@@ -1,0 +1,42 @@
+/*
+ * Copyright 2018 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package common.uk.gov.hmrc.testutils
+
+import uk.gov.hmrc.models.{State, ApplicationState}
+
+trait ApplicationStateUtil {
+
+  val generatedVerificationCode: String = "verificationCode"
+
+  def testingState() = ApplicationState(name = State.TESTING)
+
+  def productionState(requestedBy: String) = ApplicationState(
+    name = State.PRODUCTION,
+    requestedByEmailAddress = Some(requestedBy),
+    verificationCode = Some(generatedVerificationCode))
+
+  def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
+    name = State.PENDING_REQUESTER_VERIFICATION,
+    requestedByEmailAddress = Some(requestedBy),
+    verificationCode = Some(generatedVerificationCode))
+
+  def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
+    name = State.PENDING_GATEKEEPER_APPROVAL,
+    requestedByEmailAddress = Some(requestedBy),
+    verificationCode = None)
+
+}

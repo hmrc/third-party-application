@@ -1,0 +1,38 @@
+[
+  {
+    "app": {
+      "name": "Application 1",
+      "description": "First test application",
+      "collaborators": [
+        {
+          "emailAddress": "app1.admin@example.com",
+          "role": "ADMINISTRATOR"
+        }
+      ]
+    },
+    "subscriptions": [
+      {
+        "context": "hello",
+        "version": "1.0"
+      }
+    ]
+  },
+  {
+    "app": {
+      "name": "Application 2",
+      "description": "Second test application",
+      "collaborators": [
+        {
+          "emailAddress": "app2.admin@example.com",
+          "role": "ADMINISTRATOR"
+        }
+      ]
+    },
+    "subscriptions": [
+      {
+        "context": "hello",
+        "version": "1.0"
+      }
+    ]
+  }
+]
