@@ -24,14 +24,10 @@ import uk.gov.hmrc.services.{RealWSO2APIStore, StubAPIStore, WSO2APIStore}
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 
   override def configure = {
-
     bind(classOf[Config]).toInstance(ConfigFactory.load())
     bind(classOf[AuditConnector]).toInstance(MicroserviceAuditConnector)
     val skipWso2 = configuration.getBoolean("skipWso2").getOrElse(false)
     if (skipWso2) bind(classOf[WSO2APIStore]).toInstance(StubAPIStore)
     else bind(classOf[WSO2APIStore]).to(classOf[RealWSO2APIStore])
-
-    // Temporary binding for Sage application fix to Terms of Use Agreement
-    bind(classOf[RemoveSageTermsAgreement]).asEagerSingleton
   }
 }
