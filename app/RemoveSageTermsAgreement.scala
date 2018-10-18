@@ -26,8 +26,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 @Singleton
 class RemoveSageTermsAgreement @Inject()(applicationRepository: ApplicationRepository) {
 
-  val applicationId: UUID = UUID.fromString("ab349380-17cc-4de0-a7ac-c76baedd7133") // QA - API Platform
-//  val applicationId: UUID = UUID.fromString("33575d00-95cb-4e36-97b0-949d99b0a081") // Prod - Sage Application
+//  val applicationId: UUID = UUID.fromString("ab349380-17cc-4de0-a7ac-c76baedd7133") // QA - API Platform
+  val applicationId: UUID = UUID.fromString("33575d00-95cb-4e36-97b0-949d99b0a081") // Prod - Sage Application
 
   val logPrefix = "RemoveSageTermsAgreement"
 
