@@ -16,11 +16,15 @@
 
 package uk.gov.hmrc.models
 
+import java.util.UUID
+
+import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.controllers._
 import uk.gov.hmrc.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.models.OverrideType._
+import uk.gov.hmrc.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.services.WSO2RestoreData
@@ -105,7 +109,30 @@ object JsonFormatters {
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
-  implicit val formatApplicationData = Json.format[ApplicationData]
+
+  val applicationDataReads: Reads[ApplicationData] = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "normalisedName").read[String] and
+      (JsPath \ "collaborators").read[Set[Collaborator]] and
+      (JsPath \ "description").readNullable[String] and
+      (JsPath \ "wso2Username").read[String] and
+      (JsPath \ "wso2Password").read[String] and
+      (JsPath \ "wso2ApplicationName").read[String] and
+      (JsPath \ "tokens").read[ApplicationTokens] and
+      (JsPath \ "state").read[ApplicationState] and
+      (JsPath \ "access").read[Access] and
+      (JsPath \ "createdOn").read[DateTime] and
+      (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+      (JsPath \ "environment").read[String] and
+      (JsPath \ "checkInformation").readNullable[CheckInformation] and
+      ((JsPath \ "blocked").read[Boolean] or Reads.pure(false))
+    )(ApplicationData.apply _)
+
+  implicit val formatApplicationData = {
+    Format(applicationDataReads, Json.writes[ApplicationData])
+  }
+
   implicit val formatCreateApplicationRequest = Json.format[CreateApplicationRequest]
   implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
@@ -168,7 +195,30 @@ object MongoFormat {
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
   implicit val formatApiIdentifier = Json.format[APIIdentifier]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
-  implicit val formatApplicationData = Json.format[ApplicationData]
+
+  val applicationDataReads: Reads[ApplicationData] = (
+    (JsPath \ "id").read[UUID] and
+    (JsPath \ "name").read[String] and
+    (JsPath \ "normalisedName").read[String] and
+    (JsPath \ "collaborators").read[Set[Collaborator]] and
+    (JsPath \ "description").readNullable[String] and
+    (JsPath \ "wso2Username").read[String] and
+    (JsPath \ "wso2Password").read[String] and
+    (JsPath \ "wso2ApplicationName").read[String] and
+    (JsPath \ "tokens").read[ApplicationTokens] and
+    (JsPath \ "state").read[ApplicationState] and
+    (JsPath \ "access").read[Access] and
+    (JsPath \ "createdOn").read[DateTime] and
+    (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+    (JsPath \ "environment").read[String] and
+    (JsPath \ "checkInformation").readNullable[CheckInformation] and
+    ((JsPath \ "blocked").read[Boolean] or Reads.pure(false))
+  )(ApplicationData.apply _)
+
+  implicit val formatApplicationData = {
+    OFormat(applicationDataReads, Json.writes[ApplicationData])
+  }
+
   implicit val formatWSO2RestoreData = Json.format[WSO2RestoreData]
 }
 

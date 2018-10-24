@@ -160,7 +160,8 @@ case class ApplicationData(id: UUID,
                            createdOn: DateTime = DateTimeUtils.now,
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
-                           checkInformation: Option[CheckInformation] = None) {
+                           checkInformation: Option[CheckInformation] = None,
+                           blocked: Boolean = false) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 
@@ -430,3 +431,5 @@ case object UpliftVerified extends ApplicationStateChange
 case object VerificationResent extends ApplicationStateChange
 
 case object Deleted extends ApplicationStateChange
+
+case object Blocked extends ApplicationStateChange

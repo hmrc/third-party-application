@@ -36,6 +36,7 @@ POST          /application/:id/approve-uplift                        @uk.gov.hmr
 POST          /application/:id/reject-uplift                         @uk.gov.hmrc.controllers.GatekeeperController.rejectUplift(id: java.util.UUID)
 POST          /application/:id/resend-verification                   @uk.gov.hmrc.controllers.GatekeeperController.resendVerification(id: java.util.UUID)
 POST          /application/:id/delete                                @uk.gov.hmrc.controllers.GatekeeperController.deleteApplication(id: java.util.UUID)
+POST          /application/:id/block                                 @uk.gov.hmrc.controllers.GatekeeperController.blockApplication(id: java.util.UUID)
 
 POST          /application/:id/rate-limit-tier                       @uk.gov.hmrc.controllers.ApplicationController.updateRateLimitTier(id: java.util.UUID)
 
