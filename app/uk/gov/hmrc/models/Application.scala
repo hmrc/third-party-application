@@ -101,7 +101,8 @@ case class ApplicationResponse(id: UUID,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
                                trusted: Boolean = false,
-                               checkInformation: Option[CheckInformation] = None)
+                               checkInformation: Option[CheckInformation] = None,
+                               blocked: Boolean = false)
 
 object ApplicationResponse {
   private def getEnvironment(data: ApplicationData, clientId: Option[String]): Option[Environment] = {
@@ -142,7 +143,8 @@ object ApplicationResponse {
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,
-      data.checkInformation)
+      data.checkInformation,
+      data.blocked)
   }
 }
 
