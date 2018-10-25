@@ -86,9 +86,6 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
   }
 
   def fetchAppById(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async {
-    gatekeeperService.fetchAppWithHistory(id) map (app => {
-      println(s"*************$app")
-      Ok(Json.toJson(app))
-      }) recover recovery
+    gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 }
