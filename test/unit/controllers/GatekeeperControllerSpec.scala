@@ -21,7 +21,7 @@ import java.util.UUID
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{eq => eqTo, any, anyString}
+import org.mockito.Matchers.{any, anyString, eq => eqTo}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
@@ -43,7 +43,9 @@ import common.uk.gov.hmrc.common.LogSuppressing
 import common.uk.gov.hmrc.testutils.ApplicationStateUtil
 
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.http.{ HeaderCarrier, NotFoundException }
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.models.AuthRole.APIGatekeeper
+import uk.gov.hmrc.models.RateLimitTier.SILVER
 
 class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication
   with ApplicationStateUtil with LogSuppressing {
@@ -334,6 +336,21 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
     }
 
+  }
+
+  "blockApplication" should {
+
+    val applicationId: UUID = UUID.randomUUID()
+
+    "set the block flag to true for an application" in new Setup {
+
+      when(mockGatekeeperService.blockApplication(any()) (any[HeaderCarrier]())).thenReturn(successful(Blocked))
+
+      val result = await(underTest.blockApplication(applicationId)(request))
+
+      status(result) shouldBe SC_OK
+      verify(mockGatekeeperService).blockApplication(applicationId)
+    }
   }
 
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
