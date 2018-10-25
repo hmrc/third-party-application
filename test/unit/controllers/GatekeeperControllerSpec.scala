@@ -342,7 +342,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
     val applicationId: UUID = UUID.randomUUID()
 
-    "set the block flag to true for an application" in new Setup {
+    "block the application" in new Setup {
 
       when(mockGatekeeperService.blockApplication(any()) (any[HeaderCarrier]())).thenReturn(successful(Blocked))
 
