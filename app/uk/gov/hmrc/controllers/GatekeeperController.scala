@@ -22,12 +22,11 @@ import javax.inject.Inject
 import play.api.libs.json.Json
 import uk.gov.hmrc.connector.AuthConnector
 import uk.gov.hmrc.controllers.ErrorCode._
+import uk.gov.hmrc.models.JsonFormatters._
 import uk.gov.hmrc.models.{AuthRole, Blocked, InvalidStateTransition}
 import uk.gov.hmrc.services.{ApplicationService, GatekeeperService}
-import uk.gov.hmrc.models.JsonFormatters._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class GatekeeperController @Inject()(val authConnector: AuthConnector, val applicationService: ApplicationService,
   gatekeeperService: GatekeeperService) extends CommonController with AuthorisationWrapper {

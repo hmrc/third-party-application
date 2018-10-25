@@ -423,15 +423,9 @@ object RateLimitTier extends Enumeration {
 sealed trait ApplicationStateChange
 
 case object UpliftRequested extends ApplicationStateChange
-
 case object UpliftApproved extends ApplicationStateChange
-
 case object UpliftRejected extends ApplicationStateChange
-
 case object UpliftVerified extends ApplicationStateChange
-
 case object VerificationResent extends ApplicationStateChange
-
 case object Deleted extends ApplicationStateChange
-
 case object Blocked extends ApplicationStateChange
