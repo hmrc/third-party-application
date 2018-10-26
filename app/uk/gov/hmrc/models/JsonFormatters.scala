@@ -110,8 +110,27 @@ object JsonFormatters {
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
 
+  val applicationDataReads: Reads[ApplicationData] = (
+    (JsPath \ "id").read[UUID] and
+      (JsPath \ "name").read[String] and
+      (JsPath \ "normalisedName").read[String] and
+      (JsPath \ "collaborators").read[Set[Collaborator]] and
+      (JsPath \ "description").readNullable[String] and
+      (JsPath \ "wso2Username").read[String] and
+      (JsPath \ "wso2Password").read[String] and
+      (JsPath \ "wso2ApplicationName").read[String] and
+      (JsPath \ "tokens").read[ApplicationTokens] and
+      (JsPath \ "state").read[ApplicationState] and
+      (JsPath \ "access").read[Access] and
+      (JsPath \ "createdOn").read[DateTime] and
+      (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+      (JsPath \ "environment").read[String] and
+      (JsPath \ "checkInformation").readNullable[CheckInformation] and
+      ((JsPath \ "blocked").read[Boolean] or Reads.pure(false))
+    )(ApplicationData.apply _)
+
   implicit val formatApplicationData = {
-    Format(MongoFormat.applicationDataReads, Json.writes[ApplicationData])
+    Format(applicationDataReads, Json.writes[ApplicationData])
   }
 
   implicit val formatCreateApplicationRequest = Json.format[CreateApplicationRequest]
