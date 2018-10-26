@@ -101,7 +101,8 @@ case class ApplicationResponse(id: UUID,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
                                trusted: Boolean = false,
-                               checkInformation: Option[CheckInformation] = None)
+                               checkInformation: Option[CheckInformation] = None,
+                               blocked: Boolean = false)
 
 object ApplicationResponse {
   private def getEnvironment(data: ApplicationData, clientId: Option[String]): Option[Environment] = {
@@ -142,7 +143,8 @@ object ApplicationResponse {
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,
-      data.checkInformation)
+      data.checkInformation,
+      data.blocked)
   }
 }
 
@@ -160,7 +162,8 @@ case class ApplicationData(id: UUID,
                            createdOn: DateTime = DateTimeUtils.now,
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
-                           checkInformation: Option[CheckInformation] = None) {
+                           checkInformation: Option[CheckInformation] = None,
+                           blocked: Boolean = false) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 
@@ -420,13 +423,9 @@ object RateLimitTier extends Enumeration {
 sealed trait ApplicationStateChange
 
 case object UpliftRequested extends ApplicationStateChange
-
 case object UpliftApproved extends ApplicationStateChange
-
 case object UpliftRejected extends ApplicationStateChange
-
 case object UpliftVerified extends ApplicationStateChange
-
 case object VerificationResent extends ApplicationStateChange
-
 case object Deleted extends ApplicationStateChange
+case object Blocked extends ApplicationStateChange
