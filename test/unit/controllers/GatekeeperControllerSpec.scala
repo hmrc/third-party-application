@@ -18,10 +18,12 @@ package controllers
 
 import java.util.UUID
 
+import common.uk.gov.hmrc.common.LogSuppressing
+import common.uk.gov.hmrc.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{any, anyString, eq => eqTo}
+import org.mockito.Matchers.any
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
@@ -32,6 +34,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.connector.AuthConnector
 import uk.gov.hmrc.controllers.ErrorCode._
 import uk.gov.hmrc.controllers.{ErrorCode, _}
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.models.ActorType._
 import uk.gov.hmrc.models.JsonFormatters._
 import uk.gov.hmrc.models.State._
@@ -39,13 +42,8 @@ import uk.gov.hmrc.models._
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
-import common.uk.gov.hmrc.common.LogSuppressing
-import common.uk.gov.hmrc.testutils.ApplicationStateUtil
 
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.models.AuthRole.APIGatekeeper
-import uk.gov.hmrc.models.RateLimitTier.SILVER
 
 class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication
   with ApplicationStateUtil with LogSuppressing {
