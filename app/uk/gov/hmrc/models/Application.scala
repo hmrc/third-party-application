@@ -429,3 +429,4 @@ case object UpliftVerified extends ApplicationStateChange
 case object VerificationResent extends ApplicationStateChange
 case object Deleted extends ApplicationStateChange
 case object Blocked extends ApplicationStateChange
+case object Unblocked extends ApplicationStateChange

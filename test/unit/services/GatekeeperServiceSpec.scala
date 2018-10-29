@@ -23,13 +23,11 @@ import org.joda.time.DateTimeUtils
 import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.{any, anyString, eq => eqTo}
 import org.mockito.Mockito._
-import org.apache.http.HttpStatus._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.test.FakeRequest
 import uk.gov.hmrc.config.AppContext
 import uk.gov.hmrc.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
@@ -480,6 +478,25 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.blockApplication(applicationId))
       result shouldBe Blocked
+
+      verify(mockApplicationRepository).fetch(applicationId)
+      verify(mockApplicationRepository).save(updatedApplication)
+    }
+  }
+
+  "unblockApplication" should {
+
+    val applicationId: UUID = UUID.randomUUID()
+    val applicationData = anApplicationData(applicationId).copy(blocked = true)
+    val updatedApplication = applicationData.copy(blocked = false)
+
+    "set the block flag to false for an application" in new Setup {
+
+      when(mockApplicationRepository.fetch(any())).thenReturn(successful(Option(applicationData)))
+      when(mockApplicationRepository.save(any())).thenReturn(successful(updatedApplication))
+
+      val result = await(underTest.unblockApplication(applicationId))
+      result shouldBe Unblocked
 
       verify(mockApplicationRepository).fetch(applicationId)
       verify(mockApplicationRepository).save(updatedApplication)
