@@ -23,7 +23,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.connector.AuthConnector
 import uk.gov.hmrc.controllers.ErrorCode._
 import uk.gov.hmrc.models.JsonFormatters._
-import uk.gov.hmrc.models.{AuthRole, Blocked, InvalidStateTransition}
+import uk.gov.hmrc.models.{AuthRole, Blocked, InvalidStateTransition, Unblocked}
 import uk.gov.hmrc.services.{ApplicationService, GatekeeperService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -76,6 +76,12 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
   def blockApplication(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async { implicit request =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok
+    } recover recovery
+  }
+
+  def unblockApplication(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async { implicit request =>
+    gatekeeperService.unblockApplication(id) map {
+      case Unblocked => Ok
     } recover recovery
   }
 
