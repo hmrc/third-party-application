@@ -353,6 +353,21 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     }
   }
 
+  "unblockApplication" should {
+
+    val applicationId: UUID = UUID.randomUUID()
+
+    "unblock the application" in new Setup {
+
+      when(mockGatekeeperService.unblockApplication(any()) (any[HeaderCarrier]())).thenReturn(successful(Unblocked))
+
+      val result = await(underTest.unblockApplication(applicationId)(request))
+
+      status(result) shouldBe SC_OK
+      verify(mockGatekeeperService).unblockApplication(applicationId)
+    }
+  }
+
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
   }
