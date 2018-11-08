@@ -440,21 +440,20 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   "The 'application' collection" should {
     "have all the current indexes" in {
 
-      val indexVersion = Some(1)
       val expectedIndexes = Set(
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false, version = indexVersion),
-        Index(key = Seq("state.verificationCode" -> Ascending), name = Some("verificationCodeIndex"), background = true, version = indexVersion),
-        Index(key = Seq("state.name" -> Ascending, "state.updatedOn" -> Ascending), name = Some("stateName_stateUpdatedOn_Index"), background = true, version = indexVersion),
-        Index(key = Seq("id" -> Ascending), name = Some("applicationIdIndex"), unique = true, background = true, version = indexVersion),
-        Index(key = Seq("normalisedName" -> Ascending), name = Some("applicationNormalisedNameIndex"), background = true, version = indexVersion),
-        Index(key = Seq("tokens.production.clientId" -> Ascending), name = Some("productionTokenClientIdIndex"), unique = true, background = true, version = indexVersion),
-        Index(key = Seq("tokens.sandbox.clientId" -> Ascending), name = Some("sandboxTokenClientIdIndex"), unique = true, background = true, version = indexVersion),
-        Index(key = Seq("access.overrides" -> Ascending), name = Some("accessOverridesIndex"), background = true, version = indexVersion),
-        Index(key = Seq("access.accessType" -> Ascending), name = Some("accessTypeIndex"), background = true, version = indexVersion),
-        Index(key = Seq("collaborators.emailAddress" -> Ascending), name = Some("collaboratorsEmailAddressIndex"), background = true, version = indexVersion)
+        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false),
+        Index(key = Seq("state.verificationCode" -> Ascending), name = Some("verificationCodeIndex"), background = true),
+        Index(key = Seq("state.name" -> Ascending, "state.updatedOn" -> Ascending), name = Some("stateName_stateUpdatedOn_Index"), background = true),
+        Index(key = Seq("id" -> Ascending), name = Some("applicationIdIndex"), unique = true, background = true),
+        Index(key = Seq("normalisedName" -> Ascending), name = Some("applicationNormalisedNameIndex"), background = true),
+        Index(key = Seq("tokens.production.clientId" -> Ascending), name = Some("productionTokenClientIdIndex"), unique = true, background = true),
+        Index(key = Seq("tokens.sandbox.clientId" -> Ascending), name = Some("sandboxTokenClientIdIndex"), unique = true, background = true),
+        Index(key = Seq("access.overrides" -> Ascending), name = Some("accessOverridesIndex"), background = true),
+        Index(key = Seq("access.accessType" -> Ascending), name = Some("accessTypeIndex"), background = true),
+        Index(key = Seq("collaborators.emailAddress" -> Ascending), name = Some("collaboratorsEmailAddressIndex"), background = true)
       )
 
-      verifyIndexes(applicationRepository, expectedIndexes)
+      verifyIndexesVersionAgnostic(applicationRepository, expectedIndexes)
     }
   }
 

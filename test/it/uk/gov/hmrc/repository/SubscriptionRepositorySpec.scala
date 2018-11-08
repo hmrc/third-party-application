@@ -163,14 +163,13 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
 
   "The 'subscription' collection" should {
     "have all the indexes" in {
-      val indexVersion = Some(1)
       val expectedIndexes = Set(
-        Index(key = Seq("applications" -> Ascending), name = Some("applications"), unique = false, background = true, version = indexVersion),
-        Index(key = Seq("apiIdentifier.context" -> Ascending), name = Some("context"), unique = false, background = true, version = indexVersion),
-        Index(key = Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true, version = indexVersion),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false, version = indexVersion))
+        Index(key = Seq("applications" -> Ascending), name = Some("applications"), unique = false, background = true),
+        Index(key = Seq("apiIdentifier.context" -> Ascending), name = Some("context"), unique = false, background = true),
+        Index(key = Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
+        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
 
-      verifyIndexes(repository, expectedIndexes)
+      verifyIndexesVersionAgnostic(repository, expectedIndexes)
     }
   }
 
