@@ -26,12 +26,14 @@ import scala.concurrent.duration._
 
 trait IndexVerification extends UnitSpec with Eventually {
 
-  def verifyIndexes[A, ID](repository: ReactiveRepository[A, ID], indexes: Set[Index])(implicit ec: ExecutionContext) = {
+  def verifyIndexesVersionAgnostic[A, ID](repository: ReactiveRepository[A, ID], indexes: Set[Index])(implicit ec: ExecutionContext) = {
     eventually(timeout(10.seconds), interval(1000.milliseconds)) {
       val actualIndexes = await(repository.collection.indexesManager.list()).toSet
       println(actualIndexes)
-      actualIndexes shouldBe indexes
+      versionAgnostic(actualIndexes) shouldBe versionAgnostic(indexes)
     }
   }
+
+  private def versionAgnostic(indexes: Set[Index]): Set[Index] = indexes.map(i => i.copy(version = None))
 }
 

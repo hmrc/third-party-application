@@ -140,14 +140,13 @@ class StateHistoryRepositorySpec extends UnitSpec with MongoSpecSupport with Ind
 
   "The 'stateHistory' collection" should {
     "have all the indexes" in {
-      val indexVersion = Some(1)
       val expectedIndexes = Set(
-        Index(key = Seq("state" -> Ascending), name = Some("state"), unique = false, background = true, version = indexVersion),
-        Index(key = Seq("applicationId" -> Ascending), name = Some("applicationId"), unique = false, background = true, version = indexVersion),
-        Index(key = Seq("applicationId" -> Ascending, "state" -> Ascending), name = Some("applicationId_state"), unique = false, background = true, version = indexVersion),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false, version = indexVersion))
+        Index(key = Seq("state" -> Ascending), name = Some("state"), unique = false, background = true),
+        Index(key = Seq("applicationId" -> Ascending), name = Some("applicationId"), unique = false, background = true),
+        Index(key = Seq("applicationId" -> Ascending, "state" -> Ascending), name = Some("applicationId_state"), unique = false, background = true),
+        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
 
-      verifyIndexes(repository, expectedIndexes)
+      verifyIndexesVersionAgnostic(repository, expectedIndexes)
     }
   }
 
