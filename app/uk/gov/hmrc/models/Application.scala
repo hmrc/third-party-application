@@ -213,7 +213,7 @@ case class GrantWithoutConsent(scopes: Set[String]) extends OverrideFlag {
   val overrideType = OverrideType.GRANT_WITHOUT_TAXPAYER_CONSENT
 }
 
-case class SuppressIvForIndividuals() extends OverrideFlag {
+case class SuppressIvForIndividuals(scopes: Set[String]) extends OverrideFlag {
   val overrideType = OverrideType.SUPPRESS_IV_FOR_INDIVIDUALS
 }
 
