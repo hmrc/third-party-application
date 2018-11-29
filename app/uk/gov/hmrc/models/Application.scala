@@ -213,10 +213,13 @@ case class GrantWithoutConsent(scopes: Set[String]) extends OverrideFlag {
   val overrideType = OverrideType.GRANT_WITHOUT_TAXPAYER_CONSENT
 }
 
-object OverrideType extends Enumeration {
-  val PERSIST_LOGIN_AFTER_GRANT, GRANT_WITHOUT_TAXPAYER_CONSENT, SUPPRESS_IV_FOR_AGENTS, SUPPRESS_IV_FOR_ORGANISATIONS = Value
+case class SuppressIvForIndividuals() extends OverrideFlag {
+  val overrideType = OverrideType.SUPPRESS_IV_FOR_INDIVIDUALS
 }
 
+object OverrideType extends Enumeration {
+  val PERSIST_LOGIN_AFTER_GRANT, GRANT_WITHOUT_TAXPAYER_CONSENT, SUPPRESS_IV_FOR_AGENTS, SUPPRESS_IV_FOR_ORGANISATIONS, SUPPRESS_IV_FOR_INDIVIDUALS = Value
+}
 
 case class ApplicationWithUpliftRequest(id: UUID,
                                         name: String,
