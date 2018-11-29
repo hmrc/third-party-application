@@ -276,7 +276,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val originalOverrides: Set[OverrideFlag] = Set(PersistLogin(), GrantWithoutConsent(Set("scope")),
-        SuppressIvForAgents(Set("scope")), SuppressIvForOrganisations(Set("scope")))
+        SuppressIvForAgents(Set("scope")), SuppressIvForOrganisations(Set("scope")), SuppressIvForIndividuals())
       val application = createApplication(access = standardAccess.copy(overrides = originalOverrides))
       When("I request to update the application")
       val newApplicationName = "My Renamed Application"
