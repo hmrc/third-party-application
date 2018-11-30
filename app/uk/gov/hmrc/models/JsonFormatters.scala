@@ -44,9 +44,7 @@ object JsonFormatters {
     Writes { _ => Json.obj() })
   private implicit val formatSuppressIvForAgents = Json.format[SuppressIvForAgents]
   private implicit val formatSuppressIvForOrganisations = Json.format[SuppressIvForOrganisations]
-  private implicit val formatSuppressIvForIndividuals = Format[SuppressIvForIndividuals](
-    Reads { _ => JsSuccess(SuppressIvForIndividuals()) },
-    Writes { _ => Json.obj() })
+  private implicit val formatSuppressIvForIndividuals = Json.format[SuppressIvForIndividuals]
 
   implicit val formatOverride = Union.from[OverrideFlag]("overrideType")
     .and[GrantWithoutConsent](GRANT_WITHOUT_TAXPAYER_CONSENT.toString)
