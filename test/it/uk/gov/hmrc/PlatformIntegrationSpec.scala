@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc
+package it.uk.gov.hmrc.thirdpartyapplication
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
@@ -29,8 +29,8 @@ import play.api.http.{LazyHttpErrorHandler, Status}
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.{Application, Mode}
-import uk.gov.hmrc.config.AppContext
-import uk.gov.hmrc.controllers.DocumentationController
+import uk.gov.hmrc.thirdpartyapplication.config.AppContext
+import uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController
 import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.test.UnitSpec
 

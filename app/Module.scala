@@ -17,9 +17,9 @@
 import com.google.inject.AbstractModule
 import com.typesafe.config.{Config, ConfigFactory}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.config.MicroserviceAuditConnector
+import uk.gov.hmrc.thirdpartyapplication.config.MicroserviceAuditConnector
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
-import uk.gov.hmrc.services.{RealWSO2APIStore, StubAPIStore, WSO2APIStore}
+import uk.gov.hmrc.thirdpartyapplication.services.{RealWSO2APIStore, StubAPIStore, WSO2APIStore}
 
 class Module(environment: Environment, configuration: Configuration) extends AbstractModule {
 

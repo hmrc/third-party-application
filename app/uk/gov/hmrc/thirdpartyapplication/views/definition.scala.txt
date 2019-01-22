@@ -1,0 +1,20 @@
+@import uk.gov.hmrc.thirdpartyapplication.models.APIAccess
+@import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+@import play.api.libs.json.Json
+@(apiContext: String, access: APIAccess)
+{
+  "scopes":[],
+  "api": {
+    "name": "Third Party Application",
+    "description": "Internal API for use by the developer hub",
+    "context": "@apiContext",
+    "versions": [
+      {
+        "version": "1.0",
+        "status": "STABLE",
+        "endpointsEnabled": true,
+        "access": @Json.toJson(access)
+      }
+    ]
+  }
+}
