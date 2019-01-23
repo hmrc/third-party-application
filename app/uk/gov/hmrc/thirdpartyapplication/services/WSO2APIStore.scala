@@ -1,0 +1,255 @@
+/*
+ * Copyright 2019 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.thirdpartyapplication.services
+
+import javax.inject.Inject
+
+import uk.gov.hmrc.thirdpartyapplication.connector.WSO2APIStoreConnector
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
+
+import scala.collection._
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.duration._
+
+trait WSO2APIStore {
+
+  def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                       (implicit hc: HeaderCarrier): Future[ApplicationTokens]
+
+  def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
+                        (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+  def addSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: Option[RateLimitTier])
+                     (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+  def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                       (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+  def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                      (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]]
+
+  def getAllSubscriptions(wso2Username: String, wso2Password: String)
+                         (implicit hc: HeaderCarrier): Future[Map[String, Seq[APIIdentifier]]]
+
+  def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
+                    (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+  def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
+                       (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+  def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
+                                   (implicit hc: HeaderCarrier): Future[HasSucceeded]
+
+}
+
+class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) extends WSO2APIStore {
+
+  val resubscribeMaxRetries = 5
+
+  override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier): Future[ApplicationTokens] =
+    for {
+      _ <- wso2APIStoreConnector.createUser(wso2Username, wso2Password)
+      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
+      _ <- wso2APIStoreConnector.createApplication(cookie, wso2ApplicationName)
+      // NOTE: the application keys can't be generated in parallel due to limitations in WSO2 API Manager
+      sandboxKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.SANDBOX)
+      prodKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION)
+      _ <- wso2APIStoreConnector.logout(cookie)
+    } yield ApplicationTokens(prodKeys, sandboxKeys)
+
+  override def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
+                                            (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+    def check(cookie: String) = {
+      wso2APIStoreConnector.getApplicationRateLimitTier(cookie, wso2ApplicationName).flatMap { actualTier =>
+        if (actualTier == expectedRateLimitTier) {
+          Future.successful(HasSucceeded)
+        } else {
+          Future.failed(new RuntimeException(s"Rate limit tier did not change for application $wso2ApplicationName. " +
+            s"Expected $expectedRateLimitTier, but found $actualTier."))
+        }
+      }
+    }
+
+    for {
+      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
+      _ <- Retrying.retry(check(cookie), 100.milliseconds, 1)
+      _ <- wso2APIStoreConnector.logout(cookie)
+    } yield HasSucceeded
+  }
+
+  override def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    withLogin(wso2Username, wso2Password) {
+      wso2APIStoreConnector.updateApplication(_, wso2ApplicationName, rateLimitTier)
+    }
+
+  override def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    withLogin(wso2Username, wso2Password) {
+      wso2APIStoreConnector.deleteApplication(_, wso2ApplicationName)
+    }
+
+  override def addSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: Option[RateLimitTier])
+                              (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    withLogin(wso2Username, wso2Password) {
+      wso2APIStoreConnector.addSubscription(_, wso2ApplicationName, WSO2API.create(api), rateLimitTier, 0)
+    }
+
+  override def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
+                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    withLogin(wso2Username: String, wso2Password) {
+      wso2APIStoreConnector.removeSubscription(_, wso2ApplicationName, WSO2API.create(api), 0)
+    }
+
+  override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
+                             (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    withLogin(wso2Username: String, wso2Password) { cookie =>
+      val wso2Api: WSO2API = WSO2API.create(api)
+
+      object Wso2ApiState extends Enumeration {
+        type Wso2ApiState = Value
+        val API_ADDED, API_REMOVED = Value
+      }
+
+      import Wso2ApiState._
+
+      def isApiUpdatedInWso2Store(wso2Apis: Seq[WSO2API], expectedWso2ApiState: Wso2ApiState): Boolean = expectedWso2ApiState match {
+        case API_ADDED => wso2Apis.contains(wso2Api)
+        case API_REMOVED => !wso2Apis.contains(wso2Api)
+      }
+
+      def check(expectedWso2ApiState: Wso2ApiState) = {
+        wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName).flatMap { apis: Seq[WSO2API] =>
+          if (isApiUpdatedInWso2Store(apis, expectedWso2ApiState)) {
+            Future.successful(HasSucceeded)
+          } else {
+
+            // NOTE: in case of failure, you would expect this code to rollback WSO2 Store to the original subscriptions.
+            // But since the rollback could fail, we decided it needs to be fixed manually.
+
+            Future.failed(new RuntimeException(s"Application $wso2ApplicationName has $wso2Api subscription in a wrong state. " +
+              s"Expected $expectedWso2ApiState. " +
+              s"The subscriptions of application $wso2ApplicationName are now incorrect. Please fix them manually. " +
+              s"Original subscriptions: $originalApis, current subscriptions: $apis."))
+          }
+        }
+      }
+
+      // NOTE: The steps below need to be executed sequentially, otherwise WSO2 Store could fail.
+
+      // NOTE: When subscriptions are added or removed in WSO2 Store, sometimes the requests fail with a MySQL deadlock.
+      // Thus, we retry those requests to WSO2 Store.
+
+      for {
+        _ <- wso2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2Api, resubscribeMaxRetries)
+        _ <- Retrying.retry(check(Wso2ApiState.API_REMOVED), 100.milliseconds, 1)
+        _ <- wso2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2Api, Some(rateLimitTier), resubscribeMaxRetries)
+        _ <- Retrying.retry(check(Wso2ApiState.API_ADDED), 100.milliseconds, 1)
+      } yield HasSucceeded
+
+    }
+
+  override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                               (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] =
+    for {
+      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
+      subscriptions <- wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName)
+      _ <- wso2APIStoreConnector.logout(cookie)
+    } yield subscriptions.map(APIIdentifier.create)
+
+  override def getAllSubscriptions(wso2Username: String, wso2Password: String)
+                                  (implicit hc: HeaderCarrier): Future[Map[String, Seq[APIIdentifier]]] =
+    for {
+      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
+      subscriptions <- wso2APIStoreConnector.getAllSubscriptions(cookie)
+      _ <- wso2APIStoreConnector.logout(cookie)
+    } yield subscriptions.mapValues { subs => subs.map(APIIdentifier.create) }
+
+  private def withLogin[A](wso2Username: String, wso2Password: String)(action: String => Future[A])
+                          (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+    for {
+      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
+      _ <- action(cookie)
+      logoutSucceeded <- wso2APIStoreConnector.logout(cookie)
+    } yield logoutSucceeded
+
+}
+
+object StubAPIStore extends WSO2APIStore {
+
+  lazy val dummyProdTokens = EnvironmentToken("dummyProdId", "dummyValue", "dummyValue")
+  lazy val dummyTestTokens = EnvironmentToken("dummyTestId", "dummyValue", "dummyValue")
+  lazy val dummyApplicationTokens = ApplicationTokens(dummyProdTokens, dummyTestTokens)
+  lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
+
+  override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier) = Future.successful {
+    stubApplications += (wso2ApplicationName -> mutable.ListBuffer.empty)
+    dummyApplicationTokens
+  }
+
+  override def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
+                                 (implicit hc: HeaderCarrier) = Future.successful{
+    stubApplications.get(wso2ApplicationName).map(subscriptions => subscriptions -= api)
+    HasSucceeded
+  }
+
+  override def addSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: Option[RateLimitTier])
+                              (implicit hc: HeaderCarrier) = Future.successful {
+    stubApplications.putIfAbsent(wso2ApplicationName, mutable.ListBuffer.empty)
+    stubApplications.get(wso2ApplicationName).map(subscriptions => subscriptions += api)
+    HasSucceeded
+  }
+
+  override def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier) = Future.successful {
+    stubApplications -= wso2ApplicationName
+    HasSucceeded
+  }
+
+  override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                               (implicit hc: HeaderCarrier) = Future.successful {
+    stubApplications.getOrElse(wso2ApplicationName, Nil)
+  }
+
+  override def getAllSubscriptions(wso2Username: String, wso2Password: String)
+                                  (implicit hc: HeaderCarrier) = Future.successful {
+    stubApplications.mapValues { _.toSeq }
+  }
+
+  override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String,
+                              wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
+                             (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
+                                            (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+}
