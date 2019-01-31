@@ -24,22 +24,20 @@ import play.api.http.HeaderNames.{CONTENT_TYPE, COOKIE, SET_COOKIE}
 import play.api.http.Status.OK
 import play.api.libs.json._
 import play.utils.UriEncoding
-import uk.gov.hmrc.thirdpartyapplication.config.WSHttp
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
-class WSO2APIStoreConnector @Inject() extends HttpConnector {
+class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiStoreConfig)(implicit val ec: ExecutionContext)  {
 
-  val http = WSHttp
-  val serviceUrl = s"${baseUrl("wso2-store")}/store/site/blocks"
-  val adminUsername: String = getConfString("wso2-store.username", "admin")
+  val serviceUrl = s"${config.baseUrl}/store/site/blocks"
+  val adminUsername: String = config.adminUsername
 
   def login(username: String, password: String)(implicit hc: HeaderCarrier): Future[String] = {
     Logger.debug(s"User logging in: [$username]")
@@ -171,7 +169,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
     getApplication(cookie, wso2ApplicationName) map { response => extractRateLimitTier(response.json) }
   }
 
-  def addSubscription(cookie: String, wso2ApplicationName: String, api: WSO2API, rateLimitTier: Option[RateLimitTier], retryMax: Int)
+  def addSubscription(cookie: String, wso2ApplicationName: String, api: Wso2Api, rateLimitTier: Option[RateLimitTier], retryMax: Int)
                      (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
 
     def normalise(rateLimitTier: Option[RateLimitTier]) = {
@@ -200,7 +198,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
     Retrying.retry(subscribe(), 180.milliseconds, retryMax)
   }
 
-  def removeSubscription(cookie: String, wso2ApplicationName: String, api: WSO2API, retryMax: Int)
+  def removeSubscription(cookie: String, wso2ApplicationName: String, api: Wso2Api, retryMax: Int)
                         (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
 
     // NOTE: WSO2's removeSubscription API is idempotent - if requested to remove a subscription that doesn't exist, it will respond with no error
@@ -223,14 +221,14 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
   }
 
   def getSubscriptions(cookie: String, wso2ApplicationName: String)
-                      (implicit hc: HeaderCarrier): Future[Seq[WSO2API]] = {
+                      (implicit hc: HeaderCarrier): Future[Seq[Wso2Api]] = {
     Logger.debug(s"Fetching subscriptions for application: [$wso2ApplicationName]")
     val url = s"$serviceUrl/subscription/subscription-list/ajax/subscription-list.jag"
     val payload = s"action=getSubscriptionByApplication&app=$wso2ApplicationName"
 
     post(url, payload, headers(cookie)).map { response =>
       (response.json \ "apis").as[Seq[JsValue]].map { apiJson =>
-        WSO2API(
+        Wso2Api(
           (apiJson \ "apiName").as[String],
           (apiJson \ "apiVersion").as[String]
         )
@@ -238,7 +236,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
     }
   }
 
-  def getAllSubscriptions(cookie: String)(implicit hc: HeaderCarrier): Future[Map[String, Seq[WSO2API]]] = {
+  def getAllSubscriptions(cookie: String)(implicit hc: HeaderCarrier): Future[Map[String, Seq[Wso2Api]]] = {
     Logger.debug("Fetching subscriptions for all applications")
     val url = s"$serviceUrl/subscription/subscription-list/ajax/subscription-list.jag"
     val payload = "action=getAllSubscriptions"
@@ -247,7 +245,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
       (response.json \ "subscriptions" \ "applications").as[Seq[JsValue]].map { wso2applicationJson =>
         val name = (wso2applicationJson \ "name").as[String]
         val subscriptions = (wso2applicationJson \ "subscriptions").as[Seq[JsValue]].map { subscriptionJson =>
-          WSO2API(
+          Wso2Api(
             (subscriptionJson \ "name").as[String],
             (subscriptionJson \ "version").as[String]
           )
@@ -260,7 +258,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
   private def post(url: String, body: String, headers: Seq[(String, String)])
                   (implicit hc: HeaderCarrier): Future[HttpResponse] = {
     Logger.debug(s"POST url=$url request=$body")
-    http.POSTString[HttpResponse](url, body, headers)
+    httpClient.POSTString[HttpResponse](url, body, headers)
       .map { resp => handleResponse(url, resp) } recover {
       case e => throw new RuntimeException(s"Unexpected response from $url: ${e.getMessage}")
     }
@@ -270,7 +268,7 @@ class WSO2APIStoreConnector @Inject() extends HttpConnector {
                  (implicit rds: HttpReads[HttpResponse], hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     Logger.debug(s"GET url=$url")
     val headerCarrier = hc.withExtraHeaders(headers: _*)
-    http.GET[HttpResponse](url)(rds, headerCarrier, ec)
+    httpClient.GET[HttpResponse](url)(rds, headerCarrier, ec)
       .map { resp => handleResponse(url, resp) }
   }
 
@@ -310,3 +308,5 @@ case class Keys(consumerKey: String, consumerSecret: String, accessToken: String
 object Keys {
   implicit val formats: Format[Keys] = Json.format[Keys]
 }
+
+case class Wso2ApiStoreConfig(baseUrl: String, adminUsername: String)

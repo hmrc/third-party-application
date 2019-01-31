@@ -16,219 +16,211 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import org.mockito.Mockito.when
-import org.scalatest.BeforeAndAfterEach
+import org.mockito.Matchers.{any, eq => meq}
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.http.Status
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.connector._
 
-class EmailConnectorSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with BeforeAndAfterEach {
-    implicit val hc = HeaderCarrier()
-    val stubPort = sys.env.getOrElse("WIREMOCK", "21212").toInt
-    val stubHost = "localhost"
-    val wireMockUrl = s"http://$stubHost:$stubPort"
-    val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
-    val emailServicePath = "/hmrc/email"
-    val hubTestTitle = "Unit Test Hub Title"
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-    trait Setup {
-        val appContext = mock[AppContext]
-        when(appContext.devHubBaseUrl).thenReturn("http://localhost:9685")
-        when(appContext.devHubTitle).thenReturn(hubTestTitle)
+class EmailConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 
-        val connector = new EmailConnector(appContext) {
-            override lazy val serviceUrl = wireMockUrl
-        }
-        stubFor(post(urlEqualTo(emailServicePath)).willReturn(aResponse().withStatus(Status.OK)))
+  implicit val hc = HeaderCarrier()
+  private val baseUrl = s"http://example.com"
+  private val hubTestTitle = "Unit Test Hub Title"
+  private val hubUrl = "http://localhost:9685"
+  private val hubLink = s"$hubUrl/developer/registration"
+
+  trait Setup {
+    val mockHttpClient = mock[HttpClient]
+    val config = EmailConfig(baseUrl, hubUrl, hubTestTitle)
+    val connector = new EmailConnector(mockHttpClient, config)
+
+    def emailWillReturn(result: Future[HttpResponse]) = {
+      when(mockHttpClient.POST[SendEmailRequest, HttpResponse](
+        any[String](), any[SendEmailRequest](), any[Seq[(String, String)]]())(any(), any(), any(), any())
+      ).thenReturn(result)
     }
 
-    override def beforeEach() {
-        wireMockServer.start()
-        WireMock.configureFor(stubHost, stubPort)
+    def verifyEmailCalled(request: SendEmailRequest) = {
+      val expectedUrl = s"${config.baseUrl}/hmrc/email"
+      verify(mockHttpClient).POST[SendEmailRequest, HttpResponse](meq(expectedUrl), meq(request), any())(any(), any(), any(), any())
+    }
+  }
+
+  "emailConnector" should {
+    val collaboratorEmail = "email@example.com"
+    val adminEmail1 = "admin1@example.com"
+    val adminEmail2 = "admin2@example.com"
+    val gatekeeperEmail = "gatekeeper@example.com"
+    val role = "admin"
+    val application = "Test Application"
+
+    "send added collaborator confirmation email" in new Setup {
+      val expectedTemplateId = "apiAddedDeveloperAsCollaboratorConfirmation"
+      val expectedToEmails = Set(collaboratorEmail)
+      val expectedParameters: Map[String, String] = Map(
+        "role" -> role,
+        "applicationName" -> application,
+        "developerHubLink" -> hubLink,
+        "developerHubTitle" -> hubTestTitle
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendAddedCollaboratorConfirmation(role, application, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
     }
 
-    override def afterEach() {
-        wireMockServer.resetMappings()
-        wireMockServer.stop()
+    "send added collaborator notification email" in new Setup {
+
+      val expectedTemplateId = "apiAddedDeveloperAsCollaboratorNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "email" -> collaboratorEmail,
+        "role" -> role,
+        "applicationName" -> application,
+        "developerHubTitle" -> hubTestTitle
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, application, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
     }
 
-    "emailConnector" should {
-        val collaboratorEmail = "email@example.com"
-        val adminEmail1 = "admin1@example.com"
-        val adminEmail2 = "admin2@example.com"
-        val gatekeeperEmail = "gatekeeper@example.com"
-        val role = "admin"
-        val application = "Test Application"
+    "send removed collaborator confirmation email" in new Setup {
 
-        "send added collaborator confirmation email" in new Setup {
-            await(connector.sendAddedCollaboratorConfirmation(role, application, Set(collaboratorEmail)))
+      val expectedTemplateId = "apiRemovedCollaboratorConfirmation"
+      val expectedToEmails = Set(collaboratorEmail)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> application,
+        "developerHubTitle" -> hubTestTitle
+      )
 
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$collaboratorEmail"],
-                     |  "templateId": "apiAddedDeveloperAsCollaboratorConfirmation",
-                     |  "parameters": {
-                     |    "role": "$role",
-                     |    "applicationName": "$application",
-                     |    "developerHubLink": "${connector.devHubBaseUrl}/developer/registration",
-                     |    "developerHubTitle": "$hubTestTitle"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
+      emailWillReturn(Future(HttpResponse(OK)))
 
-        "send added collaborator notification email" in new Setup {
-            await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, application, Set(adminEmail1, adminEmail2)))
+      await(connector.sendRemovedCollaboratorConfirmation(application, Set(collaboratorEmail)))
 
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$adminEmail1","$adminEmail2"],
-                     |  "templateId": "apiAddedDeveloperAsCollaboratorNotification",
-                     |  "parameters": {
-                     |    "email": "$collaboratorEmail",
-                     |    "role": "$role",
-                     |    "applicationName": "$application",
-                     |    "developerHubTitle":"$hubTestTitle"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin))
-            )
-        }
-
-        "send removed collaborator confirmation email" in new Setup {
-            await(connector.sendRemovedCollaboratorConfirmation(application, Set(collaboratorEmail)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$collaboratorEmail"],
-                     |  "templateId": "apiRemovedCollaboratorConfirmation",
-                     |  "parameters": {
-                     |    "applicationName": "$application",
-                     |    "developerHubTitle": "$hubTestTitle"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
-
-        "send removed collaborator notification email" in new Setup {
-            await(connector.sendRemovedCollaboratorNotification(collaboratorEmail, application,  Set(adminEmail1, adminEmail2)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$adminEmail1","$adminEmail2"],
-                     |  "templateId":"apiRemovedCollaboratorNotification",
-                     |  "parameters": {
-                     |    "email": "$collaboratorEmail",
-                     |    "applicationName": "$application",
-                     |    "developerHubTitle": "$hubTestTitle"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin))
-            )
-        }
-
-        "send application approved gatekeeper confirmation email" in new Setup {
-            await(connector.sendApplicationApprovedGatekeeperConfirmation(adminEmail1, application, Set(gatekeeperEmail)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$gatekeeperEmail"],
-                     |  "templateId": "apiApplicationApprovedGatekeeperConfirmation",
-                     |  "parameters": {
-                     |    "email": "$adminEmail1",
-                     |    "applicationName": "$application"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
-
-        "send application approved admin confirmation email" in new Setup {
-            val code: String = "generatedCode"
-            await(connector.sendApplicationApprovedAdminConfirmation(application, code, Set(adminEmail1)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$adminEmail1"],
-                     |  "templateId": "apiApplicationApprovedAdminConfirmation",
-                     |  "parameters": {
-                     |    "applicationName":"$application",
-                     |    "developerHubLink":"${connector.devHubBaseUrl}/developer/application-verification?code=$code"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
-
-        "send application approved notification email" in new Setup {
-            await(connector.sendApplicationApprovedNotification(application, Set(adminEmail1, adminEmail2)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$adminEmail1","$adminEmail2"],
-                     |  "templateId": "apiApplicationApprovedNotification",
-                     |  "parameters": {
-                     |    "applicationName": "$application"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
-
-        "send application rejected notification email" in new Setup {
-            val reason = "Test Error"
-            await(connector.sendApplicationRejectedNotification(application, Set(adminEmail1, adminEmail2), reason))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                s"""{
-                   |  "to": ["$adminEmail1","$adminEmail2"],
-                   |  "templateId": "apiApplicationRejectedNotification",
-                   |  "parameters": {
-                   |    "applicationName": "$application",
-                   |    "guidelinesUrl": "${connector.devHubBaseUrl}/api-documentation/docs/using-the-hub/name-guidelines",
-                   |    "supportUrl": "${connector.devHubBaseUrl}/developer/support",
-                   |    "reason": "$reason"
-                   |  },
-                   |  "force": false,
-                   |  "auditData": {}
-                   |}""".stripMargin)))
-        }
-
-        "send application deleted notification email" in new Setup {
-            await(connector.sendApplicationDeletedNotification(application, adminEmail1, Set(adminEmail1, adminEmail2)))
-
-            verify(1, postRequestedFor(urlEqualTo(emailServicePath))
-              .withRequestBody(equalToJson(
-                  s"""{
-                     |  "to": ["$adminEmail1","$adminEmail2"],
-                     |  "templateId": "apiApplicationDeletedNotification",
-                     |  "parameters": {
-                     |    "applicationName": "$application",
-                     |    "requestor": "$adminEmail1"
-                     |  },
-                     |  "force": false,
-                     |  "auditData": {}
-                     |}""".stripMargin)))
-        }
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
     }
+
+    "send removed collaborator notification email" in new Setup {
+
+      val expectedTemplateId = "apiRemovedCollaboratorNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "email" -> collaboratorEmail,
+        "applicationName" -> application,
+        "developerHubTitle" -> hubTestTitle
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendRemovedCollaboratorNotification(collaboratorEmail, application, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send application approved gatekeeper confirmation email" in new Setup {
+
+      val expectedTemplateId = "apiApplicationApprovedGatekeeperConfirmation"
+      val expectedToEmails = Set(gatekeeperEmail)
+      val expectedParameters: Map[String, String] = Map(
+        "email" -> adminEmail1,
+        "applicationName" -> application
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendApplicationApprovedGatekeeperConfirmation(adminEmail1, application, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+
+    }
+
+    "send application approved admin confirmation email" in new Setup {
+
+      val code = "generatedCode"
+      val expectedTemplateId = "apiApplicationApprovedAdminConfirmation"
+      val expectedToEmails = Set(adminEmail1)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> application,
+        "developerHubLink" -> s"${connector.devHubBaseUrl}/developer/application-verification?code=$code"
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendApplicationApprovedAdminConfirmation(application, code, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send application approved notification email" in new Setup {
+
+      val expectedTemplateId = "apiApplicationApprovedNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> application
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendApplicationApprovedNotification(application, Set(adminEmail1, adminEmail2)))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send application rejected notification email" in new Setup {
+
+      val reason = "Test Error"
+      val expectedTemplateId = "apiApplicationRejectedNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> application,
+        "guidelinesUrl" -> s"${connector.devHubBaseUrl}/api-documentation/docs/using-the-hub/name-guidelines",
+        "supportUrl" -> s"${connector.devHubBaseUrl}/developer/support",
+        "reason" -> s"$reason"
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendApplicationRejectedNotification(application, expectedToEmails, reason))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send application deleted notification email" in new Setup {
+
+      val expectedTemplateId = "apiApplicationDeletedNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> application,
+        "requestor" -> s"$adminEmail1"
+      )
+
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendApplicationDeletedNotification(application, adminEmail1, expectedToEmails))
+
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+  }
 }

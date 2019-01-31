@@ -14,10 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.play.config.ServicesConfig
+import javax.inject.{Inject, Singleton}
 
-trait HttpConnector extends ServicesConfig {
-  lazy val applicationName = getString("appName")
+@Singleton
+class TrustedApplications @Inject()(config: TrustedApplicationsConfig) {
+
+  def isTrusted(application: ApplicationData): Boolean = config.trustedApplications.contains(application.id.toString)
 }
+
+case class TrustedApplicationsConfig(trustedApplications: Seq[String])

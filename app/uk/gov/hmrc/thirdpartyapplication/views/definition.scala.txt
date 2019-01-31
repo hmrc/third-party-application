@@ -1,7 +1,7 @@
-@import uk.gov.hmrc.thirdpartyapplication.models.APIAccess
+@import uk.gov.hmrc.thirdpartyapplication.models.ApiAccess
 @import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 @import play.api.libs.json.Json
-@(apiContext: String, access: APIAccess)
+@(apiContext: String, access: ApiAccess)
 {
   "scopes":[],
   "api": {

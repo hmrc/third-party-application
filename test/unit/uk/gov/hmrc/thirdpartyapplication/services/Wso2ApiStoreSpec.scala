@@ -22,23 +22,23 @@ import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.thirdpartyapplication.connector.WSO2APIStoreConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.services.{RealWSO2APIStore, WSO2APIStore}
+import uk.gov.hmrc.thirdpartyapplication.services.{RealWso2ApiStore, Wso2ApiStore}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
 
-class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
+class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-    val mockWSO2APIStoreConnector = mock[WSO2APIStoreConnector]
+    val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector]
 
-    val underTest = new RealWSO2APIStore(mockWSO2APIStoreConnector) {
+    val underTest = new RealWso2ApiStore(mockWSO2APIStoreConnector) {
       override val resubscribeMaxRetries = 0
     }
 
@@ -125,7 +125,7 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     val wso2Password = "mypassword"
     val wso2ApplicationName = "myapplication"
     val cookie = "some-cookie-value"
-    val wso2API = WSO2API("some--context--1.0", "1.0")
+    val wso2API = Wso2Api("some--context--1.0", "1.0")
     val api = APIIdentifier("some/context", "1.0")
 
     "add a subscription to an application in WSO2" in new Setup {
@@ -162,7 +162,7 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val wso2API = WSO2API("some--context--1.0", "1.0")
+      val wso2API = Wso2Api("some--context--1.0", "1.0")
       val api = APIIdentifier("some/context", "1.0")
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
@@ -184,9 +184,9 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
     val wso2Password = "mypassword"
     val wso2ApplicationName = "myapplication"
     val cookie = "some-cookie-value"
-    val wso2Api = WSO2API("some--context--1.0", "1.0")
+    val wso2Api = Wso2Api("some--context--1.0", "1.0")
     val api = APIIdentifier("some/context", "1.0")
-    val anotherWso2Api = WSO2API("some--context_2--1.0", "1.0")
+    val anotherWso2Api = Wso2Api("some--context_2--1.0", "1.0")
     val anotherApi = APIIdentifier("some/context_2", "1.0")
 
     "remove and then add subscriptions" in new Setup {
@@ -206,9 +206,9 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
 
       when(mockWSO2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName)).thenAnswer(
-        new Answer[Future[Seq[WSO2API]]] {
+        new Answer[Future[Seq[Wso2Api]]] {
           var count = 0
-          override def answer(invocation: InvocationOnMock): Future[Seq[WSO2API]] = {
+          override def answer(invocation: InvocationOnMock): Future[Seq[Wso2Api]] = {
             count += 1
             count match {
               case 1 => Future.successful(Seq(anotherWso2Api))
@@ -248,7 +248,7 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
         await(underTest.resubscribeApi(Seq(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
       }
 
-      verify(mockWSO2APIStoreConnector, never()).addSubscription(anyString(), anyString(), any[WSO2API], any[Option[RateLimitTier]], anyInt())(any[HeaderCarrier])
+      verify(mockWSO2APIStoreConnector, never()).addSubscription(anyString(), anyString(), any[Wso2Api], any[Option[RateLimitTier]], anyInt())(any[HeaderCarrier])
     }
 
     "fail when add subscription fails" in new Setup {
@@ -274,7 +274,7 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val wso2Subscriptions = Seq(WSO2API("some--context--1.0", "1.0"), WSO2API("some--other--context--1.0", "1.0"))
+      val wso2Subscriptions = Seq(Wso2Api("some--context--1.0", "1.0"), Wso2Api("some--other--context--1.0", "1.0"))
       val subscriptions = Seq(APIIdentifier("some/context", "1.0"), APIIdentifier("some/other/context", "1.0"))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
@@ -298,7 +298,7 @@ class WSO2APIStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val wso2Subscriptions = Seq(WSO2API("some--context--1.0", "1.0"), WSO2API("some--other--context--1.0", "1.0"))
+      val wso2Subscriptions = Seq(Wso2Api("some--context--1.0", "1.0"), Wso2Api("some--other--context--1.0", "1.0"))
       val subscriptions = Seq(APIIdentifier("some/context", "1.0"), APIIdentifier("some/other/context", "1.0"))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))

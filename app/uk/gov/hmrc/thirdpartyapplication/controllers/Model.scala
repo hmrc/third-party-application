@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag}
 
 case class ValidationRequest(clientId: String, clientSecret: String)

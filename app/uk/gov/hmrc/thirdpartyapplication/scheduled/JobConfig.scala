@@ -24,7 +24,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 case class JobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean) {
-  override def toString() = s"JobConfig{initialDelay=$initialDelay interval=$interval enabled=$enabled}"
+  override def toString = s"JobConfig{initialDelay=$initialDelay interval=$interval enabled=$enabled}"
 }
 
 trait ScheduledMongoJob extends ExclusiveScheduledJob with ScheduledJobState {

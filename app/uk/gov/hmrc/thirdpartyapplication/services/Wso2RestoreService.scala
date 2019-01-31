@@ -23,7 +23,7 @@ import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
 import reactivemongo.play.json.ImplicitBSONHandlers._
-import uk.gov.hmrc.thirdpartyapplication.connector.WSO2APIStoreConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -36,11 +36,11 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class WSO2RestoreService @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector,
-                                   wso2APIStore: WSO2APIStore,
+class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
+                                   wso2APIStore: Wso2ApiStore,
                                    subscriptionRepository: SubscriptionRepository,
                                    applicationRepository: ApplicationRepository,
-                                   migrationRepository: WSO2RestoreRepository) {
+                                   migrationRepository: Wso2RestoreRepository) {
 
   implicit val hc: uk.gov.hmrc.http.HeaderCarrier = HeaderCarrier()
 
@@ -49,19 +49,19 @@ class WSO2RestoreService @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector,
     val eventualApplicationDatas = applicationRepository.fetchAll()
     val eventualAppsToMigrate = migrationRepository.fetchAllUnfinished()
     val a: Future[Seq[ApplicationData]] = for {
-      appsToMigrate: Seq[WSO2RestoreData] <- eventualAppsToMigrate
+      appsToMigrate: Seq[Wso2RestoreData] <- eventualAppsToMigrate
       appDatas: Seq[ApplicationData] <- eventualApplicationDatas
       appToMigrate = appDatas.filter(app => appsToMigrate.map(_.appId).contains(app.id))
     } yield appToMigrate
     a.flatMap(_.foldLeft(Future.successful(Seq[HasSucceeded]()))((fs, appData) =>
-      fs.flatMap((seq) => restoreApp(appData).map(_ ++ seq))
+      fs.flatMap(seq => restoreApp(appData).map(_ ++ seq))
     ))
   }
 
   private def restoreApp(appData: ApplicationData): Future[Seq[HasSucceeded]] = {
     Logger.info(s"Starting to restore ${appData.name}.")
     wso2APIStore.createApplication(appData.wso2Username, appData.wso2Password, appData.wso2ApplicationName).flatMap(_ =>
-      migrationRepository.save(WSO2RestoreData(appData.id, None, None, None, None, Some(false))).flatMap(
+      migrationRepository.save(Wso2RestoreData(appData.id, None, None, None, None, Some(false))).flatMap(
         _ => {
           val succeeded: Future[Seq[Future[HasSucceeded]]] = subscriptionRepository.getSubscriptions(appData.id).map(
             _.map(addSubscription(appData, _))
@@ -79,7 +79,7 @@ class WSO2RestoreService @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector,
 
   private def saveFinished(appData: ApplicationData) = {
     migrationRepository.save(
-      WSO2RestoreData(appData.id,
+      Wso2RestoreData(appData.id,
         Some(appData.wso2ApplicationName),
         Some(appData.tokens.production.clientId),
         Some(appData.tokens.production.wso2ClientSecret),
@@ -99,7 +99,7 @@ class WSO2RestoreService @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector,
   }
 }
 
-case class WSO2RestoreData(appId: UUID,
+case class Wso2RestoreData(appId: UUID,
                            wso2ApplicationName: Option[String],
                            clientId: Option[String],
                            wso2ClientSecret: Option[String],
@@ -107,9 +107,9 @@ case class WSO2RestoreData(appId: UUID,
                            finished: Option[Boolean])
 
 @Singleton
-class WSO2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
-  extends ReactiveRepository[WSO2RestoreData, BSONObjectID]("migration", mongo.mongoConnector.db,
-    MongoFormat.formatWSO2RestoreData, ReactiveMongoFormats.objectIdFormats) {
+class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
+  extends ReactiveRepository[Wso2RestoreData, BSONObjectID]("migration", mongo.mongoConnector.db,
+    MongoFormat.formatWso2RestoreData, ReactiveMongoFormats.objectIdFormats) {
 
   override def indexes = Seq(
     createSingleFieldAscendingIndex(
@@ -122,14 +122,14 @@ class WSO2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
     )
   )
 
-  def save(migrationData: WSO2RestoreData) = {
+  def save(migrationData: Wso2RestoreData) = {
     collection.find(BSONDocument("appId" -> migrationData.appId.toString)).one[BSONDocument].flatMap {
       case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = migrationData)
       case None => collection.insert(migrationData)
     }
   }
 
-  def fetchAllUnfinished(): Future[Seq[WSO2RestoreData]] = {
-    collection.find(BSONDocument("finished" -> false)).cursor[WSO2RestoreData]().collect[Seq]()
+  def fetchAllUnfinished(): Future[Seq[Wso2RestoreData]] = {
+    collection.find(BSONDocument("finished" -> false)).cursor[Wso2RestoreData]().collect[Seq]()
   }
 }

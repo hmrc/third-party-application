@@ -16,10 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import javax.inject.Inject
-
-import uk.gov.hmrc.thirdpartyapplication.connector.WSO2APIStoreConnector
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
@@ -29,7 +28,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait WSO2APIStore {
+trait Wso2ApiStore {
 
   def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                        (implicit hc: HeaderCarrier): Future[ApplicationTokens]
@@ -49,7 +48,12 @@ trait WSO2APIStore {
   def getAllSubscriptions(wso2Username: String, wso2Password: String)
                          (implicit hc: HeaderCarrier): Future[Map[String, Seq[APIIdentifier]]]
 
-  def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
+  def resubscribeApi(originalApis: Seq[APIIdentifier],
+                     wso2Username: String,
+                     wso2Password: String,
+                     wso2ApplicationName: String,
+                     api: APIIdentifier,
+                     rateLimitTier: RateLimitTier)
                     (implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
@@ -60,7 +64,8 @@ trait WSO2APIStore {
 
 }
 
-class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) extends WSO2APIStore {
+@Singleton
+class RealWso2ApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector) extends Wso2ApiStore {
 
   val resubscribeMaxRetries = 5
 
@@ -109,22 +114,31 @@ class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) e
       wso2APIStoreConnector.deleteApplication(_, wso2ApplicationName)
     }
 
-  override def addSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: Option[RateLimitTier])
+  override def addSubscription(wso2Username: String,
+                               wso2Password: String,
+                               wso2ApplicationName: String,
+                               api: APIIdentifier,
+                               rateLimitTier: Option[RateLimitTier])
                               (implicit hc: HeaderCarrier): Future[HasSucceeded] =
     withLogin(wso2Username, wso2Password) {
-      wso2APIStoreConnector.addSubscription(_, wso2ApplicationName, WSO2API.create(api), rateLimitTier, 0)
+      wso2APIStoreConnector.addSubscription(_, wso2ApplicationName, Wso2Api.create(api), rateLimitTier, 0)
     }
 
   override def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
                                  (implicit hc: HeaderCarrier): Future[HasSucceeded] =
     withLogin(wso2Username: String, wso2Password) {
-      wso2APIStoreConnector.removeSubscription(_, wso2ApplicationName, WSO2API.create(api), 0)
+      wso2APIStoreConnector.removeSubscription(_, wso2ApplicationName, Wso2Api.create(api), 0)
     }
 
-  override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
+  override def resubscribeApi(originalApis: Seq[APIIdentifier],
+                              wso2Username: String,
+                              wso2Password: String,
+                              wso2ApplicationName: String,
+                              api: APIIdentifier,
+                              rateLimitTier: RateLimitTier)
                              (implicit hc: HeaderCarrier): Future[HasSucceeded] =
     withLogin(wso2Username: String, wso2Password) { cookie =>
-      val wso2Api: WSO2API = WSO2API.create(api)
+      val wso2Api: Wso2Api = Wso2Api.create(api)
 
       object Wso2ApiState extends Enumeration {
         type Wso2ApiState = Value
@@ -133,13 +147,13 @@ class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) e
 
       import Wso2ApiState._
 
-      def isApiUpdatedInWso2Store(wso2Apis: Seq[WSO2API], expectedWso2ApiState: Wso2ApiState): Boolean = expectedWso2ApiState match {
+      def isApiUpdatedInWso2Store(wso2Apis: Seq[Wso2Api], expectedWso2ApiState: Wso2ApiState): Boolean = expectedWso2ApiState match {
         case API_ADDED => wso2Apis.contains(wso2Api)
         case API_REMOVED => !wso2Apis.contains(wso2Api)
       }
 
       def check(expectedWso2ApiState: Wso2ApiState) = {
-        wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName).flatMap { apis: Seq[WSO2API] =>
+        wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName).flatMap { apis: Seq[Wso2Api] =>
           if (isApiUpdatedInWso2Store(apis, expectedWso2ApiState)) {
             Future.successful(HasSucceeded)
           } else {
@@ -156,7 +170,6 @@ class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) e
       }
 
       // NOTE: The steps below need to be executed sequentially, otherwise WSO2 Store could fail.
-
       // NOTE: When subscriptions are added or removed in WSO2 Store, sometimes the requests fail with a MySQL deadlock.
       // Thus, we retry those requests to WSO2 Store.
 
@@ -195,7 +208,8 @@ class RealWSO2APIStore @Inject()(wso2APIStoreConnector: WSO2APIStoreConnector) e
 
 }
 
-object StubAPIStore extends WSO2APIStore {
+@Singleton
+class StubApiStore @Inject()() extends Wso2ApiStore {
 
   lazy val dummyProdTokens = EnvironmentToken("dummyProdId", "dummyValue", "dummyValue")
   lazy val dummyTestTokens = EnvironmentToken("dummyTestId", "dummyValue", "dummyValue")
@@ -209,12 +223,16 @@ object StubAPIStore extends WSO2APIStore {
   }
 
   override def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
-                                 (implicit hc: HeaderCarrier) = Future.successful{
+                                 (implicit hc: HeaderCarrier) = Future.successful {
     stubApplications.get(wso2ApplicationName).map(subscriptions => subscriptions -= api)
     HasSucceeded
   }
 
-  override def addSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: Option[RateLimitTier])
+  override def addSubscription(wso2Username: String,
+                               wso2Password: String,
+                               wso2ApplicationName: String,
+                               api: APIIdentifier,
+                               rateLimitTier: Option[RateLimitTier])
                               (implicit hc: HeaderCarrier) = Future.successful {
     stubApplications.putIfAbsent(wso2ApplicationName, mutable.ListBuffer.empty)
     stubApplications.get(wso2ApplicationName).map(subscriptions => subscriptions += api)
@@ -234,7 +252,9 @@ object StubAPIStore extends WSO2APIStore {
 
   override def getAllSubscriptions(wso2Username: String, wso2Password: String)
                                   (implicit hc: HeaderCarrier) = Future.successful {
-    stubApplications.mapValues { _.toSeq }
+    stubApplications.mapValues {
+      _.toSeq
+    }
   }
 
   override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String,

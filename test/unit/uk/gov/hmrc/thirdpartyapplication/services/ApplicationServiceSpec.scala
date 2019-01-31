@@ -31,17 +31,16 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.OneAppPerTest
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TOTPConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.{Environment, PRODUCTION}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -60,22 +59,24 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   trait Setup {
 
     lazy val locked = false
-    val mockWSO2APIStore = mock[WSO2APIStore]
+    val mockWSO2APIStore = mock[Wso2ApiStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockSubscriptionRepository = mock[SubscriptionRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockAuditService = mock[AuditService]
     val mockEmailConnector = mock[EmailConnector]
-    val mockTotpConnector = mock[TOTPConnector]
+    val mockTotpConnector = mock[TotpConnector]
     val mockLockKeeper = new MockLockKeeper(locked)
     val response = mock[HttpResponse]
     val trustedApplicationId1 = UUID.fromString("162017dc-607b-4405-8208-a28308672f76")
     val trustedApplicationId2 = UUID.fromString("162017dc-607b-4405-8208-a28308672f77")
 
-    val mockAppContext = mock[AppContext]
-    when(mockAppContext.trustedApplications).thenReturn(Seq(trustedApplicationId1.toString, trustedApplicationId2.toString))
+    val mockTrustedApplications = mock[TrustedApplications]
+    when(mockTrustedApplications.isTrusted(any[ApplicationData]())).thenReturn(false)
+    when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId1))).thenReturn(true)
+    when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId2))).thenReturn(true)
 
-    val applicationResponseCreator = new ApplicationResponseCreator(mockAppContext)
+    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
 
     implicit val hc = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
@@ -84,8 +85,18 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     val mockCredentialGenerator = mock[CredentialGenerator]
 
-    val underTest = new ApplicationService(mockApplicationRepository, mockStateHistoryRepository, mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockTotpConnector, mockLockKeeper, mockWSO2APIStore,
-      applicationResponseCreator, mockCredentialGenerator, mockAppContext)
+    val underTest = new ApplicationService(
+      mockApplicationRepository,
+      mockStateHistoryRepository,
+      mockSubscriptionRepository,
+      mockAuditService,
+      mockEmailConnector,
+      mockTotpConnector,
+      mockLockKeeper,
+      mockWSO2APIStore,
+      applicationResponseCreator,
+      mockCredentialGenerator,
+      mockTrustedApplications)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockWSO2APIStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(ApplicationTokens(productionToken, sandboxToken)))
@@ -151,9 +162,10 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
       callsMadeToLockKeeper = callsMadeToLockKeeper + 1
-      locked match {
-        case true => successful(None)
-        case false => successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
+      if (locked) {
+        successful(None)
+      } else {
+        successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
       }
     }
   }
@@ -228,11 +240,11 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationRequest = aNewApplicationRequest(access = Privileged())
       when(mockApplicationRepository.fetchNonTestingApplicationByName(applicationRequest.name)).thenReturn(None)
 
-      val prodTOTP = TOTP("prodTotp", "prodTotpId")
-      val sandboxTOTP = TOTP("sandboxTotp", "sandboxTotpId")
+      val prodTOTP = Totp("prodTotp", "prodTotpId")
+      val sandboxTOTP = Totp("sandboxTotp", "sandboxTotpId")
       val totpQueue = mutable.Queue(prodTOTP, sandboxTOTP)
-      given(mockTotpConnector.generateTotp()).willAnswer(new Answer[Future[TOTP]] {
-        override def answer(invocationOnMock: InvocationOnMock): Future[TOTP] = successful(totpQueue.dequeue())
+      given(mockTotpConnector.generateTotp()).willAnswer(new Answer[Future[Totp]] {
+        override def answer(invocationOnMock: InvocationOnMock): Future[Totp] = successful(totpQueue.dequeue())
       })
 
       val createdApp = await(underTest.create(applicationRequest)(hc))
@@ -434,14 +446,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetch(applicationId))
 
       result shouldBe Some(ApplicationResponse(applicationId, productionToken.clientId, data.name, data.environment, data.description, data.collaborators,
-        data.createdOn, Seq.empty, None, None, data.access, None, data.state, SILVER, false))
+        data.createdOn, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
     }
 
     "return an application with trusted flag when the application is in the whitelist" in new Setup {
 
       val applicationData = anApplicationData(trustedApplicationId2)
-
-      when(mockAppContext.isTrusted(applicationData)).thenReturn(true)
 
       when(mockApplicationRepository.fetch(trustedApplicationId2)).thenReturn(Some(applicationData))
       when(mockWSO2APIStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier]))
@@ -734,8 +744,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "return an application with trusted flag when the application is in the whitelist" in new Setup {
 
       val applicationData = anApplicationData(trustedApplicationId1)
-
-      when(mockAppContext.isTrusted(applicationData)).thenReturn(true)
 
       when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
       when(mockWSO2APIStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))

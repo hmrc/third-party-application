@@ -1,2 +1,2 @@
-GET   /api/definition              @uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController.definition()
-GET   /api/conf/:version/*file     @uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController.raml(version, file)
+GET   /api/definition              uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController.definition()
+GET   /api/conf/:version/*file     uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController.raml(version, file)

@@ -18,21 +18,18 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.security.MessageDigest
 import java.util.UUID
-import javax.inject.Inject
 
 import com.google.common.base.Charsets
+import javax.inject.Inject
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import play.api.libs.functional.syntax._
 import play.api.libs.json._
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.time.DateTimeUtils
-
 
 trait ApplicationRequest {
   val name: String
@@ -230,7 +227,7 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Seq
 
 case class APIIdentifier(context: String, version: String)
 
-case class WSO2API(name: String, version: String)
+case class Wso2Api(name: String, version: String)
 
 case class Collaborator(emailAddress: String, role: Role)
 
@@ -323,18 +320,10 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 
 }
 
-class ApplicationResponseCreator @Inject()(appContext: AppContext) {
+class ApplicationResponseCreator @Inject()(trustedApplications: TrustedApplications) {
 
   def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
-    CreateApplicationResponse(ApplicationResponse(applicationData, None, appContext.isTrusted(applicationData)), totpSecrets)
-  }
-
-  private def getEnvironment(data: ApplicationData, clientId: Option[String]): Option[Environment] = {
-    clientId match {
-      case Some(data.tokens.production.clientId) => Some(Environment.PRODUCTION)
-      case Some(data.tokens.sandbox.clientId) => Some(Environment.SANDBOX)
-      case _ => None
-    }
+    CreateApplicationResponse(ApplicationResponse(applicationData, None, trustedApplications.isTrusted(applicationData)), totpSecrets)
   }
 }
 
@@ -393,10 +382,10 @@ object ApplicationData {
   }
 }
 
-object WSO2API {
+object Wso2Api {
 
   def create(api: APIIdentifier) = {
-    WSO2API(name(api), api.version)
+    Wso2Api(name(api), api.version)
   }
 
   private def name(api: APIIdentifier) = {
@@ -407,11 +396,11 @@ object WSO2API {
 
 object APIIdentifier {
 
-  def create(wso2API: WSO2API) = {
+  def create(wso2API: Wso2Api) = {
     APIIdentifier(context(wso2API), wso2API.version)
   }
 
-  private def context(wso2API: WSO2API) = {
+  private def context(wso2API: Wso2Api) = {
     wso2API.name.dropRight(s"--${wso2API.version}".length).replaceAll("--", "/")
   }
 
@@ -426,10 +415,17 @@ object RateLimitTier extends Enumeration {
 sealed trait ApplicationStateChange
 
 case object UpliftRequested extends ApplicationStateChange
+
 case object UpliftApproved extends ApplicationStateChange
+
 case object UpliftRejected extends ApplicationStateChange
+
 case object UpliftVerified extends ApplicationStateChange
+
 case object VerificationResent extends ApplicationStateChange
+
 case object Deleted extends ApplicationStateChange
+
 case object Blocked extends ApplicationStateChange
+
 case object Unblocked extends ApplicationStateChange

@@ -35,11 +35,11 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
     }
   }
 
-  "WSO2API" should {
+  "Wso2Api" should {
 
     "construct a WSO2 name from the context and version" in {
 
-      WSO2API.create(APIIdentifier("some/context", "1.0")) shouldBe WSO2API("some--context--1.0", "1.0")
+      Wso2Api.create(APIIdentifier("some/context", "1.0")) shouldBe Wso2Api("some--context--1.0", "1.0")
 
     }
 
@@ -49,7 +49,7 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
 
     "deconstruct the context from a WSO2 api name" in {
 
-      APIIdentifier.create(WSO2API("some--context--1.0", "1.0")) shouldBe APIIdentifier("some/context", "1.0")
+      APIIdentifier.create(Wso2Api("some--context--1.0", "1.0")) shouldBe APIIdentifier("some/context", "1.0")
 
     }
 

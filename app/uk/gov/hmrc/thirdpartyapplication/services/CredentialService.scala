@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import javax.inject.Inject
 
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
@@ -30,13 +29,17 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class CredentialService @Inject()(applicationRepository: ApplicationRepository, auditService: AuditService,
-                                  appContext: AppContext, applicationResponseCreator: ApplicationResponseCreator) {
+class CredentialService @Inject()(applicationRepository: ApplicationRepository,
+                                  auditService: AuditService,
+                                  trustedApplications: TrustedApplications,
+                                  applicationResponseCreator: ApplicationResponseCreator,
+                                  config: CredentialConfig) {
 
-  val clientSecretLimit = appContext.clientSecretLimit
+  val clientSecretLimit = config.clientSecretLimit
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
-    applicationRepository.fetch(applicationId) map (_.map(app => ApplicationResponse(data = app, clientId = None, trusted = appContext.isTrusted(app))))
+    applicationRepository.fetch(applicationId) map (_.map(
+      app => ApplicationResponse(data = app, clientId = None, trusted = trustedApplications.isTrusted(app))))
   }
 
   def fetchCredentials(applicationId: UUID): Future[Option[ApplicationTokensResponse]] = {
@@ -125,3 +128,5 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository, 
   }
 
 }
+
+case class CredentialConfig(clientSecretLimit: Int)

@@ -18,29 +18,31 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import controllers.AssetsBuilder
 import javax.inject.Inject
+import play.api.Configuration
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Action
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.models.APIAccess
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.thirdpartyapplication.models.ApiAccess
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.thirdpartyapplication.views.txt
 
-class DocumentationController @Inject()(httpErrorHandler: HttpErrorHandler, appContext: AppContext)
+class DocumentationController @Inject()(httpErrorHandler: HttpErrorHandler, config: DocumentationConfig)
   extends AssetsBuilder(httpErrorHandler) with BaseController {
 
   def definition = Action {
-    if(appContext.publishApiDefinition) {
-      Ok(txt.definition(appContext.apiContext, APIAccess.build(appContext.access))).withHeaders(CONTENT_TYPE -> JSON)
+    if(config.publishApiDefinition) {
+      Ok(txt.definition(config.apiContext, ApiAccess.build(config.access))).withHeaders(CONTENT_TYPE -> JSON)
     } else {
       NotFound
     }
   }
 
   def raml(version: String, file: String) = Action {
-    if(appContext.publishApiDefinition) {
-      Ok(txt.application(appContext.apiContext))
+    if(config.publishApiDefinition) {
+      Ok(txt.application(config.apiContext))
     } else {
       NotFound
     }
   }
 }
+
+case class DocumentationConfig(publishApiDefinition: Boolean, apiContext: String, access: Option[Configuration])

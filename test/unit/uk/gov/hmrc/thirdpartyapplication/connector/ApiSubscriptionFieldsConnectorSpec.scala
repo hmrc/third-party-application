@@ -16,74 +16,71 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock
-import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.core.WireMockConfiguration.wireMockConfig
+import java.util.UUID
+
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.scalatest.BeforeAndAfterEach
+import org.mockito.Matchers.{any, eq => meq}
+import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConfig, ApiSubscriptionFieldsConnector}
 
-class ApiSubscriptionFieldsConnectorSpec  extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures
-  with BeforeAndAfterEach with LogSuppressing {
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-  implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-  val stubPort = sys.env.getOrElse("WIREMOCK", "21212").toInt
-  val stubHost = "localhost"
-  val wireMockUrl = s"http://$stubHost:$stubPort"
-  val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
+class ApiSubscriptionFieldsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures with LogSuppressing {
+
+  implicit val hc = HeaderCarrier()
+  val baseUrl = s"http://example.com"
 
   trait Setup {
-    val clientId = "client-id"
-    val underTest = new ApiSubscriptionFieldsConnector {
-      override lazy val serviceUrl = wireMockUrl
+    val mockHttpClient = mock[HttpClient]
+    val config = ApiSubscriptionFieldsConfig(baseUrl)
+    val underTest = new ApiSubscriptionFieldsConnector(mockHttpClient, config)
+
+    def apiSubscriptionFieldsWillReturn(result: Future[HttpResponse]) = {
+      when(mockHttpClient.DELETE[HttpResponse](any())(any(), any(), any())).thenReturn(result)
     }
-  }
 
-  override def beforeEach() {
-    wireMockServer.start()
-    WireMock.configureFor(stubHost, stubPort)
-  }
-
-  override def afterEach() {
-    wireMockServer.resetMappings()
-    wireMockServer.stop()
+    def verifyApiSubscriptionFieldsCalled(clientId: String) = {
+      val expectedUrl = s"${config.baseUrl}/field/application/$clientId"
+      verify(mockHttpClient).DELETE[HttpResponse](meq(expectedUrl))(any(), any(), any())
+    }
   }
 
   "ApiSubscriptionFieldsConnector" should {
+
+    val clientId = UUID.randomUUID().toString
+
     "succeed when the remote call returns No Content" in new Setup {
-      val url = s"/field/application/$clientId"
-      stubFor(delete(urlEqualTo(url)).willReturn(aResponse().withStatus(NO_CONTENT)))
+
+      apiSubscriptionFieldsWillReturn(Future(HttpResponse(NO_CONTENT)))
 
       await(underTest.deleteSubscriptions(clientId))
 
-      verify(1, deleteRequestedFor(urlEqualTo(url)))
+      verifyApiSubscriptionFieldsCalled(clientId)
     }
 
     "succeed when the remote call returns Not Found" in new Setup {
-      val url = s"/field/application/$clientId"
-      stubFor(delete(urlEqualTo(url)).willReturn(aResponse().withStatus(NOT_FOUND)))
+      apiSubscriptionFieldsWillReturn(Future(HttpResponse(NOT_FOUND)))
 
       await(underTest.deleteSubscriptions(clientId))
 
-      verify(1, deleteRequestedFor(urlEqualTo(url)))
+      verifyApiSubscriptionFieldsCalled(clientId)
     }
 
     "fail when the remote call returns Internal Server Error" in new Setup {
-      val url = s"/field/application/$clientId"
-      stubFor(delete(urlEqualTo(url)).willReturn(aResponse().withStatus(INTERNAL_SERVER_ERROR)))
+      apiSubscriptionFieldsWillReturn(Future.failed(Upstream5xxResponse("", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR)))
 
       intercept[Upstream5xxResponse] {
         await(underTest.deleteSubscriptions(clientId))
       }
 
-      verify(1, deleteRequestedFor(urlEqualTo(url)))
+      verifyApiSubscriptionFieldsCalled(clientId)
     }
   }
 }

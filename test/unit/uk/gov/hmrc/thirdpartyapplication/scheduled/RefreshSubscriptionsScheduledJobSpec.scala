@@ -18,26 +18,24 @@ package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 
+import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, RefreshSubscriptionsJobLockKeeper, RefreshSubscriptionsScheduledJob}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{RefreshSubscriptionsJobConfig, RefreshSubscriptionsJobLockKeeper, RefreshSubscriptionsScheduledJob}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HeaderCarrier
-
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil
   with LogSuppressing {
@@ -57,24 +55,22 @@ class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar wi
 
       override def repo: LockRepository = mock[LockRepository]
 
-      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5)
+      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
       override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
         if (lockKeeperSuccess()) body.map(value => Future.successful(Some(value)))
         else Future.successful(None)
     }
 
-    val mockAppContext = mock[AppContext]
-    when(mockAppContext.refreshSubscriptionsJobConfig).thenReturn(JobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true))
-
-    val underTest = new RefreshSubscriptionsScheduledJob(mockLockKeeper, mockSubscriptionService, mockAppContext)
+    val config = RefreshSubscriptionsJobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true) // scalastyle:off magic.number
+    val underTest = new RefreshSubscriptionsScheduledJob(mockLockKeeper, mockSubscriptionService, config)
   }
 
   override def beforeAll(): Unit = {
     DateTimeUtils.setCurrentMillisFixed(FixedTimeNow.toDate.getTime)
   }
 
-  override  def afterAll() : Unit = {
+  override def afterAll(): Unit = {
     DateTimeUtils.setCurrentMillisSystem()
   }
 
@@ -93,13 +89,15 @@ class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar wi
     }
 
     "handle error when fetching subscription fails" in new Setup {
-      withSuppressedLoggingFrom(Logger, "Could not refresh subscriptions") { suppressedLogs =>
+      withSuppressedLoggingFrom(Logger, "Could not refresh subscriptions") { _ =>
         when(mockSubscriptionService.refreshSubscriptions()(any[HeaderCarrier])).thenReturn(
           Future.failed(new RuntimeException("A failure on executing refreshSubscriptions"))
         )
         val result = await(underTest.execute)
 
-        result.message shouldBe "The execution of scheduled job RefreshSubscriptionsScheduledJob failed with error 'A failure on executing refreshSubscriptions'. The next execution of the job will do retry."
+        result.message shouldBe
+          "The execution of scheduled job RefreshSubscriptionsScheduledJob failed with error" +
+          " 'A failure on executing refreshSubscriptions'. The next execution of the job will do retry."
       }
     }
   }

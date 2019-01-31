@@ -17,20 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.Inject
-import uk.gov.hmrc.thirdpartyapplication.config.WSHttp
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
-class ThirdPartyDelegatedAuthorityConnector @Inject() extends HttpConnector {
-  lazy val serviceUrl = baseUrl("third-party-delegated-authority")
-  val http = WSHttp
+class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
 
   def revokeApplicationAuthorities(clientId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    http.DELETE(s"$serviceUrl/authority/$clientId") map (_ => HasSucceeded) recover {
+    httpClient.DELETE(s"${config.baseUrl}/authority/$clientId") map (_ => HasSucceeded) recover {
       case _: NotFoundException => HasSucceeded
     }
   }
 }
+
+case class ThirdPartyDelegatedAuthorityConfig(baseUrl: String)

@@ -16,69 +16,74 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import com.github.tomakehurst.wiremock.client.WireMock._
+import org.mockito.Matchers.{any, eq => meq}
+import org.mockito.Mockito.{verify, when}
+import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.{BeforeAndAfterEach, Matchers}
-import uk.gov.hmrc.thirdpartyapplication.config.WSHttp
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import org.scalatest.mockito.MockitoSugar
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream4xxResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{USER_AGENT, X_REQUEST_ID_HEADER}
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
-class AuthConnectorSpec extends UnitSpec with Matchers with ScalaFutures with WiremockSugar with BeforeAndAfterEach with WithFakeApplication {
+class AuthConnectorSpec extends UnitSpec with MockitoSugar with Matchers with ScalaFutures with WithFakeApplication {
+
+  implicit val hc = HeaderCarrier()
+  val baseUrl = s"http://example.com"
 
   trait Setup {
-    implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+    val mockHttpClient = mock[HttpClient]
+    val config = AuthConfig(baseUrl)
+    val connector = new AuthConnector(mockHttpClient, config)
 
-    val connector = new AuthConnector {
-      override val http = WSHttp
-      override val authUrl: String = s"$wireMockUrl/auth/authenticate/user"
+    def authWillReturn(result: Future[HttpResponse]) = {
+      when(mockHttpClient.GET[HttpResponse](any())(any(), any(), any())).thenReturn(result)
+    }
+
+    def verifyAuthCalled(scope: String, role: Option[String] = None) = {
+      val authUrl = s"${config.baseUrl}/auth/authenticate/user/authorise"
+      val urlWithScope = s"$authUrl?scope=$scope"
+      val expectedUrl = role.fold(urlWithScope)(r => s"$urlWithScope&role=$r")
+      verify(mockHttpClient).GET[HttpResponse](meq(expectedUrl))(any(), any(), any())
     }
   }
 
   "authorised" should {
 
-    val applicationName = "third-party-application"
+    val scope = "api"
 
-    "return true if only scope is sent and the response is 200" in new Setup {
-      stubFor(get(urlEqualTo("/auth/authenticate/user/authorise?scope=api"))
-        .withHeader(USER_AGENT, equalTo(applicationName))
-        .withHeader(X_REQUEST_ID_HEADER, equalTo("requestId"))
-        .willReturn(aResponse().withStatus(200)))
+    "return true if only scope is sent and the response is 200 OK" in new Setup {
+
+      authWillReturn(Future(HttpResponse(OK)))
 
       val result = await(connector.authorized("api", None))
-      verify(1, getRequestedFor(urlPathEqualTo("/auth/authenticate/user/authorise"))
-        .withQueryParam("scope", equalTo("api")))
 
+      verifyAuthCalled(scope)
       result shouldBe true
     }
 
-    "return true if scope and role are sent and the response is 200" in new Setup {
-      stubFor(get(urlEqualTo("/auth/authenticate/user/authorise?scope=api&role=gatekeeper"))
-        .withHeader(USER_AGENT, equalTo(applicationName))
-        .withHeader(X_REQUEST_ID_HEADER, equalTo("requestId"))
-        .willReturn(aResponse().withStatus(200)))
+    "return true if scope and role are sent and the response is 200 OK" in new Setup {
 
-      val result = await(connector.authorized("api", Some("gatekeeper")))
-      verify(1, getRequestedFor(urlPathEqualTo("/auth/authenticate/user/authorise"))
-        .withQueryParam("scope", equalTo("api"))
-        .withQueryParam("role", equalTo("gatekeeper")))
+      authWillReturn(Future(HttpResponse(OK)))
 
+      val role = "gatekeeper"
+      val result = await(connector.authorized("api", Some(role)))
+
+      verifyAuthCalled(scope, Some(role))
       result shouldBe true
     }
 
-    "return false if scope and role are sent but the response is 401" in new Setup {
-      stubFor(get(urlEqualTo("/auth/authenticate/user/authorise?scope=api&role=gatekeeper"))
-        .withHeader(USER_AGENT, equalTo(applicationName))
-        .withHeader(X_REQUEST_ID_HEADER, equalTo("requestId"))
-        .willReturn(aResponse().withStatus(401)))
+    "return false if scope and role are sent but the response is 401 UNAUTHORIZED" in new Setup {
+      authWillReturn(Future.failed(Upstream4xxResponse("", UNAUTHORIZED, UNAUTHORIZED)))
 
-      val result = await(connector.authorized("api", Some("gatekeeper")))
-      verify(1, getRequestedFor(urlPathEqualTo("/auth/authenticate/user/authorise"))
-        .withQueryParam("scope", equalTo("api"))
-        .withQueryParam("role", equalTo("gatekeeper")))
+      val role = "gatekeeper"
+      val result = await(connector.authorized("api", Some(role)))
 
+      verifyAuthCalled(scope, Some(role))
       result shouldBe false
     }
   }

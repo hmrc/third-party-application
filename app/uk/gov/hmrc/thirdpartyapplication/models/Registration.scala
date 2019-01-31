@@ -14,17 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import javax.inject.Inject
+import play.api.libs.json.Json
 
-import play.api.mvc.Action
-import uk.gov.hmrc.thirdpartyapplication.services.WSO2RestoreService
-import scala.concurrent.ExecutionContext.Implicits.global
+case class Registration(serviceName: String, serviceUrl: String, metadata:Option[Map[String, String]] = None)
 
-class WSO2RestoreController @Inject()(wso2RestoreService: WSO2RestoreService) extends CommonController {
-
-  def restoreWSO2Data() = Action.async {
-    wso2RestoreService.restoreData().map(_ => NoContent)
-  }
+object Registration {
+  implicit val format = Json.format[Registration]
 }

@@ -28,7 +28,6 @@ import org.mockito.stubbing.Answer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
@@ -69,7 +68,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   trait Setup {
 
     lazy val locked = false
-    val mockWSO2APIStore = mock[WSO2APIStore]
+    val mockWSO2APIStore = mock[Wso2ApiStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockSubscriptionRepository = mock[SubscriptionRepository]
@@ -78,10 +77,10 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
-    val mockAppContext = mock[AppContext]
-    when(mockAppContext.trustedApplications).thenReturn(Seq.empty)
+    val mockTrustedApplications = mock[TrustedApplications]
+    when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
 
-    val applicationResponseCreator = new ApplicationResponseCreator(mockAppContext)
+    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
 
     implicit val hc = HeaderCarrier()
 
@@ -93,7 +92,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockApiSubscriptionFieldsConnector,
       mockWSO2APIStore,
       applicationResponseCreator,
-      mockAppContext,
+      mockTrustedApplications,
       mockThirdPartyDelegatedAuthorityConnector)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {

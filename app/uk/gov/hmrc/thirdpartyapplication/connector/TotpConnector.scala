@@ -18,23 +18,21 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.Inject
 import play.api.http.Status.CREATED
-import uk.gov.hmrc.thirdpartyapplication.config.WSHttp
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.TOTP
+import uk.gov.hmrc.thirdpartyapplication.models.Totp
 
 import scala.concurrent.{ExecutionContext, Future}
 
-class TOTPConnector @Inject() extends HttpConnector {
-  val http = WSHttp
-  val serviceUrl = baseUrl("totp")
+class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConfig)(implicit val ec: ExecutionContext)   {
 
-  def generateTotp()(implicit rds: HttpReads[HttpResponse], hc: HeaderCarrier, ec: ExecutionContext): Future[TOTP] = {
-    val url = s"$serviceUrl/time-based-one-time-password/secret"
+  def generateTotp()(implicit rds: HttpReads[HttpResponse], hc: HeaderCarrier, ec: ExecutionContext): Future[Totp] = {
+    val url = s"${config.baseUrl}/time-based-one-time-password/secret"
 
-    http.POSTEmpty[HttpResponse](url).map { result =>
+    httpClient.POSTEmpty[HttpResponse](url).map { result =>
       result.status match {
-        case CREATED => result.json.as[TOTP]
+        case CREATED => result.json.as[Totp]
         case _ => throw new RuntimeException(s"Unexpected response from $url: (${result.status}) ${result.body}")
       }
     } recover {
@@ -42,3 +40,5 @@ class TOTPConnector @Inject() extends HttpConnector {
     }
   }
 }
+
+case class TotpConfig(baseUrl: String)

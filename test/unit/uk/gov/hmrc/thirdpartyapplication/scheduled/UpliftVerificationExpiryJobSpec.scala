@@ -29,14 +29,13 @@ import org.mockito.stubbing.Answer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.lock.LockRepository
-import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, UpliftVerificationExpiryJob, UpliftVerificationExpiryJobLockKeeper}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{UpliftVerificationExpiryJob, UpliftVerificationExpiryJobConfig, UpliftVerificationExpiryJobLockKeeper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,18 +63,19 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
 
       override def repo: LockRepository = ???
 
-      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5)
+      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
       override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
         if (lockKeeperSuccess()) body.map(value => Future.successful(Some(value)))
         else Future.successful(None)
     }
 
-    val mockAppContext = mock[AppContext]
-    when(mockAppContext.upliftVerificationExpiryJobConfig).thenReturn(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
-    when(mockAppContext.upliftVerificationValidity).thenReturn(FiniteDuration(expiryTimeInDays, TimeUnit.DAYS))
+    val upliftVerificationValidity = FiniteDuration(expiryTimeInDays, TimeUnit.DAYS)
+    val initialDelay = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
+    val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
+    val config = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
 
-    val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, mockAppContext)
+    val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, config)
 
     when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer(returnSame[ApplicationData])
 

@@ -20,11 +20,10 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
-import uk.gov.hmrc.thirdpartyapplication.config.{AppContext, WSHttp}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
 
 case class SendEmailRequest(to: Set[String],
@@ -38,11 +37,10 @@ object SendEmailRequest {
   implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
 }
 
-class EmailConnector @Inject()(appContext: AppContext) extends HttpConnector {
-  lazy val serviceUrl = baseUrl("email")
-  val http = WSHttp
-  val devHubBaseUrl = appContext.devHubBaseUrl
-  val devHubTitle = appContext.devHubTitle
+class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(implicit val ec: ExecutionContext) {
+  val serviceUrl = config.baseUrl
+  val devHubBaseUrl = config.devHubBaseUrl
+  val devHubTitle = config.devHubTitle
 
   val addedCollaboratorConfirmation = "apiAddedDeveloperAsCollaboratorConfirmation"
   val addedCollaboratorNotification = "apiAddedDeveloperAsCollaboratorNotification"
@@ -118,7 +116,7 @@ class EmailConnector @Inject()(appContext: AppContext) extends HttpConnector {
       }
     }
 
-    http.POST[SendEmailRequest, HttpResponse](url, payload)
+    httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
       .map { response =>
         Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
@@ -129,3 +127,5 @@ class EmailConnector @Inject()(appContext: AppContext) extends HttpConnector {
       }
   }
 }
+
+case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String)

@@ -17,16 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.Inject
 import play.api.Logger
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.connector.APIDefinitionConnector
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models.{TrustedApplicationsConfig, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -34,24 +33,24 @@ import scala.concurrent.Future.{failed, sequence, successful}
 
 class SubscriptionService @Inject()(applicationRepository: ApplicationRepository,
                                     subscriptionRepository: SubscriptionRepository,
-                                    apiDefinitionConnector: APIDefinitionConnector,
+                                    apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
-                                    wso2APIStore: WSO2APIStore,
-                                    appContext: AppContext){
+                                    wso2APIStore: Wso2ApiStore,
+                                    trustedAppConfig: TrustedApplicationsConfig) {
 
-  val trustedApplications = appContext.trustedApplications
+  val trustedApplications = trustedAppConfig.trustedApplications
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
   def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier) = {
-    val fetchApis: Future[Seq[APIDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
+    val fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
       apis => apis.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
     }
 
     for {
       apis <- fetchApis
       subscriptions <- fetchSubscriptions(applicationId)
-    } yield apis.map(api => APISubscription.from(api, subscriptions))
+    } yield apis.map(api => ApiSubscription.from(api, subscriptions))
   }
 
   def isSubscribed(applicationId: UUID, api: APIIdentifier): Future[Boolean] = {
@@ -156,6 +155,6 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       apps <- applicationRepository.findAll()
       _ = Logger.info(s"Found ${apps.length} applications for subscriptions refresh.")
       subs <- processApplicationsOneByOne(apps)
-      } yield subs
+    } yield subs
   }
 }
