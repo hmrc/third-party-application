@@ -19,21 +19,20 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 import java.util.UUID
 
 import javax.inject.Inject
-import uk.gov.hmrc.thirdpartyapplication.config.WSHttp
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
-import uk.gov.hmrc.thirdpartyapplication.models.APIDefinition
+import uk.gov.hmrc.thirdpartyapplication.models.ApiDefinition
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
 
-class APIDefinitionConnector @Inject() extends HttpConnector {
-  lazy val serviceUrl = baseUrl("api-definition")
-  val http = WSHttp
+class ApiDefinitionConnector @Inject()(httpClient: HttpClient, config: ApiDefinitionConfig)(implicit val ec: ExecutionContext)  {
 
-  def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[Seq[APIDefinition]], hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[APIDefinition]] = {
-    val url = s"$serviceUrl/api-definition?applicationId=$applicationId"
-    http.GET[Seq[APIDefinition]](url).map(result => result) recover {
+  def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[Seq[ApiDefinition]], hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[ApiDefinition]] = {
+    val url = s"${config.baseUrl}/api-definition?applicationId=$applicationId"
+    httpClient.GET[Seq[ApiDefinition]](url).map(result => result) recover {
       case e => throw new RuntimeException(s"Unexpected response from $url: ${e.getMessage}")
     }
   }
 }
+
+case class ApiDefinitionConfig(baseUrl: String)

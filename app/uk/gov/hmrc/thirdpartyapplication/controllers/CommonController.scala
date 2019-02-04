@@ -22,7 +22,7 @@ import play.api.mvc.{Request, Result}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, INVALID_REQUEST_PAYLOAD, SCOPE_NOT_FOUND, UNKNOWN_ERROR}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.ScopeNotFoundException
-import uk.gov.hmrc.play.microservice.controller.BaseController
+import uk.gov.hmrc.play.bootstrap.controller.BaseController
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -30,7 +30,7 @@ import scala.util.{Failure, Success, Try}
 trait CommonController extends BaseController {
 
   override protected def withJsonBody[T]
-  (f: (T) => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+  (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
     Try(request.body.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs)) => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))

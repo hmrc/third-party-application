@@ -30,7 +30,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.ws.WSResponse
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -54,27 +53,26 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   trait Setup {
 
     lazy val locked = false
-    val mockWSO2APIStore = mock[WSO2APIStore]
+    val mockWSO2APIStore = mock[Wso2ApiStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockAuditService = mock[AuditService]
     val mockEmailConnector = mock[EmailConnector]
     val response = mock[WSResponse]
 
-    val mockAppContext = mock[AppContext]
-    when(mockAppContext.clientSecretLimit).thenReturn(5)
-    when(mockAppContext.trustedApplications).thenReturn(Seq.empty)
-
-    val applicationResponseCreator = new ApplicationResponseCreator(mockAppContext)
-
-
     implicit val hc = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
 
+    val mockTrustedApplications = mock[TrustedApplications]
+    when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
+    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
 
-    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, mockAppContext, applicationResponseCreator)
+    val clientSecretLimit = 5
+    val credentialConfig = CredentialConfig(clientSecretLimit)
+
+    val underTest = new CredentialService(mockApplicationRepository, mockAuditService,mockTrustedApplications, applicationResponseCreator, credentialConfig)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
@@ -105,9 +103,10 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
       callsMadeToLockKeeper = callsMadeToLockKeeper + 1
-      locked match {
-        case true => successful(None)
-        case false => successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
+      if (locked) {
+        successful(None)
+      } else {
+        successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
       }
     }
   }
@@ -277,7 +276,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       verify(mockApplicationRepository, never()).save(any[ApplicationData])
     }
 
-    "throw a ClientSecretsLimitExceeded when app contains already 5 secrets" in new Setup {
+    "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
 
       val prodTokenWith5Secrets = productionToken.copy(clientSecrets = Seq(1, 2, 3, 4, 5).map(v => ClientSecret(v.toString)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets, sandboxToken))

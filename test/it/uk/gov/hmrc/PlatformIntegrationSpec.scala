@@ -20,19 +20,16 @@ import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
-import com.typesafe.config.ConfigFactory
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, TestData}
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
-import play.api.http.{LazyHttpErrorHandler, Status}
+import play.api.http.Status
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.test.FakeRequest
 import play.api.{Application, Mode}
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController
-import uk.gov.hmrc.play.microservice.filters.MicroserviceFilterSupport
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController
 
 /**
   * Testcase to verify the capability of integration with the API platform.
@@ -50,6 +47,8 @@ import uk.gov.hmrc.play.test.UnitSpec
 
 
 trait PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach with GuiceOneAppPerTest {
+
+  implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
   val publishApiDefinition: Boolean
   val stubHost = "localhost"
@@ -79,8 +78,8 @@ trait PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ScalaFutur
     wireMockServer.resetMappings()
   }
 
-  trait Setup extends MicroserviceFilterSupport {
-    val documentationController = new DocumentationController(LazyHttpErrorHandler, new AppContext(ConfigFactory.load())) {}
+  trait Setup {
+    val documentationController = app.injector.instanceOf[DocumentationController]
     val request = FakeRequest()
   }
 

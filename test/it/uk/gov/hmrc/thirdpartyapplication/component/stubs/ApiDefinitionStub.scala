@@ -23,13 +23,13 @@ import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.OK
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.APIDefinition
+import uk.gov.hmrc.thirdpartyapplication.models.ApiDefinition
 
 object ApiDefinitionStub extends Stub {
 
   override val stub = MockHost(22221)
 
-  def willReturnApisForApplication(applicationId: UUID, apiDefinitions: Seq[APIDefinition]) = {
+  def willReturnApisForApplication(applicationId: UUID, apiDefinitions: Seq[ApiDefinition]) = {
     stub.mock.register(get(urlEqualTo(s"/api-definition?applicationId=$applicationId"))
       .willReturn(
         aResponse()

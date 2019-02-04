@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
-import uk.gov.hmrc.thirdpartyapplication.services.WSO2RestoreData
+import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 
 import scala.language.implicitConversions
 
@@ -54,7 +54,7 @@ object JsonFormatters {
     .and[SuppressIvForIndividuals](SUPPRESS_IV_FOR_INDIVIDUALS.toString)
     .format
 
-  implicit val formatTotp = Json.format[TOTP]
+  implicit val formatTotp = Json.format[Totp]
   implicit val formatTotpIds = Json.format[TotpIds]
   implicit val formatTotpSecrets = Json.format[TotpSecrets]
 
@@ -84,24 +84,24 @@ object JsonFormatters {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
 
-  implicit val formatAPIStatus = APIStatusJson.apiStatusFormat(APIStatus)
+  implicit val formatAPIStatus = APIStatusJson.apiStatusFormat(ApiStatus)
   implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
-  implicit val formatAPIAccess = Json.format[APIAccess]
-  implicit val formatAPIVersion = Json.format[APIVersion]
+  implicit val formatAPIAccess = Json.format[ApiAccess]
+  implicit val formatAPIVersion = Json.format[ApiVersion]
   implicit val formatVersionSubscription = Json.format[VersionSubscription]
-  implicit val formatApiSubscription = Json.format[APISubscription]
+  implicit val formatApiSubscription = Json.format[ApiSubscription]
 
-  val apiDefinitionReads: Reads[APIDefinition] = (
+  val apiDefinitionReads: Reads[ApiDefinition] = (
     (JsPath \ "serviceName").read[String] and
       (JsPath \ "name").read[String] and
       (JsPath \ "context").read[String] and
-      (JsPath \ "versions").read[Seq[APIVersion]] and
+      (JsPath \ "versions").read[Seq[ApiVersion]] and
       (JsPath \ "requiresTrust").readNullable[Boolean] and
       (JsPath \ "isTestSupport").readNullable[Boolean]
-    ) (APIDefinition.apply _)
+    ) (ApiDefinition.apply _)
 
   implicit val formatAPIDefinition = {
-    Format(apiDefinitionReads, Json.writes[APIDefinition])
+    Format(apiDefinitionReads, Json.writes[ApiDefinition])
   }
 
   implicit val formatApplicationState = Json.format[ApplicationState]
@@ -200,7 +200,7 @@ object MongoFormat {
     OFormat(applicationDataReads, Json.writes[ApplicationData])
   }
 
-  implicit val formatWSO2RestoreData = Json.format[WSO2RestoreData]
+  implicit val formatWso2RestoreData = Json.format[Wso2RestoreData]
 }
 
 
@@ -235,27 +235,27 @@ class InvalidEnumException(className: String, input:String)
 
 object APIStatusJson {
 
-  def apiStatusReads[APIStatus](apiStatus: APIStatus): Reads[APIStatus.Value] = new Reads[APIStatus.Value] {
-    def reads(json: JsValue): JsResult[APIStatus.Value] = json match {
-      case JsString("PROTOTYPED") => JsSuccess(APIStatus.BETA)
-      case JsString("PUBLISHED") => JsSuccess(APIStatus.STABLE)
+  def apiStatusReads[APIStatus](apiStatus: APIStatus): Reads[ApiStatus.Value] = new Reads[ApiStatus.Value] {
+    def reads(json: JsValue): JsResult[ApiStatus.Value] = json match {
+      case JsString("PROTOTYPED") => JsSuccess(ApiStatus.BETA)
+      case JsString("PUBLISHED") => JsSuccess(ApiStatus.STABLE)
       case JsString(s) => {
         try {
-          JsSuccess(APIStatus.withName(s))
+          JsSuccess(ApiStatus.withName(s))
         } catch {
           case _: NoSuchElementException =>
-            JsError(s"Enumeration expected of type: APIStatus, but it does not contain '$s'")
+            JsError(s"Enumeration expected of type: ApiStatus, but it does not contain '$s'")
         }
       }
       case _ => JsError("String value expected")
     }
   }
 
-  implicit def apiStatusWrites: Writes[APIStatus.Value] = new Writes[APIStatus.Value] {
-    def writes(v: APIStatus.Value): JsValue = JsString(v.toString)
+  implicit def apiStatusWrites: Writes[ApiStatus.Value] = new Writes[ApiStatus.Value] {
+    def writes(v: ApiStatus.Value): JsValue = JsString(v.toString)
   }
 
-  implicit def apiStatusFormat[APIStatus](apiStatus: APIStatus): Format[APIStatus.Value] = {
+  implicit def apiStatusFormat[APIStatus](apiStatus: APIStatus): Format[ApiStatus.Value] = {
     Format(apiStatusReads(apiStatus), apiStatusWrites)
   }
 

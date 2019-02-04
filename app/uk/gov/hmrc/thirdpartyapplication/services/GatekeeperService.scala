@@ -20,7 +20,6 @@ import java.util.UUID
 
 import javax.inject.Inject
 import play.api.Logger
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -43,9 +42,9 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
                                   apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
-                                  wso2APIStore: WSO2APIStore,
+                                  wso2APIStore: Wso2ApiStore,
                                   applicationResponseCreator: ApplicationResponseCreator,
-                                  appContext: AppContext,
+                                  trustedApplications: TrustedApplications,
                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector) {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[Seq[ApplicationWithUpliftRequest]] = {
@@ -76,7 +75,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield {
       ApplicationWithHistory(ApplicationResponse(data = app,
         clientId = None,
-        trusted = appContext.isTrusted(app)),
+        trusted = trustedApplications.isTrusted(app)),
         history.map(StateHistoryResponse.from))
     }
   }
@@ -100,7 +99,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       _ <- insertStateHistory(app, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL),
         gatekeeperUserId, GATEKEEPER, applicationRepository.save)
       _ = Logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
-        s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:${gatekeeperUserId}")
+        s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _ = auditGatekeeperAction(gatekeeperUserId, app, ApplicationUpliftApproved)
       _ = recoverAll(sendEmails(newApp))
     } yield UpliftApproved
@@ -184,7 +183,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       _ = auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
       _ = recoverAll(sendEmails(app))
     } yield Deleted).recover {
-      case e: NotFoundException => Deleted
+      case _: NotFoundException => Deleted
     }
   }
 
@@ -231,7 +230,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                  notes: Option[String] = None): Future[StateHistory] = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, notes)
     stateHistoryRepository.insert(stateHistory) andThen {
-      case Failure(e) =>
+      case Failure(_) =>
         rollback(snapshotApp)
     }
   }

@@ -1,5 +1,4 @@
 import play.core.PlayVersion
-import play.sbt.PlayImport._
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
@@ -12,17 +11,16 @@ lazy val appName = "third-party-application"
 lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
-  ws,
-  "uk.gov.hmrc" %% "microservice-bootstrap" % "8.2.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.8.0",
   "uk.gov.hmrc" %% "mongo-lock" % "5.1.0",
   "uk.gov.hmrc" %% "play-reactivemongo" % "6.2.0",
-  "uk.gov.hmrc" %% "play-scheduling" % "4.1.0",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.3.0",
-  "uk.gov.hmrc" %% "play-hmrc-api" % "2.0.0"
+  "uk.gov.hmrc" %% "play-scheduling" % "5.4.0",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.4.0",
+  "uk.gov.hmrc" %% "play-hmrc-api" % "3.4.0-play-25"
 )
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % "test,it",
-  "uk.gov.hmrc" %% "hmrctest" % "3.0.0" % "test,it",
+  "uk.gov.hmrc" %% "hmrctest" % "3.4.0-play-25" % "test,it",
   "org.pegdown" % "pegdown" % "1.6.0" % "test,it",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test,it",
   "org.scalatest" %% "scalatest" % "2.2.6" % "test,it",
@@ -53,6 +51,9 @@ lazy val microservice = (project in file("."))
   )
   .settings(playPublishingSettings: _*)
   .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
+  .settings(
+    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
+  )
   .configs(IntegrationTest)
   .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
   .settings(
@@ -60,6 +61,7 @@ lazy val microservice = (project in file("."))
     unmanagedSourceDirectories in IntegrationTest <<= (baseDirectory in IntegrationTest) (base => Seq(base / "test")),
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.jcenterRepo
@@ -87,6 +89,6 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
   }
 
 // Coverage configuration
-coverageMinimum := 87
+coverageMinimum := 88
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

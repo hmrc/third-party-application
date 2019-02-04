@@ -25,11 +25,10 @@ import play.api.Logger
 import play.api.Play.current
 import play.api.libs.concurrent.Akka
 import play.modules.reactivemongo.MongoDbConnection
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TOTPConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
+import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
@@ -53,12 +52,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    subscriptionRepository: SubscriptionRepository,
                                    auditService: AuditService,
                                    emailConnector: EmailConnector,
-                                   totpConnector: TOTPConnector,
+                                   totpConnector: TotpConnector,
                                    lockKeeper: ApplicationLockKeeper,
-                                   wso2APIStore: WSO2APIStore,
+                                   wso2APIStore: Wso2ApiStore,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
-                                   appContext: AppContext) {
+                                   trustedApplications: TrustedApplications) {
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     lockKeeper.tryLock {
@@ -76,14 +75,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def update[T <: ApplicationRequest](id: UUID, application: T)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
-    updateApp(id)(application) map (app => ApplicationResponse(data = app, clientId = None, trusted = appContext.isTrusted(app)))
+    updateApp(id)(application) map (app => ApplicationResponse(data = app, clientId = None, trusted = trustedApplications.isTrusted(app)))
   }
 
   def updateCheck(id: UUID, checkInformation: CheckInformation): Future[ApplicationResponse] = {
     for {
       existing <- fetchApp(id)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
-    } yield ApplicationResponse(data = savedApp, clientId = None, trusted = appContext.isTrusted(savedApp))
+    } yield ApplicationResponse(data = savedApp, clientId = None, trusted = trustedApplications.isTrusted(savedApp))
   }
 
   def addCollaborator(applicationId: UUID, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
@@ -213,55 +212,56 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def fetchByClientId(clientId: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => ApplicationResponse(data = application, clientId = Some(clientId), trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = Some(clientId), trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
-      _.map(application => ApplicationResponse(data = application, clientId = Some(application.id.toString), trusted = appContext.isTrusted(application)))
+      _.map(application =>
+        ApplicationResponse(data = application, clientId = Some(application.id.toString), trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllForCollaborator(emailAddress: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddress(emailAddress).map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAll(): Future[Seq[ApplicationResponse]] = {
     applicationRepository.findAll().map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllBySubscription(apiContext: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllBySubscription(apiIdentifier: APIIdentifier): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = appContext.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
@@ -328,46 +328,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
       val updatedApplication = ids match {
-        case Some(t) if application.access.accessType == PRIVILEGED => application.copy(access = newPrivilegedAccess)
+        case Some(_) if application.access.accessType == PRIVILEGED => application.copy(access = newPrivilegedAccess)
         case _ => application
       }
 
       val applicationData = ApplicationData.create(updatedApplication, wso2Username, wso2Password, wso2ApplicationName, tokens)
 
       applicationRepository.save(applicationData)
-    }
-
-    def generateApplicationTotps(accessType: AccessType): Future[Option[ApplicationTotps]] = {
-
-      def generateTotps() = {
-        val productionTotpFuture = totpConnector.generateTotp()
-        val sandboxTotpFuture = totpConnector.generateTotp()
-        for {
-          productionTotp <- productionTotpFuture
-          sandboxTotp <- sandboxTotpFuture
-        } yield Some(ApplicationTotps(productionTotp, sandboxTotp))
-      }
-
-      accessType match {
-        case PRIVILEGED => generateTotps()
-        case _ => Future(None)
-      }
-    }
-
-    def createStateHistory(appData: ApplicationData) = {
-      val actor = appData.access.accessType match {
-        case PRIVILEGED | ROPC => Actor("", GATEKEEPER)
-        case _ => Actor(loggedInUser, COLLABORATOR)
-      }
-      insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
-    }
-
-    def extractTotpIds(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
-      applicationTotps.map { t => TotpIds(t.production.id, t.sandbox.id) }
-    }
-
-    def extractTotpSecrets(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
-      applicationTotps.map { t => TotpSecrets(t.production.secret, t.sandbox.secret) }
     }
 
     val f = for {
@@ -385,10 +352,43 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecrets(applicationTotps))
 
     f andThen {
-      case Failure(e) =>
+      case Failure(_) =>
         wso2APIStore.deleteApplication(wso2Username, wso2Password, wso2ApplicationName)
           .map(_ => Logger.info(s"deleted application: [$wso2ApplicationName]"))
     }
+  }
+
+  private def generateApplicationTotps(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
+
+    def generateTotps() = {
+      val productionTotpFuture = totpConnector.generateTotp()
+      val sandboxTotpFuture = totpConnector.generateTotp()
+      for {
+        productionTotp <- productionTotpFuture
+        sandboxTotp <- sandboxTotpFuture
+      } yield Some(ApplicationTotps(productionTotp, sandboxTotp))
+    }
+
+    accessType match {
+      case PRIVILEGED => generateTotps()
+      case _ => Future(None)
+    }
+  }
+
+  private def extractTotpIds(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
+    applicationTotps.map { t => TotpIds(t.production.id, t.sandbox.id) }
+  }
+
+  private def extractTotpSecrets(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
+    applicationTotps.map { t => TotpSecrets(t.production.secret, t.sandbox.secret) }
+  }
+
+  def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
+    val actor = appData.access.accessType match {
+      case PRIVILEGED | ROPC => Actor("", GATEKEEPER)
+      case _ => Actor(loggedInUser, COLLABORATOR)
+    }
+    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
@@ -478,16 +478,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
     stateHistoryRepository.insert(stateHistory) andThen {
-      case Failure(e) =>
+      case Failure(_) =>
         rollback(snapshotApp)
     }
   }
 
-  val unit = (): Unit
-
   val recoverAll: Future[_] => Future[_] = {
     _ recover {
-      case e: Throwable => Logger.error(e.getMessage); unit
+      case e: Throwable => Logger.error(e.getMessage); (): Unit
     }
   }
 

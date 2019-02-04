@@ -19,29 +19,28 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import java.util.UUID
 
 import play.api.Configuration
-import play.api.libs.json._
-import uk.gov.hmrc.thirdpartyapplication.models.APIStatus.APIStatus
+import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.APIStatus
 
-case class APIDefinition(serviceName: String,
+case class ApiDefinition(serviceName: String,
                          name: String,
                          context: String,
-                         versions: Seq[APIVersion],
+                         versions: Seq[ApiVersion],
                          requiresTrust: Option[Boolean],
                          isTestSupport: Option[Boolean] = None)
 
-case class APIVersion(version: String,
+case class ApiVersion(version: String,
                       status: APIStatus,
-                      access: Option[APIAccess])
+                      access: Option[ApiAccess])
 
-case class APIAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Option[Seq[String]])
+case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Option[Seq[String]])
 
-object APIAccess {
-  def build(config: Option[Configuration]): APIAccess = APIAccess(
+object ApiAccess {
+  def build(config: Option[Configuration]): ApiAccess = ApiAccess(
     `type` = APIAccessType.PRIVATE,
     whitelistedApplicationIds = config.flatMap(_.getStringSeq("whitelistedApplicationIds")).orElse(Some(Seq.empty)))
 }
 
-object APIStatus extends Enumeration {
+object ApiStatus extends Enumeration {
   type APIStatus = Value
   val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
 }
@@ -51,20 +50,20 @@ object APIAccessType extends Enumeration {
   val PRIVATE, PUBLIC = Value
 }
 
-case class APISubscription(name: String, serviceName: String, context: String, versions: Seq[VersionSubscription],
+case class ApiSubscription(name: String, serviceName: String, context: String, versions: Seq[VersionSubscription],
                            requiresTrust: Option[Boolean], isTestSupport: Boolean = false)
 
-object APISubscription {
+object ApiSubscription {
 
-  def from(apiDefinition: APIDefinition, subscribedApis: Seq[APIIdentifier]): APISubscription = {
+  def from(apiDefinition: ApiDefinition, subscribedApis: Seq[APIIdentifier]): ApiSubscription = {
     val versionSubscriptions: Seq[VersionSubscription] = apiDefinition.versions.map { v =>
       VersionSubscription(v, subscribedApis.exists(s => s.context == apiDefinition.context && s.version == v.version))
     }
-    APISubscription(apiDefinition.name, apiDefinition.serviceName, apiDefinition.context, versionSubscriptions,
+    ApiSubscription(apiDefinition.name, apiDefinition.serviceName, apiDefinition.context, versionSubscriptions,
       apiDefinition.requiresTrust, apiDefinition.isTestSupport.getOrElse(false))
   }
 }
 
-case class VersionSubscription(version: APIVersion, subscribed: Boolean)
+case class VersionSubscription(version: ApiVersion, subscribed: Boolean)
 
 case class SubscriptionData(apiIdentifier: APIIdentifier, applications: Set[UUID])

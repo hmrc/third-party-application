@@ -22,7 +22,6 @@ import javax.inject.Inject
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.http.NotFoundException
@@ -41,10 +40,10 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       val authConnector: AuthConnector,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
-                                      appContext: AppContext) extends CommonController with AuthorisationWrapper {
+                                      config: ApplicationControllerConfig) extends CommonController with AuthorisationWrapper {
 
-  val applicationCacheExpiry = appContext.fetchApplicationTtlInSecs
-  val subscriptionCacheExpiry = appContext.fetchSubscriptionTtlInSecs
+  val applicationCacheExpiry = config.fetchApplicationTtlInSecs
+  val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
@@ -287,3 +286,5 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 }
+
+case class ApplicationControllerConfig(fetchApplicationTtlInSecs: Int, fetchSubscriptionTtlInSecs: Int)

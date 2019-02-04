@@ -30,21 +30,20 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -62,14 +61,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockApplicationService = mock[ApplicationService]
     val mockAuthConnector = mock[AuthConnector]
     val mockSubscriptionService = mock[SubscriptionService]
-    val mockAppContext = mock[AppContext]
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
-    when(mockAppContext.fetchApplicationTtlInSecs).thenReturn(applicationTtlInSecs)
-    when(mockAppContext.fetchSubscriptionTtlInSecs).thenReturn(subscriptionTtlInSecs)
+    val config = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
-    val underTest = new ApplicationController(mockApplicationService, mockAuthConnector, mockCredentialService, mockSubscriptionService, mockAppContext)
+    val underTest = new ApplicationController(
+      mockApplicationService,
+      mockAuthConnector,
+      mockCredentialService,
+      mockSubscriptionService,
+      config)
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -1375,7 +1377,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   }
 
   private def anAPISubscription() = {
-    new APISubscription("name", "service-name", "some-context", Seq(VersionSubscription(APIVersion("1.0", APIStatus.STABLE, None), subscribed = true)), None)
+    new ApiSubscription("name", "service-name", "some-context", Seq(VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true)), None)
   }
 
   private def aSubcriptionData() = {

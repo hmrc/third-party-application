@@ -17,11 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.Inject
-
 import org.joda.time.Duration
 import play.api.Logger
 import play.modules.reactivemongo.MongoDbConnection
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
@@ -31,13 +29,13 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class RefreshSubscriptionsScheduledJob @Inject()(val lockKeeper: RefreshSubscriptionsJobLockKeeper,
                                                  subscriptionService: SubscriptionService,
-                                                 appContext: AppContext) extends ScheduledMongoJob {
+                                                 jobConfig: RefreshSubscriptionsJobConfig) extends ScheduledMongoJob {
 
   override def name: String = "RefreshSubscriptionsScheduledJob"
 
-  override def interval: FiniteDuration = appContext.refreshSubscriptionsJobConfig.interval
+  override def interval: FiniteDuration = jobConfig.interval
 
-  override def initialDelay: FiniteDuration = appContext.refreshSubscriptionsJobConfig.initialDelay
+  override def initialDelay: FiniteDuration = jobConfig.initialDelay
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -63,3 +61,5 @@ class RefreshSubscriptionsJobLockKeeper extends LockKeeper {
   override val forceLockReleaseAfter: Duration = Duration.standardHours(2)
 
 }
+
+case class RefreshSubscriptionsJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)

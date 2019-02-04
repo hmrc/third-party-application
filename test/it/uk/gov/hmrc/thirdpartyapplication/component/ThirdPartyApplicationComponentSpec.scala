@@ -61,7 +61,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val apiName = "apiName"
   val context = "myapi"
   val version = "1.0"
-  val anApiDefinition = APIDefinition(serviceName, apiName, context, Seq(APIVersion(version, APIStatus.STABLE, None)), None)
+  val anApiDefinition = ApiDefinition(serviceName, apiName, context, Seq(ApiVersion(version, ApiStatus.STABLE, None)), None)
   val standardAccess = Standard(
     redirectUris = Seq("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
@@ -206,14 +206,14 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.SANDBOX)
       wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.PRODUCTION)
 
-      And("TOTP returns successfully")
+      And("Totp returns successfully")
       totpConnector.willReturnTOTP(privilegedApplicationsScenario)
 
       When("We create a privileged application")
       val createdResponse = postData("/application", applicationRequest(appName, privilegedAccess))
       createdResponse.code shouldBe CREATED
 
-      Then("The application is returned with the TOTP Ids and the TOTP Secrets")
+      Then("The application is returned with the Totp Ids and the Totp Secrets")
       val totpIds = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpIds]
       val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecrets]
 
@@ -437,8 +437,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val response = Http(s"$serviceUrl/application/${application.id}/subscription").asString
 
       Then("The API subscription is returned")
-      val result = Json.parse(response.body).as[Seq[APISubscription]]
-      result shouldBe Seq(APISubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true)), None))
+      val result = Json.parse(response.body).as[Seq[ApiSubscription]]
+      result shouldBe Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true)), None))
     }
 
     scenario("Fetch All API Subscriptions") {

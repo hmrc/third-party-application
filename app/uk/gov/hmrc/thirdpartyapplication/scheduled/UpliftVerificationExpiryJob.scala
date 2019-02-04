@@ -17,11 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.Inject
-
 import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.thirdpartyapplication.config.AppContext
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.SCHEDULED_JOB
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -35,15 +33,15 @@ import scala.concurrent.{ExecutionContext, Future}
 class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationExpiryJobLockKeeper,
                                             applicationRepository: ApplicationRepository,
                                             stateHistoryRepository: StateHistoryRepository,
-                                            appContext: AppContext) extends ScheduledMongoJob {
+                                            jobConfig: UpliftVerificationExpiryJobConfig) extends ScheduledMongoJob {
 
-  val upliftVerificationValidity: FiniteDuration = appContext.upliftVerificationValidity
+  val upliftVerificationValidity: FiniteDuration = jobConfig.validity
 
   override def name: String = "UpliftVerificationExpiryJob"
 
-  override def interval: FiniteDuration = appContext.upliftVerificationExpiryJobConfig.interval
+  override def interval: FiniteDuration = jobConfig.interval
 
-  override def initialDelay: FiniteDuration = appContext.upliftVerificationExpiryJobConfig.initialDelay
+  override def initialDelay: FiniteDuration = jobConfig.initialDelay
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
     Logger.info(s"Set status back to testing for app{id=${app.id},name=${app.name},state." +
@@ -76,3 +74,5 @@ class UpliftVerificationExpiryJobLockKeeper @Inject()(mongo: ReactiveMongoCompon
 
   override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5)
 }
+
+case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)
