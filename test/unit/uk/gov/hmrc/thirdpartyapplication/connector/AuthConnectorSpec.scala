@@ -24,13 +24,13 @@ import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream4xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class AuthConnectorSpec extends UnitSpec with MockitoSugar with Matchers with ScalaFutures with WithFakeApplication {
+class AuthConnectorSpec extends UnitSpec with MockitoSugar with Matchers with ScalaFutures {
 
   implicit val hc = HeaderCarrier()
   val baseUrl = s"http://example.com"
