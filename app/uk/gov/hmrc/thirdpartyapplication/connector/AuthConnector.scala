@@ -17,28 +17,16 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream4xxResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole
 
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.auth.core.PlayAuthConnector
+import uk.gov.hmrc.play.bootstrap.http.HttpClient
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class AuthConnector @Inject()(httpClient: HttpClient, authConfig: AuthConfig)(implicit val ec: ExecutionContext)  {
+class AuthConnector @Inject()(val http: HttpClient, authConfig: AuthConfig)(implicit val ec: ExecutionContext) extends PlayAuthConnector  {
+  override val serviceUrl: String = authConfig.baseUrl
 
-  private val authUrl: String = s"${authConfig.baseUrl}/auth/authenticate/user"
-
-  def authorized(role: AuthRole)(implicit hc: HeaderCarrier): Future[Boolean] = authorized(role.scope, Some(role.name))
-
-  def authorized(scope: String, role: Option[String])(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val authoriseUrl =
-      role.map(aRole =>  s"$authUrl/authorise?scope=$scope&role=$aRole")
-        .getOrElse(s"$authUrl/authorise?scope=$scope")
-
-    httpClient.GET(authoriseUrl) map (_ => true) recover {
-      case e: Upstream4xxResponse if e.upstreamResponseCode == 401 => false
-    }
-  }
 }
 
-case class AuthConfig(baseUrl: String)
+case class AuthConfig(baseUrl: String, userRole: String)

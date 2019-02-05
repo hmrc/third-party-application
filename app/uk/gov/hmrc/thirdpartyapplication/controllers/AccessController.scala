@@ -17,11 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
 import javax.inject.Inject
+
 import play.api.libs.json.Json.toJson
 import play.api.mvc.BodyParsers.parse.json
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
@@ -29,7 +29,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AccessController @Inject()(accessService: AccessService,
                                  val authConnector: AuthConnector,
-                                 val applicationService: ApplicationService) extends CommonController with AuthorisationWrapper {
+                                 val applicationService: ApplicationService,
+                                 val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 
   def readScopes(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
     accessService.readScopes(applicationId) map { scopeResponse =>

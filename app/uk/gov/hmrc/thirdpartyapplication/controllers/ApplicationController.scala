@@ -17,16 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
 import javax.inject.Inject
+
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
@@ -40,7 +39,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       val authConnector: AuthConnector,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
-                                      config: ApplicationControllerConfig) extends CommonController with AuthorisationWrapper {
+                                      config: ApplicationControllerConfig,
+                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -52,7 +52,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  def create = requiresRoleFor(APIGatekeeper, PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
+  def create = requiresRoleFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[CreateApplicationRequest] { application =>
       applicationService.create(application).map {
         result => Created(toJson(result))
@@ -71,7 +71,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateRateLimitTier(applicationId: UUID) = requiresRole(APIGatekeeper).async(BodyParsers.parse.json) { implicit request =>
+  def updateRateLimitTier(applicationId: UUID) = requiresRole().async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Success(rateLimitTier) =>

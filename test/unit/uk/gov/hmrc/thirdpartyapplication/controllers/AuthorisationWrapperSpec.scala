@@ -68,7 +68,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       mockAuthConnectorToReturn(true)
 
-      val result = await(underTest.requiresRoleFor(APIGatekeeper, PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
       )
 
