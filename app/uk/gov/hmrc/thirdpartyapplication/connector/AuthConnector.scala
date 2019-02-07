@@ -25,8 +25,8 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class AuthConnector @Inject()(val http: HttpClient, authConfig: AuthConfig)(implicit val ec: ExecutionContext) extends PlayAuthConnector  {
-  override val serviceUrl: String = authConfig.baseUrl
+  lazy val serviceUrl: String = authConfig.baseUrl
 
 }
 
-case class AuthConfig(baseUrl: String, userRole: String)
+case class AuthConfig(baseUrl: String, userRole: String, superUserRole: String, adminRole: String)

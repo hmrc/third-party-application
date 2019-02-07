@@ -25,14 +25,15 @@ import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.Result
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 import uk.gov.hmrc.time.DateTimeUtils
+import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
@@ -49,6 +50,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   private val mockApplicationService = mock[ApplicationService]
   private val mockAuthConnector = mock[AuthConnector]
   private val mockAccessService = mock[AccessService]
+  private val mockAuthConfig = mock[AuthConfig]
 
   implicit val fakeRequest = FakeRequest()
   implicit val headerCarrier = HeaderCarrier()
@@ -110,9 +112,9 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
   "Access controller overrides crud functions" should {
 
-    "return http unauthorized status when application id refers to a non-standard application" in new PrivilegedAndRopcFixture {
-      status(invokeAccessControllerReadOverridesWith(applicationId)) shouldBe UNAUTHORIZED
-      status(invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)) shouldBe UNAUTHORIZED
+    "return http forbidden status when application id refers to a non-standard application" in new PrivilegedAndRopcFixture {
+      status(invokeAccessControllerReadOverridesWith(applicationId)) shouldBe FORBIDDEN
+      status(invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)) shouldBe FORBIDDEN
     }
 
   }
@@ -160,6 +162,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     }
 
     "return http internal server error status when service update overrides fails" in new StandardFixture {
+
       mockAccessServiceUpdateOverridesToReturn(failed(new RuntimeException("testing testing 123")))
       val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
       status(result) shouldBe INTERNAL_SERVER_ERROR
@@ -168,9 +171,9 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
   trait Fixture {
 
-    private[controllers] val accessController = new AccessController(mockAccessService, mockAuthConnector, mockApplicationService)
+    private[controllers] val accessController = new AccessController(mockAccessService, mockAuthConnector, mockApplicationService, mockAuthConfig)
 
-    when(mockAuthConnector.authorized(any[AuthRole])(any[HeaderCarrier])).thenReturn(successful(true))
+    givenUserIsAuthenticated(accessController)
 
     def invokeAccessControllerReadScopesWith(applicationId: UUID): Result =
       await(accessController.readScopes(applicationId)(fakeRequest))

@@ -19,26 +19,23 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import controllers.Default
-import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK, SC_UNAUTHORIZED}
-import org.mockito.Matchers._
+import org.apache.http.HttpStatus.{SC_FORBIDDEN, SC_NOT_FOUND, SC_OK}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, UNAUTHORIZED}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, FORBIDDEN}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AuthorisationWrapper, JsErrorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
-
-import scala.concurrent.Future._
-import uk.gov.hmrc.http.HeaderCarrier
+import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
@@ -49,11 +46,8 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]
+      override val authConfig: AuthConfig = mock[AuthConfig]
     }
-
-    def mockAuthConnectorToReturn(boolean: Boolean) =
-      when(underTest.authConnector.authorized(any[AuthRole])(any[HeaderCarrier]))
-        .thenReturn(successful(boolean))
 
     def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
       when(underTest.applicationService.fetch(id)).thenReturn(application)
@@ -66,7 +60,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
     "accept the request when access type in the payload is PRIVILEGED and gatekeeper is logged in" in new Setup {
 
-      mockAuthConnectorToReturn(true)
+      givenUserIsAuthenticated(underTest)
 
       val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
@@ -75,14 +69,14 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       status(result) shouldBe SC_OK
     }
 
-    "accept the request when access type in the payload is ROPC and gatekeeper is logged in" in new Setup {
-      mockAuthConnectorToReturn(true)
-      status(underTest.requiresRoleFor(APIGatekeeper, ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
+    "accept the request when access type in the payload is ROPC and user is authenticated" in new Setup {
+      givenUserIsAuthenticated(underTest)
+      status(underTest.requiresRoleFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for payload with STANDARD applications" in new Setup {
 
-      val result = await(underTest.requiresRoleFor(APIGatekeeper, PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(standardRequest)
       )
 
@@ -90,25 +84,25 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 401 (Unauthorised) response when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "return a 403 (forbidden) response when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
-      mockAuthConnectorToReturn(false)
+      givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(APIGatekeeper, PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
       )
 
-      status(result) shouldBe SC_UNAUTHORIZED
-      jsonBodyOf(result) shouldBe JsErrorResponse(UNAUTHORIZED, "Action requires authority: 'api:gatekeeper'")
+      status(result) shouldBe SC_FORBIDDEN
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
     }
 
-    "return a 401 (Unauthorised) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
-      mockAuthConnectorToReturn(false)
+    "return a 403 (forbidden) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
+      givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(APIGatekeeper, ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest))
+      val result = await(underTest.requiresRoleFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest))
 
-      status(result) shouldBe SC_UNAUTHORIZED
-      jsonBodyOf(result) shouldBe JsErrorResponse(UNAUTHORIZED, "Action requires authority: 'api:gatekeeper'")
+      status(result) shouldBe SC_FORBIDDEN
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
     }
   }
 
@@ -122,57 +116,57 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       mockFetchApplicationToReturn(applicationId, Some(privilegedApplication))
 
-      mockAuthConnectorToReturn(true)
+      givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, APIGatekeeper, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_OK
     }
 
     "accept the request when access type of the application is ROPC and gatekeeper is logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
-      mockAuthConnectorToReturn(true)
-      status(underTest.requiresRoleFor(applicationId, APIGatekeeper, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
+      givenUserIsAuthenticated(underTest)
+      status(underTest.requiresRoleFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for STANDARD applications" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(standardApplication))
 
-      val result = await(underTest.requiresRoleFor(applicationId, APIGatekeeper, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
 
       status(result) shouldBe SC_OK
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 401 (Unauthorised) response when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "return a 403 (forbidden) response when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(privilegedApplication))
 
-      mockAuthConnectorToReturn(false)
+      givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, APIGatekeeper, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
-      status(result) shouldBe SC_UNAUTHORIZED
-      jsonBodyOf(result) shouldBe JsErrorResponse(UNAUTHORIZED, "Action requires authority: 'api:gatekeeper'")
+      status(result) shouldBe SC_FORBIDDEN
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
     }
 
-    "return a 401 (Unauthorised) response when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
+    "return a 403 (forbidden) response when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
-      mockAuthConnectorToReturn(false)
+      givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, APIGatekeeper, ROPC).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRoleFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest()))
 
-      status(result) shouldBe SC_UNAUTHORIZED
-      jsonBodyOf(result) shouldBe JsErrorResponse(UNAUTHORIZED, "Action requires authority: 'api:gatekeeper'")
+      status(result) shouldBe SC_FORBIDDEN
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
     }
 
     "return a 404 (Not Found) when the application doesn't exist" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, None)
 
-      val result = await(underTest.requiresRoleFor(applicationId, APIGatekeeper, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_NOT_FOUND
       jsonBodyOf(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
@@ -183,21 +177,21 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
     "accept the request when the gatekeeper is logged in" in new Setup {
 
-      mockAuthConnectorToReturn(true)
+      givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresRole(APIGatekeeper).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRole().async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_OK
     }
 
-    "return a 401 (Unauthorised) response when the gatekeeper is not logged in" in new Setup {
+    "return a 403 (forbidden) response when the gatekeeper is not logged in" in new Setup {
 
-      mockAuthConnectorToReturn(false)
+      givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRole(APIGatekeeper).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresRole().async(_ => Default.Ok(""))(FakeRequest()))
 
-      status(result) shouldBe SC_UNAUTHORIZED
-      jsonBodyOf(result) shouldBe JsErrorResponse(UNAUTHORIZED, "Action requires authority: 'api:gatekeeper'")
+      status(result) shouldBe SC_FORBIDDEN
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
     }
   }
 

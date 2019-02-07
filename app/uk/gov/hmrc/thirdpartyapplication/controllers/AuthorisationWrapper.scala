@@ -65,10 +65,11 @@ trait AuthorisationWrapper {
   private abstract class AuthenticationFilter() extends ActionFilter[Request] {
     def authenticate[A](request: Request[A]): Future[Option[Result]] = {
       implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-      authConnector.authorise(Enrolment(authConfig.userRole), EmptyRetrieval).map {
+      val hasAnyGatekeeperRole = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+      authConnector.authorise(hasAnyGatekeeperRole, EmptyRetrieval).map {
         _ => None
       } recover { case _ => Some(Forbidden(JsErrorResponse(FORBIDDEN,
-        s"Insufficient enrolments'")))
+        s"Insufficient enrolments")))
       }
     }
   }
@@ -99,7 +100,7 @@ trait AuthorisationWrapper {
       deriveAccessType(request) flatMap {
         case Some(accessType) if accessTypes.contains(accessType) => authenticate(request)
         case Some(_) if failOnAccessTypeMismatch =>
-          Future.successful(Some(Results.Unauthorized(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
+          Future.successful(Some(Results.Forbidden(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
 
         case _ => Future(None)
       } recover {

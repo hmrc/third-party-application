@@ -32,10 +32,9 @@ import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
@@ -44,6 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
+import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -61,6 +61,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockApplicationService = mock[ApplicationService]
     val mockAuthConnector = mock[AuthConnector]
     val mockSubscriptionService = mock[SubscriptionService]
+    val mockAuthConfig = mock[AuthConfig]
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
@@ -71,22 +72,25 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       mockAuthConnector,
       mockCredentialService,
       mockSubscriptionService,
-      config)
+      config,
+      mockAuthConfig)
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+      givenUserIsAuthenticated(underTest)
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
+      givenUserIsNotAuthenticated(underTest)
 
     private def testWithPrivilegedAndRopc(applicationId: UUID, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
         .thenReturn(Some(aNewApplicationResponse(privilegedAccess)))
         .thenReturn(Some(aNewApplicationResponse(ropcAccess)))
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(gatekeeperLoggedIn)
+
       testBlock
       testBlock
     }
@@ -151,7 +155,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(privilegedApplicationResponse))
 
       val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
@@ -162,7 +166,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(ropcApplicationResponse))
 
       val result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
@@ -171,28 +175,27 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       verify(underTest.applicationService).create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])
     }
 
-    "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
-
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(false)
+    "fail with a 403 (Forbidden) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
+      givenUserIsNotAuthenticated(underTest)
 
       val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
 
-      verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       verify(underTest.applicationService, never()).create(any[CreateApplicationRequest])(any[HeaderCarrier])
     }
 
-    "fail with a 401 (Unauthorized) for a valid ROPC application request when gatekeeper is not logged in" in new Setup {
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(false)
+    "fail with a 403 (Forbidden) for a valid ROPC application request when gatekeeper is not logged in" in new Setup {
+      givenUserIsNotAuthenticated(underTest)
 
       val result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
 
-      verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       verify(underTest.applicationService, never()).create(any[CreateApplicationRequest])(any[HeaderCarrier])
     }
 
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier]))
         .thenReturn(failed(ApplicationAlreadyExists("appName")))
 
@@ -378,7 +381,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "sucessfully update approval information for applicaton" in new Setup {
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.fetch(id)).thenReturn(successful(Some(aNewApplicationResponse())))
       when(underTest.applicationService.updateCheck(mockEq(id), mockEq(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
 
@@ -511,6 +514,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         val response = AddCollaboratorResponse(registeredUser = true)
         when(underTest.applicationService.addCollaborator(mockEq(applicationId), mockEq(addCollaboratorRequest))(any[HeaderCarrier])).thenReturn(response)
 
+        givenUserIsAuthenticated(underTest)
+
         val result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
 
         status(result) shouldBe SC_OK
@@ -518,14 +523,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (unauthorized) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "fail with a 403 (forbidden) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         val response = AddCollaboratorResponse(registeredUser = true)
         when(underTest.applicationService.addCollaborator(mockEq(applicationId), mockEq(addCollaboratorRequest))(any[HeaderCarrier])).thenReturn(response)
 
         val result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
 
-        verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+        verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       })
     }
 
@@ -586,6 +591,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+
+      givenUserIsAuthenticated(underTest)
+
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
           mockEq(applicationId), mockEq(collaborator), mockEq(admin), mockEq(adminsToEmailSet))(any[HeaderCarrier]))
@@ -597,7 +605,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (Unauthorized) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "fail with a 403 (Forbidden) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
           mockEq(applicationId), mockEq(collaborator), mockEq(admin), mockEq(adminsToEmailSet))(any[HeaderCarrier]))
@@ -605,7 +613,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
         val result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
 
-        verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+        verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       })
     }
 
@@ -652,6 +660,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier])).thenReturn(successful(tokens))
 
+        givenUserIsAuthenticated(underTest)
+
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
         status(result) shouldBe SC_OK
@@ -659,14 +669,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (Unauthorized) if the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "fail with a 403 (Forbidden) if the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new ClientSecretsLimitExceeded))
 
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
-        verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+        verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       })
     }
 
@@ -674,6 +684,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new ClientSecretsLimitExceeded))
+
+        givenUserIsAuthenticated(underTest)
 
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
@@ -686,6 +698,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new NotFoundException("application not found")))
 
+        givenUserIsAuthenticated(underTest)
+
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
         verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
@@ -696,6 +710,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new RuntimeException))
+
+        givenUserIsAuthenticated(underTest)
 
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
@@ -726,6 +742,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+
+      givenUserIsAuthenticated(underTest)
+
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
           .thenReturn(successful(tokens))
@@ -736,14 +755,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (Unauthorized) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "fail with a 403 (Forbidden) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
           .thenReturn(successful(tokens))
 
         val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
-        verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+        verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
       })
     }
   }
@@ -1125,6 +1144,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
+
+        givenUserIsAuthenticated(underTest)
+
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
           when(mockSubscriptionService.createSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
             .thenReturn(successful(HasSucceeded))
@@ -1133,15 +1155,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         })
       }
 
-    "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
+    "fail with 403 (Forbidden) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
+
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
           when(mockSubscriptionService.createSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
             .thenReturn(successful(HasSucceeded))
 
           val result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
 
-          verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+          verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
         })
       }
 
@@ -1191,8 +1214,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_NO_CONTENT
     }
 
-    "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
-      new PrivilegedAndRopcSetup {
+    "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+
+        givenUserIsAuthenticated(underTest)
+
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
           when(mockSubscriptionService.removeSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
             .thenReturn(successful(HasSucceeded))
@@ -1201,7 +1226,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         })
       }
 
-    "fail with a 401 (unauthorized) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
+    "fail with a 403 (forbidden) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
           when(mockSubscriptionService.removeSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
@@ -1209,7 +1234,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
           val result = await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request))
 
-          verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+          verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
         })
       }
 
@@ -1313,7 +1338,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "fail with a 422 (unprocessable entity) when request json is invalid" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
 
       val result = await(underTest.updateRateLimitTier(uuid)(request.withBody(invalidUpdateRateLimitTierJson)))
 
@@ -1323,7 +1348,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
 
       val result = await(underTest.updateRateLimitTier(uuid)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }"""))))
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
@@ -1338,7 +1363,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "succeed with a 204 (no content) when rate limit tier is successfully added to application" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
 
       when(underTest.applicationService.updateRateLimitTier(mockEq(uuid), mockEq(SILVER))(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
 
@@ -1350,7 +1375,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(true)
+      givenUserIsAuthenticated(underTest)
 
       when(underTest.applicationService.updateRateLimitTier(mockEq(uuid), mockEq(SILVER))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Expected test exception")))
@@ -1360,15 +1385,15 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
 
-    "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
+    "fail with a 403 (Forbidden) when the request is done without a gatekeeper token" in new Setup {
 
-      when(underTest.authConnector.authorized(mockEq(APIGatekeeper))(any[HeaderCarrier])).thenReturn(false)
+      givenUserIsNotAuthenticated(underTest)
 
       when(underTest.applicationService.updateRateLimitTier(mockEq(uuid), mockEq(SILVER))(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
 
       val result = await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson)))
 
-      verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.UNAUTHORIZED)
+      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
     }
   }
 
