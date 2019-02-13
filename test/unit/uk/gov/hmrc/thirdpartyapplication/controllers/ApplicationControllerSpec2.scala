@@ -94,16 +94,16 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
-    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
+    "succeed with a 201 (Created) for a valid Privileged application request when service responds successfully" in new Setup {
       givenAnAuthenticatedRequest
 
-      when(underTest.applicationService.create(mockEq(standardApplicationRequest))(any[HeaderCarrier]))
+      when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier]))
         .thenReturn(successful(standardApplicationResponse))
 
-      private val result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
+      private val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
 
       status(result) shouldBe SC_CREATED
-      verify(underTest.applicationService).create(mockEq(standardApplicationRequest))(any[HeaderCarrier])
+      verify(underTest.applicationService).create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {

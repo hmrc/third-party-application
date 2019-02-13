@@ -40,7 +40,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
-                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper with AuthorisationWrapper2 {
+                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper with AuthorisationWrapper2 with RequestValidationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -64,16 +64,21 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 //    }
 //  }
 
-  def create = requiresAuthentication2().async(BodyParsers.parse.json) { implicit request =>
-    withJsonBody[CreateApplicationRequest] { application =>
-      applicationService.create(application).map {
-        result => Created(toJson(result))
-      } recover {
-        case e: ApplicationAlreadyExists =>
-          Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-      } recover recovery
-    }
-  }
+  def create =
+    (requiresAuthentication2() andThen requiresRequestValidation() )
+      .async(BodyParsers.parse.json) { implicit request =>
+
+
+        withJsonBody[CreateApplicationRequest] { application =>
+          applicationService.create(application).map {
+            result => Created(toJson(result))
+          } recover {
+            case e: ApplicationAlreadyExists =>
+              Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+          } recover recovery
+        }
+      }
+
 
   def update(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpdateApplicationRequest] { application =>
