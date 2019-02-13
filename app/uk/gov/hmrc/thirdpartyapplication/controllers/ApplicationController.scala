@@ -40,7 +40,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
-                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
+                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper with AuthorisationWrapper2 {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -52,7 +52,19 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  def create = requiresRoleFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
+  // TODO - This needs deleting
+  //  def create = requiresRoleFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
+//    withJsonBody[CreateApplicationRequest] { application =>
+//        applicationService.create(application).map {
+//        result => Created(toJson(result))
+//      } recover {
+//        case e: ApplicationAlreadyExists =>
+//          Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+//      } recover recovery
+//    }
+//  }
+
+  def create = requiresAuthentication2().async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[CreateApplicationRequest] { application =>
       applicationService.create(application).map {
         result => Created(toJson(result))
