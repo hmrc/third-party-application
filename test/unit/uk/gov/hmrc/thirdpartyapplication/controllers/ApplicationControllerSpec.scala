@@ -144,55 +144,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 //    val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
 //    val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 //
-//    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
-//
-//      when(underTest.applicationService.create(mockEq(standardApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(standardApplicationResponse))
-//
-//      val result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
-//
-//      status(result) shouldBe SC_CREATED
-//      verify(underTest.applicationService).create(mockEq(standardApplicationRequest))(any[HeaderCarrier])
-//    }
-//
-//    "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
-//
-//      givenUserIsAuthenticated(underTest)
-//      when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(privilegedApplicationResponse))
-//
-//      val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
-//
-//      (jsonBodyOf(result) \ "totp").as[TotpSecrets] shouldBe totp
-//      status(result) shouldBe SC_CREATED
-//      verify(underTest.applicationService).create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])
-//    }
-//
-//    "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
-//      givenUserIsAuthenticated(underTest)
-//      when(underTest.applicationService.create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(ropcApplicationResponse))
-//
-//      val result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
-//
-//      status(result) shouldBe SC_CREATED
-//      verify(underTest.applicationService).create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])
-//    }
-//
-//    "fail with a 403 (Forbidden) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
-//      givenUserIsNotAuthenticated(underTest)
-//
-//      val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
-//
-//      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
-//      verify(underTest.applicationService, never()).create(any[CreateApplicationRequest])(any[HeaderCarrier])
-//    }
-//
-//    "fail with a 403 (Forbidden) for a valid ROPC application request when gatekeeper is not logged in" in new Setup {
-//      givenUserIsNotAuthenticated(underTest)
-//
-//      val result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
-//
-//      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.FORBIDDEN)
-//      verify(underTest.applicationService, never()).create(any[CreateApplicationRequest])(any[HeaderCarrier])
-//    }
 //
 //    "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
 //

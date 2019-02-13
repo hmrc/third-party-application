@@ -81,14 +81,18 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
     Collaborator("dev@example.com", DEVELOPER))
 
   private val standardAccess = Standard(Seq("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  //private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  //private val ropcAccess = Ropc()
+  private val privilegedAccess = Privileged(scopes = Set("scope1"))
+  private val ropcAccess = Ropc()
 
   "Create" should {
     val standardApplicationRequest = aCreateApplicationRequest(standardAccess, Environment.PRODUCTION)
+    val privilegedApplicationRequest = aCreateApplicationRequest(privilegedAccess, Environment.PRODUCTION)
+    val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess, Environment.PRODUCTION)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    //val totp = TotpSecrets("pTOTP", "sTOTP")
+    val totp = TotpSecrets("pTOTP", "sTOTP")
+    val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
+    val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       givenAnAuthenticatedRequest
@@ -102,13 +106,34 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
       verify(underTest.applicationService).create(mockEq(standardApplicationRequest))(any[HeaderCarrier])
     }
 
-    "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
+    "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
+
+      givenAnAuthenticatedRequest
+
+      when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(privilegedApplicationResponse))
+
+      val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
+
+      (jsonBodyOf(result) \ "totp").as[TotpSecrets] shouldBe totp
+      status(result) shouldBe SC_CREATED
+      verify(underTest.applicationService).create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier])
+    }
+
+    "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
+      givenAnAuthenticatedRequest
+
+      when(underTest.applicationService.create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(ropcApplicationResponse))
+
+      val result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
+
+      status(result) shouldBe SC_CREATED
+      verify(underTest.applicationService).create(mockEq(ropcApplicationRequest))(any[HeaderCarrier])
+    }
+
+    "fail for a unauthenticated application request" in new Setup {
       givenAnUnauthenticatedRequest
 
-      when(underTest.applicationService.create(mockEq(standardApplicationRequest))(any[HeaderCarrier]))
-        .thenReturn(successful(standardApplicationResponse))
-
-      assertThrows[SessionRecordNotFound]{
+      assertThrows[SessionRecordNotFound] {
         await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
       }
     }
@@ -122,6 +147,7 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
       .thenReturn(Future.successful())
 
   }
+
   def givenAnUnauthenticatedRequest(implicit underTest: ApplicationController) = {
     when(underTest.authConnector.authorise(any, any[Retrieval[Any]])(any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Future.failed(new SessionRecordNotFound))
@@ -129,7 +155,9 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
   }
 
 
-  private def aNewApplicationResponse(access: Access = standardAccess) = {
+  private def aNewApplicationResponse(access: Access = standardAccess)
+
+  = {
     new ApplicationResponse(
       UUID.randomUUID(),
       "clientId",
@@ -144,7 +172,9 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
       access)
   }
 
-  private def aCreateApplicationRequest(access: Access, environment: Environment) = CreateApplicationRequest("My Application", access, Some("Description"),
+  private def aCreateApplicationRequest(access: Access, environment: Environment)
+
+  = CreateApplicationRequest("My Application", access, Some("Description"),
     environment, Set(Collaborator("admin@example.com", ADMINISTRATOR), Collaborator("dev@example.com", ADMINISTRATOR)))
 }
 
