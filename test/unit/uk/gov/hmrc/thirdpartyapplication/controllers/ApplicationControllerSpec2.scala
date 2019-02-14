@@ -22,11 +22,9 @@ import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.mockito.Matchers.{any, eq => mockEq}
 import org.mockito.Mockito._
-import org.mockito.stubbing.OngoingStubbing
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json.Json
-import play.api.mvc.Result
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.auth.core.retrieve.Retrieval
@@ -138,6 +136,18 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
       }
     }
 
+    "fail with a 403 (Forbidden) for an authenticated STANDARD application request" in new Setup {
+      givenAnAuthenticatedRequest
+
+      when(underTest.applicationService.create(mockEq(standardApplicationRequest))(any[HeaderCarrier])).thenReturn(successful(standardApplicationResponse))
+
+      val result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
+
+      status(result) shouldBe SC_FORBIDDEN
+
+      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "application access type mismatch")
+    }
+
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
 
       givenAnAuthenticatedRequest
@@ -163,54 +173,25 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
     }
 
     "fail with a 422 (unprocessable entity) when duplicate email is provided" in new Setup {
-
       givenAnAuthenticatedRequest
 
+      // We have had to use a block of Json as the factory methods in the test classes use the
+      // same validation classes, and therefore you can't create invalid appliacation requests
       val body =
         s"""{
-           |"name" : "My Application",
-           |"environment": "PRODUCTION",
-           |"access" : {
-           |  "accessType" : "STANDARD",
-           |  "redirectUris" : [],
-           |  "overrides" : []
-           |},
-           |"collaborators": [
-           |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"},
-           |{"emailAddress": "ADMIN@example.com","role": "ADMINISTRATOR"}
-           |]
+           |"name":"My Application",
+           |"access":{"scopes":[],"accessType":"ROPC"},
+           |"description":"Description",
+           |"environment":"PRODUCTION",
+           |"collaborators":[
+           |  {"emailAddress":"admin@example.com","role":"ADMINISTRATOR"},
+           |  {"emailAddress":"ADMIN@example.com","role":"ADMINISTRATOR"}]
            |}""".stripMargin.replaceAll("\n", "")
 
       val result = await(underTest.create()(request.withBody(Json.parse(body))))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
       (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: duplicate email in collaborator"
-    }
-
-    "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
-
-      givenAnAuthenticatedRequest
-
-      val createApplicationRequestJson: String =
-        s"""{
-              "name" : "My Application",
-              "environment": "PRODUCTION",
-              "access": {
-                "accessType": "STANDARD",
-                "redirectUris": [
-                  "http://localhost:8080/redirect1", "http://localhost:8080/redirect2",
-                  "http://localhost:8080/redirect3", "http://localhost:8080/redirect4",
-                  "http://localhost:8080/redirect5", "http://localhost:8080/redirect6"
-                ],
-                "overrides" : []
-              },
-              "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"}]
-              }"""
-
-      val result = await(underTest.create()(request.withBody(Json.parse(createApplicationRequestJson))))
-
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 
     "fail with a 422 (unprocessable entity) when incomplete json is provided" in new Setup {
@@ -265,10 +246,10 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
 
       givenAnAuthenticatedRequest
 
-      when(underTest.applicationService.create(mockEq(standardApplicationRequest))(any[HeaderCarrier]))
+      when(underTest.applicationService.create(mockEq(privilegedApplicationRequest))(any[HeaderCarrier]))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
+      val result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -283,8 +264,7 @@ class ApplicationControllerSpec2 extends UnitSpec with ScalaFutures with Mockito
       verify(underTest.applicationService, never).create(any())(any())
     }
 
-    // TODO - Check. Where are the tests for validating access types on 1) Request 2) DB
-    // TODO - Doesn't check valid application in request or existing
+    // TODO - Check. Where are the tests for validating access types from DB (e.g. updates)
   }
 
 

@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+//  TODO: This should be deleted as it should have been replaced by AuthorisationWrapper2
 trait AuthorisationWrapper {
 
   val authConnector: AuthConnector

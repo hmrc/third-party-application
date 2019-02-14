@@ -17,15 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.Inject
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
@@ -52,24 +51,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  // TODO - This needs deleting
-  //  def create = requiresRoleFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
-//    withJsonBody[CreateApplicationRequest] { application =>
-//        applicationService.create(application).map {
-//        result => Created(toJson(result))
-//      } recover {
-//        case e: ApplicationAlreadyExists =>
-//          Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-//      } recover recovery
-//    }
-//  }
-
   def create =
     (requiresAuthentication2() andThen requiresRequestValidation() )
       .async(BodyParsers.parse.json) { implicit request =>
 
-
         withJsonBody[CreateApplicationRequest] { application =>
+
           applicationService.create(application).map {
             result => Created(toJson(result))
           } recover {
