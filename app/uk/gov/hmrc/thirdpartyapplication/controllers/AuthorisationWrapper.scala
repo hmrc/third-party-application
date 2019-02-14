@@ -42,20 +42,20 @@ trait AuthorisationWrapper {
   val applicationService: ApplicationService
   val authConfig: AuthConfig
 
-  def requiresRole(): ActionBuilder[Request] = {
+  def requiresAuthentication(): ActionBuilder[Request] = {
     Action andThen AuthenticatedAction()
   }
 
-  def requiresRoleFor(accessTypes: AccessType*): ActionBuilder[Request] =
+  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes)
 
-  def requiresRoleFor(uuid: UUID, accessTypes: AccessType*): ActionBuilder[Request] =
+  def requiresAuthenticationFor(uuid: UUID, accessTypes: AccessType*): ActionBuilder[Request] =
     Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, accessTypes)
 
-  def requiresGatekeeperForStandardApplications(uuid: UUID): ActionBuilder[Request] =
+  def requiresAuthenticationForStandardApplications(uuid: UUID): ActionBuilder[Request] =
     Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = true, Seq(STANDARD))
 
-  def requiresGatekeeperForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request] =
+  def requiresAuthenticationForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request] =
     Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, Seq(PRIVILEGED, ROPC))
 
   private case class AuthenticatedAction() extends AuthenticationFilter() {
@@ -65,15 +65,11 @@ trait AuthorisationWrapper {
   private abstract class AuthenticationFilter() extends ActionFilter[Request] {
     def authenticate[A](request: Request[A]): Future[Option[Result]] = {
       implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-      val hasAnyGatekeeperRole = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
-      authConnector.authorise(hasAnyGatekeeperRole, EmptyRetrieval).map {
-        _ => None
-      } recover { case _ => Some(Forbidden(JsErrorResponse(FORBIDDEN,
-        s"Insufficient enrolments")))
-      }
+
+      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     }
   }
-
 
   private case class PayloadBasedApplicationTypeFilter(accessTypes: Seq[AccessType])
     extends ApplicationTypeFilter(false, accessTypes) {

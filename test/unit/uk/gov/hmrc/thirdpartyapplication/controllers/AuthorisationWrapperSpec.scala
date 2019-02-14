@@ -58,11 +58,11 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
     val privilegedRequest = postRequestWithAccess(Privileged())
     val standardRequest = postRequestWithAccess(Standard())
 
-    "accept the request when access type in the payload is PRIVILEGED and gatekeeper is logged in" in new Setup {
+    "accept the request when access type in the payload is PRIVILEGED and gatekeeper authenticated" in new Setup {
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
       )
 
@@ -71,12 +71,12 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
     "accept the request when access type in the payload is ROPC and user is authenticated" in new Setup {
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresRoleFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for payload with STANDARD applications" in new Setup {
 
-      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(standardRequest)
       )
 
@@ -88,7 +88,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
       )
 
@@ -99,7 +99,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
     "return a 403 (forbidden) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest))
+      val result = await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest))
 
       status(result) shouldBe SC_FORBIDDEN
       jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
@@ -118,7 +118,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_OK
     }
@@ -126,14 +126,14 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
     "accept the request when access type of the application is ROPC and gatekeeper is logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresRoleFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for STANDARD applications" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(standardApplication))
 
-      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
 
       status(result) shouldBe SC_OK
@@ -146,7 +146,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_FORBIDDEN
       jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
@@ -156,7 +156,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRoleFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_FORBIDDEN
       jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
@@ -166,7 +166,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       mockFetchApplicationToReturn(applicationId, None)
 
-      val result = await(underTest.requiresRoleFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_NOT_FOUND
       jsonBodyOf(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
@@ -179,7 +179,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresRole().async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_OK
     }
@@ -188,7 +188,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresRole().async(_ => Default.Ok(""))(FakeRequest()))
+      val result = await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest()))
 
       status(result) shouldBe SC_FORBIDDEN
       jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")

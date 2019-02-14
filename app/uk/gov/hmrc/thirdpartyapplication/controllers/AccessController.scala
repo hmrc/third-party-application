@@ -32,13 +32,13 @@ class AccessController @Inject()(accessService: AccessService,
                                  val applicationService: ApplicationService,
                                  val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 
-  def readScopes(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
+  def readScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
     accessService.readScopes(applicationId) map { scopeResponse =>
       Ok(toJson(scopeResponse))
     } recover recovery
   }
 
-  def updateScopes(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(json) { implicit request =>
+  def updateScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(json) { implicit request =>
     withJsonBody[ScopeRequest] { scopeRequest =>
       accessService.updateScopes(applicationId, scopeRequest) map { scopeResponse =>
         Ok(toJson(scopeResponse))
@@ -46,13 +46,13 @@ class AccessController @Inject()(accessService: AccessService,
     }
   }
 
-  def readOverrides(applicationId: UUID) = requiresGatekeeperForStandardApplications(applicationId).async { implicit request =>
+  def readOverrides(applicationId: UUID) = requiresAuthenticationForStandardApplications(applicationId).async { implicit request =>
     accessService.readOverrides(applicationId) map { overrideResponse =>
       Ok(toJson(overrideResponse))
     } recover recovery
   }
 
-  def updateOverrides(applicationId: UUID) = requiresGatekeeperForStandardApplications(applicationId).async(json) { implicit request =>
+  def updateOverrides(applicationId: UUID) = requiresAuthenticationForStandardApplications(applicationId).async(json) { implicit request =>
     withJsonBody[OverridesRequest] { overridesRequest =>
       accessService.updateOverrides(applicationId, overridesRequest) map { overridesResponse =>
         Ok(toJson(overridesResponse))
