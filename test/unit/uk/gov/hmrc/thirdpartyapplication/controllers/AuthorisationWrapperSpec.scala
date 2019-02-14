@@ -74,7 +74,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       status(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
     }
 
-    "skip gatekeeper authentication for payload with STANDARD applications" in new Setup {
+    "skip gatekeeper authentication for payload with STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
       val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(standardRequest)
@@ -129,12 +129,11 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
     }
 
-    "skip gatekeeper authentication for STANDARD applications" in new Setup {
+    "skip gatekeeper authentication for STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(standardApplication))
 
       val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
-
 
       status(result) shouldBe SC_OK
       verifyZeroInteractions(underTest.authConnector)
