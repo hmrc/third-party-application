@@ -211,7 +211,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def searchApplications = Action.async { implicit request =>
-    applicationService.searchApplications(new ApplicationSearch(request)).map(apps => Ok(toJson(apps)))
+    applicationService.searchApplications(new ApplicationSearch(request)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchByServerToken(serverToken: String) = {
