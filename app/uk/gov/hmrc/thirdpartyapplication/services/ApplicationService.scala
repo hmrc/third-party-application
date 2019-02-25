@@ -265,6 +265,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+  def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationResponse]] = {
+    Future(Seq())
+  }
+
   def requestUplift(applicationId: UUID, applicationName: String,
                     requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
