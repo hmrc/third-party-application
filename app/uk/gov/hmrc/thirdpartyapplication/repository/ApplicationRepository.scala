@@ -165,6 +165,10 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     find("collaborators.emailAddress" -> emailAddress, "environment" -> environment)
   }
 
+  def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
+    Future.successful(Seq())
+  }
+
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
     (json \ "result").validate[T] match {
       case JsSuccess(result, _) => Future.successful(result)
