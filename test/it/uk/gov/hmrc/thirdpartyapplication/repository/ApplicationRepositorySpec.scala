@@ -501,6 +501,36 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       assert(result.size == 1)
       assert(result.head.id == ropcApplication.id)
     }
+
+    "return applications with no API subscriptions" in {
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithSubscriptions))
+      await(applicationRepository.save(applicationWithoutSubscriptions))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(NoAPISubscriptions))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == applicationWithoutSubscriptions.id)
+    }
+
+    "return applications with any API subscriptions" in {
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithSubscriptions))
+      await(applicationRepository.save(applicationWithoutSubscriptions))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(OneOrMoreAPISubscriptions))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == applicationWithSubscriptions.id)
+    }
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(

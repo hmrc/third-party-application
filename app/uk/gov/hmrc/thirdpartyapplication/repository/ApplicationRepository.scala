@@ -177,7 +177,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
         applicationSearchFilter match {
           // API Subscriptions
-
+          case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
+          case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+            
           // Application Status
           case Created => Match(BSONDocument("state.name" -> State.TESTING.toString))
           case PendingGatekeeperCheck => Match(BSONDocument("state.name" -> State.PENDING_GATEKEEPER_APPROVAL.toString))
