@@ -174,19 +174,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
-    def buildFindQuery(): Seq[PipelineOperator] = {
-      def skipAndLimitClauses =
-        Seq(
-          Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
-          Limit(applicationSearch.pageSize))
-
-      if(applicationSearch.filters.nonEmpty) {
-        applicationSearch.filters.map(filter => convertFilterToQueryClause(filter)).union(skipAndLimitClauses)
-      } else {
-        skipAndLimitClauses
-      }
-    }
-
     def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
         applicationSearchFilter match {
           // API Subscriptions
@@ -207,7 +194,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     }
 
     def buildQueryCommandDocument(): BSONDocument = {
-      val operators: Seq[PipelineOperator] = buildFindQuery()
+      def operators: Seq[PipelineOperator] =
+        applicationSearch.filters
+          .map(filter => convertFilterToQueryClause(filter))
+          .union(
+            Seq(
+              Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
+              Limit(applicationSearch.pageSize),
+              applicationProjection))
 
       BSONDocument(
         "aggregate" -> "application",
