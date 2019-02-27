@@ -170,7 +170,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
     def buildFindQuery(filters : Seq[ApplicationSearchFilter]): JsObject = {
       if(filters.isEmpty) {
-        Json.obj()
+        Json.obj() // Must return an empty JSON object for the find() clause of the MongoDB query if we have no filters
       } else {
         Json.obj("$and" -> applicationSearch.filters.map(filter => convertFilterToQueryClause(filter)))
       }

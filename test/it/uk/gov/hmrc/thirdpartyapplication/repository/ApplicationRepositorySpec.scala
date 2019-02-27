@@ -465,9 +465,6 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
-      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
-      await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
-      await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application2.id, application3.id)))
 
       val applicationSearch = new ApplicationSearch(pageNumber = 2, pageSize = 1, filters = Seq.empty)
 
