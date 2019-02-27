@@ -24,9 +24,9 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command
-import reactivemongo.api.{Cursor, ReadPreference}
+import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID}
-import reactivemongo.core.commands.{Match, PipelineOperator, Project}
+import reactivemongo.core.commands._
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.JSONSerializationPack
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -44,6 +44,13 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats) {
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  private val subscriptionsLookup: BSONDocument = BSONDocument(
+    "$lookup" -> BSONDocument(
+      "from" -> "subscription",
+      "localField" -> "id",
+      "foreignField" -> "applications",
+      "as" -> "subscribedApis"))
 
   private val applicationProjection = Project(
     "id" -> BSONBoolean(true),
@@ -167,39 +174,55 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
+    def buildFindQuery(): Seq[PipelineOperator] = {
+      def skipAndLimitClauses =
+        Seq(
+          Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
+          Limit(applicationSearch.pageSize))
 
-    def buildFindQuery(filters : Seq[ApplicationSearchFilter]): JsObject = {
-      if(filters.isEmpty) {
-        Json.obj() // Must return an empty JSON object for the find() clause of the MongoDB query if we have no filters
+      if(applicationSearch.filters.nonEmpty) {
+        applicationSearch.filters.map(filter => convertFilterToQueryClause(filter)).union(skipAndLimitClauses)
       } else {
-        Json.obj("$and" -> applicationSearch.filters.map(filter => convertFilterToQueryClause(filter)))
+        skipAndLimitClauses
       }
     }
 
-    def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): JsObject = {
+    def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
         applicationSearchFilter match {
           // API Subscriptions
 
           // Application Status
-          case Created => Json.obj("state.name" -> Json.obj("$eq" -> State.TESTING))
-          case PendingGatekeeperCheck => Json.obj("state.name" -> Json.obj("$eq" -> State.PENDING_GATEKEEPER_APPROVAL))
-          case PendingSubmitterVerification => Json.obj("state.name" -> Json.obj("$eq" -> State.PENDING_REQUESTER_VERIFICATION))
-          case Active => Json.obj("state.name" -> Json.obj("$eq" -> State.PRODUCTION))
+          case Created => Match(BSONDocument("state.name" -> State.TESTING.toString))
+          case PendingGatekeeperCheck => Match(BSONDocument("state.name" -> State.PENDING_GATEKEEPER_APPROVAL.toString))
+          case PendingSubmitterVerification => Match(BSONDocument("state.name" -> State.PENDING_REQUESTER_VERIFICATION.toString))
+          case Active => Match(BSONDocument("state.name" -> State.PRODUCTION.toString()))
 
           // Terms of Use
 
           // Access Type
-          case StandardAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.STANDARD))
-          case ROPCAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.ROPC))
-          case PrivilegedAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.PRIVILEGED))
+          case StandardAccess => Match(BSONDocument("access.accessType" -> AccessType.STANDARD.toString))
+          case ROPCAccess => Match(BSONDocument("access.accessType" -> AccessType.ROPC.toString))
+          case PrivilegedAccess => Match(BSONDocument("access.accessType" -> AccessType.PRIVILEGED.toString))
         }
     }
 
-    collection
-      .find(buildFindQuery(applicationSearch.filters))
-      .skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize)
-      .cursor[ApplicationData](ReadPreference.primaryPreferred)
-      .collect[Seq](applicationSearch.pageSize, Cursor.FailOnError[Seq[ApplicationData]]())
+    def buildQueryCommandDocument(): BSONDocument = {
+      val operators: Seq[PipelineOperator] = buildFindQuery()
+
+      BSONDocument(
+        "aggregate" -> "application",
+        "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
+    }
+
+    runApplicationQueryAggregation(buildQueryCommandDocument())
+  }
+
+  private def runApplicationQueryAggregation(commandDocument: BSONDocument): Future[Seq[ApplicationData]] = {
+    val runner = Command.run(JSONSerializationPack, FailoverStrategy())
+    runner
+      .apply(collection.db, runner.rawCommand(commandDocument))
+      .one[JsObject](ReadPreference.nearest)
+      .flatMap(processResults[Seq[ApplicationData]])
   }
 
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
@@ -210,21 +233,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   private def lookupByAPI(operators: PipelineOperator*): Future[Seq[ApplicationData]] = {
-    val lookup: BSONDocument = BSONDocument(
-      "$lookup" -> BSONDocument(
-        "from" -> "subscription",
-        "localField" -> "id",
-        "foreignField" -> "applications",
-        "as" -> "subscribedApis"))
-
     val commandDoc: BSONDocument = BSONDocument(
       "aggregate" -> "application",
-      "pipeline" -> BSONArray(lookup +: operators.map(_.makePipe)))
+      "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
 
-    val runner = Command.run(JSONSerializationPack)
-    runner.apply(collection.db, runner.rawCommand(commandDoc))
-      .one[JsObject]
-      .flatMap(processResults[Seq[ApplicationData]])
+    runApplicationQueryAggregation(commandDoc)
   }
 
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
