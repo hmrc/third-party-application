@@ -20,13 +20,25 @@ import play.api.mvc.{AnyContent, Request}
 
 class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq[ApplicationSearchFilter]) {
 
+  def this(filters: Seq[ApplicationSearchFilter]) {
+    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters)
+  }
+
+  def this() {
+    this(Seq())
+  }
+
   def this(request: Request[AnyContent]) {
     this(
-      request.getQueryString("page").getOrElse("1").toInt,
-      request.getQueryString("pageSize").getOrElse("100").toInt,
+      if (request.getQueryString(ApplicationSearch.PageNumberParameterName).isDefined) {
+        request.getQueryString(ApplicationSearch.PageNumberParameterName).get.toInt
+      } else ApplicationSearch.DefaultPageNumber,
+      if (request.getQueryString(ApplicationSearch.PageSizeParameterName).isDefined) {
+        request.getQueryString(ApplicationSearch.PageSizeParameterName).get.toInt
+      } else ApplicationSearch.DefaultPageSize,
       request.queryString
         .map {
-          case (key, value) => {
+          case (key, value) =>
             // 'value' is a Seq, but we should only ever have one of each, so just take the head
             key match {
               case "apiSubscriptions" => APISubscriptionFilter(value.head)
@@ -35,12 +47,20 @@ class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq
               case "accessType" => AccessTypeFilter(value.head)
               case _ => None // ignore anything that isn't a search filter
             }
-          }
         }
         .filter(searchFilter => searchFilter.isDefined)
         .flatten
         .toSeq)
   }
+}
+
+object ApplicationSearch {
+  val PageNumberParameterName = "page"
+  val PageSizeParameterName = "pageSize"
+
+  // Set paging defaults that mean we'll get everything back (so that a search specifying only filters will get all relevant results)
+  val DefaultPageNumber: Int = 1
+  val DefaultPageSize: Int = Int.MaxValue
 }
 
 sealed trait ApplicationSearchFilter

@@ -16,15 +16,26 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
+import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.models._
 
 
-class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with MockitoSugar {
+class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with MockitoSugar with Matchers {
 
   "ApplicationSearch" should {
+    "set appropriate defaults for no-arg constructor" in {
+      checkCreatedSearchObject(new ApplicationSearch(), ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set.empty)
+    }
+
+    "set appropriate defaults for paging values" in {
+      val searchObject = new ApplicationSearch(Seq(OneOrMoreAPISubscriptions, ROPCAccess))
+
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(OneOrMoreAPISubscriptions, ROPCAccess))
+    }
+
     "correctly parse page number and size" in {
       val expectedPageNumber: Int = 2
       val expectedPageSize: Int = 50
@@ -32,66 +43,44 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.isEmpty)
+      checkCreatedSearchObject(searchObject, expectedPageNumber, expectedPageSize, Set.empty)
     }
 
     "correctly parse API Subscriptions filter" in {
-      val expectedPageNumber: Int = 1
-      val expectedPageSize: Int = 100
-      val request = FakeRequest("GET", s"/applications?apiSubscriptions=ANYSUB&page=$expectedPageNumber&pageSize=$expectedPageSize")
+      val request = FakeRequest("GET", s"/applications?apiSubscriptions=ANYSUB")
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.size == 1)
-      assert(searchObject.filters.contains(OneOrMoreAPISubscriptions))
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(OneOrMoreAPISubscriptions))
     }
 
     "correctly parse Application Status filter" in {
-      val expectedPageNumber: Int = 1
-      val expectedPageSize: Int = 100
-      val request = FakeRequest("GET", s"/applications?status=PENDING_GATEKEEPER_CHECK&page=$expectedPageNumber&pageSize=$expectedPageSize")
+      val request = FakeRequest("GET", s"/applications?status=PENDING_GATEKEEPER_CHECK")
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.size == 1)
-      assert(searchObject.filters.contains(PendingGatekeeperCheck))
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(PendingGatekeeperCheck))
     }
 
     "correctly parse Terms of Use filter" in {
-      val expectedPageNumber: Int = 1
-      val expectedPageSize: Int = 100
-      val request = FakeRequest("GET", s"/applications?termsOfUse=TOU_NOT_ACCEPTED&page=$expectedPageNumber&pageSize=$expectedPageSize")
+      val request = FakeRequest("GET", s"/applications?termsOfUse=TOU_NOT_ACCEPTED")
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.size == 1)
-      assert(searchObject.filters.contains(TermsOfUseNotAccepted))
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(TermsOfUseNotAccepted))
     }
 
     "correctly parse Access Type filter" in {
-      val expectedPageNumber: Int = 1
-      val expectedPageSize: Int = 100
-      val request = FakeRequest("GET", s"/applications?accessType=ACCESS_TYPE_PRIVILEGED&page=$expectedPageNumber&pageSize=$expectedPageSize")
+      val request = FakeRequest("GET", s"/applications?accessType=ACCESS_TYPE_PRIVILEGED")
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.size == 1)
-      assert(searchObject.filters.contains(PrivilegedAccess))
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(PrivilegedAccess))
     }
 
     "correctly parses multiple filters" in {
-      val expectedPageNumber: Int = 1
-      val expectedPageSize: Int = 100
+      val expectedPageNumber: Int = 3
+      val expectedPageSize: Int = 250
       val request =
         FakeRequest(
           "GET",
@@ -105,12 +94,21 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = new ApplicationSearch(request)
 
-      assert(searchObject.pageNumber == expectedPageNumber)
-      assert(searchObject.pageSize == expectedPageSize)
-      assert(searchObject.filters.contains(NoAPISubscriptions))
-      assert(searchObject.filters.contains(Created))
-      assert(searchObject.filters.contains(TermsOfUseAccepted))
-      assert(searchObject.filters.contains(ROPCAccess))
+      checkCreatedSearchObject(
+        searchObject,
+        expectedPageNumber,
+        expectedPageSize,
+        Set(NoAPISubscriptions, Created, TermsOfUseAccepted, ROPCAccess))
     }
+  }
+
+  def checkCreatedSearchObject(searchObject: ApplicationSearch,
+                               expectedPageNumber: Int,
+                               expectedPageSize: Int,
+                               expectedFilters: Set[ApplicationSearchFilter]): Unit = {
+    searchObject.pageNumber shouldEqual expectedPageNumber
+    searchObject.pageSize shouldEqual expectedPageSize
+    searchObject.filters.size shouldEqual expectedFilters.size
+    searchObject.filters.toSet shouldEqual expectedFilters
   }
 }

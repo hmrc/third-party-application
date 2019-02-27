@@ -179,7 +179,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
           // API Subscriptions
           case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
           case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
-            
+
           // Application Status
           case Created => Match(BSONDocument("state.name" -> State.TESTING.toString))
           case PendingGatekeeperCheck => Match(BSONDocument("state.name" -> State.PENDING_GATEKEEPER_APPROVAL.toString))
@@ -246,14 +246,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       Match(BSONDocument("subscribedApis.apiIdentifier" -> BSONDocument("context" -> apiIdentifier.context, "version" -> apiIdentifier.version))),
       applicationProjection)
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0))),
-      applicationProjection)
+  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(Seq(NoAPISubscriptions)))
 
-  def fetchAll(): Future[Seq[ApplicationData]] = {
-    collection.find(Json.obj()).cursor[ApplicationData]().collect[Seq]()
-  }
+  def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch())
 
   def delete(id: UUID): Future[HasSucceeded] = {
     collection.remove(Json.obj("id" -> id)).map(_ => HasSucceeded)

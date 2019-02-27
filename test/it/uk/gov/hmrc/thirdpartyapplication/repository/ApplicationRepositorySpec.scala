@@ -480,7 +480,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
-      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(Active))
+      val applicationSearch = new ApplicationSearch(Seq(Active))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -494,7 +494,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
-      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(ROPCAccess))
+      val applicationSearch = new ApplicationSearch(Seq(ROPCAccess))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -509,7 +509,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
 
-      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(NoAPISubscriptions))
+      val applicationSearch = new ApplicationSearch(Seq(NoAPISubscriptions))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -524,7 +524,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
 
-      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(OneOrMoreAPISubscriptions))
+      val applicationSearch = new ApplicationSearch(Seq(OneOrMoreAPISubscriptions))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
