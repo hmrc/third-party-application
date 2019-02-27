@@ -24,14 +24,15 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command
+import reactivemongo.api.{Cursor, ReadPreference}
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID}
 import reactivemongo.core.commands.{Match, PipelineOperator, Project}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.JSONSerializationPack
-import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -166,7 +167,39 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
-    Future.successful(Seq())
+
+    def buildFindQuery(filters : Seq[ApplicationSearchFilter]): JsObject = {
+      if(filters.isEmpty) {
+        Json.obj()
+      } else {
+        Json.obj("$and" -> applicationSearch.filters.map(filter => convertFilterToQueryClause(filter)))
+      }
+    }
+
+    def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): JsObject = {
+        applicationSearchFilter match {
+          // API Subscriptions
+
+          // Application Status
+          case Created => Json.obj("state.name" -> Json.obj("$eq" -> State.TESTING))
+          case PendingGatekeeperCheck => Json.obj("state.name" -> Json.obj("$eq" -> State.PENDING_GATEKEEPER_APPROVAL))
+          case PendingSubmitterVerification => Json.obj("state.name" -> Json.obj("$eq" -> State.PENDING_REQUESTER_VERIFICATION))
+          case Active => Json.obj("state.name" -> Json.obj("$eq" -> State.PRODUCTION))
+
+          // Terms of Use
+
+          // Access Type
+          case StandardAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.STANDARD))
+          case ROPCAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.ROPC))
+          case PrivilegedAccess => Json.obj("access.accessType" -> Json.obj("$eq" -> AccessType.PRIVILEGED))
+        }
+    }
+
+    collection
+      .find(buildFindQuery(applicationSearch.filters))
+      .skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize)
+      .cursor[ApplicationData](ReadPreference.primaryPreferred)
+      .collect[Seq](applicationSearch.pageSize, Cursor.FailOnError[Seq[ApplicationData]]())
   }
 
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {

@@ -457,6 +457,55 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
   }
 
+  "Search" should {
+    "correctly include the skip and limit clauses" in {
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
+      await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application2.id, application3.id)))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 2, pageSize = 1, filters = Seq.empty)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1) // as a result of pageSize = 1
+      assert(result.head.id == application2.id) // as a result of pageNumber = 2
+    }
+
+    "return applications based on application state filter" in {
+      val applicationInTest = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, DateTime.now())
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationInProduction))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(Active))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == applicationInProduction.id)
+    }
+
+    "return applications based on access type filter" in {
+      val standardApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val ropcApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+      await(applicationRepository.save(standardApplication))
+      await(applicationRepository.save(ropcApplication))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 1, pageSize = 100, filters = Seq(ROPCAccess))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == ropcApplication.id)
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
