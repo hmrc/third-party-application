@@ -19,12 +19,13 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import controllers.Default
-import org.apache.http.HttpStatus.{SC_FORBIDDEN, SC_NOT_FOUND, SC_OK}
+import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
+import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -84,25 +85,19 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 403 (forbidden) response when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "return a 401 (Unauthorized) response when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
         Default.Ok(""))(privilegedRequest)
-      )
-
-      status(result) shouldBe SC_FORBIDDEN
-      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
+      ))
     }
 
-    "return a 403 (forbidden) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
+    "return a 401 (forbidden) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest))
-
-      status(result) shouldBe SC_FORBIDDEN
-      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)))
     }
   }
 
@@ -139,26 +134,20 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 403 (forbidden) response when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "return a 401 (unauthorized) response when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(privilegedApplication))
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
-
-      status(result) shouldBe SC_FORBIDDEN
-      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest())))
     }
 
-    "return a 403 (forbidden) response when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
+    "return a 401 (unauthorized) response when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest()))
-
-      status(result) shouldBe SC_FORBIDDEN
-      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())))
     }
 
     "return a 404 (Not Found) when the application doesn't exist" in new Setup {
@@ -183,14 +172,11 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       status(result) shouldBe SC_OK
     }
 
-    "return a 403 (forbidden) response when the gatekeeper is not logged in" in new Setup {
+    "return a 401 (Unauthorized) response when the gatekeeper is not logged in" in new Setup {
 
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest()))
-
-      status(result) shouldBe SC_FORBIDDEN
-      jsonBodyOf(result) shouldBe JsErrorResponse(FORBIDDEN, "Insufficient enrolments")
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest())))
     }
   }
 

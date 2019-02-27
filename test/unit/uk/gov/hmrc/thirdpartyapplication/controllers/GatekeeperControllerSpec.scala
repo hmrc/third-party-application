@@ -30,6 +30,7 @@ import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.FakeRequest
+import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -75,10 +76,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "return forbidden when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.fetchAppsForGatekeeper(request))
+      assertThrows[SessionRecordNotFound]( await(underTest.fetchAppsForGatekeeper(request)))
 
       verifyZeroInteractions(mockGatekeeperService)
-      verifyForbidden(result)
     }
 
     "return apps" in new Setup {
@@ -99,10 +99,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "return forbidden when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.fetchAppById(appId)(request))
+      assertThrows[SessionRecordNotFound](await(underTest.fetchAppById(appId)(request)))
 
       verifyZeroInteractions(mockGatekeeperService)
-      verifyForbidden(result)
     }
 
     "return app with history" in new Setup {
@@ -139,10 +138,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "return forbidden when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader)))
+      assertThrows[SessionRecordNotFound](await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader))))
 
       verifyZeroInteractions(mockGatekeeperService)
-      verifyForbidden(result)
     }
 
     "successfully approve uplift when user is authorised" in new Setup {
@@ -201,10 +199,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "return forbidden when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.rejectUplift(applicationId)(testReq))
+      assertThrows[SessionRecordNotFound](await(underTest.rejectUplift(applicationId)(testReq)))
 
       verifyZeroInteractions(mockGatekeeperService)
-      verifyForbidden(result)
     }
 
     "successfully reject uplift when user is authorised" in new Setup {
@@ -261,10 +258,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "return forbidden when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader)))
+      assertThrows[SessionRecordNotFound](await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))))
 
       verifyZeroInteractions(mockGatekeeperService)
-      verifyForbidden(result)
     }
 
     "successfully resend verification when user is authorised" in new Setup {
