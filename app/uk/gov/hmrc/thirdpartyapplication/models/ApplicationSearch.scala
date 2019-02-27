@@ -18,24 +18,28 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.mvc.{AnyContent, Request}
 
-class ApplicationSearch(request: Request[AnyContent]) {
-  var pageNumber: Int = request.getQueryString("page").getOrElse("1").toInt
-  var pageSize: Int = request.getQueryString("pageSize").getOrElse("100").toInt
-  var filters: Seq[ApplicationSearchFilter] =
-    request.queryString
-      .map(entry => parseQueryStringSearchFilter(entry._1, entry._2.head)) // Only expecting a single value for each query string
-      .filter(searchFilter => searchFilter.isDefined)
-      .flatten
-      .toSeq
+class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq[ApplicationSearchFilter]) {
 
-  def parseQueryStringSearchFilter(key: String, value: String): Option[ApplicationSearchFilter] = {
-    key match {
-      case "apiSubscriptions" => APISubscriptionFilter(value)
-      case "status" => ApplicationStatusFilter(value)
-      case "termsOfUse" => TermsOfUseStatusFilter(value)
-      case "accessType" => AccessTypeFilter(value)
-      case _ => None
-    }
+  def this(request: Request[AnyContent]) {
+    this(
+      request.getQueryString("page").getOrElse("1").toInt,
+      request.getQueryString("pageSize").getOrElse("100").toInt,
+      request.queryString
+        .map {
+          case (key, value) => {
+            // 'value' is a Seq, but we should only ever have one of each, so just take the head
+            key match {
+              case "apiSubscriptions" => APISubscriptionFilter(value.head)
+              case "status" => ApplicationStatusFilter(value.head)
+              case "termsOfUse" => TermsOfUseStatusFilter(value.head)
+              case "accessType" => AccessTypeFilter(value.head)
+              case _ => None // ignore anything that isn't a search filter
+            }
+          }
+        }
+        .filter(searchFilter => searchFilter.isDefined)
+        .flatten
+        .toSeq)
   }
 }
 
