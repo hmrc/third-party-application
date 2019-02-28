@@ -585,6 +585,22 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       result.size shouldBe 1
       result.head.id shouldBe ropcApplication.id
     }
+
+    "return applications matching search text in a case-insensitive manner" in {
+      val applicationId = UUID.randomUUID()
+
+      val application = aNamedApplicationData(applicationId, "TEST APPLICATION", prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(Seq(), "application")
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
