@@ -433,7 +433,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.fetchAllForApiIdentifier(APIIdentifier("other", "version-1")))
 
-      result shouldBe Seq()
+      result shouldBe Seq.empty
     }
   }
 
@@ -470,8 +470,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1) // as a result of pageSize = 1
-      assert(result.head.id == application2.id) // as a result of pageNumber = 2
+      result.size shouldBe 1 // as a result of pageSize = 1
+      result.head.id shouldBe application2.id // as a result of pageNumber = 2
     }
 
     "return applications based on application state filter" in {
@@ -484,8 +484,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == applicationInProduction.id)
+      result.size shouldBe 1
+      result.head.id shouldBe applicationInProduction.id
     }
 
     "return applications based on access type filter" in {
@@ -498,8 +498,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == ropcApplication.id)
+      result.size shouldBe 1
+      result.head.id shouldBe ropcApplication.id
     }
 
     "return applications with no API subscriptions" in {
@@ -513,8 +513,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == applicationWithoutSubscriptions.id)
+      result.size shouldBe 1
+      result.head.id shouldBe applicationWithoutSubscriptions.id
     }
 
     "return applications with any API subscriptions" in {
@@ -528,8 +528,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == applicationWithSubscriptions.id)
+      result.size shouldBe 1
+      result.head.id shouldBe applicationWithSubscriptions.id
     }
 
     "return applications with search text matching application id" in {
@@ -545,8 +545,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == applicationId)
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
     }
 
     "return applications with search text matching application name" in {
@@ -562,8 +562,28 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      assert(result.size == 1)
-      assert(result.head.id == applicationId)
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with matching search text and other filters" in {
+      val applicationName = "Test Application"
+
+      // Applications with the same name, but different access levels
+      val standardApplication =
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val ropcApplication =
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+      await(applicationRepository.save(standardApplication))
+      await(applicationRepository.save(ropcApplication))
+
+      val applicationSearch = new ApplicationSearch(Seq(ROPCAccess), applicationName)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      // Only ROPC application should be returned
+      result.size shouldBe 1
+      result.head.id shouldBe ropcApplication.id
     }
   }
 
