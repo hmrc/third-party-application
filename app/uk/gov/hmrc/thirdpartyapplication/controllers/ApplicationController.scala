@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationSearch, ApplicationSearchFilter}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSearch
 import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._

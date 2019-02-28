@@ -24,7 +24,7 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command
-import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
+import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID, BSONRegex}
 import reactivemongo.core.commands._
 import reactivemongo.play.json.ImplicitBSONHandlers._
