@@ -46,6 +46,16 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       checkCreatedSearchObject(searchObject, expectedPageNumber, expectedPageSize, Set.empty)
     }
 
+    "correctly parse search text filter" in {
+      val searchText = "foo"
+      val request = FakeRequest("GET", s"/applications?search=$searchText")
+
+      val searchObject = new ApplicationSearch(request)
+
+      searchObject.filters.size shouldBe 0
+      searchObject.textToSearch shouldBe searchText
+    }
+
     "correctly parse API Subscriptions filter" in {
       val request = FakeRequest("GET", s"/applications?apiSubscriptions=ANYSUB")
 

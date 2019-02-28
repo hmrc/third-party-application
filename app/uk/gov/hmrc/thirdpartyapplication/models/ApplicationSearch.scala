@@ -18,10 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.mvc.{AnyContent, Request}
 
-class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq[ApplicationSearchFilter]) {
+class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq[ApplicationSearchFilter], var textToSearch: String = "") {
+
+  def this(filters: Seq[ApplicationSearchFilter], textToSearch: String) {
+    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters, textToSearch)
+  }
 
   def this(filters: Seq[ApplicationSearchFilter]) {
-    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters)
+    this(filters, "")
   }
 
   def this() {
@@ -50,7 +54,8 @@ class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq
         }
         .filter(searchFilter => searchFilter.isDefined)
         .flatten
-        .toSeq)
+        .toSeq,
+      request.getQueryString("search").getOrElse(""))
   }
 }
 
@@ -64,16 +69,6 @@ object ApplicationSearch {
 }
 
 sealed trait ApplicationSearchFilter
-
-sealed trait SearchTextFilter extends ApplicationSearchFilter {
-  var text: String
-}
-//case object SearchTextFilter extends SearchTextFilter {
-//  def apply(value: String): SearchTextFilter = {
-//    this.text = value
-//    this
-//  }
-//}
 
 sealed trait APISubscriptionFilter extends ApplicationSearchFilter
 case object OneOrMoreAPISubscriptions extends APISubscriptionFilter

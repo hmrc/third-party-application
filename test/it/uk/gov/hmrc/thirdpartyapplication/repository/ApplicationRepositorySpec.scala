@@ -531,6 +531,40 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       assert(result.size == 1)
       assert(result.head.id == applicationWithSubscriptions.id)
     }
+
+    "return applications with search text matching application id" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application 1"
+
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(Seq(), applicationId.toString)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == applicationId)
+    }
+
+    "return applications with search text matching application name" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application 2"
+
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(Seq(), applicationName)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      assert(result.size == 1)
+      assert(result.head.id == applicationId)
+    }
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
@@ -551,10 +585,21 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
                         access: Access = Standard(Seq.empty, None, None),
                         user: String = "user@example.com"): ApplicationData = {
 
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user)
+  }
+
+  def aNamedApplicationData(id: UUID,
+                            name: String,
+                            prodClientId: String = "aaa",
+                            sandboxClientId: String = "111",
+                            state: ApplicationState = testingState(),
+                            access: Access = Standard(Seq.empty, None, None),
+                            user: String = "user@example.com"): ApplicationData = {
+
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      name,
+      name.toLowerCase,
       Set(Collaborator(user, Role.ADMINISTRATOR)),
       Some("description"),
       "username",

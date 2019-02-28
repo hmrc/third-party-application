@@ -25,7 +25,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command
 import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID, BSONRegex}
 import reactivemongo.core.commands._
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.JSONSerializationPack
@@ -195,12 +195,23 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
         }
     }
 
+    def buildTextSearchClauses(): PipelineOperator = {
+      val searchText = applicationSearch.textToSearch
+      Match(
+        BSONDocument(
+          "$or" ->
+            BSONArray(
+              BSONDocument("id" -> BSONRegex(searchText, "i")),
+              BSONDocument("name" -> BSONRegex(searchText, "i")))))
+    }
+
     def buildQueryCommandDocument(): BSONDocument = {
       def operators: Seq[PipelineOperator] =
         applicationSearch.filters
           .map(filter => convertFilterToQueryClause(filter))
           .union(
             Seq(
+              buildTextSearchClauses(),
               Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
               Limit(applicationSearch.pageSize),
               applicationProjection))
