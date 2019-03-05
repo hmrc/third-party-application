@@ -181,7 +181,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
     val operators: Seq[PipelineOperator] =
       applicationSearch.filters
-        .map(filter => convertFilterToQueryClause(filter))
+        .map(filter => convertFilterToQueryClause(filter, applicationSearch))
         .union(textSearchClauses)
         .union(
           Seq(
@@ -192,14 +192,23 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     runApplicationQueryAggregation(commandQueryDocument(operators))
   }
 
-  private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
+  private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): PipelineOperator = {
     def applicationStatusMatch(state: State): PipelineOperator = Match(BSONDocument("state.name" -> state.toString))
     def accessTypeMatch(accessType: AccessType): PipelineOperator = Match(BSONDocument("access.accessType" -> accessType.toString))
+
+    def specificAPISubscription(apiContext: String, apiVersion: String = "") = {
+      if (apiVersion.isEmpty) {
+        Match(BSONDocument("subscribedApis.apiIdentifier.context" -> apiContext))
+      } else {
+        Match(BSONDocument("subscribedApis.apiIdentifier" -> BSONDocument("context" -> apiContext, "version" -> apiVersion)))
+      }
+    }
 
     applicationSearchFilter match {
       // API Subscriptions
       case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
       case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext, applicationSearch.apiVersion)
 
       // Application Status
       case Created => applicationStatusMatch(State.TESTING)
@@ -254,19 +263,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
   }
 
-  private def lookupByAPI(operators: PipelineOperator*): Future[Seq[ApplicationData]] = {
-    runApplicationQueryAggregation(commandQueryDocument(operators))
-  }
-
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis.apiIdentifier.context" -> apiContext)),
-      applicationProjection)
+    searchApplications(new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = apiContext, apiVersion = ""))
 
   def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis.apiIdentifier" -> BSONDocument("context" -> apiIdentifier.context, "version" -> apiIdentifier.version))),
-      applicationProjection)
+    searchApplications(new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = apiIdentifier.context, apiVersion = apiIdentifier.version))
 
   def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(Seq(NoAPISubscriptions)))
 

@@ -668,6 +668,45 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       result.size shouldBe 1
       result.head.id shouldBe applicationId
     }
+
+    "return applications subscribing to a specific API" in {
+      val expectedAPIContext = "match-this-api"
+      val otherAPIContext = "do-not-match-this-api"
+
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(expectedApplication))
+      await(applicationRepository.save(otherApplication))
+      await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(otherAPIContext, "version-1", otherApplication.id)))
+
+      val applicationSearch = new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = expectedAPIContext, apiVersion = "")
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe expectedApplication.id
+    }
+
+    "return applications subscribing to a specific version of an API" in {
+      val apiContext = "match-this-api"
+      val expectedAPIVersion = "version-1"
+      val otherAPIVersion = "version-2"
+
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(expectedApplication))
+      await(applicationRepository.save(otherApplication))
+      await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
+
+      val applicationSearch = new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = apiContext, apiVersion = expectedAPIVersion)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe expectedApplication.id
+    }
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
