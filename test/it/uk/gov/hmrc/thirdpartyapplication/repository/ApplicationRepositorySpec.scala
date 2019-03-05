@@ -601,6 +601,73 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       result.size shouldBe 1
       result.head.id shouldBe applicationId
     }
+
+    "return applications with terms of use agreed" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val applicationWithTermsOfUseAgreed =
+        aNamedApplicationData(
+          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      val applicationWithNoTermsOfUseAgreed = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+      await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(Seq(TermsOfUseAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val applicationWithNoCheckInformation =
+        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithTermsOfUseAgreed =
+        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      await(applicationRepository.save(applicationWithNoCheckInformation))
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(Seq(TermsOfUseNotAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq())
+
+      val applicationWithNoTermsOfUseAgreed =
+        aNamedApplicationData(
+          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
+      val applicationWithTermsOfUseAgreed =
+        anApplicationData(
+          UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(Seq(TermsOfUseNotAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
@@ -619,9 +686,10 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
                         sandboxClientId: String = "111",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(Seq.empty, None, None),
-                        user: String = "user@example.com"): ApplicationData = {
+                        user: String = "user@example.com",
+                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user)
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user, checkInformation)
   }
 
   def aNamedApplicationData(id: UUID,
@@ -630,7 +698,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
                             sandboxClientId: String = "111",
                             state: ApplicationState = testingState(),
                             access: Access = Standard(Seq.empty, None, None),
-                            user: String = "user@example.com"): ApplicationData = {
+                            user: String = "user@example.com",
+                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     ApplicationData(
       id,
@@ -645,7 +714,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
         EnvironmentToken(prodClientId, nextString(5), nextString(5)),
         EnvironmentToken(sandboxClientId, nextString(5), nextString(5))),
       state,
-      access)
+      access,
+      checkInformation = checkInformation)
   }
 
 }

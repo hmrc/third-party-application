@@ -187,6 +187,15 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
           case Active => Match(BSONDocument("state.name" -> State.PRODUCTION.toString()))
 
           // Terms of Use
+          case TermsOfUseAccepted => Match(BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+          case TermsOfUseNotAccepted =>
+            Match(
+              BSONDocument(
+                "$or" ->
+                  BSONArray(
+                    BSONDocument("checkInformation" -> BSONDocument("$exists" -> false)),
+                    BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$exists" -> false),
+                    BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$size" -> 0))))))
 
           // Access Type
           case StandardAccess => Match(BSONDocument("access.accessType" -> AccessType.STANDARD.toString))
