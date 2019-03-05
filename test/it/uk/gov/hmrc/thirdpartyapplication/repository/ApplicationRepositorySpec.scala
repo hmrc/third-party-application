@@ -541,7 +541,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq(), applicationId.toString)
+      val applicationSearch = new ApplicationSearch(Seq.empty, applicationId.toString)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -558,7 +558,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq(), applicationName)
+      val applicationSearch = new ApplicationSearch(Seq.empty, applicationName)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -594,7 +594,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq(), "application")
+      val applicationSearch = new ApplicationSearch(Seq.empty, "application")
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -650,7 +650,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
 
-      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq())
+      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq.empty
 
       val applicationWithNoTermsOfUseAgreed =
         aNamedApplicationData(
