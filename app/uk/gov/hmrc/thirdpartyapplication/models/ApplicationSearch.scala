@@ -18,7 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.mvc.{AnyContent, Request}
 
-class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq[ApplicationSearchFilter], var textToSearch: String = "") {
+class ApplicationSearch(var pageNumber: Int,
+                        var pageSize: Int,
+                        var filters: Seq[ApplicationSearchFilter],
+                        var textToSearch: String = "",
+                        var apiContext: String = "",
+                        var apiVersion: String = "") {
+
+  def this(filters: Seq[ApplicationSearchFilter], apiContext: String, apiVersion: String) {
+    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters, "", apiContext, apiVersion)
+  }
 
   def this(filters: Seq[ApplicationSearchFilter], textToSearch: String) {
     this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters, textToSearch)
@@ -65,7 +74,17 @@ object ApplicationSearch {
 
     def searchText = request.getQueryString("search").getOrElse("")
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText)
+    if (filters.contains(SpecificAPISubscription)) {
+      new ApplicationSearch(
+        pageNumber,
+        pageSize,
+        filters,
+        searchText,
+        request.getQueryString("apiSubscription").getOrElse(""),
+        request.getQueryString("apiVersion").getOrElse(""))
+    } else {
+      new ApplicationSearch(pageNumber, pageSize, filters, searchText)
+    }
   }
 }
 
@@ -74,12 +93,15 @@ sealed trait ApplicationSearchFilter
 sealed trait APISubscriptionFilter extends ApplicationSearchFilter
 case object OneOrMoreAPISubscriptions extends APISubscriptionFilter
 case object NoAPISubscriptions extends APISubscriptionFilter
+case object SpecificAPISubscription extends APISubscriptionFilter
 
 case object APISubscriptionFilter extends APISubscriptionFilter {
   def apply(value: String): Option[APISubscriptionFilter] = {
+
     value match {
       case "ANYSUB" => Some(OneOrMoreAPISubscriptions)
       case "NOSUB" => Some(NoAPISubscriptions)
+      case _ if !value.isEmpty => Some(SpecificAPISubscription)
       case _ => None
     }
   }

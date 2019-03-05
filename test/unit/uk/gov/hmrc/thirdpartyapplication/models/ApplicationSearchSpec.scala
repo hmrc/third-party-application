@@ -111,7 +111,36 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
         Set(NoAPISubscriptions, Created, TermsOfUseAccepted, ROPCAccess))
     }
 
+    "not return a filter where apiSubscription is included with empty string" in {
+      val request = FakeRequest("GET", "/applications?apiSubscription=")
 
+      val searchObject = ApplicationSearch.fromRequest(request)
+
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set.empty)
+    }
+
+    "populate apiContext if specific value is provided" in {
+      val api = "foo"
+      val request = FakeRequest("GET", s"/applications?apiSubscription=$api")
+
+      val searchObject = ApplicationSearch.fromRequest(request)
+
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(SpecificAPISubscription))
+      searchObject.apiContext shouldBe api
+      searchObject.apiVersion shouldBe ""
+    }
+
+    "populate apiContext and apiVersion if specific values are provided" in {
+      val api = "foo"
+      val apiVersion = "1.0"
+      val request = FakeRequest("GET", s"/applications?apiSubscription=$api&apiVersion=$apiVersion")
+
+      val searchObject = ApplicationSearch.fromRequest(request)
+
+      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(SpecificAPISubscription))
+      searchObject.apiContext shouldBe api
+      searchObject.apiVersion shouldBe apiVersion
+    }
   }
 
   def checkCreatedSearchObject(searchObject: ApplicationSearch,
