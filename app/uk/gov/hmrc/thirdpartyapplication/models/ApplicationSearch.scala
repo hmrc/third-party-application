@@ -29,33 +29,7 @@ class ApplicationSearch(var pageNumber: Int, var pageSize: Int, var filters: Seq
   }
 
   def this() {
-    this(Seq())
-  }
-
-  def this(request: Request[AnyContent]) {
-    this(
-      if (request.getQueryString(ApplicationSearch.PageNumberParameterName).isDefined) {
-        request.getQueryString(ApplicationSearch.PageNumberParameterName).get.toInt
-      } else ApplicationSearch.DefaultPageNumber,
-      if (request.getQueryString(ApplicationSearch.PageSizeParameterName).isDefined) {
-        request.getQueryString(ApplicationSearch.PageSizeParameterName).get.toInt
-      } else ApplicationSearch.DefaultPageSize,
-      request.queryString
-        .map {
-          case (key, value) =>
-            // 'value' is a Seq, but we should only ever have one of each, so just take the head
-            key match {
-              case "apiSubscriptions" => APISubscriptionFilter(value.head)
-              case "status" => ApplicationStatusFilter(value.head)
-              case "termsOfUse" => TermsOfUseStatusFilter(value.head)
-              case "accessType" => AccessTypeFilter(value.head)
-              case _ => None // ignore anything that isn't a search filter
-            }
-        }
-        .filter(searchFilter => searchFilter.isDefined)
-        .flatten
-        .toSeq,
-      request.getQueryString("search").getOrElse(""))
+    this(Seq.empty)
   }
 }
 
@@ -66,6 +40,33 @@ object ApplicationSearch {
   // Set paging defaults that mean we'll get everything back (so that a search specifying only filters will get all relevant results)
   val DefaultPageNumber: Int = 1
   val DefaultPageSize: Int = Int.MaxValue
+
+  def fromRequest(request: Request[AnyContent]): ApplicationSearch = {
+    def pageNumber =
+      if (request.getQueryString(PageNumberParameterName).isDefined) request.getQueryString(PageNumberParameterName).get.toInt else DefaultPageNumber
+    def pageSize =
+      if (request.getQueryString(PageSizeParameterName).isDefined) request.getQueryString(PageSizeParameterName).get.toInt else DefaultPageSize
+
+    def filters = request.queryString
+      .map {
+        case (key, value) =>
+          // 'value' is a Seq, but we should only ever have one of each, so just take the head
+          key match {
+            case "apiSubscription" => APISubscriptionFilter(value.head)
+            case "status" => ApplicationStatusFilter(value.head)
+            case "termsOfUse" => TermsOfUseStatusFilter(value.head)
+            case "accessType" => AccessTypeFilter(value.head)
+            case _ => None // ignore anything that isn't a search filter
+          }
+      }
+      .filter(searchFilter => searchFilter.isDefined)
+      .flatten
+      .toSeq
+
+    def searchText = request.getQueryString("search").getOrElse("")
+
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText)
+  }
 }
 
 sealed trait ApplicationSearchFilter

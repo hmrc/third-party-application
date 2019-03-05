@@ -41,7 +41,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val expectedPageSize: Int = 50
       val request = FakeRequest("GET", s"/applications?page=$expectedPageNumber&pageSize=$expectedPageSize")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(searchObject, expectedPageNumber, expectedPageSize, Set.empty)
     }
@@ -50,16 +50,16 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val searchText = "foo"
       val request = FakeRequest("GET", s"/applications?search=$searchText")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       searchObject.filters.size shouldBe 0
       searchObject.textToSearch shouldBe searchText
     }
 
     "correctly parse API Subscriptions filter" in {
-      val request = FakeRequest("GET", s"/applications?apiSubscriptions=ANYSUB")
+      val request = FakeRequest("GET", s"/applications?apiSubscription=ANYSUB")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(OneOrMoreAPISubscriptions))
     }
@@ -67,7 +67,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Application Status filter" in {
       val request = FakeRequest("GET", s"/applications?status=PENDING_GATEKEEPER_CHECK")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(PendingGatekeeperCheck))
     }
@@ -75,7 +75,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Terms of Use filter" in {
       val request = FakeRequest("GET", s"/applications?termsOfUse=TOU_NOT_ACCEPTED")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(TermsOfUseNotAccepted))
     }
@@ -83,7 +83,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Access Type filter" in {
       val request = FakeRequest("GET", s"/applications?accessType=ACCESS_TYPE_PRIVILEGED")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(PrivilegedAccess))
     }
@@ -95,14 +95,14 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
         FakeRequest(
           "GET",
           s"/applications" +
-            s"?apiSubscriptions=NOSUB" +
+            s"?apiSubscription=NOSUB" +
             s"&status=CREATED" +
             s"&termsOfUse=TOU_ACCEPTED" +
             s"&accessType=ACCESS_TYPE_ROPC" +
             s"&page=$expectedPageNumber" +
             s"&pageSize=$expectedPageSize")
 
-      val searchObject = new ApplicationSearch(request)
+      val searchObject = ApplicationSearch.fromRequest(request)
 
       checkCreatedSearchObject(
         searchObject,
@@ -110,6 +110,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
         expectedPageSize,
         Set(NoAPISubscriptions, Created, TermsOfUseAccepted, ROPCAccess))
     }
+
+
   }
 
   def checkCreatedSearchObject(searchObject: ApplicationSearch,
