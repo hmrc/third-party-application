@@ -31,7 +31,9 @@ import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.JSONSerializationPack
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
+import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
@@ -174,63 +176,61 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
-    def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
-        applicationSearchFilter match {
-          // API Subscriptions
-          case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
-          case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+    val regexTextSearchClauses = regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch)
+    val textSearchClauses = if (regexTextSearchClauses.isDefined) Seq(regexTextSearchClauses.get) else Seq.empty
 
-          // Application Status
-          case Created => Match(BSONDocument("state.name" -> State.TESTING.toString))
-          case PendingGatekeeperCheck => Match(BSONDocument("state.name" -> State.PENDING_GATEKEEPER_APPROVAL.toString))
-          case PendingSubmitterVerification => Match(BSONDocument("state.name" -> State.PENDING_REQUESTER_VERIFICATION.toString))
-          case Active => Match(BSONDocument("state.name" -> State.PRODUCTION.toString()))
+    val operators: Seq[PipelineOperator] =
+      applicationSearch.filters
+        .map(filter => convertFilterToQueryClause(filter))
+        .union(textSearchClauses)
+        .union(
+          Seq(
+            Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
+            Limit(applicationSearch.pageSize),
+            applicationProjection))
 
-          // Terms of Use
-          case TermsOfUseAccepted => Match(BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
-          case TermsOfUseNotAccepted =>
-            Match(
-              BSONDocument(
-                "$or" ->
-                  BSONArray(
-                    BSONDocument("checkInformation" -> BSONDocument("$exists" -> false)),
-                    BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$exists" -> false),
-                    BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$size" -> 0))))))
+    runApplicationQueryAggregation(commandQueryDocument(operators))
+  }
 
-          // Access Type
-          case StandardAccess => Match(BSONDocument("access.accessType" -> AccessType.STANDARD.toString))
-          case ROPCAccess => Match(BSONDocument("access.accessType" -> AccessType.ROPC.toString))
-          case PrivilegedAccess => Match(BSONDocument("access.accessType" -> AccessType.PRIVILEGED.toString))
-        }
+  private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter): PipelineOperator = {
+    def applicationStatusMatch(state: State): PipelineOperator = Match(BSONDocument("state.name" -> state.toString))
+    def accessTypeMatch(accessType: AccessType): PipelineOperator = Match(BSONDocument("access.accessType" -> accessType.toString))
+
+    applicationSearchFilter match {
+      // API Subscriptions
+      case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
+      case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+
+      // Application Status
+      case Created => applicationStatusMatch(State.TESTING)
+      case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case Active => applicationStatusMatch(State.PRODUCTION)
+
+      // Terms of Use
+      case TermsOfUseAccepted => Match(BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+      case TermsOfUseNotAccepted =>
+        Match(
+          BSONDocument(
+            "$or" ->
+              BSONArray(
+                BSONDocument("checkInformation" -> BSONDocument("$exists" -> false)),
+                BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$exists" -> false),
+                  BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$size" -> 0))))))
+
+      // Access Type
+      case StandardAccess => accessTypeMatch(AccessType.STANDARD)
+      case ROPCAccess => accessTypeMatch(AccessType.ROPC)
+      case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
     }
+  }
 
-    def buildTextSearchClauses(): PipelineOperator = {
-      val searchText = applicationSearch.textToSearch
-      Match(
-        BSONDocument(
-          "$or" ->
-            BSONArray(
-              BSONDocument("id" -> BSONRegex(searchText, "i")),
-              BSONDocument("name" -> BSONRegex(searchText, "i")))))
+  private def regexTextSearch(fields: Seq[String], searchText: String): Option[PipelineOperator] = {
+    if (!searchText.isEmpty) {
+      Some(Match(BSONDocument("$or" -> BSONArray(fields.map(field => BSONDocument(field -> BSONRegex(searchText, "i")))))))
+    } else {
+      None
     }
-
-    def buildQueryCommandDocument(): BSONDocument = {
-      def operators: Seq[PipelineOperator] =
-        applicationSearch.filters
-          .map(filter => convertFilterToQueryClause(filter))
-          .union(
-            Seq(
-              buildTextSearchClauses(),
-              Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
-              Limit(applicationSearch.pageSize),
-              applicationProjection))
-
-      BSONDocument(
-        "aggregate" -> "application",
-        "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
-    }
-
-    runApplicationQueryAggregation(buildQueryCommandDocument())
   }
 
   private def runApplicationQueryAggregation(commandDocument: BSONDocument): Future[Seq[ApplicationData]] = {
@@ -248,12 +248,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
-  private def lookupByAPI(operators: PipelineOperator*): Future[Seq[ApplicationData]] = {
-    val commandDoc: BSONDocument = BSONDocument(
+  private def commandQueryDocument(operators: Seq[PipelineOperator]): BSONDocument = {
+    BSONDocument(
       "aggregate" -> "application",
       "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
+  }
 
-    runApplicationQueryAggregation(commandDoc)
+  private def lookupByAPI(operators: PipelineOperator*): Future[Seq[ApplicationData]] = {
+    runApplicationQueryAggregation(commandQueryDocument(operators))
   }
 
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
@@ -278,3 +280,4 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 sealed trait ApplicationModificationResult
 final case class SuccessfulApplicationModificationResult(numberOfDocumentsUpdated: Int) extends ApplicationModificationResult
 final case class UnsuccessfulApplicationModificationResult(message: Option[String]) extends ApplicationModificationResult
+
