@@ -650,7 +650,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
 
-      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq.empty
+      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq.empty)
 
       val applicationWithNoTermsOfUseAgreed =
         aNamedApplicationData(
