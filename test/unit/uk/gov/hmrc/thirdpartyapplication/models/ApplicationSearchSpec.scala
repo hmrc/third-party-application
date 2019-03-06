@@ -52,7 +52,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      searchObject.filters.size shouldBe 0
+      searchObject.filters.size shouldBe 1
+      assert(searchObject.filters.contains(ApplicationTextSearch))
       searchObject.textToSearch shouldBe searchText
     }
 
@@ -91,14 +92,20 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parses multiple filters" in {
       val expectedPageNumber: Int = 3
       val expectedPageSize: Int = 250
+      val expectedSearchText: String = "foo"
+      val expectedAPIContext = "test-api"
+      val expectedAPIVersion = "v1"
+
       val request =
         FakeRequest(
           "GET",
           s"/applications" +
-            s"?apiSubscription=NOSUB" +
+            s"?apiSubscription=$expectedAPIContext" +
+            s"&apiVersion=$expectedAPIVersion" +
             s"&status=CREATED" +
             s"&termsOfUse=TOU_ACCEPTED" +
             s"&accessType=ACCESS_TYPE_ROPC" +
+            s"&search=$expectedSearchText" +
             s"&page=$expectedPageNumber" +
             s"&pageSize=$expectedPageSize")
 
@@ -108,7 +115,10 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
         searchObject,
         expectedPageNumber,
         expectedPageSize,
-        Set(NoAPISubscriptions, Created, TermsOfUseAccepted, ROPCAccess))
+        Set(SpecificAPISubscription, Created, TermsOfUseAccepted, ROPCAccess, ApplicationTextSearch),
+        expectedSearchText,
+        expectedAPIContext,
+        expectedAPIVersion)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {
@@ -125,9 +135,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(SpecificAPISubscription))
-      searchObject.apiContext shouldBe api
-      searchObject.apiVersion shouldBe ""
+      checkCreatedSearchObject(
+        searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(SpecificAPISubscription), expectedAPIContext = api)
     }
 
     "populate apiContext and apiVersion if specific values are provided" in {
@@ -137,19 +146,29 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, Set(SpecificAPISubscription))
-      searchObject.apiContext shouldBe api
-      searchObject.apiVersion shouldBe apiVersion
+      checkCreatedSearchObject(
+        searchObject,
+        ApplicationSearch.DefaultPageNumber,
+        ApplicationSearch.DefaultPageSize,
+        Set(SpecificAPISubscription),
+        expectedAPIContext = api,
+        expectedAPIVersion = apiVersion)
     }
   }
 
   def checkCreatedSearchObject(searchObject: ApplicationSearch,
                                expectedPageNumber: Int,
                                expectedPageSize: Int,
-                               expectedFilters: Set[ApplicationSearchFilter]): Unit = {
+                               expectedFilters: Set[ApplicationSearchFilter],
+                               expectedSearchText: String = "",
+                               expectedAPIContext: String = "",
+                               expectedAPIVersion: String = ""): Unit = {
     searchObject.pageNumber shouldEqual expectedPageNumber
     searchObject.pageSize shouldEqual expectedPageSize
     searchObject.filters.size shouldEqual expectedFilters.size
     searchObject.filters.toSet shouldEqual expectedFilters
+    searchObject.textToSearch shouldEqual expectedSearchText
+    searchObject.apiContext shouldEqual expectedAPIContext
+    searchObject.apiVersion shouldEqual expectedAPIVersion
   }
 }

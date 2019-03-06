@@ -541,7 +541,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq.empty, applicationId.toString)
+      val applicationSearch = new ApplicationSearch(Seq(ApplicationTextSearch), applicationId.toString)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -558,7 +558,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq.empty, applicationName)
+      val applicationSearch = new ApplicationSearch(Seq(ApplicationTextSearch), applicationName)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -594,7 +594,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(Seq.empty, "application")
+      val applicationSearch = new ApplicationSearch(Seq(ApplicationTextSearch), "application")
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 

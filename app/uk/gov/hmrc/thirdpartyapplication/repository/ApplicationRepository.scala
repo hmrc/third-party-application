@@ -176,13 +176,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
-    val regexTextSearchClauses = regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch)
-    val textSearchClauses = if (regexTextSearchClauses.isDefined) Seq(regexTextSearchClauses.get) else Seq.empty
-
-    val operators: Seq[PipelineOperator] =
+    def operators: Seq[PipelineOperator] =
       applicationSearch.filters
         .map(filter => convertFilterToQueryClause(filter, applicationSearch))
-        .union(textSearchClauses)
         .union(
           Seq(
             Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
@@ -231,16 +227,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       case StandardAccess => accessTypeMatch(AccessType.STANDARD)
       case ROPCAccess => accessTypeMatch(AccessType.ROPC)
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
+
+      // Text Search
+      case ApplicationTextSearch => regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch)
     }
   }
 
-  private def regexTextSearch(fields: Seq[String], searchText: String): Option[PipelineOperator] = {
-    if (!searchText.isEmpty) {
-      Some(Match(BSONDocument("$or" -> BSONArray(fields.map(field => BSONDocument(field -> BSONRegex(searchText, "i")))))))
-    } else {
-      None
-    }
-  }
+  private def regexTextSearch(fields: Seq[String], searchText: String): PipelineOperator =
+    Match(BSONDocument("$or" -> BSONArray(fields.map(field => BSONDocument(field -> BSONRegex(searchText, "i"))))))
 
   private def runApplicationQueryAggregation(commandDocument: BSONDocument): Future[Seq[ApplicationData]] = {
     val runner = Command.run(JSONSerializationPack, FailoverStrategy())

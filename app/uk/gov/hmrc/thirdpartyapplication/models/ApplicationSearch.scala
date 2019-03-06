@@ -61,6 +61,7 @@ object ApplicationSearch {
         case (key, value) =>
           // 'value' is a Seq, but we should only ever have one of each, so just take the head
           key match {
+            case "search" => TextSearchFilter(value.head)
             case "apiSubscription" => APISubscriptionFilter(value.head)
             case "status" => ApplicationStatusFilter(value.head)
             case "termsOfUse" => TermsOfUseStatusFilter(value.head)
@@ -72,23 +73,27 @@ object ApplicationSearch {
       .flatten
       .toSeq
 
-    def searchText = request.getQueryString("search").getOrElse("")
+    def searchText = if(filters.contains(ApplicationTextSearch)) request.getQueryString("search").getOrElse("") else ""
+    def apiSubscription = if(filters.contains(SpecificAPISubscription)) request.getQueryString("apiSubscription").getOrElse("") else ""
+    def apiVersion = if(filters.contains(SpecificAPISubscription)) request.getQueryString("apiVersion").getOrElse("") else ""
 
-    if (filters.contains(SpecificAPISubscription)) {
-      new ApplicationSearch(
-        pageNumber,
-        pageSize,
-        filters,
-        searchText,
-        request.getQueryString("apiSubscription").getOrElse(""),
-        request.getQueryString("apiVersion").getOrElse(""))
-    } else {
-      new ApplicationSearch(pageNumber, pageSize, filters, searchText)
-    }
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiSubscription, apiVersion)
   }
 }
 
 sealed trait ApplicationSearchFilter
+
+sealed trait TextSearchFilter extends ApplicationSearchFilter
+case object ApplicationTextSearch extends TextSearchFilter
+
+case object TextSearchFilter extends TextSearchFilter {
+  def apply(value: String): Option[TextSearchFilter] = {
+    value match {
+      case _ if !value.isEmpty => Some(ApplicationTextSearch)
+      case _ => None
+    }
+  }
+}
 
 sealed trait APISubscriptionFilter extends ApplicationSearchFilter
 case object OneOrMoreAPISubscriptions extends APISubscriptionFilter
@@ -101,7 +106,7 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
     value match {
       case "ANYSUB" => Some(OneOrMoreAPISubscriptions)
       case "NOSUB" => Some(NoAPISubscriptions)
-      case _ if !value.isEmpty => Some(SpecificAPISubscription)
+      case _ if !value.isEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
       case _ => None
     }
   }
