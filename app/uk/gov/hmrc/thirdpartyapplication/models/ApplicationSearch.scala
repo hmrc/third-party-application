@@ -104,8 +104,8 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
   def apply(value: String): Option[APISubscriptionFilter] = {
 
     value match {
-      case "ANYSUB" => Some(OneOrMoreAPISubscriptions)
-      case "NOSUB" => Some(NoAPISubscriptions)
+      case "ANY" => Some(OneOrMoreAPISubscriptions)
+      case "NONE" => Some(NoAPISubscriptions)
       case _ if !value.isEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
       case _ => None
     }
@@ -136,8 +136,8 @@ case object TermsOfUseAccepted extends TermsOfUseFilter
 case object TermsOfUseStatusFilter extends TermsOfUseFilter {
   def apply(value: String): Option[TermsOfUseFilter] = {
     value match {
-      case "TOU_NOT_ACCEPTED" => Some(TermsOfUseNotAccepted)
-      case "TOU_ACCEPTED" => Some(TermsOfUseAccepted)
+      case "NOT_ACCEPTED" => Some(TermsOfUseNotAccepted)
+      case "ACCEPTED" => Some(TermsOfUseAccepted)
       case _ => None
     }
   }
@@ -151,9 +151,9 @@ case object PrivilegedAccess extends AccessTypeFilter
 case object AccessTypeFilter extends AccessTypeFilter {
   def apply(value: String): Option[AccessTypeFilter] = {
     value match {
-      case "ACCESS_TYPE_STANDARD" => Some(StandardAccess)
-      case "ACCESS_TYPE_ROPC" => Some(ROPCAccess)
-      case "ACCESS_TYPE_PRIVILEGED" => Some(PrivilegedAccess)
+      case "STANDARD" => Some(StandardAccess)
+      case "ROPC" => Some(ROPCAccess)
+      case "PRIVILEGED" => Some(PrivilegedAccess)
       case _ => None
     }
   }

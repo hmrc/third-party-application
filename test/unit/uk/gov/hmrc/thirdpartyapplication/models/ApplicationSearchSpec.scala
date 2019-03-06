@@ -58,7 +58,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     }
 
     "correctly parse API Subscriptions filter" in {
-      val request = FakeRequest("GET", s"/applications?apiSubscription=ANYSUB")
+      val request = FakeRequest("GET", s"/applications?apiSubscription=ANY")
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
@@ -74,7 +74,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     }
 
     "correctly parse Terms of Use filter" in {
-      val request = FakeRequest("GET", s"/applications?termsOfUse=TOU_NOT_ACCEPTED")
+      val request = FakeRequest("GET", s"/applications?termsOfUse=NOT_ACCEPTED")
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
@@ -82,7 +82,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     }
 
     "correctly parse Access Type filter" in {
-      val request = FakeRequest("GET", s"/applications?accessType=ACCESS_TYPE_PRIVILEGED")
+      val request = FakeRequest("GET", s"/applications?accessType=PRIVILEGED")
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
@@ -103,8 +103,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
             s"?apiSubscription=$expectedAPIContext" +
             s"&apiVersion=$expectedAPIVersion" +
             s"&status=CREATED" +
-            s"&termsOfUse=TOU_ACCEPTED" +
-            s"&accessType=ACCESS_TYPE_ROPC" +
+            s"&termsOfUse=ACCEPTED" +
+            s"&accessType=ROPC" +
             s"&search=$expectedSearchText" +
             s"&page=$expectedPageNumber" +
             s"&pageSize=$expectedPageSize")
