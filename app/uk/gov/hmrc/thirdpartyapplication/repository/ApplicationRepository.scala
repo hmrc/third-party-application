@@ -258,12 +258,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
-    searchApplications(new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = apiContext, apiVersion = ""))
+    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = apiContext))
 
   def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
-    searchApplications(new ApplicationSearch(Seq(SpecificAPISubscription), apiContext = apiIdentifier.context, apiVersion = apiIdentifier.version))
+    searchApplications(ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = apiIdentifier.context, apiVersion = apiIdentifier.version))
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(Seq(NoAPISubscriptions)))
+  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions)))
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch())
 

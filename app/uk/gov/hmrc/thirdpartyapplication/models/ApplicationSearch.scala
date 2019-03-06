@@ -18,41 +18,23 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.mvc.{AnyContent, Request}
 
-class ApplicationSearch(var pageNumber: Int,
-                        var pageSize: Int,
-                        var filters: Seq[ApplicationSearchFilter],
+case class ApplicationSearch(var pageNumber: Int = 1,
+                        var pageSize: Int = Int.MaxValue,
+                        var filters: Seq[ApplicationSearchFilter] = Seq(),
                         var textToSearch: String = "",
                         var apiContext: String = "",
-                        var apiVersion: String = "") {
-
-  def this(filters: Seq[ApplicationSearchFilter], apiContext: String, apiVersion: String) {
-    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters, "", apiContext, apiVersion)
-  }
-
-  def this(filters: Seq[ApplicationSearchFilter], textToSearch: String) {
-    this(ApplicationSearch.DefaultPageNumber, ApplicationSearch.DefaultPageSize, filters, textToSearch)
-  }
-
-  def this(filters: Seq[ApplicationSearchFilter]) {
-    this(filters, "")
-  }
-
-  def this() {
-    this(Seq.empty)
-  }
-}
+                        var apiVersion: String = "")
 
 object ApplicationSearch {
-  val PageNumberParameterName = "page"
-  val PageSizeParameterName = "pageSize"
+  private val PageNumberParameterName = "page"
+  private val PageSizeParameterName = "pageSize"
 
   // Set paging defaults that mean we'll get everything back (so that a search specifying only filters will get all relevant results)
-  val DefaultPageNumber: Int = 1
-  val DefaultPageSize: Int = Int.MaxValue
+  private val DefaultPageNumber = "1"
+  private val DefaultPageSize: Int = Int.MaxValue
 
   def fromRequest(request: Request[AnyContent]): ApplicationSearch = {
-    def pageNumber =
-      if (request.getQueryString(PageNumberParameterName).isDefined) request.getQueryString(PageNumberParameterName).get.toInt else DefaultPageNumber
+    def pageNumber = request.getQueryString(PageNumberParameterName).getOrElse("1").toInt
     def pageSize =
       if (request.getQueryString(PageSizeParameterName).isDefined) request.getQueryString(PageSizeParameterName).get.toInt else DefaultPageSize
 
