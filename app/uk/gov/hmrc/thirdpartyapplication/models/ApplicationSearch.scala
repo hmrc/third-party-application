@@ -26,17 +26,9 @@ case class ApplicationSearch(var pageNumber: Int = 1,
                         var apiVersion: String = "")
 
 object ApplicationSearch {
-  private val PageNumberParameterName = "page"
-  private val PageSizeParameterName = "pageSize"
-
-  // Set paging defaults that mean we'll get everything back (so that a search specifying only filters will get all relevant results)
-  private val DefaultPageNumber = "1"
-  private val DefaultPageSize: Int = Int.MaxValue
-
   def fromRequest(request: Request[AnyContent]): ApplicationSearch = {
-    def pageNumber = request.getQueryString(PageNumberParameterName).getOrElse("1").toInt
-    def pageSize =
-      if (request.getQueryString(PageSizeParameterName).isDefined) request.getQueryString(PageSizeParameterName).get.toInt else DefaultPageSize
+    def pageNumber = request.queryString.getOrElse("page", Seq("1")).head.toInt
+    def pageSize = request.queryString.getOrElse("pageSize", Seq(Int.MaxValue.toString)).head.toInt
 
     def filters = request.queryString
       .map {
