@@ -541,7 +541,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = applicationId.toString)
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationId.toString))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -558,7 +558,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = applicationName)
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationName))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -577,7 +577,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess), textToSearch = applicationName)
+      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess), textToSearch = Some(applicationName))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -594,7 +594,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = "application")
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some("application"))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -680,7 +680,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
       await(subscriptionRepository.insert(aSubscriptionData(otherAPIContext, "version-1", otherApplication.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = expectedAPIContext, apiVersion = "")
+      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(expectedAPIContext), apiVersion = Some(""))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -700,7 +700,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = apiContext, apiVersion = expectedAPIVersion)
+      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 

@@ -18,17 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.mvc.{AnyContent, Request}
 
-case class ApplicationSearch(var pageNumber: Int = 1,
-                        var pageSize: Int = Int.MaxValue,
-                        var filters: Seq[ApplicationSearchFilter] = Seq(),
-                        var textToSearch: String = "",
-                        var apiContext: String = "",
-                        var apiVersion: String = "")
+case class ApplicationSearch(pageNumber: Int = 1,
+                             pageSize: Int = Int.MaxValue,
+                             filters: Seq[ApplicationSearchFilter] = Seq(),
+                             textToSearch: Option[String] = None,
+                             apiContext: Option[String] = None,
+                             apiVersion: Option[String] = None)
 
 object ApplicationSearch {
   def fromRequest(request: Request[AnyContent]): ApplicationSearch = {
-    def pageNumber = request.queryString.getOrElse("page", Seq("1")).head.toInt
-    def pageSize = request.queryString.getOrElse("pageSize", Seq(Int.MaxValue.toString)).head.toInt
+    def pageNumber = request.queryString.getOrElse("page", Seq()).headOption.getOrElse("1").toInt
+    def pageSize = request.queryString.getOrElse("pageSize", Seq()).headOption.getOrElse(Int.MaxValue.toString).toInt
 
     def filters = request.queryString
       .map {
@@ -47,9 +47,9 @@ object ApplicationSearch {
       .flatten
       .toSeq
 
-    def searchText = if(filters.contains(ApplicationTextSearch)) request.getQueryString("search").getOrElse("") else ""
-    def apiSubscription = if(filters.contains(SpecificAPISubscription)) request.getQueryString("apiSubscription").getOrElse("") else ""
-    def apiVersion = if(filters.contains(SpecificAPISubscription)) request.getQueryString("apiVersion").getOrElse("") else ""
+    def searchText = request.getQueryString("search")
+    def apiSubscription = request.getQueryString("apiSubscription")
+    def apiVersion = request.getQueryString("apiVersion")
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiSubscription, apiVersion)
   }

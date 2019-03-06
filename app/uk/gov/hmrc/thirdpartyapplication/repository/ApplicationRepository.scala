@@ -204,7 +204,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       // API Subscriptions
       case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
       case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
-      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext, applicationSearch.apiVersion)
+      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.getOrElse(""), applicationSearch.apiVersion.getOrElse(""))
 
       // Application Status
       case Created => applicationStatusMatch(State.TESTING)
@@ -229,7 +229,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
-      case ApplicationTextSearch => regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch)
+      case ApplicationTextSearch => regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch.getOrElse(""))
     }
   }
 
@@ -258,10 +258,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = apiContext))
+    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiContext)))
 
   def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
-    searchApplications(ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = apiIdentifier.context, apiVersion = apiIdentifier.version))
+    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
+      apiVersion= Some(apiIdentifier.version)))
 
   def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions)))
 

@@ -26,15 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with MockitoSugar with Matchers {
 
   "ApplicationSearch" should {
-    "set appropriate defaults for no-arg constructor" in {
-      checkCreatedSearchObject(new ApplicationSearch(), expectedFilters =  Set.empty)
-    }
-
-    "set appropriate defaults for paging values" in {
-      val searchObject = new ApplicationSearch(filters = Seq(OneOrMoreAPISubscriptions, ROPCAccess))
-
-      checkCreatedSearchObject(searchObject, expectedFilters = Set(OneOrMoreAPISubscriptions, ROPCAccess))
-    }
 
     "correctly parse page number and size" in {
       val expectedPageNumber: Int = 2
@@ -43,7 +34,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedPageNumber, expectedPageSize, Set.empty)
+      searchObject.pageNumber shouldBe expectedPageNumber
+      searchObject.pageSize shouldBe expectedPageSize
     }
 
     "correctly parse search text filter" in {
@@ -53,8 +45,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val searchObject = ApplicationSearch.fromRequest(request)
 
       searchObject.filters.size shouldBe 1
-      assert(searchObject.filters.contains(ApplicationTextSearch))
-      searchObject.textToSearch shouldBe searchText
+      searchObject.filters should contain (ApplicationTextSearch)
+      searchObject.textToSearch shouldBe Some(searchText)
     }
 
     "correctly parse API Subscriptions filter" in {
@@ -62,7 +54,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedFilters = Set(OneOrMoreAPISubscriptions))
+      searchObject.filters should contain (OneOrMoreAPISubscriptions)
     }
 
     "correctly parse Application Status filter" in {
@@ -70,7 +62,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedFilters = Set(PendingGatekeeperCheck))
+      searchObject.filters should contain (PendingGatekeeperCheck)
     }
 
     "correctly parse Terms of Use filter" in {
@@ -78,7 +70,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedFilters = Set(TermsOfUseNotAccepted))
+      searchObject.filters should contain (TermsOfUseNotAccepted)
     }
 
     "correctly parse Access Type filter" in {
@@ -86,7 +78,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedFilters = Set(PrivilegedAccess))
+      searchObject.filters should contain (PrivilegedAccess)
     }
 
     "correctly parses multiple filters" in {
@@ -111,14 +103,9 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(
-        searchObject,
-        expectedPageNumber,
-        expectedPageSize,
-        Set(SpecificAPISubscription, Created, TermsOfUseAccepted, ROPCAccess, ApplicationTextSearch),
-        expectedSearchText,
-        expectedAPIContext,
-        expectedAPIVersion)
+      searchObject.filters should contain (SpecificAPISubscription)
+      searchObject.filters should contain (Created)
+      searchObject.filters should contain (TermsOfUseAccepted)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {
@@ -126,7 +113,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(searchObject, expectedFilters = Set.empty)
+      searchObject.filters shouldBe empty
     }
 
     "populate apiContext if specific value is provided" in {
@@ -135,8 +122,8 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(
-        searchObject, expectedFilters = Set(SpecificAPISubscription), expectedAPIContext = api)
+      searchObject.apiContext shouldBe Some(api)
+      searchObject.filters should contain (SpecificAPISubscription)
     }
 
     "populate apiContext and apiVersion if specific values are provided" in {
@@ -146,27 +133,9 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
 
       val searchObject = ApplicationSearch.fromRequest(request)
 
-      checkCreatedSearchObject(
-        searchObject,
-        expectedFilters = Set(SpecificAPISubscription),
-        expectedAPIContext = api,
-        expectedAPIVersion = apiVersion)
+      searchObject.filters should contain (SpecificAPISubscription)
+      searchObject.apiContext shouldBe Some(api)
+      searchObject.apiVersion shouldBe Some(apiVersion)
     }
-  }
-
-  def checkCreatedSearchObject(searchObject: ApplicationSearch,
-                               expectedPageNumber: Int = 1,
-                               expectedPageSize: Int = Int.MaxValue,
-                               expectedFilters: Set[ApplicationSearchFilter] = Set.empty,
-                               expectedSearchText: String = "",
-                               expectedAPIContext: String = "",
-                               expectedAPIVersion: String = ""): Unit = {
-    searchObject.pageNumber shouldEqual expectedPageNumber
-    searchObject.pageSize shouldEqual expectedPageSize
-    searchObject.filters.size shouldEqual expectedFilters.size
-    searchObject.filters.toSet shouldEqual expectedFilters
-    searchObject.textToSearch shouldEqual expectedSearchText
-    searchObject.apiContext shouldEqual expectedAPIContext
-    searchObject.apiVersion shouldEqual expectedAPIVersion
   }
 }
