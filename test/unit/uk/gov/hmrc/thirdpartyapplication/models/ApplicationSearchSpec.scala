@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.models._
 
 
-class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with MockitoSugar with Matchers {
+class ApplicationSearchSpec extends UnitSpec with MockitoSugar with Matchers {
 
   "ApplicationSearch" should {
 
@@ -32,7 +32,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val expectedPageSize: Int = 50
       val request = FakeRequest("GET", s"/applications?page=$expectedPageNumber&pageSize=$expectedPageSize")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.pageNumber shouldBe expectedPageNumber
       searchObject.pageSize shouldBe expectedPageSize
@@ -42,7 +42,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val searchText = "foo"
       val request = FakeRequest("GET", s"/applications?search=$searchText")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters.size shouldBe 1
       searchObject.filters should contain (ApplicationTextSearch)
@@ -52,7 +52,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse API Subscriptions filter" in {
       val request = FakeRequest("GET", s"/applications?apiSubscription=ANY")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (OneOrMoreAPISubscriptions)
     }
@@ -60,7 +60,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Application Status filter" in {
       val request = FakeRequest("GET", s"/applications?status=PENDING_GATEKEEPER_CHECK")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (PendingGatekeeperCheck)
     }
@@ -68,7 +68,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Terms of Use filter" in {
       val request = FakeRequest("GET", s"/applications?termsOfUse=NOT_ACCEPTED")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (TermsOfUseNotAccepted)
     }
@@ -76,7 +76,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "correctly parse Access Type filter" in {
       val request = FakeRequest("GET", s"/applications?accessType=PRIVILEGED")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (PrivilegedAccess)
     }
@@ -101,7 +101,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
             s"&page=$expectedPageNumber" +
             s"&pageSize=$expectedPageSize")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (SpecificAPISubscription)
       searchObject.filters should contain (Created)
@@ -111,7 +111,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
     "not return a filter where apiSubscription is included with empty string" in {
       val request = FakeRequest("GET", "/applications?apiSubscription=")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters shouldBe empty
     }
@@ -120,7 +120,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val api = "foo"
       val request = FakeRequest("GET", s"/applications?apiSubscription=$api")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.apiContext shouldBe Some(api)
       searchObject.filters should contain (SpecificAPISubscription)
@@ -131,7 +131,7 @@ class ApplicationSearchSpec extends UnitSpec with WithFakeApplication with Mocki
       val apiVersion = "1.0"
       val request = FakeRequest("GET", s"/applications?apiSubscription=$api&apiVersion=$apiVersion")
 
-      val searchObject = ApplicationSearch.fromRequest(request)
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api)

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import play.api.mvc.{AnyContent, Request}
-
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
                              filters: Seq[ApplicationSearchFilter] = Seq(),
@@ -26,11 +24,11 @@ case class ApplicationSearch(pageNumber: Int = 1,
                              apiVersion: Option[String] = None)
 
 object ApplicationSearch {
-  def fromRequest(request: Request[AnyContent]): ApplicationSearch = {
-    def pageNumber = request.queryString.getOrElse("page", Seq()).headOption.getOrElse("1").toInt
-    def pageSize = request.queryString.getOrElse("pageSize", Seq()).headOption.getOrElse(Int.MaxValue.toString).toInt
+  def fromQueryString(queryString: Map[String, Seq[String]]): ApplicationSearch = {
+    def pageNumber = queryString.getOrElse("page", Seq()).headOption.getOrElse("1").toInt
+    def pageSize = queryString.getOrElse("pageSize", Seq()).headOption.getOrElse(Int.MaxValue.toString).toInt
 
-    def filters = request.queryString
+    def filters = queryString
       .map {
         case (key, value) =>
           // 'value' is a Seq, but we should only ever have one of each, so just take the head
@@ -47,9 +45,9 @@ object ApplicationSearch {
       .flatten
       .toSeq
 
-    def searchText = request.getQueryString("search")
-    def apiSubscription = request.getQueryString("apiSubscription")
-    def apiVersion = request.getQueryString("apiVersion")
+    def searchText = queryString.getOrElse("search", Seq()).headOption
+    def apiSubscription = queryString.getOrElse("apiSubscription", Seq()).headOption
+    def apiVersion = queryString.getOrElse("apiVersion", Seq()).headOption
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiSubscription, apiVersion)
   }
