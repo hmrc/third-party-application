@@ -2,6 +2,8 @@
 
 GET           /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 
+GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications
+
 GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /application/wso2-credentials                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchWso2Credentials(clientId: String)
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()

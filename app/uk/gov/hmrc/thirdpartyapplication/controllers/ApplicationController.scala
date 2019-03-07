@@ -209,6 +209,10 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
+  def searchApplications = Action.async { implicit request =>
+    applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
+  }
+
   private def fetchByServerToken(serverToken: String) = {
     applicationService.fetchByServerToken(serverToken).map {
       case Some(application) => Ok(toJson(application))

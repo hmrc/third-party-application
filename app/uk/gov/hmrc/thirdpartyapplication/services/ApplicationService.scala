@@ -265,6 +265,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+  def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationResponse]] = {
+    applicationRepository.searchApplications(applicationSearch).map {
+      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+    }
+  }
+
   def requestUplift(applicationId: UUID, applicationName: String,
                     requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 

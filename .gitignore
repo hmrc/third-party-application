@@ -1,5 +1,6 @@
 
 logs
+classes
 project/project
 project/target
 target
@@ -22,5 +23,3 @@ node_modules/
 npm-debug.log
 yarn-debug.log
 yarn-error.log
-
-    
