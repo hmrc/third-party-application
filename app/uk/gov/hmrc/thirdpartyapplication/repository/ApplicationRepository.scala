@@ -24,14 +24,17 @@ import play.api.libs.json.Json._
 import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command
-import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID}
-import reactivemongo.core.commands.{Match, PipelineOperator, Project}
+import reactivemongo.api.{FailoverStrategy, ReadPreference}
+import reactivemongo.bson.{BSONArray, BSONBoolean, BSONDocument, BSONObjectID, BSONRegex}
+import reactivemongo.core.commands._
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import reactivemongo.play.json.JSONSerializationPack
-import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
+import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
+import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,6 +46,13 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats) {
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  private val subscriptionsLookup: BSONDocument = BSONDocument(
+    "$lookup" -> BSONDocument(
+      "from" -> "subscription",
+      "localField" -> "id",
+      "foreignField" -> "applications",
+      "as" -> "subscribedApis"))
 
   private val applicationProjection = Project(
     "id" -> BSONBoolean(true),
@@ -165,6 +175,75 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     find("collaborators.emailAddress" -> emailAddress, "environment" -> environment)
   }
 
+  def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationData]] = {
+    def operators: Seq[PipelineOperator] =
+      applicationSearch.filters
+        .map(filter => convertFilterToQueryClause(filter, applicationSearch))
+        .union(
+          Seq(
+            Skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
+            Limit(applicationSearch.pageSize),
+            applicationProjection))
+
+    runApplicationQueryAggregation(commandQueryDocument(operators))
+  }
+
+  private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): PipelineOperator = {
+    def applicationStatusMatch(state: State): PipelineOperator = Match(BSONDocument("state.name" -> state.toString))
+    def accessTypeMatch(accessType: AccessType): PipelineOperator = Match(BSONDocument("access.accessType" -> accessType.toString))
+
+    def specificAPISubscription(apiContext: String, apiVersion: String = "") = {
+      if (apiVersion.isEmpty) {
+        Match(BSONDocument("subscribedApis.apiIdentifier.context" -> apiContext))
+      } else {
+        Match(BSONDocument("subscribedApis.apiIdentifier" -> BSONDocument("context" -> apiContext, "version" -> apiVersion)))
+      }
+    }
+
+    applicationSearchFilter match {
+      // API Subscriptions
+      case NoAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0)))
+      case OneOrMoreAPISubscriptions => Match(BSONDocument("subscribedApis" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.getOrElse(""), applicationSearch.apiVersion.getOrElse(""))
+
+      // Application Status
+      case Created => applicationStatusMatch(State.TESTING)
+      case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case Active => applicationStatusMatch(State.PRODUCTION)
+
+      // Terms of Use
+      case TermsOfUseAccepted => Match(BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$gt" -> BSONDocument("$size" -> 0))))
+      case TermsOfUseNotAccepted =>
+        Match(
+          BSONDocument(
+            "$or" ->
+              BSONArray(
+                BSONDocument("checkInformation" -> BSONDocument("$exists" -> false)),
+                BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$exists" -> false),
+                  BSONDocument("checkInformation.termsOfUseAgreements" -> BSONDocument("$size" -> 0))))))
+
+      // Access Type
+      case StandardAccess => accessTypeMatch(AccessType.STANDARD)
+      case ROPCAccess => accessTypeMatch(AccessType.ROPC)
+      case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
+
+      // Text Search
+      case ApplicationTextSearch => regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch.getOrElse(""))
+    }
+  }
+
+  private def regexTextSearch(fields: Seq[String], searchText: String): PipelineOperator =
+    Match(BSONDocument("$or" -> BSONArray(fields.map(field => BSONDocument(field -> BSONRegex(searchText, "i"))))))
+
+  private def runApplicationQueryAggregation(commandDocument: BSONDocument): Future[Seq[ApplicationData]] = {
+    val runner = Command.run(JSONSerializationPack, FailoverStrategy())
+    runner
+      .apply(collection.db, runner.rawCommand(commandDocument))
+      .one[JsObject](ReadPreference.nearest)
+      .flatMap(processResults[Seq[ApplicationData]])
+  }
+
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
     (json \ "result").validate[T] match {
       case JsSuccess(result, _) => Future.successful(result)
@@ -172,42 +251,22 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
-  private def lookupByAPI(operators: PipelineOperator*): Future[Seq[ApplicationData]] = {
-    val lookup: BSONDocument = BSONDocument(
-      "$lookup" -> BSONDocument(
-        "from" -> "subscription",
-        "localField" -> "id",
-        "foreignField" -> "applications",
-        "as" -> "subscribedApis"))
-
-    val commandDoc: BSONDocument = BSONDocument(
+  private def commandQueryDocument(operators: Seq[PipelineOperator]): BSONDocument = {
+    BSONDocument(
       "aggregate" -> "application",
-      "pipeline" -> BSONArray(lookup +: operators.map(_.makePipe)))
-
-    val runner = Command.run(JSONSerializationPack)
-    runner.apply(collection.db, runner.rawCommand(commandDoc))
-      .one[JsObject]
-      .flatMap(processResults[Seq[ApplicationData]])
+      "pipeline" -> BSONArray(subscriptionsLookup +: operators.map(_.makePipe)))
   }
 
   def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis.apiIdentifier.context" -> apiContext)),
-      applicationProjection)
+    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiContext)))
 
   def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis.apiIdentifier" -> BSONDocument("context" -> apiIdentifier.context, "version" -> apiIdentifier.version))),
-      applicationProjection)
+    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
+      apiVersion= Some(apiIdentifier.version)))
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] =
-    lookupByAPI(
-      Match(BSONDocument("subscribedApis" -> BSONDocument("$size" -> 0))),
-      applicationProjection)
+  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions)))
 
-  def fetchAll(): Future[Seq[ApplicationData]] = {
-    collection.find(Json.obj()).cursor[ApplicationData]().collect[Seq]()
-  }
+  def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch())
 
   def delete(id: UUID): Future[HasSucceeded] = {
     collection.remove(Json.obj("id" -> id)).map(_ => HasSucceeded)
@@ -217,3 +276,4 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 sealed trait ApplicationModificationResult
 final case class SuccessfulApplicationModificationResult(numberOfDocumentsUpdated: Int) extends ApplicationModificationResult
 final case class UnsuccessfulApplicationModificationResult(message: Option[String]) extends ApplicationModificationResult
+

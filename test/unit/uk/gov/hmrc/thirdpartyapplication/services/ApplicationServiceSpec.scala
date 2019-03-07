@@ -1175,6 +1175,23 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
+  "Search" should {
+    "return results based on provided ApplicationSearch" in new Setup {
+      val standardApplicationData = anApplicationData(UUID.randomUUID(), access = Standard())
+      val privilegedApplicationData = anApplicationData(UUID.randomUUID(), access = Privileged())
+      val ropcApplicationData = anApplicationData(UUID.randomUUID(), access = Ropc())
+
+      val mockApplicationSearch: ApplicationSearch = mock[ApplicationSearch]
+
+      when(mockApplicationRepository.searchApplications(mockApplicationSearch))
+        .thenReturn(successful(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
+
+      val results = await(underTest.searchApplications(mockApplicationSearch))
+
+      assert(results.size == 3)
+    }
+  }
+
   private def aNewApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequest("MyApp", access, Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR)))

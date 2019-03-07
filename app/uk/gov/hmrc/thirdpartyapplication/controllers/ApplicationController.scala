@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSearch
 import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -207,6 +208,10 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         fetchAllWithNoSubscriptions()
       case _ => fetchAll()
     }
+  }
+
+  def searchApplications = Action.async { implicit request =>
+    applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchByServerToken(serverToken: String) = {

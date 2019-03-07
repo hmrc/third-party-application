@@ -1372,6 +1372,20 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
   }
 
+  "Search" should {
+    "pass an ApplicationSearch object to applicationService" in new Setup {
+      val req =
+        FakeRequest("GET", "/applications?apiSubscriptions=ANYSUB&page=1&pageSize=100")
+          .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+
+      when(underTest.applicationService.searchApplications(any[ApplicationSearch])).thenReturn(Future(Seq()))
+
+      val result = await(underTest.searchApplications(req))
+
+      status(result) shouldBe SC_OK
+    }
+  }
+
   private def anAPI() = {
     new APIIdentifier("some-context", "1.0")
   }

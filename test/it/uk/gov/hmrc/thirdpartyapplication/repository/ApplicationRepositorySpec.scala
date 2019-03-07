@@ -272,28 +272,40 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       )
       applications.foreach(application => await(applicationRepository.save(application)))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated before the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated on the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve no application with PENDING_REQUESTER_VERIFICATION state that have been updated after the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayAfter)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 0)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        0)
     }
 
   }
@@ -433,7 +445,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.fetchAllForApiIdentifier(APIIdentifier("other", "version-1")))
 
-      result shouldBe Seq()
+      result shouldBe Seq.empty
     }
   }
 
@@ -457,6 +469,259 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
   }
 
+  "Search" should {
+    "correctly include the skip and limit clauses" in {
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      val applicationSearch = new ApplicationSearch(pageNumber = 2, pageSize = 1, filters = Seq.empty)
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1 // as a result of pageSize = 1
+      result.head.id shouldBe application2.id // as a result of pageNumber = 2
+    }
+
+    "return applications based on application state filter" in {
+      val applicationInTest = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, DateTime.now())
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationInProduction))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(Active))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationInProduction.id
+    }
+
+    "return applications based on access type filter" in {
+      val standardApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val ropcApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+      await(applicationRepository.save(standardApplication))
+      await(applicationRepository.save(ropcApplication))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe ropcApplication.id
+    }
+
+    "return applications with no API subscriptions" in {
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithSubscriptions))
+      await(applicationRepository.save(applicationWithoutSubscriptions))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(NoAPISubscriptions))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationWithoutSubscriptions.id
+    }
+
+    "return applications with any API subscriptions" in {
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithSubscriptions))
+      await(applicationRepository.save(applicationWithoutSubscriptions))
+      await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
+
+      val applicationSearch = ApplicationSearch(filters = Seq(OneOrMoreAPISubscriptions))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationWithSubscriptions.id
+    }
+
+    "return applications with search text matching application id" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application 1"
+
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationId.toString))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with search text matching application name" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application 2"
+
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationName))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with matching search text and other filters" in {
+      val applicationName = "Test Application"
+
+      // Applications with the same name, but different access levels
+      val standardApplication =
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val ropcApplication =
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+      await(applicationRepository.save(standardApplication))
+      await(applicationRepository.save(ropcApplication))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess), textToSearch = Some(applicationName))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      // Only ROPC application should be returned
+      result.size shouldBe 1
+      result.head.id shouldBe ropcApplication.id
+    }
+
+    "return applications matching search text in a case-insensitive manner" in {
+      val applicationId = UUID.randomUUID()
+
+      val application = aNamedApplicationData(applicationId, "TEST APPLICATION", prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some("application"))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with terms of use agreed" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val applicationWithTermsOfUseAgreed =
+        aNamedApplicationData(
+          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      val applicationWithNoTermsOfUseAgreed = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+      await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val applicationWithNoCheckInformation =
+        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithTermsOfUseAgreed =
+        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      await(applicationRepository.save(applicationWithNoCheckInformation))
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseNotAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
+      val applicationId = UUID.randomUUID()
+      val applicationName = "Test Application"
+      val termsOfUseAgreement = new TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val checkInformation = new CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+
+      val emptyCheckInformation = new CheckInformation(termsOfUseAgreements = Seq.empty)
+
+      val applicationWithNoTermsOfUseAgreed =
+        aNamedApplicationData(
+          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
+      val applicationWithTermsOfUseAgreed =
+        anApplicationData(
+          UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+      await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
+      await(applicationRepository.save(applicationWithTermsOfUseAgreed))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseNotAccepted))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe applicationId
+    }
+
+    "return applications subscribing to a specific API" in {
+      val expectedAPIContext = "match-this-api"
+      val otherAPIContext = "do-not-match-this-api"
+
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(expectedApplication))
+      await(applicationRepository.save(otherApplication))
+      await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(otherAPIContext, "version-1", otherApplication.id)))
+
+      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(expectedAPIContext), apiVersion = Some(""))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe expectedApplication.id
+    }
+
+    "return applications subscribing to a specific version of an API" in {
+      val apiContext = "match-this-api"
+      val expectedAPIVersion = "version-1"
+      val otherAPIVersion = "version-2"
+
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      await(applicationRepository.save(expectedApplication))
+      await(applicationRepository.save(otherApplication))
+      await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
+
+      val applicationSearch =
+        new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.size shouldBe 1
+      result.head.id shouldBe expectedApplication.id
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
@@ -473,12 +738,25 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
                         sandboxClientId: String = "111",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(Seq.empty, None, None),
-                        user: String = "user@example.com"): ApplicationData = {
+                        user: String = "user@example.com",
+                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
+
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user, checkInformation)
+  }
+
+  def aNamedApplicationData(id: UUID,
+                            name: String,
+                            prodClientId: String = "aaa",
+                            sandboxClientId: String = "111",
+                            state: ApplicationState = testingState(),
+                            access: Access = Standard(Seq.empty, None, None),
+                            user: String = "user@example.com",
+                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      name,
+      name.toLowerCase,
       Set(Collaborator(user, Role.ADMINISTRATOR)),
       Some("description"),
       "username",
@@ -488,7 +766,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
         EnvironmentToken(prodClientId, nextString(5), nextString(5)),
         EnvironmentToken(sandboxClientId, nextString(5), nextString(5))),
       state,
-      access)
+      access,
+      checkInformation = checkInformation)
   }
 
 }
