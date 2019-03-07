@@ -272,28 +272,40 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       )
       applications.foreach(application => await(applicationRepository.save(application)))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated before the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayBefore)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve the application with PENDING_REQUESTER_VERIFICATION state that have been updated on the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 1)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        1)
     }
 
     "retrieve no application with PENDING_REQUESTER_VERIFICATION state that have been updated after the dayOfExpiry" in {
       val application = createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, expiryOnTheDayAfter)
       await(applicationRepository.save(application))
 
-      verifyApplications(await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)), State.PENDING_REQUESTER_VERIFICATION, 0)
+      verifyApplications(
+        await(applicationRepository.fetchAllByStatusDetails(State.PENDING_REQUESTER_VERIFICATION, dayOfExpiry)),
+        State.PENDING_REQUESTER_VERIFICATION,
+        0)
     }
 
   }
@@ -700,7 +712,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
+      val applicationSearch =
+        new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 

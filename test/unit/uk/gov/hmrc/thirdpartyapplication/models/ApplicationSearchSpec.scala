@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.models
 import org.scalatest._
 import org.scalatest.mockito.MockitoSugar
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 
 
