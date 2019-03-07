@@ -164,7 +164,10 @@ class ApiStorageConfigProvider @Inject()(val runModeConfiguration: Configuration
   override protected def mode = environment.mode
 
   override def get() = {
-    val skipWso2 = getConfBool("skipWso2", defBool = false)
+    val skipWso2 =
+      runModeConfiguration.getBoolean(s"$env.skipWso2").
+      getOrElse(runModeConfiguration.getBoolean("skipWso2").
+        getOrElse(false))
     ApiStorageConfig(skipWso2)
   }
 }
