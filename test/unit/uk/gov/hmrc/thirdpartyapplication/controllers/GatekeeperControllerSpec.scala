@@ -73,7 +73,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
   }
 
   "Fetch apps" should {
-    "return forbidden when the user is not authorised" in new Setup {
+    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound]( await(underTest.fetchAppsForGatekeeper(request)))
@@ -96,7 +96,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
   "Fetch app by id" should {
     val appId = UUID.randomUUID()
 
-    "return forbidden when the user is not authorised" in new Setup {
+    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.fetchAppById(appId)(request)))
@@ -135,7 +135,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     val gatekeeperUserId = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
-    "return forbidden when the user is not authorised" in new Setup {
+    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader))))
@@ -196,7 +196,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     val gatekeeperUserId = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
     val testReq = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
-    "return forbidden when the user is not authorised" in new Setup {
+    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.rejectUplift(applicationId)(testReq)))
@@ -255,7 +255,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     val gatekeeperUserId = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
-    "return forbidden when the user is not authorised" in new Setup {
+    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))))

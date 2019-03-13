@@ -85,7 +85,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 401 (Unauthorized) response when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "throws SessionRecordNotFound when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
       givenUserIsNotAuthenticated(underTest)
 
@@ -94,7 +94,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       ))
     }
 
-    "return a 401 (forbidden) response when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
+    "throws SessionRecordNotFound when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)))
@@ -134,7 +134,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       verifyZeroInteractions(underTest.authConnector)
     }
 
-    "return a 401 (unauthorized) response when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
+    "throws SessionRecordNotFound when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(privilegedApplication))
 
@@ -143,7 +143,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest())))
     }
 
-    "return a 401 (unauthorized) response when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
+    "throws SessionRecordNotFound when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsNotAuthenticated(underTest)
 
@@ -172,7 +172,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
       status(result) shouldBe SC_OK
     }
 
-    "return a 401 (Unauthorized) response when the gatekeeper is not logged in" in new Setup {
+    "throws SessionRecordNotFound when the gatekeeper is not logged in" in new Setup {
 
       givenUserIsNotAuthenticated(underTest)
 
