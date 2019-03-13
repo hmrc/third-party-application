@@ -19,16 +19,18 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import play.api.libs.json.Json
-import play.api.mvc.Results.Unauthorized
+import play.api.mvc.Results.Forbidden
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, UNAUTHORIZED}
+import uk.gov.hmrc.auth.core.Enrolment
+import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, FORBIDDEN}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.AuthRole
 import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -38,49 +40,47 @@ trait AuthorisationWrapper {
 
   val authConnector: AuthConnector
   val applicationService: ApplicationService
+  val authConfig: AuthConfig
 
-  def requiresRole(requiredRole: AuthRole): ActionBuilder[Request] = {
-    Action andThen AuthenticatedAction(requiredRole)
+  def requiresAuthentication(): ActionBuilder[Request] = {
+    Action andThen AuthenticatedAction()
   }
 
-  def requiresRoleFor(authRole: AuthRole, accessTypes: AccessType*): ActionBuilder[Request] =
-    Action andThen PayloadBasedApplicationTypeFilter(authRole, accessTypes)
+  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
+    Action andThen PayloadBasedApplicationTypeFilter(accessTypes)
 
-  def requiresRoleFor(uuid: UUID, authRole: AuthRole, accessTypes: AccessType*): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(authRole, uuid, failOnAccessTypeMismatch = false, accessTypes)
+  def requiresAuthenticationFor(uuid: UUID, accessTypes: AccessType*): ActionBuilder[Request] =
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, accessTypes)
 
-  def requiresGatekeeperForStandardApplications(uuid: UUID): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(APIGatekeeper, uuid, failOnAccessTypeMismatch = true, Seq(STANDARD))
+  def requiresAuthenticationForStandardApplications(uuid: UUID): ActionBuilder[Request] =
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = true, Seq(STANDARD))
 
-  def requiresGatekeeperForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(APIGatekeeper, uuid, failOnAccessTypeMismatch = false, Seq(PRIVILEGED, ROPC))
+  def requiresAuthenticationForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request] =
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, Seq(PRIVILEGED, ROPC))
 
-  private case class AuthenticatedAction(requiredRole: AuthRole) extends AuthenticationFilter(requiredRole) {
+  private case class AuthenticatedAction() extends AuthenticationFilter() {
     def filter[A](input: Request[A]) = authenticate(input)
   }
 
-  private abstract class AuthenticationFilter(authRole: AuthRole) extends ActionFilter[Request] {
-    def authenticate[A](request: Request[A]) = {
-      val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-      authConnector.authorized(authRole)(hc).map {
-        case true => None
-        case false =>
-          Some(Unauthorized(JsErrorResponse(UNAUTHORIZED,
-            s"Action requires authority: '${authRole.scope}:${authRole.name}'")))
-      }
+  private abstract class AuthenticationFilter() extends ActionFilter[Request] {
+    def authenticate[A](request: Request[A]): Future[Option[Result]] = {
+      implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+
+      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     }
   }
 
-  private case class PayloadBasedApplicationTypeFilter(requiredAuthRole: AuthRole, accessTypes: Seq[AccessType])
-    extends ApplicationTypeFilter(requiredAuthRole, false, accessTypes) {
+  private case class PayloadBasedApplicationTypeFilter(accessTypes: Seq[AccessType])
+    extends ApplicationTypeFilter(false, accessTypes) {
 
     override protected def deriveAccessType[A](request: Request[A]) =
       Future((Json.parse(request.body.toString) \ "access" \ "accessType").asOpt[AccessType])
   }
 
-  private case class RepositoryBasedApplicationTypeFilter(requiredAuthRole: AuthRole, applicationId: UUID,
+  private case class RepositoryBasedApplicationTypeFilter(applicationId: UUID,
                                                           failOnAccessTypeMismatch: Boolean, accessTypes: Seq[AccessType])
-    extends ApplicationTypeFilter(requiredAuthRole, failOnAccessTypeMismatch, accessTypes) {
+    extends ApplicationTypeFilter(failOnAccessTypeMismatch, accessTypes) {
 
     override protected def deriveAccessType[A](request: Request[A]) =
       applicationService.fetch(applicationId).map {
@@ -89,14 +89,14 @@ trait AuthorisationWrapper {
       }
   }
 
-  private abstract class ApplicationTypeFilter(authRole: AuthRole, failOnAccessTypeMismatch: Boolean = false,
-                                               accessTypes: Seq[AccessType]) extends AuthenticationFilter(authRole) {
+  private abstract class ApplicationTypeFilter(failOnAccessTypeMismatch: Boolean = false,
+                                               accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
 
     override def filter[A](request: Request[A]) =
       deriveAccessType(request) flatMap {
         case Some(accessType) if accessTypes.contains(accessType) => authenticate(request)
         case Some(_) if failOnAccessTypeMismatch =>
-          Future.successful(Some(Results.Unauthorized(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
+          Future.successful(Some(Results.Forbidden(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
 
         case _ => Future(None)
       } recover {
@@ -105,4 +105,5 @@ trait AuthorisationWrapper {
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }
+
 }

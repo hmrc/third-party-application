@@ -19,15 +19,22 @@ package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
 import com.github.tomakehurst.wiremock.client.WireMock._
 import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.OK
+import play.api.libs.json.Json
+import uk.gov.hmrc.auth.core.Enrolment
 
 object AuthStub extends Stub {
 
   override val stub = MockHost(22225)
 
-  def willValidateLoggedInUserHasGatekeeperRole() = {
-    stub.mock.register(get(urlPathEqualTo("/auth/authenticate/user/authorise"))
-      .withQueryParam("scope", equalTo("api"))
-      .withQueryParam("role", equalTo("gatekeeper"))
-      .willReturn(aResponse().withStatus(OK)))
-  }
+  val json = Json.obj(
+    "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),
+    "retrieve" -> Json.arr()
+  )
+
+  def willValidateLoggedInUserHasGatekeeperRole() =
+    stub.mock.register(post(urlPathEqualTo("/auth/authorise"))
+      .withRequestBody(equalTo(json.toString))
+      .willReturn(aResponse().withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
+        .withStatus(OK)))
+
 }

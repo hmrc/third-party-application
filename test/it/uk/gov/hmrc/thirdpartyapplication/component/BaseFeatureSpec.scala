@@ -56,7 +56,10 @@ abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Match
 }
 
 case class MockHost(port: Int) {
-  val server = new WireMockServer(WireMockConfiguration.wireMockConfig().port(port))
+  val server = new WireMockServer(WireMockConfiguration
+    .wireMockConfig()
+    .port(port))
+
   val mock = new WireMock("localhost", port)
 }
 

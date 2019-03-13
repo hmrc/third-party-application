@@ -180,7 +180,10 @@ class AuthConfigProvider @Inject()(val runModeConfiguration: Configuration, envi
 
   override def get() = {
     val url = baseUrl("auth")
-    AuthConfig(url)
+    val userRole = getString("roles.user")
+    val superUserRole = getString("roles.super-user")
+    val adminRole = getString("roles.admin")
+    AuthConfig(url, userRole, superUserRole, adminRole)
   }
 }
 

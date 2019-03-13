@@ -17,19 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
 import javax.inject.Inject
+
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.{AuthRole, Blocked, InvalidStateTransition, Unblocked}
+import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, InvalidStateTransition, Unblocked}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class GatekeeperController @Inject()(val authConnector: AuthConnector, val applicationService: ApplicationService,
-  gatekeeperService: GatekeeperService) extends CommonController with AuthorisationWrapper {
+  gatekeeperService: GatekeeperService, val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'"))
@@ -38,7 +38,7 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'"))
 
 
-  def approveUplift(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async(parse.json) {
+  def approveUplift(id: UUID) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[ApproveUpliftRequest] { approveUpliftPayload =>
         gatekeeperService.approveUplift(id, approveUpliftPayload.gatekeeperUserId)
@@ -48,7 +48,7 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
       } recover recovery
   }
 
-  def rejectUplift(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async(parse.json) {
+  def rejectUplift(id: UUID) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[RejectUpliftRequest] {
         gatekeeperService.rejectUplift(id, _).map(_ => NoContent)
@@ -57,7 +57,7 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
       } recover recovery
   }
 
-  def resendVerification(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async(parse.json) {
+  def resendVerification(id: UUID) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[ResendVerificationRequest] { resendVerificationPayload =>
         gatekeeperService.resendVerification(id, resendVerificationPayload.gatekeeperUserId).map(_ => NoContent)
@@ -66,32 +66,32 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
       } recover recovery
   }
 
-  def deleteApplication(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async(parse.json) {
+  def deleteApplication(id: UUID) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
         gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
       } recover recovery
   }
 
-  def blockApplication(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async { implicit request =>
+  def blockApplication(id: UUID) = requiresAuthentication().async { implicit request =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok
     } recover recovery
   }
 
-  def unblockApplication(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async { implicit request =>
+  def unblockApplication(id: UUID) = requiresAuthentication().async { implicit request =>
     gatekeeperService.unblockApplication(id) map {
       case Unblocked => Ok
     } recover recovery
   }
 
-  def fetchAppsForGatekeeper = requiresRole(AuthRole.APIGatekeeper).async {
+  def fetchAppsForGatekeeper = requiresAuthentication().async {
     gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
       apps => Ok(Json.toJson(apps))
     } recover recovery
   }
 
-  def fetchAppById(id: UUID) = requiresRole(AuthRole.APIGatekeeper).async {
+  def fetchAppById(id: UUID) = requiresAuthentication().async {
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 }

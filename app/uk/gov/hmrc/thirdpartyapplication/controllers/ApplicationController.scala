@@ -17,17 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
 import javax.inject.Inject
+
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationSearch
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
@@ -41,7 +39,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       val authConnector: AuthConnector,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
-                                      config: ApplicationControllerConfig) extends CommonController with AuthorisationWrapper {
+                                      config: ApplicationControllerConfig,
+                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -53,7 +52,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  def create = requiresRoleFor(APIGatekeeper, PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
+  def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[CreateApplicationRequest] { application =>
       applicationService.create(application).map {
         result => Created(toJson(result))
@@ -64,7 +63,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def update(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+  def update(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpdateApplicationRequest] { application =>
       applicationService.update(applicationId, application).map { result =>
         Ok(toJson(result))
@@ -72,7 +71,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateRateLimitTier(applicationId: UUID) = requiresRole(APIGatekeeper).async(BodyParsers.parse.json) { implicit request =>
+  def updateRateLimitTier(applicationId: UUID) = requiresAuthentication().async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Success(rateLimitTier) =>
@@ -85,7 +84,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateCheck(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[CheckInformation] { checkInformation =>
       applicationService.updateCheck(applicationId, checkInformation).map { result =>
         Ok(toJson(result))
@@ -106,7 +105,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def addCollaborator(applicationId: UUID) = {
-    requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
         applicationService.addCollaborator(applicationId, collaboratorRequest) map {
           response => Ok(toJson(response))
@@ -124,7 +123,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 
-    requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       applicationService.deleteCollaborator(applicationId, email, admin, adminsToEmailSet) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery
@@ -132,7 +131,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def addClientSecret(applicationId: java.util.UUID) =
-    requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { tokens => Ok(toJson(tokens))
         } recover {
@@ -145,7 +144,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
   def deleteClientSecrets(appId: java.util.UUID) = {
-    requiresGatekeeperForPrivilegedOrRopcApplications(appId).async(BodyParsers.parse.json) { implicit request =>
+    requiresAuthenticationForPrivilegedOrRopcApplications(appId).async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretsRequest] { secretsRequest =>
         credentialService.deleteClientSecrets(appId, secretsRequest.secrets).map(_ => NoContent) recover recovery
       }
@@ -270,7 +269,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: UUID) = requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
+  def createSubscriptionForApplication(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
     implicit request =>
       withJsonBody[APIIdentifier] { api =>
         subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
@@ -280,7 +279,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def removeSubscriptionForApplication(applicationId: UUID, context: String, version: String) = {
-    requiresGatekeeperForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, APIIdentifier(context, version)).map(_ => NoContent) recover recovery
     }
   }

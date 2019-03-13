@@ -28,6 +28,11 @@ uses:
       is: [headers.acceptHeader]
       securedBy: [ sec.x-application ]
 
+    /subscriptions:
+      get:
+        is: [headers.acceptHeader]
+        securedBy: [ sec.x-application ]
+
     /{id}:
       uriParameters:
         id:
@@ -38,6 +43,16 @@ uses:
       get:
         is: [headers.acceptHeader]
         securedBy: [ sec.x-application ]
+
+      /access/scopes:
+        put:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+
+      /access/overrides:
+        put:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
 
       /collaborator:
         post:
@@ -88,11 +103,55 @@ uses:
           is: [headers.acceptHeader]
           securedBy: [ sec.x-application ]
 
+      /approve-uplift:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /reject-uplift:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /resend-verification:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /delete:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /block:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+      /unblock:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+
+      /rate-limit-tier:
+        post:
+          is: [headers.acceptHeader]
+          securedBy: [ sec.x-application ]
+
+  /applications:
+    get:
+      is: [headers.acceptHeader]
+      securedBy: [ sec.x-application ]
+
   /verify-uplift:
     /{verificationCode}:
       uriParameters:
         verificationCode:
           type: string
       post:
+        is: [headers.acceptHeader]
+        securedBy: [ sec.x-application ]
+
+  /gatekeeper/applications:
+    /{id}:
+      uriParameters:
+        id:
+          type: string
+      get:
         is: [headers.acceptHeader]
         securedBy: [ sec.x-application ]
