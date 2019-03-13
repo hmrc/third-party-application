@@ -24,6 +24,10 @@ uses:
       securedBy: [ sec.x-application ]
 
   /application:
+    get:
+      is: [headers.acceptHeader]
+      securedBy: [ sec.x-application ]
+
     post:
       is: [headers.acceptHeader]
       securedBy: [ sec.x-application ]
