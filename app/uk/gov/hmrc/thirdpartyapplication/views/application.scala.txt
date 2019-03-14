@@ -151,7 +151,7 @@ uses:
         is: [headers.acceptHeader]
         securedBy: [ sec.x-application ]
 
-  /gatekeeper/applications:
+  /gatekeeper/application:
     /{id}:
       uriParameters:
         id:
