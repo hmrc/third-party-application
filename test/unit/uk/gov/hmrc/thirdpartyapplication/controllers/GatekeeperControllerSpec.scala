@@ -60,6 +60,8 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     val mockAuthConfig = mock[AuthConfig]
     implicit val headers = HeaderCarrier()
 
+    when(mockAuthConfig.enabled).thenReturn(true)
+
     val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockAuthConfig) {
       override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
     }

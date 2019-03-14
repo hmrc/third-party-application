@@ -64,6 +64,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockSubscriptionService = mock[SubscriptionService]
     val mockAuthConfig = mock[AuthConfig]
 
+    when(mockAuthConfig.enabled).thenReturn(true)
+
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
     val config = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)

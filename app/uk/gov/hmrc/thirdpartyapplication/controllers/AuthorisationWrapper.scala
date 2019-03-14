@@ -62,14 +62,13 @@ trait AuthorisationWrapper {
 
   private abstract class AuthenticationFilter() extends ActionFilter[Request] {
     def authenticate[A](request: Request[A]): Future[Option[Result]] = {
-      val hcc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-      implicit val hc = request.headers.get("X-Gatekeeper-Authorization") match {
-        case Some(token) => hcc.copy(authorization = Some(Authorization(token)))
-        case None => hcc
+      if (authConfig.enabled) {
+        implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+        val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+        authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
+      } else {
+        Future.successful(None)
       }
-
-      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
-      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     }
   }
 

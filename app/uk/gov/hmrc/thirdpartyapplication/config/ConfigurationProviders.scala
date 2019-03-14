@@ -183,7 +183,8 @@ class AuthConfigProvider @Inject()(val runModeConfiguration: Configuration, envi
     val userRole = getString("roles.user")
     val superUserRole = getString("roles.super-user")
     val adminRole = getString("roles.admin")
-    AuthConfig(url, userRole, superUserRole, adminRole)
+    val enabled = getConfBool("auth.enabled", true)
+    AuthConfig(url, userRole, superUserRole, adminRole, enabled)
   }
 }
 

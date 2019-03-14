@@ -41,13 +41,16 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
 
   implicit lazy val materializer = fakeApplication.materializer
+  val mockAuthConfig = mock[AuthConfig]
+
+  when(mockAuthConfig.enabled).thenReturn(true)
 
   trait Setup {
     val underTest = new AuthorisationWrapper {
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]
-      override val authConfig: AuthConfig = mock[AuthConfig]
+      override val authConfig: AuthConfig = mockAuthConfig
     }
 
     def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
