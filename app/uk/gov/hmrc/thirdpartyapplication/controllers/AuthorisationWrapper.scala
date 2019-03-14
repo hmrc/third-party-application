@@ -19,17 +19,15 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import play.api.libs.json.Json
-import play.api.mvc.Results.Forbidden
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, FORBIDDEN}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole
-import uk.gov.hmrc.thirdpartyapplication.models.AuthRole.APIGatekeeper
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
@@ -64,7 +62,11 @@ trait AuthorisationWrapper {
 
   private abstract class AuthenticationFilter() extends ActionFilter[Request] {
     def authenticate[A](request: Request[A]): Future[Option[Result]] = {
-      implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+      val hcc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+      implicit val hc = request.headers.get("X-Gatekeeper-Authorization") match {
+        case Some(token) => hcc.copy(authorization = Some(Authorization(token)))
+        case None => hcc
+      }
 
       val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
       authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
