@@ -76,6 +76,6 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def deleteByApplicationId(applicationId: UUID): Future[HasSucceeded] = {
-    collection.remove(Json.obj("applicationId" -> applicationId)).map(_ => HasSucceeded)
+    remove("applicationId" -> applicationId).map(_ => HasSucceeded)
   }
 }

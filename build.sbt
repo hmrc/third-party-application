@@ -12,14 +12,14 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.9.0",
-  "uk.gov.hmrc" %% "mongo-lock" % "5.1.1",
-  "uk.gov.hmrc" %% "play-reactivemongo" % "6.4.0",
+  "uk.gov.hmrc" %% "mongo-lock" % "6.12.0-play-25",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.16.0-play-25",
   "uk.gov.hmrc" %% "play-scheduling" % "5.4.0",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.4.0",
   "uk.gov.hmrc" %% "play-hmrc-api" % "3.4.0-play-25"
 )
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "3.1.0" % "test,it",
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.10.0-play-25" % "test,it",
   "uk.gov.hmrc" %% "hmrctest" % "3.6.0-play-25" % "test,it",
   "org.pegdown" % "pegdown" % "1.6.0" % "test,it",
   "org.scalaj" %% "scalaj-http" % "2.3.0" % "test,it",
@@ -52,7 +52,9 @@ lazy val microservice = (project in file("."))
   .settings(playPublishingSettings: _*)
   .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
   .settings(
-    testOptions in Test += Tests.Argument(TestFrameworks.ScalaTest, "-eT")
+    testOptions in Test := Seq(Tests.Filter(unitFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
+    fork in Test := false,
+    parallelExecution in Test := false
   )
   .configs(IntegrationTest)
   .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
@@ -61,7 +63,7 @@ lazy val microservice = (project in file("."))
     unmanagedSourceDirectories in IntegrationTest <<= (baseDirectory in IntegrationTest) (base => Seq(base / "test")),
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    testOptions in IntegrationTest += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    testOptions in IntegrationTest := Seq(Tests.Filter(itFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.jcenterRepo
@@ -87,6 +89,9 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
   tests map {
     test => Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
   }
+
+def unitFilter(name: String): Boolean = name startsWith "unit"
+def itFilter(name: String): Boolean = name startsWith "it"
 
 // Coverage configuration
 coverageMinimum := 88

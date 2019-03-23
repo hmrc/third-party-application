@@ -69,9 +69,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def getSubscriptions(applicationId: UUID): Future[Seq[APIIdentifier]] = {
-    collection.find(Json.obj("applications" -> applicationId.toString)).cursor[JsValue]().collect[Seq]() map {
-      _ map (doc => (doc \ "apiIdentifier").as[APIIdentifier])
-    }
+    find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
   }
 
   private def makeSelector(apiIdentifier: APIIdentifier) = {

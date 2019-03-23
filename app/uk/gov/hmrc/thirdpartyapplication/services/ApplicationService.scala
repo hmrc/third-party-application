@@ -265,9 +265,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def searchApplications(applicationSearch: ApplicationSearch): Future[Seq[ApplicationResponse]] = {
-    applicationRepository.searchApplications(applicationSearch).map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+  def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
+    applicationRepository.searchApplications(applicationSearch).map { data =>
+      PaginatedApplicationResponse(
+        page = applicationSearch.pageNumber,
+        pageSize = applicationSearch.pageSize,
+        total = data.totals.foldLeft(0)(_ + _.total),
+        matching = data.matching.foldLeft(0)(_ + _.total),
+        applications = data.applications.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application))))
     }
   }
 

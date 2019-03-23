@@ -482,8 +482,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1 // as a result of pageSize = 1
-      result.head.id shouldBe application2.id // as a result of pageNumber = 2
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 3
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 3
+      result.applications.size shouldBe 1 // as a result of pageSize = 1
+      result.applications.head.id shouldBe application2.id // as a result of pageNumber = 2
     }
 
     "return applications based on application state filter" in {
@@ -496,8 +500,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationInProduction.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationInProduction.id
     }
 
     "return applications based on access type filter" in {
@@ -510,8 +518,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe ropcApplication.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe ropcApplication.id
     }
 
     "return applications with no API subscriptions" in {
@@ -525,8 +537,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationWithoutSubscriptions.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationWithoutSubscriptions.id
     }
 
     "return applications with any API subscriptions" in {
@@ -540,8 +556,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationWithSubscriptions.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationWithSubscriptions.id
     }
 
     "return applications with search text matching application id" in {
@@ -557,8 +577,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications with search text matching application name" in {
@@ -574,8 +598,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications with matching search text and other filters" in {
@@ -593,9 +621,13 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
       // Only ROPC application should be returned
-      result.size shouldBe 1
-      result.head.id shouldBe ropcApplication.id
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe ropcApplication.id
     }
 
     "return applications matching search text in a case-insensitive manner" in {
@@ -610,8 +642,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications with terms of use agreed" in {
@@ -631,8 +667,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
@@ -652,8 +692,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
@@ -677,8 +721,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe applicationId
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
     }
 
     "return applications subscribing to a specific API" in {
@@ -696,8 +744,12 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe expectedApplication.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe expectedApplication.id
     }
 
     "return applications subscribing to a specific version of an API" in {
@@ -717,8 +769,96 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
-      result.size shouldBe 1
-      result.head.id shouldBe expectedApplication.id
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe expectedApplication.id
+    }
+
+    "return applications sorted by name ascending" in {
+      val firstName = "AAA first"
+      val secondName = "ZZZ second"
+      val firstApplication = aNamedApplicationData(name = firstName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val secondApplication = aNamedApplicationData(name = secondName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = NameAscending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.name shouldBe firstName
+      result.applications.last.name shouldBe secondName
+    }
+
+    "return applications sorted by name descending" in {
+      val firstName = "AAA first"
+      val secondName = "ZZZ second"
+      val firstApplication = aNamedApplicationData(name = firstName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val secondApplication = aNamedApplicationData(name = secondName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+
+      await(applicationRepository.save(firstApplication))
+      await(applicationRepository.save(secondApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = NameDescending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.name shouldBe secondName
+      result.applications.last.name shouldBe firstName
+    }
+
+    "return applications sorted by submitted ascending" in {
+      val firstCreatedOn = HmrcTime.now.minusDays(2)
+      val secondCreatedOn = HmrcTime.now.minusDays(1)
+      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = firstCreatedOn)
+      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = secondCreatedOn)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = SubmittedAscending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.createdOn shouldBe firstCreatedOn
+      result.applications.last.createdOn shouldBe secondCreatedOn
+    }
+
+    "return applications sorted by submitted descending" in {
+      val firstCreatedOn = HmrcTime.now.minusDays(2)
+      val secondCreatedOn = HmrcTime.now.minusDays(1)
+      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = firstCreatedOn)
+      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = secondCreatedOn)
+
+      await(applicationRepository.save(firstApplication))
+      await(applicationRepository.save(secondApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = SubmittedDescending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.createdOn shouldBe secondCreatedOn
+      result.applications.last.createdOn shouldBe firstCreatedOn
     }
   }
 
