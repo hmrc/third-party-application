@@ -129,13 +129,48 @@ class ApplicationSearchSpec extends UnitSpec with MockitoSugar with Matchers {
     "populate apiContext and apiVersion if specific values are provided" in {
       val api = "foo"
       val apiVersion = "1.0"
-      val request = FakeRequest("GET", s"/applications?apiSubscription=$api&apiVersion=$apiVersion")
+      val request = FakeRequest("GET", s"/applications?apiSubscription=$api--$apiVersion")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api)
       searchObject.apiVersion shouldBe Some(apiVersion)
+    }
+
+    "populate sort as NameAscending when sort is NAME_ASC" in {
+      val request = FakeRequest("GET", s"/applications?sort=NAME_ASC")
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.sort shouldBe NameAscending
+    }
+
+    "populate sort as NameDescending when sort is NAME_DESC" in {
+      val request = FakeRequest("GET", s"/applications?sort=NAME_DESC")
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.sort shouldBe NameDescending
+    }
+
+    "populate sort as SubmittedAscending when sort is SUBMITTED_DESC" in {
+      val request = FakeRequest("GET", s"/applications?sort=SUBMITTED_ASC")
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.sort shouldBe SubmittedAscending
+    }
+
+    "populate sort as SubmittedDescending when sort is SUBMITTED_DESC" in {
+      val request = FakeRequest("GET", s"/applications?sort=SUBMITTED_DESC")
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.sort shouldBe SubmittedDescending
+    }
+
+    "populate sort as SubmittedAscending when sort is not specified" in {
+      val request = FakeRequest("GET", s"/applications")
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.sort shouldBe SubmittedAscending
     }
   }
 }

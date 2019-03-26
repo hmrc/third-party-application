@@ -129,7 +129,5 @@ class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
-  def fetchAllUnfinished(): Future[Seq[Wso2RestoreData]] = {
-    collection.find(BSONDocument("finished" -> false)).cursor[Wso2RestoreData]().collect[Seq]()
-  }
+  def fetchAllUnfinished(): Future[Seq[Wso2RestoreData]] = find("finished" -> false)
 }

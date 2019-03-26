@@ -21,7 +21,8 @@ case class ApplicationSearch(pageNumber: Int = 1,
                              filters: Seq[ApplicationSearchFilter] = Seq(),
                              textToSearch: Option[String] = None,
                              apiContext: Option[String] = None,
-                             apiVersion: Option[String] = None)
+                             apiVersion: Option[String] = None,
+                             sort: ApplicationSort = SubmittedAscending)
 
 object ApplicationSearch {
   def fromQueryString(queryString: Map[String, Seq[String]]): ApplicationSearch = {
@@ -46,10 +47,11 @@ object ApplicationSearch {
       .toSeq
 
     def searchText = queryString.getOrElse("search", Seq()).headOption
-    def apiSubscription = queryString.getOrElse("apiSubscription", Seq()).headOption
-    def apiVersion = queryString.getOrElse("apiVersion", Seq()).headOption
+    def apiContext = queryString.getOrElse("apiSubscription", Seq()).headOption.flatMap(_.split("--").lift(0))
+    def apiVersion = queryString.getOrElse("apiSubscription", Seq()).headOption.flatMap(_.split("--").lift(1))
+    def sort = ApplicationSort(queryString.getOrElse("sort", Seq()).headOption)
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiSubscription, apiVersion)
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)
   }
 }
 
@@ -128,5 +130,21 @@ case object AccessTypeFilter extends AccessTypeFilter {
       case "PRIVILEGED" => Some(PrivilegedAccess)
       case _ => None
     }
+  }
+}
+
+sealed trait ApplicationSort
+case object NameAscending extends ApplicationSort
+case object NameDescending extends ApplicationSort
+case object SubmittedAscending extends ApplicationSort
+case object SubmittedDescending extends ApplicationSort
+
+object ApplicationSort extends ApplicationSort {
+  def apply(value: Option[String]): ApplicationSort = value match {
+    case Some("NAME_ASC") => NameAscending
+    case Some("NAME_DESC") => NameDescending
+    case Some("SUBMITTED_ASC") => SubmittedAscending
+    case Some("SUBMITTED_DESC") => SubmittedDescending
+    case _ => SubmittedAscending
   }
 }

@@ -1184,11 +1184,13 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val mockApplicationSearch: ApplicationSearch = mock[ApplicationSearch]
 
       when(mockApplicationRepository.searchApplications(mockApplicationSearch))
-        .thenReturn(successful(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
+        .thenReturn(successful(PaginatedApplicationData(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData), Seq(PaginationTotal(3)), Seq(PaginationTotal(3)))))
 
-      val results = await(underTest.searchApplications(mockApplicationSearch))
+      val result = await(underTest.searchApplications(mockApplicationSearch))
 
-      assert(results.size == 3)
+      result.total shouldBe 3
+      result.matching shouldBe 3
+      result.applications.size shouldBe 3
     }
   }
 

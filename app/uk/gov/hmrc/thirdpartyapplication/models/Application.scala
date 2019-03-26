@@ -145,6 +145,8 @@ object ApplicationResponse {
   }
 }
 
+case class PaginatedApplicationResponse(applications: Seq[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
+
 case class ApplicationData(id: UUID,
                            name: String,
                            normalisedName: String,
@@ -163,6 +165,9 @@ case class ApplicationData(id: UUID,
                            blocked: Boolean = false) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
+
+case class PaginationTotal(total: Int)
+case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: Seq[PaginationTotal], matching: Seq[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 

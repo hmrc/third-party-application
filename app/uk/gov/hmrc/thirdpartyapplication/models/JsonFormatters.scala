@@ -117,6 +117,7 @@ object JsonFormatters {
   implicit val formatCreateApplicationRequest = Json.format[CreateApplicationRequest]
   implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
+  implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatEnvironmentTokenResponse = Json.format[EnvironmentTokenResponse]
@@ -199,6 +200,9 @@ object MongoFormat {
   implicit val formatApplicationData = {
     OFormat(applicationDataReads, Json.writes[ApplicationData])
   }
+
+  implicit val formatPaginationTotla = Json.format[PaginationTotal]
+  implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
   implicit val formatWso2RestoreData = Json.format[Wso2RestoreData]
 }

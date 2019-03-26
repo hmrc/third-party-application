@@ -1390,7 +1390,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         FakeRequest("GET", "/applications?apiSubscriptions=ANYSUB&page=1&pageSize=100")
           .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-      when(underTest.applicationService.searchApplications(any[ApplicationSearch])).thenReturn(Future(Seq()))
+      when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
+        .thenReturn(Future(PaginatedApplicationResponse(applications = Seq.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
 
       val result = await(underTest.searchApplications(req))
 
