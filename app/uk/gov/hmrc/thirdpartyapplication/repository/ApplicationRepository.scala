@@ -29,7 +29,6 @@ import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
@@ -241,7 +240,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
-    (json \ "result" \ 0).validate[T] match {
+    (json \ "cursor" \ "firstBatch" \ 0).validate[T] match {
       case JsSuccess(result, _) => Future.successful(result)
       case JsError(errors) => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
     }
@@ -254,6 +253,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
     Json.obj(
       "aggregate" -> "application",
+      "cursor" -> Json.obj(),
       "pipeline" -> Json.arr(Json.obj(
         f"$$facet" -> Json.obj(
           "totals" -> totalCount,
