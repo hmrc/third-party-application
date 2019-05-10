@@ -46,6 +46,7 @@ class ConfigurationModule extends Module {
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
       bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
+      bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[TrustedApplicationsConfig].toProvider[TrustedApplicationsConfigProvider],
@@ -200,6 +201,19 @@ class Wso2ApiStoreConfigProvider @Inject()(val runModeConfiguration: Configurati
 }
 
 @Singleton
+class AwsApiGatewayConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[AwsApiGatewayConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val url = baseUrl("aws-gateway")
+    val awsApiKey = getString("awsApiKey")
+    AwsApiGatewayConfig(url, awsApiKey)
+  }
+}
+
+@Singleton
 class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
   extends Provider[ThirdPartyDelegatedAuthorityConfig] with ServicesConfig {
 
@@ -247,6 +261,3 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
     CredentialConfig(clientSecretLimit)
   }
 }
-
-
-

@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
 
@@ -56,7 +56,7 @@ trait Wso2ApiStore {
                      rateLimitTier: RateLimitTier)
                     (implicit hc: HeaderCarrier): Future[HasSucceeded]
 
-  def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
+  def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)
                        (implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
@@ -65,12 +65,13 @@ trait Wso2ApiStore {
 }
 
 @Singleton
-class RealWso2ApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector) extends Wso2ApiStore {
+class RealWso2ApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsApiGatewayConnector: AwsApiGatewayConnector) extends Wso2ApiStore {
 
   val resubscribeMaxRetries = 5
 
   override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                                (implicit hc: HeaderCarrier): Future[ApplicationTokens] =
+                                (implicit hc: HeaderCarrier): Future[ApplicationTokens] = {
+
     for {
       _ <- wso2APIStoreConnector.createUser(wso2Username, wso2Password)
       cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
@@ -79,7 +80,9 @@ class RealWso2ApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector) e
       sandboxKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.SANDBOX)
       prodKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION)
       _ <- wso2APIStoreConnector.logout(cookie)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(UpsertApplicationRequest(wso2ApplicationName, BRONZE, prodKeys.accessToken))(hc)
     } yield ApplicationTokens(prodKeys, sandboxKeys)
+  }
 
   override def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
                                             (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
@@ -102,17 +105,25 @@ class RealWso2ApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector) e
     } yield HasSucceeded
   }
 
-  override def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
-                                (implicit hc: HeaderCarrier): Future[HasSucceeded] =
-    withLogin(wso2Username, wso2Password) {
-      wso2APIStoreConnector.updateApplication(_, wso2ApplicationName, rateLimitTier)
+  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+    withLogin(app.wso2Username, app.wso2Password) {
+      wso2APIStoreConnector.updateApplication(_, app.wso2ApplicationName, rateLimitTier)
+    } flatMap { _ =>
+      awsApiGatewayConnector.createOrUpdateApplication(UpsertApplicationRequest(app.wso2ApplicationName, rateLimitTier, app.tokens.production.accessToken))(hc)
     }
+  }
 
   override def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                                (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
     withLogin(wso2Username, wso2Password) {
       wso2APIStoreConnector.deleteApplication(_, wso2ApplicationName)
+    } flatMap { _ =>
+      awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)
     }
+  }
 
   override def addSubscription(wso2Username: String,
                                wso2Password: String,
@@ -263,7 +274,7 @@ class StubApiStore @Inject()() extends Wso2ApiStore {
     Future.successful(HasSucceeded)
   }
 
-  override def updateApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String, rateLimitTier: RateLimitTier)
+  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)
                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     Future.successful(HasSucceeded)
   }

@@ -122,7 +122,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     def mockWso2ApiStoreUpdateApplicationToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
-      when(mockWSO2APIStore.updateApplication(anyString(), anyString(), anyString(), any[RateLimitTier])(any[HeaderCarrier])) thenReturn eventualHasSucceeded
+      when(mockWSO2APIStore.updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])) thenReturn eventualHasSucceeded
     }
 
     def mockWso2ApiStoreGetSubscriptionsToReturn(apiIdentifiers: Seq[APIIdentifier]) = {
@@ -1089,8 +1089,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       await(underTest updateRateLimitTier(uuid, SILVER))
 
-      verify(mockWSO2APIStore) updateApplication(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
-        originalApplicationData.wso2ApplicationName, SILVER)
+      verify(mockWSO2APIStore) updateApplication(originalApplicationData, SILVER)
 
       verify(mockWSO2APIStore) resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER)
@@ -1109,7 +1108,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockWSO2APIStore, never).updateApplication(anyString, anyString, anyString, any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockWSO2APIStore, never).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
       verify(mockWSO2APIStore, never).resubscribeApi(any[Seq[APIIdentifier]], anyString, anyString, anyString,
         any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier])
       verify(mockApplicationRepository, never) save updatedApplicationData
@@ -1125,7 +1124,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockWSO2APIStore).updateApplication(anyString, anyString, anyString, any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockWSO2APIStore).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
       verify(mockWSO2APIStore, never).resubscribeApi(any[Seq[APIIdentifier]], anyString, anyString, anyString,
         any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier])
       verify(mockApplicationRepository, never) save updatedApplicationData
@@ -1141,7 +1140,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockWSO2APIStore).updateApplication(anyString, anyString, anyString, any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockWSO2APIStore).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
 
@@ -1163,8 +1162,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockWSO2APIStore).updateApplication(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
-        originalApplicationData.wso2ApplicationName, SILVER)
+      verify(mockWSO2APIStore).updateApplication(originalApplicationData, SILVER)
 
       verify(mockWSO2APIStore).resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER)

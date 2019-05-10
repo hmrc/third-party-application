@@ -16,29 +16,35 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.services
 
+import java.util.UUID
+
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.mockito.Matchers.{any, anyInt, anyString}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.services.{RealWso2ApiStore, Wso2ApiStore}
+import uk.gov.hmrc.thirdpartyapplication.services.RealWso2ApiStore
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
+import scala.concurrent.Future.successful
+import scala.util.Random.nextString
 
-class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
+class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector]
+    val mockAwsApiGatewayConnector = mock[AwsApiGatewayConnector]
 
-    val underTest = new RealWso2ApiStore(mockWSO2APIStoreConnector) {
+    val underTest = new RealWso2ApiStore(mockWSO2APIStoreConnector, mockAwsApiGatewayConnector) {
       override val resubscribeMaxRetries = 0
     }
 
@@ -46,13 +52,13 @@ class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
 
   "createApplication" should {
 
-    "create an application in WSO2 and generate production and sandbox tokens" in new Setup {
-
+    "create an application in AWS and WSO2 and generate production and sandbox tokens" in new Setup {
       val wso2Username = "myuser"
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
       val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"), EnvironmentToken("111", "222", "333"))
+      val upsertApplicationRequest = UpsertApplicationRequest(wso2ApplicationName, BRONZE, tokens.production.accessToken)
 
       when(mockWSO2APIStoreConnector.createUser(wso2Username, wso2Password))
         .thenReturn(Future.successful(HasSucceeded))
@@ -65,41 +71,59 @@ class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION))
         .thenReturn(Future.successful(tokens.production))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
 
       val result = await(underTest.createApplication(wso2Username, wso2Password, wso2ApplicationName))
 
       result shouldBe tokens
 
       verify(mockWSO2APIStoreConnector).logout(cookie)
-
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(upsertApplicationRequest)(hc)
     }
 
   }
 
   "updateApplication" should {
 
-    "update rate limiting tier in wso2" in new Setup {
+    "update rate limiting tier in AWS and WSO2" in new Setup {
       val wso2Username = "myuser"
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
+      val serverToken: String = nextString(2)
       val cookie = "some-cookie-value"
+      val app = ApplicationData(
+        UUID.randomUUID(),
+        "MyApp",
+        "myapp",
+        Set.empty,
+        Some("description"),
+        wso2Username,
+        wso2Password,
+        wso2ApplicationName,
+        ApplicationTokens(
+          EnvironmentToken(nextString(2), nextString(2), serverToken),
+          EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+        testingState())
+      val upsertApplicationRequest = UpsertApplicationRequest(wso2ApplicationName, SILVER, serverToken)
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.updateApplication(cookie, wso2ApplicationName, SILVER)).
         thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest updateApplication(wso2Username, wso2Password, wso2ApplicationName, SILVER))
+      await(underTest updateApplication(app, SILVER))
 
       verify(mockWSO2APIStoreConnector).updateApplication(cookie, wso2ApplicationName, SILVER)
       verify(mockWSO2APIStoreConnector).logout(cookie)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(upsertApplicationRequest)(hc)
     }
 
   }
 
   "deleteApplication" should {
 
-    "delete an application in WSO2" in new Setup {
+    "delete an application in AWS and WSO2" in new Setup {
 
       val wso2Username = "myuser"
       val wso2Password = "mypassword"
@@ -110,11 +134,13 @@ class Wso2ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar {
       when(mockWSO2APIStoreConnector.deleteApplication(cookie, wso2ApplicationName))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest.deleteApplication(wso2Username, wso2Password, wso2ApplicationName))
 
       verify(mockWSO2APIStoreConnector).deleteApplication(cookie, wso2ApplicationName)
       verify(mockWSO2APIStoreConnector).logout(cookie)
+      verify(mockAwsApiGatewayConnector).deleteApplication(wso2ApplicationName)(hc)
     }
 
   }

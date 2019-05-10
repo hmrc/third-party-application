@@ -16,6 +16,7 @@
 
 package it.uk.gov.hmrc.thirdpartyapplication
 
+import com.codahale.metrics.SharedMetricRegistries
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterEach, TestData}
@@ -50,6 +51,7 @@ trait PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ScalaFutur
     )).in(Mode.Test).build()
 
   trait Setup {
+    SharedMetricRegistries.clear()
     val documentationController = app.injector.instanceOf[DocumentationController]
     val request = FakeRequest()
   }

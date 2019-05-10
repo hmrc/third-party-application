@@ -145,7 +145,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
       def updateWso2Application(): Future[HasSucceeded] = {
         for {
-          _ <- wso2APIStore.updateApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName, rateLimitTier)
+          _ <- wso2APIStore.updateApplication(app, rateLimitTier)
           _ <- wso2APIStore.checkApplicationRateLimitTier(app.wso2Username, app.wso2Password, app.wso2ApplicationName, rateLimitTier)
         } yield HasSucceeded
       }
