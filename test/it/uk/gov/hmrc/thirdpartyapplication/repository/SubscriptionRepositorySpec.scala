@@ -28,24 +28,26 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.util.Random.{alphanumeric, nextString}
 
 class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 
-  private val repository = new SubscriptionRepository(reactiveMongoComponent)
+  private val subscriptionRepository = new SubscriptionRepository(reactiveMongoComponent)
+  private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   override def beforeEach() {
-    await(repository.drop)
-    await(repository.ensureIndexes)
+    await(subscriptionRepository.drop)
+    await(subscriptionRepository.ensureIndexes)
   }
 
   override protected def afterAll() {
-    await(repository.drop)
+    await(subscriptionRepository.drop)
   }
 
   "add" should {
@@ -54,7 +56,7 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val applicationId = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
 
-      val result = await(repository.add(applicationId, apiIdentifier))
+      val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
 
       result shouldBe HasSucceeded
     }
@@ -63,9 +65,9 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val application1 = UUID.randomUUID()
       val application2 = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
-      await(repository.add(application1, apiIdentifier))
+      await(subscriptionRepository.add(application1, apiIdentifier))
 
-      val result = await(repository.add(application2, apiIdentifier))
+      val result = await(subscriptionRepository.add(application2, apiIdentifier))
 
       result shouldBe HasSucceeded
     }
@@ -76,26 +78,26 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val application1 = UUID.randomUUID()
       val application2 = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
-      await(repository.add(application1, apiIdentifier))
-      await(repository.add(application2, apiIdentifier))
+      await(subscriptionRepository.add(application1, apiIdentifier))
+      await(subscriptionRepository.add(application2, apiIdentifier))
 
-      val result = await(repository.remove(application1, apiIdentifier))
+      val result = await(subscriptionRepository.remove(application1, apiIdentifier))
 
       result shouldBe HasSucceeded
-      await(repository.isSubscribed(application1, apiIdentifier)) shouldBe false
-      await(repository.isSubscribed(application2, apiIdentifier)) shouldBe true
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe false
+      await(subscriptionRepository.isSubscribed(application2, apiIdentifier)) shouldBe true
     }
 
     "not fail when deleting a non-existing subscription" in {
       val application1 = UUID.randomUUID()
       val application2 = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
-      await(repository.add(application1, apiIdentifier))
+      await(subscriptionRepository.add(application1, apiIdentifier))
 
-      val result = await(repository.remove(application2, apiIdentifier))
+      val result = await(subscriptionRepository.remove(application2, apiIdentifier))
 
       result shouldBe HasSucceeded
-      await(repository.isSubscribed(application1, apiIdentifier)) shouldBe true
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe true
     }
   }
 
@@ -105,10 +107,10 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val application2 = UUID.randomUUID()
       val apiIdentifierA = APIIdentifier("some-context-a", "1.0.0")
       val apiIdentifierB = APIIdentifier("some-context-b", "1.0.2")
-      await(repository.add(application1, apiIdentifierA))
-      await(repository.add(application2, apiIdentifierA))
-      await(repository.add(application2, apiIdentifierB))
-      val retrieved = await(repository.findAll())
+      await(subscriptionRepository.add(application1, apiIdentifierA))
+      await(subscriptionRepository.add(application2, apiIdentifierA))
+      await(subscriptionRepository.add(application2, apiIdentifierB))
+      val retrieved = await(subscriptionRepository.findAll())
       retrieved shouldBe Seq(
         subscriptionData("some-context-a", "1.0.0", application1, application2),
         subscriptionData("some-context-b", "1.0.2", application2))
@@ -120,9 +122,9 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
     "return true when the application is subscribed" in {
       val applicationId = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
-      await(repository.add(applicationId, apiIdentifier))
+      await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-      val isSubscribed = await(repository.isSubscribed(applicationId, apiIdentifier))
+      val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
       isSubscribed shouldBe true
     }
@@ -131,7 +133,7 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val applicationId = UUID.randomUUID()
       val apiIdentifier = APIIdentifier("some-context", "1.0.0")
 
-      val isSubscribed = await(repository.isSubscribed(applicationId, apiIdentifier))
+      val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
       isSubscribed shouldBe false
     }
@@ -145,17 +147,17 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
     val api3 = APIIdentifier("some-context", "3.0")
 
     "return the subscribed APIs" in {
-      await(repository.add(application1, api1))
-      await(repository.add(application1, api2))
-      await(repository.add(application2, api3))
+      await(subscriptionRepository.add(application1, api1))
+      await(subscriptionRepository.add(application1, api2))
+      await(subscriptionRepository.add(application2, api3))
 
-      val result = await(repository.getSubscriptions(application1))
+      val result = await(subscriptionRepository.getSubscriptions(application1))
 
       result shouldBe Seq(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
-      val result = await(repository.getSubscriptions(application1))
+      val result = await(subscriptionRepository.getSubscriptions(application1))
 
       result shouldBe Seq.empty
     }
@@ -169,7 +171,37 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
         Index(key = Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
         Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
 
-      verifyIndexesVersionAgnostic(repository, expectedIndexes)
+      verifyIndexesVersionAgnostic(subscriptionRepository, expectedIndexes)
+    }
+  }
+
+  "Get API Version Collaborators" should {
+    "return email addresses" in {
+
+      def generateClientId = alphanumeric.take(10).mkString
+      val app1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
+        user = Seq("match1@example.com", "match2@example.com"))
+      await(applicationRepository.save(app1))
+
+      val app2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
+        user = Seq("match3@example.com"))
+      await(applicationRepository.save(app2))
+
+      val doNotMatchApp = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
+        user = Seq("donotmatch@example.com"))
+      await(applicationRepository.save(doNotMatchApp))
+
+      val api1 = APIIdentifier("some-context-api1", "1.0")
+      await(subscriptionRepository.add(app1.id, api1))
+      await(subscriptionRepository.add(app2.id, api1))
+
+      val doNotMatchApi = APIIdentifier("some-context-donotmatchapi", "1.0")
+      await(subscriptionRepository.add(doNotMatchApp.id, doNotMatchApi))
+
+      val result = await(subscriptionRepository.getCollaborators(api1.context, api1.version))
+
+      val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
+      result.toSet shouldBe expectedEmails
     }
   }
 
@@ -178,4 +210,44 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       APIIdentifier(apiContext, version),
       Set(applicationIds: _*))
   }
+
+  def anApplicationData(id: UUID,
+                        prodClientId: String = "aaa",
+                        sandboxClientId: String = "111",
+                        state: ApplicationState = testingState(),
+                        access: Access = Standard(Seq.empty, None, None),
+                        user: Seq[String] = Seq("user@example.com"),
+                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
+
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user, checkInformation)
+  }
+
+  def aNamedApplicationData(id: UUID,
+                            name: String,
+                            prodClientId: String = "aaa",
+                            sandboxClientId: String = "111",
+                            state: ApplicationState = testingState(),
+                            access: Access = Standard(Seq.empty, None, None),
+                            user: Seq[String] = Seq("user@example.com"),
+                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
+
+    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR)).toSet
+
+    ApplicationData(
+      id,
+      name,
+      name.toLowerCase,
+      collaborators,
+      Some("description"),
+      "username",
+      "password",
+      "myapplication",
+      ApplicationTokens(
+        EnvironmentToken(prodClientId, nextString(5), nextString(5)),
+        EnvironmentToken(sandboxClientId, nextString(5), nextString(5))),
+      state,
+      access,
+      checkInformation = checkInformation)
+  }
+
 }
