@@ -28,7 +28,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
 
-trait ApiStore {
+trait ApiGatewayStore {
 
   def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                        (implicit hc: HeaderCarrier): Future[ApplicationTokens]
@@ -65,7 +65,7 @@ trait ApiStore {
 }
 
 @Singleton
-class RealApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsApiGatewayConnector: AwsApiGatewayConnector) extends ApiStore {
+class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsApiGatewayConnector: AwsApiGatewayConnector) extends ApiGatewayStore {
 
   val resubscribeMaxRetries = 5
 
@@ -220,7 +220,7 @@ class RealApiStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsAp
 }
 
 @Singleton
-class StubApiStore @Inject()() extends ApiStore {
+class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
   lazy val dummyProdTokens = EnvironmentToken("dummyProdId", "dummyValue", "dummyValue")
   lazy val dummyTestTokens = EnvironmentToken("dummyTestId", "dummyValue", "dummyValue")

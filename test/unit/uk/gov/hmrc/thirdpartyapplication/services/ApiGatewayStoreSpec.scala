@@ -30,21 +30,21 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.RealApiStore
+import uk.gov.hmrc.thirdpartyapplication.services.RealApiGatewayStore
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class ApiStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
+class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector]
     val mockAwsApiGatewayConnector = mock[AwsApiGatewayConnector]
 
-    val underTest = new RealApiStore(mockWSO2APIStoreConnector, mockAwsApiGatewayConnector) {
+    val underTest = new RealApiGatewayStore(mockWSO2APIStoreConnector, mockAwsApiGatewayConnector) {
       override val resubscribeMaxRetries = 0
     }
 
