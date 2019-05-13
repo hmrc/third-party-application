@@ -73,4 +73,4 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpsertApplicationRequest(applicationName: String, rateLimitTier: RateLimitTier, serverToken: String)
+case class UpsertApplicationRequest(applicationName: String, usagePlan: RateLimitTier, serverToken: String)
