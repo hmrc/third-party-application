@@ -37,7 +37,7 @@ import scala.concurrent.Future
 
 @Singleton
 class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
-                                   wso2APIStore: Wso2ApiStore,
+                                   apiGatewayStore: ApiGatewayStore,
                                    subscriptionRepository: SubscriptionRepository,
                                    applicationRepository: ApplicationRepository,
                                    migrationRepository: Wso2RestoreRepository) {
@@ -60,7 +60,7 @@ class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
 
   private def restoreApp(appData: ApplicationData): Future[Seq[HasSucceeded]] = {
     Logger.info(s"Starting to restore ${appData.name}.")
-    wso2APIStore.createApplication(appData.wso2Username, appData.wso2Password, appData.wso2ApplicationName).flatMap(_ =>
+    apiGatewayStore.createApplication(appData.wso2Username, appData.wso2Password, appData.wso2ApplicationName).flatMap(_ =>
       migrationRepository.save(Wso2RestoreData(appData.id, None, None, None, None, Some(false))).flatMap(
         _ => {
           val succeeded: Future[Seq[Future[HasSucceeded]]] = subscriptionRepository.getSubscriptions(appData.id).map(
@@ -91,7 +91,7 @@ class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
 
   private def addSubscription(appData: ApplicationData, apiIdentifier: APIIdentifier) = {
     Logger.info(s"Trying to subscribe application ${appData.name} to API $apiIdentifier")
-    wso2APIStore.addSubscription(appData.wso2Username,
+    apiGatewayStore.addSubscription(appData.wso2Username,
       appData.wso2Password,
       appData.wso2ApplicationName,
       apiIdentifier,
