@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.config
 import javax.inject.{Inject, Provider, Singleton}
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
-import uk.gov.hmrc.thirdpartyapplication.services.{RealWso2ApiStore, StubApiStore, Wso2ApiStore}
+import uk.gov.hmrc.thirdpartyapplication.services.{RealApiStore, StubApiStore, ApiStore}
 
 class ApiStorageModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[Wso2ApiStore].toProvider[ApiStorageProvider]
+      bind[ApiStore].toProvider[ApiStorageProvider]
     )
   }
 }
@@ -33,15 +33,15 @@ class ApiStorageModule extends Module {
 @Singleton
 class ApiStorageProvider @Inject()(config: ApiStorageConfig,
                                    stubApiStore: StubApiStore,
-                                  realWso2ApiStore: RealWso2ApiStore)
-  extends Provider[Wso2ApiStore] {
+                                  realApiStore: RealApiStore)
+  extends Provider[ApiStore] {
 
   override def get() =  {
     if (config.skipWso2) {
       stubApiStore
     }
     else {
-      realWso2ApiStore
+      realApiStore
     }
   }
 }

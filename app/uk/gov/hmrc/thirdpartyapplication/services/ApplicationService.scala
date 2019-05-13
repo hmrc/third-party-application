@@ -54,7 +54,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    emailConnector: EmailConnector,
                                    totpConnector: TotpConnector,
                                    lockKeeper: ApplicationLockKeeper,
-                                   wso2APIStore: Wso2ApiStore,
+                                   apiStore: ApiStore,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
                                    trustedApplications: TrustedApplications) {
@@ -136,17 +136,17 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     fetchApp(applicationId) flatMap { app =>
 
       def updateWso2Subscriptions(): Future[Seq[HasSucceeded]] = {
-        wso2APIStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName) flatMap { originalApis =>
+        apiStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName) flatMap { originalApis =>
           sequence(originalApis map { api =>
-            wso2APIStore.resubscribeApi(originalApis, app.wso2Username, app.wso2Password, app.wso2ApplicationName, api, rateLimitTier)
+            apiStore.resubscribeApi(originalApis, app.wso2Username, app.wso2Password, app.wso2ApplicationName, api, rateLimitTier)
           })
         }
       }
 
       def updateWso2Application(): Future[HasSucceeded] = {
         for {
-          _ <- wso2APIStore.updateApplication(app, rateLimitTier)
-          _ <- wso2APIStore.checkApplicationRateLimitTier(app.wso2Username, app.wso2Password, app.wso2ApplicationName, rateLimitTier)
+          _ <- apiStore.updateApplication(app, rateLimitTier)
+          _ <- apiStore.checkApplicationRateLimitTier(app.wso2Username, app.wso2Password, app.wso2ApplicationName, rateLimitTier)
         } yield HasSucceeded
       }
 
@@ -329,7 +329,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val wso2ApplicationName = credentialGenerator.generate()
 
     def createInWso2(): Future[ApplicationTokens] = {
-      wso2APIStore.createApplication(wso2Username, wso2Password, wso2ApplicationName)
+      apiStore.createApplication(wso2Username, wso2Password, wso2ApplicationName)
     }
 
     def saveApplication(tokens: ApplicationTokens, ids: Option[TotpIds]): Future[ApplicationData] = {
@@ -364,7 +364,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     f andThen {
       case Failure(_) =>
-        wso2APIStore.deleteApplication(wso2Username, wso2Password, wso2ApplicationName)
+        apiStore.deleteApplication(wso2Username, wso2Password, wso2ApplicationName)
           .map(_ => Logger.info(s"deleted application: [$wso2ApplicationName]"))
     }
   }

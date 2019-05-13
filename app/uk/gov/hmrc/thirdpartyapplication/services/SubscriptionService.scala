@@ -35,7 +35,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     subscriptionRepository: SubscriptionRepository,
                                     apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
-                                    wso2APIStore: Wso2ApiStore,
+                                    apiStore: ApiStore,
                                     trustedAppConfig: TrustedApplicationsConfig) {
 
   val trustedApplications = trustedAppConfig.trustedApplications
@@ -77,7 +77,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       versionSubscription <- versionSubscriptionFuture
       app <- fetchAppFuture
       _ = checkVersionSubscription(app, versionSubscription)
-      _ <- wso2APIStore.addSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier, app.rateLimitTier) map { _ =>
+      _ <- apiStore.addSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier, app.rateLimitTier) map { _ =>
         auditSubscription(Subscribed, app, apiIdentifier)
       }
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
@@ -87,14 +87,14 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     for {
       app <- fetchApp(applicationId)
-      _ <- wso2APIStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier) map { _ =>
+      _ <- apiStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier) map { _ =>
         auditSubscription(Unsubscribed, app, apiIdentifier)
       }
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
     } yield HasSucceeded
 
   private def fetchSubscriptions(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] = fetchApp(applicationId) flatMap { app =>
-    wso2APIStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+    apiStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
   }
 
   private def auditSubscription(action: AuditAction, app: ApplicationData, api: APIIdentifier)(implicit hc: HeaderCarrier): Unit = {
@@ -144,7 +144,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
       for {
         mongoSubscriptions <- mongoSubscriptionsFuture
-        wso2Subscriptions <- wso2APIStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+        wso2Subscriptions <- apiStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
         subscriptionsToAdd = wso2Subscriptions.filterNot(mongoSubscriptions.contains(_))
         subscriptionsToRemove = mongoSubscriptions.filterNot(wso2Subscriptions.contains(_))
         sub <- updateSubscriptions(app, subscriptionsToAdd, subscriptionsToRemove)

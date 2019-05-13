@@ -68,7 +68,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   trait Setup {
 
     lazy val locked = false
-    val mockWSO2APIStore = mock[Wso2ApiStore]
+    val mockApiStore = mock[ApiStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockSubscriptionRepository = mock[SubscriptionRepository]
@@ -90,7 +90,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockAuditService,
       mockEmailConnector,
       mockApiSubscriptionFieldsConnector,
-      mockWSO2APIStore,
+      mockApiStore,
       applicationResponseCreator,
       mockTrustedApplications,
       mockThirdPartyDelegatedAuthorityConnector)
@@ -389,10 +389,10 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     trait DeleteApplicationSetup extends Setup {
       when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
-      when(mockWSO2APIStore.getSubscriptions(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(Seq(api1, api2)))
-      when(mockWSO2APIStore.removeSubscription(any(), any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockApiStore.getSubscriptions(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(Seq(api1, api2)))
+      when(mockApiStore.removeSubscription(any(), any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
-      when(mockWSO2APIStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockApiStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockApplicationRepository.delete(any())).thenReturn(successful(HasSucceeded))
       when(mockStateHistoryRepository.deleteByApplicationId(any())).thenReturn(successful(HasSucceeded))
       when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
@@ -406,15 +406,15 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "call to WSO2 to delete the application" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, request))
-      verify(mockWSO2APIStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password),
+      verify(mockApiStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password),
         eqTo(application.wso2ApplicationName))(any[HeaderCarrier])
     }
 
     "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, request))
-      verify(mockWSO2APIStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
+      verify(mockApiStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
         eqTo(application.wso2ApplicationName), eqTo(api1))(any[HeaderCarrier])
-      verify(mockWSO2APIStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
+      verify(mockApiStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
         eqTo(application.wso2ApplicationName), eqTo(api2))(any[HeaderCarrier])
     }
 
@@ -459,7 +459,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       result shouldBe Deleted
 
       verify(mockApplicationRepository).fetch(applicationId)
-      verifyNoMoreInteractions(mockWSO2APIStore, mockApplicationRepository, mockStateHistoryRepository,
+      verifyNoMoreInteractions(mockApiStore, mockApplicationRepository, mockStateHistoryRepository,
         mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
   }
