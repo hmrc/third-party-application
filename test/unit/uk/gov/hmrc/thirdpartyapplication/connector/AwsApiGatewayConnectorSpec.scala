@@ -48,13 +48,14 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
   private val wireMockUrl = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
   private val applicationName = "api-platform-app"
+  private val apiName = "hello--1.0"
 
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val upsertApplicationRequest = UpsertApplicationRequest("foobar-app", SILVER, UUID.randomUUID().toString)
+    val upsertApplicationRequest = UpsertApplicationRequest(SILVER, UUID.randomUUID().toString)
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val awsApiKey: String = UUID.randomUUID().toString
     val config: AwsApiGatewayConfig = AwsApiGatewayConfig(wireMockUrl, awsApiKey)
@@ -73,15 +74,15 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
   "createOrUpdateApplication" should {
     "send the right body and headers when creating or updating an application" in new Setup {
-      stubFor(put(urlPathEqualTo("/v1/application"))
+      stubFor(put(urlPathEqualTo(s"/v1/application/$applicationName"))
         .willReturn(
           aResponse()
             .withStatus(OK)
             .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")))
 
-      await(underTest.createOrUpdateApplication(upsertApplicationRequest)(hc))
+      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc))
 
-      wireMockServer.verify(putRequestedFor(urlEqualTo("/v1/application"))
+      wireMockServer.verify(putRequestedFor(urlEqualTo(s"/v1/application/$applicationName"))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION)
@@ -89,12 +90,12 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
     }
 
     "return HasSucceeded when application creation or update fails" in new Setup {
-      stubFor(put(urlPathEqualTo("/v1/application"))
+      stubFor(put(urlPathEqualTo(s"/v1/application/$applicationName"))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      await(underTest.createOrUpdateApplication(upsertApplicationRequest)(hc)) shouldBe HasSucceeded
+      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc)) shouldBe HasSucceeded
     }
   }
 
@@ -120,6 +121,57 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
             .withStatus(INTERNAL_SERVER_ERROR)))
 
       await(underTest.deleteApplication(applicationName)(hc)) shouldBe HasSucceeded
+    }
+  }
+
+  "addSubscription" should {
+    "send the x-api-key header when adding a subscription" in new Setup {
+      stubFor(put(urlPathEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")))
+
+      await(underTest.addSubscription(applicationName, apiName)(hc))
+
+      wireMockServer.verify(putRequestedFor(urlEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .withoutHeader(AUTHORIZATION)
+        .withRequestBody(equalTo("\"\"")))
+    }
+
+    "return HasSucceeded when subscription addition fails" in new Setup {
+      stubFor(post(urlPathEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)))
+
+      await(underTest.addSubscription(applicationName, apiName)(hc)) shouldBe HasSucceeded
+    }
+  }
+
+  "removeSubscription" should {
+    "send the x-api-key header when removing a subscription" in new Setup {
+      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")))
+
+      await(underTest.removeSubscription(applicationName, apiName)(hc))
+
+      wireMockServer.verify(deleteRequestedFor(urlEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .withoutHeader(AUTHORIZATION))
+    }
+
+    "return HasSucceeded when subscription removal fails" in new Setup {
+      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName/subscription/$apiName"))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)))
+
+      await(underTest.removeSubscription(applicationName, apiName)(hc)) shouldBe HasSucceeded
     }
   }
 }

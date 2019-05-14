@@ -58,7 +58,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
       val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"), EnvironmentToken("111", "222", "333"))
-      val upsertApplicationRequest = UpsertApplicationRequest(wso2ApplicationName, BRONZE, tokens.production.accessToken)
+      val upsertApplicationRequest = UpsertApplicationRequest(BRONZE, tokens.production.accessToken)
 
       when(mockWSO2APIStoreConnector.createUser(wso2Username, wso2Password))
         .thenReturn(Future.successful(HasSucceeded))
@@ -71,14 +71,14 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION))
         .thenReturn(Future.successful(tokens.production))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
 
       val result = await(underTest.createApplication(wso2Username, wso2Password, wso2ApplicationName))
 
       result shouldBe tokens
 
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(upsertApplicationRequest)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)
     }
 
   }
@@ -104,19 +104,19 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
           EnvironmentToken(nextString(2), nextString(2), serverToken),
           EnvironmentToken(nextString(2), nextString(2), nextString(2))),
         testingState())
-      val upsertApplicationRequest = UpsertApplicationRequest(wso2ApplicationName, SILVER, serverToken)
+      val upsertApplicationRequest = UpsertApplicationRequest(SILVER, serverToken)
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.updateApplication(cookie, wso2ApplicationName, SILVER)).
         thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest updateApplication(app, SILVER))
 
       verify(mockWSO2APIStoreConnector).updateApplication(cookie, wso2ApplicationName, SILVER)
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(upsertApplicationRequest)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)
     }
 
   }
@@ -154,17 +154,19 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
     val wso2API = Wso2Api("some--context--1.0", "1.0")
     val api = APIIdentifier("some/context", "1.0")
 
-    "add a subscription to an application in WSO2" in new Setup {
+    "add a subscription to an application in AWS and WSO2" in new Setup {
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.addSubscription(wso2ApplicationName, wso2API.name)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest.addSubscription(wso2Username, wso2Password, wso2ApplicationName, api, Some(GOLD)))
 
       verify(mockWSO2APIStoreConnector).addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
+      verify(mockAwsApiGatewayConnector).addSubscription(wso2ApplicationName, wso2API.name)(hc)
     }
 
     "fail when add subscription fails" in new Setup {
@@ -182,7 +184,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
 
   "removeSubscription" should {
 
-    "remove a subscription from an application in WSO2" in new Setup {
+    "remove a subscription from an application in AWS and WSO2" in new Setup {
 
       val wso2Username = "myuser"
       val wso2Password = "mypassword"
@@ -195,11 +197,13 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2API, 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.removeSubscription(wso2ApplicationName, wso2API.name)(hc)).thenReturn(successful(HasSucceeded))
 
       await(underTest.removeSubscription(wso2Username, wso2Password, wso2ApplicationName, api))
 
       verify(mockWSO2APIStoreConnector).removeSubscription(cookie, wso2ApplicationName, wso2API, 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
+      verify(mockAwsApiGatewayConnector).removeSubscription(wso2ApplicationName, wso2API.name)(hc)
     }
 
   }

@@ -36,17 +36,17 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
   val awsApiKey: String = config.awsApiKey
   val apiKeyHeaderName = "x-api-key"
 
-  def createOrUpdateApplication(upsertApplicationRequest: UpsertApplicationRequest)(hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createOrUpdateApplication(applicationName: String, upsertApplicationRequest: UpsertApplicationRequest)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
-    http.PUT(serviceBaseUrl, upsertApplicationRequest) map { result =>
+    http.PUT(s"$serviceBaseUrl/$applicationName", upsertApplicationRequest) map { result =>
       val requestId = (result.json \ "RequestId").as[String]
-      Logger.info(s"Successfully created or updated application '${upsertApplicationRequest.applicationName}' in AWS API Gateway with request ID $requestId")
+      Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID $requestId")
       HasSucceeded
     } recover {
-      awsRecovery(s"Failed to create or update application ${upsertApplicationRequest.applicationName} in AWS API Gateway")
+      awsRecovery(s"Failed to create or update application '$applicationName' in AWS API Gateway")
     }
   }
 
@@ -60,7 +60,35 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID $requestId")
       HasSucceeded
     } recover {
-      awsRecovery(s"Failed to delete application $applicationName from AWS API Gateway")
+      awsRecovery(s"Failed to delete application '$applicationName' from AWS API Gateway")
+    }
+  }
+
+  def addSubscription(applicationName: String, apiName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+      .copy(authorization = None)
+      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
+
+    http.PUT(s"$serviceBaseUrl/$applicationName/subscription/$apiName", "") map { result =>
+      val requestId = (result.json \ "RequestId").as[String]
+      Logger.info(s"Successfully added subscription '$applicationName/$apiName' in AWS API Gateway with request ID $requestId")
+      HasSucceeded
+    } recover {
+      awsRecovery(s"Failed to add subscription '$applicationName/$apiName' in AWS API Gateway")
+    }
+  }
+
+  def removeSubscription(applicationName: String, apiName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+      .copy(authorization = None)
+      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
+
+    http.DELETE(s"$serviceBaseUrl/$applicationName/subscription/$apiName") map { result =>
+      val requestId = (result.json \ "RequestId").as[String]
+      Logger.info(s"Successfully deleted subscription '$applicationName/$apiName' from AWS API Gateway with request ID $requestId")
+      HasSucceeded
+    } recover {
+      awsRecovery(s"Failed to delete subscription '$applicationName/$apiName' from AWS API Gateway")
     }
   }
 
@@ -73,4 +101,4 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpsertApplicationRequest(applicationName: String, usagePlan: RateLimitTier, serverToken: String)
+case class UpsertApplicationRequest(usagePlan: RateLimitTier, serverToken: String)

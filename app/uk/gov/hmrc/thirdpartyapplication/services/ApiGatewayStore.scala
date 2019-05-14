@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{Wso2Api, _}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
 
 import scala.collection._
@@ -80,7 +80,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       sandboxKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.SANDBOX)
       prodKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION)
       _ <- wso2APIStoreConnector.logout(cookie)
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(UpsertApplicationRequest(wso2ApplicationName, BRONZE, prodKeys.accessToken))(hc)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, UpsertApplicationRequest(BRONZE, prodKeys.accessToken))(hc)
     } yield ApplicationTokens(prodKeys, sandboxKeys)
   }
 
@@ -111,7 +111,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
     withLogin(app.wso2Username, app.wso2Password) {
       wso2APIStoreConnector.updateApplication(_, app.wso2ApplicationName, rateLimitTier)
     } flatMap { _ =>
-      awsApiGatewayConnector.createOrUpdateApplication(UpsertApplicationRequest(app.wso2ApplicationName, rateLimitTier, app.tokens.production.accessToken))(hc)
+      awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, UpsertApplicationRequest(rateLimitTier, app.tokens.production.accessToken))(hc)
     }
   }
 
@@ -130,16 +130,24 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
                                wso2ApplicationName: String,
                                api: APIIdentifier,
                                rateLimitTier: Option[RateLimitTier])
-                              (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+                              (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val wso2Api = Wso2Api.create(api)
     withLogin(wso2Username, wso2Password) {
-      wso2APIStoreConnector.addSubscription(_, wso2ApplicationName, Wso2Api.create(api), rateLimitTier, 0)
+      wso2APIStoreConnector.addSubscription(_, wso2ApplicationName, wso2Api, rateLimitTier, 0)
+    } flatMap { _ =>
+      awsApiGatewayConnector.addSubscription(wso2ApplicationName, wso2Api.name)(hc)
     }
+  }
 
   override def removeSubscription(wso2Username: String, wso2Password: String, wso2ApplicationName: String, api: APIIdentifier)
-                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] =
+                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val wso2Api = Wso2Api.create(api)
     withLogin(wso2Username: String, wso2Password) {
-      wso2APIStoreConnector.removeSubscription(_, wso2ApplicationName, Wso2Api.create(api), 0)
+      wso2APIStoreConnector.removeSubscription(_, wso2ApplicationName, wso2Api, 0)
+    } flatMap { _ =>
+      awsApiGatewayConnector.removeSubscription(wso2ApplicationName, wso2Api.name)(hc)
     }
+  }
 
   override def resubscribeApi(originalApis: Seq[APIIdentifier],
                               wso2Username: String,
