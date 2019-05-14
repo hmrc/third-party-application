@@ -380,6 +380,19 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     }
   }
 
+  "searchCollaborators" should{
+    "return emails" in new Setup {
+      val context = "api1"
+      val version = "1.0"
+      val emails = Seq("user@example.com", "dev@example.com")
+
+      given(mockSubscriptionRepository.searchCollaborators(context, version)).willReturn(emails)
+
+      val result = await(underTest.searchCollaborators(context, version))
+      result shouldBe emails
+    }
+  }
+
   private val requestedByEmail = "john.smith@example.com"
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),

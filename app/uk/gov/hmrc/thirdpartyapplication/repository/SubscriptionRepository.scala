@@ -39,7 +39,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
     MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats) {
 
-  def getCollaborators(context: String, version: String): Future[Seq[String]] = {
+  def searchCollaborators(context: String, version: String): Future[Seq[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
     val pipeline = List(
       builder.Match(Json.obj("apiIdentifier.version" -> version, "apiIdentifier.context" -> context)),

@@ -198,7 +198,7 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val doNotMatchApi = APIIdentifier("some-context-donotmatchapi", "1.0")
       await(subscriptionRepository.add(doNotMatchApp.id, doNotMatchApi))
 
-      val result = await(subscriptionRepository.getCollaborators(api1.context, api1.version))
+      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version))
 
       val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
       result.toSet shouldBe expectedEmails

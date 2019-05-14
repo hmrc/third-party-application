@@ -38,6 +38,11 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     wso2APIStore: Wso2ApiStore,
                                     trustedAppConfig: TrustedApplicationsConfig) {
 
+  def searchCollaborators(context:String, version:String):Future[Seq[String]] = {
+    subscriptionRepository.searchCollaborators(context, version)
+  }
+
+
   val trustedApplications = trustedAppConfig.trustedApplications
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
