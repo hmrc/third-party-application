@@ -36,8 +36,6 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[ServiceLocatorRegistrationConfig].toProvider[ServiceLocatorRegistrationConfigProvider],
-      bind[ServiceLocatorConfig].toProvider[ServiceLocatorConfigProvider],
       bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
@@ -48,6 +46,7 @@ class ConfigurationModule extends Module {
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
       bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
+      bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[TrustedApplicationsConfig].toProvider[TrustedApplicationsConfigProvider],
@@ -60,32 +59,6 @@ object ConfigHelper {
 
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
-  }
-}
-
-@Singleton
-class ServiceLocatorRegistrationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ServiceLocatorRegistrationConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val registrationEnabled = getConfBool("service-locator.enabled", defBool = true)
-    ServiceLocatorRegistrationConfig(registrationEnabled)
-  }
-}
-
-@Singleton
-class ServiceLocatorConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ServiceLocatorConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val appName = getString("appName")
-    val appUrl = getString("appUrl")
-    val serviceLocatorBaseUrl = baseUrl("service-locator")
-    ServiceLocatorConfig(appName, appUrl, serviceLocatorBaseUrl)
   }
 }
 
@@ -228,6 +201,19 @@ class Wso2ApiStoreConfigProvider @Inject()(val runModeConfiguration: Configurati
 }
 
 @Singleton
+class AwsApiGatewayConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[AwsApiGatewayConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val url = baseUrl("aws-gateway")
+    val awsApiKey = getString("awsApiKey")
+    AwsApiGatewayConfig(url, awsApiKey)
+  }
+}
+
+@Singleton
 class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
   extends Provider[ThirdPartyDelegatedAuthorityConfig] with ServicesConfig {
 
@@ -275,6 +261,3 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
     CredentialConfig(clientSecretLimit)
   }
 }
-
-
-

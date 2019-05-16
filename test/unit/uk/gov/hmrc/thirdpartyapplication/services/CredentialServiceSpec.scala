@@ -53,7 +53,6 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   trait Setup {
 
     lazy val locked = false
-    val mockWSO2APIStore = mock[Wso2ApiStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockAuditService = mock[AuditService]

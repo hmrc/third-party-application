@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 object AuthSpecHelpers {
   def givenUserIsAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise(any, any[Retrieval[Any]])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful())
+    when(underTest.authConnector.authorise(any, any[Retrieval[Any]])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(()))
   }
 
   def givenUserIsNotAuthenticated(underTest: AuthorisationWrapper) = {

@@ -42,7 +42,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
                                   apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
-                                  wso2APIStore: Wso2ApiStore,
+                                  apiGatewayStore: ApiGatewayStore,
                                   applicationResponseCreator: ApplicationResponseCreator,
                                   trustedApplications: TrustedApplications,
                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector) {
@@ -155,13 +155,13 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: APIIdentifier) = {
         for {
-          _ <- wso2APIStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, subscription)
+          _ <- apiGatewayStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, subscription)
           _ <- subscriptionRepository.remove(app.id, subscription)
         } yield HasSucceeded
       }
 
       for {
-        subscriptions <- wso2APIStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+        subscriptions <- apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
         _ <- traverse(subscriptions)(deleteSubscription)
         _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
       } yield HasSucceeded
@@ -177,7 +177,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       app <- fetchApp(applicationId)
       _ <- deleteSubscriptions(app)
       _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
-      _ <- wso2APIStore.deleteApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+      _ <- apiGatewayStore.deleteApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
       _ <- applicationRepository.delete(applicationId)
       _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _ = auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
