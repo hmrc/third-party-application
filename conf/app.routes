@@ -51,3 +51,4 @@ GET           /gatekeeper/application/:id                            uk.gov.hmrc
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: java.util.UUID)
 
 POST          /admin/application/restore-wso2-data                   uk.gov.hmrc.thirdpartyapplication.controllers.Wso2RestoreController.restoreWso2Data()
+POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()
