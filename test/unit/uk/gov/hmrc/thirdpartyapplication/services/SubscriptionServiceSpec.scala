@@ -384,10 +384,11 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       val context = "api1"
       val version = "1.0"
       val emails = Seq("user@example.com", "dev@example.com")
+      val partialEmailMatch = "partialEmail"
 
-      given(mockSubscriptionRepository.searchCollaborators(context, version)).willReturn(emails)
+      given(mockSubscriptionRepository.searchCollaborators(context, version, Some(partialEmailMatch))).willReturn(emails)
 
-      val result = await(underTest.searchCollaborators(context, version))
+      val result = await(underTest.searchCollaborators(context, version, Some(partialEmailMatch)))
       result shouldBe emails
     }
   }

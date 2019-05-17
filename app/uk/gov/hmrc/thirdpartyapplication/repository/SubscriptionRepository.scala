@@ -17,13 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
+import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor
-import reactivemongo.bson.BSONObjectID
+import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -39,8 +40,9 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
     MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats) {
 
-  def searchCollaborators(context: String, version: String): Future[Seq[String]] = {
+  def searchCollaborators(context: String, version: String, partialEmail: Option[String]): Future[Seq[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
+
     val pipeline = List(
       builder.Match(Json.obj("apiIdentifier.version" -> version, "apiIdentifier.context" -> context)),
       builder.Project(Json.obj("applications" -> 1, "_id" -> 0)),
@@ -49,9 +51,21 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
       builder.Project(Json.obj("collaborators" -> "$applications.collaborators.emailAddress")),
       builder.UnwindField("collaborators"),
       builder.UnwindField("collaborators"),
-      builder.Group(JsString("$collaborators"))())
+      builder.Group(JsString("$collaborators"))()
+    )
 
-    val query = collection.aggregateWith[JsObject]()(_ => (pipeline.head, pipeline.tail))
+    def partialEmailMatch(email :String) = {
+      val caseInsensitiveRegExOption = "i"
+      builder.Match(Json.obj("_id" -> BSONRegex(email, caseInsensitiveRegExOption)))
+    }
+
+    val pipelineWithOptionalEmailFilter =
+      partialEmail match {
+      case Some(email) => pipeline ++ List(partialEmailMatch(email))
+      case None => pipeline
+    }
+
+    val query = collection.aggregateWith[JsObject]()(_ => (pipelineWithOptionalEmailFilter.head, pipelineWithOptionalEmailFilter.tail))
 
     val fList = query.collect(Int.MaxValue, Cursor.FailOnError[List[JsObject]]())
     fList.map {

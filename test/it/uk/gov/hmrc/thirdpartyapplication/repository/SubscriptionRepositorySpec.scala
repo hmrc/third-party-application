@@ -36,7 +36,9 @@ import scala.util.Random.{alphanumeric, nextString}
 class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually {
 
-  private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
+  private val reactiveMongoComponent = new ReactiveMongoComponent {
+    override def mongoConnector: MongoConnector = mongoConnectorForTest
+  }
 
   private val subscriptionRepository = new SubscriptionRepository(reactiveMongoComponent)
   private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
@@ -179,6 +181,7 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
     "return email addresses" in {
 
       def generateClientId = alphanumeric.take(10).mkString
+
       val app1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
         user = Seq("match1@example.com", "match2@example.com"))
       await(applicationRepository.save(app1))
@@ -198,10 +201,31 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val doNotMatchApi = APIIdentifier("some-context-donotmatchapi", "1.0")
       await(subscriptionRepository.add(doNotMatchApp.id, doNotMatchApi))
 
-      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version))
+      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
 
       val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
       result.toSet shouldBe expectedEmails
+    }
+
+    "filter by collaborators and api version" in {
+      def generateClientId = alphanumeric.take(10).mkString
+
+      val matchEmail = "match@example.com"
+      val partialEmailToMatch = "match"
+      val app1 = anApplicationData(
+        id = UUID.randomUUID(),
+        prodClientId = generateClientId,
+        sandboxClientId = generateClientId,
+        user = Seq(matchEmail, "donot@example.com"))
+
+      await(applicationRepository.save(app1))
+
+      val api1 = APIIdentifier("some-context-api", "1.0")
+      await(subscriptionRepository.add(app1.id, api1))
+
+      val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, Some(partialEmailToMatch)))
+
+      result.toSet shouldBe Set(matchEmail)
     }
   }
 

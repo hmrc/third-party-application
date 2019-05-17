@@ -48,12 +48,13 @@ class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with Mockito
   "searchCollaborators" should {
 
     "succeed with a 200 (ok) when collaborators are found for an Api context and version" in new Setup {
-      val context="api1"
-      val version="1.0"
+      private val context="api1"
+      private val version="1.0"
+      private val partialemail = "partialemail"
 
-      when(mockSubscriptionService.searchCollaborators(context, version)).thenReturn(Future.successful(Seq("user@example.com")))
+      when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(Seq("user@example.com")))
 
-      val result = await(underTest.searchCollaborators(context, version)(request))
+      val result = await(underTest.searchCollaborators(context, version, Some(partialemail))(request))
 
       status(result) shouldBe SC_OK
 
