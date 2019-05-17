@@ -53,6 +53,8 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
     val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
     val awsRestoreService: AwsRestoreService =
       new AwsRestoreService(mockApiGatewayConnector, mockApplicationRepository, mockSubscriptionRepository)
   }
@@ -81,8 +83,34 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val capturedUpsertRequest: UpsertApplicationRequest = upsertApplicationRequestCaptor.getValue
       capturedUpsertRequest.serverToken shouldBe serverToken
 
-      verify(mockApiGatewayConnector, times(1)).addSubscription(applicationName, "hello--1.0")(_)
-      verify(mockApiGatewayConnector, times(1)).addSubscription(applicationName, "goodbye--2.0")(_)
+      verify(mockApiGatewayConnector, times(1)).addSubscription(applicationName, "hello--1.0")(hc)
+      verify(mockApiGatewayConnector, times(1)).addSubscription(applicationName, "goodbye--2.0")(hc)
+    }
+
+    "republish Applications with multi-segment API subscriptions" in new Setup {
+      val applicationName = "foo"
+      val serverToken: String = UUID.randomUUID().toString
+
+      val application: ApplicationData = buildApplication(applicationName, serverToken)
+      val multiSegmentSubscription = new APIIdentifier("hello/there", "1.0")
+      val expectedAPIName = "hello--there--1.0"
+
+      when(mockApplicationRepository.fetchAll()).thenReturn(Future.successful(Seq(application)))
+      when(mockSubscriptionRepository.getSubscriptions(application.id)).thenReturn(Future.successful(Seq(multiSegmentSubscription)))
+
+      val upsertApplicationRequestCaptor: ArgumentCaptor[UpsertApplicationRequest] = ArgumentCaptor.forClass(classOf[UpsertApplicationRequest])
+
+      when(mockApiGatewayConnector.createOrUpdateApplication(any[String], upsertApplicationRequestCaptor.capture())(any[HeaderCarrier]))
+        .thenReturn(Future.successful(HasSucceeded))
+      when(mockApiGatewayConnector.addSubscription(meq(applicationName), any[String])(any[HeaderCarrier])).thenReturn(Future.successful(HasSucceeded))
+
+      await(awsRestoreService.restoreData())
+
+      upsertApplicationRequestCaptor.getAllValues.size() shouldBe 1
+      val capturedUpsertRequest: UpsertApplicationRequest = upsertApplicationRequestCaptor.getValue
+      capturedUpsertRequest.serverToken shouldBe serverToken
+
+      verify(mockApiGatewayConnector, times(1)).addSubscription(applicationName, expectedAPIName)(hc)
     }
   }
 }

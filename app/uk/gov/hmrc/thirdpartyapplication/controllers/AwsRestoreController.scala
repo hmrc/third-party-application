@@ -24,7 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AwsRestoreController @Inject()(awsRestoreService: AwsRestoreService) extends CommonController {
 
-  def restoreAwsData() = Action.async {
+  def restoreAwsData() = Action.async { implicit request =>
     awsRestoreService.restoreData().map(_ => NoContent)
   }
 }
