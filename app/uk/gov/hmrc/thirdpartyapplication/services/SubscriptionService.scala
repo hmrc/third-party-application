@@ -38,6 +38,10 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     apiGatewayStore: ApiGatewayStore,
                                     trustedAppConfig: TrustedApplicationsConfig) {
 
+  def searchCollaborators(context:String, version:String, partialEmailMatch: Option[String]):Future[Seq[String]] = {
+    subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
+  }
+
   val trustedApplications = trustedAppConfig.trustedApplications
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()

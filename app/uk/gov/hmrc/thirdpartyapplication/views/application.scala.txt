@@ -159,3 +159,13 @@ uses:
       get:
         is: [headers.acceptHeader]
         securedBy: [ sec.x-application ]
+
+  /collaborators:
+    get:
+      queryParameters:
+        context:
+          type: string
+        version:
+          type: string
+      is: [headers.acceptHeader]
+      securedBy: [ sec.x-application ]
