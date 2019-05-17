@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.Inject
+import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ApplicationData, HasSucceeded}
@@ -31,11 +32,16 @@ class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector
   implicit val executionContext: ExecutionContext = ExecutionContext.global
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  def restoreData(): Future[Seq[HasSucceeded]] =
+  def restoreData(): Future[Seq[HasSucceeded]] = {
+    Logger.info("Republishing all Applications to AWS API Gateway")
+
     applicationRepository.fetchAll()
       .flatMap(applications => Future.sequence(applications.map(restoreApplication)))
+  }
 
   def restoreApplication(application: ApplicationData): Future[HasSucceeded] = {
+    Logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
+
     val request = UpsertApplicationRequest(application.rateLimitTier.get, application.tokens.production.accessToken)
     awsApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, request)(hc)
       .flatMap(_ => {
@@ -48,6 +54,12 @@ class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector
 
   def restoreApplicationSubscriptions(applicationName: String, apis: Seq[APIIdentifier]): Future[Seq[HasSucceeded]] = {
     Future.sequence(
-      apis.map(api => awsApiGatewayConnector.addSubscription(applicationName, s"${api.context}--${api.version}")(hc)))
+      apis.map(api => {
+        val normalisedAPIName = s"${api.context}--${api.version}"
+
+        Logger.debug(s"Resubscribing Application [$applicationName] to API [$normalisedAPIName]")
+
+        awsApiGatewayConnector.addSubscription(applicationName, normalisedAPIName)(hc)
+      }))
   }
 }
