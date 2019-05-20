@@ -20,9 +20,11 @@ import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ApplicationData, HasSucceeded, Wso2Api}
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationData, HasSucceeded, Wso2Api}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
+import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
 
 class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector,
@@ -35,30 +37,17 @@ class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector
     Logger.info("Republishing all Applications to AWS API Gateway")
 
     applicationRepository.fetchAll()
-      .flatMap(applications => Future.sequence(applications.map(restoreApplication)))
+      .flatMap(applications => sequence(applications.map(restoreApplication)))
   }
 
   def restoreApplication(application: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     Logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
 
-    val request = UpsertApplicationRequest(application.rateLimitTier.get, application.tokens.production.accessToken)
-    awsApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, request)(hc)
-      .flatMap(_ => {
-        val subscriptions = subscriptionRepository.getSubscriptions(application.id)
-        subscriptions
-          .flatMap(subs => restoreApplicationSubscriptions(application.wso2ApplicationName, subs))
-          .flatMap(_ => Future.successful(HasSucceeded))
-      })
-  }
-
-  def restoreApplicationSubscriptions(applicationName: String, apis: Seq[APIIdentifier])(implicit hc: HeaderCarrier): Future[Seq[HasSucceeded]] = {
-    Future.sequence(
-      apis
-        .map(Wso2Api.create)
-        .map(wso2Api => {
-          Logger.debug(s"Resubscribing Application [$applicationName] to API [${wso2Api.name}]")
-          awsApiGatewayConnector.addSubscription(applicationName, wso2Api.name)(hc)
-        })
-    )
+    for {
+      apiIdentifiers <- subscriptionRepository.getSubscriptions(application.id)
+      apiNames = apiIdentifiers.map(api => Wso2Api.create(api).name)
+      request = UpsertApplicationRequest(application.rateLimitTier.getOrElse(BRONZE), application.tokens.production.accessToken, apiNames)
+      result <- awsApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, request)(hc)
+    } yield result
   }
 }

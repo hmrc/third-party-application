@@ -91,11 +91,7 @@ class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
 
   private def addSubscription(appData: ApplicationData, apiIdentifier: APIIdentifier) = {
     Logger.info(s"Trying to subscribe application ${appData.name} to API $apiIdentifier")
-    apiGatewayStore.addSubscription(appData.wso2Username,
-      appData.wso2Password,
-      appData.wso2ApplicationName,
-      apiIdentifier,
-      appData.rateLimitTier)
+    apiGatewayStore.addSubscription(appData, apiIdentifier)
   }
 }
 

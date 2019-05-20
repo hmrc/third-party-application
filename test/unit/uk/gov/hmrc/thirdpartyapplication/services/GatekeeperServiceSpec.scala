@@ -390,7 +390,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     trait DeleteApplicationSetup extends Setup {
       when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
       when(mockApiGatewayStore.getSubscriptions(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(Seq(api1, api2)))
-      when(mockApiGatewayStore.removeSubscription(any(), any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
       when(mockApiGatewayStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockApplicationRepository.delete(any())).thenReturn(successful(HasSucceeded))
@@ -412,10 +412,8 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, request))
-      verify(mockApiGatewayStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
-        eqTo(application.wso2ApplicationName), eqTo(api1))(any[HeaderCarrier])
-      verify(mockApiGatewayStore).removeSubscription(eqTo(application.wso2Username), eqTo(application.wso2Password),
-        eqTo(application.wso2ApplicationName), eqTo(api2))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api1))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api2))(any[HeaderCarrier])
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {

@@ -77,8 +77,8 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     when(mockApiDefinitionConnector.fetchAllAPIs(any())(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
       .thenReturn(Seq(anAPIDefinition()))
     when(mockApiGatewayStore.getSubscriptions(any(), any(), any())(any[HeaderCarrier])).thenReturn(Seq())
-    when(mockApiGatewayStore.addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])).thenReturn(HasSucceeded)
-    when(mockApiGatewayStore.removeSubscription(any(), any(), any(), any())(any[HeaderCarrier])).thenReturn(HasSucceeded)
+    when(mockApiGatewayStore.addSubscription(any(), any())(any[HeaderCarrier])).thenReturn(HasSucceeded)
+    when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(HasSucceeded)
     when(mockSubscriptionRepository.add(any(), any())).thenReturn(HasSucceeded)
     when(mockSubscriptionRepository.remove(any(), any())).thenReturn(HasSucceeded)
   }
@@ -196,10 +196,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
       result shouldBe HasSucceeded
       verify(mockAuditService).audit(refEq(Subscribed), any[Map[String, String]])(refEq(hc))
-      verify(mockApiGatewayStore).addSubscription(refEq(applicationData.wso2Username), refEq(applicationData.wso2Password),
-        refEq(applicationData.wso2ApplicationName), refEq(api), refEq(Some(GOLD)))(any[HeaderCarrier])
-      verify(mockApiGatewayStore).addSubscription(refEq(applicationData.wso2Username), refEq(applicationData.wso2Password),
-        refEq(applicationData.wso2ApplicationName), refEq(api), refEq(Some(GOLD)))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).addSubscription(refEq(applicationData), refEq(api))(any[HeaderCarrier])
       verify(mockSubscriptionRepository).add(applicationId, api)
     }
 
@@ -215,10 +212,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       val result = await(underTest.createSubscriptionForApplication(trustedApplicationId, api))
 
       result shouldBe HasSucceeded
-      verify(mockApiGatewayStore).addSubscription(refEq(applicationData.wso2Username), refEq(applicationData.wso2Password),
-        refEq(applicationData.wso2ApplicationName), refEq(api), refEq(Some(RateLimitTier.BRONZE)))(any[HeaderCarrier])
-      verify(mockApiGatewayStore).addSubscription(refEq(applicationData.wso2Username), refEq(applicationData.wso2Password),
-        refEq(applicationData.wso2ApplicationName), refEq(api), refEq(Some(BRONZE)))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).addSubscription(refEq(trustedApplication), refEq(api))(any[HeaderCarrier])
       verify(mockSubscriptionRepository).add(trustedApplicationId, api)
     }
 
@@ -233,7 +227,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -246,7 +240,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when the API does not exist" in new Setup {
@@ -259,7 +253,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when the version does not exist for the given context" in new Setup {
@@ -272,7 +266,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       intercept[NotFoundException] {
         await(underTest.createSubscriptionForApplication(applicationId, apiWithWrongVersion))
       }
-      verify(mockApiGatewayStore, never).addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when the API requires trust and the application is not trusted" in new Setup {
@@ -285,7 +279,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       intercept[NotFoundException] {
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
-      verify(mockApiGatewayStore, never).addSubscription(any(), any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
   }
 
@@ -310,7 +304,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
-      verify(mockApiGatewayStore).removeSubscription(any(), any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).removeSubscription(any(), any())(any[HeaderCarrier])
       verify(mockAuditService).audit(refEq(Unsubscribed), any[Map[String, String]])(refEq(hc))
     }
   }

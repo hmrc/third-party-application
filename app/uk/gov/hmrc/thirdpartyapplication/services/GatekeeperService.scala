@@ -155,7 +155,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: APIIdentifier) = {
         for {
-          _ <- apiGatewayStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, subscription)
+          _ <- apiGatewayStore.removeSubscription(app, subscription)
           _ <- subscriptionRepository.remove(app.id, subscription)
         } yield HasSucceeded
       }
