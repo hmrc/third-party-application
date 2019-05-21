@@ -81,7 +81,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       versionSubscription <- versionSubscriptionFuture
       app <- fetchAppFuture
       _ = checkVersionSubscription(app, versionSubscription)
-      _ <- apiGatewayStore.addSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier, app.rateLimitTier) map { _ =>
+      _ <- apiGatewayStore.addSubscription(app, apiIdentifier) map { _ =>
         auditSubscription(Subscribed, app, apiIdentifier)
       }
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
@@ -91,7 +91,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     for {
       app <- fetchApp(applicationId)
-      _ <- apiGatewayStore.removeSubscription(app.wso2Username, app.wso2Password, app.wso2ApplicationName, apiIdentifier) map { _ =>
+      _ <- apiGatewayStore.removeSubscription(app, apiIdentifier) map { _ =>
         auditSubscription(Unsubscribed, app, apiIdentifier)
       }
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)

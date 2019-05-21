@@ -64,34 +64,6 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
     }
   }
 
-  def addSubscription(applicationName: String, apiName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
-      .copy(authorization = None)
-      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
-
-    http.PUT(s"$serviceBaseUrl/$applicationName/subscription/$apiName", "") map { result =>
-      val requestId = (result.json \ "RequestId").as[String]
-      Logger.info(s"Successfully added subscription '$applicationName/$apiName' in AWS API Gateway with request ID $requestId")
-      HasSucceeded
-    } recover {
-      awsRecovery(s"Failed to add subscription '$applicationName/$apiName' in AWS API Gateway")
-    }
-  }
-
-  def removeSubscription(applicationName: String, apiName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
-      .copy(authorization = None)
-      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
-
-    http.DELETE(s"$serviceBaseUrl/$applicationName/subscription/$apiName") map { result =>
-      val requestId = (result.json \ "RequestId").as[String]
-      Logger.info(s"Successfully deleted subscription '$applicationName/$apiName' from AWS API Gateway with request ID $requestId")
-      HasSucceeded
-    } recover {
-      awsRecovery(s"Failed to delete subscription '$applicationName/$apiName' from AWS API Gateway")
-    }
-  }
-
   // we don't want the AWS API Gateway to cause failures until we make the switch from WSO2
   private def awsRecovery(errorMessage: String): PartialFunction[Throwable, HasSucceeded] = {
     case NonFatal(e) =>
@@ -101,4 +73,4 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpsertApplicationRequest(usagePlan: RateLimitTier, serverToken: String)
+case class UpsertApplicationRequest(usagePlan: RateLimitTier, serverToken: String, apiNames: Seq[String])

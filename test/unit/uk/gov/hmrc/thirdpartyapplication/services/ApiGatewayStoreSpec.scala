@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.RealApiGatewayStore
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
@@ -43,8 +44,9 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector]
     val mockAwsApiGatewayConnector = mock[AwsApiGatewayConnector]
+    val mockSubscriptionRepository = mock[SubscriptionRepository]
 
-    val underTest = new RealApiGatewayStore(mockWSO2APIStoreConnector, mockAwsApiGatewayConnector) {
+    val underTest = new RealApiGatewayStore(mockWSO2APIStoreConnector, mockAwsApiGatewayConnector, mockSubscriptionRepository) {
       override val resubscribeMaxRetries = 0
     }
 
@@ -58,7 +60,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
       val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"), EnvironmentToken("111", "222", "333"))
-      val upsertApplicationRequest = UpsertApplicationRequest(BRONZE, tokens.production.accessToken)
+      val upsertApplicationRequest = UpsertApplicationRequest(BRONZE, tokens.production.accessToken, Seq())
 
       when(mockWSO2APIStoreConnector.createUser(wso2Username, wso2Password))
         .thenReturn(Future.successful(HasSucceeded))
@@ -104,13 +106,14 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
           EnvironmentToken(nextString(2), nextString(2), serverToken),
           EnvironmentToken(nextString(2), nextString(2), nextString(2))),
         testingState())
-      val upsertApplicationRequest = UpsertApplicationRequest(SILVER, serverToken)
+      val upsertApplicationRequest = UpsertApplicationRequest(SILVER, serverToken, Seq("hello--1.0"))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.updateApplication(cookie, wso2ApplicationName, SILVER)).
         thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(APIIdentifier("hello", "1.0"))))
 
       await(underTest updateApplication(app, SILVER))
 
@@ -153,6 +156,22 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
     val cookie = "some-cookie-value"
     val wso2API = Wso2Api("some--context--1.0", "1.0")
     val api = APIIdentifier("some/context", "1.0")
+    val serverToken: String = nextString(2)
+    val app = ApplicationData(
+      UUID.randomUUID(),
+      "MyApp",
+      "myapp",
+      Set.empty,
+      Some("description"),
+      wso2Username,
+      wso2Password,
+      wso2ApplicationName,
+      ApplicationTokens(
+        EnvironmentToken(nextString(2), nextString(2), serverToken),
+        EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+      testingState(),
+      rateLimitTier = Some(GOLD))
+    val upsertApplicationRequest = UpsertApplicationRequest(GOLD, serverToken, Seq(wso2API.name, "hello--1.0"))
 
     "add a subscription to an application in AWS and WSO2" in new Setup {
 
@@ -160,24 +179,25 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.addSubscription(wso2ApplicationName, wso2API.name)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(APIIdentifier("hello", "1.0"))))
 
-      await(underTest.addSubscription(wso2Username, wso2Password, wso2ApplicationName, api, Some(GOLD)))
+      await(underTest.addSubscription(app, api))
 
       verify(mockWSO2APIStoreConnector).addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).addSubscription(wso2ApplicationName, wso2API.name)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)
     }
 
     "fail when add subscription fails" in new Setup {
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
-      when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(SILVER), 0))
+      when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0))
         .thenReturn(Future.failed(new RuntimeException))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
 
       intercept[RuntimeException] {
-        await(underTest.addSubscription(wso2Username, wso2Password, wso2ApplicationName, api, Some(SILVER)))
+        await(underTest.addSubscription(app, api))
       }
     }
   }
@@ -192,18 +212,35 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       val cookie = "some-cookie-value"
       val wso2API = Wso2Api("some--context--1.0", "1.0")
       val api = APIIdentifier("some/context", "1.0")
+      val serverToken: String = nextString(2)
+      val app = ApplicationData(
+        UUID.randomUUID(),
+        "MyApp",
+        "myapp",
+        Set.empty,
+        Some("description"),
+        wso2Username,
+        wso2Password,
+        wso2ApplicationName,
+        ApplicationTokens(
+          EnvironmentToken(nextString(2), nextString(2), serverToken),
+          EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+        testingState(),
+        rateLimitTier = Some(GOLD))
+      val upsertApplicationRequest = UpsertApplicationRequest(GOLD, serverToken, Seq("hello--1.0"))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2API, 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.removeSubscription(wso2ApplicationName, wso2API.name)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(api, APIIdentifier("hello", "1.0"))))
 
-      await(underTest.removeSubscription(wso2Username, wso2Password, wso2ApplicationName, api))
+      await(underTest.removeSubscription(app, api))
 
       verify(mockWSO2APIStoreConnector).removeSubscription(cookie, wso2ApplicationName, wso2API, 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).removeSubscription(wso2ApplicationName, wso2API.name)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, upsertApplicationRequest)(hc)
     }
 
   }
