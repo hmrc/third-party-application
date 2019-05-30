@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.util.UUID
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
@@ -243,8 +245,8 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  lazy val dummyProdTokens = EnvironmentToken("dummyProdId", "dummyValue", "dummyValue")
-  lazy val dummyTestTokens = EnvironmentToken("dummyTestId", "dummyValue", "dummyValue")
+  lazy val dummyProdTokens = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
+  lazy val dummyTestTokens = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
   lazy val dummyApplicationTokens = ApplicationTokens(dummyProdTokens, dummyTestTokens)
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
 
