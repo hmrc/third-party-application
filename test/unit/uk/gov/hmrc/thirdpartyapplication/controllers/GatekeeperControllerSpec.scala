@@ -392,6 +392,6 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
   }
 
   private def anAppResponse(id: UUID = UUID.randomUUID()) = {
-    new ApplicationResponse(id, "clientId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now)
+    new ApplicationResponse(id, "clientId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, DateTimeUtils.now)
   }
 }

@@ -458,6 +458,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
         Index(key = Seq("state.name" -> Ascending, "state.updatedOn" -> Ascending), name = Some("stateName_stateUpdatedOn_Index"), background = true),
         Index(key = Seq("id" -> Ascending), name = Some("applicationIdIndex"), unique = true, background = true),
         Index(key = Seq("normalisedName" -> Ascending), name = Some("applicationNormalisedNameIndex"), background = true),
+        Index(key = Seq("lastAccess" -> Ascending), name = Some("lastAccessIndex"), unique = false, background = true),
         Index(key = Seq("tokens.production.clientId" -> Ascending), name = Some("productionTokenClientIdIndex"), unique = true, background = true),
         Index(key = Seq("tokens.sandbox.clientId" -> Ascending), name = Some("sandboxTokenClientIdIndex"), unique = true, background = true),
         Index(key = Seq("access.overrides" -> Ascending), name = Some("accessOverridesIndex"), background = true),

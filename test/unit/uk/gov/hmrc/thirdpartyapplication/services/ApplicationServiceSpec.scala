@@ -446,7 +446,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetch(applicationId))
 
       result shouldBe Some(ApplicationResponse(applicationId, productionToken.clientId, data.name, data.environment, data.description, data.collaborators,
-        data.createdOn, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
+        data.createdOn, data.lastAccess, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
     }
 
     "return an application with trusted flag when the application is in the whitelist" in new Setup {

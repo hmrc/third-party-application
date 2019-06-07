@@ -1424,6 +1424,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       Some("Description"),
       collaborators,
       DateTimeUtils.now,
+      DateTimeUtils.now,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,

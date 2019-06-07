@@ -25,7 +25,7 @@ import play.api.libs.json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -65,6 +65,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     "state" -> true,
     "access" -> true,
     "createdOn" -> true,
+    "lastAccess" -> true,
     "rateLimitTier" -> true,
     "environment" -> true))
 
@@ -87,6 +88,10 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     createSingleFieldAscendingIndex(
       indexFieldKey = "normalisedName",
       indexName = Some("applicationNormalisedNameIndex")
+    ),
+    createSingleFieldAscendingIndex(
+      indexFieldKey = "lastAccess",
+      indexName = Some("lastAccessIndex")
     ),
     createSingleFieldAscendingIndex(
       indexFieldKey = "tokens.production.clientId",
@@ -114,6 +119,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def save(application: ApplicationData): Future[ApplicationData] = {
     findAndUpdate(Json.obj("id" -> application.id.toString), Json.toJson(application).as[JsObject], upsert = true, fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+  }
+
+  def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] = {
+    def query: JsObject = Json.obj("id" -> applicationId.toString)
+    def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "timestamp")))
+
+    findAndUpdate(query, updateStatement)
       .map(_.result[ApplicationData].head)
   }
 
@@ -268,7 +281,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
       apiVersion= Some(apiIdentifier.version))).map(_.applications)
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions))).map(_.applications)
+  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] =
+    searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions))).map(_.applications)
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
