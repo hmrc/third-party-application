@@ -32,7 +32,7 @@ class DocumentationController @Inject()(httpErrorHandler: HttpErrorHandler, conf
     if(config.publishApiDefinition) {
       Ok(txt.definition(config.apiContext, ApiAccess.build(config.access))).withHeaders(CONTENT_TYPE -> JSON)
     } else {
-      NotFound
+      NoContent
     }
   }
 
@@ -40,7 +40,7 @@ class DocumentationController @Inject()(httpErrorHandler: HttpErrorHandler, conf
     if(config.publishApiDefinition) {
       Ok(txt.application(config.apiContext))
     } else {
-      NotFound
+      NoContent
     }
   }
 }
