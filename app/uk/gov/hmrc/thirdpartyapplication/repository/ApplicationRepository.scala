@@ -124,9 +124,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] = {
     def query: JsObject = Json.obj("id" -> applicationId.toString)
-    def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "timestamp")))
+    def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date")))
 
-    findAndUpdate(query, updateStatement)
+    findAndUpdate(query, updateStatement, fetchNewObject = true)
       .map(_.result[ApplicationData].head)
   }
 

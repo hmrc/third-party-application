@@ -94,6 +94,24 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   }
 
+  "recordApplicationUsage" should {
+    "update the lastAccess property" in {
+      val testStartTime = DateTime.now()
+
+      val applicationId = UUID.randomUUID()
+
+      val application =
+        anApplicationData(applicationId, "aaa", "111", productionState("requestorEmail@example.com"))
+          .copy(lastAccess = DateTime.now.minusDays(20)) // scalastyle:ignore magic.number
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
+
+      retrieved.lastAccess.isAfter(testStartTime) shouldBe true
+    }
+  }
+
   "fetchByClientId" should {
 
     "retrieve the application for a given client id when it is matched for sandbox client id" in {
