@@ -83,12 +83,12 @@ class PublishApiDefinitionDisabledSpec extends PlatformIntegrationSpec {
 
     "return a 404 from the definition endpoint" in new Setup {
       val result = await(documentationController.definition()(request))
-      status(result) shouldBe 404
+      status(result) shouldBe 204
     }
 
     "return a 404 from the RAML endpoint" in new Setup {
       val result = await(documentationController.raml("1.0", "application.raml")(request))
-      status(result) shouldBe 404
+      status(result) shouldBe 204
     }
   }
 }
