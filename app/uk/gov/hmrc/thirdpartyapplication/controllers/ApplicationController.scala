@@ -17,12 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.Inject
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
@@ -45,10 +45,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
+  val AuthorizerUserAgent: String = "APIPlatformAuthorizer"
+
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
-    val extraHeaders = Seq(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER)).flatten
+    val extraHeaders = Seq(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
@@ -213,17 +215,27 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchByServerToken(serverToken: String) = {
-    applicationService.fetchByServerToken(serverToken).map {
-      case Some(application) => Ok(toJson(application))
-      case None => handleNotFound("No application was found for server token")
+  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] = {
+    applicationService.fetchByServerToken(serverToken).flatMap {
+      case Some(application) =>
+        hc.headers.find(_._1 == "User-Agent").map(_._2) match {
+          case Some(AuthorizerUserAgent) =>
+            applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
+          case _ => Future.successful(Ok(toJson(application)))
+        }
+      case None => Future.successful(handleNotFound("No application was found for server token"))
     } recover recovery
   }
 
-  private def fetchByClientId(clientId: String) = {
-    applicationService.fetchByClientId(clientId).map {
-      case Some(application) => Ok(toJson(application))
-      case None => handleNotFound("No application was found")
+  private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier) = {
+    applicationService.fetchByClientId(clientId).flatMap {
+      case Some(application) =>
+        hc.headers.find(_._1 == "User-Agent").map(_._2) match {
+          case Some(AuthorizerUserAgent) =>
+            applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
+          case _ => Future.successful(Ok(toJson(application)))
+        }
+      case None => Future.successful(handleNotFound("No application was found"))
     } recover recovery
   }
 
