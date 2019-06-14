@@ -215,29 +215,24 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] = {
-    applicationService.fetchByServerToken(serverToken).flatMap {
-      case Some(application) =>
-        hc.headers.find(_._1 == "User-Agent").map(_._2) match {
-          case Some(AuthorizerUserAgent) =>
-            applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
-          case _ => Future.successful(Ok(toJson(application)))
-        }
-      case None => Future.successful(handleNotFound("No application was found for server token"))
-    } recover recovery
-  }
+  private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] =
+    fetchAndUpdateApplication(() => applicationService.fetchByServerToken(serverToken), "No application was found for server token")
 
-  private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier) = {
-    applicationService.fetchByClientId(clientId).flatMap {
+  private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier): Future[Result] =
+    fetchAndUpdateApplication(() => applicationService.fetchByClientId(clientId), "No application was found")
+
+  private def fetchAndUpdateApplication(fetchFunction: () => Future[Option[ApplicationResponse]],
+                                        notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
+    fetchFunction().flatMap {
       case Some(application) =>
-        hc.headers.find(_._1 == "User-Agent").map(_._2) match {
+        // If request has orginated from AWS Authorizer, record usage of the Application
+        hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
           case Some(AuthorizerUserAgent) =>
             applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
           case _ => Future.successful(Ok(toJson(application)))
         }
       case None => Future.successful(handleNotFound("No application was found"))
     } recover recovery
-  }
 
   private def fetchAllForCollaborator(emailAddress: String) = {
     applicationService.fetchAllForCollaborator(emailAddress).map(apps => Ok(toJson(apps))) recover recovery

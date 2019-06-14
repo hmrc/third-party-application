@@ -26,7 +26,7 @@ import org.mockito.Matchers.{any, eq => mockEq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import play.api.libs.json.{JsNumber, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
