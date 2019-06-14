@@ -231,7 +231,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
             applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
           case _ => Future.successful(Ok(toJson(application)))
         }
-      case None => Future.successful(handleNotFound("No application was found"))
+      case None => Future.successful(handleNotFound(notFoundMessage))
     } recover recovery
 
   private def fetchAllForCollaborator(emailAddress: String) = {
