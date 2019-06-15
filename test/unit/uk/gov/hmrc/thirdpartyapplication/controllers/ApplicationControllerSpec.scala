@@ -800,6 +800,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   "fetch application" should {
     val clientId = "A123XC"
+    val serverToken = "b3c83934c02df8b111e7f9f8700000"
+
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
@@ -809,7 +811,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "retrieve by server token" in new Setup {
-      val serverToken = "b3c83934c02df8b111e7f9f8700000"
       val req = request.withHeaders("X-Server-Token" -> serverToken)
       val application = aNewApplicationResponse()
 
@@ -822,7 +823,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "retrieve by server token (Uppercased header)" in new Setup {
-      val serverToken = "b3c83934c02df8b111e7f9f8700000"
       val req = request.withHeaders("X-SERVER-TOKEN" -> serverToken)
       val application = aNewApplicationResponse()
 
@@ -870,6 +870,84 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
       result.header.headers.get(HeaderNames.VARY) shouldBe None
+    }
+
+    "update last accessed time when AWS Authorizer retrieves Application by Server Token" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val applicationResponse: ApplicationResponse =
+        aNewApplicationResponse().copy(id = applicationId, lastAccess = DateTime.now().minusDays(10)) //scalastyle:ignore magic.number
+      val updatedLastAccessTime: DateTime = DateTime.now()
+      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = updatedLastAccessTime)
+
+      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
+      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+
+      val result: Result =
+        await(underTest.queryDispatcher()(request.withHeaders(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer")))
+
+      status(result) shouldBe SC_OK
+      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
+      result.header.headers.get(HeaderNames.VARY) shouldBe Some(SERVER_TOKEN_HEADER)
+
+      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe updatedLastAccessTime.getMillis
+    }
+
+    "update last accessed time when AWS Authorizer retrieves Application by Client Id" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val applicationResponse: ApplicationResponse =
+        aNewApplicationResponse().copy(id = applicationId, lastAccess = DateTime.now().minusDays(10)) //scalastyle:ignore magic.number
+      val updatedLastAccessTime: DateTime = DateTime.now()
+      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = updatedLastAccessTime)
+
+      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
+      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+
+      val result: Result =
+        await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(USER_AGENT -> "APIPlatformAuthorizer")))
+
+      status(result) shouldBe SC_OK
+      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
+      result.header.headers.get(HeaderNames.VARY) shouldBe None
+
+      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe updatedLastAccessTime.getMillis
+    }
+
+    "fetchByServerToken does not update last accessed time in absence of appropriate User-Agent header" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
+
+      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = lastAccessTime)
+
+      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
+
+      val result: Result =
+        await(underTest.queryDispatcher()(request.withHeaders(SERVER_TOKEN_HEADER -> serverToken)))
+
+      verify(underTest.applicationService, times(0)).recordApplicationUsage(applicationId)
+
+      status(result) shouldBe SC_OK
+      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
+      result.header.headers.get(HeaderNames.VARY) shouldBe Some(SERVER_TOKEN_HEADER)
+
+      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe lastAccessTime.getMillis
+    }
+
+    "fetchByClientId does not update last accessed time in absence of appropriate User-Agent header" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
+      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = lastAccessTime)
+
+      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
+
+      val result: Result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
+
+      verify(underTest.applicationService, times(0)).recordApplicationUsage(applicationId)
+
+      status(result) shouldBe SC_OK
+      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
+      result.header.headers.get(HeaderNames.VARY) shouldBe None
+
+      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe lastAccessTime.getMillis
     }
   }
 
@@ -1423,6 +1501,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       "PRODUCTION",
       Some("Description"),
       collaborators,
+      DateTimeUtils.now,
       DateTimeUtils.now,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,

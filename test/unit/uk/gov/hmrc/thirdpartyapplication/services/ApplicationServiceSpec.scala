@@ -99,7 +99,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockTrustedApplications)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
-    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(ApplicationTokens(productionToken, sandboxToken)))
+    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier]))
+      .thenReturn(successful(ApplicationTokens(productionToken, sandboxToken)))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
         successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
@@ -353,6 +354,18 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
+  "recordApplicationUsage" should {
+    "update the Application and return an ApplicationResponse" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+
+      when(mockApplicationRepository.recordApplicationUsage(applicationId)).thenReturn(anApplicationData(applicationId))
+
+      val applicationResponse: ApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
+
+      applicationResponse.id shouldBe applicationId
+    }
+  }
+
   "Update" should {
     val id = UUID.randomUUID()
     val applicationRequest = anExistingApplicationRequest()
@@ -446,7 +459,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetch(applicationId))
 
       result shouldBe Some(ApplicationResponse(applicationId, productionToken.clientId, data.name, data.environment, data.description, data.collaborators,
-        data.createdOn, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
+        data.createdOn, data.lastAccess, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
     }
 
     "return an application with trusted flag when the application is in the whitelist" in new Setup {

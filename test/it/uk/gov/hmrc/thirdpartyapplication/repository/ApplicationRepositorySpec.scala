@@ -94,6 +94,24 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   }
 
+  "recordApplicationUsage" should {
+    "update the lastAccess property" in {
+      val testStartTime = DateTime.now()
+
+      val applicationId = UUID.randomUUID()
+
+      val application =
+        anApplicationData(applicationId, "aaa", "111", productionState("requestorEmail@example.com"))
+          .copy(lastAccess = DateTime.now.minusDays(20)) // scalastyle:ignore magic.number
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
+
+      retrieved.lastAccess.isAfter(testStartTime) shouldBe true
+    }
+  }
+
   "fetchByClientId" should {
 
     "retrieve the application for a given client id when it is matched for sandbox client id" in {
@@ -458,6 +476,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
         Index(key = Seq("state.name" -> Ascending, "state.updatedOn" -> Ascending), name = Some("stateName_stateUpdatedOn_Index"), background = true),
         Index(key = Seq("id" -> Ascending), name = Some("applicationIdIndex"), unique = true, background = true),
         Index(key = Seq("normalisedName" -> Ascending), name = Some("applicationNormalisedNameIndex"), background = true),
+        Index(key = Seq("lastAccess" -> Ascending), name = Some("lastAccessIndex"), unique = false, background = true),
         Index(key = Seq("tokens.production.clientId" -> Ascending), name = Some("productionTokenClientIdIndex"), unique = true, background = true),
         Index(key = Seq("tokens.sandbox.clientId" -> Ascending), name = Some("sandboxTokenClientIdIndex"), unique = true, background = true),
         Index(key = Seq("access.overrides" -> Ascending), name = Some("accessOverridesIndex"), background = true),

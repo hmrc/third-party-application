@@ -185,6 +185,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
 
   private def postRequestWithAccess(access: Access) = FakeRequest("POST", "/").withBody(Json.obj("access" -> access).as[JsValue])
 
-  private def application(access: Access) = ApplicationResponse(UUID.randomUUID, "clientId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, access = access)
+  private def application(access: Access) =
+    ApplicationResponse(UUID.randomUUID, "clientId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, DateTimeUtils.now, access = access)
 
 }

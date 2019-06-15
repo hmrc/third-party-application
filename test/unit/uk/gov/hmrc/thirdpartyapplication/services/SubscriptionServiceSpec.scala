@@ -403,7 +403,8 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       "aaaaaaaaaa",
       ApplicationTokens(productionToken, sandboxToken), state,
       Standard(Seq(), None, None),
-      new DateTime(),
+      DateTime.now,
+      DateTime.now,
       rateLimitTier
     )
   }
