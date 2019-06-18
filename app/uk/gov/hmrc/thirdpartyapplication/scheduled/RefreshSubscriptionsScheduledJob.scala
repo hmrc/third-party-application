@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import javax.inject.Inject
 import org.joda.time.Duration
 import play.api.Logger
-import play.modules.reactivemongo.MongoDbConnection
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
@@ -53,8 +53,8 @@ class RefreshSubscriptionsScheduledJob @Inject()(val lockKeeper: RefreshSubscrip
   }
 }
 
-class RefreshSubscriptionsJobLockKeeper extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(new MongoDbConnection {}.db)
+class RefreshSubscriptionsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
+  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
 
   override def lockId: String = "RefreshSubscriptionsScheduledJob"
 

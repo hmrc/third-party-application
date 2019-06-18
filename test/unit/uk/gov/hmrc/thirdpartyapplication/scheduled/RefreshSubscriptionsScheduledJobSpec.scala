@@ -26,8 +26,10 @@ import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.LockRepository
+import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{RefreshSubscriptionsJobConfig, RefreshSubscriptionsJobLockKeeper, RefreshSubscriptionsScheduledJob}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
@@ -37,20 +39,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil
+class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil
   with LogSuppressing {
 
   val FixedTimeNow: DateTime = HmrcTime.now
   val expiryTimeInDays = 90
 
   trait Setup {
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val mockSubscriptionService = mock[SubscriptionService]
+    val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
     val lockKeeperSuccess: () => Boolean = () => true
 
-    val mockLockKeeper = new RefreshSubscriptionsJobLockKeeper {
+    private val reactiveMongoComponent = new ReactiveMongoComponent {
+      override def mongoConnector: MongoConnector = mongoConnectorForTest
+    }
+
+    val mockLockKeeper: RefreshSubscriptionsJobLockKeeper = new RefreshSubscriptionsJobLockKeeper(reactiveMongoComponent) {
       override def lockId: String = "testLock"
 
       override def repo: LockRepository = mock[LockRepository]
