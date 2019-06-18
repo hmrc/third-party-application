@@ -875,9 +875,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "update last accessed time when AWS Authorizer retrieves Application by Server Token" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
       val applicationResponse: ApplicationResponse =
-        aNewApplicationResponse().copy(id = applicationId, lastAccess = DateTime.now().minusDays(10)) //scalastyle:ignore magic.number
+        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(DateTime.now().minusDays(10))) //scalastyle:ignore magic.number
       val updatedLastAccessTime: DateTime = DateTime.now()
-      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = updatedLastAccessTime)
+      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
 
       when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
@@ -895,9 +895,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "update last accessed time when AWS Authorizer retrieves Application by Client Id" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
       val applicationResponse: ApplicationResponse =
-        aNewApplicationResponse().copy(id = applicationId, lastAccess = DateTime.now().minusDays(10)) //scalastyle:ignore magic.number
+        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(DateTime.now().minusDays(10))) //scalastyle:ignore magic.number
       val updatedLastAccessTime: DateTime = DateTime.now()
-      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = updatedLastAccessTime)
+      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
 
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
@@ -916,7 +916,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val applicationId: UUID = UUID.randomUUID()
       val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
 
-      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = lastAccessTime)
+      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
 
       when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
 
@@ -935,7 +935,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fetchByClientId does not update last accessed time in absence of appropriate User-Agent header" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
       val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
-      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = lastAccessTime)
+      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
 
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
 
@@ -1502,7 +1502,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       Some("Description"),
       collaborators,
       DateTimeUtils.now,
-      DateTimeUtils.now,
+      Some(DateTimeUtils.now),
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
