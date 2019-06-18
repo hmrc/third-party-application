@@ -18,24 +18,22 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import play.api.libs.json.{JsObject, Json}
-import reactivemongo.play.json.commands.JSONFindAndModifyCommand
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
