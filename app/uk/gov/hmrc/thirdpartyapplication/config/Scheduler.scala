@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.config
 
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
+import play.api.Application
 import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 
@@ -31,7 +32,8 @@ class SchedulerModule extends AbstractModule {
 class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationExpiryJobConfig,
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           refreshSubscriptionsJobConfig: RefreshSubscriptionsJobConfig,
-                          refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob) extends RunningOfScheduledJobs {
+                          refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
+                          app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs = {
 
@@ -49,6 +51,8 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
     upliftJob ++ refreshJob
 
   }
+
+  onStart(app)
 
 }
 
