@@ -199,7 +199,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
         Some("description"),
         Set.empty,
         DateTimeUtils.now,
-        DateTimeUtils.now,
+        Some(DateTimeUtils.now),
         access = Standard())))
     )
   }
@@ -207,7 +207,8 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   trait PrivilegedAndRopcFixture extends Fixture {
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
-      val applicationResponse = ApplicationResponse(applicationId, "clientId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, DateTimeUtils.now)
+      val applicationResponse =
+        ApplicationResponse(applicationId, "clientId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
       when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(
         applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
       ))).thenReturn(successful(Some(

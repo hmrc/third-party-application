@@ -18,26 +18,27 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
-import org.joda.time.DateTime
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
+import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with IndexVerification
-  with MockitoSugar with Eventually {
+  with MockitoSugar with Eventually with Matchers {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 
@@ -102,13 +103,53 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val application =
         anApplicationData(applicationId, "aaa", "111", productionState("requestorEmail@example.com"))
-          .copy(lastAccess = DateTime.now.minusDays(20)) // scalastyle:ignore magic.number
+          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
 
-      retrieved.lastAccess.isAfter(testStartTime) shouldBe true
+      retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
+    }
+  }
+
+  "setMissingLastAccessedDates" should {
+    def applicationWithoutLastAccessDate(applicationId: UUID) = {
+      await(applicationRepository.save(anApplicationData(applicationId, UUID.randomUUID().toString, UUID.randomUUID().toString)))
+
+      def applicationById: JsObject = Json.obj("id" -> applicationId.toString)
+      def removeLastAccessField: JsObject = Json.obj("$unset" -> Json.obj("lastAccess" -> ""))
+
+      applicationRepository.findAndUpdate(applicationById, removeLastAccessField)
+    }
+
+    def numberOfApplications: Int = applicationRepository.findAll().map(_.size)
+
+    def applicationLastAccessDate(applicationId: UUID): Option[DateTime] = await(applicationRepository.fetch(applicationId).get).lastAccess
+
+    "set lastAccess property on applications that do not have it" in {
+      // 2 Applications that do not have lastAccess dates
+      val application1Id = UUID.randomUUID()
+      await(applicationWithoutLastAccessDate(application1Id))
+
+      val application2Id = UUID.randomUUID()
+      await(applicationWithoutLastAccessDate(application2Id))
+
+      // Application that already has a lastAccess date
+      val updatedApplicationId = UUID.randomUUID()
+      val updatedApplication = anApplicationData(updatedApplicationId)
+      val updatedApplicationLastAccessDate = updatedApplication.lastAccess.get
+      await(applicationRepository.save(updatedApplication))
+
+      val dateToSet: DateTime = DateTime.now
+      val numberOfUpdatedApplications = await(applicationRepository.setMissingLastAccessedDates(dateToSet))
+
+      numberOfApplications shouldBe 3
+      numberOfUpdatedApplications shouldBe 2
+
+      applicationLastAccessDate(application1Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
+      applicationLastAccessDate(application2Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
+      applicationLastAccessDate(updatedApplicationId).get.withZone(DateTimeZone.UTC) shouldEqual updatedApplicationLastAccessDate.withZone(DateTimeZone.UTC)
     }
   }
 

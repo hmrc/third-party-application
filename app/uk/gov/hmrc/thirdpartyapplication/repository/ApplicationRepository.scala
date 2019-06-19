@@ -130,6 +130,18 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .map(_.result[ApplicationData].head)
   }
 
+  def setMissingLastAccessedDates(dateToSet: DateTime): Future[Int] = {
+    def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID])= {
+      val setLastAccessDate: JsObject = Json.obj("$set" -> Json.obj("lastAccess" -> dateToSet))
+      Future.sequence(applicationIds.map(applicationId => findAndUpdate(Json.obj("id" -> applicationId.toString), setLastAccessDate)))
+    }
+
+    for {
+      applicationIds <- findAll().map(applications => applications.filter(application => application.lastAccess.isEmpty).map(_.id))
+      results <- updateApplicationsWithLastAccessDate(applicationIds)
+    } yield results.size
+  }
+
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     find(s"$$and" -> Json.arr(
       Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)),

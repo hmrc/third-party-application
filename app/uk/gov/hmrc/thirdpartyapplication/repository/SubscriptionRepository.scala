@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
-import java.util.regex.Pattern
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json._
