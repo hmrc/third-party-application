@@ -19,10 +19,10 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.joda.time.DateTime
+import org.joda.time.{DateTime, DateTimeZone}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
@@ -38,7 +38,7 @@ import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with IndexVerification
-  with MockitoSugar with Eventually {
+  with MockitoSugar with Eventually with Matchers {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 
@@ -123,26 +123,33 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       applicationRepository.findAndUpdate(applicationById, removeLastAccessField)
     }
 
+    def numberOfApplications: Int = applicationRepository.findAll().map(_.size)
+
+    def applicationLastAccessDate(applicationId: UUID): Option[DateTime] = await(applicationRepository.fetch(applicationId).get).lastAccess
+
     "set lastAccess property on applications that do not have it" in {
+      // 2 Applications that do not have lastAccess dates
       val application1Id = UUID.randomUUID()
-      val application2Id = UUID.randomUUID()
-      val dateToSet: DateTime = DateTime.now
-
       await(applicationWithoutLastAccessDate(application1Id))
-      await(applicationWithoutLastAccessDate(application2Id))
-      await(applicationRepository.save(anApplicationData(UUID.randomUUID()))) // Application with lastAccess date
 
+      val application2Id = UUID.randomUUID()
+      await(applicationWithoutLastAccessDate(application2Id))
+
+      // Application that already has a lastAccess date
+      val updatedApplicationId = UUID.randomUUID()
+      val updatedApplication = anApplicationData(updatedApplicationId)
+      val updatedApplicationLastAccessDate = updatedApplication.lastAccess.get
+      await(applicationRepository.save(updatedApplication))
+
+      val dateToSet: DateTime = DateTime.now
       val numberOfUpdatedApplications = await(applicationRepository.setMissingLastAccessedDates(dateToSet))
 
+      numberOfApplications shouldBe 3
       numberOfUpdatedApplications shouldBe 2
 
-      val updatedApplication1: ApplicationData = await(applicationRepository.fetch(application1Id).get)
-      val lastAccess1 = updatedApplication1.lastAccess.get
-      lastAccess1.getMillis shouldBe dateToSet.getMillis
-
-      val updatedApplication2: ApplicationData = await(applicationRepository.fetch(application2Id).get)
-      val lastAccess2 = updatedApplication2.lastAccess.get
-      lastAccess2.getMillis shouldBe dateToSet.getMillis
+      applicationLastAccessDate(application1Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
+      applicationLastAccessDate(application2Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
+      applicationLastAccessDate(updatedApplicationId).get.withZone(DateTimeZone.UTC) shouldEqual updatedApplicationLastAccessDate.withZone(DateTimeZone.UTC)
     }
   }
 
