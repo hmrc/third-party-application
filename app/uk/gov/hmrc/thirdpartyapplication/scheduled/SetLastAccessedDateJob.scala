@@ -22,9 +22,9 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class SetLastAccessedDateJob @Inject()(val lockKeeper: SetLastAccessedDateJobLockKeeper,
                                        jobConfig: SetLastAccessedDateJobConfig,
@@ -62,4 +62,4 @@ class SetLastAccessedDateJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) 
   override val forceLockReleaseAfter: Duration = Duration.standardMinutes(10) //scalastyle:ignore magic.number
 }
 
-case class SetLastAccessedDateJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)
+case class SetLastAccessedDateJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)

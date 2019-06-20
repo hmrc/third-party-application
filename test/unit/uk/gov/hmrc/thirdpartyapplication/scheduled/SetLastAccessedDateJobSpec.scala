@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
@@ -31,9 +30,9 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{SetLastAccessedDateJob, SetLastAccessedDateJobConfig, SetLastAccessedDateJobLockKeeper}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class SetLastAccessedDateJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -61,10 +60,9 @@ class SetLastAccessedDateJobSpec extends UnitSpec with MockitoSugar with MongoSp
         else Future.successful(None)
     }
 
-    val upliftVerificationValidity = FiniteDuration(expiryTimeInDays, TimeUnit.DAYS)
     val initialDelay = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
     val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
-    val config = SetLastAccessedDateJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
+    val config = SetLastAccessedDateJobConfig(initialDelay, interval, enabled = true)
 
     val underTest = new SetLastAccessedDateJob(mockLockKeeper, config, mockApplicationRepository)
   }
