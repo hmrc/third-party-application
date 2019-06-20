@@ -33,9 +33,11 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           refreshSubscriptionsJobConfig: RefreshSubscriptionsJobConfig,
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
+                          setLastAccessedDateJobConfig: SetLastAccessedDateJobConfig,
+                          setLastAccessedDateJob: SetLastAccessedDateJob,
                           app: Application) extends RunningOfScheduledJobs {
 
-  override val scheduledJobs = {
+  override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
 
     val upliftJob: Seq[ExclusiveScheduledJob] = if (upliftVerificationExpiryJobConfig.enabled) {
       Seq(upliftVerificationExpiryJob)
@@ -48,7 +50,14 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
     } else {
       Seq.empty
     }
-    upliftJob ++ refreshJob
+
+    val accessDateJob = if (setLastAccessedDateJobConfig.enabled) {
+      Seq(setLastAccessedDateJob)
+    } else {
+      Seq.empty
+    }
+
+    upliftJob ++ refreshJob ++ accessDateJob
 
   }
 

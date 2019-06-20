@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
 import uk.gov.hmrc.thirdpartyapplication.models.TrustedApplicationsConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, RefreshSubscriptionsJobConfig, UpliftVerificationExpiryJobConfig}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, RefreshSubscriptionsJobConfig, SetLastAccessedDateJobConfig, UpliftVerificationExpiryJobConfig}
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -39,6 +39,7 @@ class ConfigurationModule extends Module {
       bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
+      bind[SetLastAccessedDateJobConfig].toProvider[SetLastAccessDateJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -103,6 +104,21 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
       .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
+  }
+}
+
+@Singleton
+class SetLastAccessDateJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[SetLastAccessedDateJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.setLastAccessedDateJob")
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    SetLastAccessedDateJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
