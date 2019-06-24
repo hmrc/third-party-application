@@ -194,6 +194,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
       new ApplicationResponse(
         applicationId,
         "clientId",
+        "gatewayId",
         "name",
         "PRODUCTION",
         Some("description"),
@@ -208,7 +209,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
 
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, "clientId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+        ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
       when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(
         applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
       ))).thenReturn(successful(Some(

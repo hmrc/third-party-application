@@ -27,6 +27,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
+import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.FakeRequest
@@ -70,7 +71,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
   def verifyForbidden(result: Result): Unit = {
     status(result) shouldBe 403
     jsonBodyOf(result) shouldBe Json.obj(
-      "code" -> FORBIDDEN.toString, "message" -> "Insufficient enrolments"
+      "code" -> ErrorCode.FORBIDDEN.toString, "message" -> "Insufficient enrolments"
     )
   }
 
@@ -78,7 +79,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound]( await(underTest.fetchAppsForGatekeeper(request)))
+      assertThrows[SessionRecordNotFound](await(underTest.fetchAppsForGatekeeper(request)))
 
       verifyZeroInteractions(mockGatekeeperService)
     }
@@ -306,7 +307,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest))))
 
-      verifyErrorResult(result, 500, ErrorCode.UNKNOWN_ERROR)
+      verifyErrorResult(result, INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
     }
   }
 
@@ -350,7 +351,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.blockApplication(any()) (any[HeaderCarrier]())).thenReturn(successful(Blocked))
+      when(mockGatekeeperService.blockApplication(any())(any[HeaderCarrier]())).thenReturn(successful(Blocked))
 
       val result = await(underTest.blockApplication(applicationId)(request))
 
@@ -367,7 +368,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.unblockApplication(any()) (any[HeaderCarrier]())).thenReturn(successful(Unblocked))
+      when(mockGatekeeperService.unblockApplication(any())(any[HeaderCarrier]())).thenReturn(successful(Unblocked))
 
       val result = await(underTest.unblockApplication(applicationId)(request))
 
@@ -392,6 +393,6 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
   }
 
   private def anAppResponse(id: UUID = UUID.randomUUID()) = {
-    new ApplicationResponse(id, "clientId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+    new ApplicationResponse(id, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
   }
 }
