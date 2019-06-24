@@ -19,12 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import java.util.concurrent.TimeUnit
 
-import javax.inject.Inject
+import akka.actor.ActorSystem
+import javax.inject.{Inject, Singleton}
 import org.joda.time.Duration.standardMinutes
 import play.api.Logger
-import play.api.Play.current
-import play.api.libs.concurrent.Akka
-import play.modules.reactivemongo.MongoDbConnection
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
@@ -46,18 +45,20 @@ import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.duration.Duration
 import scala.util.Failure
 
-
+@Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    stateHistoryRepository: StateHistoryRepository,
                                    subscriptionRepository: SubscriptionRepository,
                                    auditService: AuditService,
                                    emailConnector: EmailConnector,
                                    totpConnector: TotpConnector,
+                                   system: ActorSystem,
                                    lockKeeper: ApplicationLockKeeper,
                                    apiGatewayStore: ApiGatewayStore,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
                                    trustedApplications: TrustedApplications) {
+
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     lockKeeper.tryLock {
@@ -68,7 +69,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         Future(x)
       case None =>
         Logger.warn(s"Application creation is locked. Retry scheduled for ${application.name}")
-        akka.pattern.after(Duration(3, TimeUnit.SECONDS), using = Akka.system.scheduler) {
+        akka.pattern.after(Duration(3, TimeUnit.SECONDS), using = system.scheduler) {
           create(application)
         }
     }
@@ -277,7 +278,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         pageSize = applicationSearch.pageSize,
         total = data.totals.foldLeft(0)(_ + _.total),
         matching = data.matching.foldLeft(0)(_ + _.total),
-        applications = data.applications.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application))))
+        applications =
+          data.applications.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application))))
     }
   }
 
@@ -508,9 +510,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def loggedInUser(implicit hc: HeaderCarrier) = hc.headers find (_._1 == LOGGED_IN_USER_EMAIL_HEADER) map (_._2) getOrElse ""
 }
 
-class ApplicationLockKeeper extends LockKeeper {
+class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoComponent) extends LockKeeper {
   override def repo: LockRepository = {
-    LockMongoRepository(new MongoDbConnection {}.db)
+    LockMongoRepository(reactiveMongoComponent.mongoConnector.db)
   }
 
   override def lockId: String = "create-third-party-application"

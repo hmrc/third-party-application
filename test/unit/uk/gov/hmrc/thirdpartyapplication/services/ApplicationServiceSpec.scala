@@ -19,6 +19,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
+import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
@@ -30,8 +31,9 @@ import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerTest
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
@@ -53,10 +55,11 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
-  with BeforeAndAfterAll with ApplicationStateUtil with OneAppPerTest {
+class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup {
+
+    val actorSystem: ActorSystem = ActorSystem("System")
 
     lazy val locked = false
     protected val mockitoTimeout = 1000
@@ -93,6 +96,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockAuditService,
       mockEmailConnector,
       mockTotpConnector,
+      actorSystem,
       mockLockKeeper,
       mockApiGatewayStore,
       applicationResponseCreator,
@@ -155,12 +159,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     override lazy val locked = true
   }
 
-  class MockLockKeeper(locked: Boolean) extends ApplicationLockKeeper {
-    override def repo = null
+  class MockLockKeeper(locked: Boolean) extends ApplicationLockKeeper(mock[ReactiveMongoComponent]) {
+
+    override def repo = mock[LockRepository]
 
     override def lockId = ""
 
-    override val forceLockReleaseAfter = null
     var callsMadeToLockKeeper: Int = 0
 
     override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
