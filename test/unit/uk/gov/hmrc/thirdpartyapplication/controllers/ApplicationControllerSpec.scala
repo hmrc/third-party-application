@@ -1283,7 +1283,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_NO_CONTENT
     }
 
-    "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+    "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
+      new PrivilegedAndRopcSetup {
 
         givenUserIsAuthenticated(underTest)
 
@@ -1497,6 +1498,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     new ApplicationResponse(
       UUID.randomUUID(),
       "clientId",
+      "gatewayId",
       "My Application",
       "PRODUCTION",
       Some("Description"),

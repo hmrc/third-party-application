@@ -19,8 +19,9 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
+import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
 import org.mockito.Matchers._
 import org.mockito.Mockito._
@@ -30,8 +31,9 @@ import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.OneAppPerTest
+import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
@@ -53,12 +55,14 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
-  with BeforeAndAfterAll with ApplicationStateUtil with OneAppPerTest {
+class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup {
 
+    val actorSystem: ActorSystem = ActorSystem("System")
+
     lazy val locked = false
+    protected val mockitoTimeout = 1000
     val mockApiGatewayStore = mock[ApiGatewayStore]
     val mockApplicationRepository = mock[ApplicationRepository]
     val mockSubscriptionRepository = mock[SubscriptionRepository]
@@ -92,6 +96,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockAuditService,
       mockEmailConnector,
       mockTotpConnector,
+      actorSystem,
       mockLockKeeper,
       mockApiGatewayStore,
       applicationResponseCreator,
@@ -131,7 +136,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
-      when(mockApiGatewayStore.resubscribeApi(any[Seq[APIIdentifier]], anyString(), anyString(), anyString(), any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier]))
+      when(mockApiGatewayStore
+        .resubscribeApi(any[Seq[APIIdentifier]], anyString(), anyString(), anyString(), any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier]))
         .thenReturn(eventualHasSucceeded)
     }
 
@@ -153,12 +159,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     override lazy val locked = true
   }
 
-  class MockLockKeeper(locked: Boolean) extends ApplicationLockKeeper {
-    override def repo = null
+  class MockLockKeeper(locked: Boolean) extends ApplicationLockKeeper(mock[ReactiveMongoComponent]) {
+
+    override def repo = mock[LockRepository]
 
     override def lockId = ""
 
-    override val forceLockReleaseAfter = null
     var callsMadeToLockKeeper: Int = 0
 
     override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
@@ -276,7 +282,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val createdApp = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)), access = Ropc())
+      val expectedApplicationData = anApplicationData(
+        createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)), access = Ropc())
       verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
@@ -458,7 +465,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val result = await(underTest.fetch(applicationId))
 
-      result shouldBe Some(ApplicationResponse(applicationId, productionToken.clientId, data.name, data.environment, data.description, data.collaborators,
+      result shouldBe Some(ApplicationResponse(
+        applicationId, productionToken.clientId, data.wso2ApplicationName, data.name, data.environment, data.description, data.collaborators,
         data.createdOn, data.lastAccess, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
     }
 
@@ -522,13 +530,16 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val email: String = "test@example.com"
     val adminsToEmail = Set(admin2)
 
-    def collaboratorRequest(admin: String = admin, email: String = email, role: Role = DEVELOPER, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
+    def collaboratorRequest(admin: String = admin,
+                            email: String = email,
+                            role: Role = DEVELOPER,
+                            isRegistered: Boolean = false,
+                            adminsToEmail: Set[String] = adminsToEmail) = {
       AddCollaboratorRequest(admin, Collaborator(email, role), isRegistered, adminsToEmail)
     }
 
     val applicationId = UUID.randomUUID()
     val applicationData = anApplicationData(applicationId)
-    val userResponse = UserResponse(email, "John", "Bloggs", DateTime.now(), DateTime.now())
     val request = collaboratorRequest()
     val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
@@ -571,8 +582,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       verify(mockApplicationRepository).save(expected)
 
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 
@@ -592,8 +603,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.addCollaborator(applicationId, collaboratorRequest()))
 
       verify(mockApplicationRepository).save(expected)
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = false)
     }
 
@@ -613,7 +624,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.addCollaborator(applicationId, collaboratorRequest(admin = admin, isRegistered = true, adminsToEmail = Set.empty[String])))
 
       verify(mockApplicationRepository).save(expected)
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
       verifyNoMoreInteractions(mockEmailConnector)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
@@ -693,8 +704,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmail))
 
       verify(mockApplicationRepository).save(updatedData)
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       verify(mockAuditService).audit(CollaboratorRemoved,
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)))
       result shouldBe updatedData.collaborators
@@ -708,8 +719,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.deleteCollaborator(applicationId, collaborator.toUpperCase, admin, adminsToEmail))
 
       verify(mockApplicationRepository).save(updatedData)
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
-      verify(mockEmailConnector, Mockito.timeout(1000)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       result shouldBe updatedData.collaborators
     }
 
@@ -1097,8 +1108,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
       mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier, anotherApiIdentifier))
 
-      when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Username,
-        originalApplicationData.wso2Password, SILVER)).thenReturn(successful(HasSucceeded))
+      when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
+        originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
       await(underTest updateRateLimitTier(uuid, SILVER))
 
@@ -1157,7 +1168,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
 
-    "fail when one single api fails to resubscribe in wso2, updating the application in wso2, but leaving the Mongo application and some APIs (in wso2) in a wrong state" in new Setup {
+    "fail when one single api fails to resubscribe in wso2, updating the application in wso2, but leaving the Mongo application" +
+      " and some APIs (in wso2) in a wrong state" in new Setup {
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
@@ -1166,10 +1178,16 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
-      when(mockApiGatewayStore.resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
-        originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER)).thenReturn(successful(HasSucceeded))
-      when(mockApiGatewayStore.resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
-        originalApplicationData.wso2ApplicationName, anotherApiIdentifier, SILVER)).thenReturn(failed(new RuntimeException))
+      when(mockApiGatewayStore
+        .resubscribeApi(
+          Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
+          originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER))
+        .thenReturn(successful(HasSucceeded))
+      when(mockApiGatewayStore
+        .resubscribeApi(
+          Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
+          originalApplicationData.wso2ApplicationName, anotherApiIdentifier, SILVER))
+        .thenReturn(failed(new RuntimeException))
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
@@ -1195,7 +1213,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val mockApplicationSearch: ApplicationSearch = mock[ApplicationSearch]
 
       when(mockApplicationRepository.searchApplications(mockApplicationSearch))
-        .thenReturn(successful(PaginatedApplicationData(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData), Seq(PaginationTotal(3)), Seq(PaginationTotal(3)))))
+        .thenReturn(successful(PaginatedApplicationData(
+          Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData), Seq(PaginationTotal(3)), Seq(PaginationTotal(3)))))
 
       val result = await(underTest.searchApplications(mockApplicationSearch))
 

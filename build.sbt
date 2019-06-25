@@ -11,7 +11,7 @@ lazy val appName = "third-party-application"
 lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.12.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
   "uk.gov.hmrc" %% "mongo-lock" % "6.12.0-play-25",
   "uk.gov.hmrc" %% "play-scheduling" % "6.0.0",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.5.0",

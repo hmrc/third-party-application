@@ -85,6 +85,7 @@ case class CheckInformation(contactDetails: Option[ContactDetails] = None,
 
 case class ApplicationResponse(id: UUID,
                                clientId: String,
+                               gatewayId: String,
                                name: String,
                                deployedTo: String,
                                description: Option[String] = None,
@@ -128,6 +129,7 @@ object ApplicationResponse {
     ApplicationResponse(
       data.id,
       data.tokens.production.clientId,
+      data.wso2ApplicationName,
       data.name,
       data.environment,
       data.description,
@@ -170,6 +172,7 @@ case class ApplicationData(id: UUID,
 }
 
 case class PaginationTotal(total: Int)
+
 case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: Seq[PaginationTotal], matching: Seq[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)

@@ -29,7 +29,7 @@ import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, FORBIDDEN}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AuthorisationWrapper, JsErrorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -186,6 +186,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeA
   private def postRequestWithAccess(access: Access) = FakeRequest("POST", "/").withBody(Json.obj("access" -> access).as[JsValue])
 
   private def application(access: Access) =
-    ApplicationResponse(UUID.randomUUID, "clientId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+    ApplicationResponse(
+      UUID.randomUUID, "clientId", "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
 
 }
