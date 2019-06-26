@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+@Singleton
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   trustedApplications: TrustedApplications,

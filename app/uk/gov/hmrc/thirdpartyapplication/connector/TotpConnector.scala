@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.http.Status.CREATED
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.Totp
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConfig)(implicit val ec: ExecutionContext)   {
 
   def generateTotp()(implicit rds: HttpReads[HttpResponse], hc: HeaderCarrier, ec: ExecutionContext): Future[Totp] = {

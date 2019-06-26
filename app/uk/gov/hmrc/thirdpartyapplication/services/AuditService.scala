@@ -20,18 +20,19 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.UUID
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationData, Collaborator, OverrideFlag, Standard}
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationData, Collaborator, OverrideFlag, Standard}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{AppNameChanged, AppPrivacyPolicyUrlChanged, AppRedirectUrisChanged, AppTermsAndConditionsUrlChanged}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
+@Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector) {
 
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import com.google.common.base.Charsets
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.http.ContentTypes.FORM
 import play.api.http.HeaderNames.{CONTENT_TYPE, COOKIE, SET_COOKIE}
@@ -34,6 +34,7 @@ import scala.concurrent._
 import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
+@Singleton
 class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiStoreConfig)(implicit val ec: ExecutionContext)  {
 
   val serviceUrl = s"${config.baseUrl}/store/site/blocks"

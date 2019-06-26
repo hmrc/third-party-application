@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest}
@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector,
                                   applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository) {

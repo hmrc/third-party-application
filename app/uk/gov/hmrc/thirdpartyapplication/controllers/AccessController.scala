@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.BodyParsers.parse.json
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationSer
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@Singleton
 class AccessController @Inject()(accessService: AccessService,
                                  val authConnector: AuthConnector,
                                  val applicationService: ApplicationService,

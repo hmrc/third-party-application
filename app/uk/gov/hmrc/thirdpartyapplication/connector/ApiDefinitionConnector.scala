@@ -18,13 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import java.util.UUID
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.thirdpartyapplication.models.ApiDefinition
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class ApiDefinitionConnector @Inject()(httpClient: HttpClient, config: ApiDefinitionConfig)(implicit val ec: ExecutionContext)  {
 
   def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[Seq[ApiDefinition]], hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[ApiDefinition]] = {

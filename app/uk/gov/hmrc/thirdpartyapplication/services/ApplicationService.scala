@@ -510,6 +510,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def loggedInUser(implicit hc: HeaderCarrier) = hc.headers find (_._1 == LOGGED_IN_USER_EMAIL_HEADER) map (_._2) getOrElse ""
 }
 
+@Singleton
 class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoComponent) extends LockKeeper {
   override def repo: LockRepository = {
     LockMongoRepository(reactiveMongoComponent.mongoConnector.db)
