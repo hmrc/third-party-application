@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import io.netty.handler.ssl.ApplicationProtocolNames
 import javax.inject.Inject
 import play.api.Logger
 import play.api.http.ContentTypes.JSON
@@ -38,6 +37,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
   val apiKeyHeaderName = "x-api-key"
 
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
+  private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
 
   def createOrUpdateApplication(applicationName: String, upsertApplicationRequest: UpsertApplicationRequest)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
@@ -61,7 +61,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE(s"$serviceBaseUrl/$applicationName") map { result =>
+    http.DELETE(deleteAPIKeyURL(applicationName)) map { result =>
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID $requestId")
       HasSucceeded

@@ -35,9 +35,9 @@ import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest, UpsertApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -59,8 +59,10 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
     val upsertApplicationRequest = UpsertApplicationRequest(SILVER, apiKeyValue, Seq(apiName))
-    val expectedURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
+    val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
     val expectedRequest: UpdateApplicationUsagePlanRequest = UpdateApplicationUsagePlanRequest(applicationName, apiKeyValue)
+
+    val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
 
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val awsApiKey: String = UUID.randomUUID().toString
@@ -80,7 +82,7 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
   "createOrUpdateApplication" should {
     "send the right body and headers when creating or updating an application" in new Setup {
-      stubFor(post(urlPathEqualTo(expectedURL))
+      stubFor(post(urlPathEqualTo(expectedUpdateURL))
         .willReturn(
           aResponse()
             .withStatus(ACCEPTED)
@@ -88,7 +90,7 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
       await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc))
 
-      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedURL))
+      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION)
@@ -96,14 +98,14 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
     }
 
     "return HasSucceeded when application creation or update fails" in new Setup {
-      stubFor(post(urlPathEqualTo(expectedURL))
+      stubFor(post(urlPathEqualTo(expectedUpdateURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
       await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc)) shouldBe HasSucceeded
 
-      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedURL))
+      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION)
@@ -113,7 +115,7 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
   "deleteApplication" should {
     "send the x-api-key header when deleting an application" in new Setup {
-      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(delete(urlPathEqualTo(expectedDeleteURL))
         .willReturn(
           aResponse()
             .withStatus(OK)
@@ -121,13 +123,13 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
       await(underTest.deleteApplication(applicationName)(hc))
 
-      wireMockServer.verify(deleteRequestedFor(urlEqualTo(s"/v1/application/$applicationName"))
+      wireMockServer.verify(deleteRequestedFor(urlEqualTo(expectedDeleteURL))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION))
     }
 
     "return HasSucceeded when application deletion fails" in new Setup {
-      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(delete(urlPathEqualTo(expectedDeleteURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
