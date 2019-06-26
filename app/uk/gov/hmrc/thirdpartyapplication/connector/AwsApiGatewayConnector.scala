@@ -37,12 +37,18 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
   val awsApiKey: String = config.awsApiKey
   val apiKeyHeaderName = "x-api-key"
 
-  def createOrUpdateApplication(applicationName: String, upsertApplicationRequest: UpsertApplicationRequest)(hc: HeaderCarrier): Future[HasSucceeded] = {
+  private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
+  private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
+
+  def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
-    http.PUT(s"$serviceBaseUrl/$applicationName", upsertApplicationRequest) map { result =>
+    http.POST(
+      updateUsagePlanURL(usagePlan),
+      UpdateApplicationUsagePlanRequest(applicationName, serverToken))
+    .map { result =>
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID $requestId")
       HasSucceeded
@@ -56,7 +62,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-    http.DELETE(s"$serviceBaseUrl/$applicationName") map { result =>
+    http.DELETE(deleteAPIKeyURL(applicationName)) map { result =>
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID $requestId")
       HasSucceeded
@@ -74,4 +80,4 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpsertApplicationRequest(usagePlan: RateLimitTier, serverToken: String, apiNames: Seq[String])
+case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)

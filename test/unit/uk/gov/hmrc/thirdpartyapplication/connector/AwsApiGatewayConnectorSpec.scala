@@ -28,16 +28,16 @@ import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
-import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
+import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpsertApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -47,15 +47,22 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
   private val stubHost = "localhost"
   private val wireMockUrl = s"http://$stubHost:$stubPort"
   private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
+
   private val applicationName = "api-platform-app"
   private val apiName = "hello--1.0"
+  private val requestedUsagePlan: RateLimitTier.Value = SILVER
+  private val apiKeyValue: String = UUID.randomUUID().toString
 
   trait Setup {
     SharedMetricRegistries.clear()
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val upsertApplicationRequest = UpsertApplicationRequest(SILVER, UUID.randomUUID().toString, Seq(apiName))
+    val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
+    val expectedRequest: UpdateApplicationUsagePlanRequest = UpdateApplicationUsagePlanRequest(applicationName, apiKeyValue)
+
+    val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
+
     val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
     val awsApiKey: String = UUID.randomUUID().toString
     val config: AwsApiGatewayConfig = AwsApiGatewayConfig(wireMockUrl, awsApiKey)
@@ -74,34 +81,40 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
   "createOrUpdateApplication" should {
     "send the right body and headers when creating or updating an application" in new Setup {
-      stubFor(put(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(post(urlPathEqualTo(expectedUpdateURL))
         .willReturn(
           aResponse()
-            .withStatus(OK)
+            .withStatus(ACCEPTED)
             .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")))
 
-      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc))
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
 
-      wireMockServer.verify(putRequestedFor(urlEqualTo(s"/v1/application/$applicationName"))
+      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION)
-        .withRequestBody(equalToJson(Json.toJson(upsertApplicationRequest).toString())))
+        .withRequestBody(equalToJson(Json.toJson(expectedRequest).toString())))
     }
 
     "return HasSucceeded when application creation or update fails" in new Setup {
-      stubFor(put(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(post(urlPathEqualTo(expectedUpdateURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc)) shouldBe HasSucceeded
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+
+      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
+        .withHeader(CONTENT_TYPE, equalTo(JSON))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .withoutHeader(AUTHORIZATION)
+        .withRequestBody(equalToJson(Json.toJson(expectedRequest).toString())))
     }
   }
 
   "deleteApplication" should {
     "send the x-api-key header when deleting an application" in new Setup {
-      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(delete(urlPathEqualTo(expectedDeleteURL))
         .willReturn(
           aResponse()
             .withStatus(OK)
@@ -109,13 +122,13 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
 
       await(underTest.deleteApplication(applicationName)(hc))
 
-      wireMockServer.verify(deleteRequestedFor(urlEqualTo(s"/v1/application/$applicationName"))
+      wireMockServer.verify(deleteRequestedFor(urlEqualTo(expectedDeleteURL))
         .withHeader("x-api-key", equalTo(awsApiKey))
         .withoutHeader(AUTHORIZATION))
     }
 
     "return HasSucceeded when application deletion fails" in new Setup {
-      stubFor(delete(urlPathEqualTo(s"/v1/application/$applicationName"))
+      stubFor(delete(urlPathEqualTo(expectedDeleteURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))

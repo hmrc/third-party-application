@@ -21,13 +21,13 @@ import java.util.UUID
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.connector.UpdateApplicationUsagePlanRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.play.json.Union
-import uk.gov.hmrc.thirdpartyapplication.connector.UpsertApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 
 import scala.language.implicitConversions
@@ -140,7 +140,7 @@ object JsonFormatters {
   implicit val formatApplicationWithUpliftRequest = Json.format[ApplicationWithUpliftRequest]
   implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretsRequest]
-  implicit val formatUpsertApplicationRequest = Json.format[UpsertApplicationRequest]
+  implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]
