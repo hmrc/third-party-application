@@ -20,34 +20,31 @@ import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationData, HasSucceeded, Wso2Api}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future.sequence
 import scala.concurrent.{ExecutionContext, Future}
 
 class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector,
-                                  applicationRepository: ApplicationRepository,
-                                  subscriptionRepository: SubscriptionRepository) {
+                                  applicationRepository: ApplicationRepository) {
 
   implicit val executionContext: ExecutionContext = ExecutionContext.global
+
+  val DefaultRateLimitTier: RateLimitTier = BRONZE
 
   def restoreData()(implicit hc: HeaderCarrier): Future[Seq[HasSucceeded]] = {
     Logger.info("Republishing all Applications to AWS API Gateway")
 
     applicationRepository.fetchAll()
-      .flatMap(applications => sequence(applications.map(restoreApplication)))
-  }
-
-  def restoreApplication(application: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    Logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
-
-    for {
-      apiIdentifiers <- subscriptionRepository.getSubscriptions(application.id)
-      _ = apiIdentifiers.map(api => Wso2Api.create(api).name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        application.wso2ApplicationName, application.tokens.production.accessToken, application.rateLimitTier.getOrElse(BRONZE))(hc)
-    } yield result
+      .flatMap(applications => {
+        sequence(
+          applications.map(application => {
+            Logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
+            awsApiGatewayConnector.createOrUpdateApplication(
+              application.wso2ApplicationName, application.tokens.production.accessToken, application.rateLimitTier.getOrElse(DefaultRateLimitTier))(hc)
+          }))
+      })
   }
 }
