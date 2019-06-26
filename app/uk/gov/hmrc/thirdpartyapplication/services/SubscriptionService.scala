@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
@@ -31,6 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, sequence, successful}
 
+@Singleton
 class SubscriptionService @Inject()(applicationRepository: ApplicationRepository,
                                     subscriptionRepository: SubscriptionRepository,
                                     apiDefinitionConnector: ApiDefinitionConnector,

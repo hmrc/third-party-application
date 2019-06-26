@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
@@ -36,6 +36,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future._
 import scala.util.Failure
 
+@Singleton
 class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   stateHistoryRepository: StateHistoryRepository,
                                   subscriptionRepository: SubscriptionRepository,

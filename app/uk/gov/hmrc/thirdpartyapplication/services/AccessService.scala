@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, sequence, successful}
 
+@Singleton
 class AccessService @Inject()(applicationRepository: ApplicationRepository, auditService: AuditService) {
 
   def readScopes(applicationId: UUID): Future[ScopeResponse] =

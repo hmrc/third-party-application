@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import controllers.AssetsBuilder
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Configuration
 import play.api.http.HttpErrorHandler
 import play.api.mvc.Action
@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApiAccess
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
 import uk.gov.hmrc.thirdpartyapplication.views.txt
 
+@Singleton
 class DocumentationController @Inject()(httpErrorHandler: HttpErrorHandler, config: DocumentationConfig)
   extends AssetsBuilder(httpErrorHandler) with BaseController {
 

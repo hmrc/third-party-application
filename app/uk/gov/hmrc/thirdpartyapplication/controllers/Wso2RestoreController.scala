@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import javax.inject.Inject
-
+import javax.inject.{Inject, Singleton}
 import play.api.mvc.Action
 import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreService
+
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@Singleton
 class Wso2RestoreController @Inject()(wso2RestoreService: Wso2RestoreService) extends CommonController {
 
   def restoreWso2Data() = Action.async {

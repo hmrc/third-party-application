@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-import javax.inject.Inject
 
+import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, Gatekeepe
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@Singleton
 class GatekeeperController @Inject()(val authConnector: AuthConnector, val applicationService: ApplicationService,
   gatekeeperService: GatekeeperService, val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
 

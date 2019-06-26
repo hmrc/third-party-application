@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
@@ -37,6 +37,7 @@ object SendEmailRequest {
   implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
 }
 
+@Singleton
 class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(implicit val ec: ExecutionContext) {
   val serviceUrl = config.baseUrl
   val devHubBaseUrl = config.devHubBaseUrl

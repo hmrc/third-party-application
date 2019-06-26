@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
+@Singleton
 class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConfig)
                                       (implicit val ec: ExecutionContext) {
 

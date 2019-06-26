@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import play.api.mvc.Action
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
+@Singleton
 class AwsRestoreController @Inject()(awsRestoreService: AwsRestoreService) extends CommonController {
 
   def restoreAwsData() = Action.async { implicit request =>
