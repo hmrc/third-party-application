@@ -20,7 +20,7 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, UpsertApplicationRequest, Wso2ApiStoreConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.{Wso2Api, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
@@ -84,7 +84,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       sandboxKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.SANDBOX)
       prodKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION)
       _ <- wso2APIStoreConnector.logout(cookie)
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, UpsertApplicationRequest(BRONZE, prodKeys.accessToken, Seq()))(hc)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, prodKeys.accessToken, BRONZE)(hc)
     } yield ApplicationTokens(prodKeys, sandboxKeys)
   }
 
@@ -117,9 +117,8 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
         wso2APIStoreConnector.updateApplication(_, app.wso2ApplicationName, rateLimitTier)
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
-      apiNames = apiIdentifiers.map(api => Wso2Api.create(api).name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, UpsertApplicationRequest(rateLimitTier, app.tokens.production.accessToken, apiNames))(hc)
+      _ = apiIdentifiers.map(api => Wso2Api.create(api).name)
+      result <- awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, rateLimitTier)(hc)
     } yield result
   }
 
@@ -143,9 +142,9 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
         wso2APIStoreConnector.addSubscription(_, app.wso2ApplicationName, wso2Api, app.rateLimitTier, 0)
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
-      apiNames = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
+      _ = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
       result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, UpsertApplicationRequest(app.rateLimitTier.getOrElse(BRONZE), app.tokens.production.accessToken, apiNames))(hc)
+        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
     } yield result
   }
 
@@ -158,9 +157,9 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
         wso2APIStoreConnector.removeSubscription(_, app.wso2ApplicationName, wso2Api, 0)
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
-      apiNames = apiIdentifiers.map(api => Wso2Api.create(api).name).filterNot(_ == wso2Api.name)
+      _ = apiIdentifiers.map(api => Wso2Api.create(api).name).filterNot(_ == wso2Api.name)
       result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, UpsertApplicationRequest(app.rateLimitTier.getOrElse(BRONZE), app.tokens.production.accessToken, apiNames))(hc)
+        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
     } yield result
   }
 

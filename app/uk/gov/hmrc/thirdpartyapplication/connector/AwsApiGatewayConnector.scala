@@ -39,14 +39,14 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
   private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
 
-  def createOrUpdateApplication(applicationName: String, upsertApplicationRequest: UpsertApplicationRequest)(hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
     http.POST(
-      updateUsagePlanURL(upsertApplicationRequest.usagePlan),
-      UpdateApplicationUsagePlanRequest(applicationName, upsertApplicationRequest.serverToken))
+      updateUsagePlanURL(usagePlan),
+      UpdateApplicationUsagePlanRequest(applicationName, serverToken))
     .map { result =>
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID $requestId")
@@ -79,5 +79,4 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpsertApplicationRequest(usagePlan: RateLimitTier, serverToken: String, apiNames: Seq[String])
 case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)

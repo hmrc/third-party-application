@@ -34,7 +34,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
-import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest, UpsertApplicationRequest}
+import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
@@ -58,7 +58,6 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
     WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    val upsertApplicationRequest = UpsertApplicationRequest(SILVER, apiKeyValue, Seq(apiName))
     val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
     val expectedRequest: UpdateApplicationUsagePlanRequest = UpdateApplicationUsagePlanRequest(applicationName, apiKeyValue)
 
@@ -88,7 +87,7 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
             .withStatus(ACCEPTED)
             .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")))
 
-      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc))
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
 
       wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
@@ -103,7 +102,7 @@ class AwsApiGatewayConnectorSpec extends UnitSpec with WithFakeApplication with 
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      await(underTest.createOrUpdateApplication(applicationName, upsertApplicationRequest)(hc)) shouldBe HasSucceeded
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
 
       wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
         .withHeader(CONTENT_TYPE, equalTo(JSON))
