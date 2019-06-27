@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
 import uk.gov.hmrc.thirdpartyapplication.models.TrustedApplicationsConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, RefreshSubscriptionsJobConfig, SetLastAccessedDateJobConfig, UpliftVerificationExpiryJobConfig}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, PurgeApplicationsJobConfig, RefreshSubscriptionsJobConfig, SetLastAccessedDateJobConfig, UpliftVerificationExpiryJobConfig}
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -40,6 +40,7 @@ class ConfigurationModule extends Module {
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[SetLastAccessedDateJobConfig].toProvider[SetLastAccessDateJobConfigProvider],
+      bind[PurgeApplicationsJobConfig].toProvider[PurgeApplicationsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -119,6 +120,21 @@ class SetLastAccessDateJobConfigProvider @Inject()(val runModeConfiguration: Con
       .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
     SetLastAccessedDateJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
+  }
+}
+
+@Singleton
+class PurgeApplicationsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[PurgeApplicationsJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.purgeApplicationsJob")
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    PurgeApplicationsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
