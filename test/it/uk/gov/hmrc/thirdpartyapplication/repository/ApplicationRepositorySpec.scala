@@ -20,6 +20,7 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeZone}
+import org.mockito.Mockito.{times, verify, verifyNoMoreInteractions}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
@@ -919,6 +920,28 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       result.applications.size shouldBe 2
       result.applications.head.createdOn shouldBe secondCreatedOn
       result.applications.last.createdOn shouldBe firstCreatedOn
+    }
+  }
+
+  "processAll" should {
+    class TestThing {
+      def doSomething(application: ApplicationData): ApplicationData = application
+    }
+
+    "ensure function is called for every Application in collection" in {
+      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+
+      await(applicationRepository.save(firstApplication))
+      await(applicationRepository.save(secondApplication))
+
+      val mockThing = mock[TestThing]
+
+      await(applicationRepository.processAll(a => mockThing.doSomething(a)))
+
+      verify(mockThing, times(1)).doSomething(firstApplication)
+      verify(mockThing, times(1)).doSomething(secondApplication)
+      verifyNoMoreInteractions(mockThing)
     }
   }
 

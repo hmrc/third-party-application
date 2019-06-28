@@ -15,7 +15,9 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "mongo-lock" % "6.12.0-play-25",
   "uk.gov.hmrc" %% "play-scheduling" % "6.0.0",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.5.0",
-  "uk.gov.hmrc" %% "play-hmrc-api" % "3.4.0-play-25"
+  "uk.gov.hmrc" %% "play-hmrc-api" % "3.4.0-play-25",
+  "com.typesafe.play" %% "play-iteratees" % PlayVersion.current,
+  "org.reactivemongo" %% "reactivemongo-iteratees" % "0.16.4"
 )
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.14.0-play-25" % "test,it",
