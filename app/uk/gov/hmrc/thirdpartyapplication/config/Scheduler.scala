@@ -20,7 +20,7 @@ import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
 import play.api.Application
 import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{SetLastAccessedDateJobConfig, _}
 
 class SchedulerModule extends AbstractModule {
   override def configure(): Unit = {
@@ -35,6 +35,8 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
                           setLastAccessedDateJobConfig: SetLastAccessedDateJobConfig,
                           setLastAccessedDateJob: SetLastAccessedDateJob,
+                          purgeApplicationsJobConfig: PurgeApplicationsJobConfig,
+                          purgeApplicationsJob: PurgeApplicationsJob,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
@@ -57,7 +59,13 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
       Seq.empty
     }
 
-    upliftJob ++ refreshJob ++ accessDateJob
+    val purgeAppsJob = if (purgeApplicationsJobConfig.enabled) {
+      Seq(purgeApplicationsJob)
+    } else {
+      Seq.empty
+    }
+
+    upliftJob ++ refreshJob ++ accessDateJob ++ purgeAppsJob
 
   }
 
