@@ -46,6 +46,7 @@ class PurgeApplicationsJob @Inject()(override val lockKeeper: PurgeApplicationsJ
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     Logger.info("Starting PurgeApplicationsJob")
+    countRecords()
     val applicationIds: Seq[UUID] = Seq(
       UUID.fromString("a9633b5b-aae9-4419-8aa1-6317832dc580"),
       UUID.fromString("73d33f9f-6e42-4a22-ae1e-5a05ba2be22d")
@@ -53,10 +54,17 @@ class PurgeApplicationsJob @Inject()(override val lockKeeper: PurgeApplicationsJ
 
     purgeApplications(applicationIds) map { _ =>
       Logger.info(s"Purged applications: $applicationIds")
+      countRecords()
       RunningOfJobSuccessful
     } recoverWith {
       case e: Throwable => failed(RunningOfJobFailed(name, e))
     }
+  }
+
+  private def countRecords(): Unit = {
+    applicationRepository.count.map(i => Logger.info(s"Applications: $i"))
+    stateHistoryRepository.count.map(i => Logger.info(s"State history records: $i"))
+    subscriptionRepository.count.map(i => Logger.info(s"Subscriptions: $i"))
   }
 
   private def purgeApplications(applicationIds: Seq[UUID]): Future[Seq[RunningOfJobSuccessful]] = {
