@@ -924,7 +924,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   }
 
   "processAll" should {
-    class TestThing {
+    class TestService {
       def doSomething(application: ApplicationData): ApplicationData = application
     }
 
@@ -935,13 +935,13 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
 
-      val mockThing = mock[TestThing]
+      val mockTestService = mock[TestService]
 
-      await(applicationRepository.processAll(a => mockThing.doSomething(a)))
+      await(applicationRepository.processAll(a => mockTestService.doSomething(a)))
 
-      verify(mockThing, times(1)).doSomething(firstApplication)
-      verify(mockThing, times(1)).doSomething(secondApplication)
-      verifyNoMoreInteractions(mockThing)
+      verify(mockTestService, times(1)).doSomething(firstApplication)
+      verify(mockTestService, times(1)).doSomething(secondApplication)
+      verifyNoMoreInteractions(mockTestService)
     }
   }
 
