@@ -55,11 +55,14 @@ class PurgeApplicationsJobSpec extends UnitSpec with MockitoSugar with MongoSpec
     val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 
     when(mockApplicationRepository.delete(any[UUID])).thenReturn(successful(HasSucceeded))
+    when(mockApplicationRepository.count).thenReturn(successful(1))
     when(mockStateHistoryRepository.deleteByApplicationId(any[UUID])).thenReturn(successful(HasSucceeded))
+    when(mockStateHistoryRepository.count).thenReturn(successful(1))
     when(mockSubscriptionRepository.getSubscriptions(any[UUID]))
       .thenReturn(successful(expectedSubscriptions.head))
       .thenReturn(successful(expectedSubscriptions(1)))
     when(mockSubscriptionRepository.remove(any[UUID], any[APIIdentifier])).thenReturn(successful(HasSucceeded))
+    when(mockSubscriptionRepository.count).thenReturn(successful(1))
 
     val lockKeeperSuccess: () => Boolean = () => true
 
@@ -94,6 +97,8 @@ class PurgeApplicationsJobSpec extends UnitSpec with MockitoSugar with MongoSpec
           verify(mockSubscriptionRepository).remove(app._1, sub)
         }
       }
+      verify(mockApplicationRepository, times(2)).count
+      verify(mockStateHistoryRepository, times(2)).count
       verifyNoMoreInteractions(mockApplicationRepository)
       verifyNoMoreInteractions(mockStateHistoryRepository)
     }
