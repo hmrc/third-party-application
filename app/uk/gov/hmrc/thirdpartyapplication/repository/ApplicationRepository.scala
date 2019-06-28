@@ -20,12 +20,14 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
+import play.api.libs.iteratee._
 import play.api.libs.json.Json._
-import play.api.libs.json._
+import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -297,6 +299,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions))).map(_.applications)
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
+
+  def processAll(function: ApplicationData => Unit): Future[Unit] = {
+    collection
+      .find(Json.obj())
+      .cursor[ApplicationData]()
+      .enumerator()
+      .run(Iteratee.foreach(function))
+  }
 
   def delete(id: UUID): Future[HasSucceeded] = remove("id" -> id).map(_ => HasSucceeded)
 }

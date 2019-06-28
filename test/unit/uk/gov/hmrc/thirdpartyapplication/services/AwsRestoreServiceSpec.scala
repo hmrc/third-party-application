@@ -18,6 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
@@ -61,12 +62,17 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val serverToken: String = UUID.randomUUID().toString
       val application: ApplicationData = buildApplication("foo", serverToken)
 
-      when(mockApplicationRepository.fetchAll()).thenReturn(Future.successful(Seq(application)))
+      val captor: ArgumentCaptor[ApplicationData => Unit] = ArgumentCaptor.forClass(classOf[ApplicationData => Unit])
+
+      when(mockApplicationRepository.processAll(captor.capture())).thenReturn(Future.successful())
       when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc))
         .thenReturn(Future.successful(HasSucceeded))
 
       await(awsRestoreService.restoreData())
 
+      val capturedValue = captor.getValue
+
+      capturedValue(application)
       verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc)
     }
   }
