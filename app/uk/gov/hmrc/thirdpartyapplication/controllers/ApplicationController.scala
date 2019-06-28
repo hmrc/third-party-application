@@ -46,7 +46,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val AuthorizerUserAgent: String = "APIPlatformAuthorizer"
+  val apiGatewayUserAgents: Seq[String] = Seq("APIPlatformAuthorizer", "wso2-gateway-customizations")
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
@@ -226,9 +226,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                         notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
     fetchFunction().flatMap {
       case Some(application) =>
-        // If request has orginated from AWS Authorizer, record usage of the Application
+        // If request has originated from an API gateway, record usage of the Application
         hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
-          case Some(AuthorizerUserAgent) =>
+          case Some(userAgent) if apiGatewayUserAgents.contains(userAgent) =>
             applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
           case _ => Future.successful(Ok(toJson(application)))
         }
