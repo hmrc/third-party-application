@@ -26,6 +26,7 @@ import org.mockito.Matchers.{any, eq => mockEq}
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
@@ -50,14 +51,14 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _, _}
 
-class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication with ApplicationStateUtil {
+class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication
+  with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   implicit lazy val materializer = fakeApplication.materializer
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
-    val apiGatewayUserAgents: Seq[String] = Seq("APIPlatformAuthorizer", "wso2-gateway-customizations")
 
     val mockCredentialService = mock[CredentialService]
     val mockApplicationService = mock[ApplicationService]
@@ -803,6 +804,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val clientId = "A123XC"
     val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
+    trait LastAccessedSetup extends Setup {
+      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
+      val updatedLastAccessTime: DateTime = DateTime.now()
+      val applicationId: UUID = UUID.randomUUID()
+      val applicationResponse: ApplicationResponse =
+        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
+      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
+      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+    }
+
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
       val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
@@ -873,86 +884,50 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       result.header.headers.get(HeaderNames.VARY) shouldBe None
     }
 
-    "update last accessed time when an API gateway retrieves Application by Server Token" in new Setup {
-      val applicationId: UUID = UUID.randomUUID()
-      val applicationResponse: ApplicationResponse =
-        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(DateTime.now().minusDays(10))) //scalastyle:ignore magic.number
-      val updatedLastAccessTime: DateTime = DateTime.now()
-      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
-
+    "update last accessed time when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
       when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
-      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+      val scenarios =
+        Table(
+          ("headers", "expectedLastAccessTime"),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
+        )
 
-      apiGatewayUserAgents.foreach { userAgent =>
+      forAll (scenarios) { (headers, expectedLastAccessTime) =>
         val result: Result =
-          await(underTest.queryDispatcher()(request.withHeaders(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> userAgent)))
+          await(underTest.queryDispatcher()(request.withHeaders(headers: _*)))
 
         status(result) shouldBe SC_OK
         result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
         result.header.headers.get(HeaderNames.VARY) shouldBe Some(SERVER_TOKEN_HEADER)
 
-        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe updatedLastAccessTime.getMillis
+        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
     }
 
-    "update last accessed time when an API gateway retrieves Application by Client Id" in new Setup {
-      val applicationId: UUID = UUID.randomUUID()
-      val applicationResponse: ApplicationResponse =
-        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(DateTime.now().minusDays(10))) //scalastyle:ignore magic.number
-      val updatedLastAccessTime: DateTime = DateTime.now()
-      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
-
+    "update last accessed time when an API gateway retrieves Application by Client Id" in new LastAccessedSetup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
-      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+      val scenarios =
+        Table(
+          ("headers", "expectedLastAccessTime"),
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
+          (Seq(USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
+          (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis),
+          (Seq(), lastAccessTime.getMillis)
+        )
 
-      apiGatewayUserAgents.foreach { userAgent =>
+      forAll (scenarios) { (headers, expectedLastAccessTime) =>
         val result: Result =
-          await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(USER_AGENT -> userAgent)))
+          await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*)))
 
         status(result) shouldBe SC_OK
         result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
         result.header.headers.get(HeaderNames.VARY) shouldBe None
 
-        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe updatedLastAccessTime.getMillis
+        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
-    }
-
-    "fetchByServerToken does not update last accessed time in absence of appropriate User-Agent header" in new Setup {
-      val applicationId: UUID = UUID.randomUUID()
-      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
-
-      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
-
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
-
-      val result: Result =
-        await(underTest.queryDispatcher()(request.withHeaders(SERVER_TOKEN_HEADER -> serverToken)))
-
-      verify(underTest.applicationService, times(0)).recordApplicationUsage(applicationId)
-
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-      result.header.headers.get(HeaderNames.VARY) shouldBe Some(SERVER_TOKEN_HEADER)
-
-      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe lastAccessTime.getMillis
-    }
-
-    "fetchByClientId does not update last accessed time in absence of appropriate User-Agent header" in new Setup {
-      val applicationId: UUID = UUID.randomUUID()
-      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
-      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
-
-      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
-
-      val result: Result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
-
-      verify(underTest.applicationService, times(0)).recordApplicationUsage(applicationId)
-
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
-
-      (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe lastAccessTime.getMillis
     }
   }
 
