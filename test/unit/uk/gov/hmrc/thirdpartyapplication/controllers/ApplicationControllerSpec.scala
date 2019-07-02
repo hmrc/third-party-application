@@ -808,80 +808,77 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
       val updatedLastAccessTime: DateTime = DateTime.now()
       val applicationId: UUID = UUID.randomUUID()
+
       val applicationResponse: ApplicationResponse =
         aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
+
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+    }
+
+    def validateResult(result: Result, expectedResponseCode: Int,
+                       expectedCacheControlHeader: Option[String],
+                       expectedVaryHeader: Option[String]) = {
+      status(result) shouldBe expectedResponseCode
+      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe expectedCacheControlHeader
+      result.header.headers.get(HeaderNames.VARY) shouldBe expectedVaryHeader
     }
 
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
+
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
+
+      validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
 
     "retrieve by server token" in new Setup {
-      val req = request.withHeaders("X-Server-Token" -> serverToken)
-      val application = aNewApplicationResponse()
-
       when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(aNewApplicationResponse())))
 
-      val result = await(underTest.queryDispatcher()(req))
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-      result.header.headers.get(HeaderNames.VARY) shouldBe Some("X-server-token")
-    }
+      private val scenarios =
+        Table(
+          ("serverTokenHeader", "expectedVaryHeader"),
+          ("X-Server-Token", "X-server-token"),
+          ("X-SERVER-TOKEN", "X-server-token"))
 
-    "retrieve by server token (Uppercased header)" in new Setup {
-      val req = request.withHeaders("X-SERVER-TOKEN" -> serverToken)
-      val application = aNewApplicationResponse()
+      forAll(scenarios) { (serverTokenHeader, expectedVaryHeader) =>
+        val result = await(underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken)))
 
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(aNewApplicationResponse())))
-
-      val result = await(underTest.queryDispatcher()(req))
-
-      verify(underTest.applicationService).fetchByServerToken(serverToken)
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-      result.header.headers.get(HeaderNames.VARY) shouldBe Some("X-server-token")
+        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
+      }
     }
 
     "retrieve all" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(Future(Seq(aNewApplicationResponse(), aNewApplicationResponse())))
-      val result = await(underTest.queryDispatcher()(FakeRequest()))
-      status(result) shouldBe SC_OK
+
+      private val result = await(underTest.queryDispatcher()(FakeRequest()))
+
+      validateResult(result, SC_OK, None, None)
       jsonBodyOf(result).as[Seq[JsValue]] should have size 2
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
     }
 
     "retrieve when no subscriptions" in new Setup {
       when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(Seq(aNewApplicationResponse())))
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true")))
-      status(result) shouldBe SC_OK
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
+
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true")))
+
+      validateResult(result, SC_OK, None, None)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown from fetchAll" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      val result = await(underTest.queryDispatcher()(FakeRequest()))
+      private val result = await(underTest.queryDispatcher()(FakeRequest()))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
+      validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
     }
 
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
-      val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
-      result.header.headers.get(HeaderNames.VARY) shouldBe None
+      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
+
+      validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
     }
 
     "update last accessed time when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
@@ -899,16 +896,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         val result: Result =
           await(underTest.queryDispatcher()(request.withHeaders(headers: _*)))
 
-        status(result) shouldBe SC_OK
-        result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-        result.header.headers.get(HeaderNames.VARY) shouldBe Some(SERVER_TOKEN_HEADER)
-
+        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
     }
 
     "update last accessed time when an API gateway retrieves Application by Client Id" in new LastAccessedSetup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
+
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime"),
@@ -922,10 +917,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         val result: Result =
           await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*)))
 
-        status(result) shouldBe SC_OK
-        result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$applicationTtlInSecs")
-        result.header.headers.get(HeaderNames.VARY) shouldBe None
-
+        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
     }
