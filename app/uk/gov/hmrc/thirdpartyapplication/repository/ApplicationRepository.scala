@@ -243,7 +243,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
-      case ApplicationTextSearch => regexTextSearch(Seq("id", "name"), applicationSearch.textToSearch.getOrElse(""))
+      case ApplicationTextSearch => regexTextSearch(Seq("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
     }
   }
 
@@ -302,7 +302,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     collection
-      .find(Json.obj())
+      .find(Json.obj(), Option.empty[ApplicationData])
       .cursor[ApplicationData]()
       .enumerator()
       .run(Iteratee.foreach(function))
