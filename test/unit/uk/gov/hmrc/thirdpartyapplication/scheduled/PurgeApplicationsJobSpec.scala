@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{PurgeApplicationsJob, PurgeApplicationsJobConfig, PurgeApplicationsJobLockKeeper}
 
-import scala.collection.immutable.ListMap
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.FiniteDuration
@@ -44,11 +43,13 @@ class PurgeApplicationsJobSpec extends UnitSpec with MockitoSugar with MongoSpec
   }
 
   trait Setup {
-    val expectedApplications: ListMap[UUID, Seq[APIIdentifier]] = ListMap(
-      UUID.fromString("a9633b5b-aae9-4419-8aa1-6317832dc580") -> Seq(APIIdentifier("hello", "1.0"), APIIdentifier("hello", "2.0")),
-      UUID.fromString("73d33f9f-6e42-4a22-ae1e-5a05ba2be22d") -> Seq(APIIdentifier("example", "1.0"), APIIdentifier("example", "2.0"))
+    val expectedApplications: Seq[UUID] = Seq(
+      UUID.fromString("a9633b5b-aae9-4419-8aa1-6317832dc580"),
+      UUID.fromString("73d33f9f-6e42-4a22-ae1e-5a05ba2be22d")
     )
-    val expectedSubscriptions: Seq[Seq[APIIdentifier]] = expectedApplications.values.toSeq
+    val expectedSubscriptions: Seq[Seq[APIIdentifier]] = Seq(
+      Seq(APIIdentifier("hello", "1.0"), APIIdentifier("hello", "2.0")), Seq(APIIdentifier("example", "1.0"), APIIdentifier("example", "2.0"))
+    )
 
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
     val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
@@ -90,10 +91,10 @@ class PurgeApplicationsJobSpec extends UnitSpec with MockitoSugar with MongoSpec
       val result: underTest.Result = await(underTest.execute)
 
       result.message shouldBe "PurgeApplicationsJob Job ran successfully."
-      expectedApplications.foreach { app =>
+      expectedApplications.zipWithIndex.foreach { app =>
         verify(mockApplicationRepository, times(1)).delete(app._1)
         verify(mockStateHistoryRepository, times(1)).deleteByApplicationId(app._1)
-        app._2.foreach { sub =>
+        expectedSubscriptions(app._2).foreach { sub =>
           verify(mockSubscriptionRepository).remove(app._1, sub)
         }
       }
