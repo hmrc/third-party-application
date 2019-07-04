@@ -18,23 +18,24 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
+import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
 class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually {
+  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -162,6 +163,44 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
       result shouldBe Seq.empty
+    }
+  }
+
+  "getSubscribers" should {
+    val application1 = UUID.randomUUID()
+    val application2 = UUID.randomUUID()
+    val api1 = APIIdentifier("some-context", "1.0")
+    val api2 = APIIdentifier("some-context", "2.0")
+    val api3 = APIIdentifier("some-context", "3.0")
+
+    def saveSubscriptions(): HasSucceeded = {
+      await(subscriptionRepository.add(application1, api1))
+      await(subscriptionRepository.add(application1, api2))
+      await(subscriptionRepository.add(application2, api2))
+      await(subscriptionRepository.add(application2, api3))
+    }
+
+    "return an empty set when the API doesn't have any subscribers" in {
+      saveSubscriptions()
+
+      val applications: Set[UUID] = await(subscriptionRepository.getSubscribers(APIIdentifier("some-context", "4.0")))
+
+      applications should have size 0
+    }
+
+    "return the IDs of the applications subscribed to the given API" in {
+      saveSubscriptions()
+      val scenarios = Table(
+        ("apiIdentifier", "expectedApplications"),
+        (APIIdentifier("some-context", "1.0"), Seq(application1)),
+        (APIIdentifier("some-context", "2.0"), Seq(application1, application2)),
+        (APIIdentifier("some-context", "3.0"), Seq(application2))
+      )
+
+      forAll(scenarios) { (apiIdentifier, expectedApplications) =>
+        val applications: Set[UUID] = await(subscriptionRepository.getSubscribers(apiIdentifier))
+        applications should contain only (expectedApplications: _*)
+      }
     }
   }
 

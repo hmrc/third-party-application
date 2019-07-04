@@ -27,6 +27,7 @@ import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatApiIdentifier, formatSubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
@@ -108,6 +109,14 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def getSubscriptions(applicationId: UUID): Future[Seq[APIIdentifier]] = {
     find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
+  }
+
+  def getSubscribers(apiIdentifier: APIIdentifier): Future[Set[UUID]] = {
+    val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
+    collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
+      case Some(subscriptionData) => subscriptionData.applications
+      case _ => Set()
+    }
   }
 
   private def makeSelector(apiIdentifier: APIIdentifier) = {
