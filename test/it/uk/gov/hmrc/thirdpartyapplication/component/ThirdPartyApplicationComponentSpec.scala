@@ -430,8 +430,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       And("The API is available for the application")
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
-      And("The application is subscribed to an API in WSO2")
-      wso2Store.willReturnApplicationSubscriptions(wso2ApplicationName, Seq(APIIdentifier(context, version)))
+      And("The application is subscribed to an API")
+      subscriptionExists(application.id, context, version)
 
       When("I fetch the API subscriptions of the application")
       val response = Http(s"$serviceUrl/application/${application.id}/subscription").asString
@@ -539,6 +539,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED
     Json.parse(createdResponse.body).as[ApplicationResponse]
+  }
+
+  private def subscriptionExists(applicationId: UUID, apiContext: String, apiVersion: String) = {
+    subscriptionRepository.add(applicationId, new APIIdentifier(apiContext, apiVersion))
   }
 
   private def postData(path: String, data: String, method: String = "POST"): HttpResponse[String] = {
