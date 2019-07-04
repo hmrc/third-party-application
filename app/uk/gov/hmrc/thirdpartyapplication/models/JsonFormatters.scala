@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 import scala.language.implicitConversions
 
 object JsonFormatters {
+  implicit val formatSubscribersResponse = Json.format[SubscribersResponse]
   implicit val formatRole = EnumJson.enumFormat(Role)
   implicit val formatEnvironment = EnumJson.enumFormat(Environment)
   implicit val formatAccessType = EnumJson.enumFormat(AccessType)
