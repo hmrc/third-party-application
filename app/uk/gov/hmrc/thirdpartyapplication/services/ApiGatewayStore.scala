@@ -140,9 +140,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
       _ = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
-    } yield result
+    } yield HasSucceeded
   }
 
   override def removeSubscription(app: ApplicationData, api: APIIdentifier)
@@ -155,9 +153,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
       _ = apiIdentifiers.map(api => Wso2Api.create(api).name).filterNot(_ == wso2Api.name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
-    } yield result
+    } yield HasSucceeded
   }
 
   override def resubscribeApi(originalApis: Seq[APIIdentifier],

@@ -177,14 +177,13 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, serverToken, GOLD)(hc)).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(APIIdentifier("hello", "1.0"))))
 
       await(underTest.addSubscription(app, api))
 
       verify(mockWSO2APIStoreConnector).addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, serverToken, GOLD)(hc)
+      verifyZeroInteractions(mockAwsApiGatewayConnector)
     }
 
     "fail when add subscription fails" in new Setup {
@@ -230,14 +229,13 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2API, 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, serverToken, GOLD)(hc)).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(api, APIIdentifier("hello", "1.0"))))
 
       await(underTest.removeSubscription(app, api))
 
       verify(mockWSO2APIStoreConnector).removeSubscription(cookie, wso2ApplicationName, wso2API, 0)
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, serverToken, GOLD)(hc)
+      verifyZeroInteractions(mockAwsApiGatewayConnector)
     }
 
   }
