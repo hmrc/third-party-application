@@ -1098,8 +1098,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier, anotherApiIdentifier))
-
+      when(mockApiGatewayStore.getSubscriptions(
+        originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
+        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
@@ -1166,7 +1167,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier, anotherApiIdentifier))
+      when(mockApiGatewayStore.getSubscriptions(
+        originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
+        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
 
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
