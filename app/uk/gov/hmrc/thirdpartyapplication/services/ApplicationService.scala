@@ -137,7 +137,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     fetchApp(applicationId) flatMap { app =>
 
       def updateWso2Subscriptions(): Future[Seq[HasSucceeded]] = {
-        apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName) flatMap { originalApis =>
+        subscriptionRepository.getSubscriptions(applicationId) flatMap { originalApis =>
           sequence(originalApis map { api =>
             apiGatewayStore.resubscribeApi(originalApis, app.wso2Username, app.wso2Password, app.wso2ApplicationName, api, rateLimitTier)
           })
