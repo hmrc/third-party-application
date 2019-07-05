@@ -461,8 +461,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val data = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Nil))
 
       val result = await(underTest.fetch(applicationId))
 
@@ -476,8 +474,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(trustedApplicationId2)
 
       when(mockApplicationRepository.fetch(trustedApplicationId2)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Nil))
 
       val result = await(underTest.fetch(trustedApplicationId2))
 
@@ -756,7 +752,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
@@ -771,7 +766,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(trustedApplicationId1)
 
       when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
@@ -802,7 +796,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(production = productionToken, sandbox = sandboxToken))
 
       when(mockApplicationRepository.fetchByServerToken(serverToken)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByServerToken(serverToken))
 
