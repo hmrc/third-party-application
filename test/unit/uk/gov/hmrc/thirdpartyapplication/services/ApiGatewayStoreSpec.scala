@@ -312,7 +312,8 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         await(underTest.resubscribeApi(Seq(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
       }
 
-      verify(mockWSO2APIStoreConnector, never()).addSubscription(anyString(), anyString(), any[Wso2Api], any[Option[RateLimitTier]], anyInt())(any[HeaderCarrier])
+      verify(mockWSO2APIStoreConnector, never())
+        .addSubscription(anyString(), anyString(), any[Wso2Api], any[Option[RateLimitTier]], anyInt())(any[HeaderCarrier])
     }
 
     "fail when add subscription fails" in new Setup {
@@ -352,28 +353,5 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       verify(mockWSO2APIStoreConnector).logout(cookie)
     }
 
-  }
-
-  "getAllSubscriptions" should {
-
-    "retrieve all subscriptions for all applications in WSO2" in new Setup {
-
-      val wso2Username = "myuser"
-      val wso2Password = "mypassword"
-      val wso2ApplicationName = "myapplication"
-      val cookie = "some-cookie-value"
-      val wso2Subscriptions = Seq(Wso2Api("some--context--1.0", "1.0"), Wso2Api("some--other--context--1.0", "1.0"))
-      val subscriptions = Seq(APIIdentifier("some/context", "1.0"), APIIdentifier("some/other/context", "1.0"))
-
-      when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
-      when(mockWSO2APIStoreConnector.getAllSubscriptions(cookie))
-        .thenReturn(Future.successful(Map(wso2ApplicationName -> wso2Subscriptions)))
-      when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-
-      val result = await(underTest.getAllSubscriptions(wso2Username, wso2Password))
-
-      result shouldBe Map(wso2ApplicationName -> subscriptions)
-      verify(mockWSO2APIStoreConnector).logout(cookie)
-    }
   }
 }

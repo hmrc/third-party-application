@@ -816,8 +816,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       when(mockApplicationRepository.fetchAllForEmailAddress(emailAddress))
         .thenReturn(successful(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
-      when(mockApiGatewayStore.getAllSubscriptions(anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Map.empty[String, Seq[APIIdentifier]]))
 
       await(underTest.fetchAllForCollaborator(emailAddress)).size shouldBe 3
     }
