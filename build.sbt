@@ -8,7 +8,7 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 lazy val appName = "third-party-application"
 
-lazy val appDependencies: Seq[ModuleID] = compile ++ test
+lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
@@ -30,6 +30,13 @@ lazy val test = Seq(
   "com.github.tomakehurst" % "wiremock" % "1.58" % "test,it",
   "org.mockito" % "mockito-core" % "1.9.5" % "test,it"
 )
+// Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
+// See Jira story GG-3666 for further information
+def tmpMacWorkaround =
+  if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))) {
+    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
+  } else Seq()
+
 lazy val plugins: Seq[Plugins] = Seq(_root_.play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
