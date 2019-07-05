@@ -101,11 +101,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       isUnique = true
     ),
     createSingleFieldAscendingIndex(
-      indexFieldKey = "tokens.sandbox.clientId",
-      indexName = Some("sandboxTokenClientIdIndex"),
-      isUnique = true
-    ),
-    createSingleFieldAscendingIndex(
       indexFieldKey = "access.overrides",
       indexName = Some("accessOverridesIndex")
     ),

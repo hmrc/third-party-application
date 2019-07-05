@@ -29,7 +29,6 @@ trait IndexVerification extends UnitSpec with Eventually {
   def verifyIndexesVersionAgnostic[A, ID](repository: ReactiveRepository[A, ID], indexes: Set[Index])(implicit ec: ExecutionContext) = {
     eventually(timeout(10.seconds), interval(1000.milliseconds)) {
       val actualIndexes = await(repository.collection.indexesManager.list()).toSet
-      println(actualIndexes)
       versionAgnostic(actualIndexes) shouldBe versionAgnostic(indexes)
     }
   }
