@@ -237,25 +237,6 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
     }
   }
 
-  def getAllSubscriptions(cookie: String)(implicit hc: HeaderCarrier): Future[Map[String, Seq[Wso2Api]]] = {
-    Logger.debug("Fetching subscriptions for all applications")
-    val url = s"$serviceUrl/subscription/subscription-list/ajax/subscription-list.jag"
-    val payload = "action=getAllSubscriptions"
-
-    post(url, payload, headers(cookie)).map { response =>
-      (response.json \ "subscriptions" \ "applications").as[Seq[JsValue]].map { wso2applicationJson =>
-        val name = (wso2applicationJson \ "name").as[String]
-        val subscriptions = (wso2applicationJson \ "subscriptions").as[Seq[JsValue]].map { subscriptionJson =>
-          Wso2Api(
-            (subscriptionJson \ "name").as[String],
-            (subscriptionJson \ "version").as[String]
-          )
-        }
-        name -> subscriptions
-      }.toMap
-    }
-  }
-
   private def post(url: String, body: String, headers: Seq[(String, String)])
                   (implicit hc: HeaderCarrier): Future[HttpResponse] = {
     Logger.debug(s"POST url=$url request=$body")
