@@ -48,9 +48,6 @@ trait ApiGatewayStore {
   def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                       (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]]
 
-  def getAllSubscriptions(wso2Username: String, wso2Password: String)
-                         (implicit hc: HeaderCarrier): Future[Map[String, Seq[APIIdentifier]]]
-
   def resubscribeApi(originalApis: Seq[APIIdentifier],
                      wso2Username: String,
                      wso2Password: String,
@@ -143,9 +140,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
       _ = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
-    } yield result
+    } yield HasSucceeded
   }
 
   override def removeSubscription(app: ApplicationData, api: APIIdentifier)
@@ -158,9 +153,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       }
       apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
       _ = apiIdentifiers.map(api => Wso2Api.create(api).name).filterNot(_ == wso2Api.name)
-      result <- awsApiGatewayConnector.createOrUpdateApplication(
-        app.wso2ApplicationName, app.tokens.production.accessToken, app.rateLimitTier.getOrElse(BRONZE))(hc)
-    } yield result
+    } yield HasSucceeded
   }
 
   override def resubscribeApi(originalApis: Seq[APIIdentifier],
@@ -223,14 +216,6 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
       _ <- wso2APIStoreConnector.logout(cookie)
     } yield subscriptions.map(APIIdentifier.create)
 
-  override def getAllSubscriptions(wso2Username: String, wso2Password: String)
-                                  (implicit hc: HeaderCarrier): Future[Map[String, Seq[APIIdentifier]]] =
-    for {
-      cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
-      subscriptions <- wso2APIStoreConnector.getAllSubscriptions(cookie)
-      _ <- wso2APIStoreConnector.logout(cookie)
-    } yield subscriptions.mapValues { subs => subs.map(APIIdentifier.create) }
-
   private def withLogin[A](wso2Username: String, wso2Password: String)(action: String => Future[A])
                           (implicit hc: HeaderCarrier): Future[HasSucceeded] =
     for {
@@ -278,13 +263,6 @@ class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
   override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                                (implicit hc: HeaderCarrier) = Future.successful {
     stubApplications.getOrElse(wso2ApplicationName, Nil)
-  }
-
-  override def getAllSubscriptions(wso2Username: String, wso2Password: String)
-                                  (implicit hc: HeaderCarrier) = Future.successful {
-    stubApplications.mapValues {
-      _.toSeq
-    }
   }
 
   override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String,

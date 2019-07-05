@@ -28,14 +28,14 @@ import org.mockito.stubbing.Answer
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -389,7 +389,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     trait DeleteApplicationSetup extends Setup {
       when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
-      when(mockApiGatewayStore.getSubscriptions(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(Seq(api1, api2)))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
       when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
       when(mockApiGatewayStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))

@@ -48,13 +48,14 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
   def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier) = {
-    val fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
+    def fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
       apis => apis.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
     }
 
     for {
+      _ <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
       apis <- fetchApis
-      subscriptions <- fetchSubscriptions(applicationId)
+      subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
     } yield apis.map(api => ApiSubscription.from(api, subscriptions))
   }
 
@@ -64,11 +65,11 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def createSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
 
-    val versionSubscriptionFuture: Future[Option[VersionSubscription]] = fetchAllSubscriptionsForApplication(applicationId) map { apis =>
+    def versionSubscriptionFuture: Future[Option[VersionSubscription]] = fetchAllSubscriptionsForApplication(applicationId) map { apis =>
       apis.find(_.context == apiIdentifier.context) flatMap (_.versions.find(_.version.version == apiIdentifier.version))
     }
 
-    val fetchAppFuture = fetchApp(applicationId)
+    def fetchAppFuture = fetchApp(applicationId)
 
     def checkVersionSubscription(app: ApplicationData, versionSubscriptionMaybe: Option[VersionSubscription]): Unit = {
       versionSubscriptionMaybe match {
@@ -98,10 +99,6 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
     } yield HasSucceeded
 
-  private def fetchSubscriptions(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] = fetchApp(applicationId) flatMap { app =>
-    apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
-  }
-
   private def auditSubscription(action: AuditAction, app: ApplicationData, api: APIIdentifier)(implicit hc: HeaderCarrier): Unit = {
     auditService.audit(action, Map(
       "applicationId" -> app.id.toString,
@@ -111,10 +108,9 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   }
 
   private def fetchApp(applicationId: UUID) = {
-    val notFoundException = new NotFoundException(s"Application not found for id: $applicationId")
     applicationRepository.fetch(applicationId).flatMap {
       case Some(app) => successful(app)
-      case _ => failed(notFoundException)
+      case _ => failed(new NotFoundException(s"Application not found for id: $applicationId"))
     }
   }
 

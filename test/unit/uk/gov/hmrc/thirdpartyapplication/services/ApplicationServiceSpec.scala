@@ -26,7 +26,7 @@ import org.mockito.BDDMockito.given
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.stubbing.{Answer, OngoingStubbing}
 import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -123,27 +123,28 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     mockWso2ApiStoreUpdateApplicationToReturn(HasSucceeded)
     mockWso2SubscribeToReturn(HasSucceeded)
 
-    def mockApplicationRepositoryFetchToReturn(uuid: UUID, eventualMaybeApplicationData: Future[Option[ApplicationData]]) = {
+    def mockApplicationRepositoryFetchToReturn(uuid: UUID,
+                                               eventualMaybeApplicationData: Future[Option[ApplicationData]]): OngoingStubbing[Future[Option[ApplicationData]]] = {
       when(mockApplicationRepository fetch uuid) thenReturn eventualMaybeApplicationData
     }
 
-    def mockWso2ApiStoreUpdateApplicationToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
+    def mockWso2ApiStoreUpdateApplicationToReturn(eventualHasSucceeded: Future[HasSucceeded]): OngoingStubbing[Future[HasSucceeded]] = {
       when(mockApiGatewayStore.updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])) thenReturn eventualHasSucceeded
     }
 
-    def mockWso2ApiStoreGetSubscriptionsToReturn(apiIdentifiers: Seq[APIIdentifier]) = {
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])) thenReturn apiIdentifiers
-    }
-
-    def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
+    def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]): OngoingStubbing[Future[HasSucceeded]] = {
       when(mockApiGatewayStore
         .resubscribeApi(any[Seq[APIIdentifier]], anyString(), anyString(), anyString(), any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier]))
         .thenReturn(eventualHasSucceeded)
     }
 
-    def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]) = {
+    def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]): OngoingStubbing[Future[ApplicationData]] = {
       when(mockApplicationRepository save any[ApplicationData]) thenReturn eventualApplicationData
     }
+
+    def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
+                                                           subscriptions: Seq[APIIdentifier]): OngoingStubbing[Future[Seq[APIIdentifier]]] =
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
 
   }
 
@@ -460,8 +461,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val data = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Nil))
 
       val result = await(underTest.fetch(applicationId))
 
@@ -475,8 +474,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(trustedApplicationId2)
 
       when(mockApplicationRepository.fetch(trustedApplicationId2)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Nil))
 
       val result = await(underTest.fetch(trustedApplicationId2))
 
@@ -755,7 +752,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
@@ -770,7 +766,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(trustedApplicationId1)
 
       when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
@@ -801,7 +796,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(production = productionToken, sandbox = sandboxToken))
 
       when(mockApplicationRepository.fetchByServerToken(serverToken)).thenReturn(Some(applicationData))
-      when(mockApiGatewayStore.getSubscriptions(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(successful(Nil))
 
       val result = await(underTest.fetchByServerToken(serverToken))
 
@@ -822,8 +816,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       when(mockApplicationRepository.fetchAllForEmailAddress(emailAddress))
         .thenReturn(successful(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
-      when(mockApiGatewayStore.getAllSubscriptions(anyString(), anyString())(any[HeaderCarrier]))
-        .thenReturn(successful(Map.empty[String, Seq[APIIdentifier]]))
 
       await(underTest.fetchAllForCollaborator(emailAddress)).size shouldBe 3
     }
@@ -1106,8 +1098,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
-      mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier, anotherApiIdentifier))
-
+      when(mockApiGatewayStore.getSubscriptions(
+        originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
+        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
@@ -1126,7 +1119,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail fast when retrieving application data fails" in new Setup {
 
       mockApplicationRepositoryFetchToReturn(uuid, failed(new RuntimeException))
-      mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
@@ -1142,7 +1135,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockWso2ApiStoreUpdateApplicationToReturn(failed(new RuntimeException))
-      mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
@@ -1157,8 +1150,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail when wso2 resubscribe fails, updating the application in wso2, but leaving the Mongo application in a wrong state" in new Setup {
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
-      mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
       mockWso2SubscribeToReturn(failed(new RuntimeException))
+
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
@@ -1173,7 +1167,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
-      mockWso2ApiStoreGetSubscriptionsToReturn(Seq(apiIdentifier, anotherApiIdentifier))
+      when(mockApiGatewayStore.getSubscriptions(
+        originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
+        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
 
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
