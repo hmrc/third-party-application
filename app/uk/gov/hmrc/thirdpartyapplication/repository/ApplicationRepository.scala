@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global

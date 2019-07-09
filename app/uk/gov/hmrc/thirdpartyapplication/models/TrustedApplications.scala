@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import javax.inject.{Inject, Singleton}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class TrustedApplications @Inject()(config: TrustedApplicationsConfig) {

@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.RealApiGatewayStore
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
@@ -59,7 +60,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"), EnvironmentToken("111", "222", "333"))
+      val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"))
 
       when(mockWSO2APIStoreConnector.createUser(wso2Username, wso2Password))
         .thenReturn(Future.successful(HasSucceeded))
@@ -67,8 +68,6 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         .thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.createApplication(cookie, wso2ApplicationName))
         .thenReturn(Future.successful(HasSucceeded))
-      when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.SANDBOX))
-        .thenReturn(Future.successful(tokens.sandbox))
       when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION))
         .thenReturn(Future.successful(tokens.production))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
@@ -103,8 +102,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         wso2Password,
         wso2ApplicationName,
         ApplicationTokens(
-          EnvironmentToken(nextString(2), nextString(2), serverToken),
-          EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+          EnvironmentToken(nextString(2), nextString(2), serverToken)),
         testingState())
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
@@ -166,8 +164,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       wso2Password,
       wso2ApplicationName,
       ApplicationTokens(
-        EnvironmentToken(nextString(2), nextString(2), serverToken),
-        EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+        EnvironmentToken(nextString(2), nextString(2), serverToken)),
       testingState(),
       rateLimitTier = Some(GOLD))
 
@@ -220,8 +217,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         wso2Password,
         wso2ApplicationName,
         ApplicationTokens(
-          EnvironmentToken(nextString(2), nextString(2), serverToken),
-          EnvironmentToken(nextString(2), nextString(2), nextString(2))),
+          EnvironmentToken(nextString(2), nextString(2), serverToken)),
         testingState(),
         rateLimitTier = Some(GOLD))
 
@@ -270,6 +266,7 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       when(mockWSO2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName)).thenAnswer(
         new Answer[Future[Seq[Wso2Api]]] {
           var count = 0
+
           override def answer(invocation: InvocationOnMock): Future[Seq[Wso2Api]] = {
             count += 1
             count match {

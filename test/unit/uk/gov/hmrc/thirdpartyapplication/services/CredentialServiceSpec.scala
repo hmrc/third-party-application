@@ -30,15 +30,16 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import play.api.libs.ws.WSResponse
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.LockKeeper
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -71,7 +72,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val clientSecretLimit = 5
     val credentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(mockApplicationRepository, mockAuditService,mockTrustedApplications, applicationResponseCreator, credentialConfig)
+    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, mockTrustedApplications, applicationResponseCreator, credentialConfig)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
@@ -85,19 +86,22 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   }
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
-  private val sandboxToken = EnvironmentToken("111", "222", "wso2SandboxSecret", Seq(aSecret("secret3"), aSecret("secret4")))
+  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
 
   trait LockedSetup extends Setup {
     override lazy val locked = true
   }
 
   class MockLockKeeper(locked: Boolean) extends LockKeeper {
+
+    //noinspection ScalaStyle
     override def repo = null
 
     override def lockId = ""
 
+    //noinspection ScalaStyle
     val forceLockReleaseAfter = null
+
     var callsMadeToLockKeeper: Int = 0
 
     override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
@@ -134,9 +138,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val applicationId = UUID.randomUUID()
       val applicationData = anApplicationData(applicationId)
-      val expectedResult = ApplicationTokensResponse(
-        EnvironmentTokenResponse(productionToken.clientId, productionToken.accessToken, productionToken.clientSecrets),
-        EnvironmentTokenResponse(sandboxToken.clientId, sandboxToken.accessToken, sandboxToken.clientSecrets))
+      val expectedResult = EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, environmentToken.clientSecrets)
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(applicationData))
 
@@ -163,11 +165,11 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val applicationId = UUID.randomUUID()
       val applicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetchByClientId(productionToken.clientId)).thenReturn(Some(applicationData))
+      when(mockApplicationRepository.fetchByClientId(environmentToken.clientId)).thenReturn(Some(applicationData))
 
-      val result = await(underTest.fetchWso2Credentials(productionToken.clientId))
+      val result = await(underTest.fetchWso2Credentials(environmentToken.clientId))
 
-      result shouldBe Some(Wso2Credentials(productionToken.clientId, productionToken.accessToken, productionToken.wso2ClientSecret))
+      result shouldBe Some(Wso2Credentials(environmentToken.clientId, environmentToken.accessToken, environmentToken.wso2ClientSecret))
     }
 
     "fail when the repository fails to return the application" in new Setup {
@@ -206,17 +208,6 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       result shouldBe None
     }
 
-    "return none when sandbox secret is used with production client id" in new Setup {
-
-      val applicationData = anApplicationData(UUID.randomUUID())
-      val productionClientId = applicationData.tokens.production.clientId
-      when(mockApplicationRepository.fetchByClientId(productionClientId)).thenReturn(Some(applicationData))
-
-      val result = await(underTest.validateCredentials(ValidationRequest(productionClientId, applicationData.tokens.sandbox.clientSecrets.head.secret)))
-
-      result shouldBe None
-    }
-
     "return environment when credentials match with an application" in new Setup {
 
       val applicationData = anApplicationData(UUID.randomUUID())
@@ -234,7 +225,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val applicationData = anApplicationData(applicationId)
     val secretRequest = ClientSecretRequest("secret-1")
 
-    "add the client secret for production" in new Setup {
+    "add the client secret" in new Setup {
       val captor = ArgumentCaptor.forClass(classOf[ApplicationData])
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
@@ -243,27 +234,11 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       verify(mockApplicationRepository).save(captor.capture())
       val updatedProductionSecrets = captor.getValue.tokens.production.clientSecrets
-      updatedProductionSecrets should have size productionToken.clientSecrets.size + 1
-      val newSecret = updatedProductionSecrets diff productionToken.clientSecrets
-      result shouldBe ApplicationTokensResponse.create(ApplicationTokens(productionToken.copy(clientSecrets = updatedProductionSecrets), sandboxToken))
+      updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
+      val newSecret = updatedProductionSecrets diff environmentToken.clientSecrets
+      result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedProductionSecrets)
       verify(mockAuditService).audit(ClientSecretAdded,
         Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString))
-    }
-
-    "add the client secret for a Sandbox app" in new Setup {
-
-      val sandboxAppData = applicationData.copy(environment = "SANDBOX")
-
-      val captor = ArgumentCaptor.forClass(classOf[ApplicationData])
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(sandboxAppData)))
-
-      val result = await(underTest.addClientSecret(applicationId, secretRequest))
-
-      verify(mockApplicationRepository).save(captor.capture())
-      val updatedSecrets = captor.getValue.tokens.production.clientSecrets
-      updatedSecrets should have size productionToken.clientSecrets.size + 1
-      result shouldBe ApplicationTokensResponse.create(ApplicationTokens(productionToken.copy(clientSecrets = updatedSecrets), sandboxToken))
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -277,8 +252,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
 
-      val prodTokenWith5Secrets = productionToken.copy(clientSecrets = Seq(1, 2, 3, 4, 5).map(v => ClientSecret(v.toString)))
-      val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets, sandboxToken))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = Seq("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
+      val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationDataWith5Secrets)))
 
@@ -306,14 +281,13 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       verify(mockApplicationRepository).save(captor.capture())
       val updatedClientSecrets = captor.getValue.tokens.production.clientSecrets
-      updatedClientSecrets should have size productionToken.clientSecrets.size - secretsToRemove.length
-      result shouldBe ApplicationTokensResponse.create(ApplicationTokens(productionToken.copy(clientSecrets = updatedClientSecrets), sandboxToken))
+      updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
+      result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedClientSecrets)
       verify(mockAuditService, times(secretsToRemove.length)).audit(ClientSecretRemoved,
         Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head))
-
     }
 
-    "throw an IllegalArgumentException when reqested to remove all secrets" in new Setup {
+    "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
 
       val secretsToRemove = Seq("secret1", "secret2")
 
@@ -361,6 +335,6 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       "aaaaaaaaaa",
       "aaaaaaaaaa",
       "aaaaaaaaaa",
-      ApplicationTokens(productionToken, sandboxToken), state, Standard(Seq.empty, None, None))
+      ApplicationTokens(environmentToken), state, Standard(Seq.empty, None, None))
   }
 }

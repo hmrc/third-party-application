@@ -19,10 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
@@ -43,21 +44,21 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       app => ApplicationResponse(data = app, clientId = None, trusted = trustedApplications.isTrusted(app))))
   }
 
-  def fetchCredentials(applicationId: UUID): Future[Option[ApplicationTokensResponse]] = {
+  def fetchCredentials(applicationId: UUID): Future[Option[EnvironmentTokenResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map { app =>
-      ApplicationTokensResponse.create(app.tokens)
+      EnvironmentTokenResponse(app.tokens.production)
     })
   }
 
   def fetchWso2Credentials(clientId: String): Future[Option[Wso2Credentials]] = {
     applicationRepository.fetchByClientId(clientId) map (_.flatMap { app =>
-      Seq(app.tokens.production, app.tokens.sandbox)
+      Seq(app.tokens.production)
         .find(_.clientId == clientId)
         .map(token => Wso2Credentials(token.clientId, token.accessToken, token.wso2ClientSecret))
     })
   }
 
-  def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokensResponse] = {
+  def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
     for {
       app <- fetchApp(id)
       secret = ClientSecret(secretRequest.name)
@@ -65,21 +66,21 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       savedApp <- applicationRepository.save(updatedApp)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> app.id.toString,
         "newClientSecret" -> secret.secret, "clientSecretType" -> "PRODUCTION"))
-    } yield ApplicationTokensResponse.create(savedApp.tokens)
+    } yield EnvironmentTokenResponse(savedApp.tokens.production)
   }
 
   private def addClientSecretToApp(application: ApplicationData, secret: ClientSecret) = {
-    val environmentTokens = application.tokens.environmentToken(Environment.PRODUCTION)
-    if (environmentTokens.clientSecrets.size >= clientSecretLimit) {
+    val environmentToken = application.tokens.production
+    if (environmentToken.clientSecrets.size >= clientSecretLimit) {
       throw new ClientSecretsLimitExceeded
     }
-    val updatedEnvironmentTokens = environmentTokens.copy(clientSecrets = environmentTokens.clientSecrets :+ secret)
+    val updatedEnvironmentToken = environmentToken.copy(clientSecrets = environmentToken.clientSecrets :+ secret)
 
-    application.copy(tokens = ApplicationTokens(updatedEnvironmentTokens, application.tokens.sandbox))
+    application.copy(tokens = ApplicationTokens(updatedEnvironmentToken))
 
   }
 
-  def deleteClientSecrets(id: java.util.UUID, secrets: Seq[String])(implicit hc: HeaderCarrier): Future[ApplicationTokensResponse] = {
+  def deleteClientSecrets(id: java.util.UUID, secrets: Seq[String])(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
 
     def audit(clientSecret: ClientSecret) = {
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString,
@@ -88,13 +89,13 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
     def updateApp(app: ApplicationData): (ApplicationData, Set[ClientSecret]) = {
       val numberOfSecretsToDelete = secrets.length
-      val existingSecrets= app.tokens.production.clientSecrets
+      val existingSecrets = app.tokens.production.clientSecrets
       val updatedSecrets = existingSecrets.filterNot(secret => secrets.contains(secret.secret))
       if (existingSecrets.length - updatedSecrets.length != numberOfSecretsToDelete) {
-        throw new NotFoundException ("Cannot find all secrets to delete")
+        throw new NotFoundException("Cannot find all secrets to delete")
       }
       if (updatedSecrets.isEmpty) {
-        throw new IllegalArgumentException ("Cannot delete all client secrets")
+        throw new IllegalArgumentException("Cannot delete all client secrets")
       }
       val updatedProductionToken = app.tokens.production.copy(clientSecrets = updatedSecrets)
       val updatedTokens = app.tokens.copy(production = updatedProductionToken)
@@ -108,14 +109,14 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       (updatedApp, removedSecrets) = updateApp(app)
       _ <- applicationRepository.save(updatedApp)
       _ <- Future.traverse(removedSecrets)(audit)
-    } yield ApplicationTokensResponse.create(updatedApp.tokens)
+    } yield EnvironmentTokenResponse(updatedApp.tokens.production)
   }
 
   def validateCredentials(validation: ValidationRequest): Future[Option[Environment]] = {
     applicationRepository.fetchByClientId(validation.clientId) map (_.flatMap { app =>
-      Seq(app.tokens.production -> PRODUCTION, app.tokens.sandbox -> SANDBOX)
+      Seq(app.tokens.production -> PRODUCTION)
         .find(t =>
-        t._1.clientId == validation.clientId && t._1.clientSecrets.exists(_.secret == validation.clientSecret)
+          t._1.clientId == validation.clientId && t._1.clientSecrets.exists(_.secret == validation.clientSecret)
         ).map(_._2)
     })
   }

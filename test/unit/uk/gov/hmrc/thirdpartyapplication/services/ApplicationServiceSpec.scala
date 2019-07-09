@@ -43,6 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SI
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -105,7 +106,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier]))
-      .thenReturn(successful(ApplicationTokens(productionToken, sandboxToken)))
+      .thenReturn(successful(ApplicationTokens(productionToken)))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
         successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
@@ -124,7 +125,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     mockWso2SubscribeToReturn(HasSucceeded)
 
     def mockApplicationRepositoryFetchToReturn(uuid: UUID,
-                                               eventualMaybeApplicationData: Future[Option[ApplicationData]]): OngoingStubbing[Future[Option[ApplicationData]]] = {
+                                               eventualMaybeApplicationData: Future[Option[ApplicationData]]
+                                              ): OngoingStubbing[Future[Option[ApplicationData]]] = {
       when(mockApplicationRepository fetch uuid) thenReturn eventualMaybeApplicationData
     }
 
@@ -154,7 +156,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
-  private val sandboxToken = EnvironmentToken("111", "222", "wso2SandboxSecret", Seq(aSecret("secret3"), aSecret("secret4")))
 
   trait LockedSetup extends Setup {
     override lazy val locked = true
@@ -193,8 +194,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val createdApp = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData = anApplicationData(createdApp.application.id, state = testingState(),
-        environment = Environment.PRODUCTION)
+      val expectedApplicationData = anApplicationData(createdApp.application.id, state = testingState())
       createdApp.totp shouldBe None
       verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
       verify(mockApplicationRepository).save(expectedApplicationData)
@@ -207,23 +207,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         ))
     }
 
-    "create a new standard application in Mongo and WSO2 for the SANDBOX environment" in new Setup {
+    "throw an exception when an attempt is made to create an application for the SANDBOX environment" in new Setup {
       val applicationRequest = aNewApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
 
-      val createdApp = await(underTest.create(applicationRequest)(hc))
-
-      val expectedApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION),
-        environment = Environment.SANDBOX)
-      createdApp.totp shouldBe None
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
-      verify(mockApplicationRepository).save(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
-      verify(mockAuditService).audit(AppCreated,
-        Map(
-          "applicationId" -> createdApp.application.id.toString,
-          "newApplicationName" -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
-        ))
+      intercept[SandboxEnvironmentNotSupportedException] {
+        await(underTest.create(applicationRequest)(hc))
+      }
     }
 
     "create a new standard application in Mongo and WSO2" in new Setup {
@@ -466,7 +455,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       result shouldBe Some(ApplicationResponse(
         applicationId, productionToken.clientId, data.wso2ApplicationName, data.name, data.environment, data.description, data.collaborators,
-        data.createdOn, data.lastAccess, Seq.empty, None, None, data.access, None, data.state, SILVER, trusted = false))
+        data.createdOn, data.lastAccess, Seq.empty, None, None, data.access, Some(PRODUCTION), data.state, SILVER, trusted = false))
     }
 
     "return an application with trusted flag when the application is in the whitelist" in new Setup {
@@ -484,8 +473,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val admin = Collaborator("test@example.com", ADMINISTRATOR)
       val id = UUID.randomUUID()
       val tokens = ApplicationTokens(
-        EnvironmentToken("prodId", "prodSecret", "prodToken"),
-        EnvironmentToken("sandboxId", "sandboxSecret", "sandboxToken")
+        EnvironmentToken("prodId", "prodSecret", "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -790,10 +778,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "return an application when it exists in the repository for the given server token" in new Setup {
 
       val productionToken = EnvironmentToken("aaa", "wso2Secret", serverToken, Seq(aSecret("secret1"), aSecret("secret2")))
-      val sandboxToken = EnvironmentToken("111", "wso2SandboxSecret", "000", Seq(aSecret("secret3"), aSecret("secret4")))
 
       val applicationId = UUID.randomUUID()
-      val applicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(production = productionToken, sandbox = sandboxToken))
+      val applicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
       when(mockApplicationRepository.fetchByServerToken(serverToken)).thenReturn(Some(applicationData))
 
@@ -1246,8 +1233,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR)),
                                 access: Access = Standard(),
-                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION) = {
+                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE)
+                               ) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1257,7 +1244,10 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       "aaaaaaaaaa",
       "aaaaaaaaaa",
       "aaaaaaaaaa",
-      ApplicationTokens(productionToken, sandboxToken), state, access, rateLimitTier = rateLimitTier,
-      environment = environment.toString)
+      ApplicationTokens(productionToken),
+      state,
+      access,
+      rateLimitTier = rateLimitTier,
+      environment = Environment.PRODUCTION.toString)
   }
 }

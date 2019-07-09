@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -61,6 +62,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
+
     lockKeeper.tryLock {
       createApp(application)
     } flatMap {
@@ -330,6 +332,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
     Logger.info(s"Creating application ${application.name}")
+
+    if (application.environment == Environment.SANDBOX) throw SandboxEnvironmentNotSupportedException()
 
     val wso2Username = credentialGenerator.generate()
     val wso2Password = credentialGenerator.generate()
