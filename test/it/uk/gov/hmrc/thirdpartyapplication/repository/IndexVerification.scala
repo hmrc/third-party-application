@@ -33,6 +33,13 @@ trait IndexVerification extends UnitSpec with Eventually {
     }
   }
 
+  def verifyIndexDoesNotExist[A, ID](repository: ReactiveRepository[A, ID], indexName: String)(implicit ec: ExecutionContext) = {
+    eventually(timeout(10.seconds), interval(1000.milliseconds)) {
+      val actualIndexNames = await(repository.collection.indexesManager.list()).map(i => i.name).toSet
+      actualIndexNames should not contain Some(indexName)
+    }
+  }
+
   private def versionAgnostic(indexes: Set[Index]): Set[Index] = indexes.map(i => i.copy(version = None))
 }
 
