@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -51,7 +52,6 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
-  private val sandboxToken = EnvironmentToken("111", "222", "wso2SandboxSecret", Seq(aSecret("secret3"), aSecret("secret4")))
 
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
     StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
@@ -62,7 +62,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     ApplicationData(applicationId, "MyApp", "myapp",
       collaborators, Some("description"),
       "aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa",
-      ApplicationTokens(productionToken, sandboxToken), state, Standard(Seq(), None, None))
+      ApplicationTokens(productionToken), state, Standard(Seq(), None, None))
   }
 
   trait Setup {

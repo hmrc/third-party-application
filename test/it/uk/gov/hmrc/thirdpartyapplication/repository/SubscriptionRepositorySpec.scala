@@ -28,7 +28,8 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.{db, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -45,12 +46,16 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
   private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   override def beforeEach() {
-    await(subscriptionRepository.drop)
-    await(subscriptionRepository.ensureIndexes)
+    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+      await(db.drop)
+      await(db.ensureIndexes)
+    }
   }
 
   override protected def afterAll() {
-    await(subscriptionRepository.drop)
+    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+      await(db.drop)
+    }
   }
 
   "add" should {
@@ -209,7 +214,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       val expectedIndexes = Set(
         Index(key = Seq("applications" -> Ascending), name = Some("applications"), unique = false, background = true),
         Index(key = Seq("apiIdentifier.context" -> Ascending), name = Some("context"), unique = false, background = true),
-        Index(key = Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
+        Index(key =
+          Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
         Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
 
       verifyIndexesVersionAgnostic(subscriptionRepository, expectedIndexes)
@@ -219,18 +225,13 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
   "Get API Version Collaborators" should {
     "return email addresses" in {
 
-      def generateClientId = alphanumeric.take(10).mkString
-
-      val app1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        user = Seq("match1@example.com", "match2@example.com"))
+      val app1 = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq("match1@example.com", "match2@example.com"))
       await(applicationRepository.save(app1))
 
-      val app2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        user = Seq("match3@example.com"))
+      val app2 = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq("match3@example.com"))
       await(applicationRepository.save(app2))
 
-      val doNotMatchApp = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        user = Seq("donotmatch@example.com"))
+      val doNotMatchApp = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq("donotmatch@example.com"))
       await(applicationRepository.save(doNotMatchApp))
 
       val api1 = APIIdentifier("some-context-api1", "1.0")
@@ -247,14 +248,12 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
     }
 
     "filter by collaborators and api version" in {
-      def generateClientId = alphanumeric.take(10).mkString
 
       val matchEmail = "match@example.com"
       val partialEmailToMatch = "match"
       val app1 = anApplicationData(
         id = UUID.randomUUID(),
-        prodClientId = generateClientId,
-        sandboxClientId = generateClientId,
+        clientId = generateClientId,
         user = Seq(matchEmail, "donot@example.com"))
 
       await(applicationRepository.save(app1))
@@ -275,20 +274,18 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
   }
 
   def anApplicationData(id: UUID,
-                        prodClientId: String = "aaa",
-                        sandboxClientId: String = "111",
+                        clientId: String = "aaa",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(Seq.empty, None, None),
                         user: Seq[String] = Seq("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user, checkInformation)
+    aNamedApplicationData(id, s"myApp-$id", clientId, state, access, user, checkInformation)
   }
 
   def aNamedApplicationData(id: UUID,
                             name: String,
-                            prodClientId: String = "aaa",
-                            sandboxClientId: String = "111",
+                            clientId: String = "aaa",
                             state: ApplicationState = testingState(),
                             access: Access = Standard(Seq.empty, None, None),
                             user: Seq[String] = Seq("user@example.com"),
@@ -296,7 +293,7 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR)).toSet
 
-    ApplicationData(
+    db.ApplicationData(
       id,
       name,
       name.toLowerCase,
@@ -305,12 +302,25 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       "username",
       "password",
       "myapplication",
-      ApplicationTokens(
-        EnvironmentToken(prodClientId, nextString(5), nextString(5)),
-        EnvironmentToken(sandboxClientId, nextString(5), nextString(5))),
+      ApplicationTokens(EnvironmentToken(clientId, generateWso2ClientSecret, generateAccessToken)),
       state,
       access,
       checkInformation = checkInformation)
+  }
+
+  private def generateClientId = {
+    val testClientIdLength = 10
+    alphanumeric.take(testClientIdLength).mkString
+  }
+
+  private def generateWso2ClientSecret = {
+    val testClientSecretLength = 5
+    nextString(testClientSecretLength)
+  }
+
+  private def generateAccessToken = {
+    val testAccessTokenLength = 5
+    nextString(testAccessTokenLength)
   }
 
 }

@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{ApiDefinitionConnector, Emai
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -68,7 +69,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     val underTest = new SubscriptionService(
       mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, mockAuditService, mockApiGatewayStore, trustedApplicationConfig)
 
-    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(ApplicationTokens(productionToken, sandboxToken)))
+    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(ApplicationTokens(productionToken)))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
         successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
@@ -89,7 +90,6 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
-  private val sandboxToken = EnvironmentToken("111", "222", "wso2SandboxSecret", Seq(aSecret("secret3"), aSecret("secret4")))
   private val trustedApplicationId = UUID.randomUUID()
 
   override def beforeAll() {
@@ -373,7 +373,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     }
   }
 
-  "searchCollaborators" should{
+  "searchCollaborators" should {
     "return emails" in new Setup {
       val context = "api1"
       val version = "1.0"
@@ -401,7 +401,8 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       "aaaaaaaaaa",
       "aaaaaaaaaa",
       "aaaaaaaaaa",
-      ApplicationTokens(productionToken, sandboxToken), state,
+      ApplicationTokens(productionToken),
+      state,
       Standard(Seq(), None, None),
       DateTime.now,
       Some(DateTime.now),

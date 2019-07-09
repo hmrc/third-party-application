@@ -23,6 +23,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.SCHEDULED_JOB
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -72,7 +73,7 @@ class UpliftVerificationExpiryJobLockKeeper @Inject()(mongo: ReactiveMongoCompon
 
   override def lockId: String = "UpliftVerificationExpiryScheduler"
 
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5)
+  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 }
 
 case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)

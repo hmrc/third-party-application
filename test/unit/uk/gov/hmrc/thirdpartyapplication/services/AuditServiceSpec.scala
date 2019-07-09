@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -127,8 +128,7 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
     val id = UUID.randomUUID()
     val admin = Collaborator("test@example.com", ADMINISTRATOR)
     val tokens = ApplicationTokens(
-      EnvironmentToken("prodId", "prodSecret", "prodToken"),
-      EnvironmentToken("sandboxId", "sandboxSecret", "sandboxToken")
+      EnvironmentToken("prodId", "prodSecret", "prodToken")
     )
     val previousApp = ApplicationData(
       id = id,

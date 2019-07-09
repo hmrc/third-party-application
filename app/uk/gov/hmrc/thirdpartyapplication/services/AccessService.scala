@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, Override
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 
@@ -97,7 +98,7 @@ class AccessService @Inject()(applicationRepository: ApplicationRepository, audi
     })
 
   private def privilegedOrRopc[T](applicationData: ApplicationData, privilegedFunction: ApplicationData => T, ropcFunction: ApplicationData => T) =
-    AccessType.withName(applicationData.access.accessType.toString()) match {
+    AccessType.withName(applicationData.access.accessType.toString) match {
       case PRIVILEGED => privilegedFunction(applicationData)
       case ROPC => ropcFunction(applicationData)
     }
