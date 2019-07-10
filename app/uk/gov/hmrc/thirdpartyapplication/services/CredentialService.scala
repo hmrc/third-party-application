@@ -52,9 +52,12 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
   def fetchWso2Credentials(clientId: String): Future[Option[Wso2Credentials]] = {
     applicationRepository.fetchByClientId(clientId) map (_.flatMap { app =>
-      Seq(app.tokens.production)
-        .find(_.clientId == clientId)
-        .map(token => Wso2Credentials(token.clientId, token.accessToken, token.wso2ClientSecret))
+      val environmentToken = app.tokens.production
+      if (environmentToken.clientId == clientId) {
+        Some(Wso2Credentials(environmentToken.clientId, environmentToken.accessToken, environmentToken.wso2ClientSecret))
+      } else {
+        None
+      }
     })
   }
 
@@ -114,10 +117,12 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
   def validateCredentials(validation: ValidationRequest): Future[Option[Environment]] = {
     applicationRepository.fetchByClientId(validation.clientId) map (_.flatMap { app =>
-      Seq(app.tokens.production -> PRODUCTION)
-        .find(t =>
-          t._1.clientId == validation.clientId && t._1.clientSecrets.exists(_.secret == validation.clientSecret)
-        ).map(_._2)
+      val environmentToken = app.tokens.production
+      if (environmentToken.clientId == validation.clientId && environmentToken.clientSecrets.exists(_.secret == validation.clientSecret)) {
+        Some(PRODUCTION)
+      } else {
+        None
+      }
     })
   }
 
