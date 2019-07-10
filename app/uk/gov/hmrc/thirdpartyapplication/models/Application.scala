@@ -134,7 +134,7 @@ object ApplicationResponse {
       termsAndConditionsUrl,
       privacyPolicyUrl,
       data.access,
-      Some(Environment.PRODUCTION),
+      Environment.from(data.environment),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,

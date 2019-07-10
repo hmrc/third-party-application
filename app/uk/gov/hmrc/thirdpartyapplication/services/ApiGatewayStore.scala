@@ -228,7 +228,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  lazy val dummyProdTokens = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
+  def dummyProdTokens = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
   lazy val dummyApplicationTokens = ApplicationTokens(dummyProdTokens)
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
 

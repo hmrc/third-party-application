@@ -333,8 +333,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
     Logger.info(s"Creating application ${application.name}")
 
-    if (application.environment == Environment.SANDBOX) throw SandboxEnvironmentNotSupportedException()
-
     val wso2Username = credentialGenerator.generate()
     val wso2Password = credentialGenerator.generate()
     val wso2ApplicationName = credentialGenerator.generate()
