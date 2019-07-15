@@ -337,11 +337,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val wso2Password = credentialGenerator.generate()
     val wso2ApplicationName = credentialGenerator.generate()
 
-    def createInWso2(): Future[ApplicationTokens] = {
+    def createInWso2(): Future[EnvironmentToken] = {
       apiGatewayStore.createApplication(wso2Username, wso2Password, wso2ApplicationName)
     }
 
-    def saveApplication(tokens: ApplicationTokens, ids: Option[TotpIds]): Future[ApplicationData] = {
+    def saveApplication(environmentToken: EnvironmentToken, ids: Option[TotpIds]): Future[ApplicationData] = {
 
       def newPrivilegedAccess = {
         application.access.asInstanceOf[Privileged].copy(totpIds = ids)
@@ -352,7 +352,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => application
       }
 
-      val applicationData = ApplicationData.create(updatedApplication, wso2Username, wso2Password, wso2ApplicationName, tokens)
+      val applicationData = ApplicationData.create(updatedApplication, wso2Username, wso2Password, wso2ApplicationName, environmentToken)
 
       applicationRepository.save(applicationData)
     }
@@ -365,8 +365,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
       applicationTotps <- generateApplicationTotps(application.access.accessType)
-      wso2App <- createInWso2()
-      appData <- saveApplication(wso2App, extractTotpIds(applicationTotps))
+      wso2EnvironmentToken <- createInWso2()
+      appData <- saveApplication(wso2EnvironmentToken, extractTotpIds(applicationTotps))
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
     } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecrets(applicationTotps))

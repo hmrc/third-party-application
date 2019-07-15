@@ -27,7 +27,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
@@ -41,12 +41,12 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
         CreateApplicationRequest(
           name = applicationName,
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR))),
+          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR))
+        ),
         "",
         "",
         applicationName,
-        ApplicationTokens(
-          EnvironmentToken("", "", serverToken, Seq.empty)))
+        EnvironmentToken("", "", serverToken, Seq.empty))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

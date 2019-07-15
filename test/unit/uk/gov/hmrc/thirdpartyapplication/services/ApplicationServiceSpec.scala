@@ -106,7 +106,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier]))
-      .thenReturn(successful(ApplicationTokens(productionToken)))
+      .thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
         successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
