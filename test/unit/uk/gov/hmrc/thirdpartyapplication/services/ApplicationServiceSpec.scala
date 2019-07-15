@@ -848,7 +848,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, clientId = None, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
@@ -873,7 +873,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, clientId = None, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -913,7 +913,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, clientId = None, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
     }
   }
 

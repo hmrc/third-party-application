@@ -106,7 +106,7 @@ case class ApplicationResponse(id: UUID,
 
 object ApplicationResponse {
 
-  def apply(data: ApplicationData, clientId: Option[String], trusted: Boolean): ApplicationResponse = {
+  def apply(data: ApplicationData, trusted: Boolean) : ApplicationResponse = {
     val redirectUris = data.access match {
       case a: Standard => a.redirectUris
       case _ => Seq()
@@ -134,7 +134,7 @@ object ApplicationResponse {
       termsAndConditionsUrl,
       privacyPolicyUrl,
       data.access,
-      Environment.from(data.environment),
+      Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,
@@ -234,20 +234,16 @@ case class Wso2Credentials(clientId: String,
 object Role extends Enumeration {
   type Role = Value
   val DEVELOPER, ADMINISTRATOR = Value
-
 }
 
 object Environment extends Enumeration {
   type Environment = Value
   val PRODUCTION, SANDBOX = Value
-
-  def from(env: String) = Environment.values.find(e => e.toString == env.toUpperCase)
 }
 
 object State extends Enumeration {
   type State = Value
   val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
-
 }
 
 case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
@@ -292,7 +288,7 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 class ApplicationResponseCreator @Inject()(trustedApplications: TrustedApplications) {
 
   def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
-    CreateApplicationResponse(ApplicationResponse(applicationData, None, trustedApplications.isTrusted(applicationData)), totpSecrets)
+    CreateApplicationResponse(ApplicationResponse(applicationData, trustedApplications.isTrusted(applicationData)), totpSecrets)
   }
 }
 
