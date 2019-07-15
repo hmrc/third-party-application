@@ -172,15 +172,15 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
 
   "generateApplicationKey" should {
 
-    "generate an application key in WSO2 for a given application name and key type" in new Setup {
+    "generate an application key in WSO2 for a given application name" in new Setup {
 
-      val environment = Environment.PRODUCTION
+      val keyType = "PRODUCTION"
       val url = s"$baseUrl/store/site/blocks/subscription/subscription-add/ajax/subscription-add.jag"
       val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> FORM, COOKIE -> cookie)
       val body =
         s"action=generateApplicationKey" +
           s"&application=$applicationName" +
-          s"&keytype=$environment" +
+          s"&keytype=$keyType" +
           s"&callbackUrl=" +
           s"&authorizedDomains=ALL" +
           s"&validityTime=-1"
@@ -198,7 +198,7 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
       when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
-      val result = Await.result(underTest.generateApplicationKey(cookie, applicationName, environment), 1.second)
+      val result = Await.result(underTest.generateApplicationKey(cookie, applicationName), 1.second)
 
       result shouldBe (_: EnvironmentToken)
       verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())

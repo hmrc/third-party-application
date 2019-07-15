@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{Wso2Api, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
@@ -35,7 +35,7 @@ import scala.concurrent.duration._
 trait ApiGatewayStore {
 
   def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                       (implicit hc: HeaderCarrier): Future[ApplicationTokens]
+                       (implicit hc: HeaderCarrier): Future[EnvironmentToken]
 
   def removeSubscription(app: ApplicationData, api: APIIdentifier)
                         (implicit hc: HeaderCarrier): Future[HasSucceeded]
@@ -72,16 +72,16 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
   val resubscribeMaxRetries = 5
 
   override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                                (implicit hc: HeaderCarrier): Future[ApplicationTokens] = {
+                                (implicit hc: HeaderCarrier): Future[EnvironmentToken] = {
 
     for {
       _ <- wso2APIStoreConnector.createUser(wso2Username, wso2Password)
       cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
       _ <- wso2APIStoreConnector.createApplication(cookie, wso2ApplicationName)
-      prodKeys <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION)
+      environmentToken <- wso2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName)
       _ <- wso2APIStoreConnector.logout(cookie)
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, prodKeys.accessToken, BRONZE)(hc)
-    } yield ApplicationTokens(prodKeys)
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, environmentToken.accessToken, BRONZE)(hc)
+    } yield environmentToken
   }
 
   override def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
@@ -228,14 +228,14 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  def dummyProdTokens = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
-  def dummyApplicationTokens = ApplicationTokens(dummyProdTokens)
+  def dummyEnvironmentToken = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
+
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
 
   override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                                 (implicit hc: HeaderCarrier) = Future.successful {
     stubApplications += (wso2ApplicationName -> mutable.ListBuffer.empty)
-    dummyApplicationTokens
+    dummyEnvironmentToken
   }
 
   override def removeSubscription(app: ApplicationData, api: APIIdentifier)
