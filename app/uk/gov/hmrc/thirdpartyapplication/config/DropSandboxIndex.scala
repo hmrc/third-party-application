@@ -14,15 +14,25 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.config
 
+import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-@Singleton
-class TrustedApplications @Inject()(config: TrustedApplicationsConfig) {
+import scala.concurrent.ExecutionContext
 
-  def isTrusted(application: ApplicationData): Boolean = config.trustedApplications.contains(application.id.toString)
+class DropSandboxIndexModule extends AbstractModule {
+  override def configure(): Unit = {
+    bind(classOf[DropSandboxIndex]).asEagerSingleton()
+  }
 }
 
-case class TrustedApplicationsConfig(trustedApplications: Seq[String])
+@Singleton
+class DropSandboxIndex @Inject()(applicationRepository: ApplicationRepository)(implicit ec: ExecutionContext) {
+
+  val indexName = "sandboxTokenClientIdIndex"
+  applicationRepository.collection.indexesManager.drop(indexName)
+
+}
+

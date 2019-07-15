@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -85,11 +86,13 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
-      givenUserIsAuthenticated(underTest)
+
+    givenUserIsAuthenticated(underTest)
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
-      givenUserIsNotAuthenticated(underTest)
+
+    givenUserIsNotAuthenticated(underTest)
 
     private def testWithPrivilegedAndRopc(applicationId: UUID, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
@@ -103,9 +106,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   val authTokenHeader = "authorization" -> "authorizationToken"
 
-  val tokens = ApplicationTokensResponse(
-    EnvironmentTokenResponse("aaa", "bbb", Seq(ClientSecret("ccc", "ccc"))),
-    EnvironmentTokenResponse("111", "222", Seq(ClientSecret("333", "333"))))
+  val credentialServiceResponseToken =
+    EnvironmentTokenResponse("111", "222", Seq(ClientSecret("333", "333")))
+  val controllerResponseTokens = ApplicationTokensResponse(
+    credentialServiceResponseToken,
+    EnvironmentTokenResponse("", "", Seq()))
 
   val collaborators = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -432,16 +437,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   "fetch credentials" should {
     val applicationId = UUID.randomUUID()
 
-    "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(Some(tokens)))
+    "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
+      when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(Some(credentialServiceResponseToken)))
 
       val result = await(underTest.fetchCredentials(applicationId)(request))
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.toJson(tokens)
+      jsonBodyOf(result) shouldBe Json.toJson(controllerResponseTokens)
     }
 
-    "fail with a 404 (not found) if no application exists for the given id" in new Setup {
+    "fail with a 404 (not found) when no application exists for the given id" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(None))
 
       val result = await(underTest.fetchCredentials(applicationId)(request))
@@ -650,25 +655,27 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   "add client secret" should {
     val applicationId = UUID.randomUUID()
-    val tokens = ApplicationTokensResponse(
-      EnvironmentTokenResponse("prodClientId", "prodToken", Seq(aSecret("prodSecret"), aSecret("prodSecret2"))),
-      EnvironmentTokenResponse("sandboxClientId", "sandboxToken", Seq(aSecret("sandboxSecret"))))
-    val secretRequest = ClientSecretRequest("secret 1")
+    val environmentTokenResponse = EnvironmentTokenResponse("clientId", "token", Seq(aSecret("secret1"), aSecret("secret2")))
+    val applicationTokensResponse = ApplicationTokensResponse(
+      environmentTokenResponse,
+      EnvironmentTokenResponse("", "", Seq()))
+    val secretRequest = ClientSecretRequest("request")
 
-    "succeed with a 200 (ok) if the application exists for the given id" in new PrivilegedAndRopcSetup {
+    "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-        when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier])).thenReturn(successful(tokens))
+        when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
+          .thenReturn(successful(environmentTokenResponse))
 
         givenUserIsAuthenticated(underTest)
 
         val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
         status(result) shouldBe SC_OK
-        jsonBodyOf(result) shouldBe Json.toJson(tokens)
+        jsonBodyOf(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
 
-    "fail with a 401 (unauthorized) if the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "fail with a 401 (unauthorized) when the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new ClientSecretsLimitExceeded))
@@ -677,7 +684,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 403 (Forbidden) if the environment has already the maximum number of secrets set" in new PrivilegedAndRopcSetup {
+    "fail with a 403 (Forbidden) when the environment has already the maximum number of secrets set" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new ClientSecretsLimitExceeded))
@@ -690,7 +697,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 404 (not found) if no application exists for the given id" in new PrivilegedAndRopcSetup {
+    "fail with a 404 (not found) when no application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(mockEq(applicationId), mockEq(secretRequest))(any[HeaderCarrier]))
           .thenReturn(failed(new NotFoundException("application not found")))
@@ -724,14 +731,13 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val secrets = "ccc"
     val splitSecrets = secrets.split(",").toSeq
     val secretRequest = DeleteClientSecretsRequest(splitSecrets)
-    val tokens = ApplicationTokensResponse(
-      EnvironmentTokenResponse("aaa", "bbb", Seq()),
-      EnvironmentTokenResponse("111", "222", Seq(ClientSecret("333", "333"))))
+    val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", Seq())
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
       when(underTest.applicationService.fetch(applicationId)).thenReturn(Some(aNewApplicationResponse()))
-      when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier])).thenReturn(successful(tokens))
+      when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
+        .thenReturn(successful(environmentTokenResponse))
 
       val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
@@ -744,7 +750,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
-          .thenReturn(successful(tokens))
+          .thenReturn(successful(environmentTokenResponse))
 
         val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
@@ -755,7 +761,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 401 (Unauthorized) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
-          .thenReturn(successful(tokens))
+          .thenReturn(successful(environmentTokenResponse))
 
         assertThrows[SessionRecordNotFound](await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))))
       })
@@ -892,7 +898,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
           (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
         )
 
-      forAll (scenarios) { (headers, expectedLastAccessTime) =>
+      forAll(scenarios) { (headers, expectedLastAccessTime) =>
         val result: Result =
           await(underTest.queryDispatcher()(request.withHeaders(headers: _*)))
 
@@ -913,7 +919,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
           (Seq(), lastAccessTime.getMillis)
         )
 
-      forAll (scenarios) { (headers, expectedLastAccessTime) =>
+      forAll(scenarios) { (headers, expectedLastAccessTime) =>
         val result: Result =
           await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*)))
 
@@ -1441,6 +1447,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         FakeRequest("GET", "/applications?apiSubscriptions=ANYSUB&page=1&pageSize=100")
           .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
+      // scalastyle:off magic.number
       when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
         .thenReturn(Future(PaginatedApplicationResponse(applications = Seq.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
 

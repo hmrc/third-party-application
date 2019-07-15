@@ -34,6 +34,7 @@ import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{UpliftVerificationExpiryJob, UpliftVerificationExpiryJobConfig, UpliftVerificationExpiryJobLockKeeper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
@@ -59,9 +60,12 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
     val lockKeeperSuccess: () => Boolean = () => true
 
     val mockLockKeeper = new UpliftVerificationExpiryJobLockKeeper(reactiveMongoComponent) {
-      override def lockId: String = ???
 
-      override def repo: LockRepository = ???
+      //noinspection ScalaStyle
+      override def lockId: String = null
+
+      //noinspection ScalaStyle
+      override def repo: LockRepository = null
 
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
@@ -161,8 +165,9 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
       "password",
       "myapplication",
       ApplicationTokens(
-        EnvironmentToken(prodClientId, "bbb", "ccc"),
-        EnvironmentToken(sandboxClientId, "222", "333")),
-      state, Standard(Seq.empty, None, None))
+        EnvironmentToken(prodClientId, "bbb", "ccc")
+      ),
+      state,
+      Standard(Seq.empty, None, None))
   }
 }

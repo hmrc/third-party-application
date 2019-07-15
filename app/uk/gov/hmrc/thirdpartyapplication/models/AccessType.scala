@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.thirdpartyapplication.models
 
-import scala.util.Random
-
-class CredentialGenerator {
-  def generate(): String = Random.alphanumeric.take(10).mkString // scalastyle:ignore magic.number
+object AccessType extends Enumeration {
+  type AccessType = Value
+  val STANDARD, PRIVILEGED, ROPC = Value
 }

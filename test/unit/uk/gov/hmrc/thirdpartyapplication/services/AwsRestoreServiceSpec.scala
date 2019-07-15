@@ -27,6 +27,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
@@ -45,8 +46,7 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
         "",
         applicationName,
         ApplicationTokens(
-          EnvironmentToken("", "", serverToken, Seq.empty),
-          EnvironmentToken("", "", "", Seq.empty)))
+          EnvironmentToken("", "", serverToken, Seq.empty)))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]
@@ -64,7 +64,7 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val captor: ArgumentCaptor[ApplicationData => Unit] = ArgumentCaptor.forClass(classOf[ApplicationData => Unit])
 
-      when(mockApplicationRepository.processAll(captor.capture())).thenReturn(Future.successful())
+      when(mockApplicationRepository.processAll(captor.capture())).thenReturn(Future.successful(()))
       when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc))
         .thenReturn(Future.successful(HasSucceeded))
 

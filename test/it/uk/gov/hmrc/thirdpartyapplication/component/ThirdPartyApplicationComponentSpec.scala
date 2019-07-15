@@ -20,13 +20,13 @@ import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.Scenario
+import it.uk.gov.hmrc.thirdpartyapplication.component.stubs.WSO2StoreStub.{WSO2Subscription, WSO2SubscriptionResponse}
 import org.joda.time.DateTimeUtils
 import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
-import it.uk.gov.hmrc.thirdpartyapplication.component.stubs.WSO2StoreStub.{WSO2Subscription, WSO2SubscriptionResponse}
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -56,7 +56,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val username = "a" * 10
   val password = "a" * 10
   val wso2ApplicationName = "a" * 10
-  val cookie = Random.alphanumeric.take(10).mkString
+  val testCookieLength = 10
+  val cookie = Random.alphanumeric.take(testCookieLength).mkString
   val serviceName = "service"
   val apiName = "apiName"
   val context = "myapi"
@@ -171,7 +172,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The credentials are returned")
       Json.parse(response.body) shouldBe Json.toJson(ApplicationTokensResponse(
         EnvironmentTokenResponse(s"$appName-PRODUCTION-key", "PRODUCTION-token", createdApp.tokens.production.clientSecrets),
-        EnvironmentTokenResponse(s"$appName-SANDBOX-key", "SANDBOX-token", createdApp.tokens.sandbox.clientSecrets)))
+        EnvironmentTokenResponse("", "", Seq.empty)))
     }
 
     scenario("Fetch WSO2 credentials of an application") {
@@ -182,12 +183,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createApplication(appName)
 
       When("We fetch the WSO2 credentials of the application")
-      val response = Http(s"$serviceUrl/application/wso2-credentials?clientId=$appName-SANDBOX-key").asString
+      val response = Http(s"$serviceUrl/application/wso2-credentials?clientId=$appName-PRODUCTION-key").asString
       response.code shouldBe OK
       val result = Json.parse(response.body).as[Wso2Credentials]
 
       Then("The credentials are returned")
-      result shouldBe Wso2Credentials(s"$appName-SANDBOX-key", "SANDBOX-token", "SANDBOX-secret")
+      result shouldBe Wso2Credentials(s"$appName-PRODUCTION-key", "PRODUCTION-token", "PRODUCTION-secret")
     }
   }
 
@@ -316,7 +317,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The client secret is added to the production environment of the application")
       val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokensResponse]
       fetchResponseJson.production.clientSecrets should have size 2
-      fetchResponseJson.sandbox.clientSecrets should have size 1
+      fetchResponseJson.sandbox.clientSecrets should have size 0
     }
 
     scenario("Delete an application") {
@@ -546,9 +547,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def postData(path: String, data: String, method: String = "POST"): HttpResponse[String] = {
+    val connTimeoutMs = 5000
+    val readTimeoutMs = 10000
     Http(s"$serviceUrl$path").postData(data).method(method)
       .header("Content-Type", "application/json")
-      .timeout(connTimeoutMs = 5000, readTimeoutMs = 10000)
+      .timeout(connTimeoutMs, readTimeoutMs)
       .asString
   }
 

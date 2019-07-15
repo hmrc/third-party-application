@@ -22,11 +22,12 @@ import org.mockito.ArgumentCaptor
 import org.mockito.Matchers.any
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.mockito.MockitoSugar
-import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, AuditAction, AuditService}
@@ -178,7 +179,7 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
     val scopes1to3 = Set(scope1, scope2, scope3)
     val scopes2to4 = Set(scope2, scope3, scope4)
 
-    def mockApplicationRepositoryFetchAndSave(partialApplication: (Set[String]) => ApplicationData,
+    def mockApplicationRepositoryFetchAndSave(partialApplication: Set[String] => ApplicationData,
                                               fetchScopes: Set[String], saveScopes: Set[String] = Set.empty) = {
       mockApplicationRepositoryFetchToReturn(successful(Some(partialApplication(fetchScopes))))
       mockApplicationRepositorySaveToReturn(successful(partialApplication(saveScopes)))
@@ -199,8 +200,8 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
       "wso2Username", "wso2Password", "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c"),
-        EnvironmentToken("1", "2", "3")),
+        EnvironmentToken("a", "b", "c")
+      ),
       ApplicationState(), Privileged(None, scopes))
 
   private def ropcApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
@@ -209,8 +210,8 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
       "wso2Username", "wso2Password", "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c"),
-        EnvironmentToken("1", "2", "3")),
+        EnvironmentToken("a", "b", "c")
+      ),
       ApplicationState(), Ropc(scopes))
 
   private def standardApplicationDataWithOverrides(applicationId: UUID, overrides: Set[OverrideFlag]): ApplicationData =
@@ -219,8 +220,8 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
       "wso2Username", "wso2Password", "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c"),
-        EnvironmentToken("1", "2", "3")),
+        EnvironmentToken("a", "b", "c")
+      ),
       ApplicationState(), Standard(redirectUris = Seq.empty, overrides = overrides))
 
 }

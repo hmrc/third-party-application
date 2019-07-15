@@ -31,6 +31,7 @@ import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
@@ -172,21 +173,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "fetchByClientId" should {
 
-    "retrieve the application for a given client id when it is matched for sandbox client id" in {
-
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
-
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-
-      val retrieved = await(applicationRepository.fetchByClientId(application1.tokens.sandbox.clientId))
-
-      retrieved shouldBe Some(application1)
-
-    }
-
-    "retrieve the application for a given client id when it is matched for production client id" in {
+    "retrieve the application for a given client id when it has a matching client id" in {
 
       val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
       val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
@@ -204,20 +191,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "fetchByServerToken" should {
 
-    "retrieve the application when it is matched for sandbox access token" in {
-
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
-
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-
-      val retrieved = await(applicationRepository.fetchByServerToken(application1.tokens.sandbox.accessToken))
-
-      retrieved shouldBe Some(application1)
-    }
-
-    "retrieve the application when it is matched for production access token" in {
+    "retrieve the application when it is matched for access token" in {
 
       val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
       val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
@@ -536,7 +510,6 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
         Index(key = Seq("normalisedName" -> Ascending), name = Some("applicationNormalisedNameIndex"), background = true),
         Index(key = Seq("lastAccess" -> Ascending), name = Some("lastAccessIndex"), unique = false, background = true),
         Index(key = Seq("tokens.production.clientId" -> Ascending), name = Some("productionTokenClientIdIndex"), unique = true, background = true),
-        Index(key = Seq("tokens.sandbox.clientId" -> Ascending), name = Some("sandboxTokenClientIdIndex"), unique = true, background = true),
         Index(key = Seq("access.overrides" -> Ascending), name = Some("accessOverridesIndex"), background = true),
         Index(key = Seq("access.accessType" -> Ascending), name = Some("accessTypeIndex"), background = true),
         Index(key = Seq("collaborators.emailAddress" -> Ascending), name = Some("collaboratorsEmailAddressIndex"), background = true)
@@ -1031,9 +1004,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       "username",
       "password",
       "myapplication",
-      ApplicationTokens(
-        EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken),
-        EnvironmentToken(sandboxClientId, generateClientSecret, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
       state,
       access,
       checkInformation = checkInformation)

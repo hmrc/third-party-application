@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 
 import scala.language.implicitConversions
@@ -216,14 +217,13 @@ object EnumJson {
 
   def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
     def reads(json: JsValue): JsResult[E#Value] = json match {
-      case JsString(s) => {
+      case JsString(s) =>
         try {
           JsSuccess(enum.withName(s))
         } catch {
           case _: NoSuchElementException =>
             throw new InvalidEnumException(enum.getClass.getSimpleName, s)
         }
-      }
       case _ => JsError("String value expected")
     }
   }
@@ -247,14 +247,13 @@ object APIStatusJson {
     def reads(json: JsValue): JsResult[ApiStatus.Value] = json match {
       case JsString("PROTOTYPED") => JsSuccess(ApiStatus.BETA)
       case JsString("PUBLISHED") => JsSuccess(ApiStatus.STABLE)
-      case JsString(s) => {
+      case JsString(s) =>
         try {
           JsSuccess(ApiStatus.withName(s))
         } catch {
           case _: NoSuchElementException =>
             JsError(s"Enumeration expected of type: ApiStatus, but it does not contain '$s'")
         }
-      }
       case _ => JsError("String value expected")
     }
   }

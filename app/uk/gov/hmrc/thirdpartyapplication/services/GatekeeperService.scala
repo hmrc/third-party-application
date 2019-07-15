@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 

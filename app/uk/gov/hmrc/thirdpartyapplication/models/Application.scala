@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 
 trait ApplicationRequest {
@@ -104,13 +105,6 @@ case class ApplicationResponse(id: UUID,
                                blocked: Boolean = false)
 
 object ApplicationResponse {
-  private def getEnvironment(data: ApplicationData, clientId: Option[String]): Option[Environment] = {
-    clientId match {
-      case Some(data.tokens.production.clientId) => Some(Environment.PRODUCTION)
-      case Some(data.tokens.sandbox.clientId) => Some(Environment.SANDBOX)
-      case _ => None
-    }
-  }
 
   def apply(data: ApplicationData, clientId: Option[String], trusted: Boolean): ApplicationResponse = {
     val redirectUris = data.access match {
@@ -140,7 +134,7 @@ object ApplicationResponse {
       termsAndConditionsUrl,
       privacyPolicyUrl,
       data.access,
-      getEnvironment(data, clientId),
+      Environment.from(data.environment),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,
@@ -151,36 +145,11 @@ object ApplicationResponse {
 
 case class PaginatedApplicationResponse(applications: Seq[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
 
-case class ApplicationData(id: UUID,
-                           name: String,
-                           normalisedName: String,
-                           collaborators: Set[Collaborator],
-                           description: Option[String] = None,
-                           wso2Username: String,
-                           wso2Password: String,
-                           wso2ApplicationName: String,
-                           tokens: ApplicationTokens,
-                           state: ApplicationState,
-                           access: Access = Standard(Seq.empty, None, None),
-                           createdOn: DateTime = DateTimeUtils.now,
-                           lastAccess: Option[DateTime] = Some(DateTimeUtils.now),
-                           rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
-                           environment: String = Environment.PRODUCTION.toString,
-                           checkInformation: Option[CheckInformation] = None,
-                           blocked: Boolean = false) {
-  lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
-}
-
 case class PaginationTotal(total: Int)
 
 case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: Seq[PaginationTotal], matching: Seq[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
-
-object AccessType extends Enumeration {
-  type AccessType = Value
-  val STANDARD, PRIVILEGED, ROPC = Value
-}
 
 sealed trait Access {
   val accessType: AccessType.Value
@@ -241,17 +210,6 @@ case class APIIdentifier(context: String, version: String)
 case class Wso2Api(name: String, version: String)
 
 case class Collaborator(emailAddress: String, role: Role)
-
-case class ApplicationTokens(production: EnvironmentToken,
-                             sandbox: EnvironmentToken) {
-
-  def environmentToken(environment: Environment) = {
-    environment match {
-      case Environment.PRODUCTION => production
-      case _ => sandbox
-    }
-  }
-}
 
 case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
@@ -349,49 +307,27 @@ object ApplicationWithUpliftRequest {
 }
 
 object ApplicationTokensResponse {
-  def create(applicationTokens: ApplicationTokens): ApplicationTokensResponse = {
+
+  def apply(environmentTokenResponse: EnvironmentTokenResponse): ApplicationTokensResponse = {
     ApplicationTokensResponse(
-      EnvironmentTokenResponse.create(applicationTokens.production),
-      EnvironmentTokenResponse.create(applicationTokens.sandbox)
+      production = environmentTokenResponse,
+      sandbox = EnvironmentTokenResponse.empty
     )
   }
 }
 
 object EnvironmentTokenResponse {
-  def create(environmentToken: EnvironmentToken): EnvironmentTokenResponse = {
+
+  def apply(environmentToken: EnvironmentToken): EnvironmentTokenResponse = {
     EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, environmentToken.clientSecrets)
   }
-}
 
-object ApplicationData {
-
-  def create(application: CreateApplicationRequest,
-             wso2Username: String,
-             wso2Password: String,
-             wso2ApplicationName: String,
-             tokens: ApplicationTokens): ApplicationData = {
-
-    val applicationState = (application.environment, application.access.accessType) match {
-      case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
-      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
-      case _ => ApplicationState(TESTING)
-    }
-
-    ApplicationData(
-      UUID.randomUUID,
-      application.name,
-      application.name.toLowerCase,
-      application.collaborators,
-      application.description,
-      wso2Username,
-      wso2Password,
-      wso2ApplicationName,
-      tokens,
-      applicationState,
-      application.access,
-      environment = application.environment.toString)
+  def empty = {
+    EnvironmentTokenResponse("", "", Seq())
   }
 }
+
+
 
 object Wso2Api {
 

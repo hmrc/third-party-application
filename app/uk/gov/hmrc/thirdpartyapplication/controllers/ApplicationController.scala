@@ -87,12 +87,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
-    withJsonBody[CheckInformation] { checkInformation =>
-      applicationService.updateCheck(applicationId, checkInformation).map { result =>
-        Ok(toJson(result))
-      } recover recovery
-    }
+  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
+    implicit request =>
+      withJsonBody[CheckInformation] { checkInformation =>
+        applicationService.updateCheck(applicationId, checkInformation).map { result =>
+          Ok(toJson(result))
+        } recover recovery
+      }
   }
 
   def fetch(applicationId: UUID) = Action.async {
@@ -100,7 +101,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def fetchCredentials(applicationId: UUID) = Action.async {
-    handleOption(credentialService.fetchCredentials(applicationId))
+    handleOption(credentialService.fetchCredentials(applicationId)
+      .map(_.map(ApplicationTokensResponse.apply)))
   }
 
   def fetchWso2Credentials(clientId: String) = Action.async {
@@ -136,7 +138,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def addClientSecret(applicationId: java.util.UUID) =
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
-        credentialService.addClientSecret(applicationId, secret) map { tokens => Ok(toJson(tokens))
+        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokensResponse(token)))
         } recover {
           case e: NotFoundException => handleNotFound(e.getMessage)
           case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
@@ -277,14 +279,15 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
-    implicit request =>
-      withJsonBody[APIIdentifier] { api =>
-        subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
-          case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
-        } recover recovery
-      }
-  }
+  def createSubscriptionForApplication(applicationId: UUID) =
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
+      implicit request =>
+        withJsonBody[APIIdentifier] { api =>
+          subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
+            case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
+          } recover recovery
+        }
+    }
 
   def removeSubscriptionForApplication(applicationId: UUID, context: String, version: String) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
