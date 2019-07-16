@@ -151,7 +151,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1, clientId = None, trusted = false), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1, trusted = false), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {

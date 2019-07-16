@@ -41,7 +41,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(
-      app => ApplicationResponse(data = app, clientId = None, trusted = trustedApplications.isTrusted(app))))
+      app => ApplicationResponse(data = app, trusted = trustedApplications.isTrusted(app))))
   }
 
   def fetchCredentials(applicationId: UUID): Future[Option[EnvironmentTokenResponse]] = {

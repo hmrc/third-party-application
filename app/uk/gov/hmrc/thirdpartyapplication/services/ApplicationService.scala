@@ -78,14 +78,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def update[T <: ApplicationRequest](id: UUID, application: T)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
-    updateApp(id)(application) map (app => ApplicationResponse(data = app, clientId = None, trusted = trustedApplications.isTrusted(app)))
+    updateApp(id)(application) map (app => ApplicationResponse(data = app, trusted = trustedApplications.isTrusted(app)))
   }
 
   def updateCheck(id: UUID, checkInformation: CheckInformation): Future[ApplicationResponse] = {
     for {
       existing <- fetchApp(id)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
-    } yield ApplicationResponse(data = savedApp, clientId = None, trusted = trustedApplications.isTrusted(savedApp))
+    } yield ApplicationResponse(data = savedApp, trusted = trustedApplications.isTrusted(savedApp))
   }
 
   def addCollaborator(applicationId: UUID, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
@@ -215,61 +215,61 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def fetchByClientId(clientId: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByClientId(clientId) map {
-      _.map(application => ApplicationResponse(data = application, clientId = Some(clientId), trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationResponse] =
     applicationRepository.recordApplicationUsage(applicationId)
       .map(application =>
-        ApplicationResponse(data = application, clientId = Some(application.id.toString), trusted = trustedApplications.isTrusted(application)))
+        ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>
-        ApplicationResponse(data = application, clientId = Some(application.id.toString), trusted = trustedApplications.isTrusted(application)))
+        ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllForCollaborator(emailAddress: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddress(emailAddress).map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAll(): Future[Seq[ApplicationResponse]] = {
     applicationRepository.findAll().map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllBySubscription(apiContext: String): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllBySubscription(apiIdentifier: APIIdentifier): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationResponse]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map {
-      _.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application)))
+      _.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application)))
     }
   }
 
@@ -281,7 +281,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         total = data.totals.foldLeft(0)(_ + _.total),
         matching = data.matching.foldLeft(0)(_ + _.total),
         applications =
-          data.applications.map(application => ApplicationResponse(data = application, clientId = None, trusted = trustedApplications.isTrusted(application))))
+          data.applications.map(application => ApplicationResponse(data = application, trusted = trustedApplications.isTrusted(application))))
     }
   }
 
