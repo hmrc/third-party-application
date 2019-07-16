@@ -171,7 +171,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The credentials are returned")
       Json.parse(response.body) shouldBe Json.toJson(ApplicationTokensResponse(
-        EnvironmentTokenResponse(s"$appName-PRODUCTION-key", "PRODUCTION-token", createdApp.tokens.production.clientSecrets),
+        EnvironmentTokenResponse(s"$appName-key", "token", createdApp.tokens.production.clientSecrets),
         EnvironmentTokenResponse("", "", Seq.empty)))
     }
 
@@ -183,12 +183,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createApplication(appName)
 
       When("We fetch the WSO2 credentials of the application")
-      val response = Http(s"$serviceUrl/application/wso2-credentials?clientId=$appName-PRODUCTION-key").asString
+      val response = Http(s"$serviceUrl/application/wso2-credentials?clientId=$appName-key").asString
       response.code shouldBe OK
       val result = Json.parse(response.body).as[Wso2Credentials]
 
       Then("The credentials are returned")
-      result shouldBe Wso2Credentials(s"$appName-PRODUCTION-key", "PRODUCTION-token", "PRODUCTION-secret")
+      result shouldBe Wso2Credentials(s"$appName-key", "token", "secret")
     }
   }
 
@@ -204,8 +204,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       And("WSO2 returns successfully")
       wso2Store.willAddApplication(wso2ApplicationName)
-      wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.SANDBOX)
-      wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.PRODUCTION)
+      wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName)
 
       And("Totp returns successfully")
       totpConnector.willReturnTOTP(privilegedApplicationsScenario)
@@ -534,8 +533,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {
     wso2Store.willAddApplication(wso2ApplicationName)
-    wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.SANDBOX)
-    wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName, Environment.PRODUCTION)
+    wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName)
 
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED

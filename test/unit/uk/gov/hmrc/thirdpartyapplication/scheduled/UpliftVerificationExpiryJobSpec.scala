@@ -101,8 +101,8 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
 
   "uplift verification expiry job execution" should {
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1 = anApplicationData(UUID.randomUUID(), "aaa", "111")
-      val app2 = anApplicationData(UUID.randomUUID(), "aaa", "111")
+      val app1 = anApplicationData(UUID.randomUUID(), "aaa")
+      val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(Seq(app1, app2)))
@@ -135,8 +135,8 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1 = anApplicationData(UUID.randomUUID(), "aaa", "111")
-      val app2 = anApplicationData(UUID.randomUUID(), "aaa", "111")
+      val app1 = anApplicationData(UUID.randomUUID(), "aaa")
+      val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(Seq(app1, app2)))
@@ -154,7 +154,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
 
   }
 
-  def anApplicationData(id: UUID, prodClientId: String, sandboxClientId: String, state: ApplicationState = testingState()): ApplicationData = {
+  def anApplicationData(id: UUID, prodClientId: String, state: ApplicationState = testingState()): ApplicationData = {
     ApplicationData(
       id,
       s"myApp-$id",
