@@ -55,12 +55,12 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
 
   "createApplication" should {
 
-    "create an application in AWS and WSO2 and generate production and sandbox tokens" in new Setup {
+    "create an application in AWS and WSO2 and generate token" in new Setup {
       val wso2Username = "myuser"
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val tokens = ApplicationTokens(EnvironmentToken("aaa", "bbb", "ccc"))
+      val environmentToken = EnvironmentToken("aaa", "bbb", "ccc")
 
       when(mockWSO2APIStoreConnector.createUser(wso2Username, wso2Password))
         .thenReturn(Future.successful(HasSucceeded))
@@ -68,18 +68,18 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         .thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.createApplication(cookie, wso2ApplicationName))
         .thenReturn(Future.successful(HasSucceeded))
-      when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName, Environment.PRODUCTION))
-        .thenReturn(Future.successful(tokens.production))
+      when(mockWSO2APIStoreConnector.generateApplicationKey(cookie, wso2ApplicationName))
+        .thenReturn(Future.successful(environmentToken))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, tokens.production.accessToken, BRONZE)(hc))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, environmentToken.accessToken, BRONZE)(hc))
         .thenReturn(successful(HasSucceeded))
 
-      val result: ApplicationTokens = await(underTest.createApplication(wso2Username, wso2Password, wso2ApplicationName))
+      val result = await(underTest.createApplication(wso2Username, wso2Password, wso2ApplicationName))
 
-      result shouldBe tokens
+      result shouldBe environmentToken
 
       verify(mockWSO2APIStoreConnector).logout(cookie)
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, tokens.production.accessToken, BRONZE)(hc)
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(wso2ApplicationName, environmentToken.accessToken, BRONZE)(hc)
     }
 
   }

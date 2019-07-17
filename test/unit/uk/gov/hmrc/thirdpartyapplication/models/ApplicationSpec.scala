@@ -91,7 +91,7 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
         wso2Username = "wso2Username",
         wso2Password = "wso2Password",
         wso2ApplicationName = "wso2ApplicationName",
-        tokens = ApplicationTokens(EnvironmentToken("p-clientId", "p-clientSecret", "p-accessToken"))
+        environmentToken = EnvironmentToken("clientId", "clientSecret", "accessToken")
       )
     }
 

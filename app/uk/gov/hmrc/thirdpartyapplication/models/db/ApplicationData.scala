@@ -51,7 +51,7 @@ object ApplicationData {
              wso2Username: String,
              wso2Password: String,
              wso2ApplicationName: String,
-             tokens: ApplicationTokens): ApplicationData = {
+             environmentToken: EnvironmentToken): ApplicationData = {
 
     val applicationState = (application.environment, application.access.accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
@@ -68,7 +68,7 @@ object ApplicationData {
       wso2Username,
       wso2Password,
       wso2ApplicationName,
-      tokens,
+      ApplicationTokens(environmentToken),
       applicationState,
       application.access,
       environment = application.environment.toString)

@@ -119,7 +119,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val applicationId = UUID.randomUUID()
 
       val application =
-        anApplicationData(applicationId, "aaa", "111", productionState("requestorEmail@example.com"))
+        anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
           .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -132,7 +132,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "setMissingLastAccessedDates" should {
     def applicationWithoutLastAccessDate(applicationId: UUID) = {
-      await(applicationRepository.save(anApplicationData(applicationId, UUID.randomUUID().toString, UUID.randomUUID().toString)))
+      await(applicationRepository.save(anApplicationData(applicationId, UUID.randomUUID().toString)))
 
       def applicationById: JsObject = Json.obj("id" -> applicationId.toString)
 
@@ -175,8 +175,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
     "retrieve the application for a given client id when it has a matching client id" in {
 
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(UUID.randomUUID(), "aaa", productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(UUID.randomUUID(), "zzz", productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -193,8 +193,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
     "retrieve the application when it is matched for access token" in {
 
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", "111", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", "999", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(UUID.randomUUID(), "aaa", productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(UUID.randomUUID(), "zzz", productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -208,8 +208,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   "fetchAllForEmailAddress" should {
 
     "retrieve all the applications for a given collaborator email address" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -223,13 +223,10 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "fetchStandardNonTestingApps" should {
     "retrieve all the standard applications not in TESTING state" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        state = pendingRequesterVerificationState("user1"))
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        state = productionState("user2"))
-      val application4 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId,
-        state = pendingRequesterVerificationState("user2"))
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user1"))
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = productionState("user2"))
+      val application4 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user2"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -270,9 +267,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val applicationName = "appName"
       val applicationNormalisedName = "appname"
 
-      val upliftedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val upliftedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
         .copy(normalisedName = applicationNormalisedName, state = pendingGatekeeperApprovalState("email@example.com"))
-      val testingApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val testingApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
         .copy(normalisedName = applicationNormalisedName, state = testingState())
 
       await(applicationRepository.save(upliftedApplication))
@@ -409,8 +406,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   "fetchAllWithNoSubscriptions" should {
     "fetch only those applications with no subscriptions" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version", application1.id)))
@@ -424,8 +421,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   "fetchAll" should {
     "fetch all existing applications" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
@@ -436,9 +433,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   "fetchAllForContext" should {
     "fetch only those applications when the context matches" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -454,9 +451,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "fetchAllForApiIdentifier" should {
     "fetch only those applications when the context and version matches" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -470,9 +467,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "fetch multiple applications with the same matching context and versions" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -485,8 +482,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "fetch no applications when the context and version do not match" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
@@ -521,9 +518,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   "Search" should {
     "correctly include the skip and limit clauses" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -541,7 +538,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "return applications based on application state filter" in {
-      val applicationInTest = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationInTest = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, DateTime.now())
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
@@ -559,8 +556,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "return applications based on access type filter" in {
-      val standardApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val ropcApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+      val standardApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val ropcApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, access = Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -577,8 +574,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "return applications with no API subscriptions" in {
-      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithSubscriptions))
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
@@ -596,8 +593,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "return applications with any API subscriptions" in {
-      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithSubscriptions))
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
@@ -618,8 +615,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val applicationId = UUID.randomUUID()
       val applicationName = "Test Application 1"
 
-      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -639,8 +636,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val applicationId = UUID.randomUUID()
       val applicationName = "Test Application 2"
 
-      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -661,8 +658,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val clientId = generateClientId
       val applicationName = "Test Application"
 
-      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = clientId, sandboxClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application = aNamedApplicationData(applicationId, applicationName, prodClientId = clientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -683,9 +680,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       // Applications with the same name, but different access levels
       val standardApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId)
       val ropcApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, access = Ropc())
+        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, access = Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -705,8 +702,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     "return applications matching search text in a case-insensitive manner" in {
       val applicationId = UUID.randomUUID()
 
-      val application = aNamedApplicationData(applicationId, "TEST APPLICATION", prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val application = aNamedApplicationData(applicationId, "TEST APPLICATION", prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -729,9 +726,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val checkInformation = CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
 
       val applicationWithTermsOfUseAgreed =
-        aNamedApplicationData(
-          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
-      val applicationWithNoTermsOfUseAgreed = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(checkInformation))
+      val applicationWithNoTermsOfUseAgreed = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
 
@@ -754,9 +750,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val checkInformation = CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
 
       val applicationWithNoCheckInformation =
-        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
       val applicationWithTermsOfUseAgreed =
-        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
       await(applicationRepository.save(applicationWithNoCheckInformation))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
@@ -781,11 +777,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val emptyCheckInformation = CheckInformation(termsOfUseAgreements = Seq.empty)
 
       val applicationWithNoTermsOfUseAgreed =
-        aNamedApplicationData(
-          applicationId, applicationName, prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
+        aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
       val applicationWithTermsOfUseAgreed =
-        anApplicationData(
-          UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId, checkInformation = Some(checkInformation))
+        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
@@ -805,8 +799,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val expectedAPIContext = "match-this-api"
       val otherAPIContext = "do-not-match-this-api"
 
-      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(expectedApplication))
       await(applicationRepository.save(otherApplication))
       await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
@@ -829,8 +823,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val expectedAPIVersion = "version-1"
       val otherAPIVersion = "version-2"
 
-      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       await(applicationRepository.save(expectedApplication))
       await(applicationRepository.save(otherApplication))
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
@@ -853,9 +847,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val firstName = "AAA first"
       val secondName = "ZZZ second"
       val firstApplication =
-        aNamedApplicationData(name = firstName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(id = UUID.randomUUID(), name = firstName, prodClientId = generateClientId)
       val secondApplication =
-        aNamedApplicationData(name = secondName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(id = UUID.randomUUID(), name = secondName, prodClientId = generateClientId)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -876,9 +870,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val firstName = "AAA first"
       val secondName = "ZZZ second"
       val firstApplication =
-        aNamedApplicationData(name = firstName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(id = UUID.randomUUID(), name = firstName, prodClientId = generateClientId)
       val secondApplication =
-        aNamedApplicationData(name = secondName, id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+        aNamedApplicationData(id = UUID.randomUUID(), name = secondName, prodClientId = generateClientId)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -899,9 +893,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val firstCreatedOn = HmrcTime.now.minusDays(2)
       val secondCreatedOn = HmrcTime.now.minusDays(1)
       val firstApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = firstCreatedOn)
+        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = secondCreatedOn)
+        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -922,9 +916,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val firstCreatedOn = HmrcTime.now.minusDays(2)
       val secondCreatedOn = HmrcTime.now.minusDays(1)
       val firstApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = firstCreatedOn)
+        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId).copy(createdOn = secondCreatedOn)
+        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -948,8 +942,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
 
     "ensure function is called for every Application in collection" in {
-      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
-      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, sandboxClientId = generateClientId)
+      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -967,7 +961,6 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
-    sandboxClientId = generateClientId,
     state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
   )
 
@@ -977,19 +970,17 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   def anApplicationData(id: UUID,
                         prodClientId: String = "aaa",
-                        sandboxClientId: String = "111",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(Seq.empty, None, None),
                         user: String = "user@example.com",
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", prodClientId, sandboxClientId, state, access, user, checkInformation)
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, user, checkInformation)
   }
 
   def aNamedApplicationData(id: UUID,
                             name: String,
                             prodClientId: String = "aaa",
-                            sandboxClientId: String = "111",
                             state: ApplicationState = testingState(),
                             access: Access = Standard(Seq.empty, None, None),
                             user: String = "user@example.com",

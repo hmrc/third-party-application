@@ -144,9 +144,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   }
 
   "Create" should {
-    val standardApplicationRequest = aCreateApplicationRequest(standardAccess, Environment.PRODUCTION)
-    val privilegedApplicationRequest = aCreateApplicationRequest(privilegedAccess, Environment.PRODUCTION)
-    val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess, Environment.PRODUCTION)
+    val standardApplicationRequest = aCreateApplicationRequest(standardAccess)
+    val privilegedApplicationRequest = aCreateApplicationRequest(privilegedAccess)
+    val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
     val totp = TotpSecrets("pTOTP", "sTOTP")
@@ -1492,6 +1492,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   private def anUpdateApplicationRequest(access: Access) = UpdateApplicationRequest("My Application", access, Some("Description"))
 
-  private def aCreateApplicationRequest(access: Access, environment: Environment) = CreateApplicationRequest("My Application", access, Some("Description"),
-    environment, Set(Collaborator("admin@example.com", ADMINISTRATOR), Collaborator("dev@example.com", ADMINISTRATOR)))
+  private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest("My Application", access, Some("Description"),
+    Environment.PRODUCTION, Set(Collaborator("admin@example.com", ADMINISTRATOR), Collaborator("dev@example.com", ADMINISTRATOR)))
 }

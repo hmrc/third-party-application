@@ -69,7 +69,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     val underTest = new SubscriptionService(
       mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, mockAuditService, mockApiGatewayStore, trustedApplicationConfig)
 
-    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(ApplicationTokens(productionToken)))
+    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
         successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])

@@ -122,6 +122,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] = {
     def query: JsObject = Json.obj("id" -> applicationId.toString)
+
     def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date")))
 
     findAndUpdate(query, updateStatement, fetchNewObject = true)
@@ -129,7 +130,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def setMissingLastAccessedDates(dateToSet: DateTime): Future[Int] = {
-    def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID])= {
+    def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID]) = {
       val setLastAccessDate: JsObject = Json.obj("$set" -> Json.obj("lastAccess" -> dateToSet))
       Future.sequence(applicationIds.map(applicationId => findAndUpdate(Json.obj("id" -> applicationId.toString), setLastAccessDate)))
     }
@@ -164,17 +165,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def fetchByClientId(clientId: String): Future[Option[ApplicationData]] = {
-    find(f"$$or" -> Json.arr(
-          Json.obj("tokens.production.clientId" -> clientId),
-          Json.obj("tokens.sandbox.clientId" -> clientId)))
-      .map(_.headOption)
+    find("tokens.production.clientId" -> clientId).map(_.headOption)
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationData]] = {
-    find(f"$$or" -> Json.arr(
-          Json.obj("tokens.production.accessToken" -> serverToken),
-          Json.obj("tokens.sandbox.accessToken" -> serverToken)))
-      .map(_.headOption)
+    find("tokens.production.accessToken" -> serverToken).map(_.headOption)
   }
 
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
@@ -197,10 +192,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
+
   private def sorting(clause: (String, JsValueWrapper)): JsObject = Json.obj(f"$$sort" -> Json.obj(clause))
 
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): JsObject = {
     def applicationStatusMatch(state: State): JsObject = matches("state.name" -> state.toString)
+
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
     def specificAPISubscription(apiContext: String, apiVersion: String = "") = {
@@ -227,11 +224,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       case TermsOfUseAccepted => matches("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$gt" -> Json.obj(f"$$size" -> 0)))
       case TermsOfUseNotAccepted =>
         matches(
-            f"$$or" ->
-              Json.arr(
-                Json.obj("checkInformation" -> Json.obj(f"$$exists" -> false)),
-                Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$exists" -> false)),
-                Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$size" -> 0))))
+          f"$$or" ->
+            Json.arr(
+              Json.obj("checkInformation" -> Json.obj(f"$$exists" -> false)),
+              Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$exists" -> false)),
+              Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$size" -> 0))))
 
       // Access Type
       case StandardAccess => accessTypeMatch(AccessType.STANDARD)
@@ -289,7 +286,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
-      apiVersion= Some(apiIdentifier.version))).map(_.applications)
+      apiVersion = Some(apiIdentifier.version))).map(_.applications)
 
   def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] =
     searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions))).map(_.applications)
@@ -308,5 +305,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 }
 
 sealed trait ApplicationModificationResult
+
 final case class SuccessfulApplicationModificationResult(numberOfDocumentsUpdated: Int) extends ApplicationModificationResult
+
 final case class UnsuccessfulApplicationModificationResult(message: Option[String]) extends ApplicationModificationResult

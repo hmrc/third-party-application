@@ -39,6 +39,7 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
 
   val serviceUrl = s"${config.baseUrl}/store/site/blocks"
   val adminUsername: String = config.adminUsername
+  val wso2KeyType = "PRODUCTION"
 
   def login(username: String, password: String)(implicit hc: HeaderCarrier): Future[String] = {
     Logger.debug(s"User logging in: [$username]")
@@ -115,14 +116,14 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
     post(url, payload, headers(cookie)) map toHasSucceeded
   }
 
-  def generateApplicationKey(cookie: String, wso2ApplicationName: String, environment: Environment.Value)
+  def generateApplicationKey(cookie: String, wso2ApplicationName: String)
                             (implicit hc: HeaderCarrier): Future[EnvironmentToken] = {
-    Logger.debug(s"Generating $environment keys for $wso2ApplicationName")
+    Logger.debug(s"Generating key for $wso2ApplicationName")
     val url = s"$serviceUrl/subscription/subscription-add/ajax/subscription-add.jag"
     val payload =
       s"""action=generateApplicationKey
          |&application=$wso2ApplicationName
-         |&keytype=$environment
+         |&keytype=$wso2KeyType
          |&callbackUrl=
          |&authorizedDomains=ALL
          |&validityTime=-1
