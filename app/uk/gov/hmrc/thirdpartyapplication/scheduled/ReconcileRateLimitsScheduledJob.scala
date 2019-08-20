@@ -42,22 +42,25 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    logger.info(s"Starting Rate Limit Reconciliation Job")
+    logger.info("Starting Rate Limit Reconciliation Job")
 
-    for {
-      cookie <- wso2ApiStoreConnector.login("", "")
-      _ <- applicationRepository.processAll(tpaApplication => reconcileApplicationRateLimit(tpaApplication, cookie))
-      _ <- wso2ApiStoreConnector.logout(cookie)
-    } yield RunningOfJobSuccessful
+    applicationRepository.processAll(
+      tpaApplication =>
+        for {
+          wso2Cookie <- wso2ApiStoreConnector.login(tpaApplication.wso2Username, tpaApplication.wso2Password)
+          _ <- reconcileApplicationRateLimit(wso2Cookie, tpaApplication)
+          result <- wso2ApiStoreConnector.logout(wso2Cookie)
+        } yield result) map { _ => RunningOfJobSuccessful }
   }
 
-  def reconcileApplicationRateLimit(tpaApplication: ApplicationData, wso2Cookie: String)
-                                         (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
+  def reconcileApplicationRateLimit(wso2Cookie: String, tpaApplication: ApplicationData)
+                                   (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
     wso2ApiStoreConnector.getApplicationRateLimitTier(wso2Cookie, tpaApplication.wso2ApplicationName) map {
       wso2ApplicationRateLimit =>
         tpaApplication.rateLimitTier match {
           case None =>
-            logger.warn(s"No Rate Limit stored in TPA for Application [${tpaApplication.wso2ApplicationName}]. WSO2 Rate Limit is [$wso2ApplicationRateLimit]")
+            logger.warn(
+              s"No Rate Limit stored in TPA for Application [${tpaApplication.wso2ApplicationName}]. WSO2 Rate Limit is [$wso2ApplicationRateLimit]")
           case Some(tpaApplicationRateLimit) =>
             if (tpaApplicationRateLimit == wso2ApplicationRateLimit) {
               logger.debug(s"Rate Limits in TPA and WSO2 match for Application [${tpaApplication.wso2ApplicationName}].")

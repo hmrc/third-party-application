@@ -83,14 +83,14 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
         else Future.successful(None)
     }
 
-    def testApplication(wso2ApplicationName: String, rateLimit: Option[RateLimitTier]): ApplicationData =
+    def testApplication(rateLimit: Option[RateLimitTier]): ApplicationData =
       new ApplicationData(
         id = UUID.randomUUID(),
         name = "",
         normalisedName = "",
         collaborators = Set.empty,
-        wso2Username = "",
-        wso2Password = "",
+        wso2Username = wso2Username,
+        wso2Password = wso2Password,
         wso2ApplicationName = wso2ApplicationName,
         tokens = ApplicationTokens(new EnvironmentToken("", "", "")),
         state = ApplicationState(),
@@ -100,41 +100,40 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
     val mockWSO2ApiStoreConnector: Wso2ApiStoreConnector = mock[Wso2ApiStoreConnector]
 
     val stubLogger = new StubLogger
+    val wso2ApplicationName = "foo"
+    val wso2Username = UUID.randomUUID().toString
+    val wso2Password = UUID.randomUUID().toString
+    val wso2Cookie: String = UUID.randomUUID().toString
+
+    when(mockWSO2ApiStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(wso2Cookie))
+    when(mockWSO2ApiStoreConnector.logout(wso2Cookie)).thenReturn(Future.successful(HasSucceeded))
 
     val config = ReconcileRateLimitsJobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true) // scalastyle:off magic.number
     val underTest = new ReconcileRateLimitsScheduledJob(mockLockKeeper, mockApplicationRepository, mockWSO2ApiStoreConnector, config, stubLogger)
   }
 
   "processJob" should {
-    "create session in WSO2 to retrieve API information" in new Setup {
-      val wso2Cookie: String = UUID.randomUUID().toString
-      when(mockWSO2ApiStoreConnector.login(matches(""), matches(""))(any[HeaderCarrier])).thenReturn(Future.successful(wso2Cookie))
+    "call the processAll function on ApplicationRepository" in new Setup {
       when(mockApplicationRepository.processAll(any())).thenReturn(Future.successful())
-      when(mockWSO2ApiStoreConnector.logout(matches(wso2Cookie))(any[HeaderCarrier])).thenReturn(Future.successful(HasSucceeded))
 
       val result = await(underTest.runJob)
 
-      verify(mockWSO2ApiStoreConnector).login(matches(""), matches(""))(any[HeaderCarrier])
       verify(mockApplicationRepository).processAll(any())
-      verify(mockWSO2ApiStoreConnector).logout(matches(wso2Cookie))(any[HeaderCarrier])
     }
   }
 
   "reconcileApplicationRateLimit" should {
-    val wso2Cookie: String = UUID.randomUUID().toString
-    val wso2ApplicationName = "foo"
-
     "log at DEBUG when Rate Limits match" in new Setup {
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
       val tpaRateLimit: RateLimitTier = RateLimitTier.SILVER
 
-      val application: ApplicationData = testApplication(wso2ApplicationName, Some(tpaRateLimit))
+      val application: ApplicationData = testApplication(Some(tpaRateLimit))
       val expectedMessage = s"Rate Limits in TPA and WSO2 match for Application [$wso2ApplicationName]."
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(application, wso2Cookie))
+      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
 
       stubLogger.debugMessages.size should be (1)
       stubLogger.debugMessages.toList.head should be (expectedMessage)
@@ -144,13 +143,13 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
       val tpaRateLimit: RateLimitTier = RateLimitTier.GOLD
 
-      val application: ApplicationData = testApplication(wso2ApplicationName, Some(tpaRateLimit))
+      val application: ApplicationData = testApplication(Some(tpaRateLimit))
       val expectedMessage = s"Rate Limit mismatch for Application [$wso2ApplicationName]. TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit]"
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(application, wso2Cookie))
+      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
 
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
@@ -159,13 +158,13 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
     "handle case where TPA does not have a Rate Limit assigned" in new Setup {
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
 
-      val application: ApplicationData = testApplication(wso2ApplicationName, None)
+      val application: ApplicationData = testApplication(None)
       val expectedMessage = s"No Rate Limit stored in TPA for Application [$wso2ApplicationName]. WSO2 Rate Limit is [$wso2RateLimit]"
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(application, wso2Cookie))
+      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
 
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
