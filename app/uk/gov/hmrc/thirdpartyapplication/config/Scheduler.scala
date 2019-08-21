@@ -18,13 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.config
 
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
-import play.api.Application
+import play.api.{Application, Logger, LoggerLike}
 import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{SetLastAccessedDateJobConfig, _}
 
 class SchedulerModule extends AbstractModule {
   override def configure(): Unit = {
     bind(classOf[Scheduler]).asEagerSingleton()
+    bind(classOf[LoggerLike]).toInstance(Logger)
   }
 }
 
@@ -35,6 +36,8 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
                           setLastAccessedDateJobConfig: SetLastAccessedDateJobConfig,
                           setLastAccessedDateJob: SetLastAccessedDateJob,
+                          reconcileRateLimitsJob: ReconcileRateLimitsScheduledJob,
+                          reconcileRateLimitsJobConfig: ReconcileRateLimitsJobConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
@@ -57,7 +60,13 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
       Seq.empty
     }
 
-    upliftJob ++ refreshJob ++ accessDateJob
+    val rateLimitsJob = if (reconcileRateLimitsJobConfig.enabled) {
+      Seq(reconcileRateLimitsJob)
+    } else {
+      Seq.empty
+    }
+
+    upliftJob ++ refreshJob ++ accessDateJob ++ rateLimitsJob
 
   }
 
