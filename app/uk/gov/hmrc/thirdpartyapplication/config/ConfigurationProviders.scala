@@ -21,13 +21,14 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
 import uk.gov.hmrc.thirdpartyapplication.models.TrustedApplicationsConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{JobConfig, RefreshSubscriptionsJobConfig, SetLastAccessedDateJobConfig, UpliftVerificationExpiryJobConfig}
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -40,6 +41,7 @@ class ConfigurationModule extends Module {
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[SetLastAccessedDateJobConfig].toProvider[SetLastAccessDateJobConfigProvider],
+      bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -120,6 +122,18 @@ class SetLastAccessDateJobConfigProvider @Inject()(val runModeConfiguration: Con
 
     SetLastAccessedDateJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
+}
+
+@Singleton
+class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ReconcileRateLimitsJobConfig] with ServicesConfig {
+    override protected def mode: Mode = environment.mode
+
+    override def get(): ReconcileRateLimitsJobConfig = {
+      val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.reconcileRateLimitsJob")
+        .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
+      ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
+    }
 }
 
 @Singleton
