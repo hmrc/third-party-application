@@ -131,7 +131,7 @@ class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: C
 
     override def get(): ReconcileRateLimitsJobConfig = {
       val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.reconcileRateLimitsJob")
-        .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true))
+        .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(2, HOURS), enabled = true))
       ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
     }
 }
