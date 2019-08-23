@@ -23,6 +23,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
@@ -50,24 +51,30 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
           wso2Cookie <- wso2ApiStoreConnector.login(tpaApplication.wso2Username, tpaApplication.wso2Password)
           _ <- reconcileApplicationRateLimit(wso2Cookie, tpaApplication)
           result <- wso2ApiStoreConnector.logout(wso2Cookie)
-        } yield result) map { _ => RunningOfJobSuccessful }
+        } yield result)
+    .map { _ =>
+      logger.info("Finishing Rate Limit Reconciliation Job")
+      RunningOfJobSuccessful
+    }
   }
 
   def reconcileApplicationRateLimit(wso2Cookie: String, tpaApplication: ApplicationData)
                                    (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[Unit] = {
+
+    def message(wso2ApplicationRateLimit: RateLimitTier, status: String): String =
+      s"Rate Limits for Application [${tpaApplication.name} (${tpaApplication.id})] are - " +
+        s"TPA: [${tpaApplication.rateLimitTier.getOrElse("NONE")}], WSO2: [$wso2ApplicationRateLimit] - $status"
+
     wso2ApiStoreConnector.getApplicationRateLimitTier(wso2Cookie, tpaApplication.wso2ApplicationName) map {
       wso2ApplicationRateLimit =>
         tpaApplication.rateLimitTier match {
           case None =>
-            logger.warn(
-              s"No Rate Limit stored in TPA for Application [${tpaApplication.wso2ApplicationName}]. WSO2 Rate Limit is [$wso2ApplicationRateLimit]")
+            logger.warn(message(wso2ApplicationRateLimit, "MISMATCH"))
           case Some(tpaApplicationRateLimit) =>
             if (tpaApplicationRateLimit == wso2ApplicationRateLimit) {
-              logger.debug(s"Rate Limits in TPA and WSO2 match for Application [${tpaApplication.wso2ApplicationName}].")
+              logger.info(message(wso2ApplicationRateLimit, "MATCH"))
             } else {
-              logger.warn(
-                s"Rate Limit mismatch for Application [${tpaApplication.wso2ApplicationName}]. " +
-                  s"TPA: [${tpaApplication.rateLimitTier.get}], WSO2: [$wso2ApplicationRateLimit]")
+              logger.warn(message(wso2ApplicationRateLimit, "MISMATCH"))
             }
         }
     }
@@ -79,7 +86,7 @@ class ReconcileRateLimitsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) 
 
   override def lockId: String = "ReconcileRateLimitsScheduledJob"
 
-  override val forceLockReleaseAfter: Duration = Duration.standardHours(2)
+  override val forceLockReleaseAfter: Duration = Duration.standardHours(1)
 
 }
 

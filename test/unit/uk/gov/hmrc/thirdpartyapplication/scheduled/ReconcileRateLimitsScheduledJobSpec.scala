@@ -85,8 +85,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
 
     def testApplication(rateLimit: Option[RateLimitTier]): ApplicationData =
       new ApplicationData(
-        id = UUID.randomUUID(),
-        name = "",
+        id = applicationId,
+        name = applicationName,
         normalisedName = "",
         collaborators = Set.empty,
         wso2Username = wso2Username,
@@ -100,7 +100,9 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
     val mockWSO2ApiStoreConnector: Wso2ApiStoreConnector = mock[Wso2ApiStoreConnector]
 
     val stubLogger = new StubLogger
-    val wso2ApplicationName = "foo"
+    val applicationId = UUID.randomUUID()
+    val applicationName = "foo"
+    val wso2ApplicationName = UUID.randomUUID().toString
     val wso2Username = UUID.randomUUID().toString
     val wso2Password = UUID.randomUUID().toString
     val wso2Cookie: String = UUID.randomUUID().toString
@@ -123,20 +125,20 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
   }
 
   "reconcileApplicationRateLimit" should {
-    "log at DEBUG when Rate Limits match" in new Setup {
+    "log at INFO when Rate Limits match" in new Setup {
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
       val tpaRateLimit: RateLimitTier = RateLimitTier.SILVER
 
       val application: ApplicationData = testApplication(Some(tpaRateLimit))
-      val expectedMessage = s"Rate Limits in TPA and WSO2 match for Application [$wso2ApplicationName]."
+      val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit] - MATCH"
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
       await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
 
-      stubLogger.debugMessages.size should be (1)
-      stubLogger.debugMessages.toList.head should be (expectedMessage)
+      stubLogger.infoMessages.size should be (1)
+      stubLogger.infoMessages.toList.head should be (expectedMessage)
     }
 
     "log at WARN when Rate Limits do not match" in new Setup {
@@ -144,7 +146,7 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val tpaRateLimit: RateLimitTier = RateLimitTier.GOLD
 
       val application: ApplicationData = testApplication(Some(tpaRateLimit))
-      val expectedMessage = s"Rate Limit mismatch for Application [$wso2ApplicationName]. TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit]"
+      val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit] - MISMATCH"
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
@@ -159,7 +161,7 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
 
       val application: ApplicationData = testApplication(None)
-      val expectedMessage = s"No Rate Limit stored in TPA for Application [$wso2ApplicationName]. WSO2 Rate Limit is [$wso2RateLimit]"
+      val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [NONE], WSO2: [$wso2RateLimit] - MISMATCH"
 
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
