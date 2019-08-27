@@ -125,7 +125,7 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
   }
 
   "reconcileApplicationRateLimit" should {
-    "log at INFO when Rate Limits match" in new Setup {
+    "log at DEBUG when Rate Limits match" in new Setup {
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
       val tpaRateLimit: RateLimitTier = RateLimitTier.SILVER
 
@@ -137,8 +137,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
 
       await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
 
-      stubLogger.infoMessages.size should be (1)
-      stubLogger.infoMessages.toList.head should be (expectedMessage)
+      stubLogger.debugMessages.size should be (1)
+      stubLogger.debugMessages.toList.head should be (expectedMessage)
     }
 
     "log at WARN when Rate Limits do not match" in new Setup {

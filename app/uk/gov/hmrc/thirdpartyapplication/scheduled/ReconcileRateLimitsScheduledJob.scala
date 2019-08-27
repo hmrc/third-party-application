@@ -72,7 +72,7 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
             logger.warn(message(wso2ApplicationRateLimit, "MISMATCH"))
           case Some(tpaApplicationRateLimit) =>
             if (tpaApplicationRateLimit == wso2ApplicationRateLimit) {
-              logger.info(message(wso2ApplicationRateLimit, "MATCH"))
+              logger.debug(message(wso2ApplicationRateLimit, "MATCH"))
             } else {
               logger.warn(message(wso2ApplicationRateLimit, "MISMATCH"))
             }
