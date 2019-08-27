@@ -112,6 +112,35 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
   }
 
+  "updateApplicationRateLimit" should {
+
+    "set the rateLimitTier field on an Application document" in {
+      val applicationId = UUID.randomUUID()
+      await(
+        applicationRepository.save(
+          anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE))))
+
+      val updatedRateLimit = RateLimitTier.GOLD
+
+      val updatedApplication = await(applicationRepository.updateApplicationRateLimit(applicationId, updatedRateLimit))
+
+      updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
+    }
+
+    "set the rateLimitTier field on an Application document where none previously existed" in {
+      val applicationId = UUID.randomUUID()
+      await(
+        applicationRepository.save(
+          anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = None)))
+
+      val updatedRateLimit = RateLimitTier.GOLD
+
+      val updatedApplication = await(applicationRepository.updateApplicationRateLimit(applicationId, updatedRateLimit))
+
+      updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
+    }
+  }
+
   "recordApplicationUsage" should {
     "update the lastAccess property" in {
       val testStartTime = DateTime.now()

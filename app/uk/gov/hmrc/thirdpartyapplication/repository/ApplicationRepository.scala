@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -120,9 +121,16 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .map(_.result[ApplicationData].head)
   }
 
+  def updateApplicationRateLimit(applicationId: UUID, rateLimit: RateLimitTier): Future[ApplicationData] = {
+    def query: JsObject = Json.obj("id" -> applicationId.toString)
+    def updateStatement: JsObject = Json.obj("$set" -> Json.obj("rateLimitTier" -> rateLimit.toString))
+
+    findAndUpdate(query, updateStatement, fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+  }
+
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] = {
     def query: JsObject = Json.obj("id" -> applicationId.toString)
-
     def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date")))
 
     findAndUpdate(query, updateStatement, fetchNewObject = true)
