@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -120,14 +121,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .map(_.result[ApplicationData].head)
   }
 
-  def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] = {
-    def query: JsObject = Json.obj("id" -> applicationId.toString)
+  def updateApplicationRateLimit(applicationId: UUID, rateLimit: RateLimitTier): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("rateLimitTier" -> rateLimit.toString)))
 
-    def updateStatement: JsObject = Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date")))
+  def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
-    findAndUpdate(query, updateStatement, fetchNewObject = true)
-      .map(_.result[ApplicationData].head)
-  }
+  private def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
+    findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map { _.result[ApplicationData].head }
 
   def setMissingLastAccessedDates(dateToSet: DateTime): Future[Int] = {
     def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID]) = {
