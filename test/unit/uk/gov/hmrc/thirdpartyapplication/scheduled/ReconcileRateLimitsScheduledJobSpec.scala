@@ -107,24 +107,14 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
     val wso2Password = UUID.randomUUID().toString
     val wso2Cookie: String = UUID.randomUUID().toString
 
-    when(mockWSO2ApiStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(wso2Cookie))
-    when(mockWSO2ApiStoreConnector.logout(wso2Cookie)).thenReturn(Future.successful(HasSucceeded))
+    when(mockWSO2ApiStoreConnector.login(matches(wso2Username), matches(wso2Password))(any[HeaderCarrier])).thenReturn(Future.successful(wso2Cookie))
+    when(mockWSO2ApiStoreConnector.logout(matches(wso2Cookie))(any[HeaderCarrier])).thenReturn(Future.successful(HasSucceeded))
 
     val config = ReconcileRateLimitsJobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true) // scalastyle:off magic.number
     val underTest = new ReconcileRateLimitsScheduledJob(mockLockKeeper, mockApplicationRepository, mockWSO2ApiStoreConnector, config, stubLogger)
   }
 
-  "processJob" should {
-    "call the processAll function on ApplicationRepository" in new Setup {
-      when(mockApplicationRepository.processAll(any())).thenReturn(Future.successful())
-
-      val result = await(underTest.runJob)
-
-      verify(mockApplicationRepository).processAll(any())
-    }
-  }
-
-  "reconcileApplicationRateLimit" should {
+  "Scheduled Job" should {
     "log at DEBUG when Rate Limits match" in new Setup {
       val wso2RateLimit: RateLimitTier = RateLimitTier.SILVER
       val tpaRateLimit: RateLimitTier = RateLimitTier.SILVER
@@ -132,10 +122,11 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val application: ApplicationData = testApplication(Some(tpaRateLimit))
       val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit] - MATCH"
 
+      when(mockApplicationRepository.findAll()).thenReturn(Future.successful(List(application)))
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
+      await(underTest.runJob)
 
       stubLogger.debugMessages.size should be (1)
       stubLogger.debugMessages.toList.head should be (expectedMessage)
@@ -148,10 +139,11 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val application: ApplicationData = testApplication(Some(tpaRateLimit))
       val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [$tpaRateLimit], WSO2: [$wso2RateLimit] - MISMATCH"
 
+      when(mockApplicationRepository.findAll()).thenReturn(Future.successful(List(application)))
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
+      await(underTest.runJob)
 
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
@@ -163,10 +155,11 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       val application: ApplicationData = testApplication(None)
       val expectedMessage = s"Rate Limits for Application [$applicationName ($applicationId)] are - TPA: [NONE], WSO2: [$wso2RateLimit] - MISMATCH"
 
+      when(mockApplicationRepository.findAll()).thenReturn(Future.successful(List(application)))
       when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
         .thenReturn(Future.successful(wso2RateLimit))
 
-      await(underTest.reconcileApplicationRateLimit(wso2Cookie, application))
+      await(underTest.runJob)
 
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
