@@ -50,30 +50,40 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
     for {
       tpaApplications <- applicationRepository.findAll()
       results <- processApplicationsOneByOne(tpaApplications)
-      _ = logger.info(s"Finishing Rate Limit Reconciliation Job - ${results._1 + results._2} Applications Processed (${results._1} Matches, ${results._2} Mismatches)")
+      _ = logger.info(
+        s"Finishing Rate Limit Reconciliation Job - " +
+          s"${results._1 + results._2 + results._3} Applications Processed (${results._1} Matches, ${results._2} Mismatches, ${results._3} Failures)")
     } yield RunningOfJobSuccessful
   }
 
   //Processing applications 1 by 1 as WSO2 times out when too many subscriptions calls are made simultaneously
-  private def processApplicationsOneByOne(tpaApplications: Seq[ApplicationData], processed: (Int, Int) = (0, 0))
-                                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(Int, Int)] = {
+  private def processApplicationsOneByOne(tpaApplications: Seq[ApplicationData], processed: (Int, Int, Int) = (0, 0, 0))
+                                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(Int, Int, Int)] = {
     tpaApplications match {
       case app :: tail =>
         processApplication(app)
           .flatMap {
-            case RateLimitMatch.MATCH => processApplicationsOneByOne(tail, (processed._1 + 1, processed._2))
-            case RateLimitMatch.MISMATCH => processApplicationsOneByOne(tail, (processed._1, processed._2 + 1))
+            case RateLimitMatch.MATCH => processApplicationsOneByOne(tail, (processed._1 + 1, processed._2, processed._3))
+            case RateLimitMatch.MISMATCH => processApplicationsOneByOne(tail, (processed._1, processed._2 + 1, processed._3))
+            case RateLimitMatch.FAILURE => processApplicationsOneByOne(tail, (processed._1, processed._2, processed._3 + 1))
           }
       case Nil => successful(processed)
     }
   }
 
   private def processApplication(tpaApplication: ApplicationData)(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[RateLimitMatch] = {
-    for {
+    val rateLimitMatches = for {
       wso2Cookie <- wso2ApiStoreConnector.login(tpaApplication.wso2Username, tpaApplication.wso2Password)
       rateLimitMatches <- reconcileApplicationRateLimit(wso2Cookie, tpaApplication)
       _ <- wso2ApiStoreConnector.logout(wso2Cookie)
     } yield rateLimitMatches
+
+    rateLimitMatches.recoverWith {
+      case e => {
+        logger.error(s"Failed to process Application [${tpaApplication.name} (${tpaApplication.id})]", e)
+        Future.successful(RateLimitMatch.FAILURE)
+      }
+    }
   }
 
   private def reconcileApplicationRateLimit(wso2Cookie: String, tpaApplication: ApplicationData)
@@ -108,7 +118,7 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
 object RateLimitMatch extends Enumeration {
   type RateLimitMatch = Value
 
-  val MATCH, MISMATCH = Value
+  val MATCH, MISMATCH, FAILURE = Value
 }
 
 class ReconcileRateLimitsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
