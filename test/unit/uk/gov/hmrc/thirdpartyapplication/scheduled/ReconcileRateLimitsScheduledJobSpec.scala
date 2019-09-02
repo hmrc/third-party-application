@@ -123,7 +123,6 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
 
     val stubLogger = new StubLogger
 
-
     val config = ReconcileRateLimitsJobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true) // scalastyle:off magic.number
     val underTest = new ReconcileRateLimitsScheduledJob(mockLockKeeper, mockApplicationRepository, mockWSO2ApiStoreConnector, config, stubLogger)
   }
@@ -144,6 +143,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       callToWSO2LogoutReturns(wso2Cookie, Future.successful(HasSucceeded))
 
       await(underTest.runJob)
+
+      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(application.id, wso2RateLimit)
 
       stubLogger.debugMessages.size should be (1)
       stubLogger.debugMessages.toList.head should be (expectedMessage)
@@ -166,6 +167,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
 
       await(underTest.runJob)
 
+      verify(mockApplicationRepository).updateApplicationRateLimit(application.id, wso2RateLimit)
+
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
     }
@@ -184,6 +187,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       callToWSO2LogoutReturns(wso2Cookie, Future.successful(HasSucceeded))
 
       await(underTest.runJob)
+
+      verify(mockApplicationRepository).updateApplicationRateLimit(application.id, wso2RateLimit)
 
       stubLogger.warnMessages.size should be (1)
       stubLogger.warnMessages.toList.head should be (expectedMessage)
@@ -206,6 +211,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       callToWSO2LogoutReturns(workingApplicationCookie, Future.successful(HasSucceeded))
 
       await(underTest.runJob)
+
+      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(any[UUID], any[RateLimitTier])
 
       stubLogger.errorMessages.size should be (1)
       stubLogger.errorMessages.toList.head should be (brokenApplicationExpectedMessage)
@@ -234,6 +241,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
       callToWSO2LogoutReturns(workingApplicationCookie, Future.successful(HasSucceeded))
 
       await(underTest.runJob)
+
+      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(any[UUID], any[RateLimitTier])
 
       stubLogger.errorMessages.size should be (1)
       stubLogger.errorMessages.toList.head should be (brokenApplicationExpectedMessage)

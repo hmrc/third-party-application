@@ -79,10 +79,9 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
     } yield rateLimitMatches
 
     rateLimitMatches.recoverWith {
-      case e => {
+      case e =>
         logger.error(s"Failed to process Application [${tpaApplication.name} (${tpaApplication.id})]", e)
         Future.successful(RateLimitMatch.FAILURE)
-      }
     }
   }
 
@@ -99,17 +98,21 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
       }
     }
 
+    def repairMismatchedRateLimits(rateLimitToSet: RateLimitTier): Unit = {
+      logger.info(s"Setting Rate Limit for Application [${tpaApplication.name} (${tpaApplication.id})] to $rateLimitToSet")
+      applicationRepository.updateApplicationRateLimit(tpaApplication.id, rateLimitToSet)
+    }
+
     wso2ApiStoreConnector.getApplicationRateLimitTier(wso2Cookie, tpaApplication.wso2ApplicationName) map {
       wso2ApplicationRateLimit => {
-        val rateLimitMatches: RateLimitMatch =
-          if(tpaApplication.rateLimitTier.isDefined && tpaApplication.rateLimitTier.get == wso2ApplicationRateLimit) {
-            RateLimitMatch.MATCH
-          } else {
-            RateLimitMatch.MISMATCH
-          }
-
-        logResult(wso2ApplicationRateLimit, rateLimitMatches)
-        rateLimitMatches
+        if(tpaApplication.rateLimitTier.isDefined && tpaApplication.rateLimitTier.get == wso2ApplicationRateLimit) {
+          logResult(wso2ApplicationRateLimit, RateLimitMatch.MATCH)
+          RateLimitMatch.MATCH
+        } else {
+          logResult(wso2ApplicationRateLimit, RateLimitMatch.MISMATCH)
+          repairMismatchedRateLimits(wso2ApplicationRateLimit)
+          RateLimitMatch.MISMATCH
+        }
       }
     }
   }
