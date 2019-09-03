@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
@@ -68,6 +69,8 @@ trait ApiGatewayStore {
 @Singleton
 class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsApiGatewayConnector: AwsApiGatewayConnector,
                                     subscriptionRepository: SubscriptionRepository) extends ApiGatewayStore {
+
+  val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
 
   val resubscribeMaxRetries = 5
 
@@ -131,15 +134,21 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
   override def addSubscription(app: ApplicationData,
                                api: APIIdentifier)
                               (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val wso2Api = Wso2Api.create(api)
+    if (IgnoredContexts.contains(api.context)) {
+      // API-3955: There are a couple of APIs that do not exist in WSO2 (only in AWS) - trying to subscribe to them will cause an error
+      Logger.warn(s"Ignoring subscription to ${api.context}")
+      Future.successful(HasSucceeded)
+    } else {
+      val wso2Api = Wso2Api.create(api)
 
-    for {
-      _ <- withLogin(app.wso2Username, app.wso2Password) {
-        wso2APIStoreConnector.addSubscription(_, app.wso2ApplicationName, wso2Api, app.rateLimitTier, 0)
-      }
-      apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
-      _ = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
-    } yield HasSucceeded
+      for {
+        _ <- withLogin(app.wso2Username, app.wso2Password) {
+          wso2APIStoreConnector.addSubscription(_, app.wso2ApplicationName, wso2Api, app.rateLimitTier, 0)
+        }
+        apiIdentifiers <- subscriptionRepository.getSubscriptions(app.id)
+        _ = wso2Api.name +: apiIdentifiers.map(api => Wso2Api.create(api).name)
+      } yield HasSucceeded
+    }
   }
 
   override def removeSubscription(app: ApplicationData, api: APIIdentifier)

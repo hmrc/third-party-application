@@ -194,6 +194,15 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         await(underTest.addSubscription(app, api))
       }
     }
+
+    "not add ignored subscriptions to WSO2" in new Setup {
+      val ignoredApis: Seq[APIIdentifier] = Seq(APIIdentifier("sso-in/sso", "1.0"), APIIdentifier("web-session/sso-api", "1.0"))
+
+      ignoredApis.foreach(ignoredApi => await(underTest.addSubscription(app, ignoredApi)))
+
+      verifyZeroInteractions(mockWSO2APIStoreConnector)
+      verifyZeroInteractions(mockAwsApiGatewayConnector)
+    }
   }
 
   "removeSubscription" should {
