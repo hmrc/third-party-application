@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{TrustedApplicationsConfig, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
+import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, sequence, successful}
@@ -39,6 +40,8 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     auditService: AuditService,
                                     apiGatewayStore: ApiGatewayStore,
                                     trustedAppConfig: TrustedApplicationsConfig) {
+
+  val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
 
   def searchCollaborators(context:String, version:String, partialEmailMatch: Option[String]):Future[Seq[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
@@ -148,7 +151,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
         mongoSubscriptions <- mongoSubscriptionsFuture
         wso2Subscriptions <- apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
         subscriptionsToAdd = wso2Subscriptions.filterNot(mongoSubscriptions.contains(_))
-        subscriptionsToRemove = mongoSubscriptions.filterNot(wso2Subscriptions.contains(_))
+        subscriptionsToRemove = mongoSubscriptions.filterNot(api => IgnoredContexts.contains(api.context)).filterNot(wso2Subscriptions.contains(_))
         sub <- updateSubscriptions(app, subscriptionsToAdd, subscriptionsToRemove)
       } yield sub
     }

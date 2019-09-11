@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
+import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
@@ -353,6 +354,21 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
       result shouldBe 1
       verify(mockSubscriptionRepository).remove(applicationId, api)
+    }
+
+    Seq("sso-in/sso", "web-session/sso-api") foreach { ignoredContext =>
+      s"not remove from Mongo the subscriptions not present in WSO2 for the $ignoredContext API" in new Setup {
+        given(mockApplicationRepository.findAll()).willReturn(List(applicationData))
+        mockAPIGatewayStoreWillReturnSubscriptions(
+          applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, successful(Seq.empty))
+        val apiInMongo = anAPI(context = ignoredContext)
+        given(mockSubscriptionRepository.getSubscriptions(applicationId)).willReturn(Seq(apiInMongo))
+
+        val result = await(underTest.refreshSubscriptions())
+
+        result shouldBe 0
+        verify(mockSubscriptionRepository, never).remove(applicationId, apiInMongo)
+      }
     }
 
     "process multiple applications" in new Setup {
