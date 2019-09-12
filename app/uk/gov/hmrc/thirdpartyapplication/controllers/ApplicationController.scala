@@ -285,6 +285,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         withJsonBody[APIIdentifier] { api =>
           subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
             case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
+            case e: SubscriptionForbiddenException => UnprocessableEntity(JsErrorResponse(SUBSCRIPTION_FORBIDDEN, e.getMessage))
           } recover recovery
         }
     }
