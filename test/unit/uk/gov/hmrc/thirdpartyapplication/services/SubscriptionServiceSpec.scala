@@ -32,6 +32,7 @@ import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads, NotFoundException}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiDefinitionConnector, EmailConnector}
+import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.{ALPHA, APIStatus, STABLE}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -154,8 +155,8 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
       result shouldBe Seq(ApiSubscription("name", "service", "context", Seq(
-        VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true),
-        VersionSubscription(ApiVersion("2.0", ApiStatus.STABLE, None), subscribed = false)
+        VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = true),
+        VersionSubscription(ApiVersion("2.0", STABLE, None), subscribed = false)
       ), Some(false))
       )
     }
@@ -173,7 +174,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       val result = await(underTest.fetchAllSubscriptionsForApplication(trustedApplicationId))
 
       result shouldBe Seq(ApiSubscription("name", "service", "context", Seq(
-        VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = false)), Some(true))
+        VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)), Some(true))
       )
     }
 
@@ -237,6 +238,19 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api)))
 
       intercept[SubscriptionAlreadyExistsException] {
+        await(underTest.createSubscriptionForApplication(applicationId, api))
+      }
+
+      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
+    }
+
+    "throw SubscriptionForbiddenException if API version is in status alpha" in new Setup {
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
+        .thenReturn(Seq(anAPIDefinition(versions = Seq(anAPIVersion(status = ALPHA)))))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
+
+      intercept[SubscriptionForbiddenException] {
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
@@ -441,9 +455,9 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     )
   }
 
-  private def anAPIVersion(version: String) = ApiVersion(version, ApiStatus.STABLE, None)
+  private def anAPIVersion(version: String = "1.0", status: APIStatus = STABLE) = ApiVersion(version, status, None)
 
-  private def anAPIDefinition(context: String = "some-context", versions: Seq[ApiVersion] = Seq(anAPIVersion("1.0"))) =
+  private def anAPIDefinition(context: String = "some-context", versions: Seq[ApiVersion] = Seq(anAPIVersion())) =
     ApiDefinition("service", "name", context, versions, Some(false))
 
   private def anAPI(context: String = "some-context", version: String = "1.0") = {

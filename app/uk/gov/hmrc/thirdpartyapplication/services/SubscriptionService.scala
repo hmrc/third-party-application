@@ -22,6 +22,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
+import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{TrustedApplicationsConfig, _}
@@ -79,6 +80,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       versionSubscriptionMaybe match {
         case None => throw new NotFoundException(s"API $apiIdentifier is not available for application $applicationId")
         case Some(versionSubscription) if versionSubscription.subscribed => throw SubscriptionAlreadyExistsException(app.name, apiIdentifier)
+        case Some(versionSubscription) if versionSubscription.version.status == ALPHA => throw SubscriptionForbiddenException(apiIdentifier)
         case _ =>
       }
     }
