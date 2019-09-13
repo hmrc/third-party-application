@@ -204,6 +204,17 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
         ApiSubscription("name", "service", "context", Seq(VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)), Some(false))
       )
     }
+
+    "filter API if all its versions are in status alpha" in new Setup {
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
+      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier](), any[ExecutionContext]()))
+        .thenReturn(Seq(anAPIDefinition("context", Seq(anAPIVersion("2.0", status = ALPHA)))))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
+
+      val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
+
+      result shouldBe empty
+    }
   }
 
   "createSubscriptionForApplication" should {

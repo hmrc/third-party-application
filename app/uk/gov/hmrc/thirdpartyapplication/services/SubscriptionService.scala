@@ -56,6 +56,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     def fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
       _.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
         .map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
+        .filterNot(_.versions.isEmpty)
     }
 
     for {
