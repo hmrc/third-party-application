@@ -52,9 +52,10 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
-  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier) = {
+  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Seq[ApiSubscription]] = {
     def fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
-      apis => apis.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
+      _.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
+        .map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
     }
 
     for {
@@ -80,7 +81,6 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       versionSubscriptionMaybe match {
         case None => throw new NotFoundException(s"API $apiIdentifier is not available for application $applicationId")
         case Some(versionSubscription) if versionSubscription.subscribed => throw SubscriptionAlreadyExistsException(app.name, apiIdentifier)
-        case Some(versionSubscription) if versionSubscription.version.status == ALPHA => throw SubscriptionForbiddenException(apiIdentifier)
         case _ =>
       }
     }

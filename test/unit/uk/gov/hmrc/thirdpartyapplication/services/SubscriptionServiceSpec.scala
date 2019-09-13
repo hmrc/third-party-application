@@ -191,6 +191,19 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
       result shouldBe Seq()
     }
+
+    "filter API versions in status alpha" in new Setup {
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
+      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier](), any[ExecutionContext]()))
+        .thenReturn(Seq(anAPIDefinition("context", Seq(anAPIVersion(), anAPIVersion("2.0", status = ALPHA)))))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
+
+      val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
+
+      result shouldBe Seq(
+        ApiSubscription("name", "service", "context", Seq(VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)), Some(false))
+      )
+    }
   }
 
   "createSubscriptionForApplication" should {
@@ -244,13 +257,13 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
-    "throw SubscriptionForbiddenException if API version is in status alpha" in new Setup {
+    "throw NotFoundException if API version is in status alpha" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
         .thenReturn(Seq(anAPIDefinition(versions = Seq(anAPIVersion(status = ALPHA)))))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
 
-      intercept[SubscriptionForbiddenException] {
+      intercept[NotFoundException] {
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 

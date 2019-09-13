@@ -1181,16 +1181,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "fail with a 422 (unprocessable entity) when it's not allowed to subscribe to the API" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(Some(aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
-        .thenReturn(failed(SubscriptionForbiddenException(anAPI())))
-
-      val result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
-
-      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, ErrorCode.SUBSCRIPTION_FORBIDDEN)
-    }
-
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(Some(aNewApplicationResponse()))
       when(mockSubscriptionService.createSubscriptionForApplication(mockEq(applicationId), any[APIIdentifier])(any[HeaderCarrier]))
