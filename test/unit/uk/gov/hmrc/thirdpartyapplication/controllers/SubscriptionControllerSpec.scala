@@ -22,26 +22,37 @@ import akka.stream.Materializer
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.Application
+import play.api.http.HttpVerbs.GET
 import play.api.http.Status.{INTERNAL_SERVER_ERROR, OK}
-import play.api.mvc.Result
+import play.api.http.Writeable
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import play.api.test.Helpers.{route, writeableOf_AnyContentAsEmpty}
+import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful, apply => _}
 
-class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication {
+class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with GuiceOneAppPerSuite {
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
+
+  override implicit lazy val app: Application = GuiceApplicationBuilder()
+    .disable[com.kenshoo.play.metrics.PlayModule]
+    .configure("metrics.enabled" -> false)
+    .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
+    .build
 
   trait Setup {
-    val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
-
-    val underTest = new SubscriptionController(mockSubscriptionRepository)
+    implicit lazy val materializer: Materializer = app.materializer
+    def callEndpointWith[A: Writeable](request: Request[A]): Result = await(route(app, request).get)
   }
 
   "getSubscribers" should {
@@ -51,7 +62,18 @@ class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with Mockito
       private val subscribers = Set(UUID.randomUUID(), UUID.randomUUID())
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
-      val result: Result = await(underTest.getSubscribers(apiIdentifier.context, apiIdentifier.version)(FakeRequest()))
+      val result: Result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
+
+      status(result) shouldBe OK
+      jsonBodyOf(result).as[SubscribersResponse] shouldBe SubscribersResponse(subscribers)
+    }
+
+    "return the subscribers from the repository for a multi-segment API" in new Setup {
+      private val apiIdentifier = APIIdentifier("hello/world", "1.0")
+      private val subscribers = Set(UUID.randomUUID(), UUID.randomUUID())
+      when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
+
+      val result: Result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
 
       status(result) shouldBe OK
       jsonBodyOf(result).as[SubscribersResponse] shouldBe SubscribersResponse(subscribers)
@@ -61,7 +83,7 @@ class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with Mockito
       private val apiIdentifier = APIIdentifier("hello", "1.0")
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(failed(new RuntimeException("something went wrong")))
 
-      val result: Result = await(underTest.getSubscribers(apiIdentifier.context, apiIdentifier.version)(FakeRequest()))
+      val result: Result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       (jsonBodyOf(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"
