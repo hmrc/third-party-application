@@ -987,18 +987,6 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
   }
 
-  "count" should {
-    "return number of documents in collection" in {
-      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-
-      await(applicationRepository.save(firstApplication))
-      await(applicationRepository.save(secondApplication))
-
-      await(applicationRepository.count()) shouldBe 2
-    }
-  }
-
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,

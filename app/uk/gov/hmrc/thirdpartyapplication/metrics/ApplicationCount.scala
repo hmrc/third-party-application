@@ -20,10 +20,10 @@ import javax.inject.Inject
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
+
 import scala.concurrent.{ExecutionContext, Future}
 
 class ApplicationCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] =
-    applicationRepository.count()
-      .map(applicationCount => Map("applicationCount" -> applicationCount.toInt))
+    applicationRepository.count.map(applicationCount => Map("applicationCount" -> applicationCount))
 }

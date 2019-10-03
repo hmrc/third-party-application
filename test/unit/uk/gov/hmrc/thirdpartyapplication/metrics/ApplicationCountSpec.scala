@@ -36,7 +36,7 @@ class ApplicationCountSpec extends UnitSpec with MockitoSugar {
   "metrics refresh" should {
     "output the application count correctly" in new Setup {
       private val numberOfApplications: Int = 10
-      when(mockApplicationRepository.count()).thenReturn(Future.successful(numberOfApplications.toLong))
+      when(mockApplicationRepository.count).thenReturn(Future.successful(numberOfApplications))
 
       private val result: Map[String, Int] = await(metricUnderTest.metrics)
 
