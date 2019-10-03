@@ -24,6 +24,7 @@ import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.ReadConcern.Local
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
@@ -303,6 +304,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def delete(id: UUID): Future[HasSucceeded] = remove("id" -> id).map(_ => HasSucceeded)
+
+  def count(): Future[Long] = collection.count(None, None, 0, None, Local)
 }
 
 sealed trait ApplicationModificationResult
