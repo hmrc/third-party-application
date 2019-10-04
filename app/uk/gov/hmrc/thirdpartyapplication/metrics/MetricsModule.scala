@@ -31,12 +31,14 @@ import uk.gov.hmrc.metrix.persistence.MongoMetricRepository
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
+import scala.language.postfixOps
 
 class MetricsModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
       bind[MetricOrchestrator].toProvider[MetricsOrchestratorProvider],
-      bind[MetricsSources].toProvider[MetricsSourcesProvider])
+      bind[MetricsSources].toProvider[MetricsSourcesProvider],
+      bind[MetricsScheduler].toSelf.eagerly)
   }
 }
 
@@ -46,13 +48,22 @@ class MetricsScheduler @Inject()(env: Environment,
                                  actorSystem: ActorSystem,
                                  configuration: Configuration,
                                  metricOrchestrator: MetricOrchestrator)(implicit val ec: ExecutionContext) {
-  actorSystem.scheduler.schedule(2 minutes, 1 hour) {
+  private val initialDelay = 2 minutes
+  private val interval = 1 hour
+
+  Logger.info(s"Configuring Metrics schedule to run every $interval")
+
+  actorSystem.scheduler.schedule(initialDelay, interval) {
     Logger.info(s"Running Metrics Collection Process")
     metricOrchestrator
       .attemptToUpdateAndRefreshMetrics()
       .map(_.andLogTheResult())
       .recover { case e: RuntimeException => Logger.error(s"An error occurred processing metrics: ${e.getMessage}", e) }
   }
+
+  lifecycle.addStopHook(() => Future {
+    actorSystem.terminate()
+  })
 }
 
 @Singleton
