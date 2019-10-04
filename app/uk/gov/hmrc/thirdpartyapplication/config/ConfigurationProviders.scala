@@ -42,7 +42,6 @@ class ConfigurationModule extends Module {
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[SetLastAccessedDateJobConfig].toProvider[SetLastAccessDateJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
-      bind[RefreshMetricsJobConfig].toProvider[RefreshMetricsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -135,17 +134,6 @@ class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: C
         .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(2, HOURS), enabled = true))
       ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
     }
-}
-
-@Singleton
-class RefreshMetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment) extends Provider[RefreshMetricsJobConfig] with ServicesConfig {
-  override protected def mode: Mode = environment.mode
-
-  override def get(): RefreshMetricsJobConfig = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.refreshMetricsJob")
-      .getOrElse(JobConfig(FiniteDuration(30, SECONDS), FiniteDuration(1, HOURS), enabled = true))
-    RefreshMetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
-  }
 }
 
 @Singleton
