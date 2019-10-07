@@ -24,8 +24,9 @@ import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.api.{FailoverStrategy, ReadPreference}
+import reactivemongo.api.{FailoverStrategy, ReadConcern, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
@@ -40,7 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
@@ -303,6 +304,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def delete(id: UUID): Future[HasSucceeded] = remove("id" -> id).map(_ => HasSucceeded)
+
+  def documentsWithFieldMissing(fieldName: String): Future[Int] = {
+    collection.count(Some(Json.obj(fieldName -> Json.obj(f"$$exists" -> false))), None, 0, None, Available).map(_.toInt)
+  }
+
 }
 
 sealed trait ApplicationModificationResult
