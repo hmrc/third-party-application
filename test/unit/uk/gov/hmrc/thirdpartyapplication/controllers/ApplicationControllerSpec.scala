@@ -43,7 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
@@ -66,6 +66,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockAuthConnector = mock[AuthConnector]
     val mockSubscriptionService = mock[SubscriptionService]
     val mockAuthConfig = mock[AuthConfig]
+    val mockGatekeeperService = mock[GatekeeperService]
 
     when(mockAuthConfig.enabled).thenReturn(true)
 
@@ -79,7 +80,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockAuthConfig)
+      mockAuthConfig,
+      mockGatekeeperService)
   }
 
   trait PrivilegedAndRopcSetup extends Setup {

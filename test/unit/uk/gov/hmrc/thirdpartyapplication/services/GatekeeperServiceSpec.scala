@@ -78,6 +78,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
     val mockTrustedApplications = mock[TrustedApplications]
+    val mockApplicationService = mock[ApplicationService]
     when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
 
     val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
@@ -93,7 +94,8 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockApiGatewayStore,
       applicationResponseCreator,
       mockTrustedApplications,
-      mockThirdPartyDelegatedAuthorityConnector)
+      mockThirdPartyDelegatedAuthorityConnector,
+      mockApplicationService)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {

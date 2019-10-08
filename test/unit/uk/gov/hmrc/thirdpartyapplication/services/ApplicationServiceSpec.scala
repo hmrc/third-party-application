@@ -35,7 +35,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.{Environment, PRODUCTION}
@@ -75,6 +75,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val response = mock[HttpResponse]
     val trustedApplicationId1 = UUID.fromString("162017dc-607b-4405-8208-a28308672f76")
     val trustedApplicationId2 = UUID.fromString("162017dc-607b-4405-8208-a28308672f77")
+    val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
+    val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
+
 
     val mockTrustedApplications = mock[TrustedApplications]
     when(mockTrustedApplications.isTrusted(any[ApplicationData]())).thenReturn(false)
@@ -102,7 +105,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApiGatewayStore,
       applicationResponseCreator,
       mockCredentialGenerator,
-      mockTrustedApplications)
+      mockTrustedApplications,
+      mockApiSubscriptionFieldsConnector,
+      mockThirdPartyDelegatedAuthorityConnector)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier]))

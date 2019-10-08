@@ -28,6 +28,8 @@ import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
+import uk.gov.hmrc.thirdpartyapplication.models.Environment
+import uk.gov.hmrc.thirdpartyapplication.models.Environment.SANDBOX
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
@@ -42,6 +44,19 @@ trait AuthorisationWrapper {
 
   def requiresAuthentication(): ActionBuilder[Request] = {
     Action andThen AuthenticatedAction()
+  }
+
+  def checkOnlyStandardAndSandbox(applicationId: UUID): ActionBuilder[Request] = {
+    Action andThen ApplicationFilter(applicationId)
+  }
+
+    private case class ApplicationFilter(applicationId: UUID) extends AuthenticationFilter() {
+    def filter[A](input: Request[A]) = {
+      applicationService.fetch(applicationId).map {
+        case Some(app) if app.access.accessType == STANDARD && app.environment.contains(SANDBOX) => None
+        case _ => Some(Results.Forbidden("forbidden"))
+      }
+    }
   }
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
