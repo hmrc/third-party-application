@@ -553,13 +553,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   private def loggedInUser(implicit hc: HeaderCarrier) = hc.headers find (_._1 == LOGGED_IN_USER_EMAIL_HEADER) map (_._2) getOrElse ""
 
-  private def auditDeleteSubordinateApplicationAction(gatekeeperId: String, app: ApplicationData, action: AuditAction,
-                                    extra: Map[String, String] = Map.empty)(implicit hc: HeaderCarrier): Future[AuditResult] = {
-    auditService.audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra,
-      Map("gatekeeperId" -> gatekeeperId))
-  }
-
-
 }
 
 @Singleton
