@@ -1031,6 +1031,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
         val result = await (underTest.validateApplicationName("Invalid name HMRC", sandbox))
 
+        // TODO: From AC error should say:
+        // "Choose an application name that does not include HMRC's name"
+        // Should we just return that it was a black listed name and let the FE show the error
         result shouldBe Invalid(Seq("Must not contain 'HMRC'"))
       }
 
@@ -1070,6 +1073,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
         val result = await (underTest.validateApplicationName("my duplicated name", production))
 
+        // TODO: From the AC the error should say
+        // Choose an application name that is not already registered on the Developer Hub
+        // Should we just return that it was a duplicate and let the FE worry about the error.
         result shouldBe Invalid(Seq("The name 'my duplicated name' is a duplicate"))
       }
 

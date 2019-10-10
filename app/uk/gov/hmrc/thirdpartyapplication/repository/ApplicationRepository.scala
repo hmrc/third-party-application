@@ -152,6 +152,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
 
+  // TODO: AT's say unique for any app in env in ANY state.
+  // Change to not check the state.
+  // Is this used anywhere else?
   def fetchNonTestingApplicationByName(name: String): Future[Option[ApplicationData]] = {
     find(f"$$and" -> Json.arr(
       Json.obj("normalisedName" -> name.toLowerCase),
