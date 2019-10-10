@@ -808,7 +808,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   }
 
-  // TODO
   "validate name" should {
     "Allow a valid app" in new Setup {
 
@@ -822,7 +821,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.arr())
+      jsonBodyOf(result) shouldBe Json.obj()
 
       verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
     }
@@ -832,16 +831,18 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
       when(mockApplicationService.validateApplicationName(any(), any())(any[HeaderCarrier]))
-        .thenReturn(successful(Invalid(Seq("Invalid name"))))
+        .thenReturn(successful(Invalid.invalidName))
 
       val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.arr("Invalid name"))
+      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
 
       verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
     }
+
+    // TODO: Test duplicate name error is returned
   }
 
   "query dispatcher" should {

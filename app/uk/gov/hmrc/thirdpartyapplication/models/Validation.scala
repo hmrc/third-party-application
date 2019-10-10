@@ -18,12 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 sealed trait ValidationResult
 
-object ValidationResult {
-  def apply(errors: Seq[String]) : ValidationResult = {
-    if (errors.isEmpty) Valid
-    else Invalid(errors)
-  }
-}
-
 case object Valid extends ValidationResult
-case class Invalid(errors : Seq[String]) extends ValidationResult
+case class Invalid(invalidName: Boolean, duplicateName: Boolean) extends ValidationResult
+
+object Invalid {
+  def invalidName = Invalid(invalidName = true, duplicateName = false)
+  def duplicateName = Invalid(invalidName = false, duplicateName = true)
+}

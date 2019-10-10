@@ -172,14 +172,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
         applicationService
           .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.environment)
-          .map(result => {
-            val errors =
-              result match {
-                case Valid => Seq.empty
-                case Invalid(errors) => errors
-              }
+          .map((result: ValidationResult) => {
 
-            Ok(Json.obj("errors" -> errors))
+            val json = result match {
+              case Valid => Json.obj()
+              case Invalid(invalidName, duplicateName) => Json.obj("errors" -> Json.obj("invalidName" -> invalidName, "duplicateName" -> duplicateName))
+            }
+
+            Ok(json)
           })
 
       } recover recovery
