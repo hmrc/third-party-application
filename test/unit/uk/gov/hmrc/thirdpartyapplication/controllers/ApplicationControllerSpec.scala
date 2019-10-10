@@ -815,7 +815,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val applicationName = "my valid app name"
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
-      when(mockApplicationService.validateApplicationName(any(), any()))
+      when(mockApplicationService.validateApplicationName(any(), any())(any[HeaderCarrier]))
         .thenReturn(successful(Valid))
 
       val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
@@ -824,14 +824,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.arr())
 
-      verify(mockApplicationService).validateApplicationName(applicationName, Environment.PRODUCTION)
+      verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
     }
 
     "Reject an app name as it contains a block bit of text" in new Setup {
       val applicationName = "my invalid HMRC app name"
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
-      when(mockApplicationService.validateApplicationName(any(), any()))
+      when(mockApplicationService.validateApplicationName(any(), any())(any[HeaderCarrier]))
         .thenReturn(successful(Invalid(Seq("Invalid name"))))
 
       val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
@@ -840,7 +840,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.arr("Invalid name"))
 
-      verify(mockApplicationService).validateApplicationName(applicationName, Environment.PRODUCTION)
+      verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
     }
   }
 

@@ -26,6 +26,7 @@ import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
@@ -297,7 +298,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     for {
       app <- fetchApp(applicationId)
       upliftedApp = uplift(app)
-      _ <- assertAppHasUniqueName(applicationName, app.access.accessType, Some(app))
+      _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
       updatedApp <- applicationRepository.save(upliftedApp)
       _ <- insertStateHistory(
         app,
@@ -312,11 +313,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield UpliftRequested
   }
 
-  private def assertAppHasUniqueName(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
-                                    (implicit hc: HeaderCarrier) = {
+  // TODO: Make this not throw exceptions
+  // TODO: This doesn't check for black listed names
+  private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
+                                            (implicit hc: HeaderCarrier) = {
     for {
-      appWithSameName <- applicationRepository.fetchNonTestingApplicationByName(submittedAppName)
-      _ = if (appWithSameName.isDefined) {
+      unique <- doesAppHasUniqueName(submittedAppName) // Call out validateName method
+      _ = if (!unique) {
         accessType match {
           case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
             Map("applicationName" -> submittedAppName))
@@ -328,6 +331,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         throw ApplicationAlreadyExists(submittedAppName)
       }
     } yield ()
+  }
+
+  private def doesAppHasUniqueName(submittedAppName: String)
+                                    (implicit hc: HeaderCarrier):Future[Boolean] = {
+    applicationRepository
+      .fetchNonTestingApplicationByName(submittedAppName)
+      .map(appWithSameName => !appWithSameName.isDefined)
   }
 
   private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -360,8 +370,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val f = for {
       _ <- application.access.accessType match {
-        case PRIVILEGED => assertAppHasUniqueName(application.name, PRIVILEGED)
-        case ROPC => assertAppHasUniqueName(application.name, ROPC)
+        case PRIVILEGED => assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
+        case ROPC => assertAppHasUniqueNameAndAudit(application.name, ROPC)
         case _ => successful(Unit)
       }
 
@@ -495,18 +505,33 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def validateApplicationName(applicationName: String, environment: Environment): Future[ValidationResult] = {
+  def validateApplicationName(applicationName: String, environment: Environment)
+                             (implicit hc: HeaderCarrier) : Future[ValidationResult] = {
 
     def isInvalidName(blackListedName: String) = applicationName.toLowerCase().contains(blackListedName.toLowerCase)
 
-    val errors = nameValidationConfig.nameBlackList
-      .filter(isInvalidName)
-      .map(blackListedName => s"Must not contain '$blackListedName'")
+    def getBlackListedNameValidationErrors: Future[Seq[String]] = {
+      val errors =
+        nameValidationConfig.nameBlackList
+        .filter(isInvalidName)
+        .map(blackListedName => s"Must not contain '$blackListedName'")
 
-    Future.successful(
-      if (errors.isEmpty) Valid
-      else Invalid(errors)
-    )
+      Future.successful(errors)
+    }
+
+    def getDuplicateNameErrors: Future[Seq[String]] = {
+      doesAppHasUniqueName(applicationName)
+        .map(unique =>
+          if (unique) Seq.empty
+          else Seq(s"The name '${applicationName}' is a duplicate")
+        )
+      // TODO Catch exception, and return seq or errors
+    }
+
+    for {
+      blackListedNameValidationErrors <- getBlackListedNameValidationErrors
+      duplicateNameErrors <- getDuplicateNameErrors
+    } yield ValidationResult(blackListedNameValidationErrors ++ duplicateNameErrors)
   }
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],

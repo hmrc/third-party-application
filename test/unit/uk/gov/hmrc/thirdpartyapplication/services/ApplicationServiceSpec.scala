@@ -81,6 +81,11 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId1))).thenReturn(true)
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId2))).thenReturn(true)
 
+    // TODO: Not sure about this here...
+    // Use some more traits? :(
+    when(mockApplicationRepository.fetchNonTestingApplicationByName(any()))
+      .thenReturn(Future.successful(None))
+
     val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -1006,15 +1011,17 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
-  // Should, must, can (notifying?)
-
-  // TODO
   "validate application name" must {
+
+
     "in sandbox" should {
+      val sandbox: Environment = Environment.SANDBOX
+
       "allow valid name" in new Setup {
+
         when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
 
-        val result = await (underTest.validateApplicationName("my application name", Environment.SANDBOX))
+        val result = await (underTest.validateApplicationName("my application name", sandbox))
 
         result shouldBe Valid
       }
@@ -1022,7 +1029,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       "block a name with HMRC in" in new Setup {
         when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
 
-        val result = await (underTest.validateApplicationName("Invalid name HMRC", Environment.SANDBOX))
+        val result = await (underTest.validateApplicationName("Invalid name HMRC", sandbox))
 
         result shouldBe Invalid(Seq("Must not contain 'HMRC'"))
       }
@@ -1030,7 +1037,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       "block a name with multiple blacklisted names in" in new Setup {
         when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
 
-        val result = await (underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", Environment.SANDBOX))
+        val result = await (underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", sandbox))
 
         result shouldBe Invalid(Seq("Must not contain 'InvalidName1'", "Must not contain 'InvalidName2'"))
       }
@@ -1038,21 +1045,37 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       "block an invalid ignoring case" in new Setup {
         when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName"))
 
-        val result = await (underTest.validateApplicationName("invalidname", Environment.SANDBOX))
+        val result = await (underTest.validateApplicationName("invalidname", sandbox))
 
         result shouldBe Invalid(Seq("Must not contain 'InvalidName'"))
       }
     }
 
     "in production" must {
-      "allow valid name " in new Setup {
-//        underTest.validateApplicationName("my application name", Environment.PRODUCTION)
+      val production: Environment = Environment.PRODUCTION
+
+      "allow valid name if not duplicate" in new Setup {
+          when(mockNameValidationConfig.nameBlackList).thenReturn(Seq.empty)
+
+          val result = await (underTest.validateApplicationName("my application name", production))
+
+          result shouldBe Valid
       }
 
-      "block a name with HMRC in" in new Setup {
-
-      }
       "block a duplicated name" in new Setup {
+        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq.empty)
+
+        when(mockApplicationRepository.fetchNonTestingApplicationByName(any()))
+          .thenReturn(Future.successful(Some(anApplicationData(UUID.randomUUID()))))
+
+        val result = await (underTest.validateApplicationName("my duplicated name", production))
+
+        result shouldBe Invalid(Seq("The name 'my duplicated name' is a duplicate"))
+      }
+
+      // TODO: Check for name validation. e.g. doesn't contain HMRC?
+
+      "Check name again?" in new Setup {
 
       }
     }
@@ -1314,7 +1337,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
   private val requestedByEmail = "john.smith@example.com"
 
-  private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
+  private def anApplicationData(applicationId: UUID,
+                                state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR)),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),

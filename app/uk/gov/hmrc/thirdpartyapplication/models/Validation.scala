@@ -18,5 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 sealed trait ValidationResult
 
+object ValidationResult {
+  def apply(errors: Seq[String]) : ValidationResult = {
+    if (errors.isEmpty) Valid
+    else Invalid(errors)
+  }
+}
+
 case object Valid extends ValidationResult
 case class Invalid(errors : Seq[String]) extends ValidationResult
