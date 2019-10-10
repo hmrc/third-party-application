@@ -30,11 +30,12 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnecto
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.{ValidationResult, _}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -58,8 +59,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    apiGatewayStore: ApiGatewayStore,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
-                                   trustedApplications: TrustedApplications) {
-
+                                   trustedApplications: TrustedApplications,
+                                   nameValidationConfig: ApplicationNameValidationConfig) {
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -492,6 +493,20 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
     } yield result
 
+  }
+
+  def validateApplicationName(applicationName: String, environment: Environment): Future[ValidationResult] = {
+
+    def isInvalidName(blackListedName: String) = applicationName.toLowerCase().contains(blackListedName.toLowerCase)
+
+    val errors = nameValidationConfig.nameBlackList
+      .filter(isInvalidName)
+      .map(blackListedName => s"Must not contain '$blackListedName'")
+
+    Future.successful(
+      if (errors.isEmpty) Valid
+      else Invalid(errors)
+    )
   }
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],

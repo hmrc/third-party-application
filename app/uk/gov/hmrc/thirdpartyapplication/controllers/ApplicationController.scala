@@ -156,14 +156,35 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def validateCredentials = Action.async(BodyParsers.parse.json) { implicit request =>
-    withJsonBody[ValidationRequest] { vr =>
+  def validateCredentials: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+    withJsonBody[ValidationRequest] { vr: ValidationRequest =>
       credentialService.validateCredentials(vr) map {
         case Some(e) => Ok(Json.obj("environment" -> e))
         case None => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
       } recover recovery
     }
   }
+
+  def validateApplicationName: Action[JsValue] =
+    Action.async(BodyParsers.parse.json) { implicit request =>
+
+      withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
+
+        applicationService
+          .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.environment)
+          .map(result => {
+            val errors =
+              result match {
+                case Valid => Seq.empty
+                case Invalid(errors) => errors
+              }
+
+            Ok(Json.obj("errors" -> errors))
+          })
+
+      } recover recovery
+  }
+
 
   def requestUplift(id: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpliftRequest] { upliftRequest =>
