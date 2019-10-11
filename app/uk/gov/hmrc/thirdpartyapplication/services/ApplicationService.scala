@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ValidationResult, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -507,7 +507,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def validateApplicationName(applicationName: String)
-                             (implicit hc: HeaderCarrier): Future[ValidationResult] = {
+                             (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
 
     def isBlackListedName(blackListedName: String) = applicationName.toLowerCase().contains(blackListedName.toLowerCase)
 

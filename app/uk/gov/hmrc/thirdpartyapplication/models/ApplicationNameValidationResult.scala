@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-sealed trait ValidationResult
+sealed trait ApplicationNameValidationResult
 
-case object Valid extends ValidationResult
-case class Invalid(invalidName: Boolean, duplicateName: Boolean) extends ValidationResult
+case object Valid extends ApplicationNameValidationResult
+case class Invalid(invalidName: Boolean, duplicateName: Boolean) extends ApplicationNameValidationResult
 
 object Invalid {
   def invalidName = Invalid(invalidName = true, duplicateName = false)

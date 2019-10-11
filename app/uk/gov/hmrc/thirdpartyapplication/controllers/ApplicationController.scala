@@ -172,7 +172,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
         applicationService
           .validateApplicationName(applicationNameValidationRequest.applicationName)
-          .map((result: ValidationResult) => {
+          .map((result: ApplicationNameValidationResult) => {
 
             val json = result match {
               case Valid => Json.obj()
