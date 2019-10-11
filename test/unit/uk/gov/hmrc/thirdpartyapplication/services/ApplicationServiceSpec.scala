@@ -1229,7 +1229,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val gatekeeperUserId = "big.boss.gatekeeper"
     val request = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
     val applicationId = UUID.randomUUID()
-    val auditFunction: ApplicationData => Future[AuditResult] = _ => Future.successful(mock[AuditResult])
+    val auditFunction = mock[ApplicationData => Future[AuditResult]]
     val application = anApplicationData(applicationId)
     val api1 = APIIdentifier("hello", "1.0")
     val api2 = APIIdentifier("goodbye", "1.0")
@@ -1244,6 +1244,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockStateHistoryRepository.deleteByApplicationId(any())).thenReturn(successful(HasSucceeded))
       when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockAuditService.audit(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.successful(AuditResult.Success))
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -1290,7 +1291,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         application.name, deleteRequestedBy, application.admins.map(_.emailAddress))
     }
 
-    "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new Setup {
+    "audit the application deletion" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      verify(auditFunction).apply(application)
+    }
+
+    "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
       when(mockApplicationRepository.fetch(any())).thenReturn(None)
 
       val result = await(underTest.deleteApplication(applicationId, request, auditFunction))
@@ -1300,6 +1306,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
         mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
+
+
   }
 
   "Search" should {

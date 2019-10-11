@@ -29,6 +29,7 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
@@ -377,35 +378,6 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val result = await(underTest.resendVerification(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name), anyString(), eqTo(Set(application.state.requestedByEmailAddress.get)))(any[HeaderCarrier]())
-    }
-  }
-
-  "deleting an application" should {
-    val deleteRequestedBy = "email@example.com"
-    val gatekeeperUserId = "big.boss.gatekeeper"
-    val request = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
-    val applicationId = UUID.randomUUID()
-    val application = anApplicationData(applicationId)
-    val api1 = APIIdentifier("hello", "1.0")
-    val api2 = APIIdentifier("goodbye", "1.0")
-
-    trait DeleteApplicationSetup extends Setup {
-      when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
-      when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
-      when(mockApiGatewayStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockApplicationRepository.delete(any())).thenReturn(successful(HasSucceeded))
-      when(mockStateHistoryRepository.deleteByApplicationId(any())).thenReturn(successful(HasSucceeded))
-      when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-    }
-
-    "audit the application deletion" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request))
-      verify(mockAuditService).audit(ApplicationDeleted,
-        AuditHelper.gatekeeperActionDetails(application) + ("requestedByEmailAddress" -> deleteRequestedBy),
-        Map("gatekeeperId" -> gatekeeperUserId))
     }
   }
 

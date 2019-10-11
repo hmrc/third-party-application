@@ -33,6 +33,7 @@ import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
@@ -1458,6 +1459,40 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_OK
     }
   }
+//
+//  "deleteSubordinateApplication" should {
+//    val applicationId = UUID.randomUUID()
+//    val gatekeeperUserId = "big.boss.gatekeeper"
+//    val requestedByEmailAddress = "admin@example.com"
+//    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+//    val auditFunction: ApplicationData => Future[AuditResult] = _ => Future.successful(mock[AuditResult])
+//
+//
+//    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
+//
+//      givenUserIsAuthenticated(underTest)
+//
+//      when(mockApplicationService.deleteApplication(any(), any(), any())(any[HeaderCarrier]())).thenReturn(successful(Deleted))
+//
+//      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+//
+//      status(result) shouldBe SC_NO_CONTENT
+//      verify(mockApplicationService).deleteApplication(applicationId, deleteRequest, auditFunction)
+//    }
+
+//    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+//
+//      givenUserIsAuthenticated(underTest)
+//
+//      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(failed(new RuntimeException("Expected test failure")))
+//
+//      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+//
+//      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+//      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
+//    }
+
+//  }
 
   private def anAPI() = {
     new APIIdentifier("some-context", "1.0")
