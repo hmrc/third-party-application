@@ -814,7 +814,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val applicationName = "my valid app name"
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
-      when(mockApplicationService.validateApplicationName(any(), any())(any[HeaderCarrier]))
+      when(mockApplicationService.validateApplicationName(any())(any[HeaderCarrier]))
         .thenReturn(successful(Valid))
 
       val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
@@ -823,14 +823,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       jsonBodyOf(result) shouldBe Json.obj()
 
-      verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
+      verify(mockApplicationService).validateApplicationName(mockEq(applicationName))(any[HeaderCarrier])
     }
 
     "Reject an app name as it contains a block bit of text" in new Setup {
       val applicationName = "my invalid HMRC app name"
-      val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
+      val payload = s"""{"applicationName":"${applicationName}"}"""
 
-      when(mockApplicationService.validateApplicationName(any(), any())(any[HeaderCarrier]))
+      when(mockApplicationService.validateApplicationName(any())(any[HeaderCarrier]))
         .thenReturn(successful(Invalid.invalidName))
 
       val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
@@ -839,7 +839,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
 
-      verify(mockApplicationService).validateApplicationName(mockEq(applicationName), mockEq(Environment.PRODUCTION))(any[HeaderCarrier])
+      verify(mockApplicationService).validateApplicationName(mockEq(applicationName))(any[HeaderCarrier])
     }
 
     // TODO: Test duplicate name error is returned

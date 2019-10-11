@@ -1011,79 +1011,43 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
-  "validate application name" must {
+  "validate application name" should {
 
 
-    "in sandbox" should {
-      val sandbox: Environment = Environment.SANDBOX
+    "allow valid name" in new Setup {
 
-      "allow valid name" in new Setup {
+      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
 
-        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
+      val result = await(underTest.validateApplicationName("my application name"))
 
-        val result = await (underTest.validateApplicationName("my application name", sandbox))
-
-        result shouldBe Valid
-      }
-
-      "block a name with HMRC in" in new Setup {
-        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
-
-        val result = await (underTest.validateApplicationName("Invalid name HMRC", sandbox))
-
-        // TODO: From AC error should say:
-        // "Choose an application name that does not include HMRC's name"
-        // Should we just return that it was a black listed name and let the FE show the error
-        result shouldBe Invalid.invalidName
-      }
-
-      "block a name with multiple blacklisted names in" in new Setup {
-        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
-
-        val result = await (underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", sandbox))
-
-        result shouldBe Invalid.invalidName
-      }
-
-      "block an invalid ignoring case" in new Setup {
-        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName"))
-
-        val result = await (underTest.validateApplicationName("invalidname", sandbox))
-
-        result shouldBe Invalid.invalidName
-      }
+      result shouldBe Valid
     }
 
-    "in production" must {
-      val production: Environment = Environment.PRODUCTION
+    "block a name with HMRC in" in new Setup {
+      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
 
-      "allow valid name if not duplicate" in new Setup {
-          when(mockNameValidationConfig.nameBlackList).thenReturn(Seq.empty)
+      val result = await(underTest.validateApplicationName("Invalid name HMRC"))
 
-          val result = await (underTest.validateApplicationName("my application name", production))
+      // TODO: From AC error should say:
+      // "Choose an application name that does not include HMRC's name"
+      // Should we just return that it was a black listed name and let the FE show the error
+      result shouldBe Invalid.invalidName
+    }
 
-          result shouldBe Valid
-      }
+    "block a name with multiple blacklisted names in" in new Setup {
+      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
 
-      "block a duplicated name" in new Setup {
-        when(mockNameValidationConfig.nameBlackList).thenReturn(Seq.empty)
+      val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2"))
 
-        when(mockApplicationRepository.fetchNonTestingApplicationByName(any()))
-          .thenReturn(Future.successful(Some(anApplicationData(UUID.randomUUID()))))
+      result shouldBe Invalid.invalidName
+    }
 
-        val result = await (underTest.validateApplicationName("my duplicated name", production))
+    "block an invalid ignoring case" in new Setup {
+      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName"))
 
-        // TODO: From the AC the error should say
-        // Choose an application name that is not already registered on the Developer Hub
-        // Should we just return that it was a duplicate and let the FE worry about the error.
-        result shouldBe Invalid.duplicateName
-      }
+      val result = await(underTest.validateApplicationName("invalidname"))
 
-      // TODO: Check for name validation. e.g. doesn't contain HMRC?
-
-      "Check name again?" in new Setup {
-
-      }
+      result shouldBe Invalid.invalidName
     }
   }
 

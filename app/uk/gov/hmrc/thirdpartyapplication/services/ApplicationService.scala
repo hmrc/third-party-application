@@ -506,7 +506,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def validateApplicationName(applicationName: String, environment: Environment)
+  def validateApplicationName(applicationName: String)
                              (implicit hc: HeaderCarrier): Future[ValidationResult] = {
 
     def isBlackListedName(blackListedName: String) = applicationName.toLowerCase().contains(blackListedName.toLowerCase)

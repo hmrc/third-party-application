@@ -21,8 +21,7 @@ PUT           /application/:id/access/overrides                      uk.gov.hmrc
 
 GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: java.util.UUID)
 POST          /application/credentials/validate                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateCredentials
-# TODO: Make work
-# POST          /application/application-name/validate
+POST          /application/name/validate                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName
 
 
 POST          /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addCollaborator(id: java.util.UUID)
@@ -52,7 +51,6 @@ POST          /verify-uplift/:code                                   uk.gov.hmrc
 GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
 GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: java.util.UUID)
 
-# TODO: Interesting
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: java.util.UUID)
 
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: String, version: String)
