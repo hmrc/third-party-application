@@ -44,6 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.Future.successful
 import scala.concurrent.duration.Duration
@@ -335,6 +336,10 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       "aaaaaaaaaa",
       "aaaaaaaaaa",
       "aaaaaaaaaa",
-      ApplicationTokens(environmentToken), state, Standard(Seq.empty, None, None))
+      ApplicationTokens(environmentToken),
+      state,
+      Standard(Seq.empty, None, None),
+      HmrcTime.now,
+      Some(HmrcTime.now))
   }
 }

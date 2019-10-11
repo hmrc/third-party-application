@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext
 
@@ -139,7 +140,9 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
       wso2ApplicationName = "wso2ApplicationName",
       wso2Username = "wso2Username",
       tokens = tokens,
-      state = testingState()
+      state = testingState(),
+      createdOn = DateTimeUtils.now,
+      lastAccess = Some(DateTimeUtils.now)
     )
 
     val updatedApp = previousApp.copy(

@@ -36,8 +36,8 @@ case class ApplicationData(id: UUID,
                            tokens: ApplicationTokens,
                            state: ApplicationState,
                            access: Access = Standard(Seq.empty, None, None),
-                           createdOn: DateTime = DateTimeUtils.now,
-                           lastAccess: Option[DateTime] = Some(DateTimeUtils.now),
+                           createdOn: DateTime,
+                           lastAccess: Option[DateTime],
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
@@ -58,6 +58,7 @@ object ApplicationData {
       case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
       case _ => ApplicationState(TESTING)
     }
+    val createdOn = DateTimeUtils.now
 
     ApplicationData(
       UUID.randomUUID,
@@ -71,6 +72,8 @@ object ApplicationData {
       ApplicationTokens(environmentToken),
       applicationState,
       application.access,
+      createdOn,
+      Some(createdOn),
       environment = application.environment.toString)
   }
 }
