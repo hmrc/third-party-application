@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.play.test.UnitSpec
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.time.DateTimeUtils
 
 class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
 
@@ -62,7 +63,7 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
       "a", "a", "a",
       ApplicationTokens(EnvironmentToken("cid", "cs", "at")),
       productionState("user1"),
-      Standard(Seq.empty, None, None))
+      Standard(Seq.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))
 
     "create object" in {
@@ -113,6 +114,11 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
     "defer to ROPC accessType to determine application state when the app is for the production environment" in {
       val actual = createRequest(Ropc(), Environment.PRODUCTION)
       actual.state.name shouldBe PRODUCTION
+    }
+
+    "use the same value for createdOn and lastAccess fields" in {
+      val actual = createRequest(Standard(), Environment.PRODUCTION)
+      actual.createdOn shouldBe actual.lastAccess.get
     }
   }
 

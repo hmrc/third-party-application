@@ -168,6 +168,8 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
         EnvironmentToken(prodClientId, "bbb", "ccc")
       ),
       state,
-      Standard(Seq.empty, None, None))
+      Standard(Seq.empty, None, None),
+      HmrcTime.now,
+      Some(HmrcTime.now))
   }
 }

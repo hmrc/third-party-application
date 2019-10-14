@@ -49,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-
+import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
@@ -512,7 +512,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         wso2ApplicationName = "wso2ApplicationName",
         wso2Username = "wso2Username",
         tokens = tokens,
-        state = testingState()
+        state = testingState(),
+        createdOn = HmrcTime.now,
+        lastAccess = Some(HmrcTime.now)
       )
 
       val updatedApplication = existingApplication.copy(
@@ -1274,6 +1276,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       ApplicationTokens(productionToken),
       state,
       access,
+      HmrcTime.now,
+      Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
       environment = environment.toString)
   }

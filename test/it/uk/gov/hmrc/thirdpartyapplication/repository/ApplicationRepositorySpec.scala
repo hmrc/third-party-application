@@ -1027,6 +1027,8 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
       state,
       access,
+      HmrcTime.now,
+      Some(HmrcTime.now),
       checkInformation = checkInformation)
   }
 

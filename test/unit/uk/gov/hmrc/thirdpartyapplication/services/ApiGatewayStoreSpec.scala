@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.RealApiGatewayStore
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -103,7 +104,9 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         wso2ApplicationName,
         ApplicationTokens(
           EnvironmentToken(nextString(2), nextString(2), serverToken)),
-        testingState())
+        testingState(),
+        createdOn = DateTimeUtils.now,
+        lastAccess = Some(DateTimeUtils.now))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.updateApplication(cookie, wso2ApplicationName, SILVER)).
@@ -166,6 +169,8 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
       ApplicationTokens(
         EnvironmentToken(nextString(2), nextString(2), serverToken)),
       testingState(),
+      createdOn = DateTimeUtils.now,
+      lastAccess = Some(DateTimeUtils.now),
       rateLimitTier = Some(GOLD))
 
     "add a subscription to an application in AWS and WSO2" in new Setup {
@@ -228,6 +233,8 @@ class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar w
         ApplicationTokens(
           EnvironmentToken(nextString(2), nextString(2), serverToken)),
         testingState(),
+        createdOn = DateTimeUtils.now,
+        lastAccess = Some(DateTimeUtils.now),
         rateLimitTier = Some(GOLD))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
