@@ -187,7 +187,10 @@ class AuthConfigProvider @Inject()(val runModeConfiguration: Configuration, envi
     val superUserRole = getString("roles.super-user")
     val adminRole = getString("roles.admin")
     val enabled = getConfBool("auth.enabled", true)
-    AuthConfig(url, userRole, superUserRole, adminRole, enabled)
+
+    val canDeleteApplications: Boolean = ConfigHelper.getConfig("canDeleteApplications", runModeConfiguration.getBoolean)
+
+    AuthConfig(url, userRole, superUserRole, adminRole, enabled, canDeleteApplications)
   }
 }
 

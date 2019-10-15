@@ -33,7 +33,6 @@ import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
@@ -62,6 +61,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
+    def canDeleteApplications() = true
+
     val mockCredentialService = mock[CredentialService]
     val mockApplicationService = mock[ApplicationService]
     val mockAuthConnector = mock[AuthConnector]
@@ -69,6 +70,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockAuthConfig = mock[AuthConfig]
     val mockGatekeeperService = mock[GatekeeperService]
 
+
+    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
     when(mockAuthConfig.enabled).thenReturn(true)
 
     val applicationTtlInSecs = 1234
@@ -83,6 +86,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       config,
       mockAuthConfig,
       mockGatekeeperService)
+  }
+
+
+  trait CannotDeleteApplications extends Setup{
+    override def canDeleteApplications() = false
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -1459,40 +1467,42 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       status(result) shouldBe SC_OK
     }
   }
-//
-//  "deleteSubordinateApplication" should {
-//    val applicationId = UUID.randomUUID()
-//    val gatekeeperUserId = "big.boss.gatekeeper"
-//    val requestedByEmailAddress = "admin@example.com"
-//    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
-//    val auditFunction: ApplicationData => Future[AuditResult] = _ => Future.successful(mock[AuditResult])
-//
-//
-//    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
-//
-//      givenUserIsAuthenticated(underTest)
-//
-//      when(mockApplicationService.deleteApplication(any(), any(), any())(any[HeaderCarrier]())).thenReturn(successful(Deleted))
-//
-//      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
-//
-//      status(result) shouldBe SC_NO_CONTENT
-//      verify(mockApplicationService).deleteApplication(applicationId, deleteRequest, auditFunction)
-//    }
 
-//    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-//
-//      givenUserIsAuthenticated(underTest)
-//
-//      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(failed(new RuntimeException("Expected test failure")))
-//
-//      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
-//
-//      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-//      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
-//    }
+  "deleteSubordinateApplication" should {
+    val application = aNewApplicationResponse(environment = SANDBOX)
+    val applicationId = application.id
+    val gatekeeperUserId = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
-//  }
+    "succeed when a sandbox application is successfully deleted" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
+
+      when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe SC_NO_CONTENT
+      verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
+    }
+
+    "fail when a production application is requested to be deleted" in new CannotDeleteApplications {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
+
+      when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe SC_BAD_REQUEST
+      verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
+    }
+  }
 
   private def anAPI() = {
     new APIIdentifier("some-context", "1.0")
@@ -1510,13 +1520,13 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     """{ "context" : "some-context", "version" : "1.0" }"""
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess) = {
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
       UUID.randomUUID(),
       "clientId",
       "gatewayId",
       "My Application",
-      "PRODUCTION",
+      environment.toString,
       Some("Description"),
       collaborators,
       DateTimeUtils.now,
@@ -1524,7 +1534,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
-      access)
+      access,
+      environment = Some(environment)
+    )
   }
 
   private def anUpdateApplicationRequest(access: Access) = UpdateApplicationRequest("My Application", access, Some("Description"))

@@ -23,13 +23,10 @@ import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.{Environment, SANDBOX}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
@@ -47,14 +44,21 @@ trait AuthorisationWrapper {
   }
 
   def checkOnlyStandardAndSandbox(applicationId: UUID): ActionBuilder[Request] = {
-    Action andThen ApplicationFilter(applicationId, Seq(STANDARD), Seq(SANDBOX))
+    Action andThen ApplicationFilter(applicationId, Seq(STANDARD))
   }
 
-    private case class ApplicationFilter(applicationId: UUID, accessTypes: Seq[AccessType], environments: Seq[Environment]) extends AuthenticationFilter() {
+    private case class ApplicationFilter(applicationId: UUID, accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
     def filter[A](input: Request[A]) = {
-      applicationService.fetch(applicationId).map {
-        case Some(app) if accessTypes.contains(app.access.accessType) && environments.contains(app.environment) => None
-        case _ => Some(Results.Forbidden("forbidden"))
+
+      val notAllowed = Some(Results.BadRequest("Cannot delete this application"))
+
+      if (authConfig.canDeleteApplications) {
+        applicationService.fetch(applicationId).map {
+          case Some(app) if accessTypes.contains(app.access.accessType) => None
+          case _ => notAllowed
+        }
+      } else {
+        Future.successful(notAllowed)
       }
     }
   }

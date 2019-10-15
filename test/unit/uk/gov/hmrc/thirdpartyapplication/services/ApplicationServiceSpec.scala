@@ -80,6 +80,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockApplicationService = mock[ApplicationService]
+    val mockGatekeeperService = mock[GatekeeperService]
 
 
 
@@ -1229,12 +1230,14 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val gatekeeperUserId = "big.boss.gatekeeper"
     val request = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
     val applicationId = UUID.randomUUID()
-    val auditFunction = mock[ApplicationData => Future[AuditResult]]
     val application = anApplicationData(applicationId)
     val api1 = APIIdentifier("hello", "1.0")
     val api2 = APIIdentifier("goodbye", "1.0")
 
     trait DeleteApplicationSetup extends Setup {
+
+      val auditFunction: ApplicationData => Future[AuditResult] = mock[ApplicationData => Future[AuditResult]]
+
       when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
       when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
@@ -1245,6 +1248,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
       when(mockAuditService.audit(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.successful(AuditResult.Success))
+
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -1285,16 +1289,24 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       verify(mockStateHistoryRepository).deleteByApplicationId(applicationId)
     }
 
+    "audit the application deletion" in new DeleteApplicationSetup {
+      when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.successful(mock[AuditResult]))
+      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      verify(auditFunction).apply(eqTo(application))
+    }
+
+    "audit the application when the deletion has not worked" in new DeleteApplicationSetup {
+      when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.failed(new RuntimeException))
+      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      verify(auditFunction).apply(eqTo(application))
+    }
+
     "send the application deleted notification email" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, request, auditFunction))
       verify(mockEmailConnector).sendApplicationDeletedNotification(
         application.name, deleteRequestedBy, application.admins.map(_.emailAddress))
     }
 
-    "audit the application deletion" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
-      verify(auditFunction).apply(application)
-    }
 
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
       when(mockApplicationRepository.fetch(any())).thenReturn(None)
@@ -1306,7 +1318,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
         mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
-
 
   }
 
