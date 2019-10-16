@@ -43,30 +43,23 @@ trait AuthorisationWrapper {
     Action andThen AuthenticatedAction()
   }
 
-  def checkOnlyStandardAndSandbox(applicationId: UUID): ActionBuilder[Request] = {
-    Action andThen ApplicationFilter(applicationId, Seq(STANDARD))
-  }
-
-  private case class ApplicationFilter(applicationId: UUID, accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
-    def filter[A](input: Request[A]) = {
-
-      val notAllowed = Some(Results.BadRequest("Cannot delete this application"))
-
-      if (authConfig.canDeleteApplications) {
-        applicationService.fetch(applicationId).map {
-          case Some(app) if accessTypes.contains(app.access.accessType) => None
-          case _ => notAllowed
-        }
-      } else {
-        Future.successful(notAllowed)
-      }
-    }
-  }
-
-
   def strideAuthRefiner(): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
-    override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] =
-      Future.successful(Right[Result, OptionalStrideAuthRequest[A]](OptionalStrideAuthRequest[A](isStrideAuth = true, request)))
+    override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
+      // TODO: for comp? Or better
+      val strideAuthSuccess =
+        if (authConfig.enabled) {
+          // TODO: If no stride headers - is this still ok?
+          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+          val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+          authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => true }
+        } else {
+          Future.successful(false)
+        }
+
+      strideAuthSuccess.flatMap(isStrideAuthenticated => {
+        Future.successful(Right[Result, OptionalStrideAuthRequest[A]](OptionalStrideAuthRequest[A](isStrideAuth = isStrideAuthenticated, request)))
+      })
+    }
   }
 
   case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, request: Request[A]) extends WrappedRequest[A](request)
