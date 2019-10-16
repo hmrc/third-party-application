@@ -1468,7 +1468,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
   }
 
-  "deleteSubordinateApplication" should {
+  "deleteApplication" should {
     val application = aNewApplicationResponse(environment = SANDBOX)
     val applicationId = application.id
     val gatekeeperUserId = "big.boss.gatekeeper"
@@ -1483,7 +1483,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
-      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
       verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
@@ -1497,7 +1497,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
-      val result = await(underTest.deleteSubordinateApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_BAD_REQUEST
       verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])

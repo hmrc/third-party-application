@@ -47,7 +47,7 @@ trait AuthorisationWrapper {
     Action andThen ApplicationFilter(applicationId, Seq(STANDARD))
   }
 
-    private case class ApplicationFilter(applicationId: UUID, accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
+  private case class ApplicationFilter(applicationId: UUID, accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
     def filter[A](input: Request[A]) = {
 
       val notAllowed = Some(Results.BadRequest("Cannot delete this application"))
@@ -62,6 +62,16 @@ trait AuthorisationWrapper {
       }
     }
   }
+
+
+  def strideAuthRefiner(): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
+    override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] =
+      Future.successful(Right[Result, OptionalStrideAuthRequest[A]](OptionalStrideAuthRequest[A](isStrideAuth = true, request)))
+  }
+
+  case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, request: Request[A]) extends WrappedRequest[A](request)
+
+
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes)

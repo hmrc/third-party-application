@@ -23,9 +23,9 @@ import play.api.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
+//import play.mvc.BodyParser.AnyContent
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.audit.http.connector.AuditResult.Success
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
@@ -266,7 +266,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAllWithNoSubscriptions().map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async(implicit request =>
+  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
     subscriptionService.fetchAllSubscriptions()
       .map(subs => Ok(toJson(subs.seq))) recover recovery
   )
@@ -306,17 +306,18 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def deleteSubordinateApplication(id: UUID) = checkOnlyStandardAndSandbox(id).async(parse.json) { implicit request =>
+  def deleteApplication(id: UUID) = (Action andThen strideAuthRefiner()).async(parse.json) { implicit request: OptionalStrideAuthRequest[JsValue] => {
     def audit(app: ApplicationData): Future[AuditResult] = {
-      Logger.info(s"Delete subordinate application ${app.id} - ${app.name}")
-      successful(Success)
+            Logger.info(s"Delete application ${app.id} - ${app.name}")
+            successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
+
     withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
-      applicationService.deleteApplication(id, deleteApplicationPayload, audit).map(_ => NoContent)
-    } recover recovery
+          applicationService.deleteApplication(id, deleteApplicationPayload, audit).map(_ => NoContent)
+      } recover recovery
+
+    }
   }
-
-
 }
 
 case class ApplicationControllerConfig(fetchApplicationTtlInSecs: Int, fetchSubscriptionTtlInSecs: Int)
