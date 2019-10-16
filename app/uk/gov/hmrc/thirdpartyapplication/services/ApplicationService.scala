@@ -522,6 +522,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         .map(unique => !unique)
     }
 
+    // TODO: Don't check for duplicate names on sandbox
     for {
       blackListedNameValidationErrors <- doesNameFailBlacklist
       duplicateNameErrors <- isDuplicateName
