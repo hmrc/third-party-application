@@ -138,4 +138,4 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
 case class CredentialConfig(clientSecretLimit: Int)
 
-case class ApplicationNameValidationConfig(nameBlackList: Seq[String])
+case class ApplicationNameValidationConfig(nameBlackList: Seq[String], validateForDuplicateAppNames: Boolean)

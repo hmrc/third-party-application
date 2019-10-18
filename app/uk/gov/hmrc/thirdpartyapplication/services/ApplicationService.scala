@@ -315,7 +315,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
                                             (implicit hc: HeaderCarrier) = {
     for {
-      unique <- doesAppHasUniqueName(submittedAppName)
+      unique <- doesAppHaveUniqueName(submittedAppName)
       _ = if (!unique) {
         accessType match {
           case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
@@ -330,7 +330,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield ()
   }
 
-  private def doesAppHasUniqueName(submittedAppName: String)
+  private def doesAppHaveUniqueName(submittedAppName: String)
                                   (implicit hc: HeaderCarrier): Future[Boolean] = {
     applicationRepository
       .fetchApplicationByName(submittedAppName)
@@ -502,28 +502,31 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
+  private def isBlacklistedName(applicationName: String): Future[Boolean] = {
+    def checkNameIsValid(blackListedName: String) = !applicationName.toLowerCase().contains(blackListedName.toLowerCase)
+
+    val isValid = nameValidationConfig
+      .nameBlackList
+      .forall(name => checkNameIsValid(name))
+
+    Future.successful(!isValid)
+  }
+
+  private def isDuplicateName(applicationName: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    if (nameValidationConfig.validateForDuplicateAppNames) {
+      doesAppHaveUniqueName(applicationName)
+        .map(unique => !unique)
+    } else {
+      Future.successful(false)
+    }
+  }
+
   def validateApplicationName(applicationName: String)
                              (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
-
-    def isBlackListedName(blackListedName: String) = applicationName.toLowerCase().contains(blackListedName.toLowerCase)
-
-    def doesNameFailBlacklist: Future[Boolean] = {
-      Future.successful(nameValidationConfig
-        .nameBlackList
-        .exists(isBlackListedName))
-    }
-
-    def isDuplicateName: Future[Boolean] = {
-      doesAppHasUniqueName(applicationName)
-        .map(unique => !unique)
-    }
-
-    // TODO: Don't check for duplicate names on sandbox
     for {
-      blackListedNameValidationErrors <- doesNameFailBlacklist
-      duplicateNameErrors <- isDuplicateName
-    } yield (blackListedNameValidationErrors, duplicateNameErrors) match {
-
+      isBlacklisted <- isBlacklistedName(applicationName)
+      isDuplicate <- isDuplicateName(applicationName)
+    } yield (isBlacklisted, isDuplicate) match {
       case (false, false) => Valid
       case (blacklist, duplicate) => Invalid(blacklist, duplicate)
     }

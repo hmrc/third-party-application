@@ -95,6 +95,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     val mockNameValidationConfig = mock[ApplicationNameValidationConfig]
 
+    when(mockNameValidationConfig.validateForDuplicateAppNames)
+      .thenReturn(true)
+
     val underTest = new ApplicationService(
       mockApplicationRepository,
       mockStateHistoryRepository,
@@ -1014,7 +1017,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "allow valid name" in new Setup {
 
-      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq("HMRC"))
 
       val result = await(underTest.validateApplicationName("my application name"))
 
@@ -1022,7 +1026,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     "block a name with HMRC in" in new Setup {
-      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("HMRC"))
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq("HMRC"))
 
       val result = await(underTest.validateApplicationName("Invalid name HMRC"))
 
@@ -1030,7 +1035,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     "block a name with multiple blacklisted names in" in new Setup {
-      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
 
       val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2"))
 
@@ -1038,11 +1044,47 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     "block an invalid ignoring case" in new Setup {
-      when(mockNameValidationConfig.nameBlackList).thenReturn(Seq("InvalidName"))
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq("InvalidName"))
 
       val result = await(underTest.validateApplicationName("invalidname"))
 
       result shouldBe Invalid.invalidName
+    }
+
+    "block a duplicate app name" in new Setup {
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq.empty)
+
+      when(mockApplicationRepository.fetchApplicationByName(any()))
+        .thenReturn(Some(anApplicationData(applicationId = UUID.randomUUID())))
+
+      private val duplicateName = "duplicate name"
+      val result = await(underTest.validateApplicationName(duplicateName))
+
+      result shouldBe Invalid.duplicateName
+
+      verify(mockApplicationRepository)
+        .fetchApplicationByName(duplicateName)
+    }
+
+    "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq.empty)
+
+      // TODO: Add to Dev & ET -> Override as false
+      when(mockNameValidationConfig.validateForDuplicateAppNames)
+        .thenReturn(false)
+
+      when(mockApplicationRepository.fetchApplicationByName(any()))
+        .thenReturn(Some(anApplicationData(applicationId = UUID.randomUUID())))
+
+      val result = await(underTest.validateApplicationName("app name"))
+
+      result shouldBe Valid
+
+      verify(mockApplicationRepository, times(0))
+        .fetchApplicationByName(any())
     }
   }
 

@@ -300,8 +300,9 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
   override protected def mode = environment.mode
 
   override def get() = {
-    val nameBlackList: Seq[String] = ConfigHelper.getConfig(s"applicationNameBlackList", runModeConfiguration.getStringSeq)
+    val nameBlackList: Seq[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringSeq)
+    val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
 
-    ApplicationNameValidationConfig(nameBlackList)
+    ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
   }
 }
