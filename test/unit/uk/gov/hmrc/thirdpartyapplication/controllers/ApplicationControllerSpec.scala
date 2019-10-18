@@ -817,7 +817,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(any())(any[HeaderCarrier]))
         .thenReturn(successful(Valid))
 
-      val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
 
       status(result) shouldBe SC_OK
 
@@ -833,7 +833,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(any())(any[HeaderCarrier]))
         .thenReturn(successful(Invalid.invalidName))
 
-      val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
 
       status(result) shouldBe SC_OK
 
@@ -842,7 +842,21 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       verify(mockApplicationService).validateApplicationName(mockEq(applicationName))(any[HeaderCarrier])
     }
 
-    // TODO: Test duplicate name error is returned
+    "Reject an app name as it is a duplicate name" in new Setup {
+      val applicationName = "my duplicate app name"
+      val payload = s"""{"applicationName":"${applicationName}"}"""
+
+      when(mockApplicationService.validateApplicationName(any())(any[HeaderCarrier]))
+        .thenReturn(successful(Invalid.duplicateName))
+
+      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+
+      status(result) shouldBe SC_OK
+
+      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
+
+      verify(mockApplicationService).validateApplicationName(mockEq(applicationName))(any[HeaderCarrier])
+    }
   }
 
   "query dispatcher" should {
