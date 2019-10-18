@@ -337,7 +337,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def doesAppHasUniqueName(submittedAppName: String)
                                   (implicit hc: HeaderCarrier): Future[Boolean] = {
     applicationRepository
-      .fetchNonTestingApplicationByName(submittedAppName)
+      .fetchApplicationByName(submittedAppName)
       .map(appWithSameName => !appWithSameName.isDefined)
   }
 

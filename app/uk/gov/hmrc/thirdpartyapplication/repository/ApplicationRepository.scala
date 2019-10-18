@@ -154,8 +154,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
 
-  // TODO - Rename
-  def fetchNonTestingApplicationByName(name: String): Future[Option[ApplicationData]] = {
+  def fetchApplicationByName(name: String): Future[Option[ApplicationData]] = {
     val query: (String, JsValueWrapper) = f"$$and" -> Json.arr(
       Json.obj("normalisedName" -> name.toLowerCase)
     )

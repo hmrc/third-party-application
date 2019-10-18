@@ -301,7 +301,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       await(applicationRepository.save(application))
 
-      val retrieved = await(applicationRepository.fetchNonTestingApplicationByName(applicationName))
+      val retrieved = await(applicationRepository.fetchApplicationByName(applicationName))
 
       retrieved shouldBe Some(application)
     }
@@ -314,7 +314,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       await(applicationRepository.save(application))
 
-      val retrieved = await(applicationRepository.fetchNonTestingApplicationByName("non-matching-name"))
+      val retrieved = await(applicationRepository.fetchApplicationByName("non-matching-name"))
 
       retrieved shouldBe None
     }
