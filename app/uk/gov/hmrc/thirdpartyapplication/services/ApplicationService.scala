@@ -312,12 +312,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield UpliftRequested
   }
 
-  // TODO: Make this not throw exceptions
-  // TODO: This doesn't check for black listed names
   private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
                                             (implicit hc: HeaderCarrier) = {
     for {
-      // TODO: Call out validateName method
       unique <- doesAppHasUniqueName(submittedAppName)
       _ = if (!unique) {
         accessType match {
@@ -328,7 +325,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
           case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
             AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
         }
-        // TODO: Make not throw exceptions?
         throw ApplicationAlreadyExists(submittedAppName)
       }
     } yield ()

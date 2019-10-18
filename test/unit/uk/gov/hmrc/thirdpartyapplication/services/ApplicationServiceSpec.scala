@@ -81,8 +81,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId1))).thenReturn(true)
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId2))).thenReturn(true)
 
-    // TODO: Not sure about this here...
-    // Use some more traits? :(
     when(mockApplicationRepository.fetchApplicationByName(any()))
       .thenReturn(Future.successful(None))
 
@@ -1028,9 +1026,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val result = await(underTest.validateApplicationName("Invalid name HMRC"))
 
-      // TODO: From AC error should say:
-      // "Choose an application name that does not include HMRC's name"
-      // Should we just return that it was a black listed name and let the FE show the error
       result shouldBe Invalid.invalidName
     }
 
