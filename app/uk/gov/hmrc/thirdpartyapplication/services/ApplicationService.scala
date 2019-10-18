@@ -315,8 +315,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
                                             (implicit hc: HeaderCarrier) = {
     for {
-      unique <- doesAppHaveUniqueName(submittedAppName)
-      _ = if (!unique) {
+      duplicate <- isDuplicateName(submittedAppName)
+      _ = if (duplicate) {
         accessType match {
           case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
             Map("applicationName" -> submittedAppName))
@@ -328,13 +328,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         throw ApplicationAlreadyExists(submittedAppName)
       }
     } yield ()
-  }
-
-  private def doesAppHaveUniqueName(submittedAppName: String)
-                                  (implicit hc: HeaderCarrier): Future[Boolean] = {
-    applicationRepository
-      .fetchApplicationByName(submittedAppName)
-      .map(appWithSameName => !appWithSameName.isDefined)
   }
 
   private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -514,8 +507,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   private def isDuplicateName(applicationName: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
-      doesAppHaveUniqueName(applicationName)
-        .map(unique => !unique)
+      applicationRepository
+        .fetchApplicationByName(applicationName)
+        .map(r => r.isDefined)
     } else {
       Future.successful(false)
     }
