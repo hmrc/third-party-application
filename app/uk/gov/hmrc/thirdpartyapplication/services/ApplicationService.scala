@@ -312,10 +312,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield UpliftRequested
   }
 
-  private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
+  private def assertAppHasUniqueNameAndAudit(submittedAppName: String,
+                                             accessType: AccessType,
+                                             existingApp: Option[ApplicationData] = None)
                                             (implicit hc: HeaderCarrier) = {
     for {
-      duplicate <- isDuplicateName(submittedAppName)
+      duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
       _ = if (duplicate) {
         accessType match {
           case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
@@ -505,21 +507,27 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     Future.successful(!isValid)
   }
 
-  private def isDuplicateName(applicationName: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    if (nameValidationConfig.validateForDuplicateAppNames) {
-      applicationRepository
-        .fetchApplicationByName(applicationName)
-        .map(r => r.isDefined)
-    } else {
-      Future.successful(false)
+  private def isDuplicateName(applicationName: String, thisApplicationId: Option[UUID])(implicit hc: HeaderCarrier): Future[Boolean] = {
+
+    def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
+
+    def anyDuplicatesExcludingThis(apps: Seq[ApplicationData]): Boolean = {
+      apps.exists(!isThisApplication(_))
     }
+
+    if (nameValidationConfig.validateForDuplicateAppNames)
+      applicationRepository
+        .fetchApplicationsByName(applicationName)
+        .map(anyDuplicatesExcludingThis)
+    else
+      Future.successful(false)
   }
 
   def validateApplicationName(applicationName: String)
                              (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
     for {
       isBlacklisted <- isBlacklistedName(applicationName)
-      isDuplicate <- isDuplicateName(applicationName)
+      isDuplicate <- isDuplicateName(applicationName, None)
     } yield (isBlacklisted, isDuplicate) match {
       case (false, false) => Valid
       case (blacklist, duplicate) => Invalid(blacklist, duplicate)

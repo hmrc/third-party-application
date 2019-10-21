@@ -81,8 +81,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId1))).thenReturn(true)
     when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId2))).thenReturn(true)
 
-    when(mockApplicationRepository.fetchApplicationByName(any()))
-      .thenReturn(Future.successful(None))
+    when(mockApplicationRepository.fetchApplicationsByName(any()))
+      .thenReturn(Future.successful(Seq.empty))
 
     val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
 
@@ -256,7 +256,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "create a new Privileged application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Privileged())
-      when(mockApplicationRepository.fetchApplicationByName(applicationRequest.name)).thenReturn(None)
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty)
 
       val prodTOTP = Totp("prodTotp", "prodTotpId")
       val sandboxTOTP = Totp("sandboxTotp", "sandboxTotpId")
@@ -289,7 +289,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "create a new ROPC application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Ropc())
 
-      when(mockApplicationRepository.fetchApplicationByName(applicationRequest.name)).thenReturn(None)
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -309,7 +309,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Privileged())
 
-      when(mockApplicationRepository.fetchApplicationByName(applicationRequest.name)).thenReturn(Some(anApplicationData(UUID.randomUUID())))
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name))
+        .thenReturn(Seq(anApplicationData(UUID.randomUUID())))
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
@@ -321,7 +322,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
 
-      when(mockApplicationRepository.fetchApplicationByName(applicationRequest.name)).thenReturn(Some(anApplicationData(UUID.randomUUID())))
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq(anApplicationData(UUID.randomUUID())))
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
@@ -1056,8 +1057,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq.empty)
 
-      when(mockApplicationRepository.fetchApplicationByName(any()))
-        .thenReturn(Some(anApplicationData(applicationId = UUID.randomUUID())))
+      when(mockApplicationRepository.fetchApplicationsByName(any()))
+        .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
       private val duplicateName = "duplicate name"
       val result = await(underTest.validateApplicationName(duplicateName))
@@ -1065,26 +1066,25 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       result shouldBe Invalid.duplicateName
 
       verify(mockApplicationRepository)
-        .fetchApplicationByName(duplicateName)
+        .fetchApplicationsByName(duplicateName)
     }
 
     "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq.empty)
 
-      // TODO: Add to Dev & ET -> Override as false
       when(mockNameValidationConfig.validateForDuplicateAppNames)
         .thenReturn(false)
 
-      when(mockApplicationRepository.fetchApplicationByName(any()))
-        .thenReturn(Some(anApplicationData(applicationId = UUID.randomUUID())))
+      when(mockApplicationRepository.fetchApplicationsByName(any()))
+        .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
       val result = await(underTest.validateApplicationName("app name"))
 
       result shouldBe Valid
 
       verify(mockApplicationRepository, times(0))
-        .fetchApplicationByName(any())
+        .fetchApplicationsByName(any())
     }
   }
 
@@ -1097,11 +1097,14 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val application: ApplicationData = anApplicationData(applicationId, testingState())
       val expectedApplication: ApplicationData = application.copy(state = pendingGatekeeperApprovalState(upliftRequestedBy),
         name = requestedName, normalisedName = requestedName.toLowerCase)
+
       val expectedStateHistory = StateHistory(applicationId = expectedApplication.id, state = PENDING_GATEKEEPER_APPROVAL,
         actor = Actor(upliftRequestedBy, COLLABORATOR), previousState = Some(TESTING))
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationByName(requestedName)).thenReturn(None)
+
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName))
+        .thenReturn(Seq(application, expectedApplication))
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
@@ -1114,8 +1117,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val application: ApplicationData = anApplicationData(applicationId, testingState())
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationByName(requestedName)).thenReturn(None)
-      when(mockStateHistoryRepository.insert(any())).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName))
+        .thenReturn(Seq(application))
+
+      when(mockStateHistoryRepository.insert(any()))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       intercept[RuntimeException] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
@@ -1131,7 +1138,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationByName(application.name)).thenReturn(None)
+      when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(Seq.empty)
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
       verify(mockAuditService).audit(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString))
@@ -1144,7 +1151,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationByName(requestedName)).thenReturn(None)
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(Seq.empty)
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
@@ -1160,7 +1167,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       intercept[InvalidStateTransition] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
       }
-      verify(mockApplicationRepository, never).fetchApplicationByName(requestedName)
+      verify(mockApplicationRepository, never).fetchApplicationsByName(requestedName)
     }
 
     "fail with ApplicationAlreadyExists when another uplifted application already exist with the same name" in new Setup {
@@ -1168,13 +1175,13 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val anotherApplication: ApplicationData = anApplicationData(UUID.randomUUID(), productionState("admin@example.com"))
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationByName(requestedName)).thenReturn(Some(anotherApplication))
+
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName))
+        .thenReturn(Seq(application,anotherApplication))
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
       }
-      val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.toString, "applicationName" -> requestedName)
-      verify(mockAuditService).audit(ApplicationUpliftRequestDeniedDueToNonUniqueName, expectedAuditDetails)
     }
 
     "propagate the exception when the repository fail" in new Setup {
