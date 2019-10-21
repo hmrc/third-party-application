@@ -45,7 +45,6 @@ trait AuthorisationWrapper {
 
   def strideAuthRefiner(): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
     override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
-      // TODO: for comp? Or better
       val strideAuthSuccess =
         if (authConfig.enabled) {
           // TODO: If no stride headers - is this still ok?

@@ -31,7 +31,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.Result
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
+import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -62,6 +62,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     def canDeleteApplications() = true
+    def enabled() = true
 
     val mockCredentialService = mock[CredentialService]
     val mockApplicationService = mock[ApplicationService]
@@ -69,10 +70,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockSubscriptionService = mock[SubscriptionService]
     val mockAuthConfig = mock[AuthConfig]
     val mockGatekeeperService = mock[GatekeeperService]
+    val mockEnrolment = mock[Enrolment]
 
 
     when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
-    when(mockAuthConfig.enabled).thenReturn(true)
+    when(mockAuthConfig.enabled).thenReturn(enabled())
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
@@ -91,6 +93,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   trait CannotDeleteApplications extends Setup{
     override def canDeleteApplications() = false
+  }
+
+  trait NotStrideAuthConfig extends Setup{
+    override def enabled() = false
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -1468,20 +1474,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
   }
 
-  "deleteApplication" should {
+  "notStrideUserDeleteApplication" should {
     val application = aNewApplicationResponse(environment = SANDBOX)
     val applicationId = application.id
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
-    "succeed when a sandbox application is successfully deleted" in new Setup {
+    "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
 
-      givenUserIsNotAuthenticated(underTest)
-
-      when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
+      when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(application)))
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
-//      when(mockGatekeeperService.deleteApplication(any(), any()) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
@@ -1489,12 +1492,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
     }
 
-    "fail when a production application is requested to be deleted" in new CannotDeleteApplications {
+    "fail when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
 
       givenUserIsAuthenticated(underTest)
 
       when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
-
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
@@ -1504,7 +1506,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
   }
 
-  "deleteApplicationGK" should {
+  "strideUserDeleteApplication" should {
     val applicationId = UUID.randomUUID()
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
@@ -1519,7 +1521,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -1531,7 +1533,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
     }
 
   }

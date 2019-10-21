@@ -23,7 +23,6 @@ import play.api.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-//import play.mvc.BodyParser.AnyContent
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -307,18 +306,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def deleteApplication(id: UUID) = (Action andThen strideAuthRefiner()).async(parse.json) { implicit request: OptionalStrideAuthRequest[JsValue] => {
-      def audit(app: ApplicationData): Future[AuditResult] = {
-        // TODO Audit me
-        Logger.info(s"Delete application ${app.id} - ${app.name}")
-        successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
-      }
-
-    def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest) = {
-      // This is audited in the GK FE
-      gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
+    def audit(app: ApplicationData): Future[AuditResult] = {
+      // TODO Audit me
+      Logger.info(s"Delete application ${app.id} - ${app.name}")
+      successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
-    def nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
+      def nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
         val notAllowed: Result = Results.BadRequest("Cannot delete this application")
 
         if (authConfig.canDeleteApplications) {
@@ -330,11 +324,17 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         } else {
           Future.successful(notAllowed)
         }
-    }
+      }
 
-    withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
+      def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest) = {
+        // This is audited in the GK FE
+        gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
+      }
+
+
+      withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
         if (request.isStrideAuth) {
-           strideAuthenticatedApplicationDelete(deleteApplicationPayload)
+          strideAuthenticatedApplicationDelete(deleteApplicationPayload)
         } else {
           nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload)
         }
@@ -342,15 +342,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       } recover recovery
     }
   }
-
-//  def deleteApplication2(id: UUID) = requiresAuthentication().async(parse.json) {
-//    implicit request =>
-//      withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
-//        gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
-//      } recover recovery
-//  }
 }
-
-
 
 case class ApplicationControllerConfig(fetchApplicationTtlInSecs: Int, fetchSubscriptionTtlInSecs: Int)
