@@ -296,27 +296,25 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val applicationName = "appName"
       val applicationNormalisedName = "appname"
 
-      val upliftedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-        .copy(normalisedName = applicationNormalisedName, state = pendingGatekeeperApprovalState("email@example.com"))
-      val testingApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-        .copy(normalisedName = applicationNormalisedName, state = testingState())
+      val application = anApplicationData(id = UUID.randomUUID())
+        .copy(normalisedName = applicationNormalisedName)
 
-      await(applicationRepository.save(upliftedApplication))
-      await(applicationRepository.save(testingApplication))
+      await(applicationRepository.save(application))
 
-      val retrieved = await(applicationRepository.fetchNonTestingApplicationByName(applicationName))
+      val retrieved = await(applicationRepository.fetchApplicationByName(applicationName))
 
-      retrieved shouldBe Some(upliftedApplication)
+      retrieved shouldBe Some(application)
     }
 
-    "retrieve None when no uplifted application exist for that name" in {
-      val applicationName = "appName"
-      val applicationNormalizedName = "appname"
+    "dont retrieve the application if it's a non-matching name" in {
+      val applicationNormalisedName = "appname"
 
-      val testingApplication = anApplicationData(UUID.randomUUID()).copy(normalisedName = applicationNormalizedName, state = testingState())
-      await(applicationRepository.save(testingApplication))
+      val application = anApplicationData(id = UUID.randomUUID())
+        .copy(normalisedName = applicationNormalisedName)
 
-      val retrieved = await(applicationRepository.fetchNonTestingApplicationByName(applicationName))
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.fetchApplicationByName("non-matching-name"))
 
       retrieved shouldBe None
     }

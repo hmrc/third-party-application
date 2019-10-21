@@ -21,6 +21,8 @@ PUT           /application/:id/access/overrides                      uk.gov.hmrc
 
 GET           /application/:id/credentials                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchCredentials(id: java.util.UUID)
 POST          /application/credentials/validate                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateCredentials
+POST          /application/name/validate                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.validateApplicationName
+
 
 POST          /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addCollaborator(id: java.util.UUID)
 DELETE        /application/:id/collaborator/:email                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteCollaborator(id: java.util.UUID, email: String, admin: String, adminsToEmail: String)

@@ -21,6 +21,7 @@ import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag}
 
 case class ValidationRequest(clientId: String, clientSecret: String)
+case class ApplicationNameValidationRequest(applicationName: String)
 
 case class ClientSecretRequest(name: String)
 
