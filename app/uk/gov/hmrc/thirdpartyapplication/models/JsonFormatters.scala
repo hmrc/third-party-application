@@ -24,7 +24,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.connector.UpdateApplicationUsagePlanRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers._
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
@@ -128,6 +128,7 @@ object JsonFormatters {
   implicit val formatWso2Credentials = Json.format[Wso2Credentials]
 
   implicit val formatValidationRequest = Json.format[ValidationRequest]
+  implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
   implicit val formatClientSecretRequest = Json.format[ClientSecretRequest]
   implicit val formatUpliftRequest = Json.format[UpliftRequest]
   implicit val formatApproveUpliftRequest = Json.format[ApproveUpliftRequest]

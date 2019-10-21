@@ -129,7 +129,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
   private def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
-    findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map { _.result[ApplicationData].head }
+    findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
+      _.result[ApplicationData].head
+    }
 
   def setMissingLastAccessedDates(dateToSet: DateTime): Future[Int] = {
     def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID]) = {
@@ -152,10 +154,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
 
-  def fetchNonTestingApplicationByName(name: String): Future[Option[ApplicationData]] = {
-    find(f"$$and" -> Json.arr(
-      Json.obj("normalisedName" -> name.toLowerCase),
-      Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)))).map(_.headOption)
+  def fetchApplicationByName(name: String): Future[Option[ApplicationData]] = {
+    val query: (String, JsValueWrapper) = f"$$and" -> Json.arr(
+      Json.obj("normalisedName" -> name.toLowerCase)
+    )
+
+    find(query).map(_.headOption)
   }
 
   def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[ApplicationData]] = {

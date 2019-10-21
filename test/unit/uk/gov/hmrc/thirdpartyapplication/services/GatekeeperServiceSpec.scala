@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -63,7 +64,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     ApplicationData(applicationId, "MyApp", "myapp",
       collaborators, Some("description"),
       "aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa",
-      ApplicationTokens(productionToken), state, Standard(Seq(), None, None))
+      ApplicationTokens(productionToken), state, Standard(Seq(), None, None), HmrcTime.now, Some(HmrcTime.now))
   }
 
   trait Setup {

@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
 import uk.gov.hmrc.thirdpartyapplication.models.TrustedApplicationsConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.CredentialConfig
+import uk.gov.hmrc.thirdpartyapplication.services.{CredentialConfig, ApplicationNameValidationConfig}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -53,7 +53,8 @@ class ConfigurationModule extends Module {
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[TrustedApplicationsConfig].toProvider[TrustedApplicationsConfigProvider],
-      bind[CredentialConfig].toProvider[CredentialConfigProvider]
+      bind[CredentialConfig].toProvider[CredentialConfigProvider],
+      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
     )
   }
 }
@@ -292,5 +293,19 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
   override def get() = {
     val clientSecretLimit: Int = ConfigHelper.getConfig(s"clientSecretLimit", runModeConfiguration.getInt)
     CredentialConfig(clientSecretLimit)
+  }
+}
+
+@Singleton
+class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ApplicationNameValidationConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val nameBlackList: Seq[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringSeq)
+    val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
+
+    ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
   }
 }

@@ -74,13 +74,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   lazy val subscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
   lazy val applicationRepository = app.injector.instanceOf[ApplicationRepository]
 
-  override protected def afterEach(): Unit = {
-    DateTimeUtils.setCurrentMillisSystem()
-    result(subscriptionRepository.removeAll(), timeout)
-    result(applicationRepository.removeAll(), timeout)
-    super.afterEach()
-  }
-
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     result(applicationRepository.removeAll(), timeout)
@@ -91,6 +84,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     wso2Store.willRemoveSubscription(wso2ApplicationName, context, version)
 
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
+  }
+
+  override protected def afterEach(): Unit = {
+    DateTimeUtils.setCurrentMillisSystem()
+    result(subscriptionRepository.removeAll(), timeout)
+    result(applicationRepository.removeAll(), timeout)
+    super.afterEach()
   }
 
   feature("Fetch all applications") {
@@ -522,6 +522,24 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val fetchedApplication = fetchApplication(application.id)
       fetchedApplication.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
       fetchedApplication.name shouldBe "Prod Application Name"
+    }
+  }
+
+  feature("Application name validation") {
+    scenario("for thye invalid name 'HMRC'") {
+      When("I request if a name is invalid")
+
+      val nameToCheck = "my invalid app name HMRC"
+
+      val requestBody = Json.obj("applicationName" -> nameToCheck).toString
+      val result = postData(s"/application/name/validate", requestBody)
+
+      Then("The response should be OK")
+      result.code shouldBe OK
+
+      Then("The response should not contain any errors")
+
+      result.body shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false)).toString
     }
   }
 

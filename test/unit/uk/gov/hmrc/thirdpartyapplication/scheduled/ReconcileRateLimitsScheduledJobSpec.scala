@@ -40,7 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, EnvironmentToken, HasSucceeded, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{ReconcileRateLimitsJobConfig, ReconcileRateLimitsJobLockKeeper, ReconcileRateLimitsScheduledJob}
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -49,7 +49,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
-  val FixedTimeNow: DateTime = HmrcTime.now
+  val FixedTimeNow: DateTime = DateTimeUtils.now
   val expiryTimeInDays = 90
 
   class StubLogger extends LoggerLike {
@@ -103,6 +103,8 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
         wso2ApplicationName = UUID.randomUUID().toString,
         tokens = ApplicationTokens(EnvironmentToken("", "", "")),
         state = ApplicationState(),
+        createdOn = DateTimeUtils.now,
+        lastAccess = Some(DateTimeUtils.now),
         rateLimitTier = rateLimit)
 
     def callToWSO2LoginReturns(wso2Username: String, wso2Password: String, returnValue: Future[String]): OngoingStubbing[Future[String]] =

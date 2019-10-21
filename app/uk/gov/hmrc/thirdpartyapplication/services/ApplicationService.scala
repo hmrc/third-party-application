@@ -34,8 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEE
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -61,7 +61,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    credentialGenerator: CredentialGenerator,
                                    trustedApplications: TrustedApplications,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
-                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector) {
+                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
+                                   nameValidationConfig: ApplicationNameValidationConfig) {
 
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -338,7 +339,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     for {
       app <- fetchApp(applicationId)
       upliftedApp = uplift(app)
-      _ <- assertAppHasUniqueName(applicationName, app.access.accessType, Some(app))
+      _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
       updatedApp <- applicationRepository.save(upliftedApp)
       _ <- insertStateHistory(
         app,
@@ -353,11 +354,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield UpliftRequested
   }
 
-  private def assertAppHasUniqueName(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
-                                    (implicit hc: HeaderCarrier) = {
+  private def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
+                                            (implicit hc: HeaderCarrier) = {
     for {
-      appWithSameName <- applicationRepository.fetchNonTestingApplicationByName(submittedAppName)
-      _ = if (appWithSameName.isDefined) {
+      duplicate <- isDuplicateName(submittedAppName)
+      _ = if (duplicate) {
         accessType match {
           case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
             Map("applicationName" -> submittedAppName))
@@ -401,8 +402,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val f = for {
       _ <- application.access.accessType match {
-        case PRIVILEGED => assertAppHasUniqueName(application.name, PRIVILEGED)
-        case ROPC => assertAppHasUniqueName(application.name, ROPC)
+        case PRIVILEGED => assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
+        case ROPC => assertAppHasUniqueNameAndAudit(application.name, ROPC)
         case _ => successful(Unit)
       }
 
@@ -534,6 +535,37 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
     } yield result
 
+  }
+
+  private def isBlacklistedName(applicationName: String): Future[Boolean] = {
+    def checkNameIsValid(blackListedName: String) = !applicationName.toLowerCase().contains(blackListedName.toLowerCase)
+
+    val isValid = nameValidationConfig
+      .nameBlackList
+      .forall(name => checkNameIsValid(name))
+
+    Future.successful(!isValid)
+  }
+
+  private def isDuplicateName(applicationName: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    if (nameValidationConfig.validateForDuplicateAppNames) {
+      applicationRepository
+        .fetchApplicationByName(applicationName)
+        .map(r => r.isDefined)
+    } else {
+      Future.successful(false)
+    }
+  }
+
+  def validateApplicationName(applicationName: String)
+                             (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
+    for {
+      isBlacklisted <- isBlacklistedName(applicationName)
+      isDuplicate <- isDuplicateName(applicationName)
+    } yield (isBlacklisted, isDuplicate) match {
+      case (false, false) => Valid
+      case (blacklist, duplicate) => Invalid(blacklist, duplicate)
+    }
   }
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],

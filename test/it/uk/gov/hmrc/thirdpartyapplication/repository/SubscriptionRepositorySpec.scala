@@ -31,6 +31,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
@@ -305,6 +306,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSp
       ApplicationTokens(EnvironmentToken(clientId, generateWso2ClientSecret, generateAccessToken)),
       state,
       access,
+      DateTimeUtils.now,
+      Some(DateTimeUtils.now),
       checkInformation = checkInformation)
   }
 

@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, AuditAction, AuditService}
+import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -202,7 +203,10 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),
-      ApplicationState(), Privileged(None, scopes))
+      ApplicationState(),
+      Privileged(None, scopes),
+      DateTimeUtils.now,
+      Some(DateTimeUtils.now))
 
   private def ropcApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
     ApplicationData(
@@ -212,7 +216,10 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),
-      ApplicationState(), Ropc(scopes))
+      ApplicationState(),
+      Ropc(scopes),
+      DateTimeUtils.now,
+      Some(DateTimeUtils.now))
 
   private def standardApplicationDataWithOverrides(applicationId: UUID, overrides: Set[OverrideFlag]): ApplicationData =
     ApplicationData(
@@ -222,6 +229,8 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),
-      ApplicationState(), Standard(redirectUris = Seq.empty, overrides = overrides))
-
+      ApplicationState(),
+      Standard(redirectUris = Seq.empty, overrides = overrides),
+      DateTimeUtils.now,
+      Some(DateTimeUtils.now))
 }
