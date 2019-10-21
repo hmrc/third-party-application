@@ -47,7 +47,6 @@ trait AuthorisationWrapper {
     override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
       val strideAuthSuccess =
         if (authConfig.enabled) {
-          // TODO: If no stride headers - is this still ok?
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
           val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
           authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => true }
