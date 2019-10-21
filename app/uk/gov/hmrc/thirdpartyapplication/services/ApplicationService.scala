@@ -515,19 +515,20 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       apps.exists(!isThisApplication(_))
     }
 
-    if (nameValidationConfig.validateForDuplicateAppNames)
+    if (nameValidationConfig.validateForDuplicateAppNames) {
       applicationRepository
         .fetchApplicationsByName(applicationName)
         .map(anyDuplicatesExcludingThis)
-    else
+    } else {
       Future.successful(false)
+    }
   }
 
-  def validateApplicationName(applicationName: String)
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[UUID])
                              (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
     for {
       isBlacklisted <- isBlacklistedName(applicationName)
-      isDuplicate <- isDuplicateName(applicationName, None)
+      isDuplicate <- isDuplicateName(applicationName, selfApplicationId)
     } yield (isBlacklisted, isDuplicate) match {
       case (false, false) => Valid
       case (blacklist, duplicate) => Invalid(blacklist, duplicate)

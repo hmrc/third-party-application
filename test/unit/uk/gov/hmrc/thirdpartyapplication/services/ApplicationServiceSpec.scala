@@ -1015,13 +1015,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
   "validate application name" should {
 
-
     "allow valid name" in new Setup {
 
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq("HMRC"))
 
-      val result = await(underTest.validateApplicationName("my application name"))
+      val result = await(underTest.validateApplicationName("my application name", None))
 
       result shouldBe Valid
     }
@@ -1030,7 +1029,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq("HMRC"))
 
-      val result = await(underTest.validateApplicationName("Invalid name HMRC"))
+      val result = await(underTest.validateApplicationName("Invalid name HMRC", None))
 
       result shouldBe Invalid.invalidName
     }
@@ -1039,7 +1038,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
 
-      val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2"))
+      val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", None))
 
       result shouldBe Invalid.invalidName
     }
@@ -1048,7 +1047,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(Seq("InvalidName"))
 
-      val result = await(underTest.validateApplicationName("invalidname"))
+      val result = await(underTest.validateApplicationName("invalidname", None))
 
       result shouldBe Invalid.invalidName
     }
@@ -1061,7 +1060,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
       private val duplicateName = "duplicate name"
-      val result = await(underTest.validateApplicationName(duplicateName))
+      val result = await(underTest.validateApplicationName(duplicateName, None))
 
       result shouldBe Invalid.duplicateName
 
@@ -1079,12 +1078,26 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApplicationRepository.fetchApplicationsByName(any()))
         .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
-      val result = await(underTest.validateApplicationName("app name"))
+      val result = await(underTest.validateApplicationName("app name", None))
 
       result shouldBe Valid
 
       verify(mockApplicationRepository, times(0))
         .fetchApplicationsByName(any())
+    }
+
+    "Ignore application when checking for duplicates if it is self application" in new Setup {
+      when(mockNameValidationConfig.nameBlackList)
+        .thenReturn(Seq.empty)
+
+      val applicationId = UUID.randomUUID()
+
+      when(mockApplicationRepository.fetchApplicationsByName(any()))
+        .thenReturn(Seq(anApplicationData(applicationId)))
+
+      val result = await(underTest.validateApplicationName("app name", Some(applicationId)))
+
+      result shouldBe Valid
     }
   }
 
@@ -1177,7 +1190,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
 
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
-        .thenReturn(Seq(application,anotherApplication))
+        .thenReturn(Seq(application, anotherApplication))
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
