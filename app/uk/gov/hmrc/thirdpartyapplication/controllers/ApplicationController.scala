@@ -328,7 +328,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def deleteApplication(id: UUID) = (Action andThen strideAuthRefiner()).async(parse.json) { implicit request: OptionalStrideAuthRequest[JsValue] => {
     def audit(app: ApplicationData): Future[AuditResult] = {
-      // TODO Audit me
       Logger.info(s"Delete application ${app.id} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
