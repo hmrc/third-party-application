@@ -154,12 +154,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
 
-  def fetchApplicationByName(name: String): Future[Option[ApplicationData]] = {
+  def fetchApplicationsByName(name: String): Future[Seq[ApplicationData]] = {
     val query: (String, JsValueWrapper) = f"$$and" -> Json.arr(
       Json.obj("normalisedName" -> name.toLowerCase)
     )
 
-    find(query).map(_.headOption)
+    find(query)
   }
 
   def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[ApplicationData]] = {

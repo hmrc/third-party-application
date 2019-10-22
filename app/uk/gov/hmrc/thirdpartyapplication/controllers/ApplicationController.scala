@@ -175,7 +175,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
 
         applicationService
-          .validateApplicationName(applicationNameValidationRequest.applicationName)
+          .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
           .map((result: ApplicationNameValidationResult) => {
 
             val json = result match {
