@@ -67,13 +67,6 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
       } recover recovery
   }
 
-  def deleteApplication(id: UUID) = requiresAuthentication().async(parse.json) {
-    implicit request =>
-      withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
-        gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
-      } recover recovery
-  }
-
   def blockApplication(id: UUID) = requiresAuthentication().async { implicit request =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok

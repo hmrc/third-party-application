@@ -23,7 +23,6 @@ import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
@@ -43,6 +42,27 @@ trait AuthorisationWrapper {
   def requiresAuthentication(): ActionBuilder[Request] = {
     Action andThen AuthenticatedAction()
   }
+
+  def strideAuthRefiner(): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
+    override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
+      val strideAuthSuccess =
+        if (authConfig.enabled) {
+          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+          val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+          authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => true }
+        } else {
+          Future.successful(false)
+        }
+
+      strideAuthSuccess.flatMap(isStrideAuthenticated => {
+        Future.successful(Right[Result, OptionalStrideAuthRequest[A]](OptionalStrideAuthRequest[A](isStrideAuth = isStrideAuthenticated, request)))
+      })
+    }
+  }
+
+  case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, request: Request[A]) extends WrappedRequest[A](request)
+
+
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes)
