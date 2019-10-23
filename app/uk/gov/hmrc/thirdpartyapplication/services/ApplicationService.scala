@@ -205,10 +205,16 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield HasSucceeded
     }
 
-    def sendEmails(app: ApplicationData) = {
-      val requesterEmail = request.get.requestedByEmailAddress
-      val recipients = app.admins.map(_.emailAddress)
-      emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail.toString, recipients)
+    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData) = {
+      // TODO . Use map() ?
+      request match {
+        case Some(r) => {
+          val requesterEmail = r.requestedByEmailAddress
+          val recipients = app.admins.map(_.emailAddress)
+          emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail.toString, recipients)
+        }
+        case None => Future.successful()
+      }
     }
 
     (for {
@@ -219,7 +225,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ <- applicationRepository.delete(applicationId)
       _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _ = auditFunction(app)
-      _ = recoverAll(sendEmails(app))
+      _ = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
     } yield Deleted).recover {
       case _: NotFoundException => Deleted
     }
