@@ -186,7 +186,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest, auditFunction: ApplicationData => Future[AuditResult])
+  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     Logger.info(s"Deleting application $applicationId")
 
@@ -206,9 +206,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendEmails(app: ApplicationData) = {
-      val requesterEmail = request.requestedByEmailAddress
+      val requesterEmail = request.get.requestedByEmailAddress
       val recipients = app.admins.map(_.emailAddress)
-      emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
+      emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail.toString, recipients)
     }
 
     (for {

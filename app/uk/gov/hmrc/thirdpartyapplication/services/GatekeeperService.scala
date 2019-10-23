@@ -34,7 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future._
 import scala.util.Failure
 
 @Singleton
@@ -150,9 +149,9 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest])(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-        auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
+        auditGatekeeperAction(request.get.gatekeeperUserId.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.get.requestedByEmailAddress.toString))
     }
     for {
       _ <- applicationService.deleteApplication(applicationId, request, audit)

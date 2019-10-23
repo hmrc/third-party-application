@@ -332,13 +332,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
-      def nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
+      def nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload: Option[DeleteApplicationRequest]): Future[Result] = {
         val notAllowed: Result = Results.BadRequest("Cannot delete this application")
 
         if (authConfig.canDeleteApplications) {
           applicationService.fetch(id) flatMap {
             case Some(app) if app.access.accessType == AccessType.STANDARD =>
-              applicationService.deleteApplication(id, deleteApplicationPayload, audit).map(_ => NoContent)
+              applicationService.deleteApplication(id, None, audit).map(_ => NoContent)
             case _ => Future.successful(notAllowed)
           }
         } else {
@@ -346,7 +346,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
       }
 
-      def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest) = {
+      def strideAuthenticatedApplicationDelete(deleteApplicationPayload: Option[DeleteApplicationRequest]) = {
         // This is audited in the GK FE
         gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
       }
@@ -354,9 +354,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
       withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
         if (request.isStrideAuth) {
-          strideAuthenticatedApplicationDelete(deleteApplicationPayload)
+          strideAuthenticatedApplicationDelete(Some(deleteApplicationPayload))
         } else {
-          nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload)
+          nonStrideAuthenticatedApplicationDelete(None)
         }
 
       } recover recovery

@@ -51,7 +51,7 @@ case class OverridesResponse(overrides: Set[OverrideFlag])
 
 case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
-case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
+case class DeleteApplicationRequest(gatekeeperUserId: Option[String], requestedByEmailAddress: Option[String])
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)
 

@@ -28,7 +28,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
@@ -1550,7 +1550,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val applicationId = application.id
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
-    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    val deleteRequest = DeleteApplicationRequest(Some(gatekeeperUserId), Some(requestedByEmailAddress))
 
     "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
 
@@ -1560,7 +1560,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
-      verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
+      verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
     }
 
     "fail when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
@@ -1573,7 +1573,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_BAD_REQUEST
-      verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(deleteRequest), any() )(any[HeaderCarrier])
+      verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
     }
   }
 
@@ -1581,7 +1581,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val applicationId = UUID.randomUUID()
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
-    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    val deleteRequest = DeleteApplicationRequest(Some(gatekeeperUserId), (Some(requestedByEmailAddress)))
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
 
@@ -1592,7 +1592,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -1604,7 +1604,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
     }
 
   }
