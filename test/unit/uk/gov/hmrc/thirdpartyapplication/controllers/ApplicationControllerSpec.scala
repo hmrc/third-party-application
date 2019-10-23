@@ -1599,7 +1599,8 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]()))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
 

@@ -327,12 +327,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def deleteApplication(id: UUID) = (Action andThen strideAuthRefiner()).async(parse.json) { implicit request: OptionalStrideAuthRequest[JsValue] => {
-    def audit(app: ApplicationData): Future[AuditResult] = {
-      Logger.info(s"Delete application ${app.id} - ${app.name}")
-      successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
-    }
+      def audit(app: ApplicationData): Future[AuditResult] = {
+        Logger.info(s"Delete application ${app.id} - ${app.name}")
+        successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
+      }
 
-      def nonStrideAuthenticatedApplicationDelete(deleteApplicationPayload: Option[DeleteApplicationRequest]): Future[Result] = {
+      def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
         val notAllowed: Result = Results.BadRequest("Cannot delete this application")
 
         if (authConfig.canDeleteApplications) {
@@ -346,19 +346,19 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
       }
 
-      def strideAuthenticatedApplicationDelete(deleteApplicationPayload: Option[DeleteApplicationRequest]) = {
+      def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest) = {
         // This is audited in the GK FE
-        gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
+        gatekeeperService.deleteApplication(id, Some(deleteApplicationPayload)).map(_ => NoContent)
       }
 
-
-      withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
+      {
         if (request.isStrideAuth) {
-          strideAuthenticatedApplicationDelete(Some(deleteApplicationPayload))
+          withJsonBody[DeleteApplicationRequest] {
+            deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
+          }
         } else {
-          nonStrideAuthenticatedApplicationDelete(None)
+          nonStrideAuthenticatedApplicationDelete()
         }
-
       } recover recovery
     }
   }
