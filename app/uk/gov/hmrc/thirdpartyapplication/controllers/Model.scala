@@ -53,8 +53,6 @@ case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
 
-case class DeleteSubordinateApplicationRequest(applicationId: String)
-
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
 

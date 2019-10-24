@@ -29,7 +29,6 @@ import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
@@ -80,7 +79,6 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
     val mockTrustedApplications = mock[TrustedApplications]
-    val mockApplicationService = mock[ApplicationService]
     when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
 
     val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
@@ -96,8 +94,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockApiGatewayStore,
       applicationResponseCreator,
       mockTrustedApplications,
-      mockThirdPartyDelegatedAuthorityConnector,
-      mockApplicationService)
+      mockThirdPartyDelegatedAuthorityConnector)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
@@ -379,6 +376,90 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val result = await(underTest.resendVerification(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
         eqTo(application.name), anyString(), eqTo(Set(application.state.requestedByEmailAddress.get)))(any[HeaderCarrier]())
+    }
+  }
+
+  "deleting an application" should {
+    val deleteRequestedBy = "email@example.com"
+    val gatekeeperUserId = "big.boss.gatekeeper"
+    val request = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
+    val applicationId = UUID.randomUUID()
+    val application = anApplicationData(applicationId)
+    val api1 = APIIdentifier("hello", "1.0")
+    val api2 = APIIdentifier("goodbye", "1.0")
+
+    trait DeleteApplicationSetup extends Setup {
+      when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
+      when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
+      when(mockApiGatewayStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockApplicationRepository.delete(any())).thenReturn(successful(HasSucceeded))
+      when(mockStateHistoryRepository.deleteByApplicationId(any())).thenReturn(successful(HasSucceeded))
+      when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
+    }
+
+    "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
+      val result = await(underTest.deleteApplication(applicationId, request))
+      result shouldBe Deleted
+    }
+
+    "call to WSO2 to delete the application" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockApiGatewayStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password),
+        eqTo(application.wso2ApplicationName))(any[HeaderCarrier])
+    }
+
+    "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api1))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api2))(any[HeaderCarrier])
+    }
+
+    "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockApiSubscriptionFieldsConnector).deleteSubscriptions(eqTo(application.tokens.production.clientId))(any[HeaderCarrier])
+    }
+
+    "delete the application subscriptions from the repository" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api1))
+      verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api2))
+    }
+
+    "delete the application from the repository" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockApplicationRepository).delete(applicationId)
+    }
+
+    "delete the application state history from the repository" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockStateHistoryRepository).deleteByApplicationId(applicationId)
+    }
+
+    "audit the application deletion" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockAuditService).audit(ApplicationDeleted,
+        AuditHelper.gatekeeperActionDetails(application) + ("requestedByEmailAddress" -> deleteRequestedBy),
+        Map("gatekeeperId" -> gatekeeperUserId))
+    }
+
+    "send the application deleted notification email" in new DeleteApplicationSetup {
+      await(underTest.deleteApplication(applicationId, request))
+      verify(mockEmailConnector).sendApplicationDeletedNotification(
+        application.name, deleteRequestedBy, application.admins.map(_.emailAddress))
+    }
+
+    "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new Setup {
+      when(mockApplicationRepository.fetch(any())).thenReturn(None)
+
+      val result = await(underTest.deleteApplication(applicationId, request))
+      result shouldBe Deleted
+
+      verify(mockApplicationRepository).fetch(applicationId)
+      verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
+        mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
   }
 

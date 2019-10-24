@@ -311,6 +311,37 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     }
   }
 
+  "deleteApplication" should {
+    val applicationId = UUID.randomUUID()
+    val gatekeeperUserId = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+
+    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe SC_NO_CONTENT
+      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      verify(mockGatekeeperService).deleteApplication(applicationId, deleteRequest)
+    }
+
+  }
 
   "blockApplication" should {
 
