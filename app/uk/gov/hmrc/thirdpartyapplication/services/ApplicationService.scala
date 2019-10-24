@@ -205,13 +205,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield HasSucceeded
     }
 
-    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData) = {
-      // TODO . Use map() ?
+    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData): Future[Any] = {
       request match {
         case Some(r) => {
           val requesterEmail = r.requestedByEmailAddress
           val recipients = app.admins.map(_.emailAddress)
-          emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail.toString, recipients)
+          emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
         }
         case None => Future.successful()
       }

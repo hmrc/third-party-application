@@ -1333,7 +1333,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   "deleting an application" should {
     val deleteRequestedBy = "email@example.com"
     val gatekeeperUserId = "big.boss.gatekeeper"
-    val request = DeleteApplicationRequest(Some(gatekeeperUserId), Some(deleteRequestedBy))
+    val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
     val applicationId = UUID.randomUUID()
     val application = anApplicationData(applicationId)
     val api1 = APIIdentifier("hello", "1.0")
@@ -1409,9 +1409,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "send the application deleted notification email" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockEmailConnector).sendApplicationDeletedNotification(
-        application.name, Some(deleteRequestedBy).toString, application.admins.map(_.emailAddress))
+        application.name, deleteRequestedBy, application.admins.map(_.emailAddress))
     }
-
 
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
       when(mockApplicationRepository.fetch(any())).thenReturn(None)
@@ -1423,7 +1422,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
         mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
-
   }
 
   "Search" should {

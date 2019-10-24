@@ -1550,7 +1550,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val applicationId = application.id
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
-    val deleteRequest = DeleteApplicationRequest(Some(gatekeeperUserId), Some(requestedByEmailAddress))
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
 
@@ -1581,7 +1581,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val applicationId = UUID.randomUUID()
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
-    val deleteRequest = DeleteApplicationRequest(Some(gatekeeperUserId), (Some(requestedByEmailAddress)))
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
 
