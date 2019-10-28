@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_F
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import play.api.http.HeaderNames.AUTHORIZATION
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,7 +47,7 @@ trait AuthorisationWrapper {
   def strideAuthRefiner(): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
     override protected def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
       val strideAuthSuccess =
-        if (authConfig.enabled) {
+        if (authConfig.enabled && request.headers.get(AUTHORIZATION).isDefined) {
           implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
           val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
           authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => true }

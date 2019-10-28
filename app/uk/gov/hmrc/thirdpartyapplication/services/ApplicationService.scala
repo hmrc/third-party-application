@@ -186,7 +186,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest, auditFunction: ApplicationData => Future[AuditResult])
+  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     Logger.info(s"Deleting application $applicationId")
 
@@ -205,10 +205,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield HasSucceeded
     }
 
-    def sendEmails(app: ApplicationData) = {
-      val requesterEmail = request.requestedByEmailAddress
-      val recipients = app.admins.map(_.emailAddress)
-      emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
+    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData): Future[Any] = {
+      request match {
+        case Some(r) => {
+          val requesterEmail = r.requestedByEmailAddress
+          val recipients = app.admins.map(_.emailAddress)
+          emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
+        }
+        case None => Future.successful()
+      }
     }
 
     (for {
@@ -219,7 +224,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ <- applicationRepository.delete(applicationId)
       _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _ = auditFunction(app)
-      _ = recoverAll(sendEmails(app))
+      _ = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
     } yield Deleted).recover {
       case _: NotFoundException => Deleted
     }

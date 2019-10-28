@@ -1333,7 +1333,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   "deleting an application" should {
     val deleteRequestedBy = "email@example.com"
     val gatekeeperUserId = "big.boss.gatekeeper"
-    val request = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
+    val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
     val applicationId = UUID.randomUUID()
     val application = anApplicationData(applicationId)
     val api1 = APIIdentifier("hello", "1.0")
@@ -1357,73 +1357,71 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
-      val result = await(underTest.deleteApplication(applicationId, request, auditFunction))
+      val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted
     }
 
     "call to WSO2 to delete the application" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockApiGatewayStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password),
         eqTo(application.wso2ApplicationName))(any[HeaderCarrier])
     }
 
     "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api1))(any[HeaderCarrier])
       verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api2))(any[HeaderCarrier])
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockApiSubscriptionFieldsConnector).deleteSubscriptions(eqTo(application.tokens.production.clientId))(any[HeaderCarrier])
     }
 
     "delete the application subscriptions from the repository" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api1))
       verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api2))
     }
 
     "delete the application from the repository" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockApplicationRepository).delete(applicationId)
     }
 
     "delete the application state history from the repository" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockStateHistoryRepository).deleteByApplicationId(applicationId)
     }
 
     "audit the application deletion" in new DeleteApplicationSetup {
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.successful(mock[AuditResult]))
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(auditFunction).apply(eqTo(application))
     }
 
     "audit the application when the deletion has not worked" in new DeleteApplicationSetup {
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.failed(new RuntimeException))
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(auditFunction).apply(eqTo(application))
     }
 
     "send the application deleted notification email" in new DeleteApplicationSetup {
-      await(underTest.deleteApplication(applicationId, request, auditFunction))
+      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       verify(mockEmailConnector).sendApplicationDeletedNotification(
         application.name, deleteRequestedBy, application.admins.map(_.emailAddress))
     }
 
-
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
       when(mockApplicationRepository.fetch(any())).thenReturn(None)
 
-      val result = await(underTest.deleteApplication(applicationId, request, auditFunction))
+      val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted
 
       verify(mockApplicationRepository).fetch(applicationId)
       verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
         mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
-
   }
 
   "Search" should {
