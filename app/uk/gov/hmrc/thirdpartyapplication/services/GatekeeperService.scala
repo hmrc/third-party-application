@@ -47,7 +47,8 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   apiGatewayStore: ApiGatewayStore,
                                   applicationResponseCreator: ApplicationResponseCreator,
                                   trustedApplications: TrustedApplications,
-                                  thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector) {
+                                  thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
+                                  applicationService: ApplicationService) {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[Seq[ApplicationWithUpliftRequest]] = {
     def appError(id: UUID) = new InconsistentDataState(s"App not found for id: $id")
@@ -150,42 +151,15 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application $applicationId")
-
-    def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
-      def deleteSubscription(subscription: APIIdentifier) = {
-        for {
-          _ <- apiGatewayStore.removeSubscription(app, subscription)
-          _ <- subscriptionRepository.remove(app.id, subscription)
-        } yield HasSucceeded
-      }
-
-      for {
-        subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
-        _ <- traverse(subscriptions)(deleteSubscription)
-        _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
-      } yield HasSucceeded
+    def audit(app: ApplicationData): Future[AuditResult] = {
+        auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
     }
+    for {
+      _ <- applicationService.deleteApplication(applicationId, request, audit)
+    } yield Deleted
 
-    def sendEmails(app: ApplicationData) = {
-      val requesterEmail = request.requestedByEmailAddress
-      val recipients = app.admins.map(_.emailAddress)
-      emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
-    }
-
-    (for {
-      app <- fetchApp(applicationId)
-      _ <- deleteSubscriptions(app)
-      _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
-      _ <- apiGatewayStore.deleteApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
-      _ <- applicationRepository.delete(applicationId)
-      _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
-      _ = auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
-      _ = recoverAll(sendEmails(app))
-    } yield Deleted).recover {
-      case _: NotFoundException => Deleted
-    }
   }
+
 
   def blockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def block(application: ApplicationData): ApplicationData = {
