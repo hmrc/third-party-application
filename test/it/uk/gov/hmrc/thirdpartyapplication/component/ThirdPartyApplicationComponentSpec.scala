@@ -22,6 +22,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.stubbing.Scenario
 import it.uk.gov.hmrc.thirdpartyapplication.component.stubs.WSO2StoreStub.{WSO2Subscription, WSO2SubscriptionResponse}
 import org.joda.time.DateTimeUtils
+import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -333,7 +334,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       When("I request to delete the application")
       val deleteResponse = postData(path = s"/application/${application.id}/delete",
-        data = s"""{"gatekeeperUserId": "$gatekeeperUserId", "requestedByEmailAddress": "$emailAddress"}""")
+        data = s"""{"gatekeeperUserId": "$gatekeeperUserId", "requestedByEmailAddress": "$emailAddress"}""",
+        extraHeaders = Seq(AUTHORIZATION -> UUID.randomUUID.toString))
       deleteResponse.code shouldBe NO_CONTENT
 
       Then("The application is deleted")
@@ -562,11 +564,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     subscriptionRepository.add(applicationId, new APIIdentifier(apiContext, apiVersion))
   }
 
-  private def postData(path: String, data: String, method: String = "POST"): HttpResponse[String] = {
+  private def postData(path: String, data: String, method: String = "POST", extraHeaders: Seq[(String,String)] = Seq()): HttpResponse[String] = {
     val connTimeoutMs = 5000
     val readTimeoutMs = 10000
     Http(s"$serviceUrl$path").postData(data).method(method)
       .header("Content-Type", "application/json")
+      .headers(extraHeaders)
       .timeout(connTimeoutMs, readTimeoutMs)
       .asString
   }

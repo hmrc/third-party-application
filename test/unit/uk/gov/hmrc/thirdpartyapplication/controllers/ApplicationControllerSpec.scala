@@ -28,6 +28,7 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks
+import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
@@ -1557,7 +1558,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(application)))
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
-      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
 
       status(result) shouldBe SC_NO_CONTENT
       verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
@@ -1570,7 +1571,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
-      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
 
       status(result) shouldBe SC_BAD_REQUEST
       verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
@@ -1584,30 +1585,29 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
-
       givenUserIsAuthenticated(underTest)
-
       when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
-      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+        .withHeaders(AUTHORIZATION -> "foo")
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
 
       status(result) shouldBe SC_NO_CONTENT
       verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-
       givenUserIsAuthenticated(underTest)
-
       when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]()))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest))))
+      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+        .withHeaders(AUTHORIZATION -> "foo")
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
     }
-
   }
 
   private def anAPI() = {
