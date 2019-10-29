@@ -348,7 +348,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
       // This is audited in the GK FE
-      gatekeeperService.deleteApplication(id, Some(deleteApplicationPayload)).map(_ => NoContent)
+      gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
     }
 
     {

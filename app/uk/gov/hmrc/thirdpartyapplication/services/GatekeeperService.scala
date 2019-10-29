@@ -149,12 +149,12 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest])(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-        auditGatekeeperAction(request.get.gatekeeperUserId.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.get.requestedByEmailAddress.toString))
+        auditGatekeeperAction(request.gatekeeperUserId.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.toString))
     }
     for {
-      _ <- applicationService.deleteApplication(applicationId, request, audit)
+      _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
     } yield Deleted
 
   }

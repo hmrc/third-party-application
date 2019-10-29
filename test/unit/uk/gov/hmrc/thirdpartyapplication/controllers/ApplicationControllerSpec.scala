@@ -1593,7 +1593,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
 
       status(result) shouldBe SC_NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -1606,7 +1606,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(Some(deleteRequest))) (any[HeaderCarrier])
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
     }
   }
 
