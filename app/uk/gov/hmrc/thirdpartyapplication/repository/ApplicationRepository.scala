@@ -20,6 +20,7 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
+import play.api.Logger
 import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
@@ -307,7 +308,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .run(Iteratee.foreach(function))
   }
 
-  def delete(id: UUID): Future[HasSucceeded] = remove("id" -> id).map(_ => HasSucceeded)
+  def delete(id: UUID): Future[HasSucceeded] = {
+    Logger.info(s"Pomegranate - In ApplicationRepository.delete() - AppId: $id")
+
+    remove("id" -> id).map(_ => HasSucceeded)
+  }
 
   def documentsWithFieldMissing(fieldName: String): Future[Int] = {
     collection.count(Some(Json.obj(fieldName -> Json.obj(f"$$exists" -> false))), None, 0, None, Available).map(_.toInt)

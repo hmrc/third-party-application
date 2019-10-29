@@ -150,9 +150,10 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application $applicationId")
+    Logger.info(s"Pomegranate - Deleting application $applicationId")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
+      Logger.info(s"Pomegranate - In GatekeeperService.deleteSubscriptions() - AppId: $applicationId")
       def deleteSubscription(subscription: APIIdentifier) = {
         for {
           _ <- apiGatewayStore.removeSubscription(app, subscription)
@@ -168,6 +169,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendEmails(app: ApplicationData) = {
+      Logger.info(s"Pomegranate - In GatekeeperService.sendEmails() - AppId: ${app.id}")
       val requesterEmail = request.requestedByEmailAddress
       val recipients = app.admins.map(_.emailAddress)
       emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)

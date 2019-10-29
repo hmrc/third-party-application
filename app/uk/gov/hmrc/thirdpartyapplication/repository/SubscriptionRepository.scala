@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -134,6 +135,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def remove(applicationId: UUID, apiIdentifier: APIIdentifier) = {
+    Logger.info(s"Pomegranate - In SubscriptionRepository.remove() - AppId: $applicationId")
     collection.update(
       makeSelector(apiIdentifier),
       Json.obj("$pull" -> Json.obj("applications" -> applicationId))

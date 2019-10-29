@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -27,6 +28,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
 
   def revokeApplicationAuthorities(clientId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Logger.info(s"Pomegranate - In ThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities() - clientId: $clientId")
+
     httpClient.DELETE(s"${config.baseUrl}/authority/$clientId") map (_ => HasSucceeded) recover {
       case _: NotFoundException => HasSucceeded
     }
