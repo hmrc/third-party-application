@@ -17,8 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -76,6 +77,9 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def deleteByApplicationId(applicationId: UUID): Future[HasSucceeded] = {
+
+    Logger.info(s"Pomegranate - In StateHistoryRepository.deleteByApplicationId() - AppId: $applicationId")
+
     remove("applicationId" -> applicationId).map(_ => HasSucceeded)
   }
 }

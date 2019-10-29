@@ -188,9 +188,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application $applicationId")
+    Logger.info(s"Pomegranate - Deleting application $applicationId")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
+      Logger.info(s"Pomegranate - In ApplicationService.deleteSubscriptions() - AppId: $applicationId")
       def deleteSubscription(subscription: APIIdentifier) = {
         for {
           _ <- apiGatewayStore.removeSubscription(app, subscription)
@@ -206,6 +207,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData): Future[Any] = {
+      Logger.info(s"Pomegranate - In ApplicationService.sendEmailsIfRequestedByEmailAddressPresent() - AppId: ${app.id}")
       request match {
         case Some(r) => {
           val requesterEmail = r.requestedByEmailAddress
