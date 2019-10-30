@@ -26,11 +26,11 @@ import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, TotpConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
@@ -43,7 +43,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, sequence, successful}
+import scala.concurrent.Future.{failed, sequence, successful, traverse}
 import scala.concurrent.duration.Duration
 import scala.util.Failure
 
@@ -60,7 +60,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
                                    trustedApplications: TrustedApplications,
+                                   apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
+                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    nameValidationConfig: ApplicationNameValidationConfig) {
+
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -181,6 +184,52 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield updatedApp
     }
 
+  }
+
+  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
+                       (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+    Logger.info(s"Pomegranate - Deleting application $applicationId")
+
+    def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
+      Logger.info(s"Pomegranate - In ApplicationService.deleteSubscriptions() - AppId: $applicationId")
+      def deleteSubscription(subscription: APIIdentifier) = {
+        for {
+          _ <- apiGatewayStore.removeSubscription(app, subscription)
+          _ <- subscriptionRepository.remove(app.id, subscription)
+        } yield HasSucceeded
+      }
+
+      for {
+        subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
+        _ <- traverse(subscriptions)(deleteSubscription)
+        _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
+      } yield HasSucceeded
+    }
+
+    def sendEmailsIfRequestedByEmailAddressPresent(app: ApplicationData): Future[Any] = {
+      Logger.info(s"Pomegranate - In ApplicationService.sendEmailsIfRequestedByEmailAddressPresent() - AppId: ${app.id}")
+      request match {
+        case Some(r) => {
+          val requesterEmail = r.requestedByEmailAddress
+          val recipients = app.admins.map(_.emailAddress)
+          emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
+        }
+        case None => Future.successful()
+      }
+    }
+
+    (for {
+      app <- fetchApp(applicationId)
+      _ <- deleteSubscriptions(app)
+      _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
+      _ <- apiGatewayStore.deleteApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+      _ <- applicationRepository.delete(applicationId)
+      _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
+      _ = auditFunction(app)
+      _ = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
+    } yield Deleted).recover {
+      case _: NotFoundException => Deleted
+    }
   }
 
   def deleteCollaborator(applicationId: UUID, collaborator: String, admin: String, adminsToEmail: Set[String])
@@ -551,6 +600,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   private def loggedInUser(implicit hc: HeaderCarrier) = hc.headers find (_._1 == LOGGED_IN_USER_EMAIL_HEADER) map (_._2) getOrElse ""
+
 }
 
 @Singleton

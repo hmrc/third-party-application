@@ -28,11 +28,12 @@ import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{JsArray, JsValue, Json}
+import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
+import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -44,7 +45,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
@@ -63,13 +64,20 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
+    def canDeleteApplications() = true
+    def enabled() = true
+
+    val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
+    val mockEnrolment: Enrolment = mock[Enrolment]
     val mockCredentialService: CredentialService = mock[CredentialService]
     val mockApplicationService: ApplicationService = mock[ApplicationService]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockAuthConfig: AuthConfig = mock[AuthConfig]
 
-    when(mockAuthConfig.enabled).thenReturn(true)
+
+    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
+    when(mockAuthConfig.enabled).thenReturn(enabled())
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
@@ -81,7 +89,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockAuthConfig)
+      mockAuthConfig,
+      mockGatekeeperService)
+  }
+
+
+  trait CannotDeleteApplications extends Setup{
+    override def canDeleteApplications() = false
+  }
+
+  trait NotStrideAuthConfig extends Setup{
+    override def enabled() = false
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -741,7 +759,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockCredentialService.deleteClientSecrets(mockEq(applicationId), mockEq(splitSecrets))(any[HeaderCarrier]))
         .thenReturn(successful(environmentTokenResponse))
 
-      val result: Result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
+      val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -782,7 +800,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(Some(PRODUCTION)))
 
-      val result: Result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
 
       status(result) shouldBe SC_OK
       jsonBodyOf(result) shouldBe Json.obj("environment" -> PRODUCTION.toString)
@@ -792,7 +810,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(None))
 
-      val result: Result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
 
       verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS)
     }
@@ -801,7 +819,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1528,6 +1546,70 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
   }
 
+  "notStrideUserDeleteApplication" should {
+    val application = aNewApplicationResponse(environment = SANDBOX)
+    val applicationId = application.id
+    val gatekeeperUserId = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+
+    "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
+
+      when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(application)))
+      when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+
+      status(result) shouldBe SC_NO_CONTENT
+      verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
+    }
+
+    "fail when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
+      when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+
+      status(result) shouldBe SC_BAD_REQUEST
+      verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
+    }
+  }
+
+  "strideUserDeleteApplication" should {
+    val applicationId = UUID.randomUUID()
+    val gatekeeperUserId = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+
+    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
+      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]())).thenReturn(successful(Deleted))
+
+      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+        .withHeaders(AUTHORIZATION -> "foo")
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
+
+      status(result) shouldBe SC_NO_CONTENT
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.deleteApplication(any(), any())(any[HeaderCarrier]()))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+        .withHeaders(AUTHORIZATION -> "foo")
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
+
+      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      verify(mockGatekeeperService).deleteApplication(mockEq(applicationId), mockEq(deleteRequest)) (any[HeaderCarrier])
+    }
+  }
+
   private def anAPI() = {
     new APIIdentifier("some-context", "1.0")
   }
@@ -1544,13 +1626,13 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     """{ "context" : "some-context", "version" : "1.0" }"""
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess) = {
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
       UUID.randomUUID(),
       "clientId",
       "gatewayId",
       "My Application",
-      "PRODUCTION",
+      environment.toString,
       Some("Description"),
       collaborators,
       DateTimeUtils.now,
@@ -1558,7 +1640,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
-      access)
+      access,
+      environment = Some(environment)
+    )
   }
 
   private def anUpdateApplicationRequest(access: Access) = UpdateApplicationRequest("My Application", access, Some("Description"))

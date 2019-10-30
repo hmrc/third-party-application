@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
-import play.api.mvc.{Request, Result}
+import play.api.mvc.{AnyContent, Request, Result}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, INVALID_REQUEST_PAYLOAD, SCOPE_NOT_FOUND, UNKNOWN_ERROR}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.ScopeNotFoundException
@@ -31,7 +31,19 @@ trait CommonController extends BaseController {
 
   override protected def withJsonBody[T]
   (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
-    Try(request.body.validate[T]) match {
+    withJson(request.body)(f)
+  }
+
+  protected def withJsonBodyFromAnyContent[T]
+  (f: T => Future[Result])(implicit request: Request[AnyContent], m: Manifest[T], reads: Reads[T], d: DummyImplicit): Future[Result] = {
+    request.body.asJson match {
+      case Some(json) => withJson(json)(f)
+      case _ => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Payload")))
+    }
+  }
+
+  private def withJson[T](json: JsValue)(f: T => Future[Result])(implicit m: Manifest[T], reads: Reads[T]): Future[Result] = {
+    Try(json.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
       case Success(JsError(errs)) => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
       case Failure(e) => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, e.getMessage)))

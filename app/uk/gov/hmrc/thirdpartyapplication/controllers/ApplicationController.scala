@@ -19,21 +19,25 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
+import play.api.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.util.{Failure, Success, Try}
+import scala.concurrent.Future.successful
+import scala.util.{Failure, Try}
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -41,7 +45,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
-                                      val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
+                                      val authConfig: AuthConfig, gatekeeperService: GatekeeperService) extends CommonController with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -77,11 +81,11 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def updateRateLimitTier(applicationId: UUID) = requiresAuthentication().async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
-        case Success(rateLimitTier) =>
+        case scala.util.Success(rateLimitTier) =>
           applicationService updateRateLimitTier(applicationId, rateLimitTier) map { _ =>
             NoContent
           } recover recovery
-        case Failure(_) => Future.successful(UnprocessableEntity(
+        case Failure(_) => successful(UnprocessableEntity(
           JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")))
       }
     }
@@ -253,9 +257,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
           case Some(userAgent) if apiGatewayUserAgents.contains(userAgent) =>
             applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
-          case _ => Future.successful(Ok(toJson(application)))
+          case _ => successful(Ok(toJson(application)))
         }
-      case None => Future.successful(handleNotFound(notFoundMessage))
+      case None => successful(handleNotFound(notFoundMessage))
     } recover recovery
 
   private def fetchAllForCollaborator(emailAddress: String) = {
@@ -282,7 +286,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAllWithNoSubscriptions().map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async(implicit request =>
+  def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
     subscriptionService.fetchAllSubscriptions()
       .map(subs => Ok(toJson(subs.seq))) recover recovery
   )
@@ -319,6 +323,43 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def verifyUplift(verificationCode: String) = Action.async { implicit request =>
     applicationService.verifyUplift(verificationCode) map (_ => NoContent) recover {
       case e: InvalidUpliftVerificationCode => BadRequest(e.getMessage)
+    } recover recovery
+  }
+
+  def deleteApplication(id: UUID): Action[AnyContent] = (Action andThen strideAuthRefiner()).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
+    Logger.info(s"Pomegranate - In ApplicationController.deleteApplication() - AppId: $id")
+    def audit(app: ApplicationData): Future[AuditResult] = {
+      Logger.info(s"Delete application ${app.id} - ${app.name}")
+      successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
+    }
+
+    def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
+      val notAllowed: Result = Results.BadRequest("Cannot delete this application")
+
+      if (authConfig.canDeleteApplications) {
+        applicationService.fetch(id) flatMap {
+          case Some(app) if app.access.accessType == AccessType.STANDARD =>
+            applicationService.deleteApplication(id, None, audit).map(_ => NoContent)
+          case _ => Future.successful(notAllowed)
+        }
+      } else {
+        Future.successful(notAllowed)
+      }
+    }
+
+    def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
+      // This is audited in the GK FE
+      gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
+    }
+
+    {
+      if (request.isStrideAuth) {
+        withJsonBodyFromAnyContent[DeleteApplicationRequest] {
+          deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
+        }
+      } else {
+        nonStrideAuthenticatedApplicationDelete()
+      }
     } recover recovery
   }
 }

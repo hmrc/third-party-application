@@ -36,11 +36,11 @@ DELETE        /application/:id/subscription                          uk.gov.hmrc
 POST          /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecret(id: java.util.UUID)
 POST          /application/:id/revoke-client-secrets                 uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecrets(id: java.util.UUID)
 
+POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: java.util.UUID)
 POST          /application/:id/request-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.requestUplift(id: java.util.UUID)
 POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: java.util.UUID)
 POST          /application/:id/reject-uplift                         uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.rejectUplift(id: java.util.UUID)
 POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: java.util.UUID)
-POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: java.util.UUID)
 POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: java.util.UUID)
 POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: java.util.UUID)
 

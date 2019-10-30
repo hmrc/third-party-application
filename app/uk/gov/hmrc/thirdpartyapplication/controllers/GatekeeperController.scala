@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-import play.api.Logger
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
@@ -65,14 +64,6 @@ class GatekeeperController @Inject()(val authConnector: AuthConnector, val appli
         gatekeeperService.resendVerification(id, resendVerificationPayload.gatekeeperUserId).map(_ => NoContent)
       } recover {
         case _: InvalidStateTransition => badResendResponse
-      } recover recovery
-  }
-
-  def deleteApplication(id: UUID) = requiresAuthentication().async(parse.json) {
-    Logger.info(s"Pomegranate - In GatekeeperController.deleteApplication() - AppId: $id")
-    implicit request =>
-      withJsonBody[DeleteApplicationRequest] { deleteApplicationPayload =>
-        gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
       } recover recovery
   }
 
