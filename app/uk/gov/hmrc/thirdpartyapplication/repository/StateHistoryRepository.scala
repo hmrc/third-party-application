@@ -77,9 +77,6 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def deleteByApplicationId(applicationId: UUID): Future[HasSucceeded] = {
-
-    Logger.info(s"Pomegranate - In StateHistoryRepository.deleteByApplicationId() - AppId: $applicationId")
-
     remove("applicationId" -> applicationId).map(_ => HasSucceeded)
   }
 }

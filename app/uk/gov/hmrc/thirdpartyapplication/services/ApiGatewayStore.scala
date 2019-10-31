@@ -123,8 +123,6 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 
   override def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    Logger.info(s"Pomegranate - In ApiGatewayStore.deleteApplication() - wso2ApplicationName: $wso2ApplicationName")
-
     withLogin(wso2Username, wso2Password) {
       wso2APIStoreConnector.deleteApplication(_, wso2ApplicationName)
     } flatMap { _ =>
@@ -154,7 +152,6 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 
   override def removeSubscription(app: ApplicationData, api: APIIdentifier)
                                  (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    Logger.info(s"Pomegranate - In ApiGatewayStore.removeSubscription() - in the else - app.id = ${app.id} and api.context = ${api.context}")
     val wso2Api = Wso2Api.create(api)
 
     for {

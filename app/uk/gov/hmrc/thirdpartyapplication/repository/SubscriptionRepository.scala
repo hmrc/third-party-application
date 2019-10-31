@@ -135,7 +135,6 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def remove(applicationId: UUID, apiIdentifier: APIIdentifier) = {
-    Logger.info(s"Pomegranate - In SubscriptionRepository.remove() - AppId: $applicationId")
     collection.update(
       makeSelector(apiIdentifier),
       Json.obj("$pull" -> Json.obj("applications" -> applicationId))

@@ -309,8 +309,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def delete(id: UUID): Future[HasSucceeded] = {
-    Logger.info(s"Pomegranate - In ApplicationRepository.delete() - AppId: $id")
-
     remove("id" -> id).map(_ => HasSucceeded)
   }
 
