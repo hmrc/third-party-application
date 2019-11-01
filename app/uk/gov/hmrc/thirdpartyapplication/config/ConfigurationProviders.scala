@@ -40,7 +40,6 @@ class ConfigurationModule extends Module {
       bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
-      bind[SetLastAccessedDateJobConfig].toProvider[SetLastAccessDateJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
@@ -107,21 +106,6 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
       .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
-  }
-}
-
-@Singleton
-class SetLastAccessDateJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[SetLastAccessedDateJobConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.setLastAccessedDateJob")
-      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
-
-    SetLastAccessedDateJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
