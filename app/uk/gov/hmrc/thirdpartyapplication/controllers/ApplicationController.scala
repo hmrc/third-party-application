@@ -327,7 +327,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def deleteApplication(id: UUID): Action[AnyContent] = (Action andThen strideAuthRefiner()).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
-    Logger.info(s"Pomegranate - In ApplicationController.deleteApplication() - AppId: $id")
     def audit(app: ApplicationData): Future[AuditResult] = {
       Logger.info(s"Delete application ${app.id} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)

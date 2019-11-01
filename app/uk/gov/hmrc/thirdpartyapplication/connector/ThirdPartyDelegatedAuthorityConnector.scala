@@ -28,7 +28,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
 
   def revokeApplicationAuthorities(clientId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    Logger.info(s"Pomegranate - In ThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities() - clientId: $clientId")
 
     httpClient.DELETE(s"${config.baseUrl}/authority/$clientId") map (_ => HasSucceeded) recover {
       case _: NotFoundException => HasSucceeded
