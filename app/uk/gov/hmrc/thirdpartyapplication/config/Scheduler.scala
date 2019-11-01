@@ -20,7 +20,7 @@ import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
 import play.api.{Application, Logger, LoggerLike}
 import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{SetLastAccessedDateJobConfig, _}
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
 
 class SchedulerModule extends AbstractModule {
   override def configure(): Unit = {
@@ -34,8 +34,6 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           refreshSubscriptionsJobConfig: RefreshSubscriptionsJobConfig,
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
-                          setLastAccessedDateJobConfig: SetLastAccessedDateJobConfig,
-                          setLastAccessedDateJob: SetLastAccessedDateJob,
                           reconcileRateLimitsJob: ReconcileRateLimitsScheduledJob,
                           reconcileRateLimitsJobConfig: ReconcileRateLimitsJobConfig,
                           app: Application) extends RunningOfScheduledJobs {
@@ -43,10 +41,9 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
     val refreshJob = if (refreshSubscriptionsJobConfig.enabled) Seq(refreshSubscriptionsScheduledJob) else Seq.empty
-    val accessDateJob = if (setLastAccessedDateJobConfig.enabled) Seq(setLastAccessedDateJob) else Seq.empty
     val rateLimitsJob = if (reconcileRateLimitsJobConfig.enabled) Seq(reconcileRateLimitsJob) else Seq.empty
 
-    upliftJob ++ refreshJob ++ accessDateJob ++ rateLimitsJob
+    upliftJob ++ refreshJob ++ rateLimitsJob
   }
 
   onStart(app)

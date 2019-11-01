@@ -27,7 +27,7 @@ import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.api.{FailoverStrategy, ReadConcern, ReadPreference}
+import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
@@ -42,7 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
@@ -133,18 +133,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
       _.result[ApplicationData].head
     }
-
-  def setMissingLastAccessedDates(dateToSet: DateTime): Future[Int] = {
-    def updateApplicationsWithLastAccessDate(applicationIds: Seq[UUID]) = {
-      val setLastAccessDate: JsObject = Json.obj("$set" -> Json.obj("lastAccess" -> dateToSet))
-      Future.sequence(applicationIds.map(applicationId => findAndUpdate(Json.obj("id" -> applicationId.toString), setLastAccessDate)))
-    }
-
-    for {
-      applicationIds <- findAll().map(applications => applications.filter(application => application.lastAccess.isEmpty).map(_.id))
-      results <- updateApplicationsWithLastAccessDate(applicationIds)
-    } yield results.size
-  }
 
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     find(s"$$and" -> Json.arr(

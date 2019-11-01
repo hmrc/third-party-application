@@ -159,47 +159,6 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
   }
 
-  "setMissingLastAccessedDates" should {
-    def applicationWithoutLastAccessDate(applicationId: UUID) = {
-      await(applicationRepository.save(anApplicationData(applicationId, UUID.randomUUID().toString)))
-
-      def applicationById: JsObject = Json.obj("id" -> applicationId.toString)
-
-      def removeLastAccessField: JsObject = Json.obj("$unset" -> Json.obj("lastAccess" -> ""))
-
-      applicationRepository.findAndUpdate(applicationById, removeLastAccessField)
-    }
-
-    def numberOfApplications: Int = applicationRepository.findAll().map(_.size)
-
-    def applicationLastAccessDate(applicationId: UUID): Option[DateTime] = await(applicationRepository.fetch(applicationId).get).lastAccess
-
-    "set lastAccess property on applications that do not have it" in {
-      // 2 Applications that do not have lastAccess dates
-      val application1Id = UUID.randomUUID()
-      await(applicationWithoutLastAccessDate(application1Id))
-
-      val application2Id = UUID.randomUUID()
-      await(applicationWithoutLastAccessDate(application2Id))
-
-      // Application that already has a lastAccess date
-      val updatedApplicationId = UUID.randomUUID()
-      val updatedApplication = anApplicationData(updatedApplicationId)
-      val updatedApplicationLastAccessDate = updatedApplication.lastAccess.get
-      await(applicationRepository.save(updatedApplication))
-
-      val dateToSet: DateTime = DateTime.now
-      val numberOfUpdatedApplications = await(applicationRepository.setMissingLastAccessedDates(dateToSet))
-
-      numberOfApplications shouldBe 3
-      numberOfUpdatedApplications shouldBe 2
-
-      applicationLastAccessDate(application1Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
-      applicationLastAccessDate(application2Id).get.withZone(DateTimeZone.UTC) shouldEqual dateToSet.withZone(DateTimeZone.UTC)
-      applicationLastAccessDate(updatedApplicationId).get.withZone(DateTimeZone.UTC) shouldEqual updatedApplicationLastAccessDate.withZone(DateTimeZone.UTC)
-    }
-  }
-
   "fetchByClientId" should {
 
     "retrieve the application for a given client id when it has a matching client id" in {
