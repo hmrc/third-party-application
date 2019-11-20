@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.security.SecureRandom
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -32,6 +33,7 @@ import scala.collection._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Random
 
 trait ApiGatewayStore {
 
@@ -64,6 +66,66 @@ trait ApiGatewayStore {
   def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
                                    (implicit hc: HeaderCarrier): Future[HasSucceeded]
 
+}
+
+@Singleton
+class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector) extends ApiGatewayStore {
+
+  private def generateEnvironmentToken(): EnvironmentToken = {
+    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
+    new SecureRandom().nextBytes(randomBytes)
+    val accessToken = randomBytes.map("%02x".format(_)).mkString
+    EnvironmentToken((Random.alphanumeric take 28).mkString, "", accessToken)
+  }
+
+  override def createApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier): Future[EnvironmentToken] = {
+    val environmentToken = generateEnvironmentToken()
+    for {
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, environmentToken.accessToken, BRONZE)(hc)
+    } yield environmentToken
+  }
+
+  override def checkApplicationRateLimitTier(wso2Username: String, wso2Password: String, wso2ApplicationName: String, expectedRateLimitTier: RateLimitTier)
+                                            (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    awsApiGatewayConnector.createOrUpdateApplication(app.wso2ApplicationName, app.tokens.production.accessToken, rateLimitTier)(hc)
+  }
+
+  override def deleteApplication(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)
+  }
+
+  override def addSubscription(app: ApplicationData,
+                               api: APIIdentifier)
+                              (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def removeSubscription(app: ApplicationData, api: APIIdentifier)
+                                 (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def resubscribeApi(originalApis: Seq[APIIdentifier],
+                              wso2Username: String,
+                              wso2Password: String,
+                              wso2ApplicationName: String,
+                              api: APIIdentifier,
+                              rateLimitTier: RateLimitTier)
+                             (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    Future.successful(HasSucceeded)
+  }
+
+  override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
+                               (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] = {
+    Future.successful(Seq.empty)
+  }
 }
 
 @Singleton
