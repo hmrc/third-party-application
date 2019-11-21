@@ -156,7 +156,8 @@ class ApiStorageConfigProvider @Inject()(val runModeConfiguration: Configuration
       runModeConfiguration.getBoolean(s"$env.skipWso2").
       getOrElse(runModeConfiguration.getBoolean("skipWso2").
         getOrElse(false))
-    ApiStorageConfig(skipWso2)
+    val awsOnly = runModeConfiguration.getBoolean("awsOnly").getOrElse(false)
+    ApiStorageConfig(skipWso2, awsOnly)
   }
 }
 

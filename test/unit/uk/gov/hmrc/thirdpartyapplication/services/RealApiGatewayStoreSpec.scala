@@ -40,7 +40,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class ApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
+class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
