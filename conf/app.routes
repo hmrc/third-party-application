@@ -13,6 +13,8 @@ GET           /application/:id                                       uk.gov.hmrc
 POST          /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.create
 POST          /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.update(id: java.util.UUID)
 
+PUT           /application/:id/cidrBlocks                            uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCidrBlocks(id: java.util.UUID)
+
 GET           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.readScopes(id: java.util.UUID)
 PUT           /application/:id/access/scopes                         uk.gov.hmrc.thirdpartyapplication.controllers.AccessController.updateScopes(id: java.util.UUID)
 

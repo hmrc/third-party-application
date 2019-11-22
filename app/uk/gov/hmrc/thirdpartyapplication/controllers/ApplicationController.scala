@@ -91,6 +91,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
+  def updateCidrBlocks(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+    withJsonBody[UpdateCidrBlocksRequest] { updateCidrBlocksRequest =>
+      applicationService.updateCidrBlocks(applicationId, updateCidrBlocksRequest.cidrBlocks) map { _ =>
+        NoContent
+      } recover recovery
+    }
+  }
+
   def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>

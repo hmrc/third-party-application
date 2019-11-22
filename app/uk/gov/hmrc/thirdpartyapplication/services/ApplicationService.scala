@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
+import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -43,9 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, sequence, successful, traverse}
+import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -184,6 +185,16 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield updatedApp
     }
 
+  }
+
+  def updateCidrBlocks(applicationId: UUID, newCidrBlocks: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+    for {
+      validatedCidrBlocks <- fromTry(Try(newCidrBlocks.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
+        case e: IllegalArgumentException => throw InvalidCidrBlockException(e.getMessage)
+      }
+      app <- fetchApp(applicationId)
+      updatedApp <- applicationRepository.save(app.copy(cidrBlocks = validatedCidrBlocks))
+    } yield updatedApp
   }
 
   def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
@@ -610,4 +621,11 @@ class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoCompo
   override def lockId: String = "create-third-party-application"
 
   override val forceLockReleaseAfter = standardMinutes(1)
+}
+
+object HelloWorld {
+  def main(args: Array[String]): Unit = {
+    val value = new SubnetUtils("0.0.0.0/0")
+    println(s"${value.getInfo.getCidrSignature}")
+  }
 }

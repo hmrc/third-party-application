@@ -41,7 +41,8 @@ case class ApplicationData(id: UUID,
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
-                           blocked: Boolean = false) {
+                           blocked: Boolean = false,
+                           cidrBlocks: Set[String] = Set.empty) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 

@@ -43,8 +43,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{InvalidCidrBlockException, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -1527,6 +1527,40 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.updateRateLimitTier(mockEq(uuid), mockEq(SILVER))(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
 
       assertThrows[SessionRecordNotFound](await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson))))
+    }
+  }
+
+  "update CIDR blocks" should {
+    "succeed with a 204 (no content) when the CIDR blocks are successfully added to the application" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val validUpdateCidrBlocksJson: JsValue = Json.parse("""{ "cidrBlocks" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateCidrBlocks(mockEq(applicationId), any())(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
+
+      val result: Result = await(underTest.updateCidrBlocks(applicationId)(request.withBody(validUpdateCidrBlocksJson)))
+
+      status(result) shouldBe SC_NO_CONTENT
+    }
+
+    "fail when the JSON message is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val invalidUpdateCidrBlocksJson: JsValue = Json.parse("""{ "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateCidrBlocks(mockEq(applicationId), any())(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
+
+      val result: Result = await(underTest.updateCidrBlocks(applicationId)(request.withBody(invalidUpdateCidrBlocksJson)))
+
+      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
+    }
+
+    "fail when the CIDR block is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val invalidUpdateCidrBlocksJson: JsValue = Json.parse("""{ "cidrBlocks" : ["392.168.100.0/22"] }""")
+      val errorMessage = "invalid cidr block"
+      when(underTest.applicationService.updateCidrBlocks(mockEq(applicationId), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(InvalidCidrBlockException(errorMessage)))
+
+      val result: Result = await(underTest.updateCidrBlocks(applicationId)(request.withBody(invalidUpdateCidrBlocksJson)))
+
+      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_CIDR_BLOCK)
     }
   }
 

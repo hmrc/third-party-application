@@ -23,10 +23,9 @@ import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
-import org.mockito.Matchers._
+import org.mockito.Matchers.{any, anyString, eq => eqTo, _}
 import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.Matchers.{any, anyString, eq => eqTo}
 import org.mockito.stubbing.{Answer, OngoingStubbing}
 import org.mockito.{ArgumentCaptor, Mockito}
 import org.scalatest.BeforeAndAfterAll
@@ -52,6 +51,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
@@ -1330,6 +1330,44 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
+  "update CIDR blocks" should {
+    "update the CIDR blocks in the application in Mongo" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val existingCidrBlocks: Set[String] = Set("192.168.100.14/24")
+      val newCidrBlocks: Set[String] = Set("192.168.100.0/22", "192.168.104.1/32")
+      val applicationData: ApplicationData = anApplicationData(applicationId, cidrBlocks = existingCidrBlocks)
+      mockApplicationRepositoryFetchToReturn(applicationId, Some(applicationData))
+
+      val result: ApplicationData = await(underTest.updateCidrBlocks(applicationId, newCidrBlocks))
+
+      result.cidrBlocks shouldBe newCidrBlocks
+    }
+
+    "fail when the IP address is out of range" in new Setup {
+      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
+        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("392.168.100.0/22")))
+      }
+
+      error.getMessage shouldBe "Value [392] not in range [0,255]"
+    }
+
+    "fail when the mask is out of range" in new Setup {
+      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
+        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("192.168.100.0/55")))
+      }
+
+      error.getMessage shouldBe "Value [55] not in range [0,32]"
+    }
+
+    "fail when the format is invalid" in new Setup {
+      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
+        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("192.100.0/22")))
+      }
+
+      error.getMessage shouldBe "Could not parse [192.100.0/22]"
+    }
+  }
+
   "deleting an application" should {
     val deleteRequestedBy = "email@example.com"
     val gatekeeperUserId = "big.boss.gatekeeper"
@@ -1472,7 +1510,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR)),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION) = {
+                                environment: Environment = Environment.PRODUCTION,
+                                cidrBlocks: Set[String] = Set.empty) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1488,6 +1527,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       HmrcTime.now,
       Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
-      environment = environment.toString)
+      environment = environment.toString,
+      cidrBlocks = cidrBlocks)
   }
 }
