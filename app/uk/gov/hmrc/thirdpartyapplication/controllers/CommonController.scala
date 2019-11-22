@@ -19,10 +19,10 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc.{AnyContent, Request, Result}
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.{APPLICATION_NOT_FOUND, INVALID_REQUEST_PAYLOAD, SCOPE_NOT_FOUND, UNKNOWN_ERROR}
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.thirdpartyapplication.models.ScopeNotFoundException
 import uk.gov.hmrc.play.bootstrap.controller.BaseController
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpWhitelistException, ScopeNotFoundException}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -53,6 +53,7 @@ trait CommonController extends BaseController {
   private[controllers] def recovery: PartialFunction[Throwable, Result] = {
     case e: NotFoundException => handleNotFound(e.getMessage)
     case e: ScopeNotFoundException => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
+    case e: InvalidIpWhitelistException => BadRequest(JsErrorResponse(INVALID_IP_WHITELIST, e.getMessage))
     case e: Throwable =>
       Logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)

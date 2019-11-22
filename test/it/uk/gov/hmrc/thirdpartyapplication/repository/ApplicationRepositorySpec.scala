@@ -19,12 +19,11 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import org.mockito.Mockito.{times, verify, verifyNoMoreInteractions}
 import org.scalatest.concurrent.Eventually
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
-import play.api.libs.json.{JsObject, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
@@ -138,6 +137,18 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val updatedApplication = await(applicationRepository.updateApplicationRateLimit(applicationId, updatedRateLimit))
 
       updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
+    }
+  }
+
+  "updateApplicationIpWhitelist" should {
+    "set the ipWhitelist field on an Application document" in {
+      val applicationId = UUID.randomUUID()
+      await(applicationRepository.save(anApplicationData(applicationId)))
+      val updatedIpWhitelist = Set("192.168.100.0/22", "192.168.104.1/32")
+
+      val updatedApplication = await(applicationRepository.updateApplicationIpWhitelist(applicationId, updatedIpWhitelist))
+
+      updatedApplication.ipWhitelist shouldBe updatedIpWhitelist
     }
   }
 

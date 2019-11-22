@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
+import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -43,9 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, sequence, successful, traverse}
+import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
-import scala.util.Failure
+import scala.util.{Failure, Try}
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -184,6 +185,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       } yield updatedApp
     }
 
+  }
+
+  def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+    for {
+      validatedIpWhitelist <- fromTry(Try(newIpWhitelist.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
+        case e: IllegalArgumentException => throw InvalidIpWhitelistException(e.getMessage)
+      }
+      updatedApp <- applicationRepository.updateApplicationIpWhitelist(applicationId, validatedIpWhitelist)
+    } yield updatedApp
   }
 
   def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])

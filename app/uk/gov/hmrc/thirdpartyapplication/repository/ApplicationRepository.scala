@@ -126,6 +126,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   def updateApplicationRateLimit(applicationId: UUID, rateLimit: RateLimitTier): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("rateLimitTier" -> rateLimit.toString)))
 
+  def updateApplicationIpWhitelist(applicationId: UUID, ipWhitelist: Set[String]): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipWhitelist" -> ipWhitelist)))
+
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 

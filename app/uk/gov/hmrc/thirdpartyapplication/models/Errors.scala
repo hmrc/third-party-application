@@ -39,3 +39,5 @@ case class SubscriptionAlreadyExistsException(name: String, api: APIIdentifier)
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 
 case class OverrideNotFoundException(anOverride: String) extends RuntimeException(s"Override '$anOverride' not found")
+
+case class InvalidIpWhitelistException(message: String) extends RuntimeException(message)

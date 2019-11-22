@@ -43,8 +43,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpWhitelistException, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -1527,6 +1527,40 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.updateRateLimitTier(mockEq(uuid), mockEq(SILVER))(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
 
       assertThrows[SessionRecordNotFound](await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson))))
+    }
+  }
+
+  "update IP whitelist" should {
+    "succeed with a 204 (no content) when the IP whitelist is successfully added to the application" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val validUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateIpWhitelist(mockEq(applicationId), any())(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
+
+      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(validUpdateIpWhitelistJson)))
+
+      status(result) shouldBe SC_NO_CONTENT
+    }
+
+    "fail when the JSON message is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateIpWhitelist(mockEq(applicationId), any())(any[HeaderCarrier])).thenReturn(mock[ApplicationData])
+
+      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson)))
+
+      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
+    }
+
+    "fail when the IP whitelist is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["392.168.100.0/22"] }""")
+      val errorMessage = "invalid IP whitelist"
+      when(underTest.applicationService.updateIpWhitelist(mockEq(applicationId), any())(any[HeaderCarrier]))
+        .thenReturn(Future.failed(InvalidIpWhitelistException(errorMessage)))
+
+      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson)))
+
+      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_WHITELIST)
     }
   }
 

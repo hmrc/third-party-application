@@ -91,6 +91,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
+  def updateIpWhitelist(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+    withJsonBody[UpdateIpWhitelistRequest] { updateIpWhitelistRequest =>
+      applicationService.updateIpWhitelist(applicationId, updateIpWhitelistRequest.ipWhitelist) map { _ =>
+        NoContent
+      } recover recovery
+    }
+  }
+
   def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>

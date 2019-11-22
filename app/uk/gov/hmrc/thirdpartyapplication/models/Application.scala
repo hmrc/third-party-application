@@ -102,7 +102,8 @@ case class ApplicationResponse(id: UUID,
                                rateLimitTier: RateLimitTier = BRONZE,
                                trusted: Boolean = false,
                                checkInformation: Option[CheckInformation] = None,
-                               blocked: Boolean = false)
+                               blocked: Boolean = false,
+                               ipWhitelist: Set[String] = Set.empty)
 
 object ApplicationResponse {
 
@@ -139,7 +140,8 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       trusted,
       data.checkInformation,
-      data.blocked)
+      data.blocked,
+      data.ipWhitelist)
   }
 }
 
