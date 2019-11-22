@@ -51,7 +51,7 @@ case class OverridesResponse(overrides: Set[OverrideFlag])
 
 case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
-case class UpdateCidrBlocksRequest(cidrBlocks: Set[String])
+case class UpdateIpWhitelistRequest(ipWhitelist: Set[String])
 
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
 
@@ -74,7 +74,7 @@ object ErrorCode extends Enumeration {
   val INVALID_STATE_TRANSITION = Value("INVALID_STATE_TRANSITION")
   val SUBSCRIPTION_NOT_FOUND = Value("SUBSCRIPTION_NOT_FOUND")
   val FORBIDDEN = Value("FORBIDDEN")
-  val INVALID_CIDR_BLOCK = Value("INVALID_CIDR_BLOCK")
+  val INVALID_IP_WHITELIST = Value("INVALID_IP_WHITELIST")
 }
 
 object JsErrorResponse {

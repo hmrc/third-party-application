@@ -122,7 +122,7 @@ object JsonFormatters {
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
-  implicit val formatUpdateCidrBlocksRequest = Json.format[UpdateCidrBlocksRequest]
+  implicit val formatUpdateIpWhitelistRequest = Json.format[UpdateIpWhitelistRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatEnvironmentTokenResponse = Json.format[EnvironmentTokenResponse]
   implicit val formatApplicationTokensResponse = Json.format[ApplicationTokensResponse]
@@ -202,7 +202,7 @@ object MongoFormat {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "cidrBlocks").read[Set[String]] or Reads.pure(Set.empty[String]))
+    ((JsPath \ "ipWhitelist").read[Set[String]] or Reads.pure(Set.empty[String]))
   )(ApplicationData.apply _)
 
   implicit val formatApplicationData = {

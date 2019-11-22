@@ -103,7 +103,7 @@ case class ApplicationResponse(id: UUID,
                                trusted: Boolean = false,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
-                               cidrBlocks: Set[String] = Set.empty)
+                               ipWhitelist: Set[String] = Set.empty)
 
 object ApplicationResponse {
 
@@ -141,7 +141,7 @@ object ApplicationResponse {
       trusted,
       data.checkInformation,
       data.blocked,
-      data.cidrBlocks)
+      data.ipWhitelist)
   }
 }
 

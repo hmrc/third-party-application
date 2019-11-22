@@ -187,13 +187,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def updateCidrBlocks(applicationId: UUID, newCidrBlocks: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     for {
-      validatedCidrBlocks <- fromTry(Try(newCidrBlocks.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
-        case e: IllegalArgumentException => throw InvalidCidrBlockException(e.getMessage)
+      validatedIpWhitelist <- fromTry(Try(newIpWhitelist.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
+        case e: IllegalArgumentException => throw InvalidIpWhitelistException(e.getMessage)
       }
-      app <- fetchApp(applicationId)
-      updatedApp <- applicationRepository.save(app.copy(cidrBlocks = validatedCidrBlocks))
+      updatedApp <- applicationRepository.updateApplicationIpWhitelist(applicationId, validatedIpWhitelist)
     } yield updatedApp
   }
 
@@ -621,11 +620,4 @@ class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoCompo
   override def lockId: String = "create-third-party-application"
 
   override val forceLockReleaseAfter = standardMinutes(1)
-}
-
-object HelloWorld {
-  def main(args: Array[String]): Unit = {
-    val value = new SubnetUtils("0.0.0.0/0")
-    println(s"${value.getInfo.getCidrSignature}")
-  }
 }

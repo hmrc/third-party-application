@@ -1330,38 +1330,38 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
   }
 
-  "update CIDR blocks" should {
-    "update the CIDR blocks in the application in Mongo" in new Setup {
+  "update IP whitelist" should {
+    "update the IP whitelist in the application in Mongo" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
-      val existingCidrBlocks: Set[String] = Set("192.168.100.14/24")
-      val newCidrBlocks: Set[String] = Set("192.168.100.0/22", "192.168.104.1/32")
-      val applicationData: ApplicationData = anApplicationData(applicationId, cidrBlocks = existingCidrBlocks)
-      mockApplicationRepositoryFetchToReturn(applicationId, Some(applicationData))
+      val newIpWhitelist: Set[String] = Set("192.168.100.0/22", "192.168.104.1/32")
+      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, ipWhitelist = newIpWhitelist)
+      when(mockApplicationRepository.updateApplicationIpWhitelist(applicationId, newIpWhitelist)).thenReturn(updatedApplicationData)
 
-      val result: ApplicationData = await(underTest.updateCidrBlocks(applicationId, newCidrBlocks))
+      val result: ApplicationData = await(underTest.updateIpWhitelist(applicationId, newIpWhitelist))
 
-      result.cidrBlocks shouldBe newCidrBlocks
+      result shouldBe updatedApplicationData
+      verify(mockApplicationRepository).updateApplicationIpWhitelist(applicationId, newIpWhitelist)
     }
 
     "fail when the IP address is out of range" in new Setup {
-      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
-        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("392.168.100.0/22")))
+      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("392.168.100.0/22")))
       }
 
       error.getMessage shouldBe "Value [392] not in range [0,255]"
     }
 
     "fail when the mask is out of range" in new Setup {
-      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
-        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("192.168.100.0/55")))
+      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.168.100.0/55")))
       }
 
       error.getMessage shouldBe "Value [55] not in range [0,32]"
     }
 
     "fail when the format is invalid" in new Setup {
-      val error: InvalidCidrBlockException = intercept[InvalidCidrBlockException] {
-        await(underTest.updateCidrBlocks(UUID.randomUUID(), Set("192.100.0/22")))
+      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.100.0/22")))
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
@@ -1511,7 +1511,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,
-                                cidrBlocks: Set[String] = Set.empty) = {
+                                ipWhitelist: Set[String] = Set.empty) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1528,6 +1528,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
-      cidrBlocks = cidrBlocks)
+      ipWhitelist = ipWhitelist)
   }
 }
