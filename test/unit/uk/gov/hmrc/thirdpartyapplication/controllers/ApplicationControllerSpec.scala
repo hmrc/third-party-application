@@ -906,7 +906,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       val applicationResponse: ApplicationResponse =
         aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
-      val updatedApplicationResponse: ExtendedApplicationResponse = expandedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
+      val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
 
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
     }
@@ -1679,7 +1679,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     )
   }
 
-  private def expandedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
+  private def extendedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
     new ExtendedApplicationResponse(
       app.id,
       app.clientId,
@@ -1697,10 +1697,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       app.environment,
       app.state,
       app.rateLimitTier,
-      app.trusted,
       app.checkInformation,
       app.blocked,
       app.ipWhitelist,
+      app.trusted,
       UUID.randomUUID().toString,
       Seq.empty
     )
