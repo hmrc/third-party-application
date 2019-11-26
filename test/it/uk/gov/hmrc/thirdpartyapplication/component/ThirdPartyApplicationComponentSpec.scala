@@ -440,7 +440,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The API subscription is returned")
       val result = Json.parse(response.body).as[Seq[ApiSubscription]]
-      result shouldBe Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true)), None))
+      result shouldBe Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
     }
 
     scenario("Fetch All API Subscriptions") {

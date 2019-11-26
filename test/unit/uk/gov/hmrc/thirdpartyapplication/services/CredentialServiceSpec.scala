@@ -66,14 +66,12 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
 
-    val mockTrustedApplications = mock[TrustedApplications]
-    when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
-    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
+    val applicationResponseCreator = new ApplicationResponseCreator()
 
     val clientSecretLimit = 5
     val credentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, mockTrustedApplications, applicationResponseCreator, credentialConfig)
+    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, applicationResponseCreator, credentialConfig)
 
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
       override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {

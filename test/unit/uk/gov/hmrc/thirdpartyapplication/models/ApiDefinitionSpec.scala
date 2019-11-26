@@ -27,13 +27,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVe
 class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ScalaFutures with LogSuppressing {
 
   private val apiDefinitionWithStableStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(false))
+    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)))
 
   private val apiDefinitionWithBetaStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.BETA, None)), Some(false))
+    Seq(ApiVersion("1.0", ApiStatus.BETA, None)))
 
   private val apiDefinitionWithIsTestSupportFlag = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(false), Some(true))
+    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(true))
 
   private val apiDefinitionWithStableStatusJson =
     """{
@@ -45,8 +45,7 @@ class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSu
       |      "version": "1.0",
       |      "status": "STABLE"
       |    }
-      |  ],
-      |  "requiresTrust": false
+      |  ]
       |}""".stripMargin
 
   private val apiDefinitionWithPublishedStatusJson =
@@ -59,8 +58,7 @@ class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSu
       |      "version": "1.0",
       |      "status": "PUBLISHED"
       |    }
-      |  ],
-      |  "requiresTrust": false
+      |  ]
       |}""".stripMargin
 
   private val apiDefinitionWithPrototypedStatusJson =
@@ -73,8 +71,7 @@ class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSu
       |      "version": "1.0",
       |      "status": "PROTOTYPED"
       |    }
-      |  ],
-      |  "requiresTrust": false
+      |  ]
       |}""".stripMargin
 
   private val apiDefinitionWithIsTestSupportFlagJson =
@@ -88,7 +85,6 @@ class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSu
       |      "status": "PUBLISHED"
       |    }
       |  ],
-      |  "requiresTrust": false,
       |  "isTestSupport": true
       |}""".stripMargin
 

@@ -20,7 +20,6 @@ import java.security.MessageDigest
 import java.util.UUID
 
 import com.google.common.base.Charsets
-import javax.inject.Inject
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -100,10 +99,10 @@ case class ApplicationResponse(id: UUID,
                                environment: Option[Environment] = None,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
-                               trusted: Boolean = false,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
-                               ipWhitelist: Set[String] = Set.empty)
+                               ipWhitelist: Set[String] = Set.empty,
+                               trusted: Boolean = false)
 
 object ApplicationResponse {
 
@@ -120,7 +119,7 @@ object ApplicationResponse {
     case _ => None
   }
 
-  def apply(data: ApplicationData, trusted: Boolean): ApplicationResponse = {
+  def apply(data: ApplicationData): ApplicationResponse = {
     ApplicationResponse(
       data.id,
       data.tokens.production.clientId,
@@ -138,7 +137,6 @@ object ApplicationResponse {
       Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
-      trusted,
       data.checkInformation,
       data.blocked,
       data.ipWhitelist)
@@ -161,15 +159,15 @@ case class ExtendedApplicationResponse(id: UUID,
                                        environment: Option[Environment] = None,
                                        state: ApplicationState = ApplicationState(name = TESTING),
                                        rateLimitTier: RateLimitTier = BRONZE,
-                                       trusted: Boolean = false,
                                        checkInformation: Option[CheckInformation] = None,
                                        blocked: Boolean = false,
                                        ipWhitelist: Set[String] = Set.empty,
+                                       trusted: Boolean = false,
                                        serverToken: String,
                                        subscriptions: Seq[APIIdentifier])
 
 object ExtendedApplicationResponse {
-  def apply(data: ApplicationData, trusted: Boolean, subscriptions: Seq[APIIdentifier]): ExtendedApplicationResponse = {
+  def apply(data: ApplicationData, subscriptions: Seq[APIIdentifier]): ExtendedApplicationResponse = {
     ExtendedApplicationResponse(
       data.id,
       data.tokens.production.clientId,
@@ -187,12 +185,11 @@ object ExtendedApplicationResponse {
       Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
-      trusted,
       data.checkInformation,
       data.blocked,
       data.ipWhitelist,
-      data.tokens.production.accessToken,
-      subscriptions)
+      serverToken = data.tokens.production.accessToken,
+      subscriptions = subscriptions)
   }
 }
 
@@ -338,10 +335,10 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 
 }
 
-class ApplicationResponseCreator @Inject()(trustedApplications: TrustedApplications) {
+class ApplicationResponseCreator {
 
   def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
-    CreateApplicationResponse(ApplicationResponse(applicationData, trustedApplications.isTrusted(applicationData)), totpSecrets)
+    CreateApplicationResponse(ApplicationResponse(applicationData), totpSecrets)
   }
 }
 

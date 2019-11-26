@@ -99,7 +99,6 @@ object JsonFormatters {
       (JsPath \ "name").read[String] and
       (JsPath \ "context").read[String] and
       (JsPath \ "versions").read[Seq[ApiVersion]] and
-      (JsPath \ "requiresTrust").readNullable[Boolean] and
       (JsPath \ "isTestSupport").readNullable[Boolean]
     ) (ApiDefinition.apply _)
 

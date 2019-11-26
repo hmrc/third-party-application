@@ -1649,7 +1649,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   }
 
   private def anAPISubscription() = {
-    new ApiSubscription("name", "service-name", "some-context", Seq(VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true)), None)
+    new ApiSubscription("name", "service-name", "some-context", Seq(VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true)))
   }
 
   private def aSubcriptionData() = {
