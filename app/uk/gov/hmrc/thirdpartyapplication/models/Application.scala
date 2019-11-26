@@ -106,20 +106,20 @@ case class ApplicationResponse(id: UUID,
 
 object ApplicationResponse {
 
-  def apply(data: ApplicationData) : ApplicationResponse = {
-    val redirectUris = data.access match {
-      case a: Standard => a.redirectUris
-      case _ => Seq()
-    }
-    val termsAndConditionsUrl = data.access match {
-      case a: Standard => a.termsAndConditionsUrl
-      case _ => None
-    }
-    val privacyPolicyUrl = data.access match {
-      case a: Standard => a.privacyPolicyUrl
-      case _ => None
-    }
+  def redirectUris(data: ApplicationData): Seq[String] = data.access match {
+    case a: Standard => a.redirectUris
+    case _ => Seq()
+  }
+  def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
+    case a: Standard => a.termsAndConditionsUrl
+    case _ => None
+  }
+  def privacyPolicyUrl(data: ApplicationData): Option[String] = data.access match {
+    case a: Standard => a.privacyPolicyUrl
+    case _ => None
+  }
 
+  def apply(data: ApplicationData): ApplicationResponse = {
     ApplicationResponse(
       data.id,
       data.tokens.production.clientId,
@@ -130,9 +130,9 @@ object ApplicationResponse {
       data.collaborators,
       data.createdOn,
       data.lastAccess,
-      redirectUris,
-      termsAndConditionsUrl,
-      privacyPolicyUrl,
+      redirectUris(data),
+      termsAndConditionsUrl(data),
+      privacyPolicyUrl(data),
       data.access,
       Some(Environment.PRODUCTION),
       data.state,
@@ -140,6 +140,56 @@ object ApplicationResponse {
       data.checkInformation,
       data.blocked,
       data.ipWhitelist)
+  }
+}
+
+case class ExtendedApplicationResponse(id: UUID,
+                                       clientId: String,
+                                       gatewayId: String,
+                                       name: String,
+                                       deployedTo: String,
+                                       description: Option[String] = None,
+                                       collaborators: Set[Collaborator],
+                                       createdOn: DateTime,
+                                       lastAccess: Option[DateTime],
+                                       redirectUris: Seq[String] = Seq.empty,
+                                       termsAndConditionsUrl: Option[String] = None,
+                                       privacyPolicyUrl: Option[String] = None,
+                                       access: Access = Standard(Seq.empty, None, None),
+                                       environment: Option[Environment] = None,
+                                       state: ApplicationState = ApplicationState(name = TESTING),
+                                       rateLimitTier: RateLimitTier = BRONZE,
+                                       checkInformation: Option[CheckInformation] = None,
+                                       blocked: Boolean = false,
+                                       ipWhitelist: Set[String] = Set.empty,
+                                       trusted: Boolean = false,
+                                       serverToken: String,
+                                       subscriptions: Seq[APIIdentifier])
+
+object ExtendedApplicationResponse {
+  def apply(data: ApplicationData, subscriptions: Seq[APIIdentifier]): ExtendedApplicationResponse = {
+    ExtendedApplicationResponse(
+      data.id,
+      data.tokens.production.clientId,
+      data.wso2ApplicationName,
+      data.name,
+      data.environment,
+      data.description,
+      data.collaborators,
+      data.createdOn,
+      data.lastAccess,
+      ApplicationResponse.redirectUris(data),
+      ApplicationResponse.termsAndConditionsUrl(data),
+      ApplicationResponse.privacyPolicyUrl(data),
+      data.access,
+      Some(Environment.PRODUCTION),
+      data.state,
+      data.rateLimitTier.getOrElse(BRONZE),
+      data.checkInformation,
+      data.blocked,
+      data.ipWhitelist,
+      serverToken = data.tokens.production.accessToken,
+      subscriptions = subscriptions)
   }
 }
 

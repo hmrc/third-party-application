@@ -276,10 +276,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def recordApplicationUsage(applicationId: UUID): Future[ApplicationResponse] =
-    applicationRepository.recordApplicationUsage(applicationId)
-      .map(application =>
-        ApplicationResponse(data = application))
+  def recordApplicationUsage(applicationId: UUID): Future[ExtendedApplicationResponse] = {
+    for {
+      app <- applicationRepository.recordApplicationUsage(applicationId)
+      subscriptions <- subscriptionRepository.getSubscriptions(app.id)
+    } yield ExtendedApplicationResponse(app, subscriptions)
+  }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByServerToken(serverToken) map {

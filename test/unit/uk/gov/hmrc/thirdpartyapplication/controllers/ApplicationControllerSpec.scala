@@ -44,7 +44,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpWhitelistException, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpWhitelistException, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -906,7 +906,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       val applicationResponse: ApplicationResponse =
         aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
-      val updatedApplicationResponse: ApplicationResponse = applicationResponse.copy(lastAccess = Some(updatedLastAccessTime))
+      val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
 
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
     }
@@ -1676,6 +1676,33 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       standardAccess.privacyPolicyUrl,
       access,
       environment = Some(environment)
+    )
+  }
+
+  private def extendedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
+    new ExtendedApplicationResponse(
+      app.id,
+      app.clientId,
+      app.gatewayId,
+      app.name,
+      app.deployedTo,
+      app.description,
+      app.collaborators,
+      app.createdOn,
+      app.lastAccess,
+      app.redirectUris,
+      app.termsAndConditionsUrl,
+      app.privacyPolicyUrl,
+      app.access,
+      app.environment,
+      app.state,
+      app.rateLimitTier,
+      app.checkInformation,
+      app.blocked,
+      app.ipWhitelist,
+      app.trusted,
+      UUID.randomUUID().toString,
+      Seq.empty
     )
   }
 
