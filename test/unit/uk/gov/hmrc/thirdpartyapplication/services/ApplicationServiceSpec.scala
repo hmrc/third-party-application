@@ -75,22 +75,15 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val mockTotpConnector: TotpConnector = mock[TotpConnector]
     val mockLockKeeper = new MockLockKeeper(locked)
     val response = mock[HttpResponse]
-    val trustedApplicationId1 = UUID.fromString("162017dc-607b-4405-8208-a28308672f76")
-    val trustedApplicationId2 = UUID.fromString("162017dc-607b-4405-8208-a28308672f77")
     val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockApplicationService = mock[ApplicationService]
     val mockGatekeeperService = mock[GatekeeperService]
 
-    val mockTrustedApplications: TrustedApplications = mock[TrustedApplications]
-    when(mockTrustedApplications.isTrusted(any[ApplicationData]())).thenReturn(false)
-    when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId1))).thenReturn(true)
-    when(mockTrustedApplications.isTrusted(anApplicationData(trustedApplicationId2))).thenReturn(true)
-
     when(mockApplicationRepository.fetchApplicationsByName(any()))
       .thenReturn(Future.successful(Seq.empty))
 
-    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
+    val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
@@ -116,7 +109,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApiGatewayStore,
       applicationResponseCreator,
       mockCredentialGenerator,
-      mockTrustedApplications,
       mockApiSubscriptionFieldsConnector,
       mockThirdPartyDelegatedAuthorityConnector,
       mockNameValidationConfig)
@@ -503,17 +495,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         rateLimitTier = SILVER))
     }
 
-    "return an application with trusted flag when the application is in the whitelist" in new Setup {
-
-      val applicationData: ApplicationData = anApplicationData(trustedApplicationId2)
-
-      when(mockApplicationRepository.fetch(trustedApplicationId2)).thenReturn(Some(applicationData))
-
-      val result: Option[ApplicationResponse] = await(underTest.fetch(trustedApplicationId2))
-
-      result.get.trusted shouldBe true
-    }
-
     "send an audit event for each type of change" in new Setup {
       val admin = Collaborator("test@example.com", ADMINISTRATOR)
       val id: UUID = UUID.randomUUID()
@@ -797,17 +778,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       result.get.createdOn shouldBe applicationData.createdOn
     }
 
-    "return an application with trusted flag when the application is in the whitelist" in new Setup {
-
-      val applicationData: ApplicationData = anApplicationData(trustedApplicationId1)
-
-      when(mockApplicationRepository.fetchByClientId(applicationData.tokens.production.clientId)).thenReturn(Some(applicationData))
-
-      val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
-
-      result.get.trusted shouldBe true
-    }
-
   }
 
   "fetchByServerToken" should {
@@ -869,7 +839,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
@@ -894,7 +864,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -934,7 +904,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val result: Seq[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app, trusted = false))
+      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
     }
   }
 

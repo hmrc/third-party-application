@@ -25,7 +25,6 @@ case class ApiDefinition(serviceName: String,
                          name: String,
                          context: String,
                          versions: Seq[ApiVersion],
-                         requiresTrust: Option[Boolean],
                          isTestSupport: Option[Boolean] = None)
 
 case class ApiVersion(version: String,
@@ -51,7 +50,7 @@ object APIAccessType extends Enumeration {
 }
 
 case class ApiSubscription(name: String, serviceName: String, context: String, versions: Seq[VersionSubscription],
-                           requiresTrust: Option[Boolean], isTestSupport: Boolean = false)
+                           isTestSupport: Boolean = false)
 
 object ApiSubscription {
 
@@ -60,7 +59,7 @@ object ApiSubscription {
       VersionSubscription(v, subscribedApis.exists(s => s.context == apiDefinition.context && s.version == v.version))
     }
     ApiSubscription(apiDefinition.name, apiDefinition.serviceName, apiDefinition.context, versionSubscriptions,
-      apiDefinition.requiresTrust, apiDefinition.isTestSupport.getOrElse(false))
+      apiDefinition.isTestSupport.getOrElse(false))
   }
 }
 

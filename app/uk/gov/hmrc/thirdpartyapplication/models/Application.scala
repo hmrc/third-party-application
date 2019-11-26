@@ -20,7 +20,6 @@ import java.security.MessageDigest
 import java.util.UUID
 
 import com.google.common.base.Charsets
-import javax.inject.Inject
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -100,14 +99,13 @@ case class ApplicationResponse(id: UUID,
                                environment: Option[Environment] = None,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
-                               trusted: Boolean = false,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                ipWhitelist: Set[String] = Set.empty)
 
 object ApplicationResponse {
 
-  def apply(data: ApplicationData, trusted: Boolean) : ApplicationResponse = {
+  def apply(data: ApplicationData) : ApplicationResponse = {
     val redirectUris = data.access match {
       case a: Standard => a.redirectUris
       case _ => Seq()
@@ -138,7 +136,6 @@ object ApplicationResponse {
       Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
-      trusted,
       data.checkInformation,
       data.blocked,
       data.ipWhitelist)
@@ -287,10 +284,10 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 
 }
 
-class ApplicationResponseCreator @Inject()(trustedApplications: TrustedApplications) {
+class ApplicationResponseCreator {
 
   def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
-    CreateApplicationResponse(ApplicationResponse(applicationData, trustedApplications.isTrusted(applicationData)), totpSecrets)
+    CreateApplicationResponse(ApplicationResponse(applicationData), totpSecrets)
   }
 }
 

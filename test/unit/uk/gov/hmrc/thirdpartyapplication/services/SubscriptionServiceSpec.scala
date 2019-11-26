@@ -61,15 +61,13 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
     val mockSubscriptionRepository = mock[SubscriptionRepository]
     val response = mock[WSResponse]
 
-    val trustedApplicationConfig = TrustedApplicationsConfig(Seq(trustedApplicationId.toString))
-
     implicit val hc = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, mockAuditService, mockApiGatewayStore, trustedApplicationConfig)
+      mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, mockAuditService, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
@@ -98,7 +96,6 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
-  private val trustedApplicationId = UUID.randomUUID()
 
   override def beforeAll() {
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
@@ -157,39 +154,8 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       result shouldBe Seq(ApiSubscription("name", "service", "context", Seq(
         VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = true),
         VersionSubscription(ApiVersion("2.0", STABLE, None), subscribed = false)
-      ), Some(false))
+      ))
       )
-    }
-
-    "fetch APIs which require trust for a trusted application" in new Setup {
-      val applicationData = anApplicationData(trustedApplicationId)
-      val requiresTrustAPI = anAPIDefinition("context", Seq(anAPIVersion("1.0"))).copy(requiresTrust = Some(true))
-
-      when(mockApplicationRepository.fetch(trustedApplicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector
-        .fetchAllAPIs(refEq(trustedApplicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Seq(requiresTrustAPI))
-      when(mockSubscriptionRepository.getSubscriptions(trustedApplicationId)).thenReturn(successful(Seq.empty))
-
-      val result = await(underTest.fetchAllSubscriptionsForApplication(trustedApplicationId))
-
-      result shouldBe Seq(ApiSubscription("name", "service", "context", Seq(
-        VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)), Some(true))
-      )
-    }
-
-    "filter APIs which require trust for a non trusted application" in new Setup {
-      val applicationData = anApplicationData(applicationId)
-      val requiresTrustAPI = anAPIDefinition("context", Seq(anAPIVersion("1.0"))).copy(requiresTrust = Some(true))
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Seq(requiresTrustAPI))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
-
-      val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
-
-      result shouldBe Seq()
     }
 
     "filter API versions in status alpha" in new Setup {
@@ -201,7 +167,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
       result shouldBe Seq(
-        ApiSubscription("name", "service", "context", Seq(VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)), Some(false))
+        ApiSubscription("name", "service", "context", Seq(VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)))
       )
     }
 
@@ -235,23 +201,6 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       verify(mockAuditService).audit(refEq(Subscribed), any[Map[String, String]])(refEq(hc))
       verify(mockApiGatewayStore).addSubscription(refEq(applicationData), refEq(api))(any[HeaderCarrier])
       verify(mockSubscriptionRepository).add(applicationId, api)
-    }
-
-    "create a subscription in WSO2 and Mongo when the API requires trust and the application is trusted" in new Setup {
-      val trustedApplication = anApplicationData(trustedApplicationId)
-      val trustedApi = anAPIDefinition().copy(requiresTrust = Some(true))
-
-      when(mockApplicationRepository.fetch(trustedApplicationId)).thenReturn(successful(Some(trustedApplication)))
-      when(mockApiDefinitionConnector
-        .fetchAllAPIs(refEq(trustedApplicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Seq(trustedApi))
-      when(mockSubscriptionRepository.getSubscriptions(trustedApplicationId)).thenReturn(successful(Seq.empty))
-
-      val result = await(underTest.createSubscriptionForApplication(trustedApplicationId, api))
-
-      result shouldBe HasSucceeded
-      verify(mockApiGatewayStore).addSubscription(refEq(trustedApplication), refEq(api))(any[HeaderCarrier])
-      verify(mockSubscriptionRepository).add(trustedApplicationId, api)
     }
 
     "throw SubscriptionAlreadyExistsException if already subscribed" in new Setup {
@@ -322,19 +271,6 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
     }
 
-    "throw a NotFoundException when the API requires trust and the application is not trusted" in new Setup {
-      val trustedApi = anAPIDefinition().copy(requiresTrust = Some(true))
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(any[HttpReads[Seq[ApiDefinition]]](), any[HeaderCarrier], any[ExecutionContext]))
-        .thenReturn(Seq(trustedApi))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq.empty))
-
-      intercept[NotFoundException] {
-        await(underTest.createSubscriptionForApplication(applicationId, api))
-      }
-      verify(mockApiGatewayStore, never).addSubscription(any(), any())(any[HeaderCarrier])
-    }
   }
 
   "removeSubscriptionForApplication" should {
