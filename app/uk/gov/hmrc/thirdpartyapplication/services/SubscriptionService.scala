@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{TrustedApplicationsConfig, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{_}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
@@ -39,8 +39,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     subscriptionRepository: SubscriptionRepository,
                                     apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
-                                    apiGatewayStore: ApiGatewayStore,
-                                    trustedAppConfig: TrustedApplicationsConfig) {
+                                    apiGatewayStore: ApiGatewayStore) {
 
   val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
 
@@ -48,14 +47,12 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 
-  val trustedApplications = trustedAppConfig.trustedApplications
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
   def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Seq[ApiSubscription]] = {
     def fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
-      _.filter(api => trustedApplications.contains(applicationId.toString) || !api.requiresTrust.getOrElse(false))
-        .map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
+      _.map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
         .filterNot(_.versions.isEmpty)
     }
 

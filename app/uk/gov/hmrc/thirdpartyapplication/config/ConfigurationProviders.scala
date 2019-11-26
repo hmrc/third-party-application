@@ -27,7 +27,6 @@ import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
-import uk.gov.hmrc.thirdpartyapplication.models.TrustedApplicationsConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{CredentialConfig, ApplicationNameValidationConfig}
 
@@ -51,7 +50,6 @@ class ConfigurationModule extends Module {
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
-      bind[TrustedApplicationsConfig].toProvider[TrustedApplicationsConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
     )
@@ -254,18 +252,6 @@ class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Co
     val fetchApplicationTtlInSecs: Int = ConfigHelper.getConfig("fetchApplicationTtlInSeconds", runModeConfiguration.getInt)
     val fetchSubscriptionTtlInSecs: Int = ConfigHelper.getConfig("fetchSubscriptionTtlInSeconds", runModeConfiguration.getInt)
     ApplicationControllerConfig(fetchApplicationTtlInSecs, fetchSubscriptionTtlInSecs)
-  }
-}
-
-@Singleton
-class TrustedApplicationsConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[TrustedApplicationsConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val trustedApplications: Seq[String] = ConfigHelper.getConfig(s"$env.trustedApplications", runModeConfiguration.getStringSeq)
-    TrustedApplicationsConfig(trustedApplications)
   }
 }
 

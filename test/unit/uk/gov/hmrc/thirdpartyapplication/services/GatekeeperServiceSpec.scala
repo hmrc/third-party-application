@@ -79,11 +79,9 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
-    val mockTrustedApplications = mock[TrustedApplications]
     val mockApplicationService = mock[ApplicationService]
-    when(mockTrustedApplications.isTrusted(any[ApplicationData])).thenReturn(false)
 
-    val applicationResponseCreator = new ApplicationResponseCreator(mockTrustedApplications)
+    val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc = HeaderCarrier()
 
@@ -95,7 +93,6 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockApiSubscriptionFieldsConnector,
       mockApiGatewayStore,
       applicationResponseCreator,
-      mockTrustedApplications,
       mockThirdPartyDelegatedAuthorityConnector,
       mockApplicationService)
 
@@ -155,7 +152,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
-      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1, trusted = false), history.map(StateHistoryResponse.from))
+      result shouldBe ApplicationWithHistory(ApplicationResponse(data = app1), history.map(StateHistoryResponse.from))
     }
 
     "throw not found exception" in new Setup {

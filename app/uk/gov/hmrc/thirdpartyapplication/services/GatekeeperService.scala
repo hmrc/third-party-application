@@ -45,7 +45,6 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                   apiGatewayStore: ApiGatewayStore,
                                   applicationResponseCreator: ApplicationResponseCreator,
-                                  trustedApplications: TrustedApplications,
                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                   applicationService: ApplicationService) {
 
@@ -75,7 +74,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       app <- fetchApp(id)
       history <- stateHistoryRepository.fetchByApplicationId(id)
     } yield {
-      ApplicationWithHistory(ApplicationResponse(data = app, trusted = trustedApplications.isTrusted(app)),
+      ApplicationWithHistory(ApplicationResponse(data = app),
         history.map(StateHistoryResponse.from))
     }
   }
