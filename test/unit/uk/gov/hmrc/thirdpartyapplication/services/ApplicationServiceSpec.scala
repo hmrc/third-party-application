@@ -383,14 +383,16 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   }
 
   "recordApplicationUsage" should {
-    "update the Application and return an ApplicationResponse" in new Setup {
+    "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
-
+      val subscriptions: Seq[APIIdentifier] = Seq(APIIdentifier("myContext", "myVersion"))
       when(mockApplicationRepository.recordApplicationUsage(applicationId)).thenReturn(anApplicationData(applicationId))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
 
-      val applicationResponse: ApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
+      val applicationResponse: ExtendedApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
 
       applicationResponse.id shouldBe applicationId
+      applicationResponse.subscriptions shouldBe subscriptions
     }
   }
 
