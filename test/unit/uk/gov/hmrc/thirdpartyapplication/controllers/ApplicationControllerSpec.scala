@@ -1588,7 +1588,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
-
       when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(application)))
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
@@ -1598,16 +1597,22 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       verify(mockApplicationService).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
     }
 
-    "fail when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
-
-      givenUserIsAuthenticated(underTest)
-
+    "fail with a 400 error when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
       when(mockApplicationService.fetch(any())).thenReturn(successful(Some(application)))
       when(mockApplicationService.deleteApplication(any(), any(), any() ) (any[HeaderCarrier]())).thenReturn(successful(Deleted))
 
       val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
 
       status(result) shouldBe SC_BAD_REQUEST
+      verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
+    }
+
+    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new NotStrideAuthConfig {
+      when(mockApplicationService.fetch(applicationId)).thenReturn(successful(None))
+
+      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+
+      status(result) shouldBe SC_NOT_FOUND
       verify(mockApplicationService,times(0)).deleteApplication(mockEq(applicationId), mockEq(None), any() )(any[HeaderCarrier])
     }
   }

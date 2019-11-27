@@ -341,16 +341,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      val notAllowed: Result = Results.BadRequest("Cannot delete this application")
-
       if (authConfig.canDeleteApplications) {
         applicationService.fetch(id) flatMap {
-          case Some(app) if app.access.accessType == AccessType.STANDARD =>
-            applicationService.deleteApplication(id, None, audit).map(_ => NoContent)
-          case _ => Future.successful(notAllowed)
+          case Some(_) => applicationService.deleteApplication(id, None, audit).map(_ => NoContent)
+          case _ => successful(handleNotFound("No application was found"))
         }
       } else {
-        Future.successful(notAllowed)
+        successful(BadRequest("Cannot delete this application"))
       }
     }
 
