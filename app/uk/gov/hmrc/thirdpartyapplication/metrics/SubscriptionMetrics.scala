@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import javax.inject.Inject
+import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
@@ -25,6 +26,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    Logger.info(s"Pomegranate - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")
     def subscriptionCountKey(apiName: String): String = s"subscriptionCount.$apiName"
 
     numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
