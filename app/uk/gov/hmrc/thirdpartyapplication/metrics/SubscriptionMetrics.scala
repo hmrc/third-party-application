@@ -23,13 +23,23 @@ import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    Logger.info(s"Pomegranate - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")
+    Logger.info(s"Pomegranate - Starting - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")
     def subscriptionCountKey(apiName: String): String = s"subscriptionCount.$apiName"
 
-    numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
+    val result = numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
+    result.onComplete({
+        case Success(v) =>
+          Logger.info(s"Pomegranate - Future.success - SubscriptionMetrics.metrics() - api versions are: ${v.keys.size}" )
+
+        case Failure(e) =>
+          Logger.info(s"Pomegranate - Future.failure - SubscriptionMetrics.metrics() - error is: ${e.toString}" )
+    })
+    Logger.info(s"Pomegranate - Finish - SubscriptionMetrics.metrics()")
+    result
   }
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
