@@ -955,6 +955,39 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
     }
   }
 
+  "ApplicationWithSubscriptionCount" should {
+    "return Applications with a count of subscriptions" in {
+      val api1 = "api-1"
+      val api2 = "api-2"
+      val api3 = "api-3"
+      val api1Version = "api-1-version-1"
+      val api2Version = "api-2-version-2"
+      val api3Version = "api-3-version-3"
+
+      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
+
+      await(subscriptionRepository.insert(aSubscriptionData(api1, api1Version, application1.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(api2, api2Version, application1.id)))
+      await(subscriptionRepository.insert(aSubscriptionData(api3, api3Version, application2.id)))
+
+      val result = await(applicationRepository.applicationWithSubscriptionCount())
+
+      println(result)
+
+      result.get(application1.name) shouldBe Some(2)
+      result.get(application2.name) shouldBe Some(1)
+
+      // TODO - Is this Cath?
+      // https://docs.mongodb.com/v3.6/reference/operator/aggregation/unwind/
+      result.get(application3.name) shouldBe None
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,

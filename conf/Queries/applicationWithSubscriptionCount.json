@@ -1,0 +1,20 @@
+[{
+  "$lookup": {
+    "from": "subscription",
+    "localField": "id",
+    "foreignField": "applications",
+    "as": "subscribedApis"
+  }
+},{
+  "$unwind": "$subscribedApis"
+},{
+  "$group":{
+    "_id": {
+      "id" : "$id",
+      "name": "$name"
+    },
+    "count": {
+      "$sum": 1
+    }
+  }
+}]

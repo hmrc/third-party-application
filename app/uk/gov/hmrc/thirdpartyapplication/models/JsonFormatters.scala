@@ -212,6 +212,9 @@ object MongoFormat {
   implicit val formatPaginationTotla = Json.format[PaginationTotal]
   implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
+  implicit val formatApplicationId= Json.format[ApplicationId]
+  implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
+
   implicit val formatWso2RestoreData = Json.format[Wso2RestoreData]
 }
 
