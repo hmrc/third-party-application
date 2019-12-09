@@ -269,7 +269,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
-  // TODO: Name
   private def processResultsForSeq[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
 
     println(json.toString)
@@ -324,9 +323,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     collection.count(Some(Json.obj(fieldName -> Json.obj(f"$$exists" -> false))), None, 0, None, Available).map(_.toInt)
   }
 
-  def applicationWithSubscriptionCount(): Future[Map[String, Int]] = {
+  def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
 
-    val fileStream = getClass.getResourceAsStream("/Queries/applicationWithSubscriptionCount.json")
+    val fileStream = getClass.getResourceAsStream("/queries/applicationWithSubscriptionCount.json")
     val lines = Source.fromInputStream(fileStream).getLines()
     val pipeline = Json.parse(lines.mkString)
 
@@ -340,7 +339,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .apply(collection.db, runner.rawCommand(command))
       .one[JsObject](ReadPreference.nearest)
       .flatMap(processResultsForSeq[Seq[ApplicationWithSubscriptionCount]])
-      .map(results => results.map(result => result._id.name -> result.count) toMap)
+      .map(results => results.map(result => result._id.name -> result.count).toMap)
   }
 }
 

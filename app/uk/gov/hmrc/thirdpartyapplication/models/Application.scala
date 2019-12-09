@@ -199,12 +199,10 @@ case class PaginationTotal(total: Int)
 
 case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: Seq[PaginationTotal], matching: Seq[PaginationTotal])
 
+case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
-// TODO Move these somewhere?
 case class ApplicationId(id: String, name: String)
 case class ApplicationWithSubscriptionCount(_id: ApplicationId, count: Int)
-
-case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
 sealed trait Access {
   val accessType: AccessType.Value

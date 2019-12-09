@@ -975,9 +975,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(subscriptionRepository.insert(aSubscriptionData(api2, api2Version, application1.id)))
       await(subscriptionRepository.insert(aSubscriptionData(api3, api3Version, application2.id)))
 
-      val result = await(applicationRepository.applicationWithSubscriptionCount())
-
-      println(result)
+      val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
       result.get(application1.name) shouldBe Some(2)
       result.get(application2.name) shouldBe Some(1)
