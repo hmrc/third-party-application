@@ -201,6 +201,9 @@ case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: 
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
+case class ApplicationId(id: String, name: String)
+case class ApplicationWithSubscriptionCount(_id: ApplicationId, count: Int)
+
 sealed trait Access {
   val accessType: AccessType.Value
 }

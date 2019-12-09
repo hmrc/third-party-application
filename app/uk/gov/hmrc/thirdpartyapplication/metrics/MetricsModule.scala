@@ -88,8 +88,9 @@ class MetricsOrchestratorProvider @Inject()(configuration: Configuration,
 @Singleton
 class MetricsSourcesProvider @Inject()(rateLimitMetrics: RateLimitMetrics,
                                        subscriptionMetrics: SubscriptionMetrics,
-                                       missingMongoFields: MissingMongoFields) extends Provider[MetricsSources] {
-  override def get(): MetricsSources = MetricsSources(subscriptionMetrics)
+                                       missingMongoFields: MissingMongoFields,
+                                       applicationsWithSubscriptionCount: ApplicationsWithSubscriptionCount) extends Provider[MetricsSources] {
+  override def get(): MetricsSources = MetricsSources(subscriptionMetrics, applicationsWithSubscriptionCount)
 }
 
 case class MetricsSources(metricSources: MetricSource*) {

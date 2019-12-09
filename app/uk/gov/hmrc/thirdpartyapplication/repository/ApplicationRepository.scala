@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import java.io.InputStream
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -25,10 +26,13 @@ import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.Cursor.WithOps
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
+import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONString}
+import reactivemongo.core.commands.Match
 import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -43,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.io.Source
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
@@ -264,6 +269,17 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     }
   }
 
+  private def processResultsForSeq[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
+
+    println(json.toString)
+
+    (json \ "cursor" \ "firstBatch").validate[T] match {
+      case JsSuccess(result, _) => Future.successful(result)
+      case JsError(errors) => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
+    }
+  }
+
+
   private def commandQueryDocument(filters: Seq[JsObject], pagination: Seq[JsObject], sort: Seq[JsObject]): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
     val filteredPipelineCount = Json.toJson(subscriptionsLookup +: filters :+ Json.obj(f"$$count" -> "total"))
@@ -307,6 +323,24 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
     collection.count(Some(Json.obj(fieldName -> Json.obj(f"$$exists" -> false))), None, 0, None, Available).map(_.toInt)
   }
 
+  def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
+
+    val fileStream = getClass.getResourceAsStream("/queries/applicationWithSubscriptionCount.json")
+    val lines = Source.fromInputStream(fileStream).getLines()
+    val pipeline = Json.parse(lines.mkString)
+
+    val command = Json.obj(
+      "aggregate" -> "application",
+      "cursor" -> Json.obj(),
+      "pipeline" -> pipeline)
+
+    val runner = CommandWithPackRunner(JSONSerializationPack, FailoverStrategy())
+    runner
+      .apply(collection.db, runner.rawCommand(command))
+      .one[JsObject](ReadPreference.nearest)
+      .flatMap(processResultsForSeq[Seq[ApplicationWithSubscriptionCount]])
+      .map(results => results.map(result => result._id.name -> result.count).toMap)
+  }
 }
 
 sealed trait ApplicationModificationResult
