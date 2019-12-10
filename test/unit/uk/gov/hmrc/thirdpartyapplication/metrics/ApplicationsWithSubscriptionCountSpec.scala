@@ -35,7 +35,7 @@ class ApplicationsWithSubscriptionCountSpec extends UnitSpec with MockitoSugar {
     val metricUnderTest: ApplicationsWithSubscriptionCount = new ApplicationsWithSubscriptionCount(mockApplicationRepository)
   }
   "metrics count" should{
-    val expectedResult = Map("Test App 1" -> 2, "Test App 2" -> 3, "Test App 3" -> 1)
+    val expectedResult = Map("applicationsWithSubscriptionCount.Test App 1" -> 2)
 
     "refresh application with subscription counts" in new Setup {
       when(mockApplicationRepository.getApplicationWithSubscriptionCount())
@@ -43,9 +43,7 @@ class ApplicationsWithSubscriptionCountSpec extends UnitSpec with MockitoSugar {
 
       val result: Map[String, Int] = await(metricUnderTest.metrics)
 
-      result.get("Test App 1") shouldBe expectedResult.get("Test App 1")
-      result.get("Test App 2") shouldBe expectedResult.get("Test App 2")
-      result.get("Test App 3") shouldBe expectedResult.get("Test App 3")
+      result shouldBe expectedResult
     }
   }
 }

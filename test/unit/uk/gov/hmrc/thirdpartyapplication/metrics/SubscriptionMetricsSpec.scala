@@ -40,12 +40,13 @@ class SubscriptionMetricsSpec extends UnitSpec with MockitoSugar {
     def subscriptionDetails(subscription: (String, String, Int)): SubscriptionData =
       SubscriptionData(new APIIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(UUID.randomUUID()).toSet)
 
-    def expectedAPIName(subscription: (String, String, Int)): String = s"subscriptionCount.${subscription._1}--${subscription._2}"
+    def expectedAPIName(subscription: (String, String, Int)): String =
+      s"subscriptionCount2.${subscription._1.replace("/", " ")}.${subscription._2.replace(".", "-")}"
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
       private val api1v2 = ("apiOne", "2.0", 10)
-      private val api2 = ("apiTwo", "1.0", 100)
+      private val api2 = ("route/apiTwo", "1.0", 100)
 
       when(mockSubscriptionsRepository.findAll())
         .thenReturn(Future.successful(

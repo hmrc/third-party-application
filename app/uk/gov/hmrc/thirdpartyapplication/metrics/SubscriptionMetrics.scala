@@ -28,7 +28,7 @@ import scala.util.{Failure, Success}
 class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     Logger.info(s"Pomegranate - Starting - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")
-    def subscriptionCountKey(apiName: String): String = s"subscriptionCount.$apiName"
+    def subscriptionCountKey(apiName: String): String = s"subscriptionCount2.$apiName"
 
     val result = numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
     result.onComplete({
@@ -43,7 +43,8 @@ class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepo
   }
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    def apiName(apiIdentifier: APIIdentifier): String = s"${apiIdentifier.context}--${apiIdentifier.version}"
+
+    def apiName(apiIdentifier: APIIdentifier): String = s"${apiIdentifier.context.replace("/", " ")}.${apiIdentifier.version.replace(".", "-")}"
 
     subscriptionRepository.findAll()
       .map(subscriptions => subscriptions.map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size).toMap)

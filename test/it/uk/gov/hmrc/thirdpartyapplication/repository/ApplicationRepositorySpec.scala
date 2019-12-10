@@ -977,12 +977,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
 
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
-      result.get(application1.name) shouldBe Some(2)
-      result.get(application2.name) shouldBe Some(1)
-
-      // TODO - Is this Cath?
-      // https://docs.mongodb.com/v3.6/reference/operator/aggregation/unwind/
-      result.get(application3.name) shouldBe None
+      result.get(s"applicationsWithSubscriptionCount.${application1.name}") shouldBe Some(2)
+      result.get(s"applicationsWithSubscriptionCount.${application2.name}") shouldBe Some(1)
+      result.get(s"applicationsWithSubscriptionCount.${application3.name}") shouldBe None
     }
   }
 
