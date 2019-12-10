@@ -24,23 +24,22 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class ApplicationsWithSubscriptionCount @Inject() (val applicationRepository: ApplicationRepository) extends MetricSource{
+class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     Logger.info(s"Pomegranate - Starting - ApplicationsWithSubscriptionCount.metrics()")
-
+    // TODO Need to handle Application with zero subscriptions
     val result = applicationRepository.getApplicationWithSubscriptionCount()
-    result.onComplete({
-      case Success(v) =>
-        Logger.info(s"Pomegranate - Future.success - ApplicationsWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}" )
+    result
+      .onComplete({
+        case Success(v) =>
+          Logger.info(s"Pomegranate - Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
 
-      case Failure(e) =>
-        Logger.info(s"Pomegranate - Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}" )
-    })
+        case Failure(e) =>
+          Logger.info(s"Pomegranate - Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
+      })
     Logger.info(s"Pomegranate - Finish - ApplicationsWithSubscriptionCount.metrics()")
     result
   }
-
-
 
 
 }

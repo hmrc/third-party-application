@@ -339,7 +339,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       .apply(collection.db, runner.rawCommand(command))
       .one[JsObject](ReadPreference.nearest)
       .flatMap(processResultsForSeq[Seq[ApplicationWithSubscriptionCount]])
-      .map(results => results.map(result => result._id.name -> result.count).toMap)
+      .map(results => results.map(result => (s"applicationsWithSubscriptionCount.${result._id.name}") -> result.count).toMap)
   }
 }
 
