@@ -16,23 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.io.InputStream
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor.WithOps
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
-import reactivemongo.bson.{BSONDocument, BSONDocumentReader, BSONString}
-import reactivemongo.core.commands.Match
+import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
@@ -47,7 +42,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.io.Source
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
@@ -263,22 +257,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   private def processResults[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
+    // TODO: I don't think this is returning more than 1 batch (~100?) worth of data.
     (json \ "cursor" \ "firstBatch" \ 0).validate[T] match {
       case JsSuccess(result, _) => Future.successful(result)
       case JsError(errors) => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
     }
   }
-
-  private def processResultsForSeq[T](json: JsObject)(implicit fjs: Reads[T]): Future[T] = {
-
-    println(json.toString)
-
-    (json \ "cursor" \ "firstBatch").validate[T] match {
-      case JsSuccess(result, _) => Future.successful(result)
-      case JsError(errors) => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
-    }
-  }
-
 
   private def commandQueryDocument(filters: Seq[JsObject], pagination: Seq[JsObject], sort: Seq[JsObject]): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
@@ -325,21 +309,28 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
 
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
 
-    val fileStream = getClass.getResourceAsStream("/queries/applicationWithSubscriptionCount.json")
-    val lines = Source.fromInputStream(fileStream).getLines()
-    val pipeline = Json.parse(lines.mkString)
+    collection.aggregateWith[ApplicationWithSubscriptionCount]()(_ => {
+      import collection.BatchCommands.AggregationFramework._
 
-    val command = Json.obj(
-      "aggregate" -> "application",
-      "cursor" -> Json.obj(),
-      "pipeline" -> pipeline)
+      val lookup = Lookup(
+        from = "subscription",
+        localField = "id",
+        foreignField = "applications",
+        as = "subscribedApis"
+    )
 
-    val runner = CommandWithPackRunner(JSONSerializationPack, FailoverStrategy())
-    runner
-      .apply(collection.db, runner.rawCommand(command))
-      .one[JsObject](ReadPreference.nearest)
-      .flatMap(processResultsForSeq[Seq[ApplicationWithSubscriptionCount]])
-      .map(results => results.map(result => (s"applicationsWithSubscriptionCount.${result._id.name}") -> result.count).toMap)
+      val unwind = UnwindField("subscribedApis")
+
+      val group: PipelineOperator = this.collection.BatchCommands.AggregationFramework.Group(
+        Json.parse("""{
+                     |      "id" : "$id",
+                     |      "name": "$name"
+                     |    }""".stripMargin))(
+        "count" -> SumAll
+      )
+      (lookup, List[PipelineOperator](unwind, group))
+    }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) ⇒ cur :: acc)
+      .map(_.map(r=>s"applicationsWithSubscriptionCount.${r._id.name}" -> r.count).toMap)
   }
 }
 
