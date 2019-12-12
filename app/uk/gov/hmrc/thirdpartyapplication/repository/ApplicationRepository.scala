@@ -329,7 +329,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
         "count" -> SumAll
       )
       (lookup, List[PipelineOperator](unwind, group))
-    }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) ⇒ cur :: acc)
+    }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
       .map(_.map(r=>s"applicationsWithSubscriptionCount.${r._id.name}" -> r.count).toMap)
   }
 }
