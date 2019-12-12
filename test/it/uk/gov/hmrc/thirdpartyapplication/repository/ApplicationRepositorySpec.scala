@@ -967,6 +967,7 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -980,6 +981,23 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       result.get(s"applicationsWithSubscriptionCount.${application1.name}") shouldBe Some(2)
       result.get(s"applicationsWithSubscriptionCount.${application2.name}") shouldBe Some(1)
       result.get(s"applicationsWithSubscriptionCount.${application3.name}") shouldBe None
+    }
+
+    "return Applications when more than 100 results bug" in {
+
+      (1 to 200).foreach(i => {
+        val api = s"api-$i"
+        val apiVersion = s"api-$i-version-$i"
+
+        val application = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+        await(applicationRepository.save(application))
+
+        await(subscriptionRepository.insert(aSubscriptionData(api, apiVersion, application.id)))
+      })
+
+      val result = await(applicationRepository.getApplicationWithSubscriptionCount())
+
+      result.keys.count(_ => true) shouldBe 200
     }
   }
 
