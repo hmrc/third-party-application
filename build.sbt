@@ -10,15 +10,18 @@ lazy val appName = "third-party-application"
 
 lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 
+val reactiveMongoVer = "0.18.8"
+
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
-  "uk.gov.hmrc" %% "mongo-lock" % "6.15.0-play-25",
-  "uk.gov.hmrc" %% "play-scheduling" % "6.0.0",
+  "uk.gov.hmrc" %% "play-scheduling" % "7.1.0-play-25",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
   "uk.gov.hmrc" %% "play-hmrc-api" % "3.6.0-play-25",
   "uk.gov.hmrc" %% "metrix" % "3.8.0-play-25",
-  "com.typesafe.play" %% "play-iteratees" % PlayVersion.current,
-  "org.reactivemongo" %% "reactivemongo-iteratees" % "0.16.4",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.21.0-play-25",
+  "org.reactivemongo" %% "reactivemongo-iteratees" % reactiveMongoVer,
+  "org.reactivemongo" %% "play2-reactivemongo" % (reactiveMongoVer + "-play25"),
+  "org.reactivemongo" %% "reactivemongo-play-json" % (reactiveMongoVer + "-play25"),
   "commons-net" % "commons-net" % "3.6"
 )
 lazy val test = Seq(
