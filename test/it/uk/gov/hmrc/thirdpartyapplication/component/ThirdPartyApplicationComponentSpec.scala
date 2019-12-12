@@ -433,14 +433,15 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       And("The application is subscribed to an API")
-      subscriptionExists(application.id, context, version)
+      result(subscriptionExists(application.id, context, version),timeout)
 
       When("I fetch the API subscriptions of the application")
       val response = Http(s"$serviceUrl/application/${application.id}/subscription").asString
 
       Then("The API subscription is returned")
-      val result = Json.parse(response.body).as[Seq[ApiSubscription]]
-      result shouldBe Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
+      val actualApiSubscription = Json.parse(response.body).as[Seq[ApiSubscription]]
+      actualApiSubscription shouldBe
+        Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
     }
 
     scenario("Fetch All API Subscriptions") {
