@@ -34,8 +34,8 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
 
   override def name: String = "MetricsJob"
 
+  // TODO: Load these from config
   override def interval: FiniteDuration = 1 hour
-
   override def initialDelay: FiniteDuration = 2 minutes
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
