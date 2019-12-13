@@ -45,9 +45,6 @@ class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with Mockito
   val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 
   override implicit lazy val app: Application = GuiceApplicationBuilder()
-    .disable[com.kenshoo.play.metrics.PlayModule]
-    .disable[uk.gov.hmrc.thirdpartyapplication.metrics.MetricsModule]
-    .configure("metrics.enabled" -> false)
     .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
     .build
 
