@@ -47,6 +47,8 @@
 
     <logger name="application" level="${logger.application:-WARN}"/>
 
+    <logger name="reactivemongo" level="WARN"/>
+
     <logger name="connector" level="${logger.connector:-WARN}">
         <appender-ref ref="STDOUT"/>
     </logger>
