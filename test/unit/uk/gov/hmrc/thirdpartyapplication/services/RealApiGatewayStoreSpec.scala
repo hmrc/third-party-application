@@ -18,6 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.mockito.Matchers.{any, anyInt, anyString}
 import org.mockito.Mockito._
@@ -41,6 +42,8 @@ import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
 class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
+
+  implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")

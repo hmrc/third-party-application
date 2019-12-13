@@ -61,7 +61,7 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
   )
 
   def insert(stateHistory: StateHistory): Future[StateHistory] = {
-    collection.insert(stateHistory).map(_ => stateHistory)
+    collection.insert.one(stateHistory).map(_ => stateHistory)
   }
 
   def fetchByState(state: State): Future[Seq[StateHistory]] = {

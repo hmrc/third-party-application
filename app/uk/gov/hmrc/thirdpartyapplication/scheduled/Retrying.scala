@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import akka.actor.ActorSystem
 import akka.pattern.after
-import play.api.libs.concurrent.Akka
-import play.api.Play.current
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -26,12 +25,13 @@ import scala.concurrent.duration.FiniteDuration
 
 // Taken from https://gist.github.com/viktorklang/9414163
 
-object Retrying {
+trait Retrying {
+  implicit val actorSystem: ActorSystem
 
   def retry[T](f: => Future[T], delay: FiniteDuration, retries: Int = 0): Future[T] = {
     f recoverWith {
       case _: RuntimeException if retries > 0 =>
-        after(delay, Akka.system.scheduler)(retry(f, delay, retries - 1))
+        after(delay, actorSystem.scheduler)(retry(f, delay, retries - 1))
     }
   }
 

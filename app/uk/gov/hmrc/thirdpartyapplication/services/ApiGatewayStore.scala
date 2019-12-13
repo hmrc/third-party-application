@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.security.SecureRandom
 import java.util.UUID
 
+import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
@@ -69,7 +70,7 @@ trait ApiGatewayStore {
 }
 
 @Singleton
-class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector) extends ApiGatewayStore {
+class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector)(implicit val actorSystem: ActorSystem) extends ApiGatewayStore {
 
   private def generateEnvironmentToken(): EnvironmentToken = {
     val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
@@ -129,8 +130,11 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
 }
 
 @Singleton
-class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector, awsApiGatewayConnector: AwsApiGatewayConnector,
-                                    subscriptionRepository: SubscriptionRepository) extends ApiGatewayStore {
+class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
+                                    awsApiGatewayConnector: AwsApiGatewayConnector,
+                                    subscriptionRepository: SubscriptionRepository)
+                                   (implicit val actorSystem: ActorSystem)
+  extends ApiGatewayStore with Retrying {
 
   val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
 
@@ -165,7 +169,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 
     for {
       cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
-      _ <- Retrying.retry(check(cookie), 100.milliseconds, 1)
+      _ <- retry(check(cookie), 100.milliseconds, 1)
       _ <- wso2APIStoreConnector.logout(cookie)
     } yield HasSucceeded
   }
@@ -270,9 +274,9 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 
       for {
         _ <- wso2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2Api, resubscribeMaxRetries)
-        _ <- Retrying.retry(check(Wso2ApiState.API_REMOVED), 100.milliseconds, 1)
+        _ <- retry(check(Wso2ApiState.API_REMOVED), 100.milliseconds, 1)
         _ <- wso2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2Api, Some(rateLimitTier), resubscribeMaxRetries)
-        _ <- Retrying.retry(check(Wso2ApiState.API_ADDED), 100.milliseconds, 1)
+        _ <- retry(check(Wso2ApiState.API_ADDED), 100.milliseconds, 1)
       } yield HasSucceeded
 
     }

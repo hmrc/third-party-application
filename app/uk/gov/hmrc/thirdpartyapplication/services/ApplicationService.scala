@@ -221,7 +221,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
           val recipients = app.admins.map(_.emailAddress)
           emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
         }
-        case None => Future.successful()
+        case None => Future.successful(())
       }
     }
 
