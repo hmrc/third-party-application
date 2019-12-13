@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
+import akka.actor.ActorSystem
 import org.mockito.Matchers.{any, eq => meq}
 import org.mockito.Mockito.{verify, when}
 import org.scalatest.concurrent.ScalaFutures
@@ -39,6 +40,8 @@ import scala.concurrent.{Await, Future}
 class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
 
   implicit val hc = HeaderCarrier()
+  implicit val actorSystem: ActorSystem = ActorSystem("test")
+
   private val baseUrl = s"http://example.com"
 
   private trait Setup {

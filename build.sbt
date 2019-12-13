@@ -107,6 +107,6 @@ def unitFilter(name: String): Boolean = name startsWith "unit"
 def itFilter(name: String): Boolean = name startsWith "it"
 
 // Coverage configuration
-coverageMinimum := 89
+coverageMinimum := 88
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

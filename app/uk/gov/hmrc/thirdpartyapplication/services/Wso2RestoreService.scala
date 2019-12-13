@@ -20,12 +20,12 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
+import play.api.libs.json.JsObject
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
-import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import reactivemongo.play.json._
 import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -33,15 +33,15 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
                                    apiGatewayStore: ApiGatewayStore,
                                    subscriptionRepository: SubscriptionRepository,
                                    applicationRepository: ApplicationRepository,
-                                   migrationRepository: Wso2RestoreRepository) {
+                                   migrationRepository: Wso2RestoreRepository)
+                                  (implicit val ec: ExecutionContext) {
 
   implicit val hc: uk.gov.hmrc.http.HeaderCarrier = HeaderCarrier()
 
@@ -103,8 +103,10 @@ case class Wso2RestoreData(appId: UUID,
                            accessToken: Option[String],
                            finished: Option[Boolean])
 
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
 @Singleton
-class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
+class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[Wso2RestoreData, BSONObjectID]("migration", mongo.mongoConnector.db,
     MongoFormat.formatWso2RestoreData, ReactiveMongoFormats.objectIdFormats) {
 
@@ -120,9 +122,10 @@ class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)
   )
 
   def save(migrationData: Wso2RestoreData) = {
-    collection.find(BSONDocument("appId" -> migrationData.appId.toString)).one[BSONDocument].flatMap {
-      case Some(document) => collection.update(selector = BSONDocument("_id" -> document.get("_id")), update = migrationData)
-      case None => collection.insert(migrationData)
+
+    collection.find(BSONDocument("appId" -> migrationData.appId.toString), Option.empty[JsObject]).one[BSONDocument].flatMap {
+      case Some(document) => collection.update(ordered=false).one(q = BSONDocument("_id" -> document.get("_id")), u = migrationData)
+      case None => collection.insert.one[Wso2RestoreData](migrationData)
     }
   }
 

@@ -102,7 +102,8 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
     collection.count(Some(Json.obj("$and" -> Json.arr(
       Json.obj("applications" -> applicationId.toString),
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version))))) map {
+      Json.obj("apiIdentifier.version" -> apiIdentifier.version)))))
+    .map {
       case 1 => true
       case _ => false
     }
@@ -127,7 +128,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def add(applicationId: UUID, apiIdentifier: APIIdentifier) = {
-    collection.update(
+    collection.update.one(
       makeSelector(apiIdentifier),
       Json.obj("$addToSet" -> Json.obj("applications" -> applicationId)),
       upsert = true
@@ -135,7 +136,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   }
 
   def remove(applicationId: UUID, apiIdentifier: APIIdentifier) = {
-    collection.update(
+    collection.update.one(
       makeSelector(apiIdentifier),
       Json.obj("$pull" -> Json.obj("applications" -> applicationId))
     ).map(_ => HasSucceeded)

@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import akka.actor.ActorSystem
 import com.google.common.base.Charsets
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
@@ -35,7 +36,9 @@ import scala.concurrent.duration._
 import scala.util.{Failure, Success, Try}
 
 @Singleton
-class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiStoreConfig)(implicit val ec: ExecutionContext)  {
+class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiStoreConfig)
+                                     (implicit val ec: ExecutionContext, val actorSystem: ActorSystem
+) extends Retrying {
 
   val serviceUrl = s"${config.baseUrl}/store/site/blocks"
   val adminUsername: String = config.adminUsername
@@ -197,7 +200,7 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
       post(url, payload, headers(cookie)) map toHasSucceeded
     }
 
-    Retrying.retry(subscribe(), 180.milliseconds, retryMax)
+    retry(subscribe(), 180.milliseconds, retryMax)
   }
 
   def removeSubscription(cookie: String, wso2ApplicationName: String, api: Wso2Api, retryMax: Int)
@@ -219,7 +222,7 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
       post(url, payload, headers(cookie)) map toHasSucceeded
     }
 
-    Retrying.retry(unsubscribe(), 180.milliseconds, retryMax)
+    retry(unsubscribe(), 180.milliseconds, retryMax)
   }
 
   def getSubscriptions(cookie: String, wso2ApplicationName: String)
