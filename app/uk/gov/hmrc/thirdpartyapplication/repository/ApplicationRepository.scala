@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +47,8 @@ import scala.concurrent.Future
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
-    MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats) {
+    MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats)
+    with MetricsHelper {
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
@@ -330,7 +332,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
       )
       (lookup, List[PipelineOperator](unwind, group))
     }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
-      .map(_.map(r=>s"applicationsWithSubscriptionCount.${r._id.name}" -> r.count).toMap)
+      .map(_.map(r=>s"applicationsWithSubscriptionCount.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
 }
 
