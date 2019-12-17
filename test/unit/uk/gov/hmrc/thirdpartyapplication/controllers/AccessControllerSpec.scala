@@ -20,7 +20,7 @@ import java.util.UUID
 
 import org.mockito.Matchers._
 import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -38,7 +38,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
 
   implicit lazy val materializer = fakeApplication.materializer
   private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
@@ -86,7 +86,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   "Access controller update scopes function" should {
 
     def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(any[UUID], any[ScopeRequest])(any[HeaderCarrier])).thenReturn(eventualScopeResponse)
+      when(mockAccessService.updateScopes(any[UUID], any[ScopeRequest])(*)).thenReturn(eventualScopeResponse)
 
     "return http ok status when service update scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
@@ -147,7 +147,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
   "Access controller update overrides function" should {
 
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.updateOverrides(any[UUID], any[OverridesRequest])(any[HeaderCarrier])).thenReturn(eventualOverridesResponse)
+      when(mockAccessService.updateOverrides(any[UUID], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
     "return http ok status when service update overrides succeeds" in new StandardFixture {
       mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
@@ -210,11 +210,10 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with WithFakeAppli
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
         ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
-      when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(
-        applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
-      ))).thenReturn(successful(Some(
-        applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey")))
-      )))
+      when(mockApplicationService.fetch(applicationId)).thenReturn(
+        successful(Some(applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey"))))),
+        successful(Some(applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey")))))
+      )
       testBlock
       testBlock
     }

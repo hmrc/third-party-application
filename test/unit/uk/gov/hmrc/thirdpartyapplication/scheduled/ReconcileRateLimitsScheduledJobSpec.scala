@@ -21,11 +21,8 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, Duration}
-import org.mockito.Matchers.{any, matches}
-import org.mockito.Mockito._
-import org.mockito.stubbing.OngoingStubbing
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.mockito.MockitoSugar
 import org.slf4j
 import play.api.LoggerLike
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -47,7 +44,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class ReconcileRateLimitsScheduledJobSpec extends UnitSpec
+  with MockitoSugar with ArgumentMatchersSugar
+  with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
   val FixedTimeNow: DateTime = DateTimeUtils.now
   val expiryTimeInDays = 90
@@ -107,17 +106,17 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec with MockitoSugar wit
         lastAccess = Some(DateTimeUtils.now),
         rateLimitTier = rateLimit)
 
-    def callToWSO2LoginReturns(wso2Username: String, wso2Password: String, returnValue: Future[String]): OngoingStubbing[Future[String]] =
-      when(mockWSO2ApiStoreConnector.login(matches(wso2Username), matches(wso2Password))(any[HeaderCarrier])).thenReturn(returnValue)
+    def callToWSO2LoginReturns(wso2Username: String, wso2Password: String, returnValue: Future[String]) =
+      when(mockWSO2ApiStoreConnector.login(eqTo(wso2Username), eqTo(wso2Password))(*)).thenReturn(returnValue)
 
-    def callToWSO2LogoutReturns(wso2Cookie: String, returnValue: Future[HasSucceeded]): OngoingStubbing[Future[HasSucceeded]] =
-      when(mockWSO2ApiStoreConnector.logout(matches(wso2Cookie))(any[HeaderCarrier])).thenReturn(returnValue)
+    def callToWSO2LogoutReturns(wso2Cookie: String, returnValue: Future[HasSucceeded]) =
+      when(mockWSO2ApiStoreConnector.logout(matches(wso2Cookie))(*)).thenReturn(returnValue)
 
-    def callToFindAllApplicationsReturns(returnValue: Future[List[ApplicationData]]): OngoingStubbing[Future[List[ApplicationData]]] =
+    def callToFindAllApplicationsReturns(returnValue: Future[List[ApplicationData]]) =
       when(mockApplicationRepository.findAll()).thenReturn(returnValue)
 
-    def callToWSO2GetRateLimitTierReturns(wso2Cookie: String, wso2ApplicationName: String, returnValue: Future[RateLimitTier]): OngoingStubbing[Future[RateLimitTier]] =
-      when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(matches(wso2Cookie), matches(wso2ApplicationName))(any[HeaderCarrier]))
+    def callToWSO2GetRateLimitTierReturns(wso2Cookie: String, wso2ApplicationName: String, returnValue: Future[RateLimitTier]) =
+      when(mockWSO2ApiStoreConnector.getApplicationRateLimitTier(eqTo(wso2Cookie), eqTo(wso2ApplicationName))(*))
         .thenReturn(returnValue)
 
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]

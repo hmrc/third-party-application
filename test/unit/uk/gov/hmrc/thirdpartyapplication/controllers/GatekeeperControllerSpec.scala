@@ -22,10 +22,8 @@ import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
-import org.mockito.Matchers.any
-import org.mockito.Mockito._
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.Logger
 import play.api.http.Status._
 import play.api.libs.json.Json
@@ -47,7 +45,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.Future.{failed, successful}
 
-class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication
+class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication
   with ApplicationStateUtil with LogSuppressing {
 
   val authTokenHeader = "authorization" -> "authorizationToken"
@@ -320,7 +318,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.blockApplication(any())(any[HeaderCarrier]())).thenReturn(successful(Blocked))
+      when(mockGatekeeperService.blockApplication(*)(*)).thenReturn(successful(Blocked))
 
       val result = await(underTest.blockApplication(applicationId)(request))
 
@@ -337,7 +335,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.unblockApplication(any())(any[HeaderCarrier]())).thenReturn(successful(Unblocked))
+      when(mockGatekeeperService.unblockApplication(*)(*)).thenReturn(successful(Unblocked))
 
       val result = await(underTest.unblockApplication(applicationId)(request))
 

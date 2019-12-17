@@ -20,7 +20,7 @@ import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 
-class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with WithFakeApplication with ApplicationStateUtil {
+class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication with ApplicationStateUtil {
 
   implicit lazy val materializer = fakeApplication.materializer
 

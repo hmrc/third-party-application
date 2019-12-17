@@ -21,7 +21,7 @@ import java.util.UUID
 import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
 import scala.concurrent.Future
 
-class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar {
+class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar {
 
   trait Setup {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {

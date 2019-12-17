@@ -17,7 +17,7 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
 import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.ApplicationCount
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ApplicationCountSpec extends UnitSpec with MockitoSugar {
+class ApplicationCountSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
 
   trait Setup {
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]

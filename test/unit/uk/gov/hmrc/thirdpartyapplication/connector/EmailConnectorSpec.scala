@@ -16,10 +16,8 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.mockito.Matchers.{any, eq => meq}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -29,9 +27,9 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class EmailConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
+class EmailConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   private val baseUrl = s"http://example.com"
   private val hubTestTitle = "Unit Test Hub Title"
   private val hubUrl = "http://localhost:9685"
@@ -43,14 +41,12 @@ class EmailConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
     val connector = new EmailConnector(mockHttpClient, config)
 
     def emailWillReturn(result: Future[HttpResponse]) = {
-      when(mockHttpClient.POST[SendEmailRequest, HttpResponse](
-        any[String](), any[SendEmailRequest](), any[Seq[(String, String)]]())(any(), any(), any(), any())
-      ).thenReturn(result)
+      when(mockHttpClient.POST[SendEmailRequest, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(result)
     }
 
     def verifyEmailCalled(request: SendEmailRequest) = {
       val expectedUrl = s"${config.baseUrl}/hmrc/email"
-      verify(mockHttpClient).POST[SendEmailRequest, HttpResponse](meq(expectedUrl), meq(request), any())(any(), any(), any(), any())
+      verify(mockHttpClient).POST[SendEmailRequest, HttpResponse](eqTo(expectedUrl), eqTo(request), *)(*, *, *, *)
     }
   }
 

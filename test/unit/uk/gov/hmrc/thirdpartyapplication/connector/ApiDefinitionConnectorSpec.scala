@@ -19,10 +19,8 @@ package unit.uk.gov.hmrc.thirdpartyapplication.connector
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.mockito.Matchers.{eq => meq, _}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -34,9 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVe
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures with LogSuppressing {
+class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"https://example.com"
 
   val apiDefinitionWithStableStatus = ApiDefinition("api-service", "api-name", "api-context",
@@ -53,12 +51,12 @@ class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with ScalaFu
     val underTest = new ApiDefinitionConnector(mockHttpClient, config)
 
     def apiDefinitionWillReturn(result: Future[Seq[ApiDefinition]]) = {
-      when(mockHttpClient.GET[Seq[ApiDefinition]](any())(any(), any(), any())).thenReturn(result)
+      when(mockHttpClient.GET[Seq[ApiDefinition]](*)(*, *, *)).thenReturn(result)
     }
 
     def verifyApiDefinitionCalled(applicationId: UUID) = {
       val expectedUrl = s"${config.baseUrl}/api-definition?applicationId=$applicationId"
-      verify(mockHttpClient).GET[Seq[ApiDefinition]](meq(expectedUrl))(any(), any(), any())
+      verify(mockHttpClient).GET[Seq[ApiDefinition]](eqTo(expectedUrl))(*, *, *)
     }
   }
 

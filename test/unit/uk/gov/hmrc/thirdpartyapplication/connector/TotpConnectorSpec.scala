@@ -16,9 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.mockito.Matchers.any
-import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
@@ -31,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEAD
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TotpConnectorSpec extends UnitSpec with MockitoSugar {
+class TotpConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
 
   implicit val hc = HeaderCarrier()
   private val baseUrl = s"http://example.com"
@@ -51,7 +49,7 @@ class TotpConnectorSpec extends UnitSpec with MockitoSugar {
     "return the Totp when it is successfully created" in new Setup {
 
       val responseBody = Json.obj("secret" -> totpSecret, "id" -> totpId)
-      when(mockHttpClient.POSTEmpty[HttpResponse](any[String]())(any(), any(), any()))
+      when(mockHttpClient.POSTEmpty[HttpResponse](*,*)(*, *, *))
         .thenReturn(Future(HttpResponse(CREATED, Some(responseBody))))
 
       val result = await(underTest.generateTotp())
@@ -61,7 +59,7 @@ class TotpConnectorSpec extends UnitSpec with MockitoSugar {
 
     "fail when the Totp creation fails" in new Setup {
 
-      when(mockHttpClient.POSTEmpty[HttpResponse](any[String]())(any(), any(), any()))
+      when(mockHttpClient.POSTEmpty[HttpResponse](*,*)(*, *, *))
         .thenReturn(Future.failed(Upstream5xxResponse("", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR)))
 
       intercept[RuntimeException] {

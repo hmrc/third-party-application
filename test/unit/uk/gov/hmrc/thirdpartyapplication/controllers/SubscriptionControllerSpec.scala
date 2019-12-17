@@ -21,7 +21,7 @@ import java.util.UUID
 import akka.stream.Materializer
 import org.mockito.Mockito._
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Application
 import play.api.http.HttpVerbs.GET
@@ -40,7 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.Future.{failed, successful, apply => _}
 
-class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with GuiceOneAppPerSuite {
+class SubscriptionControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with GuiceOneAppPerSuite {
 
   val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 

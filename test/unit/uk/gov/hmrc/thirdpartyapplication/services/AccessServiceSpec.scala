@@ -18,10 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.any
-import org.mockito.Mockito.{verify, when}
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.UnitSpec
@@ -36,7 +33,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-class AccessServiceSpec extends UnitSpec with MockitoSugar {
+class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
 
   "Access service update scopes function" should {
 
@@ -167,7 +164,7 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar {
       applicationDataArgumentCaptor.getValue.access.asInstanceOf[Privileged].scopes
     }
 
-    when(mockAuditService.audit(any[AuditAction], any[Map[String, String]])(any[HeaderCarrier])).thenReturn(successful(AuditResult.Success))
+    when(mockAuditService.audit(any[AuditAction], any[Map[String, String]])(*)).thenReturn(successful(AuditResult.Success))
 
   }
 

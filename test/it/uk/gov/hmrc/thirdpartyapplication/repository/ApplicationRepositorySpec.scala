@@ -22,9 +22,8 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
-import org.mockito.Mockito.{times, verify, verifyNoMoreInteractions}
+import org.mockito.MockitoSugar
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
@@ -39,12 +38,18 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
-class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
-  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with IndexVerification
-  with MockitoSugar with Eventually with Matchers {
+class ApplicationRepositorySpec
+  extends UnitSpec
+    with MockitoSugar
+    with MongoSpecSupport
+    with BeforeAndAfterEach with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with IndexVerification
+    with Eventually
+    with Matchers {
 
-  implicit val s : ActorSystem = ActorSystem("test")
-  implicit val m : Materializer = ActorMaterializer()
+  implicit var s : ActorSystem = ActorSystem("test")
+  implicit var m : Materializer = ActorMaterializer()
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest

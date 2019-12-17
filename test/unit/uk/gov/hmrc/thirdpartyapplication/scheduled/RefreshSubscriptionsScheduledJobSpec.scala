@@ -24,7 +24,7 @@ import org.joda.time.{DateTime, DateTimeUtils, Duration}
 import org.mockito.Matchers._
 import org.mockito.Mockito._
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
@@ -39,7 +39,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil
+class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil
   with LogSuppressing {
 
   val FixedTimeNow: DateTime = HmrcTime.now
@@ -82,10 +82,10 @@ class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar wi
 
   "refresh subscriptions job execution" should {
     "attempt to refresh the subscriptions for all applications" in new Setup {
-      when(mockSubscriptionService.refreshSubscriptions()(any[HeaderCarrier])).thenReturn(Future.successful(5))
+      when(mockSubscriptionService.refreshSubscriptions()(*)).thenReturn(Future.successful(5))
 
       await(underTest.execute)
-      verify(mockSubscriptionService, times(1)).refreshSubscriptions()(any[HeaderCarrier])
+      verify(mockSubscriptionService, times(1)).refreshSubscriptions()(*)
     }
 
     "not execute if the job is already running" in new Setup {
@@ -96,7 +96,7 @@ class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar wi
 
     "handle error when fetching subscription fails" in new Setup {
       withSuppressedLoggingFrom(Logger, "Could not refresh subscriptions") { _ =>
-        when(mockSubscriptionService.refreshSubscriptions()(any[HeaderCarrier])).thenReturn(
+        when(mockSubscriptionService.refreshSubscriptions()(*)).thenReturn(
           Future.failed(new RuntimeException("A failure on executing refreshSubscriptions"))
         )
         val result = await(underTest.execute)

@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.connector
 import org.mockito.Mockito.when
 import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthConnectorSpec extends UnitSpec with MockitoSugar with Matchers with ScalaFutures with WithFakeApplication{
+class AuthConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with Matchers with ScalaFutures with WithFakeApplication{
   trait Setup {
     implicit val hc = HeaderCarrier()
 

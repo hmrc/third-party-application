@@ -21,14 +21,10 @@ import java.util.concurrent.TimeUnit
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.ArgumentCaptor
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.captor.ArgCaptor
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.LockKeeper
@@ -50,7 +46,7 @@ import scala.concurrent.Future.successful
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil {
+class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup {
 
@@ -61,7 +57,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockEmailConnector = mock[EmailConnector]
     val response = mock[WSResponse]
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
@@ -73,11 +69,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     val underTest = new CredentialService(mockApplicationRepository, mockAuditService, applicationResponseCreator, credentialConfig)
 
-    when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
-      override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
-        successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
-      }
-    })
+    when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
   }
 
   private def aSecret(secret: String): ClientSecret = {
@@ -225,14 +217,14 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val secretRequest = ClientSecretRequest("secret-1")
 
     "add the client secret" in new Setup {
-      val captor = ArgumentCaptor.forClass(classOf[ApplicationData])
+      val captor = ArgCaptor[ApplicationData]
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
 
       val result = await(underTest.addClientSecret(applicationId, secretRequest))
 
-      verify(mockApplicationRepository).save(captor.capture())
-      val updatedProductionSecrets = captor.getValue.tokens.production.clientSecrets
+      verify(mockApplicationRepository).save(captor.capture)
+      val updatedProductionSecrets = captor.value.tokens.production.clientSecrets
       updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
       val newSecret = updatedProductionSecrets diff environmentToken.clientSecrets
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedProductionSecrets)
@@ -246,7 +238,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
@@ -258,7 +250,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecret(applicationId, secretRequest)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
   }
 
@@ -270,7 +262,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "remove a client secret form an app with more than one client secret" in new Setup {
 
       val secretsToRemove = Seq("secret1")
-      val captor = ArgumentCaptor.forClass(classOf[ApplicationData])
+      val captor = ArgCaptor[ApplicationData]
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockAuditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.toString,
@@ -278,8 +270,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.deleteClientSecrets(applicationId, secretsToRemove))
 
-      verify(mockApplicationRepository).save(captor.capture())
-      val updatedClientSecrets = captor.getValue.tokens.production.clientSecrets
+      verify(mockApplicationRepository).save(captor.capture)
+      val updatedClientSecrets = captor.value.tokens.production.clientSecrets
       updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedClientSecrets)
       verify(mockAuditService, times(secretsToRemove.length)).audit(ClientSecretRemoved,
@@ -294,8 +286,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       intercept[IllegalArgumentException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
-      verify(mockAuditService, never()).audit(any(), any())(any[HeaderCarrier])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
+      verify(mockAuditService, never).audit(*, *)(*)
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -305,8 +297,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
-      verify(mockAuditService, never()).audit(any(), any())(any[HeaderCarrier])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
+      verify(mockAuditService, never).audit(*, *)(*)
     }
 
     "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
@@ -316,8 +308,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
-      verify(mockAuditService, never()).audit(any(), any())(any[HeaderCarrier])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
+      verify(mockAuditService, never).audit(*, *)(*)
     }
   }
 
