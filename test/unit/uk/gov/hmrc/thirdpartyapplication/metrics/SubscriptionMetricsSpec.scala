@@ -24,11 +24,12 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionMetrics
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, SubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class SubscriptionMetricsSpec extends UnitSpec with MockitoSugar {
+class SubscriptionMetricsSpec extends UnitSpec with MockitoSugar with MetricsHelper {
 
   trait Setup {
     val mockSubscriptionsRepository: SubscriptionRepository = mock[SubscriptionRepository]
@@ -41,11 +42,11 @@ class SubscriptionMetricsSpec extends UnitSpec with MockitoSugar {
       SubscriptionData(new APIIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(UUID.randomUUID()).toSet)
 
     def expectedAPIName(subscription: (String, String, Int)): String =
-      s"subscriptionCount2.${subscription._1.replace("/", " ")}.${subscription._2.replace(".", "-")}"
+      s"subscriptionCount2.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
-      private val api1v2 = ("apiOne", "2.0", 10)
+      private val api1v2 = ("api(One)", "2.0", 10)
       private val api2 = ("route/apiTwo", "1.0", 100)
 
       when(mockSubscriptionsRepository.findAll())

@@ -32,6 +32,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +40,7 @@ import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with IndexVerification
-  with MockitoSugar with Eventually with Matchers {
+  with MockitoSugar with Eventually with Matchers with MetricsHelper {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -964,9 +965,9 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = aNamedApplicationData(id = UUID.randomUUID(), name = "organisations/trusts", prodClientId = generateClientId)
+      val application2 = aNamedApplicationData(id = UUID.randomUUID(), name = "application.com", prodClientId = generateClientId)
+      val application3 = aNamedApplicationData(id = UUID.randomUUID(), name = "Get) Vat Done (Fast)", prodClientId = generateClientId)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -976,11 +977,15 @@ class ApplicationRepositorySpec extends UnitSpec with MongoSpecSupport
       await(subscriptionRepository.insert(aSubscriptionData(api2, api2Version, application1.id)))
       await(subscriptionRepository.insert(aSubscriptionData(api3, api3Version, application2.id)))
 
+      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name)
+      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name)
+      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name)
+
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
-      result.get(s"applicationsWithSubscriptionCount.${application1.name}") shouldBe Some(2)
-      result.get(s"applicationsWithSubscriptionCount.${application2.name}") shouldBe Some(1)
-      result.get(s"applicationsWithSubscriptionCount.${application3.name}") shouldBe None
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp1Name}") shouldBe Some(2)
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp2Name}") shouldBe Some(1)
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp3Name}") shouldBe None
     }
 
     "return Applications when more than 100 results bug" in {
