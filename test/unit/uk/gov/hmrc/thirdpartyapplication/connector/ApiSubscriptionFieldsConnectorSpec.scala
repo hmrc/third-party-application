@@ -19,10 +19,8 @@ package unit.uk.gov.hmrc.thirdpartyapplication.connector
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.mockito.Matchers.{any, eq => meq}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
@@ -32,23 +30,24 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConfig,
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ApiSubscriptionFieldsConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures with LogSuppressing {
+class ApiSubscriptionFieldsConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"http://example.com"
 
   trait Setup {
     val mockHttpClient = mock[HttpClient]
     val config = ApiSubscriptionFieldsConfig(baseUrl)
+
     val underTest = new ApiSubscriptionFieldsConnector(mockHttpClient, config)
 
     def apiSubscriptionFieldsWillReturn(result: Future[HttpResponse]) = {
-      when(mockHttpClient.DELETE[HttpResponse](any())(any(), any(), any())).thenReturn(result)
+      when(mockHttpClient.DELETE[HttpResponse](*,*)(*, *, *)).thenReturn(result)
     }
 
     def verifyApiSubscriptionFieldsCalled(clientId: String) = {
       val expectedUrl = s"${config.baseUrl}/field/application/$clientId"
-      verify(mockHttpClient).DELETE[HttpResponse](meq(expectedUrl))(any(), any(), any())
+      verify(mockHttpClient).DELETE[HttpResponse](eqTo(expectedUrl), *)(*, *, *)
     }
   }
 

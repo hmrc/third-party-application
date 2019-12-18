@@ -18,9 +18,11 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -36,8 +38,11 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
-class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with MongoSpecSupport with IndexVerification
+class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
+
+  implicit val s : ActorSystem = ActorSystem("test")
+  implicit val m : Materializer = ActorMaterializer()
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest

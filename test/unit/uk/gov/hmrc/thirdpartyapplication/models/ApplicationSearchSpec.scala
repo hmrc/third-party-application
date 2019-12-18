@@ -17,13 +17,13 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
 import org.scalatest._
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 
 
-class ApplicationSearchSpec extends UnitSpec with MockitoSugar with Matchers {
+class ApplicationSearchSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with Matchers {
 
   "ApplicationSearch" should {
 

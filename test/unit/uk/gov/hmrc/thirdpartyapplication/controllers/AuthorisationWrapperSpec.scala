@@ -20,8 +20,7 @@ import java.util.UUID
 
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
-import org.mockito.Mockito._
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
@@ -38,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
-class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with WithFakeApplication {
+class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
 
   implicit lazy val materializer = fakeApplication.materializer
   val mockAuthConfig = mock[AuthConfig]

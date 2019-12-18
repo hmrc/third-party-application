@@ -23,14 +23,11 @@ import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
-import org.mockito.Matchers.{any, anyString, eq => eqTo, _}
-import org.mockito.Mockito._
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.{Answer, OngoingStubbing}
-import org.mockito.{ArgumentCaptor, Mockito}
+import org.mockito.stubbing.Answer
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, Mockito, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
@@ -58,7 +55,7 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup {
 
@@ -80,7 +77,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val mockApplicationService = mock[ApplicationService]
     val mockGatekeeperService = mock[GatekeeperService]
 
-    when(mockApplicationRepository.fetchApplicationsByName(any()))
+    when(mockApplicationRepository.fetchApplicationsByName(*))
       .thenReturn(Future.successful(Seq.empty))
 
     val applicationResponseCreator = new ApplicationResponseCreator()
@@ -114,48 +111,41 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockNameValidationConfig)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
-    when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier]))
-      .thenReturn(successful(productionToken))
-    when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
-      override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
-        successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
-      }
-    })
-    when(mockStateHistoryRepository.insert(any())).thenAnswer(new Answer[Future[StateHistory]] {
-      override def answer(invocation: InvocationOnMock): Future[StateHistory] = {
-        successful(invocation.getArguments()(0).asInstanceOf[StateHistory])
-      }
-    })
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationApprovedNotification(anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationDeletedNotification(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
+    when(mockApiGatewayStore.createApplication(*, *, *)(*)).thenReturn(successful(productionToken))
+    when(mockApplicationRepository.save(*)).thenAnswer( (a: ApplicationData) => successful(a))
+    when(mockStateHistoryRepository.insert(*)).thenAnswer((s:StateHistory) =>successful(s))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(response))
     mockWso2ApiStoreUpdateApplicationToReturn(HasSucceeded)
     mockWso2SubscribeToReturn(HasSucceeded)
 
+    def mockTidyUpDeleteAction() = when(mockApiGatewayStore.deleteApplication(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+
     def mockApplicationRepositoryFetchToReturn(uuid: UUID,
                                                eventualMaybeApplicationData: Future[Option[ApplicationData]]
-                                              ): OngoingStubbing[Future[Option[ApplicationData]]] = {
+                                              ) = {
       when(mockApplicationRepository fetch uuid) thenReturn eventualMaybeApplicationData
     }
 
-    def mockWso2ApiStoreUpdateApplicationToReturn(eventualHasSucceeded: Future[HasSucceeded]): OngoingStubbing[Future[HasSucceeded]] = {
-      when(mockApiGatewayStore.updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])) thenReturn eventualHasSucceeded
+    def mockWso2ApiStoreUpdateApplicationToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
+      when(mockApiGatewayStore.updateApplication(any[ApplicationData], any[RateLimitTier])(*)) thenReturn eventualHasSucceeded
     }
 
-    def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]): OngoingStubbing[Future[HasSucceeded]] = {
+    def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
       when(mockApiGatewayStore
-        .resubscribeApi(any[Seq[APIIdentifier]], anyString(), anyString(), anyString(), any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier]))
+        .resubscribeApi(any[Seq[APIIdentifier]], *, *, *, any[APIIdentifier], any[RateLimitTier])(*))
         .thenReturn(eventualHasSucceeded)
     }
 
-    def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]): OngoingStubbing[Future[ApplicationData]] = {
+    def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]) = {
       when(mockApplicationRepository save any[ApplicationData]) thenReturn eventualApplicationData
     }
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
-                                                           subscriptions: Seq[APIIdentifier]): OngoingStubbing[Future[Seq[APIIdentifier]]] =
+                                                           subscriptions: Seq[APIIdentifier]) =
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
 
   }
@@ -207,7 +197,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(),
         environment = Environment.PRODUCTION)
       createdApp.totp shouldBe None
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       verify(mockAuditService).audit(AppCreated,
@@ -226,7 +216,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION),
         environment = Environment.SANDBOX)
       createdApp.totp shouldBe None
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
       verify(mockAuditService).audit(AppCreated,
@@ -244,7 +234,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState())
       createdApp.totp shouldBe None
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       verify(mockAuditService).audit(AppCreated,
@@ -257,7 +247,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "create a new Privileged application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Privileged())
-      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty)
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty[ApplicationData])
 
       val prodTOTP = Totp("prodTotp", "prodTotpId")
       val sandboxTOTP = Totp("sandboxTotp", "sandboxTotpId")
@@ -276,7 +266,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val expectedTotp = ApplicationTotps(prodTOTP, sandboxTOTP)
       createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret, expectedTotp.sandbox.secret))
 
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
       verify(mockAuditService).audit(AppCreated,
@@ -290,13 +280,13 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "create a new ROPC application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Ropc())
 
-      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty)
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty[ApplicationData])
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)), access = Ropc())
-      verify(mockApiGatewayStore).createApplication(any(), any(), any())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
       verify(mockAuditService).audit(AppCreated,
@@ -313,6 +303,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name))
         .thenReturn(Seq(anApplicationData(UUID.randomUUID())))
 
+      mockTidyUpDeleteAction()
+
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
@@ -324,6 +316,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
 
       when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq(anApplicationData(UUID.randomUUID())))
+
+      mockTidyUpDeleteAction()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
@@ -349,27 +343,27 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationData: ApplicationData = anApplicationData(UUID.randomUUID())
 
       private val exception = new scala.RuntimeException("failed to generate tokens")
-      when(mockApiGatewayStore.createApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(failed(exception))
-      when(mockApiGatewayStore.deleteApplication(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(Future(HasSucceeded))
+      when(mockApiGatewayStore.createApplication(*, *, *)(*)).thenReturn(failed(exception))
+      when(mockApiGatewayStore.deleteApplication(*, *, *)(*)).thenReturn(Future(HasSucceeded))
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.create(applicationRequest)))
       ex.getMessage shouldBe exception.getMessage
 
-      verify(mockApplicationRepository, never()).save(any())
-      verify(mockApiGatewayStore).deleteApplication(anyString(), anyString(), anyString())(any[HeaderCarrier])
+      verify(mockApplicationRepository, never).save(*)
+      verify(mockApiGatewayStore).deleteApplication(*, *, *)(*)
     }
 
     "delete application when failed to create state history" in new Setup {
       val dbApplication: ArgumentCaptor[ApplicationData] = ArgumentCaptor.forClass(classOf[ApplicationData])
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest()
 
-      when(mockStateHistoryRepository.insert(any())).thenReturn(failed(new RuntimeException("Expected test failure")))
-      when(mockApiGatewayStore.deleteApplication(anyString(), anyString(), anyString())(any[HeaderCarrier])).thenReturn(Future(HasSucceeded))
+      when(mockStateHistoryRepository.insert(*)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(mockApiGatewayStore.deleteApplication(*, *, *)(*)).thenReturn(Future(HasSucceeded))
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.create(applicationRequest)))
 
       verify(mockApplicationRepository).save(dbApplication.capture())
-      verify(mockApiGatewayStore).deleteApplication(anyString(), anyString(), anyString())(any[HeaderCarrier])
+      verify(mockApiGatewayStore).deleteApplication(*, *, *)(*)
       verify(mockApplicationRepository).delete(dbApplication.getValue.id)
     }
   }
@@ -400,7 +394,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       await(underTest.update(id, applicationRequest))
 
-      verify(mockApplicationRepository).save(any())
+      verify(mockApplicationRepository).save(*)
     }
 
     "update an existing application if an id is provided and name is changed" in new Setup {
@@ -410,7 +404,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       await(underTest.update(id, applicationRequest))
 
-      verify(mockApplicationRepository).save(any())
+      verify(mockApplicationRepository).save(*)
     }
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
@@ -419,7 +413,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[NotFoundException](await(underTest.update(id, applicationRequest)))
 
-      verify(mockApplicationRepository, never()).save(any())
+      verify(mockApplicationRepository, never).save(*)
     }
 
     "throw a ForbiddenException when trying to change the access type of an application" in new Setup {
@@ -430,7 +424,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[ForbiddenException](await(underTest.update(id, privilegedApplicationRequest)))
 
-      verify(mockApplicationRepository, never()).save(any())
+      verify(mockApplicationRepository, never).save(*)
     }
   }
 
@@ -447,7 +441,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       await(underTest.updateCheck(id, approvalInformation))
 
-      verify(mockApplicationRepository).save(any())
+      verify(mockApplicationRepository).save(*)
     }
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
@@ -456,7 +450,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[NotFoundException](await(underTest.updateCheck(id, approvalInformation)))
 
-      verify(mockApplicationRepository, never()).save(any())
+      verify(mockApplicationRepository, never).save(*)
     }
   }
 
@@ -532,10 +526,10 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       await(underTest.update(id, UpdateApplicationRequest(updatedApplication.name)))
 
-      verify(mockAuditService).audit(refEq(AppNameChanged), any[Map[String, String]])(any[HeaderCarrier])
-      verify(mockAuditService).audit(refEq(AppTermsAndConditionsUrlChanged), any[Map[String, String]])(any[HeaderCarrier])
-      verify(mockAuditService).audit(refEq(AppRedirectUrisChanged), any[Map[String, String]])(any[HeaderCarrier])
-      verify(mockAuditService).audit(refEq(AppPrivacyPolicyUrlChanged), any[Map[String, String]])(any[HeaderCarrier])
+      verify(mockAuditService).audit(refEq(AppNameChanged), any[Map[String, String]])(*)
+      verify(mockAuditService).audit(refEq(AppTermsAndConditionsUrlChanged), any[Map[String, String]])(*)
+      verify(mockAuditService).audit(refEq(AppRedirectUrisChanged), any[Map[String, String]])(*)
+      verify(mockAuditService).audit(refEq(AppPrivacyPolicyUrlChanged), any[Map[String, String]])(*)
     }
   }
 
@@ -563,7 +557,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[NotFoundException](await(underTest.addCollaborator(applicationId, request)))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
 
     "update collaborators when application exists in the repository for the given application id" in new Setup {
@@ -655,12 +649,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, successful(Some(applicationData)))
       mockApplicationRepositorySaveToReturn(successful(expected))
 
-      when(mockEmailConnector.sendAddedCollaboratorConfirmation(any(), any(), any())(any())).thenReturn(failed(new RuntimeException))
+      when(mockEmailConnector.sendAddedCollaboratorConfirmation(*, *, *)(*)).thenReturn(failed(new RuntimeException))
 
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true)))
 
       verify(mockApplicationRepository).save(expected)
-      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(any(), any(), any())(any())
+      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(*, *, *)(*)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 
@@ -669,7 +663,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser, role = ADMINISTRATOR))))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
 
     "throw UserAlreadyPresent error when adding an existing collaborator with different role" in new Setup {
@@ -677,7 +671,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser, role = DEVELOPER))))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
 
     "throw UserAlreadyPresent error when adding an existing collaborator with different case" in new Setup {
@@ -685,7 +679,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       intercept[UserAlreadyExists](await(underTest.addCollaborator(applicationId, collaboratorRequest(email = loggedInUser.toUpperCase, role = DEVELOPER))))
 
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
     }
   }
 
@@ -707,7 +701,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, None)
 
       intercept[NotFoundException](await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmail)))
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
       verifyZeroInteractions(mockEmailConnector)
     }
 
@@ -748,7 +742,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(applicationData))
 
       intercept[ApplicationNeedsAdmin](await(underTest.deleteCollaborator(applicationId, admin, admin, adminsToEmail)))
-      verify(mockApplicationRepository, never()).save(any[ApplicationData])
+      verify(mockApplicationRepository, never).save(any[ApplicationData])
       verifyZeroInteractions(mockEmailConnector)
     }
   }
@@ -947,7 +941,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 
       when(mockApplicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)).thenReturn(Some(application))
-      when(mockStateHistoryRepository.insert(any())).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(mockStateHistoryRepository.insert(*)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
       intercept[RuntimeException] {
         await(underTest.verifyUplift(generatedVerificationCode))
@@ -1035,9 +1029,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "block a duplicate app name" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty)
+        .thenReturn(Seq.empty[String])
 
-      when(mockApplicationRepository.fetchApplicationsByName(any()))
+      when(mockApplicationRepository.fetchApplicationsByName(*))
         .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
       private val duplicateName = "duplicate name"
@@ -1051,12 +1045,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty)
+        .thenReturn(Seq.empty[String])
 
       when(mockNameValidationConfig.validateForDuplicateAppNames)
         .thenReturn(false)
 
-      when(mockApplicationRepository.fetchApplicationsByName(any()))
+      when(mockApplicationRepository.fetchApplicationsByName(*))
         .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
 
       val result = await(underTest.validateApplicationName("app name", None))
@@ -1064,16 +1058,16 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       result shouldBe Valid
 
       verify(mockApplicationRepository, times(0))
-        .fetchApplicationsByName(any())
+        .fetchApplicationsByName(*)
     }
 
     "Ignore application when checking for duplicates if it is self application" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty)
+        .thenReturn(Seq.empty[String])
 
       val applicationId = UUID.randomUUID()
 
-      when(mockApplicationRepository.fetchApplicationsByName(any()))
+      when(mockApplicationRepository.fetchApplicationsByName(*))
         .thenReturn(Seq(anApplicationData(applicationId)))
 
       val result = await(underTest.validateApplicationName("app name", Some(applicationId)))
@@ -1115,7 +1109,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
         .thenReturn(Seq(application))
 
-      when(mockStateHistoryRepository.insert(any()))
+      when(mockStateHistoryRepository.insert(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       intercept[RuntimeException] {
@@ -1132,7 +1126,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(Seq.empty)
+      when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(Seq.empty[ApplicationData])
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
       verify(mockAuditService).audit(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString))
@@ -1145,7 +1139,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(Seq.empty)
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(Seq.empty[ApplicationData])
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
@@ -1227,9 +1221,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockApiGatewayStore, never).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
-      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], anyString, anyString, anyString,
-        any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockApiGatewayStore, never).updateApplication(any[ApplicationData], any[RateLimitTier])(*)
+      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], *, *, *,
+        any[APIIdentifier], any[RateLimitTier])(*)
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
 
@@ -1243,9 +1237,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockApiGatewayStore).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
-      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], anyString, anyString, anyString,
-        any[APIIdentifier], any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockApiGatewayStore).updateApplication(any[ApplicationData], any[RateLimitTier])(*)
+      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], *, *, *,
+        any[APIIdentifier], any[RateLimitTier])(*)
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
 
@@ -1260,7 +1254,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
-      verify(mockApiGatewayStore).updateApplication(any[ApplicationData], any[RateLimitTier])(any[HeaderCarrier])
+      verify(mockApiGatewayStore).updateApplication(any[ApplicationData], any[RateLimitTier])(*)
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
 
@@ -1353,16 +1347,16 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       val auditFunction: ApplicationData => Future[AuditResult] = mock[ApplicationData => Future[AuditResult]]
 
-      when(mockApplicationRepository.fetch(any())).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(*)).thenReturn(Some(application))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
-      when(mockApiGatewayStore.removeSubscription(any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockSubscriptionRepository.remove(any(), any())).thenReturn(successful(HasSucceeded))
-      when(mockApiGatewayStore.deleteApplication(any(), any(), any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockApplicationRepository.delete(any())).thenReturn(successful(HasSucceeded))
-      when(mockStateHistoryRepository.deleteByApplicationId(any())).thenReturn(successful(HasSucceeded))
-      when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(any())(any[HeaderCarrier])).thenReturn(successful(HasSucceeded))
-      when(mockAuditService.audit(any(), any(), any())(any[HeaderCarrier])).thenReturn(Future.successful(AuditResult.Success))
+      when(mockApiGatewayStore.removeSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
+      when(mockApiGatewayStore.deleteApplication(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockApplicationRepository.delete(*)).thenReturn(successful(HasSucceeded))
+      when(mockStateHistoryRepository.deleteByApplicationId(*)).thenReturn(successful(HasSucceeded))
+      when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(*)(*)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
+      when(mockAuditService.audit(*, *, *)(*)).thenReturn(Future.successful(AuditResult.Success))
 
     }
 
@@ -1373,19 +1367,18 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "call to WSO2 to delete the application" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-      verify(mockApiGatewayStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password),
-        eqTo(application.wso2ApplicationName))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).deleteApplication(eqTo(application.wso2Username), eqTo(application.wso2Password), eqTo(application.wso2ApplicationName))(*)
     }
 
     "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api1))(any[HeaderCarrier])
-      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api2))(any[HeaderCarrier])
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api1))(*)
+      verify(mockApiGatewayStore).removeSubscription(eqTo(application), eqTo(api2))(*)
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-      verify(mockApiSubscriptionFieldsConnector).deleteSubscriptions(eqTo(application.tokens.production.clientId))(any[HeaderCarrier])
+      verify(mockApiSubscriptionFieldsConnector).deleteSubscriptions(eqTo(application.tokens.production.clientId))(*)
     }
 
     "delete the application subscriptions from the repository" in new DeleteApplicationSetup {
@@ -1423,7 +1416,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
-      when(mockApplicationRepository.fetch(any())).thenReturn(None)
+      when(mockApplicationRepository.fetch(*)).thenReturn(None)
 
       val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted

@@ -13,28 +13,29 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 val reactiveMongoVer = "0.18.8"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-25" % "4.13.0",
+  "uk.gov.hmrc" %% "bootstrap-play-25" % "5.1.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.1.0-play-25",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
   "uk.gov.hmrc" %% "play-hmrc-api" % "3.6.0-play-25",
   "uk.gov.hmrc" %% "metrix" % "3.8.0-play-25",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.21.0-play-25",
-  "org.reactivemongo" %% "reactivemongo-iteratees" % reactiveMongoVer,
   "org.reactivemongo" %% "play2-reactivemongo" % (reactiveMongoVer + "-play25"),
   "org.reactivemongo" %% "reactivemongo-play-json" % (reactiveMongoVer + "-play25"),
   "commons-net" % "commons-net" % "3.6"
 )
+val scope = "test,it"
+
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % "test,it",
-  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % "test,it",
-  "org.pegdown" % "pegdown" % "1.6.0" % "test,it",
-  "org.scalaj" %% "scalaj-http" % "2.3.0" % "test,it",
-  "org.scalatest" %% "scalatest" % "2.2.6" % "test,it",
-  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.0" % "test,it",
-  "com.typesafe.play" %% "play-test" % PlayVersion.current % "test,it",
-  "com.github.tomakehurst" % "wiremock" % "1.58" % "test,it",
-  "org.mockito" % "mockito-core" % "1.9.5" % "test,it"
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % scope,
+  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % scope,
+  "org.pegdown" % "pegdown" % "1.6.0" % scope,
+  "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
+  "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
+  "org.mockito" %% "mockito-scala-scalatest" % "1.7.1" % scope,
+  "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
 )
+
 // Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
 // See Jira story GG-3666 for further information
 def tmpMacWorkaround =
@@ -72,7 +73,7 @@ lazy val microservice = (project in file("."))
   .configs(IntegrationTest)
   .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
   .settings(
-    Keys.fork in IntegrationTest := false,
+    fork in IntegrationTest := false,
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "test")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),

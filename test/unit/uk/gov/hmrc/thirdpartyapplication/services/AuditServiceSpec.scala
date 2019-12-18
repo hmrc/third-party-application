@@ -19,27 +19,22 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.ArgumentMatcher
-import org.mockito.Matchers._
-import org.mockito.Mockito._
+import org.mockito.{ArgumentMatcher, ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
 
-import scala.concurrent.ExecutionContext
-
-class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
+class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
@@ -48,19 +43,17 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
-      override def matches(actual: Object) = actual match {
-        case de: DataEvent =>
-          de.auditSource == expected.auditSource &&
-            de.auditType == expected.auditType &&
-            de.tags == expected.tags &&
-            de.detail == expected.detail
-      }
+      override def matches(de: DataEvent): Boolean =
+        de.auditSource == expected.auditSource &&
+          de.auditType == expected.auditType &&
+          de.tags == expected.tags &&
+          de.detail == expected.detail
     }
 
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
       val data = Map("some-header" -> "la-di-dah")
-      implicit val hc = HeaderCarrier()
+      implicit val hc: HeaderCarrier = HeaderCarrier()
 
       val event = DataEvent(
         auditSource = "third-party-application",
@@ -70,14 +63,14 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(event)))(any[HeaderCarrier], any[ExecutionContext])
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(event)))(*, *)
     }
 
     "add user context where it exists in the header carrier" in new Setup {
       val data = Map("some-header" -> "la-di-dah")
       val email = "test@example.com"
       val name = "John Smith"
-      implicit val hc = HeaderCarrier().withExtraHeaders(
+      implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
         LOGGED_IN_USER_EMAIL_HEADER -> email,
         LOGGED_IN_USER_NAME_HEADER -> name
       )
@@ -97,14 +90,14 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(any[HeaderCarrier], any[ExecutionContext])
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(*, *)
     }
 
     "add as much user context as possible where only partial data exists" in new Setup {
       val data = Map("some-header" -> "la-di-dah")
       val email = "test@example.com"
       val name = "John Smith"
-      implicit val emailHc = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
+      implicit val emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
 
       val event = DataEvent(
         auditSource = "third-party-application",
@@ -120,7 +113,7 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
       )
 
       auditService.audit(AppCreated, data)
-      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(any[HeaderCarrier], any[ExecutionContext])
+      verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(*, *)
     }
   }
 

@@ -17,10 +17,8 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
 import akka.actor.ActorSystem
-import org.mockito.Matchers.{any, eq => meq}
-import org.mockito.Mockito.{verify, when}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import play.api.http.ContentTypes.FORM
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status
@@ -37,7 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFutures {
+class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures {
 
   implicit val hc = HeaderCarrier()
   implicit val actorSystem: ActorSystem = ActorSystem("test")
@@ -65,13 +63,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
       val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> FORM)
       val responseBody = Some(Json.parse("""{"error":false}""""))
       val responseHeaders = Map(SET_COOKIE -> Seq("JSESSIONID=12345", "api-store=loadbalancercookie"))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody, responseHeaders)))
 
       val result = Await.result(underTest.login(username, password), 1.second)
 
       result shouldBe "JSESSIONID=12345;api-store=loadbalancercookie"
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
   }
 
@@ -93,7 +91,7 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           |}"""
           .stripMargin)
       )
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.getSubscriptions(cookie, applicationName), 1.second)
@@ -102,7 +100,7 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
       result.seq.head.version shouldBe "1.0"
       result.seq(1).name shouldBe "some--context--1.0"
       result.seq(1).version shouldBe "1.1"
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
   }
 
@@ -113,13 +111,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
       val url = s"$baseUrl/store/site/blocks/user/login/ajax/login.jag?action=logout"
       val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> FORM, COOKIE -> cookie)
       val responseBody = Some(Json.parse("""{"error":false}""""))
-      when(mockHttpClient.GET[HttpResponse](any())(any(), any(), any()))
+      when(mockHttpClient.GET[HttpResponse](*)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.logout(cookie), 1.second)
 
       result shouldBe HasSucceeded
-      verify(mockHttpClient).GET[HttpResponse](meq(url))(any(), meq(hc.withExtraHeaders(headers: _*)), any())
+      verify(mockHttpClient).GET[HttpResponse](eqTo(url))(*, eqTo(hc.withExtraHeaders(headers: _*)), *)
     }
 
   }
@@ -138,13 +136,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           s"&tier=BRONZE_SUBSCRIPTION" +
           s"&applicationName=$applicationName"
       val responseBody = Some(Json.parse("""{"error":false}"""))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.addSubscription(cookie, applicationName, api, None, 0), 1.second)
 
       result shouldBe HasSucceeded
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }
@@ -163,12 +161,12 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           s"&provider=$adminUsername" +
           s"&applicationName=$applicationName"
       val responseBody = Some(Json.parse("""{"error":false}"""))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.removeSubscription(cookie, applicationName, api, 0), 1.second)
       result shouldBe HasSucceeded
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }
@@ -198,13 +196,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
            |    }
            |  }
            |}""".stripMargin))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.generateApplicationKey(cookie, applicationName), 1.second)
 
       result shouldBe (_: EnvironmentToken)
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }
@@ -217,13 +215,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
       val headers: Seq[(String, String)] = Seq(CONTENT_TYPE -> FORM, COOKIE -> cookie)
       val body = s"action=removeApplication&application=$applicationName"
       val responseBody = Some(Json.parse("""{"error":false}"""))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.deleteApplication(cookie, applicationName), 1.second)
 
       result shouldBe HasSucceeded
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }
@@ -241,13 +239,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           s"&description=" +
           s"&callbackUrl="
       val responseBody = Some(Json.parse("""{"error":false}"""))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.createApplication(cookie, applicationName), 1.second)
 
       result shouldBe HasSucceeded
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }
@@ -264,7 +262,7 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
         case _ => s"""{}"""
       }
 
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(responseCode, Some(Json.parse(responseBody)))))
     }
 
@@ -278,7 +276,7 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           s"&callbackUrlNew=" +
           s"&descriptionNew=" +
           s"&tier=SILVER_APPLICATION"
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
     "update rate limiting tier is wso2" in new Setup {
@@ -324,13 +322,13 @@ class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ScalaFut
           s"&password=$password" +
           s"&allFieldsValues=firstname|lastname|email"
       val responseBody = Some(Json.parse("""{"error":false}"""))
-      when(mockHttpClient.POSTString[HttpResponse](any(), any(), any())(any(), any(), any()))
+      when(mockHttpClient.POSTString[HttpResponse](*, *, *)(*, *, *))
         .thenReturn(Future(HttpResponse(OK, responseBody)))
 
       val result = Await.result(underTest.createUser(username, password), 1.second)
 
       result shouldBe HasSucceeded
-      verify(mockHttpClient).POSTString[HttpResponse](meq(url), meq(body), meq(headers))(any(), meq(hc), any())
+      verify(mockHttpClient).POSTString[HttpResponse](eqTo(url), eqTo(body), eqTo(headers))(*, eqTo(hc), *)
     }
 
   }

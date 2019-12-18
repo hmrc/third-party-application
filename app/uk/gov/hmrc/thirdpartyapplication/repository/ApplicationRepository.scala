@@ -18,9 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
+import akka.stream.Materializer
+import akka.stream.scaladsl.{Sink, Source}
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.libs.iteratee._
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -28,7 +29,6 @@ import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
-import reactivemongo.play.iteratees.cursorProducer
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -45,7 +45,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 @Singleton
-class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
+class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer)
   extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
     MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats)
     with MetricsHelper {
@@ -294,11 +294,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    collection
-      .find(Json.obj(), Option.empty[ApplicationData])
-      .cursor[ApplicationData]()
-      .enumerator()
-      .run(Iteratee.foreach(function))
+    import reactivemongo.akkastream.{State, cursorProducer}
+    val sourceOfApps: Source[ApplicationData, Future[State]] =
+      collection
+        .find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
+
+    sourceOfApps.runWith(Sink.foreach(function)).map(_ => ())
   }
 
   def delete(id: UUID): Future[HasSucceeded] = {

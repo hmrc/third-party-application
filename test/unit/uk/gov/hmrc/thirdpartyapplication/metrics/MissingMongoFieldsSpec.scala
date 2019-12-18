@@ -16,15 +16,15 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
-import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.MissingMongoFields
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class MissingMongoFieldsSpec extends UnitSpec with MockitoSugar {
+class MissingMongoFieldsSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
 
   trait Setup {
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]

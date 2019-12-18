@@ -20,19 +20,16 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.ArgumentCaptor
-import org.mockito.Matchers.{any, anyString, eq => eqTo}
-import org.mockito.Mockito._
+import org.mockito.captor.ArgCaptor
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar, captor}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
@@ -46,7 +43,7 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with BeforeAndAfterAll with ApplicationStateUtil {
+class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val requestedByEmail = "john.smith@example.com"
 
@@ -83,7 +80,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(mockApplicationRepository,
       mockStateHistoryRepository,
@@ -96,22 +93,14 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       mockThirdPartyDelegatedAuthorityConnector,
       mockApplicationService)
 
-    when(mockApplicationRepository.save(any())).thenAnswer(new Answer[Future[ApplicationData]] {
-      override def answer(invocation: InvocationOnMock): Future[ApplicationData] = {
-        successful(invocation.getArguments()(0).asInstanceOf[ApplicationData])
-      }
-    })
-    when(mockStateHistoryRepository.insert(any())).thenAnswer(new Answer[Future[StateHistory]] {
-      override def answer(invocation: InvocationOnMock): Future[StateHistory] = {
-        successful(invocation.getArguments()(0).asInstanceOf[StateHistory])
-      }
-    })
-    when(mockEmailConnector.sendRemovedCollaboratorNotification(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationApprovedNotification(anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationRejectedNotification(anyString(), any(), anyString())(any[HeaderCarrier]())).thenReturn(successful(response))
-    when(mockEmailConnector.sendApplicationDeletedNotification(anyString(), anyString(), any())(any[HeaderCarrier]())).thenReturn(successful(response))
+    when(mockApplicationRepository.save(*)).thenAnswer( (a: ApplicationData) => successful(a))
+    when(mockStateHistoryRepository.insert(*)).thenAnswer( (s: StateHistory) => successful(s))
+    when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationRejectedNotification(*, *, *)(*)).thenReturn(successful(response))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(response))
   }
 
   override def beforeAll() {
@@ -192,11 +181,12 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
 
       result shouldBe UpliftApproved
-      val appDataArgCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
-      verify(mockApplicationRepository).save(appDataArgCaptor.capture())
+
+      val appDataArgCaptor = captor.ArgCaptor[ApplicationData]
+      verify(mockApplicationRepository).save(appDataArgCaptor.capture)
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
 
-      val savedApplication = appDataArgCaptor.getValue
+      val savedApplication = appDataArgCaptor.value
 
       savedApplication.state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
       savedApplication.state.verificationCode shouldBe defined
@@ -207,7 +197,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
 
-      when(mockStateHistoryRepository.insert(any())).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
+      when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
 
       intercept[RuntimeException] {
         await(underTest.approveUplift(applicationId, gatekeeperUserId))
@@ -252,7 +242,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
-        eqTo(application.name), anyString(), eqTo(Set(application.state.requestedByEmailAddress.get)))(any[HeaderCarrier]())
+        eqTo(application.name), *, eqTo(Set(application.state.requestedByEmailAddress.get)))(*)
     }
 
     "send notification email to all admins except requester" in new Setup {
@@ -298,7 +288,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "rollback the application when storing the state history fails" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
 
-      when(mockStateHistoryRepository.insert(any())).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
+      when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
 
       intercept[RuntimeException] {
         await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
@@ -375,7 +365,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.resendVerification(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
-        eqTo(application.name), anyString(), eqTo(Set(application.state.requestedByEmailAddress.get)))(any[HeaderCarrier]())
+        eqTo(application.name), *, eqTo(Set(application.state.requestedByEmailAddress.get)))(*)
     }
   }
 
@@ -387,8 +377,8 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "set the block flag to true for an application" in new Setup {
 
-      when(mockApplicationRepository.fetch(any())).thenReturn(successful(Option(applicationData)))
-      when(mockApplicationRepository.save(any())).thenReturn(successful(updatedApplication))
+      when(mockApplicationRepository.fetch(*)).thenReturn(successful(Option(applicationData)))
+      when(mockApplicationRepository.save(*)).thenReturn(successful(updatedApplication))
 
       val result = await(underTest.blockApplication(applicationId))
       result shouldBe Blocked
@@ -406,8 +396,8 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "set the block flag to false for an application" in new Setup {
 
-      when(mockApplicationRepository.fetch(any())).thenReturn(successful(Option(applicationData)))
-      when(mockApplicationRepository.save(any())).thenReturn(successful(updatedApplication))
+      when(mockApplicationRepository.fetch(*)).thenReturn(successful(Option(applicationData)))
+      when(mockApplicationRepository.save(*)).thenReturn(successful(updatedApplication))
 
       val result = await(underTest.unblockApplication(applicationId))
       result shouldBe Unblocked
