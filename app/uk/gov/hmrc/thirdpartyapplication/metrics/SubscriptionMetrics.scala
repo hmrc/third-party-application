@@ -21,11 +21,12 @@ import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource {
+class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     Logger.info(s"Pomegranate - Starting - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")
     def subscriptionCountKey(apiName: String): String = s"subscriptionCount2.$apiName"
@@ -44,7 +45,7 @@ class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepo
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
 
-    def apiName(apiIdentifier: APIIdentifier): String = s"${apiIdentifier.context.replace("/", " ")}.${apiIdentifier.version.replace(".", "-")}"
+    def apiName(apiIdentifier: APIIdentifier): String = s"${sanitiseGrafanaNodeName(apiIdentifier.context)}.${sanitiseGrafanaNodeName(apiIdentifier.version)}"
 
     subscriptionRepository.findAll()
       .map(subscriptions => subscriptions.map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size).toMap)

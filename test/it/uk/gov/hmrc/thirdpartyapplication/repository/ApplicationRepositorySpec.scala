@@ -33,6 +33,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +47,8 @@ class ApplicationRepositorySpec
     with ApplicationStateUtil
     with IndexVerification
     with Eventually
-    with Matchers {
+    with Matchers 
+    with MetricsHelper {
 
   implicit var s : ActorSystem = ActorSystem("test")
   implicit var m : Materializer = ActorMaterializer()
@@ -974,9 +976,9 @@ class ApplicationRepositorySpec
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = aNamedApplicationData(id = UUID.randomUUID(), name = "organisations/trusts", prodClientId = generateClientId)
+      val application2 = aNamedApplicationData(id = UUID.randomUUID(), name = "application.com", prodClientId = generateClientId)
+      val application3 = aNamedApplicationData(id = UUID.randomUUID(), name = "Get) Vat Done (Fast)", prodClientId = generateClientId)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -986,11 +988,15 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData(api2, api2Version, application1.id)))
       await(subscriptionRepository.insert(aSubscriptionData(api3, api3Version, application2.id)))
 
+      val sanitisedApp1Name = sanitiseGrafanaNodeName(application1.name)
+      val sanitisedApp2Name = sanitiseGrafanaNodeName(application2.name)
+      val sanitisedApp3Name = sanitiseGrafanaNodeName(application3.name)
+
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
-      result.get(s"applicationsWithSubscriptionCount.${application1.name}") shouldBe Some(2)
-      result.get(s"applicationsWithSubscriptionCount.${application2.name}") shouldBe Some(1)
-      result.get(s"applicationsWithSubscriptionCount.${application3.name}") shouldBe None
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp1Name}") shouldBe Some(2)
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp2Name}") shouldBe Some(1)
+      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp3Name}") shouldBe None
     }
 
     "return Applications when more than 100 results bug" in {
