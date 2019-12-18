@@ -22,7 +22,7 @@ trait MetricsHelper {
 
 def sanitiseGrafanaNodeName(name: String) : String = {
 
-  name.replaceAll("[\\/\\\\\\.\\(\\)\\*\\&\\|\\!\\?\\@\\#]{1}", "-")
+  name.replaceAll("[\\/\\\\\\.\\(\\)\\*\\&\\|\\!\\?\\@\\#]{1}", "_")
 }
 
 }
