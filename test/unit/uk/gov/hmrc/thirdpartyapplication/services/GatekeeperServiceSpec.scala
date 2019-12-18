@@ -20,9 +20,10 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
+import org.mockito.captor.ArgCaptor
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.Answer
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar, captor}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
@@ -79,7 +80,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
-    implicit val hc = HeaderCarrier()
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val underTest = new GatekeeperService(mockApplicationRepository,
       mockStateHistoryRepository,
@@ -180,11 +181,12 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
 
       result shouldBe UpliftApproved
-      val appDataArgCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
-      verify(mockApplicationRepository).save(appDataArgCaptor.capture())
+
+      val appDataArgCaptor = captor.ArgCaptor[ApplicationData]
+      verify(mockApplicationRepository).save(appDataArgCaptor.capture)
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
 
-      val savedApplication = appDataArgCaptor.getValue
+      val savedApplication = appDataArgCaptor.value
 
       savedApplication.state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
       savedApplication.state.verificationCode shouldBe defined

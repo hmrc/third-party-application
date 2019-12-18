@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.mockito.Mockito.when
 import org.scalatest.Matchers
 import org.scalatest.concurrent.ScalaFutures
 import org.mockito.{MockitoSugar, ArgumentMatchersSugar}

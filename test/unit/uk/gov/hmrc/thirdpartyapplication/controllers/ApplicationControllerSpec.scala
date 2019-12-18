@@ -50,7 +50,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{apply => _, _}
+import scala.concurrent.Future.{successful,failed}
 
 class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication
   with ApplicationStateUtil with TableDrivenPropertyChecks {

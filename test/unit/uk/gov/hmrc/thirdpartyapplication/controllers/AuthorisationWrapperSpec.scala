@@ -20,7 +20,6 @@ import java.util.UUID
 
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
-import org.mockito.Mockito._
 import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers

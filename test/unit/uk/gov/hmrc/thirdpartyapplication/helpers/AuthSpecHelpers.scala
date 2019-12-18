@@ -17,8 +17,7 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
 import org.mockito.ArgumentMatchersSugar
-import org.mockito.Mockito.when
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
 

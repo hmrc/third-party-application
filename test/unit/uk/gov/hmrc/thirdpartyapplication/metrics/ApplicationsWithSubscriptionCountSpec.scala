@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
-import org.mockito.Mockito.when
 import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.{ApplicationsWithSubscriptionCount}

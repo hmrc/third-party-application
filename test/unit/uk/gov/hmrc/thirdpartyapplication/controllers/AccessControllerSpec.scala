@@ -18,9 +18,8 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
-import org.mockito.Matchers._
-import org.mockito.Mockito.when
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import akka.stream.Materializer
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.Result
@@ -40,7 +39,8 @@ import scala.concurrent.Future.{failed, successful}
 
 class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
 
-  implicit lazy val materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication.materializer
+
   private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes = Set("scope")
   private val scopeRequest = ScopeRequest(scopes)
@@ -52,8 +52,8 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
   private val mockAccessService = mock[AccessService]
   private val mockAuthConfig = mock[AuthConfig]
 
-  implicit val fakeRequest = FakeRequest()
-  implicit val headerCarrier = HeaderCarrier()
+  implicit private val fakeRequest = FakeRequest()
+  implicit private val headerCarrier = HeaderCarrier()
 
   "Access controller read scopes function" should {
 

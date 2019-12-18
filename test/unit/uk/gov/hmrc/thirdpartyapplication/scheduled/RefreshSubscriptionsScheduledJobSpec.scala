@@ -21,10 +21,8 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
-import org.mockito.Matchers._
-import org.mockito.Mockito._
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier

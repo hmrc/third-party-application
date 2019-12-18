@@ -44,7 +44,6 @@ class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with Argumen
     Seq(ApiVersion("1.0", ApiStatus.BETA, None)), Some(false))
 
   trait Setup {
-    val applicationName: String = "third-party-application"
     val config = ApiDefinitionConfig(baseUrl)
     val mockHttpClient = mock[HttpClient]
 

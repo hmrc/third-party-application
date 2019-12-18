@@ -16,11 +16,11 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
-import org.mockito.Mockito.when
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.MissingMongoFields
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 

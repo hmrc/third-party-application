@@ -38,6 +38,7 @@ class ApiSubscriptionFieldsConnectorSpec extends UnitSpec with MockitoSugar with
   trait Setup {
     val mockHttpClient = mock[HttpClient]
     val config = ApiSubscriptionFieldsConfig(baseUrl)
+
     val underTest = new ApiSubscriptionFieldsConnector(mockHttpClient, config)
 
     def apiSubscriptionFieldsWillReturn(result: Future[HttpResponse]) = {
