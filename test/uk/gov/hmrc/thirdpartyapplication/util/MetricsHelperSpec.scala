@@ -47,7 +47,7 @@ class MetricsHelperSpec extends UnitSpec with MetricsHelper {
     }
 
     "replace stars correctly" in {
-      sanitiseGrafanaNodeName("Don't be such a ****") shouldBe "Don't be such a ____"
+      sanitiseGrafanaNodeName("Don't be such a ****") shouldBe "Don_t be such a ____"
     }
 
     "replace pipes correctly" in {
@@ -72,6 +72,10 @@ class MetricsHelperSpec extends UnitSpec with MetricsHelper {
 
     "replace @ correctly" in {
       sanitiseGrafanaNodeName("H@") shouldBe "H_"
+    }
+
+    "replace ' correctly" in {
+      sanitiseGrafanaNodeName("Trust me it's working") shouldBe "Trust me it_s working"
     }
   }
 }
