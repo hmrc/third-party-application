@@ -19,7 +19,7 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import org.scalatest.concurrent.Eventually
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
@@ -33,7 +33,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class StateHistoryRepositorySpec extends UnitSpec with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with MockitoSugar with Eventually {
+  with BeforeAndAfterEach with BeforeAndAfterAll with MockitoSugar with ArgumentMatchersSugar with Eventually {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 

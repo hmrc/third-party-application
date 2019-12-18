@@ -16,22 +16,20 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.mockito.Matchers.any
-import org.mockito.Mockito.when
+import org.mockito.ArgumentMatchersSugar
+import org.mockito.MockitoSugar
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
-import uk.gov.hmrc.auth.core.retrieve.{EmptyRetrieval, Retrieval}
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.Future
 
-object AuthSpecHelpers {
+object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
   def givenUserIsAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise(any, any[Retrieval[Any]])(any[HeaderCarrier], any[ExecutionContext])).thenReturn(Future.successful(()))
+    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
   }
 
   def givenUserIsNotAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise(any, any[Retrieval[Any]])(any[HeaderCarrier], any[ExecutionContext]))
+    when(underTest.authConnector.authorise[Unit](*, *)(*, *))
       .thenReturn(Future.failed(new SessionRecordNotFound))
   }
 }

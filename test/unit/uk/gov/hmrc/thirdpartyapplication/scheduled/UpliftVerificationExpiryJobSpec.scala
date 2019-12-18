@@ -22,12 +22,8 @@ import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
-import org.mockito.Matchers._
-import org.mockito.Mockito._
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.mockito.MockitoSugar
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
@@ -44,7 +40,8 @@ import scala.concurrent.Future._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class UpliftVerificationExpiryJobSpec extends UnitSpec
+  with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -81,14 +78,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec with MockitoSugar with Mo
 
     val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, config)
 
-    when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer(returnSame[ApplicationData])
-
-    def returnSame[T] = new Answer[Future[T]] {
-      override def answer(invocationOnMock: InvocationOnMock): Future[T] = {
-        val argument = invocationOnMock.getArguments()(0)
-        successful(argument.asInstanceOf[T])
-      }
-    }
+    when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer((a: ApplicationData) => successful(a))
   }
 
   override def beforeAll(): Unit = {

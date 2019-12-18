@@ -20,10 +20,8 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.Matchers.{eq => meq, _}
-import org.mockito.Mockito._
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
@@ -36,7 +34,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ApplicationStateUtil {
+class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
@@ -65,7 +63,7 @@ class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
   "createApplication" should {
     "create an application in AWS and generate token" in new Setup {
-      when(mockAwsApiGatewayConnector.createOrUpdateApplication(meq(applicationName), any(), meq(BRONZE))(meq(hc)))
+      when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
       val result: EnvironmentToken = await(underTest.createApplication("myuser", "mypassword", applicationName))
@@ -73,7 +71,7 @@ class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSuga
       result.clientId should have length 28
       result.wso2ClientSecret should have length 0
       result.accessToken should have length 32
-      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(meq(applicationName), any(), meq(BRONZE))(meq(hc))
+      verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc))
     }
   }
 

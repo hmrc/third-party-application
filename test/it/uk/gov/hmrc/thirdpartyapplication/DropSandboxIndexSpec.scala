@@ -16,9 +16,11 @@
 
 package it.uk.gov.hmrc.thirdpartyapplication
 
+import akka.actor.ActorSystem
+import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import it.uk.gov.hmrc.thirdpartyapplication.repository.IndexVerification
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
@@ -31,7 +33,10 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class DropSandboxIndexSpec extends UnitSpec
-  with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with MockitoSugar with Matchers with IndexVerification with ApplicationStateUtil {
+  with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with MockitoSugar with ArgumentMatchersSugar with Matchers with IndexVerification with ApplicationStateUtil {
+
+  implicit val s : ActorSystem = ActorSystem("test")
+  implicit val m : Materializer = ActorMaterializer()
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest

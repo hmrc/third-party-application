@@ -45,11 +45,11 @@
 
     <logger name="uk.gov" level="${logger.uk.gov:-WARN}"/>
 
-    <logger name="application" level="${logger.application:-WARN}"/>
+    <logger name="application" level="INFO"/>
 
     <logger name="reactivemongo" level="WARN"/>
 
-    <logger name="connector" level="${logger.connector:-WARN}">
+    <logger name="connector" level="${logger.application:-WARN}">
         <appender-ref ref="STDOUT"/>
     </logger>
 

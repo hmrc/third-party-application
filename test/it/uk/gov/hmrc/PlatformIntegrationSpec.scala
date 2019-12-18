@@ -18,7 +18,7 @@ package it.uk.gov.hmrc.thirdpartyapplication
 
 import com.codahale.metrics.SharedMetricRegistries
 import org.scalatest.concurrent.ScalaFutures
-import org.scalatest.mockito.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.{BeforeAndAfterEach, TestData}
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.DocumentationController
   *
   * See: https://confluence.tools.tax.service.gov.uk/display/ApiPlatform/API+Platform+Architecture+with+Flows
   */
-trait PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ScalaFutures with BeforeAndAfterEach with GuiceOneAppPerTest {
+trait PlatformIntegrationSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with BeforeAndAfterEach with GuiceOneAppPerTest {
 
   implicit def mat: akka.stream.Materializer = app.injector.instanceOf[akka.stream.Materializer]
 
