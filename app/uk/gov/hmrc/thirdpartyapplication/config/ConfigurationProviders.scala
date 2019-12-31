@@ -26,9 +26,9 @@ import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationControllerConfig, DocumentationConfig}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{CredentialConfig, ApplicationNameValidationConfig}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, CredentialConfig}
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -36,7 +36,6 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
     Seq(
-      bind[DocumentationConfig].toProvider[DocumentationConfigProvider],
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
@@ -60,20 +59,6 @@ object ConfigHelper {
 
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
-  }
-}
-
-@Singleton
-class DocumentationConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[DocumentationConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val publishApiDefinition = runModeConfiguration.getBoolean("publishApiDefinition").getOrElse(false)
-    val apiContext = runModeConfiguration.getString("api.context").getOrElse("third-party-application")
-    val access = runModeConfiguration.getConfig(s"api.access")
-    DocumentationConfig(publishApiDefinition, apiContext, access)
   }
 }
 
