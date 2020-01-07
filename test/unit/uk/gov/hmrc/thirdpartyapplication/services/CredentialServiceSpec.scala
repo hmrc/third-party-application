@@ -196,6 +196,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")))
 
+      verify(mockApplicationRepository, times(0)).recordClientSecretUsage(any[String], any[String])
       result shouldBe None
     }
 
@@ -203,9 +204,13 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
       val applicationData = anApplicationData(UUID.randomUUID())
       val clientId = applicationData.tokens.production.clientId
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Some(applicationData))
+      val applicationId = applicationData.id.toString
+      val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, applicationData.tokens.production.clientSecrets.head.secret)))
+      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Future.successful(Some(applicationData)))
+      when(mockApplicationRepository.recordClientSecretUsage(applicationId, clientSecret)).thenReturn(Future.successful(applicationData))
+
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
 
       result shouldBe Some(PRODUCTION)
     }

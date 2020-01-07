@@ -18,6 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
@@ -115,14 +117,20 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def validateCredentials(validation: ValidationRequest): Future[Option[Environment]] = {
-    applicationRepository.fetchByClientId(validation.clientId) map (_.flatMap { app =>
-      val environmentToken = app.tokens.production
+    def validToken(environmentToken: EnvironmentToken, applicationId: String) = {
       if (environmentToken.clientId == validation.clientId && environmentToken.clientSecrets.exists(_.secret == validation.clientSecret)) {
-        Some(PRODUCTION)
+        applicationRepository.recordClientSecretUsage(applicationId, validation.clientSecret).map(_ => Some(PRODUCTION))
       } else {
-        None
+        Future.successful(None)
       }
-    })
+    }
+
+    (for {
+      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
+      environmentToken = application.tokens.production
+      env <- OptionT(validToken(environmentToken, application.id.toString))
+    } yield env).value
+
   }
 
   private def fetchApp(applicationId: UUID) = {
