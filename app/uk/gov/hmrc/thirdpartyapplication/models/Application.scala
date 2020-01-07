@@ -266,7 +266,8 @@ case class Collaborator(emailAddress: String, role: Role)
 
 case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
-                        createdOn: DateTime = DateTimeUtils.now)
+                        createdOn: DateTime = DateTimeUtils.now,
+                        lastAccess: Option[DateTime] = None)
 
 case class EnvironmentToken(clientId: String,
                             wso2ClientSecret: String,
