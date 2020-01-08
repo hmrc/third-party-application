@@ -147,8 +147,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def addClientSecret(applicationId: java.util.UUID) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+  def addClientSecret(applicationId: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokensResponse(token)))
         } recover {
@@ -161,7 +160,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
   def deleteClientSecrets(appId: java.util.UUID) = {
-    requiresAuthenticationForPrivilegedOrRopcApplications(appId).async(BodyParsers.parse.json) { implicit request =>
+    Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretsRequest] { secretsRequest =>
         credentialService.deleteClientSecrets(appId, secretsRequest.secrets).map(_ => NoContent) recover recovery
       }
