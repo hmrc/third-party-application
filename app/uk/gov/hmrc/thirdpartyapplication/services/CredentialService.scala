@@ -21,6 +21,7 @@ import java.util.UUID
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
+import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
@@ -31,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 @Singleton
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
@@ -39,6 +41,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   config: CredentialConfig) {
 
   val clientSecretLimit = config.clientSecretLimit
+  val logger: LoggerLike = Logger
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(
@@ -117,20 +120,23 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def validateCredentials(validation: ValidationRequest): Future[Option[Environment]] = {
-    def validToken(environmentToken: EnvironmentToken, applicationId: String) = {
-      if (environmentToken.clientId == validation.clientId && environmentToken.clientSecrets.exists(_.secret == validation.clientSecret)) {
-        applicationRepository.recordClientSecretUsage(applicationId, validation.clientSecret).map(_ => Some(PRODUCTION))
-      } else {
-        Future.successful(None)
-      }
+    def tokenIsValid(token: EnvironmentToken): Boolean =
+      token.clientId == validation.clientId && token.clientSecrets.exists(_.secret == validation.clientSecret)
+
+    def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
+      case NonFatal(e) =>
+        logger.warn("Unable to update the client secret last access date", e)
+        application
     }
 
     (for {
       application <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
-      environmentToken = application.tokens.production
-      env <- OptionT(validToken(environmentToken, application.id.toString))
+      if tokenIsValid(application.tokens.production)
+      env <- OptionT.pure[Future](PRODUCTION)
+      _ <-
+        OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id.toString, validation.clientSecret)
+          .recover(recoverFromFailedUsageDateUpdate(application)))
     } yield env).value
-
   }
 
   private def fetchApp(applicationId: UUID) = {

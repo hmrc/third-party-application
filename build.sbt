@@ -22,7 +22,7 @@ lazy val compile = Seq(
   "org.reactivemongo" %% "play2-reactivemongo" % (reactiveMongoVer + "-play25"),
   "org.reactivemongo" %% "reactivemongo-play-json" % (reactiveMongoVer + "-play25"),
   "commons-net" % "commons-net" % "3.6",
-  "org.typelevel" %% "cats-core" % "1.1.0"
+  "org.typelevel" %% "cats-core" % "2.0.0"
 )
 val scope = "test,it"
 
