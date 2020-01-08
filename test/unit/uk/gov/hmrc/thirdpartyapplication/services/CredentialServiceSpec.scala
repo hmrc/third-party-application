@@ -22,9 +22,10 @@ import java.util.concurrent.TimeUnit
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.captor.ArgCaptor
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
+import play.api.LoggerLike
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.LockKeeper
@@ -55,6 +56,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val mockStateHistoryRepository = mock[StateHistoryRepository]
     val mockAuditService = mock[AuditService]
     val mockEmailConnector = mock[EmailConnector]
+    val mockLogger = mock[LoggerLike]
     val response = mock[WSResponse]
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -67,7 +69,9 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val clientSecretLimit = 5
     val credentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, applicationResponseCreator, credentialConfig)
+    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, applicationResponseCreator, credentialConfig) {
+      override val logger = mockLogger
+    }
 
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
   }
@@ -179,7 +183,6 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   "validate credentials" should {
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-
       val clientId = "some-client-id"
       when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(None)
 
@@ -189,24 +192,46 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "return none when credentials don't match with an application" in new Setup {
-
       val applicationData = anApplicationData(UUID.randomUUID())
       val clientId = applicationData.tokens.production.clientId
       when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Some(applicationData))
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")))
 
+      verify(mockApplicationRepository, times(0)).recordClientSecretUsage(any[String], any[String])
       result shouldBe None
     }
 
     "return environment when credentials match with an application" in new Setup {
-
       val applicationData = anApplicationData(UUID.randomUUID())
       val clientId = applicationData.tokens.production.clientId
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Some(applicationData))
+      val applicationId = applicationData.id.toString
+      val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, applicationData.tokens.production.clientSecrets.head.secret)))
+      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Future.successful(Some(applicationData)))
+      when(mockApplicationRepository.recordClientSecretUsage(applicationId, clientSecret)).thenReturn(Future.successful(applicationData))
 
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
+
+      result shouldBe Some(PRODUCTION)
+    }
+
+    "return environment but write log if updating usage date fails" in new Setup {
+      val applicationData = anApplicationData(UUID.randomUUID())
+      val clientId = applicationData.tokens.production.clientId
+      val applicationId = applicationData.id.toString
+      val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
+      val thrownException = new RuntimeException
+
+      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Future.successful(Some(applicationData)))
+      when(mockApplicationRepository.recordClientSecretUsage(applicationId, clientSecret)).thenReturn(Future.failed(thrownException))
+
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
+
+      val exceptionCaptor: ArgumentCaptor[Throwable] = ArgumentCaptor.forClass(classOf[Throwable])
+      verify(mockLogger).warn(any[String], exceptionCaptor.capture())
+
+      exceptionCaptor.getValue shouldBe thrownException
       result shouldBe Some(PRODUCTION)
     }
   }

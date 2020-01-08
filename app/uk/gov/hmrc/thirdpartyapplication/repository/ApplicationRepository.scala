@@ -138,6 +138,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       _.result[ApplicationData].head
     }
 
+  def recordClientSecretUsage(applicationId: String, clientSecret: String): Future[ApplicationData] = {
+    findAndUpdate(
+      Json.obj("id" -> applicationId, "tokens.production.clientSecrets.secret" -> clientSecret),
+      Json.obj("$currentDate" -> Json.obj("tokens.production.clientSecrets.$.lastAccess" -> Json.obj("$type" -> "date"))),
+      fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+  }
+
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     find(s"$$and" -> Json.arr(
       Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)),

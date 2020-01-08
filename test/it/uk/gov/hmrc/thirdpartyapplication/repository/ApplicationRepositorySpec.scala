@@ -47,7 +47,7 @@ class ApplicationRepositorySpec
     with ApplicationStateUtil
     with IndexVerification
     with Eventually
-    with Matchers 
+    with Matchers
     with MetricsHelper {
 
   implicit var s : ActorSystem = ActorSystem("test")
@@ -179,6 +179,73 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
 
       retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
+    }
+  }
+
+  "recordClientSecretUsage" should {
+    "create a lastAccess property for client secret if it does not already exist" in {
+      val testStartTime = DateTime.now()
+      val applicationId = UUID.randomUUID()
+      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
+      val generatedClientSecret = application.tokens.production.clientSecrets.head.secret
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId.toString, generatedClientSecret))
+
+      application.tokens.production.clientSecrets.head.lastAccess shouldBe None // Original object has no value
+      retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(testStartTime) shouldBe true // Retrieved object is updated
+    }
+
+    "update an existing lastAccess property for a client secret" in {
+      val testStartTime = DateTime.now()
+      val applicationId = UUID.randomUUID()
+      val applicationTokens =
+        ApplicationTokens(
+          EnvironmentToken(
+            "aaa",
+            generateClientSecret,
+            generateAccessToken,
+            Seq(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
+      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
+      val generatedClientSecret = application.tokens.production.clientSecrets.head.secret
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId.toString, generatedClientSecret))
+
+      retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(testStartTime) shouldBe true
+      retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(applicationTokens.production.clientSecrets.head.lastAccess.get) shouldBe true
+    }
+
+    "update the correct client secret when there are multiple" in {
+      val testStartTime = DateTime.now()
+      val applicationId = UUID.randomUUID()
+      val secretToUpdate = "secret-to-update"
+      val applicationTokens =
+        ApplicationTokens(
+          EnvironmentToken(
+            "aaa",
+            generateClientSecret,
+            generateAccessToken,
+            Seq(
+              ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20))),
+              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20))))))
+      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
+
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId.toString, secretToUpdate))
+
+      retrieved.tokens.production.clientSecrets.foreach(retrievedClientSecret =>
+        if(retrievedClientSecret.secret == secretToUpdate)
+          retrievedClientSecret.lastAccess.get.isAfter(testStartTime) shouldBe true
+        else
+          retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
+      )
+
+
     }
   }
 
