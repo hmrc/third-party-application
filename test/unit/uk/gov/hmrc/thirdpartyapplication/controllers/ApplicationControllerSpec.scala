@@ -694,12 +694,15 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (unauthorized) when the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "succeed with a 200 (ok) when request originates from outside gatekeeper" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-          .thenReturn(failed(new ClientSecretsLimitExceeded))
+          .thenReturn(successful(environmentTokenResponse))
 
-        assertThrows[SessionRecordNotFound](await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))))
+        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+
+        status(result) shouldBe SC_OK
+        jsonBodyOf(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
 
@@ -777,12 +780,14 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       })
     }
 
-    "fail with a 401 (Unauthorized) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "succeed with a 204 for a PRIVILEGED or ROPC application when the request originates outside gatekeeper" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
           .thenReturn(successful(environmentTokenResponse))
 
-        assertThrows[SessionRecordNotFound](await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))))
+        val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
+
+        status(result) shouldBe SC_NO_CONTENT
       })
     }
   }
