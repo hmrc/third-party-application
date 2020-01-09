@@ -19,6 +19,9 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import akka.stream.Materializer
+import cats.data.OptionT
+import cats.implicits._
+
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.http.Status._
 import play.api.libs.json.Json
@@ -36,6 +39,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
 
@@ -189,9 +193,13 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
 
   }
 
+
+
   trait StandardFixture extends Fixture {
-    when(mockApplicationService.fetch(applicationId)).thenReturn(successful(Some(
-      new ApplicationResponse(
+
+
+    when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
+      ApplicationResponse(
         applicationId,
         "clientId",
         "gatewayId",
@@ -201,8 +209,8 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
         Set.empty,
         DateTimeUtils.now,
         Some(DateTimeUtils.now),
-        access = Standard())))
-    )
+        access = Standard())
+    ))
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
@@ -211,8 +219,8 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
       val applicationResponse =
         ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
       when(mockApplicationService.fetch(applicationId)).thenReturn(
-        successful(Some(applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey"))))),
-        successful(Some(applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey")))))
+        OptionT.pure[Future](applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))),
+      OptionT.pure[Future](applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
       )
       testBlock
       testBlock

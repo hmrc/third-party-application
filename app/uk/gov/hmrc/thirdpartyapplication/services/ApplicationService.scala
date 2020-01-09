@@ -326,11 +326,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
-    applicationRepository.fetch(applicationId) map {
-      _.map(application => ApplicationResponse(data = application))
-    }
-  }
+    import cats.data.OptionT
+    import cats.implicits._
+
+    def fetch(applicationId: UUID): OptionT[Future,ApplicationResponse] =
+      OptionT(applicationRepository.fetch(applicationId))
+        .map(application => ApplicationResponse(data = application))
+
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
     applicationRepository.searchApplications(applicationSearch).map { data =>
