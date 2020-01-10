@@ -18,9 +18,11 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.implicits._
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
@@ -36,6 +38,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
 
@@ -53,7 +58,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
     }
 
     def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
-      when(underTest.applicationService.fetch(id)).thenReturn(application)
+      when(underTest.applicationService.fetch(id)).thenReturn(OptionT.fromOption(application))
   }
 
   "Authenticate for Access Type and Role" should {

@@ -20,11 +20,13 @@ import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
+import cats.data.OptionT
+import cats.implicits._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.stubbing.{Answer, ScalaOngoingStubbing}
 import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, Mockito, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -54,6 +56,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import scala.util.Success
 
 class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -458,21 +461,28 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val applicationId = UUID.randomUUID()
 
     "return none when no application exists in the repository for the given application id" in new Setup {
-      mockApplicationRepositoryFetchToReturn(applicationId, None)
+//      mockApplicationRepositoryFetchToReturn(applicationId, None)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetch(applicationId))
+      val x = Future.successful(None)
+      val y: OptionT[Future, ApplicationResponse] = OptionT.none
 
-      result shouldBe None
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(x)
+
+      val result: OptionT[Future, ApplicationResponse] = await(underTest.fetch(applicationId))
+
+      result shouldBe y
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
       val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
 
-      mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
+//      val applicationData: ScalaOngoingStubbing[Future[Option[ApplicationData]]] = mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
 
-      val result: Option[ApplicationResponse] = await(underTest.fetch(applicationId))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Future.successful(Some(data)))
 
-      result shouldBe Some(ApplicationResponse(
+      val result = await(underTest.fetch(applicationId))
+
+      result shouldBe OptionT.pure[Future](ApplicationResponse(
         id = applicationId,
         clientId = productionToken.clientId,
         gatewayId = data.wso2ApplicationName,
