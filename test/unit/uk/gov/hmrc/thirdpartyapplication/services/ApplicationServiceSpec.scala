@@ -462,7 +462,6 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "return none when no application exists in the repository for the given application id" in new Setup {
 
       val x: Future[Option[ApplicationData]] = Future.successful(None)
-      val y: OptionT[Future, ApplicationResponse] = OptionT.none
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(x)
 

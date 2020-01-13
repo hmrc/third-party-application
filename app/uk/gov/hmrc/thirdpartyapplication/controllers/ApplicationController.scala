@@ -357,10 +357,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         } else successful(BadRequest("Cannot delete this application"))
     }
 
-//    if (authConfig.canDeleteApplications) {
-//      (applicationService.fetch(id)).fold(handleNotFound("No application was found"))(applicationService.deleteApplication(id, None, audit).map(_ => NoContent))
-//    } else successful(BadRequest("Cannot delete this application"))
-//  }
 
     def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
       // This is audited in the GK FE
