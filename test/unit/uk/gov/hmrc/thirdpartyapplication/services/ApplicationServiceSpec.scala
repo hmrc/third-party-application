@@ -56,7 +56,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import scala.util.Success
 
 class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -461,28 +460,25 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val applicationId = UUID.randomUUID()
 
     "return none when no application exists in the repository for the given application id" in new Setup {
-//      mockApplicationRepositoryFetchToReturn(applicationId, None)
 
-      val x = Future.successful(None)
+      val x: Future[Option[ApplicationData]] = Future.successful(None)
       val y: OptionT[Future, ApplicationResponse] = OptionT.none
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(x)
 
-      val result: OptionT[Future, ApplicationResponse] = await(underTest.fetch(applicationId))
+      val result = await(underTest.fetch(applicationId).value)
 
-      result shouldBe y
+      result shouldBe None
     }
 
     "return an application when it exists in the repository for the given application id" in new Setup {
       val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
 
-//      val applicationData: ScalaOngoingStubbing[Future[Option[ApplicationData]]] = mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
-
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(Future.successful(Some(data)))
 
-      val result = await(underTest.fetch(applicationId))
+      val result = await(underTest.fetch(applicationId).value)
 
-      result shouldBe OptionT.pure[Future](ApplicationResponse(
+      result shouldBe Some(ApplicationResponse(
         id = applicationId,
         clientId = productionToken.clientId,
         gatewayId = data.wso2ApplicationName,

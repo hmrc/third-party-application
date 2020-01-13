@@ -441,7 +441,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.liftF(failed(new RuntimeException("Expected test failure"))))
 
       val result: Result = await(underTest.fetch(applicationId)(request))
 
