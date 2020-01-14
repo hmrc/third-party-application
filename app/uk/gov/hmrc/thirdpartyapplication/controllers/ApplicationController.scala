@@ -17,7 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
+import cats.data.OptionT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json.toJson
@@ -216,9 +217,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case None => handleNotFound("No application was found")
     } recover recovery
   }
-
-  import cats.data.OptionT
-  import cats.implicits._
 
   private def handleOptionT[T](opt: OptionT[Future,T])(implicit writes: Writes[T]): Future[Result] = {
     opt.fold(handleNotFound("No application was found"))(v => Ok(toJson(v)))
