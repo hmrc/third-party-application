@@ -20,11 +20,13 @@ import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
+import cats.data.OptionT
+import cats.implicits._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
 import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
+import org.mockito.stubbing.{Answer, ScalaOngoingStubbing}
 import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, Mockito, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.scalatest.concurrent.ScalaFutures
@@ -458,9 +460,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val applicationId = UUID.randomUUID()
 
     "return none when no application exists in the repository for the given application id" in new Setup {
-      mockApplicationRepositoryFetchToReturn(applicationId, None)
 
-      val result: Option[ApplicationResponse] = await(underTest.fetch(applicationId))
+      val x: Future[Option[ApplicationData]] = Future.successful(None)
+
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(x)
+
+      val result = await(underTest.fetch(applicationId).value)
 
       result shouldBe None
     }
@@ -468,9 +473,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "return an application when it exists in the repository for the given application id" in new Setup {
       val data: ApplicationData = anApplicationData(applicationId, rateLimitTier = Some(SILVER))
 
-      mockApplicationRepositoryFetchToReturn(applicationId, Some(data))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Future.successful(Some(data)))
 
-      val result: Option[ApplicationResponse] = await(underTest.fetch(applicationId))
+      val result = await(underTest.fetch(applicationId).value)
 
       result shouldBe Some(ApplicationResponse(
         id = applicationId,

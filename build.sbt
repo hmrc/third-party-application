@@ -83,8 +83,9 @@ lazy val microservice = (project in file("."))
   .settings(
     resolvers += Resolver.jcenterRepo
   )
-  .settings(scalacOptions ++= Seq("-deprecation", "-feature"))
+  .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .settings(ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)))
+
 
 lazy val allPhases = "tt->test;test->test;test->compile;compile->compile"
 lazy val allItPhases = "tit->it;it->it;it->compile;compile->compile"

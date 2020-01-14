@@ -18,6 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
+import cats.data.OptionT
+import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
@@ -64,7 +66,6 @@ trait AuthorisationWrapper {
   case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, request: Request[A]) extends WrappedRequest[A](request)
 
 
-
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes)
 
@@ -104,11 +105,17 @@ trait AuthorisationWrapper {
                                                           failOnAccessTypeMismatch: Boolean, accessTypes: Seq[AccessType])
     extends ApplicationTypeFilter(failOnAccessTypeMismatch, accessTypes) {
 
+
+
+    def error[A](e: Exception): OptionT[Future,A] = {
+      OptionT.liftF(Future.failed(e))
+    }
+
     override protected def deriveAccessType[A](request: Request[A]) =
-      applicationService.fetch(applicationId).map {
-        case Some(app) => Some(app.access.accessType)
-        case None => throw new NotFoundException(s"application $applicationId doesn't exist")
-      }
+      applicationService.fetch(applicationId)
+        .map(app => app.access.accessType)
+        .orElse(error(new NotFoundException(s"application $applicationId doesn't exist")))
+        .value
   }
 
   private abstract class ApplicationTypeFilter(failOnAccessTypeMismatch: Boolean = false,

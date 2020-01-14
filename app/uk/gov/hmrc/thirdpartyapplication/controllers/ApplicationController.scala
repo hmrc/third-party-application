@@ -17,7 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
-
+import cats.data.OptionT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json.toJson
@@ -109,7 +110,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def fetch(applicationId: UUID) = Action.async {
-    handleOption(applicationService.fetch(applicationId))
+    handleOptionT(applicationService.fetch(applicationId))
   }
 
   def fetchCredentials(applicationId: UUID) = Action.async {
@@ -214,6 +215,11 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case Some(v) => Ok(toJson(v))
       case None => handleNotFound("No application was found")
     } recover recovery
+  }
+
+  private def handleOptionT[T](opt: OptionT[Future,T])(implicit writes: Writes[T]): Future[Result] = {
+    opt.fold(handleNotFound("No application was found"))(v => Ok(toJson(v)))
+      .recover(recovery)
   }
 
   def queryDispatcher() = Action.async { implicit request =>
@@ -340,15 +346,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      if (authConfig.canDeleteApplications) {
-        applicationService.fetch(id) flatMap {
-          case Some(_) => applicationService.deleteApplication(id, None, audit).map(_ => NoContent)
-          case _ => successful(handleNotFound("No application was found"))
-        }
-      } else {
-        successful(BadRequest("Cannot delete this application"))
-      }
+        if (authConfig.canDeleteApplications) {
+
+          applicationService.fetch(id)
+            .flatMap(_ => OptionT.liftF(applicationService.deleteApplication(id, None, audit)))
+            .fold(handleNotFound("No application was found"))(_ => NoContent)
+        } else successful(BadRequest("Cannot delete this application"))
     }
+
 
     def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
       // This is audited in the GK FE
