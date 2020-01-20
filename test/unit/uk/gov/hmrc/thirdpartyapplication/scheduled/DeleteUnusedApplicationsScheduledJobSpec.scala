@@ -19,8 +19,8 @@ package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.util.UUID
 import java.util.concurrent.TimeUnit.{DAYS, MINUTES}
 
-import org.joda.time.Duration
-import org.mockito.ArgumentMatchersSugar
+import org.joda.time.{DateTime, Duration}
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
 import org.mockito.Mockito._
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
@@ -79,40 +79,47 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
   }
 
   trait FullRunSetup extends Setup {
+    val cutoffDuration: FiniteDuration = FiniteDuration(180, DAYS)
     val jobConfig: DeleteUnusedApplicationsJobConfig =
-      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffInMonths = 12, dryRun = false)
+      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffDuration, dryRun = false)
 
     val jobUnderTest = new DeleteUnusedApplicationsScheduledJob(mockLockKeeper, mockApplicationRepository, jobConfig, stubLogger)
   }
 
   trait DryRunSetup extends Setup {
+    val cutoffDuration: FiniteDuration = FiniteDuration(90, DAYS)
     val jobConfig: DeleteUnusedApplicationsJobConfig =
-      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffInMonths = 12, dryRun = true)
+      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffDuration, dryRun = true)
 
     val jobUnderTest = new DeleteUnusedApplicationsScheduledJob(mockLockKeeper, mockApplicationRepository, jobConfig, stubLogger)
   }
 
   "Scheduled Job" should {
-    def applicationWithId(applicationId: UUID): ApplicationData = {
-      val application = mock[ApplicationData]
-      when(application.id).thenReturn(applicationId)
-      application
-    }
-
-    def applicationsToReturn(applicationIds: UUID*): Seq[ApplicationData] = applicationIds.map(applicationWithId)
+    def applicationsToReturn(applicationIds: UUID*): Seq[ApplicationData] =
+      applicationIds.map(applicationId => {
+        val application = mock[ApplicationData]
+        when(application.id).thenReturn(applicationId)
+        application
+      })
+    
+    def expectedCutoffDate(cutoffDuration: FiniteDuration): DateTime = DateTime.now.minus(cutoffDuration.toMillis)
 
     "delete applications not used for more than a defined time" in new FullRunSetup {
       val application1Id: UUID = UUID.randomUUID()
       val application2Id: UUID = UUID.randomUUID()
       val applications: Seq[ApplicationData] = applicationsToReturn(application1Id, application2Id)
 
-      when(mockApplicationRepository.applicationsLastUsedBefore(*)).thenReturn(Future.successful(applications))
+      val cutoffDateCaptor: ArgumentCaptor[DateTime] = ArgumentCaptor.forClass(classOf[DateTime])
+
+      when(mockApplicationRepository.applicationsLastUsedBefore(cutoffDateCaptor.capture())).thenReturn(Future.successful(applications))
       when(mockApplicationRepository.delete(*)).thenReturn(Future.successful(HasSucceeded))
 
       await(jobUnderTest.runJob)
 
       verify(mockApplicationRepository, times(1)).delete(application1Id)
       verify(mockApplicationRepository, times(1)).delete(application2Id)
+
+      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
 
       stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
     }
@@ -122,13 +129,17 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
       val application2Id: UUID = UUID.randomUUID()
       val applications: Seq[ApplicationData] = applicationsToReturn(application1Id, application2Id)
 
-      when(mockApplicationRepository.applicationsLastUsedBefore(*)).thenReturn(Future.successful(applications))
+      val cutoffDateCaptor: ArgumentCaptor[DateTime] = ArgumentCaptor.forClass(classOf[DateTime])
+
+      when(mockApplicationRepository.applicationsLastUsedBefore(cutoffDateCaptor.capture())).thenReturn(Future.successful(applications))
       when(mockApplicationRepository.delete(*)).thenReturn(Future.successful(HasSucceeded))
 
       await(jobUnderTest.runJob)
 
       verify(mockApplicationRepository, times(0)).delete(application1Id)
       verify(mockApplicationRepository, times(0)).delete(application2Id)
+
+      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
 
       stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
       stubLogger.infoMessages must contain (s"[Dry Run] Would have deleted application with id [${application1Id.toString}]")

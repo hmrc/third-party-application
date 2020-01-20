@@ -44,7 +44,7 @@ class DeleteUnusedApplicationsScheduledJob @Inject()(val lockKeeper: DeleteUnuse
 
     logger.info("Starting Delete Unused Application Job")
 
-    val cutoffDate: DateTime = DateTime.now.minusMonths(jobConfig.cutoffInMonths)
+    val cutoffDate: DateTime = DateTime.now.minus(jobConfig.cutoff.toMillis)
     Logger.info(s"Retrieving Applications not used since $cutoffDate")
 
     for {
@@ -82,5 +82,5 @@ class DeleteUnusedApplicationsJobLockKeeper @Inject()(mongo: ReactiveMongoCompon
 case class DeleteUnusedApplicationsJobConfig(initialDelay: FiniteDuration,
                                              interval: FiniteDuration,
                                              enabled: Boolean,
-                                             cutoffInMonths: Int,
+                                             cutoff: FiniteDuration,
                                              dryRun: Boolean = true)
