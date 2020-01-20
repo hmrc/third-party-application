@@ -101,7 +101,7 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
         when(application.id).thenReturn(applicationId)
         application
       })
-    
+
     def expectedCutoffDate(cutoffDuration: FiniteDuration): DateTime = DateTime.now.minus(cutoffDuration.toMillis)
 
     "delete applications not used for more than a defined time" in new FullRunSetup {
