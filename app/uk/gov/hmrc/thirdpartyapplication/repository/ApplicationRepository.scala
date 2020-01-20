@@ -301,6 +301,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
+  def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Seq[ApplicationData]] = find("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
+
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     import reactivemongo.akkastream.{State, cursorProducer}
     val sourceOfApps: Source[ApplicationData, Future[State]] =
