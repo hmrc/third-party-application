@@ -24,13 +24,18 @@ import play.api.{Logger, LoggerLike}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
+import scala.concurrent.Future.successful
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 class DeleteUnusedApplicationsScheduledJob @Inject()(val lockKeeper: DeleteUnusedApplicationsJobLockKeeper,
+                                                     applicationService: ApplicationService,
                                                      applicationRepository: ApplicationRepository,
                                                      jobConfig: DeleteUnusedApplicationsJobConfig,
                                                      logger: LoggerLike = Logger) extends ScheduledMongoJob {
@@ -48,25 +53,24 @@ class DeleteUnusedApplicationsScheduledJob @Inject()(val lockKeeper: DeleteUnuse
     Logger.info(s"Retrieving Applications not used since $cutoffDate")
 
     for {
-      applicationsToDelete <- findListOfUnusedApplications(cutoffDate)
+      applicationsToDelete <- applicationRepository.applicationsLastUsedBefore(cutoffDate)
       _ = logger.info(s"Found ${applicationsToDelete.size} applications to delete")
       _ <- deleteApplications(applicationsToDelete, jobConfig.dryRun)
     } yield RunningOfJobSuccessful
   }
-
-  def findListOfUnusedApplications(cutoffDate: DateTime)(implicit ec: ExecutionContext): Future[Set[UUID]] =
-    for {
-      applicationsToDelete <- applicationRepository.applicationsLastUsedBefore(cutoffDate)
-    } yield applicationsToDelete.map(_.id).toSet
-
+  
   def deleteApplications(applicationIds: Set[UUID], dryRun: Boolean)(implicit ec: ExecutionContext): Future[HasSucceeded] = {
+    def audit(app: ApplicationData): Future[AuditResult] = {
+      logger.info(s"Deleting application ${app.id} - ${app.name}")
+      successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
+    }
+
     if (dryRun) {
       applicationIds.foreach(applicationId => logger.info(s"[Dry Run] Would have deleted application with id [${applicationId.toString}]"))
       Future.successful(HasSucceeded)
     } else {
       Future.sequence(applicationIds.map { applicationId =>
-        logger.info(s"Deleting application with id [${applicationId.toString}]")
-        applicationRepository.delete(applicationId)
+        applicationService.deleteApplication(applicationId, None, audit)(HeaderCarrier())
       }).map(_ => HasSucceeded)
     }
   }
