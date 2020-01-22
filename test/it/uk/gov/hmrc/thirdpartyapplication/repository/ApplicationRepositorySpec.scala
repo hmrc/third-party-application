@@ -1094,10 +1094,10 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
       await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
 
-      val retrievedApplications = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
 
       retrievedApplications.size should be (1)
-      retrievedApplications.head.id should be (oldApplicationId)
+      retrievedApplications.head should be (oldApplicationId)
     }
 
     "match applications that are equal to the cutoff date" in {
@@ -1105,7 +1105,7 @@ class ApplicationRepositorySpec
 
       await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), cutoffDate)))
 
-      val retrievedApplications = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
 
       retrievedApplications.size should be (1)
     }
@@ -1113,7 +1113,7 @@ class ApplicationRepositorySpec
     "return empty collection if no applications match" in {
       await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
 
-      val retrievedApplications = await(applicationRepository.applicationsLastUsedBefore(DateTime.now.minusMonths(12)))
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(DateTime.now.minusMonths(12)))
 
       retrievedApplications.isEmpty should be (true)
     }

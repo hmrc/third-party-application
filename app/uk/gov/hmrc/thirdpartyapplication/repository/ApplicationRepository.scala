@@ -25,10 +25,11 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
+import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -301,13 +302,26 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
-  def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Seq[ApplicationData]] = find("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
+  def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Set[UUID]] = {
+    val query = Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
+    val projection = Json.obj("_id" -> 0, "id" -> 1)
+
+    for {
+      results <-
+        collection
+          .find(query, Some(projection))
+          .cursor[BSONDocument]()
+          .collect[Seq] (-1, Cursor.ContOnError[Seq[BSONDocument]]())
+
+      applicationIds = results.flatMap(_.getAs[String]("id")).map(UUID.fromString)
+    } yield applicationIds.toSet
+  }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     import reactivemongo.akkastream.{State, cursorProducer}
+
     val sourceOfApps: Source[ApplicationData, Future[State]] =
-      collection
-        .find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
+      collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
 
     sourceOfApps.runWith(Sink.foreach(function)).map(_ => ())
   }
