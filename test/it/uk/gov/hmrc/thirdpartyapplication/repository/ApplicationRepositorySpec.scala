@@ -1083,6 +1083,42 @@ class ApplicationRepositorySpec
     }
   }
 
+  "applicationsLastUsed" should {
+    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
+      anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
+
+    "return only applications last accessed before specified date" in {
+      val oldApplicationId = UUID.randomUUID()
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
+
+      retrievedApplications.size should be (1)
+      retrievedApplications.head should be (oldApplicationId)
+    }
+
+    "match applications that are equal to the cutoff date" in {
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), cutoffDate)))
+
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
+
+      retrievedApplications.size should be (1)
+    }
+
+    "return empty collection if no applications match" in {
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+
+      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(DateTime.now.minusMonths(12)))
+
+      retrievedApplications.isEmpty should be (true)
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
