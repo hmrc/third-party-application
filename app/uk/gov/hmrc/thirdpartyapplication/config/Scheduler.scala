@@ -36,6 +36,8 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
                           reconcileRateLimitsJob: ReconcileRateLimitsScheduledJob,
                           reconcileRateLimitsJobConfig: ReconcileRateLimitsJobConfig,
+                          deleteUnusedApplicationsScheduledJob: DeleteUnusedApplicationsScheduledJob,
+                          deleteUnusedApplicationsJobConfig: DeleteUnusedApplicationsJobConfig,
                           metricsJob: MetricsJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
@@ -44,9 +46,10 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
     val refreshJob = if (refreshSubscriptionsJobConfig.enabled && !apiStorageConfig.awsOnly) Seq(refreshSubscriptionsScheduledJob) else Seq.empty
     val rateLimitsJob = if (reconcileRateLimitsJobConfig.enabled && !apiStorageConfig.awsOnly) Seq(reconcileRateLimitsJob) else Seq.empty
-
+    val deleteUnusedApplicationsJob = if(deleteUnusedApplicationsJobConfig.enabled) Seq(deleteUnusedApplicationsScheduledJob) else Seq.empty
+    
     // TODO : MetricsJob optional?
-    upliftJob ++ refreshJob ++ rateLimitsJob :+ metricsJob
+    upliftJob ++ refreshJob ++ rateLimitsJob ++ deleteUnusedApplicationsJob :+ metricsJob
   }
 
   onStart(app)
