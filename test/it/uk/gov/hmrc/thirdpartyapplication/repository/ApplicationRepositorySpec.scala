@@ -1119,6 +1119,24 @@ class ApplicationRepositorySpec
     }
   }
 
+  "deletionNotificationSent" should {
+    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
+      anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
+
+    "add timestamp of when notification was sent that application would be deleted" in {
+      val testStart: DateTime = DateTime.now
+      val oldApplicationId = UUID.randomUUID()
+      val applicationLastAccessed = DateTime.now.minusMonths(11)
+
+      val savedApplication = await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, applicationLastAccessed)))
+
+      val updatedApplication: ApplicationData = await(applicationRepository.recordDeleteNotificationSent(oldApplicationId))
+
+      savedApplication.deleteNotificationSent should be (None)
+      updatedApplication.deleteNotificationSent.get.isAfter(testStart) should be (true)
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,

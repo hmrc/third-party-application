@@ -198,6 +198,7 @@ object MongoFormat {
     (JsPath \ "access").read[Access] and
     (JsPath \ "createdOn").read[DateTime] and
     (JsPath \ "lastAccess").readNullable[DateTime] and
+    (JsPath \ "deleteNotificationSent").readNullable[DateTime] and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and

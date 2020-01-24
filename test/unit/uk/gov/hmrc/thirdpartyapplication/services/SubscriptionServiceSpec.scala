@@ -402,7 +402,7 @@ class SubscriptionServiceSpec extends UnitSpec with ScalaFutures with MockitoSug
       Standard(Seq(), None, None),
       DateTime.now,
       Some(DateTime.now),
-      rateLimitTier
+      rateLimitTier = rateLimitTier
     )
   }
 
