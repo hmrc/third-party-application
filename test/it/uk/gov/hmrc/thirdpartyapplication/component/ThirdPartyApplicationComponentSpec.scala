@@ -63,9 +63,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val apiName = "apiName"
   val context = "myapi"
   val version = "1.0"
-  val anApiDefinition = ApiDefinition(serviceName, apiName, context, Seq(ApiVersion(version, ApiStatus.STABLE, None)), None)
+  val anApiDefinition = ApiDefinition(serviceName, apiName, context, List(ApiVersion(version, ApiStatus.STABLE, None)), None)
   val standardAccess = Standard(
-    redirectUris = Seq("http://example.com/redirect"),
+    redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
     overrides = Set.empty
@@ -173,7 +173,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The credentials are returned")
       Json.parse(response.body) shouldBe Json.toJson(ApplicationTokensResponse(
         EnvironmentTokenResponse(s"$appName-key", "token", createdApp.tokens.production.clientSecrets),
-        EnvironmentTokenResponse("", "", Seq.empty)))
+        EnvironmentTokenResponse("", "", List.empty)))
     }
 
     scenario("Fetch WSO2 credentials of an application") {
@@ -278,9 +278,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val originalOverrides: Set[OverrideFlag] = Set(PersistLogin(), GrantWithoutConsent(Set("scope")),
         SuppressIvForAgents(Set("scope")), SuppressIvForOrganisations(Set("scope")), SuppressIvForIndividuals(Set("Scope")))
       val application = createApplication(access = standardAccess.copy(overrides = originalOverrides))
+
       When("I request to update the application")
       val newApplicationName = "My Renamed Application"
-      val updatedRedirectUris = Seq("http://example.com/redirect2", "http://example.com/redirect3")
+      val updatedRedirectUris = List("http://example.com/redirect2", "http://example.com/redirect3")
       val updatedTermsAndConditionsUrl = Some("http://example.com/terms2")
       val updatedPrivacyPolicyUrl = Some("http://example.com/privacy2")
       val updatedAccess = Standard(
@@ -441,7 +442,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The API subscription is returned")
       val actualApiSubscription = Json.parse(response.body).as[Seq[ApiSubscription]]
       actualApiSubscription shouldBe
-        Seq(ApiSubscription(apiName, serviceName, context, Seq(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
+        List(ApiSubscription(apiName, serviceName, context, List(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
     }
 
     scenario("Fetch All API Subscriptions") {

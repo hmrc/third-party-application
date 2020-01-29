@@ -95,7 +95,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
       val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
-        .thenReturn(Future.successful(Seq(app1, app2)))
+        .thenReturn(Future.successful(List(app1, app2)))
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedTimeNow.minusDays(expiryTimeInDays))
@@ -129,7 +129,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
       val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
-        .thenReturn(Future.successful(Seq(app1, app2)))
+        .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
       )
@@ -158,7 +158,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
         EnvironmentToken(prodClientId, "bbb", "ccc")
       ),
       state,
-      Standard(Seq.empty, None, None),
+      Standard(List.empty, None, None),
       HmrcTime.now,
       Some(HmrcTime.now))
   }

@@ -81,7 +81,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   }
 
   private val loggedInUser = "loggedin@example.com"
-  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
+  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
   trait LockedSetup extends Setup {
     override lazy val locked = true
@@ -268,7 +268,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
 
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = Seq("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationDataWith5Secrets)))
@@ -286,7 +286,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "remove a client secret form an app with more than one client secret" in new Setup {
 
-      val secretsToRemove = Seq("secret1")
+      val secretsToRemove = List("secret1")
       val captor = ArgCaptor[ApplicationData]
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
@@ -305,7 +305,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
 
-      val secretsToRemove = Seq("secret1", "secret2")
+      val secretsToRemove = List("secret1", "secret2")
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
 
@@ -316,7 +316,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      val secretsToRemove = Seq("secret1")
+      val secretsToRemove = List("secret1")
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
 
@@ -327,7 +327,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
-      val secretsToRemove = Seq("notARealSecret")
+      val secretsToRemove = List("notARealSecret")
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
 
@@ -353,7 +353,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       "aaaaaaaaaa",
       ApplicationTokens(environmentToken),
       state,
-      Standard(Seq.empty, None, None),
+      Standard(List.empty, None, None),
       HmrcTime.now,
       Some(HmrcTime.now))
   }

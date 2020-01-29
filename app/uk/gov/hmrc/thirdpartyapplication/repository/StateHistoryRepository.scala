@@ -19,21 +19,17 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
-import play.api.libs.json.Json
 import play.api.libs.json.Json._
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
-import reactivemongo.play.json.ImplicitBSONHandlers._
+import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, StateHistory}
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -43,7 +39,7 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  override def indexes = Seq(
+  override def indexes = List(
     createSingleFieldAscendingIndex(
       indexFieldKey = "applicationId",
       indexName = Some("applicationId")
@@ -64,11 +60,11 @@ class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
     collection.insert.one(stateHistory).map(_ => stateHistory)
   }
 
-  def fetchByState(state: State): Future[Seq[StateHistory]] = {
+  def fetchByState(state: State): Future[List[StateHistory]] = {
     find("state" -> state)
   }
 
-  def fetchByApplicationId(applicationId: UUID): Future[Seq[StateHistory]] = {
+  def fetchByApplicationId(applicationId: UUID): Future[List[StateHistory]] = {
     find("applicationId" -> applicationId)
   }
 

@@ -63,7 +63,7 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
       "a", "a", "a",
       ApplicationTokens(EnvironmentToken("cid", "cs", "at")),
       productionState("user1"),
-      Standard(Seq.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
+      Standard(List.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))
 
     "create object" in {

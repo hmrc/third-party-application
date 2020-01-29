@@ -22,22 +22,21 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
+import play.api.libs.json.Json._
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor.ErrorHandler
+import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
@@ -77,7 +76,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     "rateLimitTier" -> true,
     "environment" -> true))
 
-  override def indexes = Seq(
+  override def indexes = List(
     createSingleFieldAscendingIndex(
       indexFieldKey = "state.verificationCode",
       indexName = Some("verificationCodeIndex")
@@ -147,7 +146,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       .map(_.result[ApplicationData].head)
   }
 
-  def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
+  def fetchStandardNonTestingApps(): Future[List[ApplicationData]] = {
     find(s"$$and" -> Json.arr(
       Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)),
       Json.obj("access.accessType" -> Json.obj(f"$$eq" -> AccessType.STANDARD))
@@ -156,7 +155,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
 
-  def fetchApplicationsByName(name: String): Future[Seq[ApplicationData]] = {
+  def fetchApplicationsByName(name: String): Future[List[ApplicationData]] = {
     val query: (String, JsValueWrapper) = f"$$and" -> Json.arr(
       Json.obj("normalisedName" -> name.toLowerCase)
     )
@@ -168,7 +167,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("state.verificationCode" -> verificationCode).map(_.headOption)
   }
 
-  def fetchAllByStatusDetails(state: State.State, updatedBefore: DateTime): Future[Seq[ApplicationData]] = {
+  def fetchAllByStatusDetails(state: State.State, updatedBefore: DateTime): Future[List[ApplicationData]] = {
     find("state.name" -> state, "state.updatedOn" -> Json.obj(f"$$lte" -> BSONDateTime(updatedBefore.getMillis)))
   }
 
@@ -180,19 +179,19 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("tokens.production.accessToken" -> serverToken).map(_.headOption)
   }
 
-  def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
+  def fetchAllForEmailAddress(emailAddress: String): Future[List[ApplicationData]] = {
     find("collaborators.emailAddress" -> emailAddress)
   }
 
-  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationData]] = {
+  def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[List[ApplicationData]] = {
     find("collaborators.emailAddress" -> emailAddress, "environment" -> environment)
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
-    val sort = Seq(convertToSortClause(applicationSearch.sort))
+    val sort = List(convertToSortClause(applicationSearch.sort))
 
-    val pagination = Seq(
+    val pagination = List(
       Json.obj(f"$$skip" -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
       Json.obj(f"$$limit" -> applicationSearch.pageSize))
 
@@ -244,7 +243,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
-      case ApplicationTextSearch => regexTextSearch(Seq("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
+      case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
     }
   }
 
@@ -256,7 +255,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     case _ => sorting("name" -> 1)
   }
 
-  private def regexTextSearch(fields: Seq[String], searchText: String): JsObject =
+  private def regexTextSearch(fields: List[String], searchText: String): JsObject =
     matches(f"$$or" -> fields.map(field => Json.obj(field -> Json.obj(f"$$regex" -> searchText, f"$$options" -> "i"))))
 
   private def runApplicationQueryAggregation(commandDocument: JsObject): Future[PaginatedApplicationData] = {
@@ -275,7 +274,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }
   }
 
-  private def commandQueryDocument(filters: Seq[JsObject], pagination: Seq[JsObject], sort: Seq[JsObject]): JsObject = {
+  private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject]): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
     val filteredPipelineCount = Json.toJson(subscriptionsLookup +: filters :+ Json.obj(f"$$count" -> "total"))
     val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookup +: filters) ++ sort ++ pagination :+ applicationProjection)
@@ -290,17 +289,17 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
           "applications" -> paginatedFilteredAndSortedPipeline))))
   }
 
-  def fetchAllForContext(apiContext: String): Future[Seq[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
+  def fetchAllForContext(apiContext: String): Future[List[ApplicationData]] =
+    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
-  def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[Seq[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, Seq(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
+  def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[List[ApplicationData]] =
+    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
       apiVersion = Some(apiIdentifier.version))).map(_.applications)
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationData]] =
-    searchApplications(new ApplicationSearch(filters = Seq(NoAPISubscriptions))).map(_.applications)
+  def fetchAllWithNoSubscriptions(): Future[List[ApplicationData]] =
+    searchApplications(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
 
-  def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
+  def fetchAll(): Future[List[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
   def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Set[UUID]] = {
     val query = Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
@@ -311,14 +310,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
         collection
           .find(query, Some(projection))
           .cursor[BSONDocument]()
-          .collect[Seq] (-1, Cursor.ContOnError[Seq[BSONDocument]]())
+          .collect[List] (-1, Cursor.ContOnError[List[BSONDocument]]())
 
       applicationIds = results.flatMap(_.getAs[String]("id")).map(UUID.fromString)
     } yield applicationIds.toSet
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    import reactivemongo.akkastream.{State, cursorProducer}
+    import reactivemongo.akkastream.{cursorProducer, State}
 
     val sourceOfApps: Source[ApplicationData, Future[State]] =
       collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()

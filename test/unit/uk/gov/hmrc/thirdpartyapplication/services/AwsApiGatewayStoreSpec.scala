@@ -121,7 +121,7 @@ class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val api = APIIdentifier("some/context", "1.0")
       val anotherApi = APIIdentifier("some/context_2", "1.0")
 
-      val result: HasSucceeded = await(underTest.resubscribeApi(Seq(api, anotherApi), app.wso2Username, app.wso2Password, applicationName, api, SILVER))
+      val result: HasSucceeded = await(underTest.resubscribeApi(List(api, anotherApi), app.wso2Username, app.wso2Password, applicationName, api, SILVER))
 
       result shouldBe HasSucceeded
       verifyZeroInteractions(mockAwsApiGatewayConnector)

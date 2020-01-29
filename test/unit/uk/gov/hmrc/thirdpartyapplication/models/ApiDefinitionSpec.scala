@@ -27,13 +27,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVe
 class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
 
   private val apiDefinitionWithStableStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)))
+    List(ApiVersion("1.0", ApiStatus.STABLE, None)))
 
   private val apiDefinitionWithBetaStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.BETA, None)))
+    List(ApiVersion("1.0", ApiStatus.BETA, None)))
 
   private val apiDefinitionWithIsTestSupportFlag = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(true))
+    List(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(true))
 
   private val apiDefinitionWithStableStatusJson =
     """{

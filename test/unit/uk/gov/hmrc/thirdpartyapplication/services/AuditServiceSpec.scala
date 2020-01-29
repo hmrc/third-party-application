@@ -141,7 +141,7 @@ class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with
     val updatedApp = previousApp.copy(
       name = "new name",
       access = Standard(
-        Seq("http://new-url.example.com", "http://new-url.example.com/other-redirect"),
+        List("http://new-url.example.com", "http://new-url.example.com/other-redirect"),
         Some("http://new-url.example.com/terms-and-conditions"),
         Some("http://new-url.example.com/privacy-policy")
       )

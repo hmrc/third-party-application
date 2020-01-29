@@ -38,10 +38,10 @@ class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with Argumen
   val baseUrl = s"https://example.com"
 
   val apiDefinitionWithStableStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(false))
+    List(ApiVersion("1.0", ApiStatus.STABLE, None)), Some(false))
 
   val apiDefinitionWithBetaStatus = ApiDefinition("api-service", "api-name", "api-context",
-    Seq(ApiVersion("1.0", ApiStatus.BETA, None)), Some(false))
+    List(ApiVersion("1.0", ApiStatus.BETA, None)), Some(false))
 
   trait Setup {
     val config = ApiDefinitionConfig(baseUrl)

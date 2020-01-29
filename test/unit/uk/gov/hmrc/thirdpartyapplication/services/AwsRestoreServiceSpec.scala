@@ -44,7 +44,7 @@ class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
         "",
         "",
         applicationName,
-        EnvironmentToken("", "", serverToken, Seq.empty))
+        EnvironmentToken("", "", serverToken, List.empty))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

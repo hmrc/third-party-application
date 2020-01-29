@@ -30,13 +30,13 @@ import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -142,7 +142,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     fetchApp(applicationId) flatMap { app =>
 
-      def updateWso2Subscriptions(): Future[Seq[HasSucceeded]] = {
+      def updateWso2Subscriptions(): Future[List[HasSucceeded]] = {
         apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName) flatMap { originalApis =>
           sequence(originalApis map { api =>
             apiGatewayStore.resubscribeApi(originalApis, app.wso2Username, app.wso2Password, app.wso2ApplicationName, api, rateLimitTier)
@@ -290,37 +290,37 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAllForCollaborator(emailAddress: String): Future[Seq[ApplicationResponse]] = {
+  def fetchAllForCollaborator(emailAddress: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddress(emailAddress).map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-  def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationResponse]] = {
+  def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-  def fetchAll(): Future[Seq[ApplicationResponse]] = {
+  def fetchAll(): Future[List[ApplicationResponse]] = {
     applicationRepository.findAll().map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-  def fetchAllBySubscription(apiContext: String): Future[Seq[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiContext: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-  def fetchAllBySubscription(apiIdentifier: APIIdentifier): Future[Seq[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiIdentifier: APIIdentifier): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-  def fetchAllWithNoSubscriptions(): Future[Seq[ApplicationResponse]] = {
+  def fetchAllWithNoSubscriptions(): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllWithNoSubscriptions() map {
       _.map(application => ApplicationResponse(data = application))
     }
@@ -571,7 +571,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
 
-    def anyDuplicatesExcludingThis(apps: Seq[ApplicationData]): Boolean = {
+    def anyDuplicatesExcludingThis(apps: List[ApplicationData]): Boolean = {
       apps.exists(!isThisApplication(_))
     }
 

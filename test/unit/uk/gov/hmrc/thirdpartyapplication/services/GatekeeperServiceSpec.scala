@@ -50,7 +50,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   private def aSecret(secret: String) = ClientSecret(secret, secret)
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
     StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
@@ -61,7 +61,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     ApplicationData(applicationId, "MyApp", "myapp",
       collaborators, Some("description"),
       "aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa",
-      ApplicationTokens(productionToken), state, Standard(Seq(), None, None), HmrcTime.now, Some(HmrcTime.now))
+      ApplicationTokens(productionToken), state, Standard(List.empty, None, None), HmrcTime.now, Some(HmrcTime.now))
   }
 
   trait Setup {
@@ -119,12 +119,12 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
-      when(mockApplicationRepository.fetchStandardNonTestingApps()).thenReturn(successful(Seq(app1, app2)))
-      when(mockStateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)).thenReturn(successful(Seq(history1, history2)))
+      when(mockApplicationRepository.fetchStandardNonTestingApps()).thenReturn(successful(List(app1, app2)))
+      when(mockStateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)).thenReturn(successful(List(history1, history2)))
 
       val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
 
-      result should contain theSameElementsAs Seq(ApplicationWithUpliftRequest.create(app1, history1),
+      result should contain theSameElementsAs List(ApplicationWithUpliftRequest.create(app1, history1),
         ApplicationWithUpliftRequest.create(app2, history2))
     }
   }
@@ -134,7 +134,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "return app" in new Setup {
       val app1 = anApplicationData(appId)
-      val history = Seq(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
+      val history = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
 
       when(mockApplicationRepository.fetch(appId)).thenReturn(successful(Some(app1)))
       when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(successful(history))

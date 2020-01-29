@@ -128,16 +128,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken =
-    EnvironmentTokenResponse("111", "222", Seq(ClientSecret("333", "333")))
+    EnvironmentTokenResponse("111", "222", List(ClientSecret("333", "333")))
   val controllerResponseTokens = ApplicationTokensResponse(
     credentialServiceResponseToken,
-    EnvironmentTokenResponse("", "", Seq()))
+    EnvironmentTokenResponse("", "", List.empty))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
     Collaborator("dev@example.com", DEVELOPER))
 
-  private val standardAccess = Standard(Seq("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess = Ropc()
 
@@ -397,7 +397,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   "update approval" should {
     val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", new DateTime(), "1.0")
     val checkInformation = CheckInformation(
-      contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = Seq(termsOfUseAgreement))
+      contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
     val id = UUID.randomUUID()
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
@@ -676,10 +676,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   "add client secret" should {
     val applicationId = UUID.randomUUID()
-    val environmentTokenResponse = EnvironmentTokenResponse("clientId", "token", Seq(aSecret("secret1"), aSecret("secret2")))
+    val environmentTokenResponse = EnvironmentTokenResponse("clientId", "token", List(aSecret("secret1"), aSecret("secret2")))
     val applicationTokensResponse = ApplicationTokensResponse(
       environmentTokenResponse,
-      EnvironmentTokenResponse("", "", Seq()))
+      EnvironmentTokenResponse("", "", List.empty))
     val secretRequest = ClientSecretRequest("request")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
@@ -753,9 +753,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     val applicationId = UUID.randomUUID()
     val secrets = "ccc"
-    val splitSecrets = secrets.split(",").toSeq
+    val splitSecrets = secrets.split(",").toList
     val secretRequest = DeleteClientSecretsRequest(splitSecrets)
-    val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", Seq())
+    val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", List.empty)
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
@@ -950,7 +950,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "retrieve all" in new Setup {
-      when(underTest.applicationService.fetchAll()).thenReturn(Future(Seq(aNewApplicationResponse(), aNewApplicationResponse())))
+      when(underTest.applicationService.fetchAll()).thenReturn(Future(List(aNewApplicationResponse(), aNewApplicationResponse())))
 
       private val result = await(underTest.queryDispatcher()(FakeRequest()))
 
@@ -959,7 +959,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "retrieve when no subscriptions" in new Setup {
-      when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(Seq(aNewApplicationResponse())))
+      when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(aNewApplicationResponse())))
 
       private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true")))
 
@@ -1036,7 +1036,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
 
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress))
-        .thenReturn(successful(Seq(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
       status(await(underTest.queryDispatcher()(queryRequest))) shouldBe SC_OK
     }
@@ -1048,7 +1048,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
 
       when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
-        .thenReturn(successful(Seq(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
       status(await(underTest.queryDispatcher()(queryRequestWithEnvironment))) shouldBe SC_OK
     }
@@ -1082,7 +1082,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
         val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
         val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-        val response: Seq[ApplicationResponse] = Seq(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val response: List[ApplicationResponse] = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(response))
 
@@ -1094,7 +1094,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(Seq()))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(List.empty))
 
         val result: Result = await(underTest.queryDispatcher()(queryRequest))
 
@@ -1121,7 +1121,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
         val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
         val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-        val response: Seq[ApplicationResponse] = Seq(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
+        val response: List[ApplicationResponse] = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
 
@@ -1134,7 +1134,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(Seq()))
+        when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(List.empty))
 
         val result: Result = await(underTest.queryDispatcher()(queryRequest))
 
@@ -1206,7 +1206,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "succeed with a 200 (ok) when subscriptions are found for the application" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*))
-        .thenReturn(successful(Seq(anAPISubscription())))
+        .thenReturn(successful(List(anAPISubscription())))
 
       val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
 
@@ -1214,7 +1214,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "succeed with a 200 (ok) when no subscriptions are found for the application" in new Setup {
-      when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*)).thenReturn(successful(Seq()))
+      when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*)).thenReturn(successful(List.empty))
 
       val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
 
@@ -1578,7 +1578,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       // scalastyle:off magic.number
       when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
-        .thenReturn(Future(PaginatedApplicationResponse(applications = Seq.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
+        .thenReturn(Future(PaginatedApplicationResponse(applications = List.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
 
       val result: Result = await(underTest.searchApplications(req))
 
@@ -1660,7 +1660,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
   }
 
   private def anAPISubscription() = {
-    new ApiSubscription("name", "service-name", "some-context", Seq(VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true)))
+    new ApiSubscription("name", "service-name", "some-context", List(VersionSubscription(ApiVersion("1.0", ApiStatus.STABLE, None), subscribed = true)))
   }
 
   private def aSubcriptionData() = {
@@ -1713,7 +1713,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       app.ipWhitelist,
       app.trusted,
       UUID.randomUUID().toString,
-      Seq.empty
+      List.empty
     )
   }
 

@@ -83,7 +83,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     }
 
     "return apps" in new Setup {
-      val expected = Seq(anAppResult(), anAppResult(state = productionState("user1")))
+      val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       givenUserIsAuthenticated(underTest)
@@ -106,7 +106,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     }
 
     "return app with history" in new Setup {
-      val expected = ApplicationWithHistory(anAppResponse(appId), Seq(aHistory(appId), aHistory(appId, PRODUCTION)))
+      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, PRODUCTION)))
 
       givenUserIsAuthenticated(underTest)
 

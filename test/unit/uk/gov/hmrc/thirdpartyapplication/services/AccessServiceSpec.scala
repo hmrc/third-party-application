@@ -227,7 +227,7 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchers
         EnvironmentToken("a", "b", "c")
       ),
       ApplicationState(),
-      Standard(redirectUris = Seq.empty, overrides = overrides),
+      Standard(redirectUris = List.empty, overrides = overrides),
       DateTimeUtils.now,
       Some(DateTimeUtils.now))
 }

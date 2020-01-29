@@ -28,9 +28,9 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApiDefinitionConnector @Inject()(httpClient: HttpClient, config: ApiDefinitionConfig)(implicit val ec: ExecutionContext)  {
 
-  def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[Seq[ApiDefinition]], hc: HeaderCarrier, ec: ExecutionContext): Future[Seq[ApiDefinition]] = {
+  def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[List[ApiDefinition]], hc: HeaderCarrier, ec: ExecutionContext): Future[List[ApiDefinition]] = {
     val url = s"${config.baseUrl}/api-definition?applicationId=$applicationId"
-    httpClient.GET[Seq[ApiDefinition]](url).map(result => result) recover {
+    httpClient.GET[List[ApiDefinition]](url).map(result => result) recover {
       case e => throw new RuntimeException(s"Unexpected response from $url: ${e.getMessage}")
     }
   }

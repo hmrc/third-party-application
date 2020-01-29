@@ -87,7 +87,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteClientSecrets(id: java.util.UUID, secrets: Seq[String])(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
+  def deleteClientSecrets(id: java.util.UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
 
     def audit(clientSecret: ClientSecret) = {
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString,
@@ -151,4 +151,4 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
 case class CredentialConfig(clientSecretLimit: Int)
 
-case class ApplicationNameValidationConfig(nameBlackList: Seq[String], validateForDuplicateAppNames: Boolean)
+case class ApplicationNameValidationConfig(nameBlackList: List[String], validateForDuplicateAppNames: Boolean)

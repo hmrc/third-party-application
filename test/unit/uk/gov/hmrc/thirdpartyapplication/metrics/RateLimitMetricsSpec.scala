@@ -30,7 +30,7 @@ import scala.concurrent.Future
 class RateLimitMetricsSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
 
   trait Setup {
-    def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): Seq[ApplicationData] = {
+    def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[ApplicationData] = {
       def mockedApplication: ApplicationData = {
         val application: ApplicationData = mock[ApplicationData]
         when(application.rateLimitTier).thenReturn(rateLimit)
@@ -38,7 +38,7 @@ class RateLimitMetricsSpec extends UnitSpec with MockitoSugar with ArgumentMatch
         application
       }
 
-      Seq.fill(numberOfApplications)(mockedApplication)
+      List.fill(numberOfApplications)(mockedApplication)
     }
 
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
@@ -53,7 +53,7 @@ class RateLimitMetricsSpec extends UnitSpec with MockitoSugar with ArgumentMatch
       private val numberOfGold = 2
       private val numberOfUnknown = 1
 
-      private val applicationsToReturn: Seq[ApplicationData] =
+      private val applicationsToReturn: List[ApplicationData] =
         applicationsWithRateLimit(Some(RateLimitTier.BRONZE), numberOfBronze) ++
           applicationsWithRateLimit(Some(RateLimitTier.SILVER), numberOfSilver) ++
           applicationsWithRateLimit(Some(RateLimitTier.GOLD), numberOfGold) ++

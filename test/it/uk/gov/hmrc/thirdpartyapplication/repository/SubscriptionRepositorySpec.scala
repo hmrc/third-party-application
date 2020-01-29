@@ -52,14 +52,14 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
   private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   override def beforeEach() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
       await(db.ensureIndexes)
     }
   }
 
   override protected def afterAll() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
     }
   }
@@ -282,8 +282,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
   def anApplicationData(id: UUID,
                         clientId: String = "aaa",
                         state: ApplicationState = testingState(),
-                        access: Access = Standard(Seq.empty, None, None),
-                        user: Seq[String] = Seq("user@example.com"),
+                        access: Access = Standard(List.empty, None, None),
+                        user: Seq[String] = List("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-$id", clientId, state, access, user, checkInformation)
@@ -293,8 +293,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
                             name: String,
                             clientId: String = "aaa",
                             state: ApplicationState = testingState(),
-                            access: Access = Standard(Seq.empty, None, None),
-                            user: Seq[String] = Seq("user@example.com"),
+                            access: Access = Standard(List.empty, None, None),
+                            user: Seq[String] = List("user@example.com"),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR)).toSet

@@ -80,7 +80,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     val mockGatekeeperService = mock[GatekeeperService]
 
     when(mockApplicationRepository.fetchApplicationsByName(*))
-      .thenReturn(Future.successful(Seq.empty))
+      .thenReturn(Future.successful(List.empty))
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
@@ -138,7 +138,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     def mockWso2SubscribeToReturn(eventualHasSucceeded: Future[HasSucceeded]) = {
       when(mockApiGatewayStore
-        .resubscribeApi(any[Seq[APIIdentifier]], *, *, *, any[APIIdentifier], any[RateLimitTier])(*))
+        .resubscribeApi(any[List[APIIdentifier]], *, *, *, any[APIIdentifier], any[RateLimitTier])(*))
         .thenReturn(eventualHasSucceeded)
     }
 
@@ -147,7 +147,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     }
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
-                                                           subscriptions: Seq[APIIdentifier]) =
+                                                           subscriptions: List[APIIdentifier]) =
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
 
   }
@@ -157,7 +157,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   }
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
   trait LockedSetup extends Setup {
     override lazy val locked = true
@@ -249,7 +249,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "create a new Privileged application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Privileged())
-      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty[ApplicationData])
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(List.empty[ApplicationData])
 
       val prodTOTP = Totp("prodTotp", "prodTotpId")
       val sandboxTOTP = Totp("sandboxTotp", "sandboxTotpId")
@@ -282,7 +282,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "create a new ROPC application in Mongo and WSO2 with a Production state" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Ropc())
 
-      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq.empty[ApplicationData])
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(List.empty[ApplicationData])
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -303,7 +303,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Privileged())
 
       when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name))
-        .thenReturn(Seq(anApplicationData(UUID.randomUUID())))
+        .thenReturn(List(anApplicationData(UUID.randomUUID())))
 
       mockTidyUpDeleteAction()
 
@@ -317,7 +317,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
 
-      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(Seq(anApplicationData(UUID.randomUUID())))
+      when(mockApplicationRepository.fetchApplicationsByName(applicationRequest.name)).thenReturn(List(anApplicationData(UUID.randomUUID())))
 
       mockTidyUpDeleteAction()
 
@@ -373,7 +373,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
   "recordApplicationUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
-      val subscriptions: Seq[APIIdentifier] = Seq(APIIdentifier("myContext", "myVersion"))
+      val subscriptions: List[APIIdentifier] = List(APIIdentifier("myContext", "myVersion"))
       when(mockApplicationRepository.recordApplicationUsage(applicationId)).thenReturn(anApplicationData(applicationId))
       mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
 
@@ -487,7 +487,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         collaborators = data.collaborators,
         createdOn = data.createdOn,
         lastAccess = data.lastAccess,
-        redirectUris = Seq.empty,
+        redirectUris = List.empty,
         termsAndConditionsUrl = None,
         privacyPolicyUrl = None,
         access = data.access,
@@ -521,7 +521,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
         name = "new name",
         normalisedName = "new name",
         access = Standard(
-          Seq("http://new-url.example.com"),
+          List("http://new-url.example.com"),
           Some("http://new-url.example.com/terms-and-conditions"),
           Some("http://new-url.example.com/privacy-policy"))
       )
@@ -796,7 +796,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken("aaa", "wso2Secret", serverToken, Seq(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = EnvironmentToken("aaa", "wso2Secret", serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       val applicationId: UUID = UUID.randomUUID()
       val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
@@ -821,7 +821,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val ropcApplicationData: ApplicationData = anApplicationData(applicationId, access = Ropc())
 
       when(mockApplicationRepository.fetchAllForEmailAddress(emailAddress))
-        .thenReturn(successful(Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
+        .thenReturn(successful(List(standardApplicationData, privilegedApplicationData, ropcApplicationData)))
 
       await(underTest.fetchAllForCollaborator(emailAddress)).size shouldBe 3
     }
@@ -836,8 +836,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val apiContext = "some-context"
       val applicationData: ApplicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetchAllForContext(apiContext)).thenReturn(successful(Seq(applicationData)))
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      when(mockApplicationRepository.fetchAllForContext(apiContext)).thenReturn(successful(List(applicationData)))
+      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
       result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
@@ -861,8 +861,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val apiIdentifier = APIIdentifier("some-context", "some-version")
       val applicationData: ApplicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetchAllForApiIdentifier(apiIdentifier)).thenReturn(successful(Seq(applicationData)))
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      when(mockApplicationRepository.fetchAllForApiIdentifier(apiIdentifier)).thenReturn(successful(List(applicationData)))
+      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
       result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
@@ -901,8 +901,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val apiContext = "some-context"
       val applicationData: ApplicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetchAllWithNoSubscriptions()).thenReturn(successful(Seq(applicationData)))
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      when(mockApplicationRepository.fetchAllWithNoSubscriptions()).thenReturn(successful(List(applicationData)))
+      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 1
       result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
@@ -998,7 +998,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "allow valid name" in new Setup {
 
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq("HMRC"))
+        .thenReturn(List("HMRC"))
 
       val result = await(underTest.validateApplicationName("my application name", None))
 
@@ -1007,7 +1007,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "block a name with HMRC in" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq("HMRC"))
+        .thenReturn(List("HMRC"))
 
       val result = await(underTest.validateApplicationName("Invalid name HMRC", None))
 
@@ -1016,7 +1016,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "block a name with multiple blacklisted names in" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq("InvalidName1", "InvalidName2", "InvalidName3"))
+        .thenReturn(List("InvalidName1", "InvalidName2", "InvalidName3"))
 
       val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", None))
 
@@ -1025,7 +1025,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "block an invalid ignoring case" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq("InvalidName"))
+        .thenReturn(List("InvalidName"))
 
       val result = await(underTest.validateApplicationName("invalidname", None))
 
@@ -1034,10 +1034,10 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "block a duplicate app name" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty[String])
+        .thenReturn(List.empty[String])
 
       when(mockApplicationRepository.fetchApplicationsByName(*))
-        .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
+        .thenReturn(List(anApplicationData(applicationId = UUID.randomUUID())))
 
       private val duplicateName = "duplicate name"
       val result = await(underTest.validateApplicationName(duplicateName, None))
@@ -1050,13 +1050,13 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty[String])
+        .thenReturn(List.empty[String])
 
       when(mockNameValidationConfig.validateForDuplicateAppNames)
         .thenReturn(false)
 
       when(mockApplicationRepository.fetchApplicationsByName(*))
-        .thenReturn(Seq(anApplicationData(applicationId = UUID.randomUUID())))
+        .thenReturn(List(anApplicationData(applicationId = UUID.randomUUID())))
 
       val result = await(underTest.validateApplicationName("app name", None))
 
@@ -1068,12 +1068,12 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
     "Ignore application when checking for duplicates if it is self application" in new Setup {
       when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(Seq.empty[String])
+        .thenReturn(List.empty[String])
 
       val applicationId = UUID.randomUUID()
 
       when(mockApplicationRepository.fetchApplicationsByName(*))
-        .thenReturn(Seq(anApplicationData(applicationId)))
+        .thenReturn(List(anApplicationData(applicationId)))
 
       val result = await(underTest.validateApplicationName("app name", Some(applicationId)))
 
@@ -1097,7 +1097,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
 
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
-        .thenReturn(Seq(application, expectedApplication))
+        .thenReturn(List(application, expectedApplication))
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
@@ -1112,7 +1112,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
 
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
-        .thenReturn(Seq(application))
+        .thenReturn(List(application))
 
       when(mockStateHistoryRepository.insert(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
@@ -1131,7 +1131,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(Seq.empty[ApplicationData])
+      when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(List.empty[ApplicationData])
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
       verify(mockAuditService).audit(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString))
@@ -1144,7 +1144,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
-      when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(Seq.empty[ApplicationData])
+      when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(List.empty[ApplicationData])
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
@@ -1170,7 +1170,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
 
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
-        .thenReturn(Seq(application, anotherApplication))
+        .thenReturn(List(application, anotherApplication))
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
@@ -1201,7 +1201,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
       when(mockApiGatewayStore.getSubscriptions(
         originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
-        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
+        .thenReturn(successful(List(apiIdentifier, anotherApiIdentifier)))
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
@@ -1209,9 +1209,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       verify(mockApiGatewayStore) updateApplication(originalApplicationData, SILVER)
 
-      verify(mockApiGatewayStore) resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
+      verify(mockApiGatewayStore) resubscribeApi(List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER)
-      verify(mockApiGatewayStore) resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
+      verify(mockApiGatewayStore) resubscribeApi(List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, anotherApiIdentifier, SILVER)
 
       verify(mockApplicationRepository) save updatedApplicationData
@@ -1220,14 +1220,14 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail fast when retrieving application data fails" in new Setup {
 
       mockApplicationRepositoryFetchToReturn(uuid, failed(new RuntimeException))
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
       verify(mockApiGatewayStore, never).updateApplication(any[ApplicationData], any[RateLimitTier])(*)
-      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], *, *, *,
+      verify(mockApiGatewayStore, never).resubscribeApi(any[List[APIIdentifier]], *, *, *,
         any[APIIdentifier], any[RateLimitTier])(*)
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
@@ -1236,14 +1236,14 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
       mockWso2ApiStoreUpdateApplicationToReturn(failed(new RuntimeException))
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
 
       intercept[RuntimeException] {
         await(underTest updateRateLimitTier(uuid, SILVER))
       }
 
       verify(mockApiGatewayStore).updateApplication(any[ApplicationData], any[RateLimitTier])(*)
-      verify(mockApiGatewayStore, never).resubscribeApi(any[Seq[APIIdentifier]], *, *, *,
+      verify(mockApiGatewayStore, never).resubscribeApi(any[List[APIIdentifier]], *, *, *,
         any[APIIdentifier], any[RateLimitTier])(*)
       verify(mockApplicationRepository, never) save updatedApplicationData
     }
@@ -1251,7 +1251,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     "fail when wso2 resubscribe fails, updating the application in wso2, but leaving the Mongo application in a wrong state" in new Setup {
 
       mockApplicationRepositoryFetchToReturn(uuid, Some(originalApplicationData))
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, Seq(apiIdentifier))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
       mockWso2SubscribeToReturn(failed(new RuntimeException))
 
 
@@ -1270,19 +1270,19 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositorySaveToReturn(updatedApplicationData)
       when(mockApiGatewayStore.getSubscriptions(
         originalApplicationData.wso2Username, originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName))
-        .thenReturn(successful(Seq(apiIdentifier, anotherApiIdentifier)))
+        .thenReturn(successful(List(apiIdentifier, anotherApiIdentifier)))
 
       when(mockApiGatewayStore.checkApplicationRateLimitTier(originalApplicationData.wso2Username, originalApplicationData.wso2Password,
         originalApplicationData.wso2ApplicationName, SILVER)).thenReturn(successful(HasSucceeded))
 
       when(mockApiGatewayStore
         .resubscribeApi(
-          Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
+          List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
           originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER))
         .thenReturn(successful(HasSucceeded))
       when(mockApiGatewayStore
         .resubscribeApi(
-          Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
+          List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username, originalApplicationData.wso2Password,
           originalApplicationData.wso2ApplicationName, anotherApiIdentifier, SILVER))
         .thenReturn(failed(new RuntimeException))
 
@@ -1292,9 +1292,9 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       verify(mockApiGatewayStore).updateApplication(originalApplicationData, SILVER)
 
-      verify(mockApiGatewayStore).resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
+      verify(mockApiGatewayStore).resubscribeApi(List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, apiIdentifier, SILVER)
-      verify(mockApiGatewayStore).resubscribeApi(Seq(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
+      verify(mockApiGatewayStore).resubscribeApi(List(apiIdentifier, anotherApiIdentifier), originalApplicationData.wso2Username,
         originalApplicationData.wso2Password, originalApplicationData.wso2ApplicationName, anotherApiIdentifier, SILVER)
 
       verify(mockApplicationRepository, never) save updatedApplicationData
@@ -1353,7 +1353,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val auditFunction: ApplicationData => Future[AuditResult] = mock[ApplicationData => Future[AuditResult]]
 
       when(mockApplicationRepository.fetch(*)).thenReturn(Some(application))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(Seq(api1, api2)))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api1, api2)))
       when(mockApiGatewayStore.removeSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
       when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
       when(mockApiGatewayStore.deleteApplication(*, *, *)(*)).thenReturn(successful(HasSucceeded))
@@ -1442,7 +1442,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
 
       when(mockApplicationRepository.searchApplications(mockApplicationSearch))
         .thenReturn(successful(PaginatedApplicationData(
-          Seq(standardApplicationData, privilegedApplicationData, ropcApplicationData), Seq(PaginationTotal(3)), Seq(PaginationTotal(3)))))
+          List(standardApplicationData, privilegedApplicationData, ropcApplicationData), List(PaginationTotal(3)), List(PaginationTotal(3)))))
 
       val result: PaginatedApplicationResponse = await(underTest.searchApplications(mockApplicationSearch))
 
@@ -1461,7 +1461,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
     CreateApplicationRequest(
       "My Application",
       access = Standard(
-        redirectUris = Seq("http://example.com/redirect"),
+        redirectUris = List("http://example.com/redirect"),
         termsAndConditionsUrl = Some("http://example.com/terms"),
         privacyPolicyUrl = Some("http://example.com/privacy"),
         overrides = Set.empty

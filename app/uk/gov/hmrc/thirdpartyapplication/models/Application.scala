@@ -38,7 +38,7 @@ trait ApplicationRequest {
 }
 
 case class CreateApplicationRequest(override val name: String,
-                                    override val access: Access = Standard(Seq.empty, None, None, Set.empty),
+                                    override val access: Access = Standard(List.empty, None, None, Set.empty),
                                     override val description: Option[String] = None,
                                     environment: Environment,
                                     collaborators: Set[Collaborator]) extends ApplicationRequest {
@@ -81,7 +81,7 @@ case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             providedPrivacyPolicyURL: Boolean = false,
                             providedTermsAndConditionsURL: Boolean = false,
                             applicationDetails: Option[String] = None,
-                            termsOfUseAgreements: Seq[TermsOfUseAgreement] = Seq.empty)
+                            termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
 
 case class ApplicationResponse(id: UUID,
                                clientId: String,
@@ -92,10 +92,10 @@ case class ApplicationResponse(id: UUID,
                                collaborators: Set[Collaborator],
                                createdOn: DateTime,
                                lastAccess: Option[DateTime],
-                               redirectUris: Seq[String] = Seq.empty,
+                               redirectUris: List[String] = List.empty,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
-                               access: Access = Standard(Seq.empty, None, None),
+                               access: Access = Standard(List.empty, None, None),
                                environment: Option[Environment] = None,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
@@ -106,9 +106,9 @@ case class ApplicationResponse(id: UUID,
 
 object ApplicationResponse {
 
-  def redirectUris(data: ApplicationData): Seq[String] = data.access match {
+  def redirectUris(data: ApplicationData): List[String] = data.access match {
     case a: Standard => a.redirectUris
-    case _ => Seq()
+    case _ => List.empty
   }
   def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
     case a: Standard => a.termsAndConditionsUrl
@@ -152,10 +152,10 @@ case class ExtendedApplicationResponse(id: UUID,
                                        collaborators: Set[Collaborator],
                                        createdOn: DateTime,
                                        lastAccess: Option[DateTime],
-                                       redirectUris: Seq[String] = Seq.empty,
+                                       redirectUris: List[String] = List.empty,
                                        termsAndConditionsUrl: Option[String] = None,
                                        privacyPolicyUrl: Option[String] = None,
-                                       access: Access = Standard(Seq.empty, None, None),
+                                       access: Access = Standard(List.empty, None, None),
                                        environment: Option[Environment] = None,
                                        state: ApplicationState = ApplicationState(name = TESTING),
                                        rateLimitTier: RateLimitTier = BRONZE,
@@ -164,10 +164,10 @@ case class ExtendedApplicationResponse(id: UUID,
                                        ipWhitelist: Set[String] = Set.empty,
                                        trusted: Boolean = false,
                                        serverToken: String,
-                                       subscriptions: Seq[APIIdentifier])
+                                       subscriptions: List[APIIdentifier])
 
 object ExtendedApplicationResponse {
-  def apply(data: ApplicationData, subscriptions: Seq[APIIdentifier]): ExtendedApplicationResponse = {
+  def apply(data: ApplicationData, subscriptions: List[APIIdentifier]): ExtendedApplicationResponse = {
     ExtendedApplicationResponse(
       data.id,
       data.tokens.production.clientId,
@@ -193,11 +193,11 @@ object ExtendedApplicationResponse {
   }
 }
 
-case class PaginatedApplicationResponse(applications: Seq[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
+case class PaginatedApplicationResponse(applications: List[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
 
 case class PaginationTotal(total: Int)
 
-case class PaginatedApplicationData(applications: Seq[ApplicationData], totals: Seq[PaginationTotal], matching: Seq[PaginationTotal])
+case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
@@ -208,7 +208,7 @@ sealed trait Access {
   val accessType: AccessType.Value
 }
 
-case class Standard(redirectUris: Seq[String] = Seq.empty,
+case class Standard(redirectUris: List[String] = List.empty,
                     termsAndConditionsUrl: Option[String] = None,
                     privacyPolicyUrl: Option[String] = None,
                     overrides: Set[OverrideFlag] = Set.empty) extends Access {
@@ -256,7 +256,7 @@ case class ApplicationWithUpliftRequest(id: UUID,
                                         submittedOn: DateTime,
                                         state: State)
 
-case class ApplicationWithHistory(application: ApplicationResponse, history: Seq[StateHistoryResponse])
+case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
 case class APIIdentifier(context: String, version: String)
 
@@ -272,14 +272,14 @@ case class ClientSecret(name: String,
 case class EnvironmentToken(clientId: String,
                             wso2ClientSecret: String,
                             accessToken: String,
-                            clientSecrets: Seq[ClientSecret] = Seq(ClientSecret("Default")))
+                            clientSecrets: List[ClientSecret] = List(ClientSecret("Default")))
 
 case class ApplicationTokensResponse(production: EnvironmentTokenResponse,
                                      sandbox: EnvironmentTokenResponse)
 
 case class EnvironmentTokenResponse(clientId: String,
                                     accessToken: String,
-                                    clientSecrets: Seq[ClientSecret])
+                                    clientSecrets: List[ClientSecret])
 
 case class Wso2Credentials(clientId: String,
                            accessToken: String,
@@ -373,7 +373,7 @@ object EnvironmentTokenResponse {
   }
 
   def empty = {
-    EnvironmentTokenResponse("", "", Seq())
+    EnvironmentTokenResponse("", "", List.empty)
   }
 }
 

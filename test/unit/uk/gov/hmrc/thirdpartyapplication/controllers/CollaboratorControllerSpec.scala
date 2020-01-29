@@ -51,7 +51,7 @@ class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with Mockito
       private val version="1.0"
       private val partialemail = "partialemail"
 
-      when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(Seq("user@example.com")))
+      when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(List("user@example.com")))
 
       val result = await(underTest.searchCollaborators(context, version, Some(partialemail))(request))
 
