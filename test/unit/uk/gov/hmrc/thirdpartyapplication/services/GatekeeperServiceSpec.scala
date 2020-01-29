@@ -20,14 +20,9 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.captor.ArgCaptor
-import org.mockito.invocation.InvocationOnMock
-import org.mockito.stubbing.Answer
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar, captor}
+import org.mockito.{ArgumentCaptor, captor}
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
@@ -38,12 +33,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
+class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val requestedByEmail = "john.smith@example.com"
 
@@ -67,12 +63,12 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   trait Setup {
 
     lazy val locked = false
-    val mockApiGatewayStore = mock[ApiGatewayStore]
-    val mockApplicationRepository = mock[ApplicationRepository]
-    val mockStateHistoryRepository = mock[StateHistoryRepository]
-    val mockSubscriptionRepository = mock[SubscriptionRepository]
-    val mockAuditService = mock[AuditService]
-    val mockEmailConnector = mock[EmailConnector]
+    val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
+    val mockApplicationRepository = mock[ApplicationRepository](withSettings.lenient())
+    val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
+    val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
+    val mockAuditService = mock[AuditService](withSettings.lenient())
+    val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
@@ -176,7 +172,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val expectedStateHistory = StateHistory(applicationId = expectedApplication.id, state = PENDING_REQUESTER_VERIFICATION,
         actor = Actor(gatekeeperUserId, GATEKEEPER), previousState = Some(PENDING_GATEKEEPER_APPROVAL))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
 
@@ -195,7 +191,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "rollback the application when storing the state history fails" in new Setup {
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
 
@@ -209,7 +205,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "send an Audit event when an application uplift approved request is successful" in new Setup {
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
       verify(mockAuditService).audit(ApplicationUpliftApproved,
@@ -219,7 +215,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "fail with InvalidStateTransition when the application is not in PENDING_GATEKEEPER_APPROVAL state" in new Setup {
       val application = anApplicationData(applicationId, pendingRequesterVerificationState("test@example.com"))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       intercept[InvalidStateTransition] {
         await(underTest.approveUplift(applicationId, gatekeeperUserId))
@@ -238,7 +234,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "send confirmation email to admin uplift requester" in new Setup {
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(
@@ -254,7 +250,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val application = anApplicationData(
         applicationId, pendingGatekeeperApprovalState(upliftRequestedBy), collaborators = Set(admin1, admin2, requester, developer))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.approveUplift(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedNotification(application.name, Set(admin1.emailAddress, admin2.emailAddress))
@@ -275,7 +271,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
         actor = Actor(gatekeeperUserId, GATEKEEPER), previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
 
@@ -286,7 +282,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "rollback the application when storing the state history fails" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
 
@@ -298,7 +294,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "send an Audit event when an application uplift is rejected" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
       verify(mockAuditService).audit(ApplicationUpliftRejected,
@@ -308,7 +304,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "fail with InvalidStateTransition when the application is not in PENDING_GATEKEEPER_APPROVAL state" in new Setup {
       when(mockApplicationRepository.fetch(applicationId))
-        .thenReturn(Some(application.copy(state = pendingRequesterVerificationState("test@example.com"))))
+        .thenReturn(successful(Some(application.copy(state = pendingRequesterVerificationState("test@example.com")))))
 
       intercept[InvalidStateTransition] {
         await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
@@ -324,7 +320,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     }
 
     "send notification emails to all admins" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
       verify(mockEmailConnector).sendApplicationRejectedNotification(
@@ -341,7 +337,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "send an Audit event when a resend verification request is successful" in new Setup {
       val application = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.resendVerification(applicationId, gatekeeperUserId))
       verify(mockAuditService).audit(ApplicationVerficationResent,
@@ -351,7 +347,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "fail with InvalidStateTransition when the application is not in PENDING_REQUESTER_VERIFICATION state" in new Setup {
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState("test@example.com"))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       intercept[InvalidStateTransition] {
         await(underTest.resendVerification(applicationId, gatekeeperUserId))
@@ -361,7 +357,7 @@ class GatekeeperServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "send verification email to requester" in new Setup {
       val application = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(application))
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(application)))
 
       val result = await(underTest.resendVerification(applicationId, gatekeeperUserId))
       verify(mockEmailConnector).sendApplicationApprovedAdminConfirmation(

@@ -16,18 +16,17 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
-import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
+import com.codahale.metrics.SharedMetricRegistries
+import org.scalatest.BeforeAndAfterEach
 
-import scala.concurrent.Future
+trait CleanMetricsBeforeAndAfterEach extends BeforeAndAfterEach {
+  this : org.scalatest.BeforeAndAfterEach with org.scalatest.Suite =>
 
-object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
-  def givenUserIsAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
+  override protected def beforeEach(): Unit = {
+    SharedMetricRegistries.clear()
   }
 
-  def givenUserIsNotAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
+  override protected def afterEach(): Unit = {
+    SharedMetricRegistries.clear()
   }
 }

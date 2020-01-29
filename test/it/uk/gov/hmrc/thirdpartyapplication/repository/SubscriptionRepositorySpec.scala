@@ -22,23 +22,22 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
-class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with IndexVerification
+class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
 
   implicit val s : ActorSystem = ActorSystem("test")

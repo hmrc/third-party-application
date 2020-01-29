@@ -17,8 +17,6 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
 import akka.actor.ActorSystem
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.http.ContentTypes.FORM
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.http.Status
@@ -26,7 +24,6 @@ import play.api.http.Status._
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{Wso2ApiStoreConfig, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -35,9 +32,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration._
 import scala.concurrent.{Await, Future}
 
-class Wso2ApiStoreConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures {
+class Wso2ApiStoreConnectorSpec extends ConnectorSpec {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   private val baseUrl = s"http://example.com"

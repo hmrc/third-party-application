@@ -18,19 +18,15 @@ package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
 import java.util.UUID
 
-import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConfig, ApiSubscriptionFieldsConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ApiSubscriptionFieldsConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
+class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"http://example.com"

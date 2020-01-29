@@ -25,17 +25,13 @@ import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
-import org.scalatest.concurrent.ScalaFutures
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
@@ -54,10 +50,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication
+class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  import play.api.test.Helpers._
+
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
@@ -70,14 +68,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
     val mockEnrolment: Enrolment = mock[Enrolment]
     val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector = mock[AuthConnector]
+    val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient())
+    val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
 
-
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
+    val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(enabled())
+    when(mockAuthConfig.userRole).thenReturn("USER")
+    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
+    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
+    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
@@ -104,15 +104,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
   trait PrivilegedAndRopcSetup extends Setup {
 
-    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: UUID, testBlock: => Unit): Unit = {
+      givenUserIsAuthenticated(underTest)
+
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+    }
 
-    givenUserIsAuthenticated(underTest)
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: UUID, testBlock: => Unit): Unit = {
+      givenUserIsNotAuthenticated(underTest)
 
-    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: UUID, testBlock: => Unit): Unit =
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
-
-    givenUserIsNotAuthenticated(underTest)
+    }
 
     private def testWithPrivilegedAndRopc(applicationId: UUID, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
       when(underTest.applicationService.fetch(applicationId))
@@ -178,7 +180,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
 
-      val result: Result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
+      val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
       status(result) shouldBe SC_CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
@@ -189,9 +191,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
 
-      val result: Result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
+      val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      (jsonBodyOf(result) \ "totp").as[TotpSecrets] shouldBe totp
+      (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
       status(result) shouldBe SC_CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
     }
@@ -200,7 +202,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
 
-      val result: Result = await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest))))
+      val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
       status(result) shouldBe SC_CREATED
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
@@ -228,17 +230,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*))
         .thenReturn(failed(ApplicationAlreadyExists("appName")))
 
-      val result: Result = await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest))))
+      val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
       status(result) shouldBe SC_CONFLICT
-      jsonBodyOf(result) shouldBe JsErrorResponse(APPLICATION_ALREADY_EXISTS, "Application already exists with name: appName")
+      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_ALREADY_EXISTS, "Application already exists with name: appName")
     }
 
     "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
 
       val body = """{ "json": "invalid" }"""
 
-      val result: Result = await(underTest.create()(request.withBody(Json.parse(body))))
+      val result = underTest.create()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
     }
@@ -260,10 +262,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
            |]
            |}""".stripMargin.replaceAll("\n", "")
 
-      val result: Result = await(underTest.create()(request.withBody(Json.parse(body))))
+      val result = underTest.create()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: duplicate email in collaborator"
+      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: duplicate email in collaborator"
     }
 
     "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
@@ -284,17 +286,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
           "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"}]
           }"""
 
-      val result: Result = await(underTest.create()(request.withBody(Json.parse(createApplicationRequestJson))))
+      val result = underTest.create()(request.withBody(Json.parse(createApplicationRequestJson)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
+      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 
     "fail with a 422 (unprocessable entity) when incomplete json is provided" in new Setup {
 
       val body = """{ "name": "myapp" }"""
 
-      val result: Result = await(underTest.create()(request.withBody(Json.parse(body))))
+      val result = underTest.create()(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
 
@@ -320,7 +322,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
            |}]
            |}""".stripMargin.replaceAll("\n", "")
 
-      val result: Result = await(underTest.create()(request.withBody(Json.parse(body))))
+      val result = underTest.create()(request.withBody(Json.parse(body)))
 
       val expected: String =
         s"""{
@@ -330,7 +332,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      jsonBodyOf(result) shouldBe Json.toJson(Json.parse(expected))
+      contentAsJson(result) shouldBe Json.toJson(Json.parse(expected))
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -338,11 +340,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.create()(request.withBody(Json.toJson(standardApplicationRequest))))
+      val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
-
   }
 
   "Update" should {
@@ -354,7 +355,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.update(id)(request.withBody(Json.toJson(privilegedApplicationRequest))))
+      val result = underTest.update(id)(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -363,7 +364,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.update(id)(request.withBody(Json.toJson(standardApplicationRequest))))
+      val result = underTest.update(id)(request.withBody(Json.toJson(standardApplicationRequest)))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -386,10 +387,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
             "overrides" : []
             }
           }"""
-      val result: Result = await(underTest.update(id)(request.withBody(Json.parse(updateApplicationRequestJson))))
+      val result = underTest.update(id)(request.withBody(Json.parse(updateApplicationRequestJson)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      (jsonBodyOf(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
+      (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 
   }
@@ -404,18 +405,18 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation))))
+      val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "sucessfully update approval information for applicaton" in new Setup {
       givenUserIsAuthenticated(underTest)
-      when(underTest.applicationService.fetch(id)).thenReturn(successful(OptionT.pure[Future](aNewApplicationResponse())))
+      when(underTest.applicationService.fetch(id)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)
-      val result: Result = await(underTest.updateCheck(id)(request.withBody(jsonBody)))
+      val result = underTest.updateCheck(id)(request.withBody(jsonBody))
 
       status(result) shouldBe SC_OK
     }
@@ -425,9 +426,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     val applicationId = UUID.randomUUID()
 
     "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(successful(OptionT.pure[Future](aNewApplicationResponse())))
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
-      val result: Result = await(underTest.fetch(applicationId)(request))
+      val result = underTest.fetch(applicationId)(request)
 
       status(result) shouldBe SC_OK
     }
@@ -435,7 +436,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.fetch(applicationId)(request))
+      val result = underTest.fetch(applicationId)(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -443,16 +444,15 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.liftF(failed(new RuntimeException("Expected test failure"))))
 
-      val result: Result = await(underTest.fetch(applicationId)(request))
+      val result = underTest.fetch(applicationId)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-
     }
   }
 
-  private def verifyErrorResult(result: Result, statusCode: Int, errorCode: ErrorCode): Unit = {
+  private def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
     status(result) shouldBe statusCode
-    (jsonBodyOf(result) \ "code").as[String] shouldBe errorCode.toString
+    (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
   "fetch credentials" should {
@@ -461,16 +461,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(Some(credentialServiceResponseToken)))
 
-      val result: Result = await(underTest.fetchCredentials(applicationId)(request))
+      val result = underTest.fetchCredentials(applicationId)(request)
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.toJson(controllerResponseTokens)
+      contentAsJson(result) shouldBe Json.toJson(controllerResponseTokens)
     }
 
     "fail with a 404 (not found) when no application exists for the given id" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(None))
 
-      val result: Result = await(underTest.fetchCredentials(applicationId)(request))
+      val result = underTest.fetchCredentials(applicationId)(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -478,7 +478,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.fetchCredentials(applicationId)(request))
+      val result = underTest.fetchCredentials(applicationId)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -492,16 +492,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val wso2Credentials = Wso2Credentials(clientId, "accessToken", "wso2Secret")
       when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(Some(wso2Credentials)))
 
-      val result: Result = await(underTest.fetchWso2Credentials(clientId)(request))
+      val result = underTest.fetchWso2Credentials(clientId)(request)
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.toJson(wso2Credentials)
+      contentAsJson(result) shouldBe Json.toJson(wso2Credentials)
     }
 
     "fail with a 404 (not found) if no application exists for the given client id" in new Setup {
       when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(None))
 
-      val result: Result = await(underTest.fetchWso2Credentials(clientId)(request))
+      val result = underTest.fetchWso2Credentials(clientId)(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -509,7 +509,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.fetchWso2Credentials(clientId)(request))
+      val result = underTest.fetchWso2Credentials(clientId)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -530,32 +530,32 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       val response = AddCollaboratorResponse(registeredUser = true)
-      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(response)
+      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
-      val result: Result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
+      val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.toJson(response)
+      contentAsJson(result) shouldBe Json.toJson(response)
     }
 
     "succeed with a 200 (ok) for a PRIVILEGED or ROPC application and the gatekeeper is logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         val response = AddCollaboratorResponse(registeredUser = true)
-        when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(response)
+        when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
         givenUserIsAuthenticated(underTest)
 
-        val result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
+        val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
         status(result) shouldBe SC_OK
-        jsonBodyOf(result) shouldBe Json.toJson(response)
+        contentAsJson(result) shouldBe Json.toJson(response)
       })
     }
 
     "fail with a 401 (unauthorized) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         val response = AddCollaboratorResponse(registeredUser = true)
-        when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(response)
+        when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
         assertThrows[SessionRecordNotFound](await(underTest.addCollaborator(applicationId)(addRequest(request))))
       })
@@ -564,7 +564,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
+      val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -572,7 +572,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 422 (unprocessable) if role is invalid" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
-      val result: Result = await(underTest.addCollaborator(applicationId)(request.withBody(Json.obj("emailAddress" -> s"$email", "role" -> "invalid"))))
+      val result = underTest.addCollaborator(applicationId)(request.withBody(Json.obj("emailAddress" -> s"$email", "role" -> "invalid")))
 
       verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, ErrorCode.INVALID_REQUEST_PAYLOAD)
     }
@@ -582,7 +582,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
         .thenReturn(failed(new UserAlreadyExists))
 
-      val result: Result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
+      val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
       verifyErrorResult(result, SC_CONFLICT, ErrorCode.USER_ALREADY_EXISTS)
     }
@@ -592,7 +592,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.addCollaborator(applicationId)(addRequest(request)))
+      val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -612,7 +612,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
         .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-      val result: Result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
+      val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -626,7 +626,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
           eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-        val result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
+        val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
         status(result) shouldBe SC_NO_CONTENT
       })
@@ -645,7 +645,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
+      val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -656,7 +656,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
         .thenReturn(failed(new ApplicationNeedsAdmin))
 
-      val result: Result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
+      val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
       verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
     }
@@ -667,7 +667,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request))
+      val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -687,12 +687,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
           .thenReturn(successful(environmentTokenResponse))
 
-        givenUserIsAuthenticated(underTest)
-
-        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_OK
-        jsonBodyOf(result) shouldBe Json.toJson(applicationTokensResponse)
+        contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
 
@@ -701,10 +699,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
           .thenReturn(successful(environmentTokenResponse))
 
-        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_OK
-        jsonBodyOf(result) shouldBe Json.toJson(applicationTokensResponse)
+        contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
 
@@ -713,9 +711,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
           .thenReturn(failed(new ClientSecretsLimitExceeded))
 
-        givenUserIsAuthenticated(underTest)
-
-        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.CLIENT_SECRET_LIMIT_EXCEEDED)
       })
@@ -726,9 +722,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
           .thenReturn(failed(new NotFoundException("application not found")))
 
-        givenUserIsAuthenticated(underTest)
-
-        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
       })
@@ -739,9 +733,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
           .thenReturn(failed(new RuntimeException))
 
-        givenUserIsAuthenticated(underTest)
-
-        val result = await(underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       })
@@ -763,20 +755,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
         .thenReturn(successful(environmentTokenResponse))
 
-      val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
+      val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
       status(result) shouldBe SC_NO_CONTENT
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-
-      givenUserIsAuthenticated(underTest)
-
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
           .thenReturn(successful(environmentTokenResponse))
 
-        val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_NO_CONTENT
       })
@@ -787,7 +776,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
           .thenReturn(successful(environmentTokenResponse))
 
-        val result = await(underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest))))
+        val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_NO_CONTENT
       })
@@ -806,17 +795,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(Some(PRODUCTION)))
 
-      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.obj("environment" -> PRODUCTION.toString)
+      contentAsJson(result) shouldBe Json.obj("environment" -> PRODUCTION.toString)
     }
 
     "fail with a 401 if credentials are invalid for an application" in new Setup {
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(None))
 
-      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
       verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS)
     }
@@ -825,7 +814,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockCredentialService.validateCredentials(validation)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = await(underTest.validateCredentials(request.withBody(Json.parse(payload))))
+      val result =underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -842,11 +831,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(*, *)(*))
         .thenReturn(successful(Valid))
 
-      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj()
+      contentAsJson(result) shouldBe Json.obj()
 
       verify(mockApplicationService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))(*)
     }
@@ -859,11 +848,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(*, *)(*))
         .thenReturn(successful(Valid))
 
-      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj()
+      contentAsJson(result) shouldBe Json.obj()
 
       verify(mockApplicationService).validateApplicationName(*, eqTo(None))(*)
     }
@@ -875,11 +864,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(*, *)(*))
         .thenReturn(successful(Invalid.invalidName))
 
-      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
 
       verify(mockApplicationService).validateApplicationName(eqTo(applicationName),eqTo(None))(*)
     }
@@ -891,11 +880,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.validateApplicationName(*,*)(*))
         .thenReturn(successful(Invalid.duplicateName))
 
-      private val result = await(underTest.validateApplicationName(request.withBody(Json.parse(payload))))
+      private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
 
-      jsonBodyOf(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
+      contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
 
       verify(mockApplicationService).validateApplicationName(eqTo(applicationName),eqTo(None))(*)
     }
@@ -917,18 +906,18 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
     }
 
-    def validateResult(result: Result, expectedResponseCode: Int,
+    def validateResult(result: Future[Result], expectedResponseCode: Int,
                        expectedCacheControlHeader: Option[String],
                        expectedVaryHeader: Option[String]) = {
       status(result) shouldBe expectedResponseCode
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe expectedCacheControlHeader
-      result.header.headers.get(HeaderNames.VARY) shouldBe expectedVaryHeader
+      headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe expectedCacheControlHeader
+      headers(result).get(HeaderNames.VARY) shouldBe expectedVaryHeader
     }
 
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
+      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
       validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
@@ -943,7 +932,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
           ("X-SERVER-TOKEN", "X-server-token"))
 
       forAll(scenarios) { (serverTokenHeader, expectedVaryHeader) =>
-        val result = await(underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken)))
+        val result =underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken))
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
       }
@@ -952,16 +941,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "retrieve all" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(Future(List(aNewApplicationResponse(), aNewApplicationResponse())))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest()))
+      private val result =underTest.queryDispatcher()(FakeRequest())
 
       validateResult(result, SC_OK, None, None)
-      jsonBodyOf(result).as[Seq[JsValue]] should have size 2
+      contentAsJson(result).as[Seq[JsValue]] should have size 2
     }
 
     "retrieve when no subscriptions" in new Setup {
       when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(aNewApplicationResponse())))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true")))
+      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
 
       validateResult(result, SC_OK, None, None)
     }
@@ -969,7 +958,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 500 (internal server error) when an exception is thrown from fetchAll" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest()))
+      private val result =underTest.queryDispatcher()(FakeRequest())
 
       validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
     }
@@ -977,7 +966,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result = await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId")))
+      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
       validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
     }
@@ -994,11 +983,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime) =>
-        val result: Result =
-          await(underTest.queryDispatcher()(request.withHeaders(headers: _*)))
+        val result =
+          underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
-        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
     }
 
@@ -1015,11 +1004,11 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime) =>
-        val result: Result =
-          await(underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*)))
+        val result =
+          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*))
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
-        (jsonBodyOf(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
       }
     }
   }
@@ -1038,7 +1027,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
-      status(await(underTest.queryDispatcher()(queryRequest))) shouldBe SC_OK
+      status(underTest.queryDispatcher()(queryRequest)) shouldBe SC_OK
     }
 
     "succeed with a 200 (ok) when applications are found for the collaborator and the environment" in new Setup {
@@ -1050,22 +1039,22 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
-      status(await(underTest.queryDispatcher()(queryRequestWithEnvironment))) shouldBe SC_OK
+      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe SC_OK
     }
 
     "succeed with a 200 (ok) when no applications are found for the collaborator" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(successful(Nil))
 
-      val result: Result = await(underTest.queryDispatcher()(queryRequest))
+      val result = underTest.queryDispatcher()(queryRequest)
 
       status(result) shouldBe SC_OK
-      bodyOf(result) shouldBe "[]"
+      contentAsString(result) shouldBe "[]"
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.queryDispatcher()(queryRequest))
+      val result = underTest.queryDispatcher()(queryRequest)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1086,27 +1075,27 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(response))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_OK
 
-        jsonBodyOf(result) shouldBe Json.toJson(response)
+        contentAsJson(result) shouldBe Json.toJson(response)
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(List.empty))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_OK
 
-        bodyOf(result) shouldBe "[]"
+        contentAsString(result) shouldBe "[]"
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
         when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       }
@@ -1125,28 +1114,28 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(response))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_OK
 
-        jsonBodyOf(result) shouldBe Json.toJson(response)
+        contentAsJson(result) shouldBe Json.toJson(response)
 
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(successful(List.empty))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_OK
 
-        bodyOf(result) shouldBe "[]"
+        contentAsString(result) shouldBe "[]"
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
         when(underTest.applicationService.fetchAllBySubscription(apiIdentifier)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-        val result: Result = await(underTest.queryDispatcher()(queryRequest))
+        val result = underTest.queryDispatcher()(queryRequest)
 
         status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       }
@@ -1162,33 +1151,33 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "succeed with a 200 (ok) when the application is subscribed to a given API version" in new Setup {
 
-      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(true)
+      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(successful(true))
 
-      val result: Result = await(underTest.isSubscribed(applicationId, context, version)(request))
+      val result = underTest.isSubscribed(applicationId, context, version)(request)
 
       status(result) shouldBe SC_OK
-      jsonBodyOf(result) shouldBe Json.toJson(api)
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$subscriptionTtlInSecs")
+      contentAsJson(result) shouldBe Json.toJson(api)
+      headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$subscriptionTtlInSecs")
     }
 
     "fail with a 404 (not found) when the application is not subscribed to a given API version" in new Setup {
 
-      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(false)
+      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(successful(false))
 
-      val result: Result = await(underTest.isSubscribed(applicationId, context, version)(request))
+      val result = underTest.isSubscribed(applicationId, context, version)(request)
 
       status(result) shouldBe SC_NOT_FOUND
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.SUBSCRIPTION_NOT_FOUND)
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
+      headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe None
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(failed(new RuntimeException("something went wrong")))
 
-      val result: Result = await(underTest.isSubscribed(applicationId, context, version)(request))
+      val result = underTest.isSubscribed(applicationId, context, version)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-      result.header.headers.get(HeaderNames.CACHE_CONTROL) shouldBe None
+      headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe None
     }
   }
 
@@ -1199,7 +1188,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-      val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
+      val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
       status(result) shouldBe SC_NOT_FOUND
     }
@@ -1208,7 +1197,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*))
         .thenReturn(successful(List(anAPISubscription())))
 
-      val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
+      val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
       status(result) shouldBe SC_OK
     }
@@ -1216,17 +1205,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "succeed with a 200 (ok) when no subscriptions are found for the application" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*)).thenReturn(successful(List.empty))
 
-      val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
+      val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
       status(result) shouldBe SC_OK
-      bodyOf(result) shouldBe "[]"
+      contentAsString(result) shouldBe "[]"
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.fetchAllSubscriptions(applicationId)(request))
+      val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1241,7 +1230,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(mockSubscriptionService.fetchAllSubscriptions()).thenReturn(successful(subscriptionData))
 
-      val result: Result = await(underTest.fetchAllAPISubscriptions()(request))
+      val result = underTest.fetchAllAPISubscriptions()(request)
 
       status(result) shouldBe SC_OK
     }
@@ -1249,16 +1238,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "succeed with a 200 (ok) when no subscriptions are found for any application" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptions()).thenReturn(successful(List()))
 
-      val result: Result = await(underTest.fetchAllAPISubscriptions()(request))
+      val result = underTest.fetchAllAPISubscriptions()(request)
 
       status(result) shouldBe SC_OK
-      bodyOf(result) shouldBe "[]"
+      contentAsString(result) shouldBe "[]"
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptions()).thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.fetchAllAPISubscriptions()(request))
+      val result = underTest.fetchAllAPISubscriptions()(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1271,17 +1260,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
-      val result: Result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -1292,7 +1281,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         givenUserIsAuthenticated(underTest)
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
           status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe SC_NO_CONTENT
@@ -1303,9 +1292,6 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       new PrivilegedAndRopcSetup {
 
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
-            .thenReturn(successful(HasSucceeded))
-
           assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
         })
       }
@@ -1315,20 +1301,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       val body = """{ "json": "invalid" }"""
 
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
-        .thenReturn(successful(HasSucceeded))
-
-      val result: Result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body))))
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1341,17 +1324,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request))
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "succeed with a 204 (no content) when a subscription is successfully removed from a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
-      val result: Result = await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request))
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -1362,7 +1345,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
         givenUserIsAuthenticated(underTest)
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-          when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+          when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
           status(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)) shouldBe SC_NO_CONTENT
@@ -1372,19 +1355,16 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 401 (unauthorized) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-          when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
-            .thenReturn(successful(HasSucceeded))
-
           assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)))
         })
       }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), any[APIIdentifier])(*))
+      when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request))
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1398,7 +1378,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       when(underTest.applicationService.verifyUplift(eqTo(verificationCode))(*)).thenReturn(successful(UpliftVerified))
 
-      val result: Result = await(underTest.verifyUplift(verificationCode)(request))
+      val result = underTest.verifyUplift(verificationCode)(request)
       status(result) shouldBe SC_NO_CONTENT
     }
 
@@ -1408,7 +1388,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.verifyUplift(eqTo(verificationCode))(*))
         .thenReturn(failed(InvalidUpliftVerificationCode(verificationCode)))
 
-      val result: Result = await(underTest.verifyUplift(verificationCode)(request))
+      val result = underTest.verifyUplift(verificationCode)(request)
       status(result) shouldBe SC_BAD_REQUEST
     }
   }
@@ -1423,10 +1403,10 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val resultUpliftedApplication: ApplicationResponse = aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
 
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(UpliftRequested)
+        .thenReturn(successful(UpliftRequested))
 
-      val result: Result = await(underTest.requestUplift(applicationId)(request
-        .withBody(Json.toJson(upliftRequest))))
+      val result = underTest.requestUplift(applicationId)(request
+        .withBody(Json.toJson(upliftRequest)))
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -1436,7 +1416,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-      val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
+      val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -1446,7 +1426,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
         .thenReturn(failed(ApplicationAlreadyExists("applicationName")))
 
-      val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
+      val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
       verifyErrorResult(result, SC_CONFLICT, ErrorCode.APPLICATION_ALREADY_EXISTS)
     }
@@ -1456,7 +1436,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
         .thenReturn(failed(new InvalidStateTransition(State.PRODUCTION, State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)))
 
-      val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
+      val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
       verifyErrorResult(result, SC_PRECONDITION_FAILED, ErrorCode.INVALID_STATE_TRANSITION)
     }
@@ -1465,7 +1445,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
+      val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
       verifyErrorResult(result, SC_INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
     }
@@ -1481,7 +1461,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       givenUserIsAuthenticated(underTest)
 
-      val result: Result = await(underTest.updateRateLimitTier(uuid)(request.withBody(invalidUpdateRateLimitTierJson)))
+      val result = underTest.updateRateLimitTier(uuid)(request.withBody(invalidUpdateRateLimitTierJson))
 
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
       verify(underTest.applicationService, never).updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)
@@ -1491,9 +1471,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       givenUserIsAuthenticated(underTest)
 
-      val result: Result = await(underTest.updateRateLimitTier(uuid)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }"""))))
+      val result = underTest.updateRateLimitTier(uuid)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
       status(result) shouldBe SC_UNPROCESSABLE_ENTITY
-      jsonBodyOf(result) shouldBe Json.toJson(Json.parse(
+      contentAsJson(result) shouldBe Json.toJson(Json.parse(
         """
          {
          "code": "INVALID_REQUEST_PAYLOAD",
@@ -1506,9 +1486,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       givenUserIsAuthenticated(underTest)
 
-      when(underTest.applicationService.updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)).thenReturn(mock[ApplicationData])
+      when(underTest.applicationService.updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
-      val result: Result = await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson)))
+      val result = underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson))
 
       status(result) shouldBe SC_NO_CONTENT
       verify(underTest.applicationService).updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)
@@ -1521,7 +1501,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*))
         .thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      val result: Result = await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson)))
+      val result = underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
@@ -1530,7 +1510,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
       givenUserIsNotAuthenticated(underTest)
 
-      when(underTest.applicationService.updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)).thenReturn(mock[ApplicationData])
+      when(underTest.applicationService.updateRateLimitTier(eqTo(uuid), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
       assertThrows[SessionRecordNotFound](await(underTest.updateRateLimitTier(uuid)(request.withBody(validUpdateRateLimitTierJson))))
     }
@@ -1540,9 +1520,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "succeed with a 204 (no content) when the IP whitelist is successfully added to the application" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
       val validUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(mock[ApplicationData])
+      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
 
-      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(validUpdateIpWhitelistJson)))
+      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(validUpdateIpWhitelistJson))
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -1550,9 +1530,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail when the JSON message is invalid" in new Setup {
       val applicationId: UUID = UUID.randomUUID()
       val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(mock[ApplicationData])
+      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
 
-      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson)))
+      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
 
       verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
     }
@@ -1564,7 +1544,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*))
         .thenReturn(Future.failed(InvalidIpWhitelistException(errorMessage)))
 
-      val result: Result = await(underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson)))
+      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
 
       verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_WHITELIST)
     }
@@ -1580,7 +1560,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(underTest.applicationService.searchApplications(any[ApplicationSearch]))
         .thenReturn(Future(PaginatedApplicationResponse(applications = List.empty, page = 1, pageSize = 100, total = 0, matching = 0)))
 
-      val result: Result = await(underTest.searchApplications(req))
+      val result = underTest.searchApplications(req)
 
       status(result) shouldBe SC_OK
     }
@@ -1597,17 +1577,17 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
 
-      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+      val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe SC_NO_CONTENT
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
     "fail with a 400 error when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
-      when(mockApplicationService.fetch(*)).thenReturn(successful(OptionT.pure[Future](application)))
+      when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
 
-      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+      val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe SC_BAD_REQUEST
       verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
@@ -1616,7 +1596,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new NotStrideAuthConfig {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result: Result = await(underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]]))
+      val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe SC_NOT_FOUND
       verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
@@ -1633,9 +1613,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       givenUserIsAuthenticated(underTest)
       when(mockGatekeeperService.deleteApplication(*, *)(*)).thenReturn(successful(Deleted))
 
-      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+      val result = underTest.deleteApplication(applicationId).apply(request
         .withHeaders(AUTHORIZATION -> "foo")
-        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_NO_CONTENT
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest)) (*)
@@ -1646,9 +1626,9 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       when(mockGatekeeperService.deleteApplication(*, *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result: Result = await(underTest.deleteApplication(applicationId).apply(request
+      val result = underTest.deleteApplication(applicationId).apply(request
         .withHeaders(AUTHORIZATION -> "foo")
-        .withBody(AnyContentAsJson(Json.toJson(deleteRequest)))))
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest)) (*)

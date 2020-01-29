@@ -18,21 +18,15 @@ package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
 import java.util.UUID
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionMetrics
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, SubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class SubscriptionMetricsSpec 
-  extends UnitSpec 
-  with MockitoSugar 
-  with ArgumentMatchersSugar 
-  with MetricsHelper {
+class SubscriptionMetricsSpec extends AsyncHmrcSpec with MetricsHelper {
 
   trait Setup {
     val mockSubscriptionsRepository: SubscriptionRepository = mock[SubscriptionRepository]

@@ -16,18 +16,17 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.metrics.RateLimitMetrics
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class RateLimitMetricsSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
+class RateLimitMetricsSpec extends AsyncHmrcSpec {
 
   trait Setup {
     def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[ApplicationData] = {

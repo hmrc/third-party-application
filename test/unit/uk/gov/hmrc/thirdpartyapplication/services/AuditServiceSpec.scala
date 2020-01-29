@@ -19,22 +19,21 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.{ArgumentMatcher, ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
+import org.mockito.ArgumentMatcher
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
 
-class AuditServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
+class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]

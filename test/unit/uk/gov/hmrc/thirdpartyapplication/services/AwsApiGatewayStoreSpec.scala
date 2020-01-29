@@ -20,21 +20,19 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AwsApiGatewayStore
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
+class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
