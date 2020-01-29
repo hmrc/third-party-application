@@ -14,9 +14,9 @@ val reactiveMongoVer = "0.18.8"
 
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-25" % "5.1.0",
-  "uk.gov.hmrc" %% "play-scheduling" % "7.1.0-play-25",
+  "uk.gov.hmrc" %% "play-scheduling" % "7.3.0-play-25",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
-  "uk.gov.hmrc" %% "play-hmrc-api" % "3.6.0-play-25",
+  "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-25",
   "uk.gov.hmrc" %% "metrix" % "3.8.0-play-25",
   "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-25",
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
@@ -26,7 +26,7 @@ lazy val compile = Seq(
 val scope = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % scope,
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.16.0-play-25" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
   "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
