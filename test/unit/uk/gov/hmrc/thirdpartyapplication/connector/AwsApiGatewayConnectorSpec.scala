@@ -24,8 +24,6 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.client.WireMock._
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration._
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
@@ -33,7 +31,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
@@ -42,10 +40,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class AwsApiGatewayConnectorSpec
-  extends UnitSpec
+  extends ConnectorSpec
     with WithFakeApplication
-    with MockitoSugar with ArgumentMatchersSugar
-    with ScalaFutures
     with BeforeAndAfterAll {
 
   private val stubPort = sys.env.getOrElse("WIREMOCK", "22221").toInt

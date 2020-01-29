@@ -21,27 +21,26 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
-
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import play.api.http.Status._
 import play.api.libs.json.Json
-import play.api.mvc.Result
+import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
+class AccessControllerSpec extends AsyncHmrcSpec with WithFakeApplication {
+  import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = fakeApplication.materializer
 
@@ -56,13 +55,13 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
   private val mockAccessService = mock[AccessService]
   private val mockAuthConfig = mock[AuthConfig]
 
-  implicit private val fakeRequest = FakeRequest()
-  implicit private val headerCarrier = HeaderCarrier()
+  implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
+  implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   "Access controller read scopes function" should {
 
     def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.readScopes(any[UUID])).thenReturn(eventualScopeResponse)
+      when(mockAccessService.readScopes(*)).thenReturn(eventualScopeResponse)
 
     "return http ok status when service read scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
@@ -74,7 +73,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
     "return resource as response body when service read scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
         mockAccessServiceReadScopesToReturn(successful(ScopeResponse(scopes)))
-        jsonBodyOf(invokeAccessControllerReadScopesWith(applicationId)) shouldBe Json.toJson(ScopeResponse(scopes))
+        contentAsJson(invokeAccessControllerReadScopesWith(applicationId)) shouldBe Json.toJson(ScopeResponse(scopes))
       })
     }
 
@@ -90,7 +89,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
   "Access controller update scopes function" should {
 
     def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(any[UUID], any[ScopeRequest])(*)).thenReturn(eventualScopeResponse)
+      when(mockAccessService.updateScopes(*, any[ScopeRequest])(*)).thenReturn(eventualScopeResponse)
 
     "return http ok status when service update scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
@@ -102,7 +101,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
     "return resource as response body when service update scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
         mockAccessServiceUpdateScopesToReturn(successful(ScopeResponse(scopes)))
-        jsonBodyOf(invokeAccessControllerUpdateScopesWith(applicationId, scopeRequest)) shouldBe Json.toJson(ScopeResponse(scopes))
+        contentAsJson(invokeAccessControllerUpdateScopesWith(applicationId, scopeRequest)) shouldBe Json.toJson(ScopeResponse(scopes))
       })
     }
 
@@ -126,7 +125,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
   "Access controller read overrides function" should {
 
     def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.readOverrides(any[UUID])).thenReturn(eventualOverridesResponse)
+      when(mockAccessService.readOverrides(*)).thenReturn(eventualOverridesResponse)
 
     "return http ok status when service read overrides succeeds" in new StandardFixture {
       mockAccessServiceReadOverridesToReturn(successful(OverridesResponse(overrides)))
@@ -137,7 +136,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
     "return resource as response body when service read overrides succeeds" in new StandardFixture {
       mockAccessServiceReadOverridesToReturn(successful(OverridesResponse(overrides)))
       val result = invokeAccessControllerReadOverridesWith(applicationId)
-      jsonBodyOf(result) shouldBe Json.toJson(OverridesResponse(overrides))
+      contentAsJson(result) shouldBe Json.toJson(OverridesResponse(overrides))
     }
 
     "return http internal server error status when service read overrides fails with exception" in new StandardFixture {
@@ -151,7 +150,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
   "Access controller update overrides function" should {
 
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.updateOverrides(any[UUID], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
+      when(mockAccessService.updateOverrides(*, any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
     "return http ok status when service update overrides succeeds" in new StandardFixture {
       mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
@@ -162,7 +161,7 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
     "return resource as response body when service update overrides succeeds" in new StandardFixture {
       mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
       val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
-      jsonBodyOf(result) shouldBe Json.toJson(OverridesResponse(overrides))
+      contentAsJson(result) shouldBe Json.toJson(OverridesResponse(overrides))
     }
 
     "return http internal server error status when service update overrides fails" in new StandardFixture {
@@ -179,18 +178,17 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
 
     givenUserIsAuthenticated(accessController)
 
-    def invokeAccessControllerReadScopesWith(applicationId: UUID): Result =
-      await(accessController.readScopes(applicationId)(fakeRequest))
+    def invokeAccessControllerReadScopesWith(applicationId: UUID): Future[Result] =
+      accessController.readScopes(applicationId)(fakeRequest)
 
-    def invokeAccessControllerUpdateScopesWith(applicationId: UUID, scopeRequest: ScopeRequest): Result =
-      await(accessController.updateScopes(applicationId)(fakeRequest.withBody(Json.toJson(scopeRequest))))
+    def invokeAccessControllerUpdateScopesWith(applicationId: UUID, scopeRequest: ScopeRequest): Future[Result] =
+      accessController.updateScopes(applicationId)(fakeRequest.withBody(Json.toJson(scopeRequest)))
 
-    def invokeAccessControllerReadOverridesWith(applicationId: UUID): Result =
-      await(accessController.readOverrides(applicationId)(fakeRequest))
+    def invokeAccessControllerReadOverridesWith(applicationId: UUID): Future[Result] =
+      accessController.readOverrides(applicationId)(fakeRequest)
 
-    def invokeAccessControllerUpdateOverridesWith(applicationId: UUID, overridesRequest: OverridesRequest): Result =
-      await(accessController.updateOverrides(applicationId)(fakeRequest.withBody(Json.toJson(overridesRequest))))
-
+    def invokeAccessControllerUpdateOverridesWith(applicationId: UUID, overridesRequest: OverridesRequest): Future[Result] =
+      accessController.updateOverrides(applicationId)(fakeRequest.withBody(Json.toJson(overridesRequest)))
   }
 
 
@@ -219,7 +217,9 @@ class AccessControllerSpec extends UnitSpec with MockitoSugar with ArgumentMatch
       val applicationResponse =
         ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
       when(mockApplicationService.fetch(applicationId)).thenReturn(
-        OptionT.pure[Future](applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))),
+        OptionT.pure[Future](
+          applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
+        ),
       OptionT.pure[Future](applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
       )
       testBlock

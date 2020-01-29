@@ -18,13 +18,9 @@ package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
 import java.util.UUID
 
-import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.http.Status.INTERNAL_SERVER_ERROR
 import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiDefinitionConfig, ApiDefinitionConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVersion}
@@ -32,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVe
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
+class ApiDefinitionConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"https://example.com"
@@ -65,7 +61,7 @@ class ApiDefinitionConnectorSpec extends UnitSpec with MockitoSugar with Argumen
 
     "return the APIs available for an application" in new Setup {
 
-      apiDefinitionWillReturn(Seq(apiDefinitionWithStableStatus, apiDefinitionWithBetaStatus))
+      apiDefinitionWillReturn(Future.successful(Seq(apiDefinitionWithStableStatus, apiDefinitionWithBetaStatus)))
 
       val result = await(underTest.fetchAllAPIs(applicationId))
 

@@ -213,7 +213,7 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec
 
       await(underTest.runJob)
 
-      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(any[UUID], any[RateLimitTier])
+      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(*, any[RateLimitTier])
 
       stubLogger.errorMessages.size should be (1)
       stubLogger.errorMessages.toList.head should be (brokenApplicationExpectedMessage)
@@ -243,7 +243,7 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec
 
       await(underTest.runJob)
 
-      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(any[UUID], any[RateLimitTier])
+      verify(mockApplicationRepository, times(0)).updateApplicationRateLimit(*, any[RateLimitTier])
 
       stubLogger.errorMessages.size should be (1)
       stubLogger.errorMessages.toList.head should be (brokenApplicationExpectedMessage)

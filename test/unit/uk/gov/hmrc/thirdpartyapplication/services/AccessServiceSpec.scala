@@ -149,7 +149,7 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchers
     val applicationDataArgumentCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
 
     def mockApplicationRepositoryFetchToReturn(eventualMaybeApplicationData: Future[Option[ApplicationData]]) =
-      when(mockApplicationRepository.fetch(any[UUID])).thenReturn(eventualMaybeApplicationData)
+      when(mockApplicationRepository.fetch(*)).thenReturn(eventualMaybeApplicationData)
 
     def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]) =
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(eventualApplicationData)

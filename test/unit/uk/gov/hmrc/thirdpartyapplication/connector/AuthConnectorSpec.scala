@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with Matchers with ScalaFutures with WithFakeApplication{
+class AuthConnectorSpec extends ConnectorSpec with WithFakeApplication{
   trait Setup {
     implicit val hc = HeaderCarrier()
 

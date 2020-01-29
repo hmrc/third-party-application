@@ -18,20 +18,18 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
+import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.Logger
-import play.api.http.Status._
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ErrorCode, _}
@@ -40,35 +38,42 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
+import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication
+class GatekeeperControllerSpec extends AsyncHmrcSpec with WithFakeApplication
   with ApplicationStateUtil with LogSuppressing {
 
+  import play.api.test.Helpers._
+
   val authTokenHeader = "authorization" -> "authorizationToken"
-  implicit lazy val materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication.materializer
   implicit lazy val request = FakeRequest()
 
   trait Setup {
     val mockGatekeeperService = mock[GatekeeperService]
     val mockAuthConnector = mock[AuthConnector]
     val mockApplicationService = mock[ApplicationService]
-    val mockAuthConfig = mock[AuthConfig]
     implicit val headers = HeaderCarrier()
 
+    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(true)
+    when(mockAuthConfig.userRole).thenReturn("USER")
+    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
+    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
 
     val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockAuthConfig) {
       override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
     }
   }
 
-  def verifyForbidden(result: Result): Unit = {
+  def verifyForbidden(result: Future[Result]): Unit = {
     status(result) shouldBe 403
-    jsonBodyOf(result) shouldBe Json.obj(
+    contentAsJson(result) shouldBe Json.obj(
       "code" -> ErrorCode.FORBIDDEN.toString, "message" -> "Insufficient enrolments"
     )
   }
@@ -88,9 +93,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.fetchAppsForGatekeeper(request))
+      val result = underTest.fetchAppsForGatekeeper(request)
 
-      jsonBodyOf(result) shouldBe Json.toJson(expected)
+      contentAsJson(result) shouldBe Json.toJson(expected)
     }
   }
 
@@ -112,10 +117,10 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
-      val result = await(underTest.fetchAppById(appId)(request))
+      val result = underTest.fetchAppById(appId)(request)
 
       status(result) shouldBe 200
-      jsonBodyOf(result) shouldBe Json.toJson(expected)
+      contentAsJson(result) shouldBe Json.toJson(expected)
     }
 
     "return 404 if the application doesn't exist" in new Setup {
@@ -125,7 +130,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.fetchAppWithHistory(appId))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-      val result = await(underTest.fetchAppById(appId)(request))
+      val result = underTest.fetchAppById(appId)(request)
 
       verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -147,9 +152,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "successfully approve uplift when user is authorised" in new Setup {
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId)).thenReturn(UpliftApproved)
+      when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId)).thenReturn(successful(UpliftApproved))
 
-      val result = await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader)))
+      val result = underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader))
 
       status(result) shouldBe 204
     }
@@ -161,7 +166,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
           .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-        val result = await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest))))
+        val result = underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)))
 
         verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
       }
@@ -173,7 +178,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
         .thenReturn(failed(new InvalidStateTransition(TESTING, PENDING_REQUESTER_VERIFICATION, PENDING_GATEKEEPER_APPROVAL)))
 
-      val result = await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest))))
+      val result = underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)))
 
       verifyErrorResult(result, 412, ErrorCode.INVALID_STATE_TRANSITION)
     }
@@ -185,7 +190,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
           .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-        val result = await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest))))
+        val result = underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)))
 
         verifyErrorResult(result, 500, ErrorCode.UNKNOWN_ERROR)
       }
@@ -208,9 +213,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     "successfully reject uplift when user is authorised" in new Setup {
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest)).thenReturn(UpliftRejected)
+      when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest)).thenReturn(successful(UpliftRejected))
 
-      val result = await(underTest.rejectUplift(applicationId)(testReq))
+      val result = underTest.rejectUplift(applicationId)(testReq)
 
       status(result) shouldBe 204
     }
@@ -221,7 +226,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-      val result = await(underTest.rejectUplift(applicationId)(testReq))
+      val result = underTest.rejectUplift(applicationId)(testReq)
 
       verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -232,7 +237,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
         .thenReturn(failed(new InvalidStateTransition(PENDING_REQUESTER_VERIFICATION, TESTING, PENDING_GATEKEEPER_APPROVAL)))
 
-      val result = await(underTest.rejectUplift(applicationId)(testReq))
+      val result = underTest.rejectUplift(applicationId)(testReq)
 
       verifyErrorResult(result, 412, ErrorCode.INVALID_STATE_TRANSITION)
     }
@@ -244,7 +249,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
         when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
           .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-        val result = await(underTest.rejectUplift(applicationId)(testReq))
+        val result = underTest.rejectUplift(applicationId)(testReq)
 
         verifyErrorResult(result, 500, ErrorCode.UNKNOWN_ERROR)
       }
@@ -268,9 +273,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId)).thenReturn(VerificationResent)
+      when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId)).thenReturn(successful(VerificationResent))
 
-      val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader)))
+      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))
 
       status(result) shouldBe 204
     }
@@ -281,7 +286,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
 
-      val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest))))
+      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
 
       verifyErrorResult(result, 404, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -292,9 +297,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new InvalidStateTransition(PENDING_REQUESTER_VERIFICATION, PENDING_REQUESTER_VERIFICATION, PENDING_REQUESTER_VERIFICATION)))
 
-      val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest))))
+      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
 
-      verifyErrorResult(result, 412, ErrorCode.INVALID_STATE_TRANSITION)
+      verifyErrorResult(result,  412, ErrorCode.INVALID_STATE_TRANSITION)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -303,7 +308,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest))))
+      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
 
       verifyErrorResult(result, INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
     }
@@ -320,7 +325,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       when(mockGatekeeperService.blockApplication(*)(*)).thenReturn(successful(Blocked))
 
-      val result = await(underTest.blockApplication(applicationId)(request))
+      val result = underTest.blockApplication(applicationId)(request)
 
       status(result) shouldBe SC_OK
       verify(mockGatekeeperService).blockApplication(applicationId)
@@ -337,7 +342,7 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
 
       when(mockGatekeeperService.unblockApplication(*)(*)).thenReturn(successful(Unblocked))
 
-      val result = await(underTest.unblockApplication(applicationId)(request))
+      val result = underTest.unblockApplication(applicationId)(request)
 
       status(result) shouldBe SC_OK
       verify(mockGatekeeperService).unblockApplication(applicationId)
@@ -354,9 +359,9 @@ class GatekeeperControllerSpec extends UnitSpec with ScalaFutures with MockitoSu
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 
-  private def verifyErrorResult(result: Result, statusCode: Int, errorCode: ErrorCode): Unit = {
+  private def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
     status(result) shouldBe statusCode
-    (jsonBodyOf(result) \ "code").as[String] shouldBe errorCode.toString
+    (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
   private def anAppResponse(id: UUID = UUID.randomUUID()) = {
