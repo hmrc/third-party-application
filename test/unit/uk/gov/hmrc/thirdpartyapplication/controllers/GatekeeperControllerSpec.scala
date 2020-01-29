@@ -45,10 +45,6 @@ import scala.concurrent.Future.{failed, successful}
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
-  override protected def afterEach(): Unit = {
-    SharedMetricRegistries.clear()
-  }
-
   import play.api.test.Helpers._
 
   val authTokenHeader = "authorization" -> "authorizationToken"
