@@ -23,12 +23,12 @@ import cats.data.OptionT
 import cats.implicits._
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AuthorisationWrapper, JsErrorResponse}
@@ -43,11 +43,11 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-class AuthorisationWrapperSpec extends AsyncHmrcSpec with WithFakeApplication {
+class AuthorisationWrapperSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
   val mockAuthConfig = mock[AuthConfig]
 
   when(mockAuthConfig.enabled).thenReturn(true)

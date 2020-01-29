@@ -27,7 +27,6 @@ val scope = "test,it"
 
 lazy val test = Seq(
   "uk.gov.hmrc" %% "reactivemongo-test" % "4.15.0-play-25" % scope,
-  "uk.gov.hmrc" %% "hmrctest" % "3.9.0-play-25" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
   "com.github.tomakehurst" % "wiremock" % "1.58" % scope,

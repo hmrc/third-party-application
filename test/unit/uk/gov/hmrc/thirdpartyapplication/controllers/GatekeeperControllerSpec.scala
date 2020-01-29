@@ -23,13 +23,13 @@ import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ErrorCode, _}
@@ -45,13 +45,13 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class GatekeeperControllerSpec extends AsyncHmrcSpec with WithFakeApplication
+class GatekeeperControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
   with ApplicationStateUtil with LogSuppressing {
 
   import play.api.test.Helpers._
 
   val authTokenHeader = "authorization" -> "authorizationToken"
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
   implicit lazy val request = FakeRequest()
 
   trait Setup {

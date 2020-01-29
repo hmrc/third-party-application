@@ -16,16 +16,15 @@
 
 package it.uk.gov.hmrc.thirdpartyapplication.repository
 
-import org.scalatest.Matchers
 import org.scalatest.concurrent.Eventually
 import reactivemongo.api.indexes.Index
 import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.duration._
 
-trait IndexVerification extends UnitSpec with Eventually with Matchers {
+trait IndexVerification extends AsyncHmrcSpec with Eventually {
   def toCompare(index: Index) = Tuple5(index.key, index.name, index.unique, index.background, index.sparse)
 
   def verifyIndexesVersionAgnostic[A, ID](repository: ReactiveRepository[A, ID], indexes: Set[Index])(implicit ec: ExecutionContext) = {

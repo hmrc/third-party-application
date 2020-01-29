@@ -19,9 +19,9 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
@@ -30,11 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 
-class CollaboratorControllerSpec extends AsyncHmrcSpec with WithFakeApplication with ApplicationStateUtil {
+class CollaboratorControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with ApplicationStateUtil {
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")

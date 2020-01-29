@@ -21,11 +21,11 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -39,10 +39,10 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class AccessControllerSpec extends AsyncHmrcSpec with WithFakeApplication {
+class AccessControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes = Set("scope")

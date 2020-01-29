@@ -22,32 +22,26 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
-import org.mockito.MockitoSugar
-import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec
-  extends UnitSpec
-    with MockitoSugar
+  extends AsyncHmrcSpec
     with MongoSpecSupport
     with BeforeAndAfterEach with BeforeAndAfterAll
     with ApplicationStateUtil
     with IndexVerification
-    with Eventually
-    with Matchers
     with MetricsHelper {
 
   implicit var s : ActorSystem = ActorSystem("test")

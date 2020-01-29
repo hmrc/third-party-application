@@ -20,11 +20,10 @@ import akka.actor.ActorSystem
 import play.api.test.FakeApplication
 import play.api.test.Helpers.running
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-import scala.concurrent.duration._
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class RetryingSpec extends AsyncHmrcSpec with Retrying{
 

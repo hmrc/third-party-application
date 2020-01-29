@@ -26,13 +26,13 @@ import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
@@ -52,12 +52,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class ApplicationControllerSpec extends AsyncHmrcSpec with WithFakeApplication
+class ApplicationControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication.materializer
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")

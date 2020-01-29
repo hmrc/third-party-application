@@ -16,23 +16,20 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.scalatest.Matchers
-import org.scalatest.concurrent.ScalaFutures
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthConnectorSpec extends ConnectorSpec with WithFakeApplication{
+class AuthConnectorSpec extends ConnectorSpec with GuiceOneAppPerSuite {
   trait Setup {
     implicit val hc = HeaderCarrier()
 
     val mockAuthConfig = mock[AuthConfig]
 
-    val httpClient = fakeApplication.injector.instanceOf[HttpClient]
+    val httpClient = fakeApplication().injector.instanceOf[HttpClient]
     val connector = new AuthConnector(httpClient, mockAuthConfig)
 
     val url = "AUrl"
