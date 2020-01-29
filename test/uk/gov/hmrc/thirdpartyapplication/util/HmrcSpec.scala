@@ -22,8 +22,8 @@ import org.scalatest.{Matchers, OptionValues, WordSpec}
 import org.scalatestplus.play.WsScalaTestClient
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 
-abstract class HmrcSpec extends WordSpec with Matchers with OptionValues with WsScalaTestClient
+abstract class HmrcSpec extends WordSpec with Matchers with OptionValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
 
 abstract class AsyncHmrcSpec
-  extends HmrcSpec with MockitoSugar with ArgumentMatchersSugar with DefaultAwaitTimeout with FutureAwaits {
+  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
 }

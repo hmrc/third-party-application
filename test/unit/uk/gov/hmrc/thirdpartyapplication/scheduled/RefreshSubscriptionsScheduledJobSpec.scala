@@ -21,23 +21,22 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{RefreshSubscriptionsJobConfig, RefreshSubscriptionsJobLockKeeper, RefreshSubscriptionsScheduledJob}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil
+class RefreshSubscriptionsScheduledJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil
   with LogSuppressing {
 
   val FixedTimeNow: DateTime = HmrcTime.now
@@ -62,7 +61,7 @@ class RefreshSubscriptionsScheduledJobSpec extends UnitSpec with MockitoSugar wi
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
       override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Future.successful(Some(value)))
+        if (lockKeeperSuccess()) body.map(value => Some(value))
         else Future.successful(None)
     }
 

@@ -28,10 +28,11 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.Future
 
-class AwsRestoreServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar {
+class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
   trait Setup {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {

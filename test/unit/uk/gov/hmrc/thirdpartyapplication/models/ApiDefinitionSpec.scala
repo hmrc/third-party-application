@@ -17,14 +17,13 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.scalatest.concurrent.ScalaFutures
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import play.api.libs.json.Json
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
+import uk.gov.hmrc.play.test.WithFakeApplication
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiDefinition, ApiStatus, ApiVersion}
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
-class ApiDefinitionSpec extends UnitSpec with WithFakeApplication with MockitoSugar with ArgumentMatchersSugar with ScalaFutures with LogSuppressing {
+class ApiDefinitionSpec extends HmrcSpec with WithFakeApplication with LogSuppressing {
 
   private val apiDefinitionWithStableStatus = ApiDefinition("api-service", "api-name", "api-context",
     Seq(ApiVersion("1.0", ApiStatus.STABLE, None)))

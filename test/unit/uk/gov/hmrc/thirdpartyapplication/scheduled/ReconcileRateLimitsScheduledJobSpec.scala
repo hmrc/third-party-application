@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit.{DAYS, SECONDS}
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, Duration}
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import org.slf4j
 import play.api.LoggerLike
@@ -29,7 +28,6 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
 import uk.gov.hmrc.thirdpartyapplication.models
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
@@ -37,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, EnvironmentToken, HasSucceeded, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{ReconcileRateLimitsJobConfig, ReconcileRateLimitsJobLockKeeper, ReconcileRateLimitsScheduledJob}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.collection.mutable.ListBuffer
@@ -44,8 +43,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class ReconcileRateLimitsScheduledJobSpec extends UnitSpec
-  with MockitoSugar with ArgumentMatchersSugar
+class ReconcileRateLimitsScheduledJobSpec extends AsyncHmrcSpec
   with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
   val FixedTimeNow: DateTime = DateTimeUtils.now
@@ -87,8 +85,11 @@ class ReconcileRateLimitsScheduledJobSpec extends UnitSpec
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
       override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Future.successful(Some(value)))
-        else Future.successful(None)
+        if (lockKeeperSuccess()) {
+          body.map(value => Some(value))
+        } else {
+          Future.successful(None)
+        }
     }
 
     def testApplication(rateLimit: Option[RateLimitTier]): ApplicationData =

@@ -16,13 +16,13 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
+import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.UnitSpec
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
-class ApplicationStateSpec extends UnitSpec with ApplicationStateUtil with BeforeAndAfterEach {
+class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach {
 
   override protected def beforeEach(): Unit = {
     DateTimeUtils.setCurrentMillisSystem()

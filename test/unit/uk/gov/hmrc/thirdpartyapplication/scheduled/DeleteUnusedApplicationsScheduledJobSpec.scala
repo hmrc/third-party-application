@@ -21,28 +21,25 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit.{DAYS, MINUTES}
 
 import org.joda.time.{DateTime, Duration}
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito._
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
-import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
 import org.slf4j
 import play.api.LoggerLike
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.{Deleted, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{DeleteUnusedApplicationsJobConfig, DeleteUnusedApplicationsJobLockKeeper, DeleteUnusedApplicationsScheduledJob}
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
-  with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with FutureAwaits with DefaultAwaitTimeout {
+class DeleteUnusedApplicationsScheduledJobSpec extends AsyncHmrcSpec with MongoSpecSupport {
 
   trait Setup {
     class StubLogger extends LoggerLike {
@@ -112,14 +109,14 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
 
       await(jobUnderTest.runJob)
 
-      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
+      expectedCutoffDate(cutoffDuration).getMillis shouldBe (cutoffDateCaptor.getValue.getMillis +- 500)
 
       val capturedApplicationIds: util.List[UUID] = applicationIdDeletionCaptor.getAllValues
-      capturedApplicationIds.size must be (applications.size)
-      capturedApplicationIds must contain (application1Id)
-      capturedApplicationIds must contain (application2Id)
+      capturedApplicationIds.size shouldBe (applications.size)
+      capturedApplicationIds should contain(application1Id)
+      capturedApplicationIds should contain(application2Id)
 
-      stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
+      stubLogger.infoMessages should contain (s"Found ${applications.size} applications to delete")
     }
 
     "only log application ids if the job is set to dryRun" in new DryRunSetup {
@@ -130,17 +127,16 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
       val cutoffDateCaptor: ArgumentCaptor[DateTime] = ArgumentCaptor.forClass(classOf[DateTime])
 
       when(mockApplicationRepository.applicationsLastUsedBefore(cutoffDateCaptor.capture())).thenReturn(Future.successful(applications))
-      when(mockApplicationRepository.delete(*)).thenReturn(Future.successful(HasSucceeded))
 
       await(jobUnderTest.runJob)
 
-      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
+      expectedCutoffDate(cutoffDuration).getMillis shouldBe (cutoffDateCaptor.getValue.getMillis +- 500)
 
       verifyNoInteractions(mockApplicationService)
 
-      stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
-      stubLogger.infoMessages must contain (s"[Dry Run] Would have deleted application with id [${application1Id.toString}]")
-      stubLogger.infoMessages must contain (s"[Dry Run] Would have deleted application with id [${application2Id.toString}]")
+      stubLogger.infoMessages should contain (s"Found ${applications.size} applications to delete")
+      stubLogger.infoMessages should contain (s"[Dry Run] Would have deleted application with id [${application1Id.toString}]")
+      stubLogger.infoMessages should contain (s"[Dry Run] Would have deleted application with id [${application2Id.toString}]")
     }
   }
 }
