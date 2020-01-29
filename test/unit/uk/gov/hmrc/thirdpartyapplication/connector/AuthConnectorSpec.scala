@@ -16,14 +16,13 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthConnectorSpec extends ConnectorSpec with GuiceOneAppPerSuite {
+class AuthConnectorSpec extends ConnectorSpec {
   trait Setup {
     implicit val hc = HeaderCarrier()
 

@@ -19,18 +19,16 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 
-class CollaboratorControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with ApplicationStateUtil {
+class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
   import play.api.test.Helpers._
 

@@ -29,12 +29,11 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
 
-class SubscriptionControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
+class SubscriptionControllerSpec extends ControllerSpec {
 
   import play.api.test.Helpers._
   import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._

@@ -23,7 +23,6 @@ import cats.data.OptionT
 import cats.implicits._
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
@@ -36,14 +35,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-class AuthorisationWrapperSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
+class AuthorisationWrapperSpec extends ControllerSpec {
 
   import play.api.test.Helpers._
 

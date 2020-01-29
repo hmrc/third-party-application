@@ -39,7 +39,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class AccessControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite {
+class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = fakeApplication().materializer

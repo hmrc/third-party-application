@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.connector
+package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.CleanMetricsBeforeAndAfterEach
 
-abstract class ConnectorSpec
-  extends AsyncHmrcSpec with GuiceOneAppPerSuite
-    with LogSuppressing with CleanMetricsBeforeAndAfterEach {}
+abstract class ControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
+  with LogSuppressing with CleanMetricsBeforeAndAfterEach {}

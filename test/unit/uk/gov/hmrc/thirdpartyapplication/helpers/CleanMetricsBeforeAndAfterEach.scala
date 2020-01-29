@@ -14,13 +14,19 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.connector
+package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
-import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import unit.uk.gov.hmrc.thirdpartyapplication.helpers.CleanMetricsBeforeAndAfterEach
+import com.codahale.metrics.SharedMetricRegistries
+import org.scalatest.BeforeAndAfterEach
 
-abstract class ConnectorSpec
-  extends AsyncHmrcSpec with GuiceOneAppPerSuite
-    with LogSuppressing with CleanMetricsBeforeAndAfterEach {}
+trait CleanMetricsBeforeAndAfterEach extends BeforeAndAfterEach {
+  this : org.scalatest.BeforeAndAfterEach with org.scalatest.Suite =>
+
+  override protected def beforeEach(): Unit = {
+    SharedMetricRegistries.clear()
+  }
+
+  override protected def afterEach(): Unit = {
+    SharedMetricRegistries.clear()
+  }
+}

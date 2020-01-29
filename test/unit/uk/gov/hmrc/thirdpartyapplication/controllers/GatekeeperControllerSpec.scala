@@ -19,11 +19,10 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import akka.stream.Materializer
-import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
+import com.codahale.metrics.SharedMetricRegistries
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
@@ -38,15 +37,17 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
-class GatekeeperControllerSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite
-  with ApplicationStateUtil with LogSuppressing {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
+
+  override protected def afterEach(): Unit = {
+    SharedMetricRegistries.clear()
+  }
 
   import play.api.test.Helpers._
 
