@@ -24,7 +24,6 @@ import org.joda.time.DateTime
 import play.api.Configuration
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.lock.LockKeeper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
