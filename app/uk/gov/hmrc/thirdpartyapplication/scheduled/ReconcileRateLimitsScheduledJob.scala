@@ -57,7 +57,7 @@ class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLim
   }
 
   //Processing applications 1 by 1 as WSO2 times out when too many subscriptions calls are made simultaneously
-  private def processApplicationsOneByOne(tpaApplications: Seq[ApplicationData], processed: (Int, Int, Int) = (0, 0, 0))
+  private def processApplicationsOneByOne(tpaApplications: List[ApplicationData], processed: (Int, Int, Int) = (0, 0, 0))
                                          (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[(Int, Int, Int)] = {
     tpaApplications match {
       case app :: tail =>

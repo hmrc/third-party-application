@@ -18,22 +18,22 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.captor.ArgCaptor
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, AuditAction, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
-class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
+class AccessServiceSpec extends AsyncHmrcSpec {
 
   "Access service update scopes function" should {
 
@@ -142,26 +142,26 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchers
     implicit val hc = HeaderCarrier()
 
     val mockApplicationRepository = mock[ApplicationRepository]
-    val mockAuditService = mock[AuditService]
+    val mockAuditService = mock[AuditService](withSettings.lenient())
 
     val accessService = new AccessService(mockApplicationRepository, mockAuditService)
 
-    val applicationDataArgumentCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
+    val applicationDataArgumentCaptor = ArgCaptor[ApplicationData]
 
     def mockApplicationRepositoryFetchToReturn(eventualMaybeApplicationData: Future[Option[ApplicationData]]) =
-      when(mockApplicationRepository.fetch(any[UUID])).thenReturn(eventualMaybeApplicationData)
+      when(mockApplicationRepository.fetch(*)).thenReturn(eventualMaybeApplicationData)
 
     def mockApplicationRepositorySaveToReturn(eventualApplicationData: Future[ApplicationData]) =
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(eventualApplicationData)
 
     def captureApplicationRepositorySaveArgument(): ApplicationData = {
-      verify(mockApplicationRepository).save(applicationDataArgumentCaptor.capture())
-      applicationDataArgumentCaptor.getValue
+      verify(mockApplicationRepository).save(applicationDataArgumentCaptor)
+      applicationDataArgumentCaptor.value
     }
 
     def captureApplicationRepositorySaveArgumentsAccessScopes(): Set[String] = {
-      verify(mockApplicationRepository).save(applicationDataArgumentCaptor.capture())
-      applicationDataArgumentCaptor.getValue.access.asInstanceOf[Privileged].scopes
+      verify(mockApplicationRepository).save(applicationDataArgumentCaptor)
+      applicationDataArgumentCaptor.value.asInstanceOf[Privileged].scopes
     }
 
     when(mockAuditService.audit(any[AuditAction], any[Map[String, String]])(*)).thenReturn(successful(AuditResult.Success))
@@ -227,7 +227,7 @@ class AccessServiceSpec extends UnitSpec with MockitoSugar with ArgumentMatchers
         EnvironmentToken("a", "b", "c")
       ),
       ApplicationState(),
-      Standard(redirectUris = Seq.empty, overrides = overrides),
+      Standard(redirectUris = List.empty, overrides = overrides),
       DateTimeUtils.now,
       Some(DateTimeUtils.now))
 }

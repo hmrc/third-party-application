@@ -22,14 +22,13 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{_}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, sequence, successful}
@@ -41,17 +40,17 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     auditService: AuditService,
                                     apiGatewayStore: ApiGatewayStore) {
 
-  val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
+  val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
-  def searchCollaborators(context:String, version:String, partialEmailMatch: Option[String]):Future[Seq[String]] = {
+  def searchCollaborators(context:String, version:String, partialEmailMatch: Option[String]):Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
-  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Seq[ApiSubscription]] = {
-    def fetchApis: Future[Seq[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
+  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[List[ApiSubscription]] = {
+    def fetchApis: Future[List[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
       _.map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
         .filterNot(_.versions.isEmpty)
     }
@@ -119,7 +118,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   }
 
   def refreshSubscriptions()(implicit hc: HeaderCarrier): Future[Int] = {
-    def updateSubscriptions(app: ApplicationData, subscriptionsToAdd: Seq[APIIdentifier], subscriptionsToRemove: Seq[APIIdentifier]): Future[Int] = {
+    def updateSubscriptions(app: ApplicationData, subscriptionsToAdd: List[APIIdentifier], subscriptionsToRemove: List[APIIdentifier]): Future[Int] = {
       val addSubscriptions = sequence(subscriptionsToAdd.map { sub =>
         Logger.warn(s"Inconsistency in subscription collection. Adding subscription in Mongo. appId=${app.id} context=${sub.context} version=${sub.version}")
         subscriptionRepository.add(app.id, sub)
@@ -136,7 +135,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     }
 
     //Processing applications 1 by 1 as WSO2 times out when too many subscriptions calls are made simultaneously
-    def processApplicationsOneByOne(apps: Seq[ApplicationData], total: Int = 0)(implicit hc: HeaderCarrier): Future[Int] = {
+    def processApplicationsOneByOne(apps: List[ApplicationData], total: Int = 0)(implicit hc: HeaderCarrier): Future[Int] = {
       apps match {
         case app :: tail => processApplication(app) flatMap (modified => processApplicationsOneByOne(tail, modified + total))
         case Nil => successful(total)

@@ -21,22 +21,24 @@ import java.util.UUID
 import play.api.Configuration
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.APIStatus
 
+import scala.collection.JavaConverters._
+
 case class ApiDefinition(serviceName: String,
                          name: String,
                          context: String,
-                         versions: Seq[ApiVersion],
+                         versions: List[ApiVersion],
                          isTestSupport: Option[Boolean] = None)
 
 case class ApiVersion(version: String,
                       status: APIStatus,
                       access: Option[ApiAccess])
 
-case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Option[Seq[String]])
+case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Option[List[String]])
 
 object ApiAccess {
   def build(config: Option[Configuration]): ApiAccess = ApiAccess(
     `type` = APIAccessType.PRIVATE,
-    whitelistedApplicationIds = config.flatMap(_.getStringSeq("whitelistedApplicationIds")).orElse(Some(Seq.empty)))
+    whitelistedApplicationIds = config.flatMap(_.getStringList("whitelistedApplicationIds").map(_.asScala.toList).orElse(Some(List.empty[String]))))
 }
 
 object ApiStatus extends Enumeration {
@@ -49,13 +51,13 @@ object APIAccessType extends Enumeration {
   val PRIVATE, PUBLIC = Value
 }
 
-case class ApiSubscription(name: String, serviceName: String, context: String, versions: Seq[VersionSubscription],
+case class ApiSubscription(name: String, serviceName: String, context: String, versions: List[VersionSubscription],
                            isTestSupport: Boolean = false)
 
 object ApiSubscription {
 
-  def from(apiDefinition: ApiDefinition, subscribedApis: Seq[APIIdentifier]): ApiSubscription = {
-    val versionSubscriptions: Seq[VersionSubscription] = apiDefinition.versions.map { v =>
+  def from(apiDefinition: ApiDefinition, subscribedApis: List[APIIdentifier]): ApiSubscription = {
+    val versionSubscriptions: List[VersionSubscription] = apiDefinition.versions.map { v =>
       VersionSubscription(v, subscribedApis.exists(s => s.context == apiDefinition.context && s.version == v.version))
     }
     ApiSubscription(apiDefinition.name, apiDefinition.serviceName, apiDefinition.context, versionSubscriptions,

@@ -18,12 +18,12 @@ package unit.uk.gov.hmrc.thirdpartyapplication.models
 
 import java.util.UUID
 
+import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import StateHistory.dateTimeOrdering
 
-class StateHistorySpec extends UnitSpec {
+class StateHistorySpec extends HmrcSpec {
 
   val applicationId = UUID.randomUUID()
   val now = DateTimeUtils.now

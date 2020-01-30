@@ -67,16 +67,16 @@ trait AuthorisationWrapper {
 
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request] =
-    Action andThen PayloadBasedApplicationTypeFilter(accessTypes)
+    Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
   def requiresAuthenticationFor(uuid: UUID, accessTypes: AccessType*): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, accessTypes)
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, accessTypes.toList)
 
   def requiresAuthenticationForStandardApplications(uuid: UUID): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = true, Seq(STANDARD))
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = true, List(STANDARD))
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, Seq(PRIVILEGED, ROPC))
+    Action andThen RepositoryBasedApplicationTypeFilter(uuid, failOnAccessTypeMismatch = false, List(PRIVILEGED, ROPC))
 
   private case class AuthenticatedAction() extends AuthenticationFilter() {
     def filter[A](input: Request[A]) = authenticate(input)
@@ -94,7 +94,7 @@ trait AuthorisationWrapper {
     }
   }
 
-  private case class PayloadBasedApplicationTypeFilter(accessTypes: Seq[AccessType])
+  private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType])
     extends ApplicationTypeFilter(false, accessTypes) {
 
     override protected def deriveAccessType[A](request: Request[A]) =
@@ -102,7 +102,7 @@ trait AuthorisationWrapper {
   }
 
   private case class RepositoryBasedApplicationTypeFilter(applicationId: UUID,
-                                                          failOnAccessTypeMismatch: Boolean, accessTypes: Seq[AccessType])
+                                                          failOnAccessTypeMismatch: Boolean, accessTypes: List[AccessType])
     extends ApplicationTypeFilter(failOnAccessTypeMismatch, accessTypes) {
 
 
@@ -119,7 +119,7 @@ trait AuthorisationWrapper {
   }
 
   private abstract class ApplicationTypeFilter(failOnAccessTypeMismatch: Boolean = false,
-                                               accessTypes: Seq[AccessType]) extends AuthenticationFilter() {
+                                               accessTypes: List[AccessType]) extends AuthenticationFilter() {
 
     override def filter[A](request: Request[A]) =
       deriveAccessType(request) flatMap {

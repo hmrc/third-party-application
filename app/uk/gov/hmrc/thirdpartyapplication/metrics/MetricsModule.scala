@@ -31,8 +31,8 @@ import uk.gov.hmrc.metrix.persistence.MongoMetricRepository
 import scala.language.postfixOps
 
 class MetricsModule extends Module {
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
-    Seq(
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+    List(
       bind[MetricOrchestrator].toProvider[MetricsOrchestratorProvider],
       bind[MetricsSources].toProvider[MetricsSourcesProvider])
   }

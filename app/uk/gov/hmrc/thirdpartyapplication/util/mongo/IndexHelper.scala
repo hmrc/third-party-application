@@ -21,11 +21,11 @@ import reactivemongo.api.indexes.{Index, IndexType}
 
 object IndexHelper {
 
-  def createIndex(indexFieldsKey: Seq[(String, IndexType)], indexName: Option[String], isUnique: Boolean = false, isBackground: Boolean = true): Index =
+  def createIndex(indexFieldsKey: List[(String, IndexType)], indexName: Option[String], isUnique: Boolean = false, isBackground: Boolean = true): Index =
     Index(key = indexFieldsKey, name = indexName, unique = isUnique, background = isBackground)
 
   def createSingleFieldAscendingIndex(indexFieldKey: String, indexName: Option[String], isUnique: Boolean = false, isBackground: Boolean = true): Index =
-    Index(key = Seq(indexFieldKey -> Ascending), name = indexName, unique = isUnique, background = isBackground)
+    Index(key = List(indexFieldKey -> Ascending), name = indexName, unique = isUnique, background = isBackground)
 
   def createAscendingIndex(indexName: Option[String], isUnique: Boolean, isBackground: Boolean, indexFieldsKey: String*): Index =
     Index(key = indexFieldsKey.map { _ -> Ascending }, name = indexName, unique = isUnique, background = isBackground)

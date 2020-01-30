@@ -51,12 +51,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val apiGatewayUserAgents: Seq[String] = Seq("APIPlatformAuthorizer", "wso2-gateway-customizations")
+  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer", "wso2-gateway-customizations")
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
-    val extraHeaders = Seq(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
+    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
@@ -252,7 +252,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def searchApplications = Action.async { implicit request =>
+  def searchApplications = Action.async { implicit
+                                          request =>
     applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
@@ -301,12 +302,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
     subscriptionService.fetchAllSubscriptions()
-      .map(subs => Ok(toJson(subs.seq))) recover recovery
+      .map(subs => Ok(toJson(subs))) recover recovery
   )
 
   def fetchAllSubscriptions(applicationId: UUID) = Action.async { implicit request =>
     subscriptionService.fetchAllSubscriptionsForApplication(applicationId)
-      .map(subs => Ok(toJson(subs.seq))) recover recovery
+      .map(subs => Ok(toJson(subs))) recover recovery
   }
 
   def isSubscribed(id: java.util.UUID, context: String, version: String) = Action.async {

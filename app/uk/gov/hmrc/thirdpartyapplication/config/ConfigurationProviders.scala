@@ -32,10 +32,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConf
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
+import scala.collection.JavaConverters._
+
 class ConfigurationModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
-    Seq(
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+    List(
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
@@ -276,7 +278,7 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
   override protected def mode = environment.mode
 
   override def get() = {
-    val nameBlackList: Seq[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringSeq)
+    val nameBlackList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringList).asScala.toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
 
     ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)

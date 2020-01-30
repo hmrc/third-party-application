@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
-                             filters: Seq[ApplicationSearchFilter] = Seq(),
+                             filters: List[ApplicationSearchFilter] = List(),
                              textToSearch: Option[String] = None,
                              apiContext: Option[String] = None,
                              apiVersion: Option[String] = None,
@@ -26,8 +26,8 @@ case class ApplicationSearch(pageNumber: Int = 1,
 
 object ApplicationSearch {
   def fromQueryString(queryString: Map[String, Seq[String]]): ApplicationSearch = {
-    def pageNumber = queryString.getOrElse("page", Seq()).headOption.getOrElse("1").toInt
-    def pageSize = queryString.getOrElse("pageSize", Seq()).headOption.getOrElse(Int.MaxValue.toString).toInt
+    def pageNumber = queryString.getOrElse("page", List()).headOption.getOrElse("1").toInt
+    def pageSize = queryString.getOrElse("pageSize", List()).headOption.getOrElse(Int.MaxValue.toString).toInt
 
     def filters = queryString
       .map {
@@ -44,12 +44,12 @@ object ApplicationSearch {
       }
       .filter(searchFilter => searchFilter.isDefined)
       .flatten
-      .toSeq
+      .toList
 
-    def searchText = queryString.getOrElse("search", Seq()).headOption
-    def apiContext = queryString.getOrElse("apiSubscription", Seq()).headOption.flatMap(_.split("--").lift(0))
-    def apiVersion = queryString.getOrElse("apiSubscription", Seq()).headOption.flatMap(_.split("--").lift(1))
-    def sort = ApplicationSort(queryString.getOrElse("sort", Seq()).headOption)
+    def searchText = queryString.getOrElse("search", List()).headOption
+    def apiContext = queryString.getOrElse("apiSubscription", List()).headOption.flatMap(_.split("--").headOption)
+    def apiVersion = queryString.getOrElse("apiSubscription", List()).headOption.flatMap(_.split("--").lift(1))
+    def sort = ApplicationSort(queryString.getOrElse("sort", List()).headOption)
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)
   }

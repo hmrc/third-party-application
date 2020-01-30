@@ -28,12 +28,12 @@ object DataUtil {
    * @tparam T value type in map1
    * @tparam S value type in map2
    * @tparam R return value type
-   * @return returns a Seq of R
+   * @return returns a List of R
    */
   def zipper[K, T, S, R](map1: Map[K, T], map2: Map[K, S], mapper: (T, S) => R,
-                         map1Error: K => Exception, map2Error: K => Exception): Seq[R] = {
+                         map1Error: K => Exception, map2Error: K => Exception): List[R] = {
     val results = for (key <- map1.keys ++ map2.keys)
       yield mapper(map1.getOrElse(key, throw map1Error(key)), map2.getOrElse(key, throw map2Error(key)))
-    results.toSeq
+    results.toList
   }
 }

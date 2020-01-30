@@ -23,8 +23,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AwsApiGatewa
 
 class ApiStorageModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
-    Seq(
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+    List(
       bind[ApiGatewayStore].toProvider[ApiStorageProvider]
     )
   }

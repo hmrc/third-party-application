@@ -226,13 +226,13 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
   }
 
   def getSubscriptions(cookie: String, wso2ApplicationName: String)
-                      (implicit hc: HeaderCarrier): Future[Seq[Wso2Api]] = {
+                      (implicit hc: HeaderCarrier): Future[List[Wso2Api]] = {
     Logger.debug(s"Fetching subscriptions for application: [$wso2ApplicationName]")
     val url = s"$serviceUrl/subscription/subscription-list/ajax/subscription-list.jag"
     val payload = s"action=getSubscriptionByApplication&app=$wso2ApplicationName"
 
     post(url, payload, headers(cookie)).map { response =>
-      (response.json \ "apis").as[Seq[JsValue]].map { apiJson =>
+      (response.json \ "apis").as[List[JsValue]].map { apiJson =>
         Wso2Api(
           (apiJson \ "apiName").as[String],
           (apiJson \ "apiVersion").as[String]
@@ -241,7 +241,7 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
     }
   }
 
-  private def post(url: String, body: String, headers: Seq[(String, String)])
+  private def post(url: String, body: String, headers: List[(String, String)])
                   (implicit hc: HeaderCarrier): Future[HttpResponse] = {
     Logger.debug(s"POST url=$url request=$body")
     httpClient.POSTString[HttpResponse](url, body, headers)
@@ -250,7 +250,7 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
     }
   }
 
-  private def get(url: String, headers: Seq[(String, String)])
+  private def get(url: String, headers: List[(String, String)])
                  (implicit rds: HttpReads[HttpResponse], hc: HeaderCarrier, ec: ExecutionContext): Future[HttpResponse] = {
     Logger.debug(s"GET url=$url")
     val headerCarrier = hc.withExtraHeaders(headers: _*)
@@ -280,11 +280,11 @@ class Wso2ApiStoreConnector @Inject()(httpClient: HttpClient, config: Wso2ApiSto
 
   private def toHasSucceeded: HttpResponse => HasSucceeded = { _ => HasSucceeded }
 
-  private def headers(): Seq[(String, String)] = {
-    Seq(CONTENT_TYPE -> FORM)
+  private def headers(): List[(String, String)] = {
+    List(CONTENT_TYPE -> FORM)
   }
 
-  private def headers(cookie: String): Seq[(String, String)] = {
+  private def headers(cookie: String): List[(String, String)] = {
     headers :+ (COOKIE -> cookie)
   }
 }

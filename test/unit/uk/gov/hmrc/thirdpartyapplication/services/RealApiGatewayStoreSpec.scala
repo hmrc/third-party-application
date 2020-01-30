@@ -20,16 +20,14 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConnector, Wso2ApiStoreConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.RealApiGatewayStore
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -37,13 +35,13 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
+class RealApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-    val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector]
+    val mockWSO2APIStoreConnector = mock[Wso2ApiStoreConnector](withSettings.lenient())
     val mockAwsApiGatewayConnector = mock[AwsApiGatewayConnector]
     val mockSubscriptionRepository = mock[SubscriptionRepository]
 
@@ -112,7 +110,7 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
         thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, serverToken, SILVER)(hc)).thenReturn(successful(HasSucceeded))
-      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(APIIdentifier("hello", "1.0"))))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(List(APIIdentifier("hello", "1.0"))))
 
       await(underTest updateApplication(app, SILVER))
 
@@ -178,7 +176,7 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockWSO2APIStoreConnector.addSubscription(cookie, wso2ApplicationName, wso2API, Some(GOLD), 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(APIIdentifier("hello", "1.0"))))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(List(APIIdentifier("hello", "1.0"))))
 
       await(underTest.addSubscription(app, api))
 
@@ -240,7 +238,7 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockWSO2APIStoreConnector.removeSubscription(cookie, wso2ApplicationName, wso2API, 0))
         .thenReturn(Future.successful(HasSucceeded))
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
-      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(Seq(api, APIIdentifier("hello", "1.0"))))
+      when(mockSubscriptionRepository.getSubscriptions(app.id)).thenReturn(successful(List(api, APIIdentifier("hello", "1.0"))))
 
       await(underTest.removeSubscription(app, api))
 
@@ -282,16 +280,16 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockWSO2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName)).thenAnswer({
             count += 1
             count match {
-              case 1 => Future.successful(Seq(anotherWso2Api))
-              case 2 => Future.successful(Seq(wso2Api, anotherWso2Api))
-              case 3 => Future.successful(Seq(wso2Api))
-              case 4 => Future.successful(Seq(wso2Api, anotherWso2Api))
+              case 1 => Future.successful(List(anotherWso2Api))
+              case 2 => Future.successful(List(wso2Api, anotherWso2Api))
+              case 3 => Future.successful(List(wso2Api))
+              case 4 => Future.successful(List(wso2Api, anotherWso2Api))
               case x => throw new IllegalStateException("Invocation not expected: " + x)
             }
           })
 
-      await(underTest.resubscribeApi(Seq(api, anotherApi), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
-      await(underTest.resubscribeApi(Seq(api, anotherApi), wso2Username, wso2Password, wso2ApplicationName, anotherApi, SILVER))
+      await(underTest.resubscribeApi(List(api, anotherApi), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
+      await(underTest.resubscribeApi(List(api, anotherApi), wso2Username, wso2Password, wso2ApplicationName, anotherApi, SILVER))
 
       verify(mockWSO2APIStoreConnector, times(2)).login(wso2Username, wso2Password)
 
@@ -314,7 +312,7 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
 
       intercept[RuntimeException] {
-        await(underTest.resubscribeApi(Seq(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
+        await(underTest.resubscribeApi(List(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
       }
 
       verify(mockWSO2APIStoreConnector, never)
@@ -331,7 +329,7 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       when(mockWSO2APIStoreConnector.logout(cookie)).thenReturn(Future.successful(HasSucceeded))
 
       intercept[RuntimeException] {
-        await(underTest.resubscribeApi(Seq(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
+        await(underTest.resubscribeApi(List(api), wso2Username, wso2Password, wso2ApplicationName, api, SILVER))
       }
     }
   }
@@ -344,8 +342,8 @@ class RealApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSug
       val wso2Password = "mypassword"
       val wso2ApplicationName = "myapplication"
       val cookie = "some-cookie-value"
-      val wso2Subscriptions = Seq(Wso2Api("some--context--1.0", "1.0"), Wso2Api("some--other--context--1.0", "1.0"))
-      val subscriptions = Seq(APIIdentifier("some/context", "1.0"), APIIdentifier("some/other/context", "1.0"))
+      val wso2Subscriptions = List(Wso2Api("some--context--1.0", "1.0"), Wso2Api("some--other--context--1.0", "1.0"))
+      val subscriptions = List(APIIdentifier("some/context", "1.0"), APIIdentifier("some/other/context", "1.0"))
 
       when(mockWSO2APIStoreConnector.login(wso2Username, wso2Password)).thenReturn(Future.successful(cookie))
       when(mockWSO2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName))

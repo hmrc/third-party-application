@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
-import play.api.libs.json.Json.JsValueWrapper
 import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag}
 
 case class ValidationRequest(clientId: String, clientSecret: String)
@@ -27,7 +27,7 @@ case class ApplicationNameValidationRequest(applicationName: String, selfApplica
 
 case class ClientSecretRequest(name: String)
 
-case class DeleteClientSecretsRequest(secrets: Seq[String])
+case class DeleteClientSecretsRequest(secrets: List[String])
 
 case class UpliftRequest(applicationName: String, requestedByEmailAddress: String)
 

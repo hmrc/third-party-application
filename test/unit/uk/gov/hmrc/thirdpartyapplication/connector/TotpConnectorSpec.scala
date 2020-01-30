@@ -16,12 +16,10 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{TotpConfig, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
@@ -29,9 +27,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEAD
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class TotpConnectorSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
+class TotpConnectorSpec extends ConnectorSpec {
 
-  implicit val hc = HeaderCarrier()
+  implicit val hc: HeaderCarrier = HeaderCarrier()
   private val baseUrl = s"http://example.com"
 
   trait Setup {

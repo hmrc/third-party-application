@@ -22,17 +22,16 @@ import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{UpliftVerificationExpiryJob, UpliftVerificationExpiryJobConfig, UpliftVerificationExpiryJobLockKeeper}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,8 +39,7 @@ import scala.concurrent.Future._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
-class UpliftVerificationExpiryJobSpec extends UnitSpec
-  with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -67,7 +65,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
       override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Future.successful(Some(value)))
+        if (lockKeeperSuccess()) body.map(value => Some(value))
         else Future.successful(None)
     }
 
@@ -78,7 +76,8 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
 
     val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, config)
 
-    when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer((a: ApplicationData) => successful(a))
+    def whenSaveCalledWork =
+      when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer((a: ApplicationData) => successful(a))
   }
 
   override def beforeAll(): Unit = {
@@ -95,7 +94,9 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
       val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
-        .thenReturn(Future.successful(Seq(app1, app2)))
+        .thenReturn(Future.successful(List(app1, app2)))
+
+      whenSaveCalledWork
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedTimeNow.minusDays(expiryTimeInDays))
@@ -129,7 +130,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
       val app2 = anApplicationData(UUID.randomUUID(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
-        .thenReturn(Future.successful(Seq(app1, app2)))
+        .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
       )
@@ -158,7 +159,7 @@ class UpliftVerificationExpiryJobSpec extends UnitSpec
         EnvironmentToken(prodClientId, "bbb", "ccc")
       ),
       state,
-      Standard(Seq.empty, None, None),
+      Standard(List.empty, None, None),
       HmrcTime.now,
       Some(HmrcTime.now))
   }

@@ -18,17 +18,16 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
+import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.BodyParsers
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AuthorisationWrapper, JsErrorResponse}
@@ -40,11 +39,13 @@ import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
-class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication {
+class AuthorisationWrapperSpec extends ControllerSpec {
 
-  implicit lazy val materializer = fakeApplication.materializer
+  import play.api.test.Helpers._
+
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
   val mockAuthConfig = mock[AuthConfig]
 
   when(mockAuthConfig.enabled).thenReturn(true)
@@ -56,6 +57,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
       override val applicationService: ApplicationService = mock[ApplicationService]
       override val authConfig: AuthConfig = mockAuthConfig
     }
+    val request = FakeRequest()
 
     def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.fromOption(application))
@@ -70,23 +72,21 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        Default.Ok(""))(privilegedRequest)
-      )
+      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+        successful(Default.Ok("")))(privilegedRequest)
 
       status(result) shouldBe SC_OK
     }
 
     "accept the request when access type in the payload is ROPC and user is authenticated" in new Setup {
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => successful(Default.Ok("")))(ropcRequest)) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for payload with STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
-      val result = await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        Default.Ok(""))(standardRequest)
-      )
+      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
+        successful(Default.Ok("")))(standardRequest)
 
       status(result) shouldBe SC_OK
       verifyZeroInteractions(underTest.authConnector)
@@ -97,14 +97,14 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        Default.Ok(""))(privilegedRequest)
-      ))
+        successful(Default.Ok("")))(privilegedRequest))
+      )
     }
 
     "throws SessionRecordNotFound when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => Default.Ok(""))(ropcRequest)))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => successful(Default.Ok("")))(ropcRequest)))
     }
   }
 
@@ -120,7 +120,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
 
       status(result) shouldBe SC_OK
     }
@@ -128,14 +128,14 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
     "accept the request when access type of the application is ROPC and gatekeeper is logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Default.Ok("")))(request)) shouldBe SC_OK
     }
 
     "skip gatekeeper authentication for STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(standardApplication))
 
-      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
 
       status(result) shouldBe SC_OK
       verifyZeroInteractions(underTest.authConnector)
@@ -147,24 +147,25 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
 
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest())))
+
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)))
     }
 
     "throws SessionRecordNotFound when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => Default.Ok(""))(FakeRequest())))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Default.Ok("")))(request)))
     }
 
     "return a 404 (Not Found) when the application doesn't exist" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, None)
 
-      val result = await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => Default.Ok(""))(FakeRequest()))
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
 
       status(result) shouldBe SC_NOT_FOUND
-      jsonBodyOf(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
+      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
     }
   }
 
@@ -174,7 +175,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
 
       givenUserIsAuthenticated(underTest)
 
-      val result = await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest()))
+      val result = underTest.requiresAuthentication().async(_ => successful(Default.Ok("")))(request)
 
       status(result) shouldBe SC_OK
     }
@@ -183,7 +184,7 @@ class AuthorisationWrapperSpec extends UnitSpec with MockitoSugar with ArgumentM
 
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthentication().async(_ => Default.Ok(""))(FakeRequest())))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthentication().async(_ => successful(Default.Ok("")))(request)))
     }
   }
 

@@ -20,21 +20,19 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AwsApiGatewayStore
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
-class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with ApplicationStateUtil {
+class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
@@ -121,7 +119,7 @@ class AwsApiGatewayStoreSpec extends UnitSpec with ScalaFutures with MockitoSuga
       val api = APIIdentifier("some/context", "1.0")
       val anotherApi = APIIdentifier("some/context_2", "1.0")
 
-      val result: HasSucceeded = await(underTest.resubscribeApi(Seq(api, anotherApi), app.wso2Username, app.wso2Password, applicationName, api, SILVER))
+      val result: HasSucceeded = await(underTest.resubscribeApi(List(api, anotherApi), app.wso2Username, app.wso2Password, applicationName, api, SILVER))
 
       result shouldBe HasSucceeded
       verifyZeroInteractions(mockAwsApiGatewayConnector)
