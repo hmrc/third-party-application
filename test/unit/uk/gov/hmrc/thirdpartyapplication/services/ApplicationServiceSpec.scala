@@ -26,7 +26,7 @@ import org.joda.time.DateTimeUtils
 import org.mockito.BDDMockito.given
 import org.mockito.invocation.InvocationOnMock
 import org.mockito.stubbing.{Answer, ScalaOngoingStubbing}
-import org.mockito.{ArgumentCaptor, Mockito}
+import org.mockito.{ArgumentCaptor, Mockito, MockitoSugar}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
@@ -47,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CredentialGenerator}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMock
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -56,7 +57,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup {
+  trait Setup extends AuditServiceMock {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -66,7 +67,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository](withSettings.lenient())
     val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockAuditService: AuditService = mock[AuditService](withSettings.lenient())
     val mockEmailConnector: EmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockTotpConnector: TotpConnector = mock[TotpConnector](withSettings.lenient())
     val mockLockKeeper = new MockLockKeeper(locked)
@@ -97,7 +97,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       mockApplicationRepository,
       mockStateHistoryRepository,
       mockSubscriptionRepository,
-      mockAuditService,
+      AuditServiceMock.aMock,
       mockEmailConnector,
       mockTotpConnector,
       actorSystem,
@@ -208,12 +208,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
-      verify(mockAuditService).audit(AppCreated,
+      AuditServiceMock.Audit.verify(
+        AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
-        ))
+        ),
+        hc
+      )
     }
 
     "create a new standard application in Mongo and WSO2 for the SUBORDINATE (SANDBOX) environment" in new Setup {
@@ -227,12 +230,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
-      verify(mockAuditService).audit(AppCreated,
+      AuditServiceMock.Audit.verify(
+        AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
-        ))
+        ),
+        hc
+      )
     }
 
     "create a new standard application in Mongo and WSO2" in new Setup {
@@ -245,12 +251,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
-      verify(mockAuditService).audit(AppCreated,
+      AuditServiceMock.Audit.verify(
+        AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
-        ))
+        ),
+        hc
+      )
     }
 
     "create a new Privileged application in Mongo and WSO2 with a Production state" in new Setup {
@@ -277,12 +286,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
-      verify(mockAuditService).audit(AppCreated,
+      AuditServiceMock.Audit.verify(
+        AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
-        ))
+        ),
+        hc
+      )
     }
 
     "create a new ROPC application in Mongo and WSO2 with a Production state" in new Setup {
@@ -297,12 +309,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApiGatewayStore).createApplication(*, *, *)(*)
       verify(mockApplicationRepository).save(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
-      verify(mockAuditService).audit(AppCreated,
+      AuditServiceMock.Audit.verify(
+        AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
-        ))
+        ),
+        hc
+      )
     }
 
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
@@ -316,8 +331,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      verify(mockAuditService).audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-        Map("applicationName" -> applicationRequest.name))
+      AuditServiceMock.Audit.verify(
+        CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
+        Map("applicationName" -> applicationRequest.name),
+        hc
+      )
     }
 
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
@@ -330,7 +348,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      verify(mockAuditService).audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> applicationRequest.name))
+      AuditServiceMock.Audit.verify(
+        CreateRopcApplicationRequestDeniedDueToNonUniqueName,
+        Map("applicationName" -> applicationRequest.name),
+        hc
+      )
     }
 
     //See https://wso2.org/jira/browse/CAPIMGT-1
@@ -537,10 +559,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       await(underTest.update(id, UpdateApplicationRequest(updatedApplication.name)))
 
-      verify(mockAuditService).audit(refEq(AppNameChanged), any[Map[String, String]])(*)
-      verify(mockAuditService).audit(refEq(AppTermsAndConditionsUrlChanged), any[Map[String, String]])(*)
-      verify(mockAuditService).audit(refEq(AppRedirectUrisChanged), any[Map[String, String]])(*)
-      verify(mockAuditService).audit(refEq(AppPrivacyPolicyUrlChanged), any[Map[String, String]])(*)
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppRedirectUrisChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
     }
   }
 
@@ -580,12 +602,16 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       verify(mockApplicationRepository).save(expected)
-      verify(mockAuditService).audit(CollaboratorAdded,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator))
+      AuditServiceMock.Audit.verify(
+        CollaboratorAdded,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        hc
+      )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 
     "send confirmation and notification emails to the developer and all relevant administrators when adding a registered collaborator" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator] = Set(
         Collaborator(admin, ADMINISTRATOR),
@@ -608,6 +634,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "send confirmation and notification emails to the developer and all relevant administrators when adding an unregistered collaborator" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator] = Set(
         Collaborator(admin, ADMINISTRATOR),
@@ -629,6 +656,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "send email confirmation to the developer and no notifications when there are no admins to email" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val admin = "theonlyadmin@example.com"
       val collaborators: Set[Collaborator] = Set(
@@ -651,6 +679,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "handle an unexpected failure when sending confirmation email" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
+
       val collaborators: Set[Collaborator] = Set(
         Collaborator(admin, ADMINISTRATOR),
         Collaborator("dev@example.com", DEVELOPER))
@@ -727,12 +757,16 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockApplicationRepository).save(updatedData)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
-      verify(mockAuditService).audit(CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)))
+      AuditServiceMock.Audit.verify(
+        CollaboratorRemoved,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
+        hc
+      )
       result shouldBe updatedData.collaborators
     }
 
     "remove collaborator with email address in different case" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       mockApplicationRepositoryFetchToReturn(applicationId, Some(applicationData))
       mockApplicationRepositorySaveToReturn(successful(updatedData))
@@ -916,10 +950,13 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   }
 
   "verifyUplift" should {
+
     val applicationId = UUID.randomUUID()
     val upliftRequestedBy = "email@example.com"
 
     "update the state of the application when application is in pendingRequesterVerification state" in new Setup {
+      AuditServiceMock.AuditWithTags.thenReturnSuccess()
+
       val expectedStateHistory = StateHistory(applicationId, State.PRODUCTION, Actor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION))
       val upliftRequest = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actor(upliftRequestedBy, COLLABORATOR), Some(TESTING))
 
@@ -1093,6 +1130,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val upliftRequestedBy = "email@example.com"
 
     "update the state of the application" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
+
       val application: ApplicationData = anApplicationData(applicationId, testingState())
       val expectedApplication: ApplicationData = application.copy(state = pendingGatekeeperApprovalState(upliftRequestedBy),
         name = requestedName, normalisedName = requestedName.toLowerCase)
@@ -1140,7 +1179,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(successful(List.empty[ApplicationData]))
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
-      verify(mockAuditService).audit(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString))
+      AuditServiceMock.Audit.verify(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString), hc)
     }
 
     "send an Audit event when an application uplift is successfully requested with a name change" in new Setup {
@@ -1155,7 +1194,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
       val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.toString, "newApplicationName" -> requestedName)
-      verify(mockAuditService).audit(ApplicationUpliftRequested, expectedAuditDetails)
+      AuditServiceMock.Audit.verify(ApplicationUpliftRequested, expectedAuditDetails, hc)
     }
 
     "fail with InvalidStateTransition without invoking fetchNonTestingApplicationByName when the application is not in testing" in new Setup {
@@ -1170,6 +1209,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail with ApplicationAlreadyExists when another uplifted application already exist with the same name" in new Setup {
+      AuditServiceMock.Audit.thenReturnSuccess()
+
       val application: ApplicationData = anApplicationData(applicationId, testingState())
       val anotherApplication: ApplicationData = anApplicationData(UUID.randomUUID(), productionState("admin@example.com"))
 
@@ -1355,8 +1396,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     trait DeleteApplicationSetup extends Setup {
 
+      type T = ApplicationData => Future[AuditResult]
       val mockAuditResult = mock[Future[AuditResult]]
-      val auditFunction: ApplicationData => Future[AuditResult] = mock[ApplicationData => Future[AuditResult]](withSettings.lenient())
+      val auditFunction: T = mock[T](withSettings.lenient())
       when(auditFunction.apply(*)).thenReturn(mockAuditResult)
 
       when(mockApplicationRepository.fetch(*)).thenReturn(successful(Some(application)))
@@ -1368,8 +1410,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(mockStateHistoryRepository.deleteByApplicationId(*)).thenReturn(successful(HasSucceeded))
       when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(*)(*)).thenReturn(successful(HasSucceeded))
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
-      when(mockAuditService.audit(*, *, *)(*)).thenReturn(Future.successful(AuditResult.Success))
-
     }
 
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
@@ -1435,7 +1475,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       verify(mockApplicationRepository).fetch(applicationId)
       verifyNoMoreInteractions(mockApiGatewayStore, mockApplicationRepository, mockStateHistoryRepository,
-        mockSubscriptionRepository, mockAuditService, mockEmailConnector, mockApiSubscriptionFieldsConnector)
+        mockSubscriptionRepository, AuditServiceMock.aMock, mockEmailConnector, mockApiSubscriptionFieldsConnector)
     }
   }
 
