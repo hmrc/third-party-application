@@ -18,30 +18,30 @@ package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util
 import java.util.UUID
-import java.util.concurrent.TimeUnit.{DAYS, MINUTES}
+import java.util.concurrent.TimeUnit.DAYS
 
-import org.joda.time.{DateTime, Duration}
+import com.typesafe.config.{Config, ConfigFactory}
+import org.joda.time.DateTime
 import org.mockito.Mockito._
 import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
 import org.slf4j
-import play.api.LoggerLike
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import play.api.{Configuration, LoggerLike}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.{Deleted, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{DeleteUnusedApplicationsJobConfig, DeleteUnusedApplicationsJobLockKeeper, DeleteUnusedApplicationsScheduledJob}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.DeleteUnusedApplications
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
 
-class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
+class DeleteUnusedApplicationSpec extends PlaySpec
   with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with FutureAwaits with DefaultAwaitTimeout {
 
   trait Setup {
@@ -64,16 +64,21 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
       }
     }
 
-    private val reactiveMongoComponent = new ReactiveMongoComponent {
+    val reactiveMongoComponent: ReactiveMongoComponent = new ReactiveMongoComponent {
       override def mongoConnector: MongoConnector = mongoConnectorForTest
     }
 
-    val mockLockKeeper: DeleteUnusedApplicationsJobLockKeeper = new DeleteUnusedApplicationsJobLockKeeper(reactiveMongoComponent) {
-      override def lockId: String = "deleteUnusedApplicationsTestLock"
-      override def repo: LockRepository = mock[LockRepository]
-      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
-      override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = body.map(value => Some(value))
-    }
+    def fullConfiguration(cutoff: String, dryRun: Boolean): Config =
+      ConfigFactory.parseString(
+        s"""
+           | DeleteUnusedApplications {
+           |  startTime = "10:00",
+           |  executionInterval = "1d",
+           |  enabled = true,
+           |  cutoff = $cutoff,
+           |  dryRun = $dryRun
+           | }
+           |""".stripMargin)
 
     val stubLogger = new StubLogger
     val mockApplicationService: ApplicationService = mock[ApplicationService]
@@ -81,22 +86,26 @@ class DeleteUnusedApplicationsScheduledJobSpec extends PlaySpec
   }
 
   trait FullRunSetup extends Setup {
-    val cutoffDuration: FiniteDuration = FiniteDuration(180, DAYS)
-    val jobConfig: DeleteUnusedApplicationsJobConfig =
-      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffDuration, dryRun = false)
+    val cutoffDuration: FiniteDuration = new FiniteDuration(180, DAYS) // scalastyle:off magic.number
+    val config: Config = fullConfiguration("180d", dryRun = false)
 
-    val jobUnderTest = new DeleteUnusedApplicationsScheduledJob(mockLockKeeper, mockApplicationService, mockApplicationRepository, jobConfig, stubLogger)
+    val jobUnderTest: DeleteUnusedApplications =
+      new DeleteUnusedApplications(new Configuration(config), mockApplicationService, mockApplicationRepository, reactiveMongoComponent) {
+        override val logger: LoggerLike = stubLogger
+      }
   }
 
   trait DryRunSetup extends Setup {
-    val cutoffDuration: FiniteDuration = FiniteDuration(90, DAYS)
-    val jobConfig: DeleteUnusedApplicationsJobConfig =
-      DeleteUnusedApplicationsJobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true, cutoffDuration, dryRun = true)
+    val cutoffDuration: FiniteDuration = new FiniteDuration(90, DAYS) // scalastyle:off magic.number
+    val config: Config = fullConfiguration("90d", dryRun = true)
 
-    val jobUnderTest = new DeleteUnusedApplicationsScheduledJob(mockLockKeeper, mockApplicationService, mockApplicationRepository, jobConfig, stubLogger)
+    val jobUnderTest: DeleteUnusedApplications =
+      new DeleteUnusedApplications(new Configuration(config), mockApplicationService, mockApplicationRepository, reactiveMongoComponent) {
+        override val logger: LoggerLike = stubLogger
+      }
   }
 
-  "Scheduled Job" should {
+  "DeleteUnusedApplications Job" should {
     def expectedCutoffDate(cutoffDuration: FiniteDuration): DateTime = DateTime.now.minus(cutoffDuration.toMillis)
 
     "delete applications not used for more than a defined time" in new FullRunSetup {

@@ -25,7 +25,6 @@ import org.joda.time.DateTime
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor.ErrorHandler
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
