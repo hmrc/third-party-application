@@ -47,7 +47,7 @@ trait TimedJobConfigReaders {
 
   implicit def deleteUnusedApplicationsConfigReader: ValueReader[DeleteUnusedApplicationsConfig] = ValueReader.relative[DeleteUnusedApplicationsConfig] {
     config =>
-      val cutoff = config.as[FiniteDuration]("cutoff")
+      val cutoff = config.as[FiniteDuration]("deleteApplicationsIfUnusedFor")
       val dryRun = config.as[Option[Boolean]]("dryRun").getOrElse(true)
 
       DeleteUnusedApplicationsConfig(cutoff, dryRun)

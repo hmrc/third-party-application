@@ -143,7 +143,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            |  startTime = "10:00",
            |  executionInterval = "1d",
            |  enabled = true,
-           |  cutoff = $cutoff,
+           |  deleteApplicationsIfUnusedFor = $cutoff,
            |  dryRun = $dryRun
            | }
            |""".stripMargin)
@@ -152,7 +152,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
-           |  cutoff = $cutoff
+           |  deleteApplicationsIfUnusedFor = $cutoff
            | }
            |""".stripMargin)
 
@@ -169,7 +169,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
       val parsedConfig: DeleteUnusedApplicationsConfig = config.as[DeleteUnusedApplicationsConfig](jobConfigPath)
 
-      parsedConfig.cutoff must be (FiniteDuration(365, TimeUnit.DAYS))
+      parsedConfig.deleteApplicationsIfUnusedFor must be (FiniteDuration(365, TimeUnit.DAYS))
       parsedConfig.dryRun must be (false)
     }
 
@@ -178,7 +178,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
       val parsedConfig: DeleteUnusedApplicationsConfig = config.as[DeleteUnusedApplicationsConfig](jobConfigPath)
 
-      parsedConfig.cutoff must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.deleteApplicationsIfUnusedFor must be (FiniteDuration(180, TimeUnit.DAYS))
       parsedConfig.dryRun must be (true)
     }
 

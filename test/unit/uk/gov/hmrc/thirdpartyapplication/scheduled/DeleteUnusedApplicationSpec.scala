@@ -75,7 +75,7 @@ class DeleteUnusedApplicationSpec extends PlaySpec
            |  startTime = "10:00",
            |  executionInterval = "1d",
            |  enabled = true,
-           |  cutoff = $cutoff,
+           |  deleteApplicationsIfUnusedFor = $cutoff,
            |  dryRun = $dryRun
            | }
            |""".stripMargin)

@@ -69,6 +69,6 @@ class DeleteUnusedApplications @Inject()(configuration: Configuration,
   }
 }
 
-case class DeleteUnusedApplicationsConfig(cutoff: FiniteDuration, dryRun: Boolean) {
-  def cutoffDate: DateTime = DateTime.now.minus(cutoff.toMillis)
+case class DeleteUnusedApplicationsConfig(deleteApplicationsIfUnusedFor: FiniteDuration, dryRun: Boolean) {
+  def cutoffDate: DateTime = DateTime.now.minus(deleteApplicationsIfUnusedFor.toMillis)
 }
