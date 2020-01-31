@@ -52,6 +52,15 @@ trait TimedJobConfigReaders {
 
       DeleteUnusedApplicationsConfig(cutoff, dryRun)
   }
+
+  implicit def applicationToBeDeletedNotificationsConfigReader: ValueReader[ApplicationToBeDeletedNotificationsConfig] =
+    ValueReader.relative[ApplicationToBeDeletedNotificationsConfig] {
+      config =>
+        val notificationCutoff = config.as[FiniteDuration]("notifyWhenUnusedFor")
+        val dryRun = config.as[Option[Boolean]]("dryRun").getOrElse(true)
+
+        ApplicationToBeDeletedNotificationsConfig(notificationCutoff, dryRun)
+    }
 }
 
 object TimedJobConfigReaders extends TimedJobConfigReaders

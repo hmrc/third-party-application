@@ -25,7 +25,7 @@ import org.joda.time.LocalTime
 import org.mockito.ArgumentMatchersSugar
 import org.scalatest.mockito.MockitoSugar
 import org.scalatest.{MustMatchers, WordSpec}
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{DeleteUnusedApplicationsConfig, TimedJobConfig, TimedJobConfigReaders}
+import uk.gov.hmrc.thirdpartyapplication.scheduled.{ApplicationToBeDeletedNotificationsConfig, DeleteUnusedApplicationsConfig, TimedJobConfig, TimedJobConfigReaders}
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -135,7 +135,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
   }
 
   "deleteUnusedApplicationsConfigReader" should {
-    val jobConfigPath: String = "TestScheduledJob"
+    val jobConfigPath: String = "DeleteUnusedApplications"
     def fullConfiguration(cutoff: String, dryRun: Boolean): Config =
       ConfigFactory.parseString(
         s"""
@@ -187,6 +187,63 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
       assertThrows[Missing] {
         config.as[DeleteUnusedApplicationsConfig](jobConfigPath)
+      }
+    }
+  }
+
+  "applicationToBeDeletedNotificationsConfigReader" should {
+    val jobConfigPath: String = "ApplicationToBeDeletedNotifications"
+    def fullConfiguration(notificationCutoff: String, dryRun: Boolean): Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  startTime = "10:00",
+           |  executionInterval = "1d",
+           |  enabled = true,
+           |  notifyWhenUnusedFor = $notificationCutoff,
+           |  dryRun = $dryRun
+           | }
+           |""".stripMargin)
+
+    def noDryRunConfig(notificationCutoff: String): Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  notifyWhenUnusedFor = $notificationCutoff
+           | }
+           |""".stripMargin)
+
+    def noNotificationCutoffConfig(dryRun: Boolean): Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  dryRun = $dryRun
+           | }
+           |""".stripMargin)
+
+    "correctly create an DeleteUnusedApplicationsConfig object when all values are populated" in new TimedJobConfigReaders {
+      val config: Config = fullConfiguration("180d", dryRun = false)
+
+      val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+
+      parsedConfig.notifyWhenUnusedFor must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.dryRun must be (false)
+    }
+
+    "default dryRun to true if not specified" in new TimedJobConfigReaders {
+      val config: Config = noDryRunConfig("180d")
+
+      val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+
+      parsedConfig.notifyWhenUnusedFor must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.dryRun must be (true)
+    }
+
+    "throw a Missing exception if cutoff is not specified" in new TimedJobConfigReaders {
+      val config: Config = noNotificationCutoffConfig(dryRun = false)
+
+      assertThrows[Missing] {
+        config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
       }
     }
   }
