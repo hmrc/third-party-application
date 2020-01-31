@@ -200,7 +200,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            |  startTime = "10:00",
            |  executionInterval = "1d",
            |  enabled = true,
-           |  notifyWhenUnusedFor = $notificationCutoff,
+           |  sendNotificationsInAdvance = $notificationCutoff,
            |  dryRun = $dryRun
            | }
            |""".stripMargin)
@@ -209,7 +209,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
-           |  notifyWhenUnusedFor = $notificationCutoff
+           |  sendNotificationsInAdvance = $notificationCutoff
            | }
            |""".stripMargin)
 
@@ -226,7 +226,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
       val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
 
-      parsedConfig.notifyWhenUnusedFor must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(180, TimeUnit.DAYS))
       parsedConfig.dryRun must be (false)
     }
 
@@ -235,7 +235,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
       val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
 
-      parsedConfig.notifyWhenUnusedFor must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(180, TimeUnit.DAYS))
       parsedConfig.dryRun must be (true)
     }
 
