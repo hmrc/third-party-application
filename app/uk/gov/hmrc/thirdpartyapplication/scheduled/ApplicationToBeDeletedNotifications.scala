@@ -17,27 +17,37 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.{Inject, Singleton}
-import org.joda.time.DateTime
+import net.ceedubs.ficus.Ficus._
+import org.joda.time.{DateTime, Months}
 import play.api.Configuration
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import net.ceedubs.ficus.Ficus._
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApplicationToBeDeletedNotifications @Inject()(configuration: Configuration,
-                                                     applicationRepository: ApplicationRepository,
-                                                     mongo: ReactiveMongoComponent)
+                                                    applicationRepository: ApplicationRepository,
+                                                    mongo: ReactiveMongoComponent)
   extends TimedJob("ApplicationToBeDeletedNotifications", configuration, mongo) {
 
   val notificationJobConfig = configuration.underlying.as[ApplicationToBeDeletedNotificationsConfig](name)
   val deleteJobConfig = configuration.underlying.as[DeleteUnusedApplicationsConfig]("DeleteUnusedApplications")
 
-  override def functionToExecute()(implicit executionContext: ExecutionContext): Future[RunningOfJobSuccessful] = ???
+  override def functionToExecute()(implicit executionContext: ExecutionContext): Future[RunningOfJobSuccessful] = {
+    val cutoffDate: DateTime =
+      DateTime.now
+        .minus(deleteJobConfig.deleteApplicationsIfUnusedFor.toMillis)
+        .plus(notificationJobConfig.sendNotificationsInAdvance.toMillis)
+
+    val applicationsRequiringNotifications = applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate)
+
+    Future.successful(RunningOfJobSuccessful)
+  }
 }
 
-case class ApplicationToBeDeletedNotificationsConfig(sendNotificationsInAdvance: FiniteDuration, dryRun: Boolean) {
-  def notificationCutoffDate: DateTime = DateTime.now.minus(sendNotificationsInAdvance.toMillis)
-}
+case class ApplicationToBeDeletedNotificationsConfig(sendNotificationsInAdvance: FiniteDuration,
+                                                     emailServiceURL: String,
+                                                     emailTemplateId: String,
+                                                     dryRun: Boolean)

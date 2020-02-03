@@ -57,9 +57,11 @@ trait TimedJobConfigReaders {
     ValueReader.relative[ApplicationToBeDeletedNotificationsConfig] {
       config =>
         val notificationCutoff = config.as[FiniteDuration]("sendNotificationsInAdvance")
+        val emailServiceURL = config.as[String]("emailServiceURL")
+        val emailTemplateId = config.as[String]("emailTemplateId")
         val dryRun = config.as[Option[Boolean]]("dryRun").getOrElse(true)
 
-        ApplicationToBeDeletedNotificationsConfig(notificationCutoff, dryRun)
+        ApplicationToBeDeletedNotificationsConfig(notificationCutoff, emailServiceURL, emailTemplateId, dryRun)
     }
 }
 

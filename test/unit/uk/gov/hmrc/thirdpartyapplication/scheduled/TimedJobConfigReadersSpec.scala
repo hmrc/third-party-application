@@ -193,7 +193,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
   "applicationToBeDeletedNotificationsConfigReader" should {
     val jobConfigPath: String = "ApplicationToBeDeletedNotifications"
-    def fullConfiguration(notificationCutoff: String, dryRun: Boolean): Config =
+    def fullConfiguration(notificationCutoff: String, emailServiceURL: String, emailTemplateId: String, dryRun: Boolean): Config =
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
@@ -201,49 +201,84 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            |  executionInterval = "1d",
            |  enabled = true,
            |  sendNotificationsInAdvance = $notificationCutoff,
+           |  emailServiceURL = "$emailServiceURL",
+           |  emailTemplateId = $emailTemplateId,
            |  dryRun = $dryRun
            | }
            |""".stripMargin)
 
-    def noDryRunConfig(notificationCutoff: String): Config =
+    def noDryRunConfig: Config =
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
-           |  sendNotificationsInAdvance = $notificationCutoff
+           |  sendNotificationsInAdvance = 30d,
+           |  emailServiceURL = "http://email.service",
+           |  emailTemplateId = apiApplicationToBeDeletedNotification,
            | }
            |""".stripMargin)
 
-    def noNotificationCutoffConfig(dryRun: Boolean): Config =
+    def noEmailServiceURLConfig: Config =
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
-           |  dryRun = $dryRun
+           |  sendNotificationsInAdvance = 30d,
+           |  emailTemplateId = apiApplicationToBeDeletedNotification,
+           |  dryRun = false
+           | }
+           |""".stripMargin)
+
+    def noEmailTemplateIdConfig: Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  sendNotificationsInAdvance = 30d,
+           |  emailServiceURL = "http://email.service",
+           |  dryRun = false
+           | }
+           |""".stripMargin)
+
+    def noNotificationCutoffConfig: Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  emailServiceURL = "http://email.service",
+           |  emailTemplateId = apiApplicationToBeDeletedNotification,
+           |  dryRun = false
            | }
            |""".stripMargin)
 
     "correctly create an DeleteUnusedApplicationsConfig object when all values are populated" in new TimedJobConfigReaders {
-      val config: Config = fullConfiguration("180d", dryRun = false)
+      val config: Config = fullConfiguration("30d", "http://email.service", "apiApplicationToBeDeletedNotification", dryRun = false)
 
       val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
 
-      parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(180, TimeUnit.DAYS))
+      parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(30, TimeUnit.DAYS))
+      parsedConfig.emailServiceURL must be ("http://email.service")
+      parsedConfig.emailTemplateId must be ("apiApplicationToBeDeletedNotification")
       parsedConfig.dryRun must be (false)
     }
 
     "default dryRun to true if not specified" in new TimedJobConfigReaders {
-      val config: Config = noDryRunConfig("180d")
+      val parsedConfig: ApplicationToBeDeletedNotificationsConfig = noDryRunConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
 
-      val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
-
-      parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(180, TimeUnit.DAYS))
       parsedConfig.dryRun must be (true)
     }
 
-    "throw a Missing exception if cutoff is not specified" in new TimedJobConfigReaders {
-      val config: Config = noNotificationCutoffConfig(dryRun = false)
-
+    "throw a Missing exception if emailServiceURL is not specified" in new TimedJobConfigReaders {
       assertThrows[Missing] {
-        config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+        noEmailServiceURLConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+      }
+    }
+
+    "throw a Missing exception if emailTemplateId is not specified" in new TimedJobConfigReaders {
+      assertThrows[Missing] {
+        noEmailTemplateIdConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+      }
+    }
+
+    "throw a Missing exception if cutoff is not specified" in new TimedJobConfigReaders {
+      assertThrows[Missing] {
+        noNotificationCutoffConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
       }
     }
   }
