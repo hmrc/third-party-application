@@ -16,14 +16,14 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.{ArgumentMatcher, ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
 
 import scala.concurrent.Future.successful
 
-trait AuditServiceMock extends MockitoSugar with ArgumentMatchersSugar {
+trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   object AuditServiceMock {
     lazy val aMock =  mock[AuditService]

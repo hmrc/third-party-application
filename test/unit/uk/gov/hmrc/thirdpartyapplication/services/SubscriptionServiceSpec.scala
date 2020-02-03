@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMock
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 
 import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +43,7 @@ import scala.concurrent.Future.{failed, successful}
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends AuditServiceMock {
+  trait Setup extends AuditServiceMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())

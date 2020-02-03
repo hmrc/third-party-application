@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AccessService
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationRepositoryMock, AuditServiceMock}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationRepositoryMockModule, AuditServiceMockModule}
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -36,14 +36,14 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       mockApplicationRepositoryFetchAndSave(privilegedApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifySaved().access.asInstanceOf[Privileged].scopes shouldBe scopes1to4
+      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Privileged].scopes shouldBe scopes1to4
     }
 
     "invoke repository save function with updated ropc application data access scopes" in new ScopeFixture {
       mockApplicationRepositoryFetchAndSave(ropcApplicationDataWithScopes(applicationId), Set.empty, scopes1to4)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes1to4))(hc))
-      ApplicationRepoMock.Save.verifySaved().access.asInstanceOf[Ropc].scopes shouldBe scopes1to4
+      ApplicationRepoMock.Save.verifyCalled().access.asInstanceOf[Ropc].scopes shouldBe scopes1to4
     }
 
     "invoke audit service for privileged scopes" in new ScopeFixture {
@@ -99,7 +99,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       val newOverrides = Set[OverrideFlag](override2, override3, override4)
       await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
 
-      val capturedApplicationData = ApplicationRepoMock.Save.verifySaved()
+      val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
       capturedApplicationData.access.asInstanceOf[Standard].overrides shouldBe newOverrides
     }
 
@@ -117,7 +117,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       val newOverrides = Set[OverrideFlag](grantWithoutConsent2)
       await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
 
-      val capturedApplicationData = ApplicationRepoMock.Save.verifySaved()
+      val capturedApplicationData = ApplicationRepoMock.Save.verifyCalled()
       capturedApplicationData.access.asInstanceOf[Standard].overrides shouldBe Set(grantWithoutConsent2)
     }
 
@@ -137,7 +137,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   }
 
-  trait Fixture extends ApplicationRepositoryMock with AuditServiceMock {
+  trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
     val applicationId = UUID.randomUUID()
     implicit val hc: HeaderCarrier = HeaderCarrier()
