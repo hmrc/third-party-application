@@ -193,7 +193,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
 
   "applicationToBeDeletedNotificationsConfigReader" should {
     val jobConfigPath: String = "ApplicationToBeDeletedNotifications"
-    def fullConfiguration(notificationCutoff: String, emailServiceURL: String, emailTemplateId: String, dryRun: Boolean): Config =
+    def fullConfiguration(notificationCutoff: String, emailServiceURL: String, emailTemplateId: String, environmentName: String,  dryRun: Boolean): Config =
       ConfigFactory.parseString(
         s"""
            | $jobConfigPath {
@@ -203,6 +203,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            |  sendNotificationsInAdvance = $notificationCutoff,
            |  emailServiceURL = "$emailServiceURL",
            |  emailTemplateId = $emailTemplateId,
+           |  environmentName = $environmentName,
            |  dryRun = $dryRun
            | }
            |""".stripMargin)
@@ -213,7 +214,8 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            | $jobConfigPath {
            |  sendNotificationsInAdvance = 30d,
            |  emailServiceURL = "http://email.service",
-           |  emailTemplateId = apiApplicationToBeDeletedNotification,
+           |  emailTemplateId = "apiApplicationToBeDeletedNotification",
+           |  environmentName = "Test Application"
            | }
            |""".stripMargin)
 
@@ -223,6 +225,7 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            | $jobConfigPath {
            |  sendNotificationsInAdvance = 30d,
            |  emailTemplateId = apiApplicationToBeDeletedNotification,
+           |  environmentName = "Test Application",
            |  dryRun = false
            | }
            |""".stripMargin)
@@ -233,6 +236,18 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            | $jobConfigPath {
            |  sendNotificationsInAdvance = 30d,
            |  emailServiceURL = "http://email.service",
+           |  environmentName = "Test Application",
+           |  dryRun = false
+           | }
+           |""".stripMargin)
+
+    def noEnvironmentNameConfig: Config =
+      ConfigFactory.parseString(
+        s"""
+           | $jobConfigPath {
+           |  sendNotificationsInAdvance = 30d,
+           |  emailServiceURL = "http://email.service",
+           |  emailTemplateId = apiApplicationToBeDeletedNotification,
            |  dryRun = false
            | }
            |""".stripMargin)
@@ -243,18 +258,20 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
            | $jobConfigPath {
            |  emailServiceURL = "http://email.service",
            |  emailTemplateId = apiApplicationToBeDeletedNotification,
+           |  environmentName = "Test Application",
            |  dryRun = false
            | }
            |""".stripMargin)
 
     "correctly create an DeleteUnusedApplicationsConfig object when all values are populated" in new TimedJobConfigReaders {
-      val config: Config = fullConfiguration("30d", "http://email.service", "apiApplicationToBeDeletedNotification", dryRun = false)
+      val config: Config = fullConfiguration("30d", "http://email.service", "apiApplicationToBeDeletedNotification", "Test Environment", dryRun = false)
 
       val parsedConfig: ApplicationToBeDeletedNotificationsConfig = config.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
 
       parsedConfig.sendNotificationsInAdvance must be (FiniteDuration(30, TimeUnit.DAYS))
       parsedConfig.emailServiceURL must be ("http://email.service")
       parsedConfig.emailTemplateId must be ("apiApplicationToBeDeletedNotification")
+      parsedConfig.environmentName must be ("Test Environment")
       parsedConfig.dryRun must be (false)
     }
 
@@ -273,6 +290,12 @@ class TimedJobConfigReadersSpec extends WordSpec with MockitoSugar with Argument
     "throw a Missing exception if emailTemplateId is not specified" in new TimedJobConfigReaders {
       assertThrows[Missing] {
         noEmailTemplateIdConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
+      }
+    }
+
+    "throw a Missing exception if environmentName is not specified" in new TimedJobConfigReaders {
+      assertThrows[Missing] {
+        noEnvironmentNameConfig.as[ApplicationToBeDeletedNotificationsConfig](jobConfigPath)
       }
     }
 

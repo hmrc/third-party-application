@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.{Inject, Singleton}
 import net.ceedubs.ficus.Ficus._
-import org.joda.time.{DateTime, Months}
+import org.joda.time.DateTime
 import play.api.Configuration
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -50,4 +50,5 @@ class ApplicationToBeDeletedNotifications @Inject()(configuration: Configuration
 case class ApplicationToBeDeletedNotificationsConfig(sendNotificationsInAdvance: FiniteDuration,
                                                      emailServiceURL: String,
                                                      emailTemplateId: String,
+                                                     environmentName: String,
                                                      dryRun: Boolean)
