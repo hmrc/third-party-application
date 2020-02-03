@@ -81,6 +81,7 @@ case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             providedPrivacyPolicyURL: Boolean = false,
                             providedTermsAndConditionsURL: Boolean = false,
                             applicationDetails: Option[String] = None,
+                            teamConfirmed: Boolean = false,
                             termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
 
 case class ApplicationResponse(id: UUID,
