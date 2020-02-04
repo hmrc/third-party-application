@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApiDefinitionConnectorMockModule, AuditServiceMockModule}
 
 import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,14 +43,12 @@ import scala.concurrent.Future.{failed, successful}
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends AuditServiceMockModule {
+  trait Setup extends AuditServiceMockModule with ApiDefinitionConnectorMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
     val mockApplicationRepository = mock[ApplicationRepository](withSettings.lenient())
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockApiDefinitionConnector = mock[ApiDefinitionConnector](withSettings.lenient())
-//    val mockAuditService = AuditServiceMock.aMock
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val response = mock[WSResponse]
@@ -61,11 +59,10 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, AuditServiceMock.aMock, mockApiGatewayStore)
+      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(*, *, *)(*)).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
-    when(mockApiDefinitionConnector.fetchAllAPIs(*)(*, *, *)).thenReturn(successful(List(anAPIDefinition())))
     when(mockApiGatewayStore.addSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApiGatewayStore.removeSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.add(*, *)).thenReturn(successful(HasSucceeded))
@@ -125,7 +122,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.fetchAllSubscriptionsForApplication(applicationId))
       }
 
-      verifyZeroInteractions(mockApiDefinitionConnector)
+      ApiDefinitionConnectorMock.verifyZeroInteractions()
       verifyZeroInteractions(mockSubscriptionRepository)
     }
 
@@ -134,8 +131,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
       when(mockApplicationRepository.fetch(applicationId))
         .thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*,*,*))
-        .thenReturn(successful(List(anAPIDefinition("context", List(anAPIVersion("1.0"), anAPIVersion("2.0"))))))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
+        anAPIDefinition("context", List(anAPIVersion("1.0"), anAPIVersion("2.0")))
+      )
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(anAPI("context", "1.0"))))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
@@ -149,8 +147,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
     "filter API versions in status alpha" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*,*,*))
-        .thenReturn(successful(List(anAPIDefinition("context", List(anAPIVersion(), anAPIVersion("2.0", status = ALPHA))))))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
+        anAPIDefinition("context", List(anAPIVersion(), anAPIVersion("2.0", status = ALPHA)))
+      )
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
@@ -162,8 +161,9 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
     "filter API if all its versions are in status alpha" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*,*,*))
-        .thenReturn(successful(List(anAPIDefinition("context", List(anAPIVersion("2.0", status = ALPHA))))))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
+        anAPIDefinition("context", List(anAPIVersion("2.0", status = ALPHA)))
+      )
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
@@ -180,8 +180,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "create a subscription in WSO2 and Mongo for the given application when an application exists in the repository" in new Setup {
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*, *, *))
-        .thenReturn(successful(List(anAPIDefinition())))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       val result = await(underTest.createSubscriptionForApplication(applicationId, api))
@@ -195,8 +194,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "throw SubscriptionAlreadyExistsException if already subscribed" in new Setup {
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*, *, *))
-        .thenReturn(successful(List(anAPIDefinition())))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api)))
 
       intercept[SubscriptionAlreadyExistsException] {
@@ -208,8 +206,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
     "throw NotFoundException if API version is in status alpha" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*, *, *))
-        .thenReturn(successful(List(anAPIDefinition(versions = List(anAPIVersion(status = ALPHA))))))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition(versions = List(anAPIVersion(status = ALPHA))))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       intercept[NotFoundException] {
@@ -220,10 +217,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*, *, *))
-        .thenReturn(successful(List(anAPIDefinition())))
 
       intercept[NotFoundException] {
         await(underTest.createSubscriptionForApplication(applicationId, api))
@@ -235,8 +229,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "throw a NotFoundException when the API does not exist" in new Setup {
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*, *, *))
-        .thenReturn(successful(List.empty))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnEmpty()
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       intercept[NotFoundException] {
@@ -250,8 +243,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       val apiWithWrongVersion = api.copy(version = "10.0")
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockApiDefinitionConnector.fetchAllAPIs(refEq(applicationId))(*,*,*))
-        .thenReturn(successful(List(anAPIDefinition())))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
 
       intercept[NotFoundException] {

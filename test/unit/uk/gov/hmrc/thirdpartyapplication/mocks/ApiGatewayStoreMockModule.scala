@@ -17,9 +17,8 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, Mockito, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, EnvironmentToken, HasSucceeded, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
@@ -73,7 +72,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
 
     object DeleteApplication {
       def verifyCalledWith(application: ApplicationData) = {
-        import application.{wso2ApplicationName,wso2Username,wso2Password}
+        import application.{wso2ApplicationName, wso2Password, wso2Username}
         ApiGatewayStoreMock.verify.deleteApplication(eqTo(wso2Username), eqTo(wso2Password), eqTo(wso2ApplicationName))(*)
       }
 
@@ -128,7 +127,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
                             originalApplicationData: ApplicationData,
                             apiIdentifier: APIIdentifier,
                             rateLimitTier: RateLimitTier) = {
-        import originalApplicationData.{wso2Password,wso2Username,wso2ApplicationName}
+        import originalApplicationData.{wso2ApplicationName, wso2Password, wso2Username}
         ApiGatewayStoreMock.verify.resubscribeApi(
             eqTo(identifiers),
             eqTo(wso2Username),
@@ -163,7 +162,5 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
 
   object ApiGatewayStoreMock extends BaseApiGatewayStoreMock {
     val aMock = mock[ApiGatewayStore](withSettings.lenient())
-
-
   }
 }
