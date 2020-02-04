@@ -122,18 +122,16 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     handleOption(credentialService.fetchWso2Credentials(clientId))
   }
 
-  def addCollaborator(applicationId: UUID) = {
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
-      withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
-        applicationService.addCollaborator(applicationId, collaboratorRequest) map {
-          response => Ok(toJson(response))
-        } recover {
-          case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS,
-            "This email address is already registered with different role, delete and add with desired role"))
+  def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+    withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
+      applicationService.addCollaborator(applicationId, collaboratorRequest) map {
+        response => Ok(toJson(response))
+      } recover {
+        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS,
+          "This email address is already registered with different role, delete and add with desired role"))
 
-          case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
-        } recover recovery
-      }
+        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
+      } recover recovery
     }
   }
 
@@ -141,7 +139,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
+    Action.async { implicit request =>
       applicationService.deleteCollaborator(applicationId, email, admin, adminsToEmailSet) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery

@@ -552,17 +552,21 @@ class ApplicationControllerSpec extends ControllerSpec
       })
     }
 
-    "fail with a 401 (unauthorized) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "succeed with a 200 (ok) for a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         val response = AddCollaboratorResponse(registeredUser = true)
         when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
-        assertThrows[SessionRecordNotFound](await(underTest.addCollaborator(applicationId)(addRequest(request))))
+        val result = underTest.addCollaborator(applicationId)(addRequest(request))
+
+        status(result) shouldBe SC_OK
+        contentAsJson(result) shouldBe Json.toJson(response)
       })
     }
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
+      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
+        .thenReturn(failed(new NotFoundException(s"application not found for id: $applicationId")))
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
@@ -632,18 +636,22 @@ class ApplicationControllerSpec extends ControllerSpec
       })
     }
 
-    "fail with a 401 (Unauthorized) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
           eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-        assertThrows[SessionRecordNotFound](await(underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)))
+        val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
+
+        status(result) shouldBe SC_NO_CONTENT
       })
     }
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
+      when(underTest.applicationService.deleteCollaborator(
+        eqTo(applicationId), eqTo(collaborator), eqTo(admin), eqTo(adminsToEmailSet))(*))
+        .thenReturn(failed(new NotFoundException(s"application not found for id: $applicationId")))
 
       val result = underTest.deleteCollaborator(applicationId, collaborator, admin, adminsToEmailString)(request)
 
