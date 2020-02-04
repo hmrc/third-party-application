@@ -80,7 +80,7 @@ object JsonFormatters {
       (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
       (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
       (JsPath \ "applicationDetails").readNullable[String] and
-      (JsPath \ "teamConfirmed").read[Boolean] and
+      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
       ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
     )(CheckInformation.apply _)
 

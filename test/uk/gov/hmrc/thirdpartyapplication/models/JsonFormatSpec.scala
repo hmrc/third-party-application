@@ -19,11 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.{Json, Reads}
 
-class MongoFormatSpec extends WordSpec with Matchers {
+class JsonFormatSpec extends WordSpec with Matchers {
 
-  implicit val mongoFormat: Reads[CheckInformation] = MongoFormat.checkInformationReads
-
-  "CheckInformation parsing from the database" should {
+  implicit val jsonFormat: Reads[CheckInformation] = JsonFormatters.checkInformationFormat
+  
+  "CheckInformation parsing from REST API Json" should {
     "parse fully populated json" in {
       val json =
         """
