@@ -321,7 +321,13 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     } yield applicationIds.toSet
   }
 
-  def applicationsRequiringDeletionPendingNotification(lastUsedDate: DateTime): Future[Seq[(UUID, DateTime)]] = {
+  def applicationsRequiringDeletionPendingNotification(lastUsedDate: DateTime): Future[Seq[(UUID, DateTime, Set[String])]] = {
+    def administratorEmailAddresses(collaborators: JsArray): Set[String] =
+      collaborators.value
+        .filter(collaborator => (collaborator \ "role").as[String] == "ADMINISTRATOR")
+        .map(collaborator => (collaborator \ "emailAddress").as[String])
+        .toSet
+
     val query =
       Json.obj(
         "lastAccess" -> Json.obj("$lte" -> lastUsedDate),
@@ -329,15 +335,18 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
           Json.obj("deleteNotificationSent"-> Json.obj("$exists" -> false)), // No notification ever sent
           Json.obj("deleteNotificationSent" -> Json.obj("$not" -> Json.obj("$lte" -> lastUsedDate))), // Exclude where notifications already sent
           Json.obj("$expr" -> Json.obj("$gt" -> Json.arr("$lastAccess", "$deleteNotificationSent"))))) // Except if application used since previous notification
-    val projection = Json.obj("_id" -> 0, "id" -> 1, "lastAccess" -> 1)
+    val projection = Json.obj("_id" -> 0, "id" -> 1, "lastAccess" -> 1, "collaborators" -> 1)
 
     for {
       results <- fetchWithProjection(query, projection)
-      applicationIds: Seq[(UUID, DateTime)] = results.map {
-        result =>
-          (UUID.fromString((result \ "id").as[String]), (result \ "lastAccess").as[DateTime])
+      applicationDetails: Seq[(UUID, DateTime, Set[String])] = results.map {
+        result => (
+          UUID.fromString((result \ "id").as[String]),
+          (result \ "lastAccess").as[DateTime],
+          administratorEmailAddresses((result \ "collaborators").as[JsArray])
+        )
       }
-    } yield applicationIds
+    } yield applicationDetails
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
