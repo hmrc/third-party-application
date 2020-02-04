@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 
 import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -42,14 +43,14 @@ import scala.concurrent.Future.{failed, successful}
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup {
+  trait Setup extends AuditServiceMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
     val mockApplicationRepository = mock[ApplicationRepository](withSettings.lenient())
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockApiDefinitionConnector = mock[ApiDefinitionConnector](withSettings.lenient())
-    val mockAuditService = mock[AuditService](withSettings.lenient())
+//    val mockAuditService = AuditServiceMock.aMock
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val response = mock[WSResponse]
@@ -60,7 +61,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, mockAuditService, mockApiGatewayStore)
+      mockApplicationRepository, mockSubscriptionRepository, mockApiDefinitionConnector, AuditServiceMock.aMock, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(*, *, *)(*)).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
@@ -186,7 +187,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       val result = await(underTest.createSubscriptionForApplication(applicationId, api))
 
       result shouldBe HasSucceeded
-      verify(mockAuditService).audit(refEq(Subscribed), any[Map[String, String]])(refEq(hc))
+      AuditServiceMock.verify.audit(refEq(Subscribed), any[Map[String, String]])(refEq(hc))
       verify(mockApiGatewayStore).addSubscription(refEq(applicationData), refEq(api))(*)
       verify(mockSubscriptionRepository).add(applicationId, api)
     }
@@ -283,7 +284,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
       verify(mockApiGatewayStore).removeSubscription(*, *)(*)
-      verify(mockAuditService).audit(refEq(Unsubscribed), any[Map[String, String]])(refEq(hc))
+      AuditServiceMock.verify.audit(refEq(Unsubscribed), any[Map[String, String]])(refEq(hc))
     }
   }
 
