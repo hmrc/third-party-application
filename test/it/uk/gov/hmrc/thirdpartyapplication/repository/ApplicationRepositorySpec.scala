@@ -1129,15 +1129,17 @@ class ApplicationRepositorySpec
 
     "return only applications last accessed before specified date with no previous notification sent" in {
       val oldApplicationId = UUID.randomUUID()
+      val lastAccessDate = DateTime.now.minusMonths(18)
       val cutoffDate = DateTime.now.minusMonths(11)
 
-      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, lastAccessDate)))
       await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
 
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
+      val retrievedApplications: Seq[(UUID, DateTime)] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.size should be (1)
-      retrievedApplications.head should be (oldApplicationId)
+      retrievedApplications.head._1 should be (oldApplicationId)
+      retrievedApplications.head._2.isEqual(lastAccessDate) should be (true)
     }
 
     "not return applications that have had notifications sent within cutoff period" in {
@@ -1147,7 +1149,7 @@ class ApplicationRepositorySpec
 
       await(applicationRepository.save(applicationWithNotificationSent))
 
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
+      val retrievedApplications: Seq[(UUID, DateTime)] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.isEmpty should be (true)
     }
@@ -1155,15 +1157,17 @@ class ApplicationRepositorySpec
     "return applications that have had notifications sent prior to last used date" in {
       val cutoffDate = DateTime.now.minusMonths(11)
       val applicationWithOldNotificationId: UUID = UUID.randomUUID
+      val lastAccessDate = DateTime.now.minusMonths(12)
       val applicationWithOldNotification =
-        applicationWithLastAccessDateAndNotificationDate(applicationWithOldNotificationId, DateTime.now.minusMonths(12), DateTime.now.minusMonths(24))
+        applicationWithLastAccessDateAndNotificationDate(applicationWithOldNotificationId, lastAccessDate, DateTime.now.minusMonths(24))
 
       await(applicationRepository.save(applicationWithOldNotification))
 
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
+      val retrievedApplications: Seq[(UUID, DateTime)] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.size should be (1)
-      retrievedApplications.head should be (applicationWithOldNotificationId)
+      retrievedApplications.head._1 should be (applicationWithOldNotificationId)
+      retrievedApplications.head._2.isEqual(lastAccessDate) should be (true)
     }
 
   }

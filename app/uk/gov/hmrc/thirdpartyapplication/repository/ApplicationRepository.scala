@@ -304,32 +304,41 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchAll(): Future[Seq[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
-  def fetchApplicationIds(query: JsObject): Future[Set[UUID]] = {
+  def fetchWithProjection(query: JsObject, projection: JsObject): Future[Seq[JsObject]] = {
+    collection
+      .find(query, Some(projection))
+      .cursor[JsObject]()
+      .collect[Seq] (-1, Cursor.ContOnError[Seq[JsObject]]())
+  }
+
+  def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Set[UUID]] = {
+    val query = Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
     val projection = Json.obj("_id" -> 0, "id" -> 1)
 
     for {
-      results <-
-        collection
-          .find(query, Some(projection))
-          .cursor[BSONDocument]()
-          .collect[Seq] (-1, Cursor.ContOnError[Seq[BSONDocument]]())
-
-      applicationIds = results.flatMap(_.getAs[String]("id")).map(UUID.fromString)
+      results <- fetchWithProjection(query, projection)
+      applicationIds = results.map(r => (r \ "id").as[String]).map(UUID.fromString)
     } yield applicationIds.toSet
   }
 
-  def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Set[UUID]] =
-    fetchApplicationIds(Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedDate)))
-
-  def applicationsRequiringDeletionPendingNotification(lastUsedDate: DateTime): Future[Set[UUID]] =
-    fetchApplicationIds(
+  def applicationsRequiringDeletionPendingNotification(lastUsedDate: DateTime): Future[Seq[(UUID, DateTime)]] = {
+    val query =
       Json.obj(
         "lastAccess" -> Json.obj("$lte" -> lastUsedDate),
         "$or" -> Json.arr(
           Json.obj("deleteNotificationSent"-> Json.obj("$exists" -> false)), // No notification ever sent
           Json.obj("deleteNotificationSent" -> Json.obj("$not" -> Json.obj("$lte" -> lastUsedDate))), // Exclude where notifications already sent
-          Json.obj("$expr" -> Json.obj("$gt" -> Json.arr("$lastAccess", "$deleteNotificationSent")))))) // Except if application used since previous notification
+          Json.obj("$expr" -> Json.obj("$gt" -> Json.arr("$lastAccess", "$deleteNotificationSent"))))) // Except if application used since previous notification
+    val projection = Json.obj("_id" -> 0, "id" -> 1, "lastAccess" -> 1)
 
+    for {
+      results <- fetchWithProjection(query, projection)
+      applicationIds: Seq[(UUID, DateTime)] = results.map {
+        result =>
+          (UUID.fromString((result \ "id").as[String]), (result \ "lastAccess").as[DateTime])
+      }
+    } yield applicationIds
+  }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     import reactivemongo.akkastream.{State, cursorProducer}
