@@ -22,12 +22,12 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDelegatedAuthorityConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -42,7 +42,6 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                   apiGatewayStore: ApiGatewayStore,
                                   applicationResponseCreator: ApplicationResponseCreator,
                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,

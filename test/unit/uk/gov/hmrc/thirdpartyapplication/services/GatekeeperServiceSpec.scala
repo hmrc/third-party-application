@@ -35,7 +35,9 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationRepositoryMockModule, AuditServiceMockModule}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -61,14 +63,14 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       ApplicationTokens(productionToken), state, Standard(List.empty, None, None), HmrcTime.now, Some(HmrcTime.now))
   }
 
-  trait Setup extends AuditServiceMockModule with ApplicationRepositoryMockModule {
+  trait Setup extends AuditServiceMockModule
+    with ApplicationRepositoryMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
-    val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
@@ -83,7 +85,6 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
       mockEmailConnector,
-      mockApiSubscriptionFieldsConnector,
       mockApiGatewayStore,
       applicationResponseCreator,
       mockThirdPartyDelegatedAuthorityConnector,

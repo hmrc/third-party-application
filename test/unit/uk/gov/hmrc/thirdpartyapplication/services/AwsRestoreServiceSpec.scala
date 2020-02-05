@@ -18,21 +18,21 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
+import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
       ApplicationData.create(
         CreateApplicationRequest(
@@ -47,11 +47,10 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]
-    val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val awsRestoreService: AwsRestoreService = new AwsRestoreService(mockApiGatewayConnector, mockApplicationRepository)
+    val awsRestoreService: AwsRestoreService = new AwsRestoreService(mockApiGatewayConnector, ApplicationRepoMock.aMock)
   }
 
   "restoreData" should {
@@ -59,17 +58,14 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
       val serverToken: String = UUID.randomUUID().toString
       val application: ApplicationData = buildApplication("foo", serverToken)
 
-      val captor: ArgumentCaptor[ApplicationData => Unit] = ArgumentCaptor.forClass(classOf[ApplicationData => Unit])
-
-      when(mockApplicationRepository.processAll(captor.capture())).thenReturn(Future.successful(()))
+      ApplicationRepoMock.ProcessAll.thenReturn()
       when(mockApiGatewayConnector.createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc))
         .thenReturn(Future.successful(HasSucceeded))
 
       await(awsRestoreService.restoreData())
 
-      val capturedValue = captor.getValue
-
-      capturedValue(application)
+      val functionCaptured = ApplicationRepoMock.ProcessAll.verify()
+      functionCaptured(application)
       verify(mockApiGatewayConnector).createOrUpdateApplication(application.wso2ApplicationName, serverToken, BRONZE)(hc)
     }
   }

@@ -26,7 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.AccessService
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationRepositoryMockModule, AuditServiceMockModule}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 

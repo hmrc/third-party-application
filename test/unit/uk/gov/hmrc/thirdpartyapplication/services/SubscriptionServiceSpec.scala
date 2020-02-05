@@ -34,7 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApiDefinitionConnectorMockModule, AuditServiceMockModule}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiDefinitionConnectorMockModule
 
 import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
