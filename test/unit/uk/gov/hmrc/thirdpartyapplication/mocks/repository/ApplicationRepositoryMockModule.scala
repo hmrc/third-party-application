@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.mocks
+package unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
 import java.util.UUID
 
 import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded, PaginatedApplicationData, PaginationTotal}
+import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
@@ -46,6 +46,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturnNone() =
         when(aMock.fetch(*)).thenReturn(successful(None))
 
+      def thenReturnNoneWhen(applicationId: UUID) =
+        when(aMock.fetch(eqTo(applicationId))).thenReturn(successful(None))
+
       def thenFail(failWith: Throwable) =
         when(aMock.fetch(*)).thenReturn(failed(failWith))
 
@@ -65,6 +68,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnNone() =
         when(aMock.fetchByClientId(*)).thenReturn(successful(None))
+
+      def thenReturnNoneWhen(clientId: String) =
+        when(aMock.fetchByClientId(clientId)).thenReturn(successful(None))
 
       def thenFail(failWith: Throwable) =
         when(aMock.fetchByClientId(*)).thenReturn(failed(failWith))
@@ -204,6 +210,31 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object SearchApplications {
       def thenReturn(data: PaginatedApplicationData) =
         when(aMock.searchApplications(*)).thenReturn(successful(data))
+    }
+
+    val captor: ArgumentCaptor[ApplicationData => Unit] = ArgumentCaptor.forClass(classOf[ApplicationData => Unit])
+
+    object ProcessAll {
+      def thenReturn() = {
+        when(aMock.processAll(*)).thenReturn(successful(()))
+      }
+
+      def verify() = {
+        val captor = ArgCaptor[ApplicationData => Unit]
+        ApplicationRepoMock.verify.processAll(captor)
+        captor.value
+      }
+    }
+
+    object RecordClientSecretUsage {
+      def verifyNeverCalled() =
+        ApplicationRepoMock.verify(never).recordClientSecretUsage(*,*)
+
+      def thenReturnWhen(applicationId: String, clientSecret: String)(applicationData: ApplicationData) =
+        when(aMock.recordClientSecretUsage(eqTo(applicationId),eqTo(clientSecret))).thenReturn(successful(applicationData))
+
+      def thenFail(failWith: Throwable) =
+        when(aMock.recordClientSecretUsage(*,*)).thenReturn(failed(failWith))
     }
 
   }

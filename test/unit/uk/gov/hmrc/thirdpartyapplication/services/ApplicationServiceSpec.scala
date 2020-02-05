@@ -44,7 +44,9 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CredentialGenerator}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, ApplicationRepositoryMockModule, AuditServiceMockModule}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks._
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -57,7 +59,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
-  trait Setup extends AuditServiceMockModule with ApiGatewayStoreMockModule with ApplicationRepositoryMockModule {
+  trait Setup extends AuditServiceMockModule
+    with ApiGatewayStoreMockModule
+    with ApiSubscriptionFieldsConnectorMockModule
+    with ApplicationRepositoryMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -72,7 +77,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val mockTotpConnector: TotpConnector = mock[TotpConnector](withSettings.lenient())
     val mockLockKeeper = new MockLockKeeper(locked)
     val response = mock[HttpResponse]
-    val mockApiSubscriptionFieldsConnector = mock[ApiSubscriptionFieldsConnector](withSettings.lenient())
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector](withSettings.lenient())
     val mockApplicationService = mock[ApplicationService]
     val mockGatekeeperService = mock[GatekeeperService]
@@ -103,7 +107,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.aMock,
       applicationResponseCreator,
       mockCredentialGenerator,
-      mockApiSubscriptionFieldsConnector,
+      ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
       mockNameValidationConfig)
 
@@ -1296,7 +1300,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
 
       when(mockStateHistoryRepository.deleteByApplicationId(*)).thenReturn(successful(HasSucceeded))
-      when(mockApiSubscriptionFieldsConnector.deleteSubscriptions(*)(*)).thenReturn(successful(HasSucceeded))
+
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
 
       ApiGatewayStoreMock.RemoveSubscription.thenReturnHasSucceeded()
@@ -1306,6 +1310,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "return a state change to indicate that the application has been deleted" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       val result = await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
       result shouldBe Deleted
@@ -1314,6 +1319,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "call to WSO2 to delete the application" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1323,6 +1329,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1333,15 +1340,17 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
-      verify(mockApiSubscriptionFieldsConnector).deleteSubscriptions(eqTo(applicationData.tokens.production.clientId))(*)
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.verifyCalledWith(applicationData.tokens.production.clientId)
     }
 
     "delete the application subscriptions from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1352,6 +1361,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "delete the application from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1361,6 +1371,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "delete the application state history from the repository" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1370,6 +1381,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "audit the application deletion" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.successful(mock[AuditResult]))
 
@@ -1381,6 +1393,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "audit the application when the deletion has not worked" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       when(auditFunction.apply(any[ApplicationData])).thenReturn(Future.failed(new RuntimeException))
 
@@ -1392,6 +1405,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "send the application deleted notification email" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
+      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
@@ -1406,7 +1420,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
       verifyNoMoreInteractions(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock, mockStateHistoryRepository,
-        mockSubscriptionRepository, AuditServiceMock.aMock, mockEmailConnector, mockApiSubscriptionFieldsConnector)
+        mockSubscriptionRepository, AuditServiceMock.aMock, mockEmailConnector, ApiSubscriptionFieldsConnectorMock.aMock)
     }
   }
 

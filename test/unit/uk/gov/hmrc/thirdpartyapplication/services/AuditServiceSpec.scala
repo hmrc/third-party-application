@@ -48,7 +48,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
           de.tags == expected.tags &&
           de.detail == expected.detail
     }
-
+;
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
       val data = Map("some-header" -> "la-di-dah")
