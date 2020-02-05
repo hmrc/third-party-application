@@ -33,11 +33,17 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock,mode)
 
     object Audit {
+      def verifyNeverCalled() =
+        AuditServiceMock.verify(never).audit(*,*)(*)
+
+      def thenReturnSuccessWhen(action: AuditAction, data: Map[String, String]) =
+        when(aMock.audit(eqTo(action),eqTo(data))(*)).thenReturn(successful(AuditResult.Success))
+
       def thenReturnSuccess() = {
         when(aMock.audit(*,*)(*)).thenReturn(successful(AuditResult.Success))
       }
 
-      def verify(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
+      def verifyCalled(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
         AuditServiceMock.verify.audit(auditAction, data)(hc)
 
       def verify(mode: org.mockito.verification.VerificationMode)(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =

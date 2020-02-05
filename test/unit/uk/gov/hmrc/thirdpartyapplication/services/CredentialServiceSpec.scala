@@ -27,7 +27,6 @@ import play.api.LoggerLike
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.LockKeeper
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
@@ -40,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future.successful
@@ -48,11 +48,10 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 
 class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
     lazy val locked = false
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockAuditService = mock[AuditService](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockLogger = mock[LoggerLike]
     val response = mock[WSResponse]
@@ -67,7 +66,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     val clientSecretLimit = 5
     val credentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(ApplicationRepoMock.aMock, mockAuditService, applicationResponseCreator, credentialConfig) {
+    val underTest = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, applicationResponseCreator, credentialConfig) {
       override val logger = mockLogger
     }
   }
@@ -249,8 +248,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
       val newSecret = updatedProductionSecrets diff environmentToken.clientSecrets
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedProductionSecrets)
-      verify(mockAuditService).audit(ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString))
+
+      AuditServiceMock.Audit.verifyCalled(
+        ClientSecretAdded,
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString),
+        hc
+      )
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -286,8 +289,10 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
 
-      when(mockAuditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.toString,
-        "removedClientSecret" -> secretsToRemove.head))).thenReturn(Future.successful(AuditResult.Success))
+      AuditServiceMock.Audit.thenReturnSuccessWhen(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head)
+      )
 
       val result = await(underTest.deleteClientSecrets(applicationId, secretsToRemove))
 
@@ -295,8 +300,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val updatedClientSecrets = savedApp.tokens.production.clientSecrets
       updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedClientSecrets)
-      verify(mockAuditService, times(secretsToRemove.length)).audit(ClientSecretRemoved,
-        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head))
+
+      AuditServiceMock.Audit.verify(times(secretsToRemove.length))(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head),
+        hc
+      )
     }
 
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
@@ -308,7 +317,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       intercept[IllegalArgumentException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
-      verify(mockAuditService, never).audit(*, *)(*)
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -319,7 +328,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
-      verify(mockAuditService, never).audit(*, *)(*)
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
 
     "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
@@ -330,7 +339,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
-      verify(mockAuditService, never).audit(*, *)(*)
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
   }
 
