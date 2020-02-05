@@ -19,16 +19,16 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.{JsObject, Json, JsString}
 import play.api.libs.json.Json._
+import play.api.libs.json.{JsObject, JsString, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor
 import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatApiIdentifier, formatSubscriptionData}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.ExecutionContext.Implicits.global

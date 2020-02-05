@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDelegatedAuthorityConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
@@ -42,9 +42,6 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  apiGatewayStore: ApiGatewayStore,
-                                  applicationResponseCreator: ApplicationResponseCreator,
-                                  thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                   applicationService: ApplicationService) {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {

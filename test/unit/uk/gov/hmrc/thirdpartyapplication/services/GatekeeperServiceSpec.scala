@@ -23,7 +23,7 @@ import org.joda.time.DateTimeUtils
 import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
@@ -35,9 +35,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -64,14 +63,13 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule {
+    with ApplicationRepositoryMockModule
+    with ApiGatewayStoreMockModule {
 
     lazy val locked = false
-    val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
-    val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val response = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
 
@@ -85,12 +83,8 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
       mockEmailConnector,
-      mockApiGatewayStore,
-      applicationResponseCreator,
-      mockThirdPartyDelegatedAuthorityConnector,
       mockApplicationService)
 
-//    ApplicationRepoMock.Save.thenAnswer()
     when(mockStateHistoryRepository.insert(*)).thenAnswer( (s: StateHistory) => successful(s))
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(response))

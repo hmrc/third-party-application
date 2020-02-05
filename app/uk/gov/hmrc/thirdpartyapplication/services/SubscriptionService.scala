@@ -22,9 +22,9 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._

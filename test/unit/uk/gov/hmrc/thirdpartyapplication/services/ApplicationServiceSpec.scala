@@ -176,7 +176,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
@@ -201,7 +201,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
@@ -224,7 +224,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
@@ -260,7 +260,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
@@ -285,7 +285,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         AppCreated,
         Map(
           "applicationId" -> createdApp.application.id.toString,
@@ -305,7 +305,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
         Map("applicationName" -> applicationRequest.name),
         hc
@@ -321,7 +321,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         CreateRopcApplicationRequestDeniedDueToNonUniqueName,
         Map("applicationName" -> applicationRequest.name),
         hc
@@ -560,7 +560,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         CollaboratorAdded,
         AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
         hc
@@ -711,7 +711,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
-      AuditServiceMock.Audit.verify(
+      AuditServiceMock.Audit.verifyCalled(
         CollaboratorRemoved,
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
         hc
@@ -1101,7 +1101,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
-      AuditServiceMock.Audit.verify(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString), hc)
+      AuditServiceMock.Audit.verifyCalled(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString), hc)
     }
 
     "send an Audit event when an application uplift is successfully requested with a name change" in new Setup {
@@ -1116,7 +1116,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
       val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.toString, "newApplicationName" -> requestedName)
-      AuditServiceMock.Audit.verify(ApplicationUpliftRequested, expectedAuditDetails, hc)
+      AuditServiceMock.Audit.verifyCalled(ApplicationUpliftRequested, expectedAuditDetails, hc)
     }
 
     "fail with InvalidStateTransition without invoking fetchNonTestingApplicationByName when the application is not in testing" in new Setup {
