@@ -16,11 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.util.UUID
+
 import javax.inject.{Inject, Singleton}
 import net.ceedubs.ficus.Ficus._
-import org.joda.time.DateTime
-import play.api.Configuration
+import org.joda.time.{DateTime, LocalDate}
+import play.api.{Configuration, LoggerLike}
 import play.modules.reactivemongo.ReactiveMongoComponent
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.duration.FiniteDuration
@@ -35,13 +38,22 @@ class ApplicationToBeDeletedNotifications @Inject()(configuration: Configuration
   val notificationJobConfig = configuration.underlying.as[ApplicationToBeDeletedNotificationsConfig](name)
   val deleteJobConfig = configuration.underlying.as[DeleteUnusedApplicationsConfig]("DeleteUnusedApplications")
 
+  val notifier: Notifier =
+    if(notificationJobConfig.dryRun) {
+      new LoggingNotifier(notificationJobConfig.environmentName, logger)
+    } else {
+      new EmailNotifier(notificationJobConfig.environmentName)
+    }
+
   override def functionToExecute()(implicit executionContext: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val cutoffDate: DateTime =
       DateTime.now
         .minus(deleteJobConfig.deleteApplicationsIfUnusedFor.toMillis)
         .plus(notificationJobConfig.sendNotificationsInAdvance.toMillis)
 
-    val applicationsRequiringNotifications = applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate)
+    for {
+      applicationsToNotify <- applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate)
+    } yield applicationsToNotify
 
     Future.successful(RunningOfJobSuccessful)
   }
@@ -52,3 +64,29 @@ case class ApplicationToBeDeletedNotificationsConfig(sendNotificationsInAdvance:
                                                      emailTemplateId: String,
                                                      environmentName: String,
                                                      dryRun: Boolean)
+
+trait Notifier {
+  trait NotificationResult
+  object NotificationSent extends NotificationResult
+  object NotificationFailed extends NotificationResult
+
+  val environmentName: String
+  def notifyApplicationToBeDeleted(applicationName: String, lastUsedDate: DateTime, deletionDate: LocalDate)
+                                  (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[NotificationResult]
+}
+
+class LoggingNotifier(override val environmentName: String, logger: LoggerLike) extends Notifier {
+  override def notifyApplicationToBeDeleted(applicationName: String, lastUsedDate: DateTime, deletionDate: LocalDate)
+                                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[NotificationResult] = {
+    logger.info(
+      s"[DryRun] Would have sent notification that application [$applicationName] in environment [$environmentName] has not been used since [$lastUsedDate] and would be deleted on [$deletionDate]")
+    Future.successful(NotificationSent)
+  }
+}
+
+class EmailNotifier(override val environmentName: String) extends Notifier {
+  override def notifyApplicationToBeDeleted(applicationName: String, lastUsedDate: DateTime, deletionDate: LocalDate)
+                                           (implicit ec: ExecutionContext, headerCarrier: HeaderCarrier): Future[NotificationResult] = {
+    Future.successful(NotificationSent)
+  }
+}

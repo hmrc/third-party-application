@@ -23,7 +23,7 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
-import uk.gov.hmrc.thirdpartyapplication.connector.UpdateApplicationUsagePlanRequest
+import uk.gov.hmrc.thirdpartyapplication.connector.{FetchUsersByEmailAddressesRequest, UpdateApplicationUsagePlanRequest}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
@@ -145,6 +145,7 @@ object JsonFormatters {
   implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretsRequest]
   implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
+  implicit val formatFetchUsersByEmailAddressesRequest = Json.format[FetchUsersByEmailAddressesRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]
