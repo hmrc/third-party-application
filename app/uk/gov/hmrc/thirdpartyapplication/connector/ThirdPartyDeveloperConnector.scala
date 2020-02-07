@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.UserResponse
@@ -29,7 +29,7 @@ class ThirdPartyDeveloperConnector @Inject()(httpClient: HttpClient, config: Thi
 
   val FetchUsersByEmailAddressesURL: String = s"${config.baseUrl}/developers/get-by-emails"
 
-  def fetchUsersByEmailAddresses(emailAddresses: Set[String])(implicit rds: HttpReads[Seq[UserResponse]], hc: HeaderCarrier): Future[Seq[UserResponse]] =
+  def fetchUsersByEmailAddresses(emailAddresses: Set[String])(implicit hc: HeaderCarrier): Future[Seq[UserResponse]] =
     httpClient.POST[FetchUsersByEmailAddressesRequest, Seq[UserResponse]](FetchUsersByEmailAddressesURL, FetchUsersByEmailAddressesRequest(emailAddresses))
       .recover {
         case e => throw new RuntimeException(s"Unexpected response from $FetchUsersByEmailAddressesURL: ${e.getMessage}")
