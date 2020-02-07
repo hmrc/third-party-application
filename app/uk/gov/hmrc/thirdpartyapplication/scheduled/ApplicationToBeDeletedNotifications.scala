@@ -57,9 +57,7 @@ class ApplicationToBeDeletedNotifications @Inject()(configuration: Configuration
       notifications <- Future.sequence(applicationsToNotify.map(toNotification))
       notificationResults <- Future.sequence(notifications.map(sendNotification))
       _ <- Future.sequence(notificationResults.map(recordNotificationSent))
-    } yield ()
-
-    Future.successful(RunningOfJobSuccessful)
+    } yield RunningOfJobSuccessful
   }
 
   def toNotification(application: (UUID, String, DateTime, Set[String])): Future[ApplicationToBeDeletedNotification] =
