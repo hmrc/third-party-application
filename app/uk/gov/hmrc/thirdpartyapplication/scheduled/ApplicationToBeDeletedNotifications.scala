@@ -26,7 +26,6 @@ import play.api.Configuration
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDeveloperConnector}
-import uk.gov.hmrc.thirdpartyapplication.models.UserResponse
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global

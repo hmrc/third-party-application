@@ -27,10 +27,11 @@ import org.scalatestplus.play.PlaySpec
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Configuration, LoggerLike}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDeveloperConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.UserResponse
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
@@ -42,10 +43,11 @@ class ApplicationToBeDeletedNotificationsSpec extends PlaySpec
   with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with FutureAwaits with DefaultAwaitTimeout {
 
   trait Setup {
+    val environmentName = "Test Environment"
+
     def jobConfiguration(sendNotificationsInAdvance: String, dryRun: Boolean): Config = {
       val emailServiceURL = "https://email.service"
       val emailTemplateId = "apiApplicationToBeDeletedNotification"
-      val environmentName = "Test Environment"
 
       ConfigFactory.parseString(
         s"""
@@ -119,7 +121,7 @@ class ApplicationToBeDeletedNotificationsSpec extends PlaySpec
     val applicationId: UUID = UUID.randomUUID
     val applicationName: String = "Test Application"
     val lastUsedDate: DateTime = DateTime.now.minusMonths(11)
-    val userEmailAddresses: Set[String] = Set("nathan@aurora.com", "cameron@aurora.com")
+    val userEmailAddresses: Set[String] = Set("nathan@aurora.com")
     val userResponses: Seq[UserResponse] = Seq(UserResponse("nathan@aurora.com", "Nathan", "Scott", DateTime.now, DateTime.now, validated = true))
 
     "write notification to log at INFO level" in new DryRunSetup {
@@ -133,6 +135,27 @@ class ApplicationToBeDeletedNotificationsSpec extends PlaySpec
 
       stubLogger.infoMessages.size must be (1)
       verifyNoInteractions(mockEmailConnector)
+    }
+  }
+
+  "Job configured for email" should {
+    val applicationId: UUID = UUID.randomUUID
+    val applicationName: String = "Test Application"
+    val lastUsedDate: DateTime = DateTime.now.minusMonths(11)
+    val userEmailAddresses: Set[String] = Set("nathan@aurora.com")
+    val userResponses: Seq[UserResponse] = Seq(UserResponse("nathan@aurora.com", "Nathan", "Scott", DateTime.now, DateTime.now, validated = true))
+
+    "send notifications via EmailConnector" in new EmailNotificationSetup {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      when(mockApplicationRepository.applicationsRequiringDeletionPendingNotification(any[DateTime]))
+        .thenReturn(Future.successful(Seq((applicationId, applicationName, lastUsedDate, userEmailAddresses))))
+      when(mockThirdPartyDeveloperConnector.fetchUsersByEmailAddresses(eqTo(userEmailAddresses))(*)).thenReturn(Future.successful(userResponses))
+      when(mockEmailConnector.sendApplicationToBeDeletedNotification(eqTo("nathan@aurora.com"), eqTo("Nathan"), eqTo("Scott"), eqTo(applicationName), eqTo(environmentName), *, *, *)(*))
+        .thenReturn(Future.successful(HttpResponse(200)))
+      when(mockApplicationRepository.recordDeleteNotificationSent(applicationId)).thenReturn(Future.successful(mock[ApplicationData]))
+
+      await(jobUnderTest.functionToExecute()) must be (jobUnderTest.RunningOfJobSuccessful)
     }
   }
 
