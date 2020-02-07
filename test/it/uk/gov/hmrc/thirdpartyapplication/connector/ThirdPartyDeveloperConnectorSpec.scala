@@ -64,8 +64,8 @@ class ThirdPartyDeveloperConnectorSpec extends UnitSpec with WithFakeApplication
   "fetchUsersByEmailAddresses" should {
 
     "make appropriate HTTP call to retrieve user details" in new Setup {
-      val user1: UserResponse = UserResponse("foo@bar.com", "Joe", "Bloggs", DateTime.now, DateTime.now)
-      val user2: UserResponse = UserResponse("bar@baz.com", "John", "Doe", DateTime.now, DateTime.now)
+      val user1: UserResponse = UserResponse("foo@bar.com", "Joe", "Bloggs", DateTime.now, DateTime.now, validated = true)
+      val user2: UserResponse = UserResponse("bar@baz.com", "John", "Doe", DateTime.now, DateTime.now, validated = true)
 
       val userEmails: Set[String] = Set(user1.email, user2.email)
 

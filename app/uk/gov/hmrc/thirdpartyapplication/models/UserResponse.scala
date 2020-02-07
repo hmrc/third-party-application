@@ -23,7 +23,8 @@ case class UserResponse(email: String,
                         firstName: String,
                         lastName: String,
                         registrationTime: DateTime,
-                        lastModified: DateTime)
+                        lastModified: DateTime,
+                        validated: Boolean)
 
 object UserResponse {
   implicit val format = Json.format[UserResponse]

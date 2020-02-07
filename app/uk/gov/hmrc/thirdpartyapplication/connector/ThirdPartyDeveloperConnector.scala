@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpReads}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.UserResponse
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class ThirdPartyDeveloperConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDeveloperConfig)(implicit val ec: ExecutionContext)  {
 
   val FetchUsersByEmailAddressesURL: String = s"${config.baseUrl}/developers/get-by-emails"

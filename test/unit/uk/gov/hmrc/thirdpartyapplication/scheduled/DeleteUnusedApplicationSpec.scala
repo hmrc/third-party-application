@@ -26,7 +26,6 @@ import org.mockito.Mockito._
 import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
 import org.scalatest.mockito.MockitoSugar
 import org.scalatestplus.play.PlaySpec
-import org.slf4j
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 import play.api.{Configuration, LoggerLike}
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -35,8 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.{Deleted, HasSucceeded}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.DeleteUnusedApplications
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import unit.uk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
 
-import scala.collection.mutable.ListBuffer
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
@@ -45,25 +44,6 @@ class DeleteUnusedApplicationSpec extends PlaySpec
   with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with FutureAwaits with DefaultAwaitTimeout {
 
   trait Setup {
-    class StubLogger extends LoggerLike {
-      override val logger: slf4j.Logger = mock[slf4j.Logger]
-
-      val infoMessages = new ListBuffer[String]()
-      val debugMessages = new ListBuffer[String]()
-      val warnMessages = new ListBuffer[String]()
-      val errorMessages = new ListBuffer[String]()
-      val capturedExceptions = new ListBuffer[Throwable]()
-
-      override def info(message: => String): Unit = infoMessages += message
-      override def debug(message: => String): Unit = debugMessages += message
-      override def warn(message: => String): Unit = warnMessages += message
-      override def error(message: => String): Unit = errorMessages += message
-      override def error(message: => String, throwable: => Throwable): Unit = {
-        errorMessages += message
-        capturedExceptions += throwable
-      }
-    }
-
     val reactiveMongoComponent: ReactiveMongoComponent = new ReactiveMongoComponent {
       override def mongoConnector: MongoConnector = mongoConnectorForTest
     }

@@ -1120,14 +1120,15 @@ class ApplicationRepositorySpec
   }
 
   "applicationsRequiringDeletionPendingNotification" should {
-    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime, users: Set[Collaborator]): ApplicationData =
-      anApplicationData(id = applicationId, prodClientId = generateClientId, users = users).copy(lastAccess = Some(lastAccessDate))
+    def applicationWithLastAccessDate(applicationId: UUID, name: String, lastAccessDate: DateTime, users: Set[Collaborator]): ApplicationData =
+      aNamedApplicationData(id = applicationId, name, prodClientId = generateClientId, users = users).copy(lastAccess = Some(lastAccessDate))
 
     def applicationWithLastAccessDateAndNotificationDate(applicationId: UUID,
+                                                         name: String,
                                                          lastAccessDate: DateTime,
                                                          deleteNotificationDate: DateTime,
                                                          users: Set[Collaborator]): ApplicationData =
-      anApplicationData(id = applicationId, prodClientId = generateClientId, users = users)
+      aNamedApplicationData(id = applicationId, name, prodClientId = generateClientId, users = users)
         .copy(lastAccess = Some(lastAccessDate), deleteNotificationSent = Some(deleteNotificationDate))
 
     def adminUser(emailAddress: String): Collaborator = Collaborator(emailAddress, Role.ADMINISTRATOR)
@@ -1135,21 +1136,23 @@ class ApplicationRepositorySpec
 
     "return only applications last accessed before specified date with no previous notification sent" in {
       val oldApplicationId = UUID.randomUUID()
-      val lastAccessDate = DateTime.now.minusMonths(18)
-      val cutoffDate = DateTime.now.minusMonths(11)
+      val applicationName = "Test Application"
+      val lastAccessDate = DateTime.now.minusMonths(18) // scalastyle:off magic.number
+      val cutoffDate = DateTime.now.minusMonths(11) // scalastyle:off magic.number
       val adminUserEmail = "foo@bar.com"
 
-      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, lastAccessDate, Set(adminUser(adminUserEmail)))))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now, Set(adminUser(adminUserEmail)))))
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, applicationName, lastAccessDate, Set(adminUser(adminUserEmail)))))
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), "foo", DateTime.now, Set(adminUser(adminUserEmail)))))
 
-      val retrievedApplications: Seq[(UUID, DateTime, Set[String])] =
+      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
         await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.size should be (1)
       retrievedApplications.head._1 should be (oldApplicationId)
-      retrievedApplications.head._2.isEqual(lastAccessDate) should be (true)
-      retrievedApplications.head._3.size should be (1)
-      retrievedApplications.head._3 should contain (adminUserEmail)
+      retrievedApplications.head._2 should be (applicationName)
+      retrievedApplications.head._3.isEqual(lastAccessDate) should be (true)
+      retrievedApplications.head._4.size should be (1)
+      retrievedApplications.head._4 should contain (adminUserEmail)
     }
 
     "not return applications that have had notifications sent within cutoff period" in {
@@ -1157,13 +1160,15 @@ class ApplicationRepositorySpec
       val applicationWithNotificationSent =
         applicationWithLastAccessDateAndNotificationDate(
           UUID.randomUUID(),
+          "Test Application",
           DateTime.now.minusMonths(12),
           DateTime.now.minusMonths(11),
           Set(adminUser("foo@bar.com")))
 
       await(applicationRepository.save(applicationWithNotificationSent))
 
-      val retrievedApplications: Seq[(UUID, DateTime, Set[String])] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
+      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
+        await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.isEmpty should be (true)
     }
@@ -1171,24 +1176,28 @@ class ApplicationRepositorySpec
     "return applications that have had notifications sent prior to last used date" in {
       val cutoffDate = DateTime.now.minusMonths(11)
       val applicationWithOldNotificationId: UUID = UUID.randomUUID
+      val applicationName = "Test Application"
       val lastAccessDate = DateTime.now.minusMonths(12)
       val adminUserEmail = "foo@bar.com"
       val applicationWithOldNotification =
         applicationWithLastAccessDateAndNotificationDate(
           applicationWithOldNotificationId,
+          applicationName,
           lastAccessDate,
           DateTime.now.minusMonths(24),
           Set(adminUser(adminUserEmail)))
 
       await(applicationRepository.save(applicationWithOldNotification))
 
-      val retrievedApplications: Seq[(UUID, DateTime, Set[String])] = await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
+      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
+        await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
 
       retrievedApplications.size should be (1)
       retrievedApplications.head._1 should be (applicationWithOldNotificationId)
-      retrievedApplications.head._2.isEqual(lastAccessDate) should be (true)
-      retrievedApplications.head._3.size should be (1)
-      retrievedApplications.head._3 should contain (adminUserEmail)
+      retrievedApplications.head._2 should be (applicationName)
+      retrievedApplications.head._3.isEqual(lastAccessDate) should be (true)
+      retrievedApplications.head._4.size should be (1)
+      retrievedApplications.head._4 should contain (adminUserEmail)
     }
 
     "return all administrator email addresses for application" in {
@@ -1199,17 +1208,18 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(
         applicationWithLastAccessDate(
           UUID.randomUUID(),
+          "Test Application",
           DateTime.now.minusMonths(18),
           Set(adminUser(adminUser1Email), adminUser(adminUser2Email), adminUser(adminUser3Email)))))
 
-      val retrievedApplications: Seq[(UUID, DateTime, Set[String])] =
+      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
         await(applicationRepository.applicationsRequiringDeletionPendingNotification(DateTime.now.minusMonths(11)))
 
       retrievedApplications.size should be (1)
-      retrievedApplications.head._3.size should be (3)
-      retrievedApplications.head._3 should contain (adminUser1Email)
-      retrievedApplications.head._3 should contain (adminUser2Email)
-      retrievedApplications.head._3 should contain (adminUser3Email)
+      retrievedApplications.head._4.size should be (3)
+      retrievedApplications.head._4 should contain (adminUser1Email)
+      retrievedApplications.head._4 should contain (adminUser2Email)
+      retrievedApplications.head._4 should contain (adminUser3Email)
     }
 
     "not return developer email addresses" in {
@@ -1220,17 +1230,18 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(
         applicationWithLastAccessDate(
           UUID.randomUUID(),
+          "Test Application",
           DateTime.now.minusMonths(18),
           Set(adminUser(adminUserEmail), developerUser(developer1Email), developerUser(developer2Email)))))
 
-      val retrievedApplications: Seq[(UUID, DateTime, Set[String])] =
+      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
         await(applicationRepository.applicationsRequiringDeletionPendingNotification(DateTime.now.minusMonths(11)))
 
       retrievedApplications.size should be (1)
-      retrievedApplications.head._3.size should be (1)
-      retrievedApplications.head._3 should contain (adminUserEmail)
-      retrievedApplications.head._3 should not contain (developer1Email)
-      retrievedApplications.head._3 should not contain (developer2Email)
+      retrievedApplications.head._4.size should be (1)
+      retrievedApplications.head._4 should contain (adminUserEmail)
+      retrievedApplications.head._4 should not contain (developer1Email)
+      retrievedApplications.head._4 should not contain (developer2Email)
     }
   }
 
