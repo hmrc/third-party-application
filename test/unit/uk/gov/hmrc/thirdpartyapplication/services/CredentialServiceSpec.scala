@@ -17,106 +17,58 @@
 package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import java.util.concurrent.TimeUnit
+import java.util.UUID.randomUUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.joda.time.DateTimeUtils
 import org.mockito.ArgumentCaptor
-import org.scalatest.BeforeAndAfterAll
 import play.api.LoggerLike
-import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.lock.LockKeeper
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future.successful
-import scala.concurrent.duration.Duration
-import scala.concurrent.{Await, ExecutionContext, Future}
 
-class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule {
-
-    lazy val locked = false
-    val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
-    val mockLogger = mock[LoggerLike]
-    val response = mock[WSResponse]
-
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
-      LOGGED_IN_USER_NAME_HEADER -> "John Smith"
-    )
-
-    val applicationResponseCreator = new ApplicationResponseCreator()
-
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+    val mockLogger: LoggerLike = mock[LoggerLike]
+    val mockGenerateSecret: () => String = mock[() => String]
     val clientSecretLimit = 5
-    val credentialConfig = CredentialConfig(clientSecretLimit)
+    val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, applicationResponseCreator, credentialConfig) {
-      override val logger = mockLogger
+    val underTest: CredentialService = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, credentialConfig) {
+      override val logger: LoggerLike = mockLogger
+      override val generateSecret: () => String = mockGenerateSecret
     }
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret)
+    ClientSecret("", secret)
   }
 
   private val loggedInUser = "loggedin@example.com"
-  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
-
-  trait LockedSetup extends Setup {
-    override lazy val locked = true
-  }
-
-  class MockLockKeeper(locked: Boolean) extends LockKeeper {
-
-    //noinspection ScalaStyle
-    override def repo = null
-
-    override def lockId = ""
-
-    //noinspection ScalaStyle
-    val forceLockReleaseAfter = null
-
-    var callsMadeToLockKeeper: Int = 0
-
-    override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
-      callsMadeToLockKeeper = callsMadeToLockKeeper + 1
-      if (locked) {
-        successful(None)
-      } else {
-        successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
-      }
-    }
-  }
-
-  override def beforeAll() {
-    DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
-  }
-
-  override def afterAll() {
-    DateTimeUtils.setCurrentMillisSystem()
-  }
+  private val firstSecret = aSecret("secret1")
+  private val secondSecret = aSecret("secret2")
+  private val environmentToken = EnvironmentToken("aaa", "wso2Secret", "bbb", List(firstSecret, secondSecret))
+  private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
+  private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
+  private val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
 
   "fetch credentials" should {
 
     "return none when no application exists in the repository for the given application id" in new Setup {
 
-      val applicationId = UUID.randomUUID()
+      val applicationId = randomUUID()
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       val result = await(underTest.fetchCredentials(applicationId))
@@ -126,15 +78,14 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     "return tokens when application exists in the repository for the given application id" in new Setup {
 
-      val applicationId = UUID.randomUUID()
+      val applicationId = randomUUID()
       val applicationData = anApplicationData(applicationId)
-      val expectedResult = EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, environmentToken.clientSecrets)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       val result = await(underTest.fetchCredentials(applicationId))
 
-      result shouldBe Some(expectedResult)
+      result shouldBe Some(environmentTokenResponse)
     }
   }
 
@@ -152,7 +103,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     "return wso2 credentials for the given client id" in new Setup {
 
-      val applicationId = UUID.randomUUID()
+      val applicationId = randomUUID()
       val applicationData = anApplicationData(applicationId)
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(environmentToken.clientId)(applicationData)
@@ -164,7 +115,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     "fail when the repository fails to return the application" in new Setup {
 
-      val applicationId = UUID.randomUUID()
+      val applicationId = randomUUID()
       val applicationData = anApplicationData(applicationId)
 
       ApplicationRepoMock.FetchByClientId.thenFail(new RuntimeException("test error"))
@@ -187,7 +138,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     }
 
     "return none when credentials don't match with an application" in new Setup {
-      val applicationData = anApplicationData(UUID.randomUUID())
+      val applicationData = anApplicationData(randomUUID())
       val clientId = applicationData.tokens.production.clientId
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
 
@@ -198,7 +149,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     }
 
     "return environment when credentials match with an application" in new Setup {
-      val applicationData = anApplicationData(UUID.randomUUID())
+      val applicationData = anApplicationData(randomUUID())
       val clientId = applicationData.tokens.production.clientId
       val applicationId = applicationData.id.toString
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
@@ -212,7 +163,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     }
 
     "return environment but write log if updating usage date fails" in new Setup {
-      val applicationData = anApplicationData(UUID.randomUUID())
+      val applicationData = anApplicationData(randomUUID())
       val clientId = applicationData.tokens.production.clientId
       val applicationId = applicationData.id.toString
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
@@ -232,31 +183,39 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "addClientSecret" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = randomUUID()
     val applicationData = anApplicationData(applicationId)
     val secretRequest = ClientSecretRequest("secret-1")
 
-    "add the client secret" in new Setup {
-
+    "add the client secret and return it unmasked in the name" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+      val newSecretValue: String = "secret3"
+      val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
+      when(mockGenerateSecret.apply()).thenReturn(newSecretValue)
 
       val result = await(underTest.addClientSecret(applicationId, secretRequest))
 
       val savedApp = ApplicationRepoMock.Save.verifyCalled()
       val updatedProductionSecrets = savedApp.tokens.production.clientSecrets
       updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
-      val newSecret = updatedProductionSecrets diff environmentToken.clientSecrets
-      result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedProductionSecrets)
+      val newSecret = (updatedProductionSecrets diff environmentToken.clientSecrets).head
+      result.clientId shouldBe environmentToken.clientId
+      result.accessToken shouldBe environmentToken.accessToken
+      result.clientSecrets.dropRight(1) shouldBe environmentTokenResponse.clientSecrets
+      result.clientSecrets.last.secret shouldBe updatedProductionSecrets.last.secret
+      result.clientSecrets.last.name shouldBe newSecretValue
+      updatedProductionSecrets.last.name shouldBe maskedSecretValue
 
       AuditServiceMock.Audit.verifyCalled(
         ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString),
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.secret, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
+      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
@@ -265,7 +224,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-
+      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
       val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
@@ -279,7 +238,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   "delete client secrets" should {
 
-    val applicationId = UUID.randomUUID()
+    val applicationId = randomUUID()
     val applicationData = anApplicationData(applicationId)
 
     "remove a client secret form an app with more than one client secret" in new Setup {
@@ -299,7 +258,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val savedApp = ApplicationRepoMock.Save.verifyCalled()
       val updatedClientSecrets = savedApp.tokens.production.clientSecrets
       updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
-      result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedClientSecrets)
+      result shouldBe environmentTokenResponse.copy(clientSecrets = environmentTokenResponse.clientSecrets.drop(1))
 
       AuditServiceMock.Audit.verify(times(secretsToRemove.length))(
         ClientSecretRemoved,
