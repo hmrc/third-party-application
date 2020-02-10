@@ -171,8 +171,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       response.code shouldBe OK
 
       Then("The credentials are returned")
+      // scalastyle:off magic.number
+      val expectedClientSecrets = createdApp.tokens.production.clientSecrets
+        .map(cs => cs.copy(name = s"${"•" * 32}${cs.secret.takeRight(4)}"))
       Json.parse(response.body) shouldBe Json.toJson(ApplicationTokensResponse(
-        EnvironmentTokenResponse(s"$appName-key", "token", createdApp.tokens.production.clientSecrets),
+        EnvironmentTokenResponse(s"$appName-key", "token", expectedClientSecrets),
         EnvironmentTokenResponse("", "", List.empty)))
     }
 

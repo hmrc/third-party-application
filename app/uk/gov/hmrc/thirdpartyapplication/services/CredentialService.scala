@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
+import java.util.UUID.randomUUID
 
 import cats.data.OptionT
 import cats.implicits._
@@ -24,6 +25,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
+import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
@@ -37,11 +39,11 @@ import scala.util.control.NonFatal
 @Singleton
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
-                                  applicationResponseCreator: ApplicationResponseCreator,
                                   config: CredentialConfig) {
 
   val clientSecretLimit = config.clientSecretLimit
   val logger: LoggerLike = Logger
+  val generateSecret: () => String = () => randomUUID.toString
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(
@@ -66,25 +68,26 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
+    val newSecretValue = generateSecret()
     for {
-      app <- fetchApp(id)
-      secret = ClientSecret(secretRequest.name)
-      updatedApp = addClientSecretToApp(app, secret)
-      savedApp <- applicationRepository.save(updatedApp)
-      _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> app.id.toString,
-        "newClientSecret" -> secret.secret, "clientSecretType" -> "PRODUCTION"))
-    } yield EnvironmentTokenResponse(savedApp.tokens.production)
+      existingApp <- fetchApp(id)
+      existingSecrets = existingApp.tokens.production.clientSecrets
+      newSecret = ClientSecret(maskSecret(newSecretValue), newSecretValue)
+      _ <- saveClientSecretToApp(existingApp, newSecret)
+      _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> existingApp.id.toString,
+        "newClientSecret" -> newSecret.secret, "clientSecretType" -> "PRODUCTION"))
+    } yield EnvironmentTokenResponse(existingApp.tokens.production.copy(clientSecrets = existingSecrets :+ newSecret.copy(name = newSecretValue)))
   }
 
-  private def addClientSecretToApp(application: ApplicationData, secret: ClientSecret) = {
+  private def saveClientSecretToApp(application: ApplicationData, newSecret: ClientSecret): Future[ApplicationData] = {
     val environmentToken = application.tokens.production
     if (environmentToken.clientSecrets.size >= clientSecretLimit) {
       throw new ClientSecretsLimitExceeded
     }
-    val updatedEnvironmentToken = environmentToken.copy(clientSecrets = environmentToken.clientSecrets :+ secret)
+    val updatedEnvironmentToken = environmentToken.copy(clientSecrets = environmentToken.clientSecrets :+ newSecret)
 
-    application.copy(tokens = ApplicationTokens(updatedEnvironmentToken))
-
+    val updatedApp = application.copy(tokens = ApplicationTokens(updatedEnvironmentToken))
+    applicationRepository.save(updatedApp)
   }
 
   def deleteClientSecrets(id: java.util.UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {

@@ -270,6 +270,14 @@ case class ClientSecret(name: String,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None)
 
+object ClientSecret {
+  def maskSecret(secret: String): String = {
+    val SecretMask = "••••••••••••••••••••••••••••••••"
+    val SecretLastDigitsLength = 4
+    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
+  }
+}
+
 case class EnvironmentToken(clientId: String,
                             wso2ClientSecret: String,
                             accessToken: String,
@@ -368,17 +376,21 @@ object ApplicationTokensResponse {
 }
 
 object EnvironmentTokenResponse {
-
   def apply(environmentToken: EnvironmentToken): EnvironmentTokenResponse = {
-    EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, environmentToken.clientSecrets)
+    val clientSecrets: List[ClientSecret] = environmentToken.clientSecrets map { clientSecret =>
+      clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
+      clientSecret.name match {
+        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
+        case _ => clientSecret
+      }
+    }
+    EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, clientSecrets)
   }
 
   def empty = {
     EnvironmentTokenResponse("", "", List.empty)
   }
 }
-
-
 
 object Wso2Api {
 
