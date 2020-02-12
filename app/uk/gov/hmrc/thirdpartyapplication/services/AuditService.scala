@@ -58,7 +58,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector) {
     val email = mapHeader(LOGGED_IN_USER_EMAIL_HEADER -> "developerEmail")
     val name = mapHeader(LOGGED_IN_USER_NAME_HEADER -> "developerFullName")
 
-    Seq(email, name).flatten.toMap
+    List(email, name).flatten.toMap
   }
 }
 

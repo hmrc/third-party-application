@@ -16,13 +16,11 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
+import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.concurrent.ScalaFutures
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -30,9 +28,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 
-class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with WithFakeApplication with ApplicationStateUtil {
+class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
-  implicit lazy val materializer = fakeApplication.materializer
+  import play.api.test.Helpers._
+
+  implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
@@ -51,13 +51,13 @@ class CollaboratorControllerSpec extends UnitSpec with ScalaFutures with Mockito
       private val version="1.0"
       private val partialemail = "partialemail"
 
-      when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(Seq("user@example.com")))
+      when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(List("user@example.com")))
 
-      val result = await(underTest.searchCollaborators(context, version, Some(partialemail))(request))
+      val result = underTest.searchCollaborators(context, version, Some(partialemail))(request)
 
       status(result) shouldBe SC_OK
 
-      (jsonBodyOf(result)).as[Seq[String]] shouldBe Seq("user@example.com")
+      contentAsJson(result).as[Seq[String]] shouldBe Seq("user@example.com")
     }
   }
 }

@@ -22,23 +22,22 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
-class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with IndexVerification
+class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
 
   implicit val s : ActorSystem = ActorSystem("test")
@@ -52,14 +51,14 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
   private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   override def beforeEach() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
       await(db.ensureIndexes)
     }
   }
 
   override protected def afterAll() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
     }
   }
@@ -282,8 +281,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
   def anApplicationData(id: UUID,
                         clientId: String = "aaa",
                         state: ApplicationState = testingState(),
-                        access: Access = Standard(Seq.empty, None, None),
-                        user: Seq[String] = Seq("user@example.com"),
+                        access: Access = Standard(List.empty, None, None),
+                        user: Seq[String] = List("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-$id", clientId, state, access, user, checkInformation)
@@ -293,8 +292,8 @@ class SubscriptionRepositorySpec extends UnitSpec with MockitoSugar with Argumen
                             name: String,
                             clientId: String = "aaa",
                             state: ApplicationState = testingState(),
-                            access: Access = Standard(Seq.empty, None, None),
-                            user: Seq[String] = Seq("user@example.com"),
+                            access: Access = Standard(List.empty, None, None),
+                            user: Seq[String] = List("user@example.com"),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR)).toSet

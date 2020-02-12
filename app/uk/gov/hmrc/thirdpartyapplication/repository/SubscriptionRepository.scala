@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatApiIdentif
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.collection.Seq
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -40,7 +39,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
     MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats) {
 
-  def searchCollaborators(context: String, version: String, partialEmail: Option[String]): Future[Seq[String]] = {
+  def searchCollaborators(context: String, version: String, partialEmail: Option[String]): Future[List[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
 
     val pipeline = List(
@@ -54,16 +53,16 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
       builder.Group(JsString("$collaborators"))()
     )
 
-    def partialEmailMatch(email :String) = {
+    def partialEmailMatch(email: String) = {
       val caseInsensitiveRegExOption = "i"
       builder.Match(Json.obj("_id" -> BSONRegex(email, caseInsensitiveRegExOption)))
     }
 
     val pipelineWithOptionalEmailFilter =
       partialEmail match {
-      case Some(email) => pipeline ++ List(partialEmailMatch(email))
-      case None => pipeline
-    }
+        case Some(email) => pipeline ++ List(partialEmailMatch(email))
+        case None => pipeline
+      }
 
     val query = collection.aggregateWith[JsObject]()(_ => (pipelineWithOptionalEmailFilter.head, pipelineWithOptionalEmailFilter.tail))
 
@@ -80,7 +79,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  override def indexes = Seq(
+  override def indexes = List(
     createSingleFieldAscendingIndex(
       indexFieldKey = "apiIdentifier.context",
       indexName = Some("context")
@@ -102,20 +101,20 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
       Json.obj("applications" -> applicationId.toString),
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
       Json.obj("apiIdentifier.version" -> apiIdentifier.version)))))
-    .map {
-      case 1 => true
-      case _ => false
-    }
+      .map {
+        case 1 => true
+        case _ => false
+      }
   }
 
-  def getSubscriptions(applicationId: UUID): Future[Seq[APIIdentifier]] = {
+  def getSubscriptions(applicationId: UUID): Future[List[APIIdentifier]] = {
     find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
   }
 
   def getSubscribers(apiIdentifier: APIIdentifier): Future[Set[UUID]] = {
     val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
     collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
-      case Some(subscriptionData) => subscriptionData.applications
+      case Some(subscriptionData) => subscriptionData.applications.toSet
       case _ => Set()
     }
   }

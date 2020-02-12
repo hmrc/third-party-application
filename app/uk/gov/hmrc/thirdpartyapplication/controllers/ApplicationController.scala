@@ -51,12 +51,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val apiGatewayUserAgents: Seq[String] = Seq("APIPlatformAuthorizer", "wso2-gateway-customizations")
+  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer", "wso2-gateway-customizations")
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
-    val extraHeaders = Seq(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
+    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
@@ -122,18 +122,16 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     handleOption(credentialService.fetchWso2Credentials(clientId))
   }
 
-  def addCollaborator(applicationId: UUID) = {
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
-      withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
-        applicationService.addCollaborator(applicationId, collaboratorRequest) map {
-          response => Ok(toJson(response))
-        } recover {
-          case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS,
-            "This email address is already registered with different role, delete and add with desired role"))
+  def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+    withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
+      applicationService.addCollaborator(applicationId, collaboratorRequest) map {
+        response => Ok(toJson(response))
+      } recover {
+        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS,
+          "This email address is already registered with different role, delete and add with desired role"))
 
-          case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
-        } recover recovery
-      }
+        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
+      } recover recovery
     }
   }
 
@@ -141,7 +139,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
+    Action.async { implicit request =>
       applicationService.deleteCollaborator(applicationId, email, admin, adminsToEmailSet) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery
@@ -252,7 +250,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def searchApplications = Action.async { implicit request =>
+  def searchApplications = Action.async { implicit
+                                          request =>
     applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
   }
 
@@ -301,12 +300,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def fetchAllAPISubscriptions(): Action[AnyContent] = Action.async((request: Request[play.api.mvc.AnyContent]) =>
     subscriptionService.fetchAllSubscriptions()
-      .map(subs => Ok(toJson(subs.seq))) recover recovery
+      .map(subs => Ok(toJson(subs))) recover recovery
   )
 
   def fetchAllSubscriptions(applicationId: UUID) = Action.async { implicit request =>
     subscriptionService.fetchAllSubscriptionsForApplication(applicationId)
-      .map(subs => Ok(toJson(subs.seq))) recover recovery
+      .map(subs => Ok(toJson(subs))) recover recovery
   }
 
   def isSubscribed(id: java.util.UUID, context: String, version: String) = Action.async {

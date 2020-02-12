@@ -18,15 +18,15 @@ package unit.uk.gov.hmrc.thirdpartyapplication.models
 
 import java.util.UUID
 
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.play.test.UnitSpec
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
-class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
+class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
   "RateLimitTier" should {
 
@@ -63,7 +63,7 @@ class ApplicationSpec extends UnitSpec with ApplicationStateUtil {
       "a", "a", "a",
       ApplicationTokens(EnvironmentToken("cid", "cs", "at")),
       productionState("user1"),
-      Standard(Seq.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
+      Standard(List.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))
 
     "create object" in {

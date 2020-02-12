@@ -21,41 +21,38 @@ import java.util.concurrent.TimeUnit
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.captor.ArgCaptor
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterAll
-import org.scalatest.concurrent.ScalaFutures
 import play.api.LoggerLike
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.LockKeeper
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future.successful
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
+class CredentialServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup {
+  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
     lazy val locked = false
-    val mockApplicationRepository = mock[ApplicationRepository]
-    val mockStateHistoryRepository = mock[StateHistoryRepository]
-    val mockAuditService = mock[AuditService]
-    val mockEmailConnector = mock[EmailConnector]
+    val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
+    val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockLogger = mock[LoggerLike]
     val response = mock[WSResponse]
 
@@ -69,11 +66,9 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val clientSecretLimit = 5
     val credentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest = new CredentialService(mockApplicationRepository, mockAuditService, applicationResponseCreator, credentialConfig) {
+    val underTest = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, applicationResponseCreator, credentialConfig) {
       override val logger = mockLogger
     }
-
-    when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
   }
 
   private def aSecret(secret: String): ClientSecret = {
@@ -81,7 +76,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
   }
 
   private val loggedInUser = "loggedin@example.com"
-  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", Seq(aSecret("secret1"), aSecret("secret2")))
+  private val environmentToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
   trait LockedSetup extends Setup {
     override lazy val locked = true
@@ -122,7 +117,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "return none when no application exists in the repository for the given application id" in new Setup {
 
       val applicationId = UUID.randomUUID()
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(None)
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       val result = await(underTest.fetchCredentials(applicationId))
 
@@ -135,7 +130,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val applicationData = anApplicationData(applicationId)
       val expectedResult = EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, environmentToken.clientSecrets)
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(Some(applicationData))
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       val result = await(underTest.fetchCredentials(applicationId))
 
@@ -148,7 +143,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "return none when no application exists in the repository for the given application clientId" in new Setup {
 
       val clientId = "aClientId"
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(None)
+      ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
 
       val result = await(underTest.fetchWso2Credentials(clientId))
 
@@ -160,7 +155,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val applicationId = UUID.randomUUID()
       val applicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetchByClientId(environmentToken.clientId)).thenReturn(Some(applicationData))
+      ApplicationRepoMock.FetchByClientId.thenReturnWhen(environmentToken.clientId)(applicationData)
 
       val result = await(underTest.fetchWso2Credentials(environmentToken.clientId))
 
@@ -172,7 +167,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val applicationId = UUID.randomUUID()
       val applicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetch(applicationId)).thenThrow(new RuntimeException("test error"))
+      ApplicationRepoMock.FetchByClientId.thenFail(new RuntimeException("test error"))
 
       intercept[RuntimeException] {
         await(underTest.fetchWso2Credentials(applicationData.tokens.production.clientId))
@@ -184,7 +179,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "return none when no application exists in the repository for the given client id" in new Setup {
       val clientId = "some-client-id"
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(None)
+      ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")))
 
@@ -194,11 +189,11 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     "return none when credentials don't match with an application" in new Setup {
       val applicationData = anApplicationData(UUID.randomUUID())
       val clientId = applicationData.tokens.production.clientId
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Some(applicationData))
+      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")))
 
-      verify(mockApplicationRepository, times(0)).recordClientSecretUsage(any[String], any[String])
+      ApplicationRepoMock.RecordClientSecretUsage.verifyNeverCalled()
       result shouldBe None
     }
 
@@ -208,8 +203,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val applicationId = applicationData.id.toString
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
 
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Future.successful(Some(applicationData)))
-      when(mockApplicationRepository.recordClientSecretUsage(applicationId, clientSecret)).thenReturn(Future.successful(applicationData))
+      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationId, clientSecret)(applicationData)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
 
@@ -223,8 +218,8 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
       val thrownException = new RuntimeException
 
-      when(mockApplicationRepository.fetchByClientId(clientId)).thenReturn(Future.successful(Some(applicationData)))
-      when(mockApplicationRepository.recordClientSecretUsage(applicationId, clientSecret)).thenReturn(Future.failed(thrownException))
+      ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
 
@@ -242,40 +237,43 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
     val secretRequest = ClientSecretRequest("secret-1")
 
     "add the client secret" in new Setup {
-      val captor = ArgCaptor[ApplicationData]
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
 
       val result = await(underTest.addClientSecret(applicationId, secretRequest))
 
-      verify(mockApplicationRepository).save(captor.capture)
-      val updatedProductionSecrets = captor.value.tokens.production.clientSecrets
+      val savedApp = ApplicationRepoMock.Save.verifyCalled()
+      val updatedProductionSecrets = savedApp.tokens.production.clientSecrets
       updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
       val newSecret = updatedProductionSecrets diff environmentToken.clientSecrets
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedProductionSecrets)
-      verify(mockAuditService).audit(ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString))
+
+      AuditServiceMock.Audit.verifyCalled(
+        ClientSecretAdded,
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.head.secret, "clientSecretType" -> PRODUCTION.toString),
+        hc
+      )
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
 
-      verify(mockApplicationRepository, never).save(any[ApplicationData])
+      ApplicationRepoMock.Save.verifyNeverCalled()
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
 
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = Seq("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationDataWith5Secrets)))
+      ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)
 
       intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecret(applicationId, secretRequest)))
 
-      verify(mockApplicationRepository, never).save(any[ApplicationData])
+      ApplicationRepoMock.Save.verifyNeverCalled()
     }
   }
 
@@ -286,55 +284,62 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
 
     "remove a client secret form an app with more than one client secret" in new Setup {
 
-      val secretsToRemove = Seq("secret1")
-      val captor = ArgCaptor[ApplicationData]
+      val secretsToRemove = List("secret1")
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockAuditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.toString,
-        "removedClientSecret" -> secretsToRemove.head))).thenReturn(Future.successful(AuditResult.Success))
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+
+      AuditServiceMock.Audit.thenReturnSuccessWhen(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head)
+      )
 
       val result = await(underTest.deleteClientSecrets(applicationId, secretsToRemove))
 
-      verify(mockApplicationRepository).save(captor.capture)
-      val updatedClientSecrets = captor.value.tokens.production.clientSecrets
+      val savedApp = ApplicationRepoMock.Save.verifyCalled()
+      val updatedClientSecrets = savedApp.tokens.production.clientSecrets
       updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
       result shouldBe EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, updatedClientSecrets)
-      verify(mockAuditService, times(secretsToRemove.length)).audit(ClientSecretRemoved,
-        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head))
+
+      AuditServiceMock.Audit.verify(times(secretsToRemove.length))(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head),
+        hc
+      )
     }
 
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
 
-      val secretsToRemove = Seq("secret1", "secret2")
+      val secretsToRemove = List("secret1", "secret2")
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       intercept[IllegalArgumentException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never).save(any[ApplicationData])
-      verify(mockAuditService, never).audit(*, *)(*)
+      ApplicationRepoMock.Save.verifyNeverCalled()
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      val secretsToRemove = Seq("secret1")
+      val secretsToRemove = List("secret1")
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never).save(any[ApplicationData])
-      verify(mockAuditService, never).audit(*, *)(*)
+      ApplicationRepoMock.Save.verifyNeverCalled()
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
 
     "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
-      val secretsToRemove = Seq("notARealSecret")
+      val secretsToRemove = List("notARealSecret")
 
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
       intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
 
-      verify(mockApplicationRepository, never).save(any[ApplicationData])
-      verify(mockAuditService, never).audit(*, *)(*)
+      ApplicationRepoMock.Save.verifyNeverCalled()
+      AuditServiceMock.Audit.verifyNeverCalled()
     }
   }
 
@@ -353,7 +358,7 @@ class CredentialServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar
       "aaaaaaaaaa",
       ApplicationTokens(environmentToken),
       state,
-      Standard(Seq.empty, None, None),
+      Standard(List.empty, None, None),
       HmrcTime.now,
       Some(HmrcTime.now))
   }

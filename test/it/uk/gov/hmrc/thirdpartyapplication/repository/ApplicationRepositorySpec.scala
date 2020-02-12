@@ -22,32 +22,26 @@ import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
-import org.mockito.MockitoSugar
-import org.scalatest.concurrent.Eventually
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach, Matchers}
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.{alphanumeric, nextString}
 
 class ApplicationRepositorySpec
-  extends UnitSpec
-    with MockitoSugar
+  extends AsyncHmrcSpec
     with MongoSpecSupport
     with BeforeAndAfterEach with BeforeAndAfterAll
     with ApplicationStateUtil
     with IndexVerification
-    with Eventually
-    with Matchers
     with MetricsHelper {
 
   implicit var s : ActorSystem = ActorSystem("test")
@@ -76,14 +70,14 @@ class ApplicationRepositorySpec
   }
 
   override def beforeEach() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
       await(db.ensureIndexes)
     }
   }
 
   override protected def afterAll() {
-    Seq(applicationRepository, subscriptionRepository).foreach { db =>
+    List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
     }
   }
@@ -206,7 +200,7 @@ class ApplicationRepositorySpec
             "aaa",
             generateClientSecret,
             generateAccessToken,
-            Seq(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
+            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
       val generatedClientSecret = application.tokens.production.clientSecrets.head.secret
 
@@ -228,7 +222,7 @@ class ApplicationRepositorySpec
             "aaa",
             generateClientSecret,
             generateAccessToken,
-            Seq(
+            List(
               ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20))),
               ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
@@ -601,7 +595,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
 
-      val applicationSearch = new ApplicationSearch(pageNumber = 2, pageSize = 1, filters = Seq.empty)
+      val applicationSearch = new ApplicationSearch(pageNumber = 2, pageSize = 1, filters = List.empty)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -619,7 +613,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(Active))
+      val applicationSearch = new ApplicationSearch(filters = List(Active))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -637,7 +631,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess))
+      val applicationSearch = new ApplicationSearch(filters = List(ROPCAccess))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -656,7 +650,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(NoAPISubscriptions))
+      val applicationSearch = new ApplicationSearch(filters = List(NoAPISubscriptions))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -675,7 +669,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
 
-      val applicationSearch = ApplicationSearch(filters = Seq(OneOrMoreAPISubscriptions))
+      val applicationSearch = ApplicationSearch(filters = List(OneOrMoreAPISubscriptions))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -696,7 +690,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationId.toString))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(applicationId.toString))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -717,7 +711,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(applicationName))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(applicationName))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -739,7 +733,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some(clientId.toString))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(clientId.toString))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -762,7 +756,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ROPCAccess), textToSearch = Some(applicationName))
+      val applicationSearch = new ApplicationSearch(filters = List(ROPCAccess), textToSearch = Some(applicationName))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -783,7 +777,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(ApplicationTextSearch), textToSearch = Some("application"))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some("application"))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -799,7 +793,7 @@ class ApplicationRepositorySpec
       val applicationId = UUID.randomUUID()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
-      val checkInformation = CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+      val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithTermsOfUseAgreed =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(checkInformation))
@@ -807,7 +801,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseAccepted))
+      val applicationSearch = new ApplicationSearch(filters = List(TermsOfUseAccepted))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -823,7 +817,7 @@ class ApplicationRepositorySpec
       val applicationId = UUID.randomUUID()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
-      val checkInformation = CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+      val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithNoCheckInformation =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
@@ -832,7 +826,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithNoCheckInformation))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseNotAccepted))
+      val applicationSearch = new ApplicationSearch(filters = List(TermsOfUseNotAccepted))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -848,9 +842,9 @@ class ApplicationRepositorySpec
       val applicationId = UUID.randomUUID()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
-      val checkInformation = CheckInformation(termsOfUseAgreements = Seq(termsOfUseAgreement))
+      val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
-      val emptyCheckInformation = CheckInformation(termsOfUseAgreements = Seq.empty)
+      val emptyCheckInformation = CheckInformation(termsOfUseAgreements = List.empty)
 
       val applicationWithNoTermsOfUseAgreed =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
@@ -859,7 +853,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(TermsOfUseNotAccepted))
+      val applicationSearch = new ApplicationSearch(filters = List(TermsOfUseNotAccepted))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -882,7 +876,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
       await(subscriptionRepository.insert(aSubscriptionData(otherAPIContext, "version-1", otherApplication.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(expectedAPIContext), apiVersion = Some(""))
+      val applicationSearch = new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(expectedAPIContext), apiVersion = Some(""))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -907,7 +901,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
 
       val applicationSearch =
-        new ApplicationSearch(filters = Seq(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
+        new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -1276,7 +1270,7 @@ class ApplicationRepositorySpec
   def anApplicationData(id: UUID,
                         prodClientId: String = "aaa",
                         state: ApplicationState = testingState(),
-                        access: Access = Standard(Seq.empty, None, None),
+                        access: Access = Standard(List.empty, None, None),
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
@@ -1287,7 +1281,7 @@ class ApplicationRepositorySpec
                             name: String,
                             prodClientId: String = "aaa",
                             state: ApplicationState = testingState(),
-                            access: Access = Standard(Seq.empty, None, None),
+                            access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 

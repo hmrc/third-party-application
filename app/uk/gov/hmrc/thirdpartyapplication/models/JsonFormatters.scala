@@ -80,7 +80,8 @@ object JsonFormatters {
       (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
       (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
       (JsPath \ "applicationDetails").readNullable[String] and
-      ((JsPath \ "termsOfUseAgreements").read[Seq[TermsOfUseAgreement]] or Reads.pure(Seq.empty[TermsOfUseAgreement]))
+      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
     )(CheckInformation.apply _)
 
   implicit val checkInformationFormat = {
@@ -98,7 +99,7 @@ object JsonFormatters {
     (JsPath \ "serviceName").read[String] and
       (JsPath \ "name").read[String] and
       (JsPath \ "context").read[String] and
-      (JsPath \ "versions").read[Seq[ApiVersion]] and
+      (JsPath \ "versions").read[List[ApiVersion]] and
       (JsPath \ "isTestSupport").readNullable[Boolean]
     ) (ApiDefinition.apply _)
 
@@ -165,7 +166,8 @@ object MongoFormat {
       (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
       (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
       (JsPath \ "applicationDetails").readNullable[String] and
-      ((JsPath \ "termsOfUseAgreements").read[Seq[TermsOfUseAgreement]] or Reads.pure(Seq.empty[TermsOfUseAgreement]))
+      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
     )(CheckInformation.apply _)
 
   implicit val checkInformationFormat = {

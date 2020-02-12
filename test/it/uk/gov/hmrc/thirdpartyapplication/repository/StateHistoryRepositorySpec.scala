@@ -19,21 +19,20 @@ package it.uk.gov.hmrc.thirdpartyapplication.repository
 import java.util.UUID
 
 import org.scalatest.concurrent.Eventually
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, State, StateHistory}
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.play.test.UnitSpec
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class StateHistoryRepositorySpec extends UnitSpec with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with MockitoSugar with ArgumentMatchersSugar with Eventually {
+class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
+  with BeforeAndAfterEach with BeforeAndAfterAll with Eventually {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 

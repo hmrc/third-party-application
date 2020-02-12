@@ -28,14 +28,14 @@ import play.api.http.Status.{BAD_REQUEST, OK}
 import play.api.libs.json.Json
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.play.test.{UnitSpec, WithFakeApplication}
 import uk.gov.hmrc.thirdpartyapplication.connector.{FetchUsersByEmailAddressesRequest, ThirdPartyDeveloperConfig, ThirdPartyDeveloperConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.UserResponse
+import unit.uk.gov.hmrc.thirdpartyapplication.connector.ConnectorSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class ThirdPartyDeveloperConnectorSpec extends UnitSpec with WithFakeApplication with BeforeAndAfterAll {
+class ThirdPartyDeveloperConnectorSpec extends ConnectorSpec with BeforeAndAfterAll {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 

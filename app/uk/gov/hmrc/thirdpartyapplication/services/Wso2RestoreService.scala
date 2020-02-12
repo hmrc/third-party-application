@@ -23,12 +23,12 @@ import play.api.Logger
 import play.api.libs.json.JsObject
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.{BSONDocument, BSONObjectID}
+import reactivemongo.play.json._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.ReactiveRepository
-import reactivemongo.play.json._
 import uk.gov.hmrc.thirdpartyapplication.connector.Wso2ApiStoreConnector
-import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
@@ -45,26 +45,26 @@ class Wso2RestoreService @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector,
 
   implicit val hc: uk.gov.hmrc.http.HeaderCarrier = HeaderCarrier()
 
-  def restoreData(): Future[Seq[HasSucceeded]] = {
+  def restoreData(): Future[List[HasSucceeded]] = {
     Logger.info("Starting the WSO2 applications and subscriptions restore job")
     val eventualApplicationDatas = applicationRepository.fetchAll()
     val eventualAppsToMigrate = migrationRepository.fetchAllUnfinished()
-    val a: Future[Seq[ApplicationData]] = for {
-      appsToMigrate: Seq[Wso2RestoreData] <- eventualAppsToMigrate
-      appDatas: Seq[ApplicationData] <- eventualApplicationDatas
+    val a: Future[List[ApplicationData]] = for {
+      appsToMigrate: List[Wso2RestoreData] <- eventualAppsToMigrate
+      appDatas: List[ApplicationData] <- eventualApplicationDatas
       appToMigrate = appDatas.filter(app => appsToMigrate.map(_.appId).contains(app.id))
     } yield appToMigrate
-    a.flatMap(_.foldLeft(Future.successful(Seq[HasSucceeded]()))((fs, appData) =>
+    a.flatMap(_.foldLeft(Future.successful(List[HasSucceeded]()))((fs, appData) =>
       fs.flatMap(seq => restoreApp(appData).map(_ ++ seq))
     ))
   }
 
-  private def restoreApp(appData: ApplicationData): Future[Seq[HasSucceeded]] = {
+  private def restoreApp(appData: ApplicationData): Future[List[HasSucceeded]] = {
     Logger.info(s"Starting to restore ${appData.name}.")
     apiGatewayStore.createApplication(appData.wso2Username, appData.wso2Password, appData.wso2ApplicationName).flatMap(_ =>
       migrationRepository.save(Wso2RestoreData(appData.id, None, None, None, None, Some(false))).flatMap(
         _ => {
-          val succeeded: Future[Seq[Future[HasSucceeded]]] = subscriptionRepository.getSubscriptions(appData.id).map(
+          val succeeded: Future[List[Future[HasSucceeded]]] = subscriptionRepository.getSubscriptions(appData.id).map(
             _.map(addSubscription(appData, _))
           )
           succeeded recover {
@@ -110,7 +110,7 @@ class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   extends ReactiveRepository[Wso2RestoreData, BSONObjectID]("migration", mongo.mongoConnector.db,
     MongoFormat.formatWso2RestoreData, ReactiveMongoFormats.objectIdFormats) {
 
-  override def indexes = Seq(
+  override def indexes = List(
     createSingleFieldAscendingIndex(
       indexFieldKey = "appId",
       indexName = Some("applicationIdIndex")
@@ -129,5 +129,5 @@ class Wso2RestoreRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }
   }
 
-  def fetchAllUnfinished(): Future[Seq[Wso2RestoreData]] = find("finished" -> false)
+  def fetchAllUnfinished(): Future[List[Wso2RestoreData]] = find("finished" -> false)
 }

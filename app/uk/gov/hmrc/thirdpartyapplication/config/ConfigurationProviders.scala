@@ -32,10 +32,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConf
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
+import scala.collection.JavaConverters._
+
 class ConfigurationModule extends Module {
 
-  override def bindings(environment: Environment, configuration: Configuration): Seq[Binding[_]] = {
-    Seq(
+  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
+    List(
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
@@ -48,6 +50,7 @@ class ConfigurationModule extends Module {
       bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
+      bind[ThirdPartyDeveloperConfig].toProvider[ThirdPartyDeveloperConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
@@ -228,6 +231,19 @@ class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfigurat
 }
 
 @Singleton
+class ThirdPartyDeveloperConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ThirdPartyDeveloperConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val url = baseUrl("third-party-developer")
+    ThirdPartyDeveloperConfig(url)
+  }
+}
+
+
+@Singleton
 class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
   extends Provider[ApplicationControllerConfig] with ServicesConfig {
 
@@ -259,7 +275,7 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
   override protected def mode = environment.mode
 
   override def get() = {
-    val nameBlackList: Seq[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringSeq)
+    val nameBlackList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringList).asScala.toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
 
     ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)

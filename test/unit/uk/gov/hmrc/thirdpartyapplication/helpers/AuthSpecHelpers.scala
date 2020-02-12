@@ -16,8 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.MockitoSugar
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
 
@@ -29,7 +28,6 @@ object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
   }
 
   def givenUserIsNotAuthenticated(underTest: AuthorisationWrapper) = {
-    when(underTest.authConnector.authorise[Unit](*, *)(*, *))
-      .thenReturn(Future.failed(new SessionRecordNotFound))
+    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
   }
 }

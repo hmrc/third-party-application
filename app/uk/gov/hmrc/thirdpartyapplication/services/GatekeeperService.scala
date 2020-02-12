@@ -22,7 +22,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
@@ -42,18 +42,14 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
-                                  apiGatewayStore: ApiGatewayStore,
-                                  applicationResponseCreator: ApplicationResponseCreator,
-                                  thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                   applicationService: ApplicationService) {
 
-  def fetchNonTestingAppsWithSubmittedDate(): Future[Seq[ApplicationWithUpliftRequest]] = {
+  def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(id: UUID) = new InconsistentDataState(s"App not found for id: $id")
 
     def historyError(id: UUID) = new InconsistentDataState(s"History not found for id: $id")
 
-    def latestUpliftRequestState(histories: Seq[StateHistory]) = {
+    def latestUpliftRequestState(histories: List[StateHistory]) = {
       for ((id, history) <- histories.groupBy(_.applicationId))
         yield id -> history.maxBy(_.changedAt)
     }
@@ -85,7 +81,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     def sendEmails(app: ApplicationData) = {
       val requesterEmail = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      val recipients = app.admins.map(_.emailAddress) - requesterEmail
+      val recipients = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
 
       if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 

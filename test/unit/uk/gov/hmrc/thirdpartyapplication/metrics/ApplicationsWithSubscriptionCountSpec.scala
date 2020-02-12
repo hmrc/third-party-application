@@ -16,16 +16,14 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import uk.gov.hmrc.play.test.UnitSpec
-import uk.gov.hmrc.thirdpartyapplication.metrics.{ApplicationsWithSubscriptionCount}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository}
+import uk.gov.hmrc.thirdpartyapplication.metrics.ApplicationsWithSubscriptionCount
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import scala.concurrent.Future
 
-class ApplicationsWithSubscriptionCountSpec extends UnitSpec with MockitoSugar with ArgumentMatchersSugar {
+class ApplicationsWithSubscriptionCountSpec extends AsyncHmrcSpec {
 
   trait Setup {
 

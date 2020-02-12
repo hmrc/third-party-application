@@ -16,11 +16,10 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.services
 
-import org.scalatest.concurrent.ScalaFutures
-import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.services.DataUtil
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-class DataUtilSpec extends UnitSpec with ScalaFutures {
+class DataUtilSpec extends AsyncHmrcSpec {
 
   def zip(first: Int, second: String) = s"$first-$second"
 

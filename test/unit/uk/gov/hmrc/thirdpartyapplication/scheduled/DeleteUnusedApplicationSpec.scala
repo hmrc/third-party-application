@@ -23,25 +23,23 @@ import java.util.concurrent.TimeUnit.DAYS
 import com.typesafe.config.{Config, ConfigFactory}
 import org.joda.time.DateTime
 import org.mockito.Mockito._
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar}
-import org.scalatest.mockito.MockitoSugar
-import org.scalatestplus.play.PlaySpec
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
-import play.api.{Configuration, LoggerLike}
+import org.mockito.ArgumentCaptor
+import play.api.Configuration
+import play.api.LoggerLike
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.models.{Deleted, HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.models.Deleted
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.DeleteUnusedApplications
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
 
-class DeleteUnusedApplicationSpec extends PlaySpec
-  with MockitoSugar with ArgumentMatchersSugar with MongoSpecSupport with FutureAwaits with DefaultAwaitTimeout {
+class DeleteUnusedApplicationsScheduledJobSpec extends AsyncHmrcSpec with MongoSpecSupport {
 
   trait Setup {
     val reactiveMongoComponent: ReactiveMongoComponent = new ReactiveMongoComponent {
@@ -101,14 +99,14 @@ class DeleteUnusedApplicationSpec extends PlaySpec
 
       await(jobUnderTest.runJob)
 
-      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
+      expectedCutoffDate(cutoffDuration).getMillis shouldBe (cutoffDateCaptor.getValue.getMillis +- 500)
 
       val capturedApplicationIds: util.List[UUID] = applicationIdDeletionCaptor.getAllValues
-      capturedApplicationIds.size must be (applications.size)
-      capturedApplicationIds must contain (application1Id)
-      capturedApplicationIds must contain (application2Id)
+      capturedApplicationIds.size shouldBe (applications.size)
+      capturedApplicationIds should contain(application1Id)
+      capturedApplicationIds should contain(application2Id)
 
-      stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
+      stubLogger.infoMessages should contain (s"Found ${applications.size} applications to delete")
     }
 
     "only log application ids if the job is set to dryRun" in new DryRunSetup {
@@ -119,17 +117,16 @@ class DeleteUnusedApplicationSpec extends PlaySpec
       val cutoffDateCaptor: ArgumentCaptor[DateTime] = ArgumentCaptor.forClass(classOf[DateTime])
 
       when(mockApplicationRepository.applicationsLastUsedBefore(cutoffDateCaptor.capture())).thenReturn(Future.successful(applications))
-      when(mockApplicationRepository.delete(*)).thenReturn(Future.successful(HasSucceeded))
 
       await(jobUnderTest.runJob)
 
-      expectedCutoffDate(cutoffDuration).getMillis must be (cutoffDateCaptor.getValue.getMillis +- 500)
+      expectedCutoffDate(cutoffDuration).getMillis shouldBe (cutoffDateCaptor.getValue.getMillis +- 500)
 
       verifyNoInteractions(mockApplicationService)
 
-      stubLogger.infoMessages must contain (s"Found ${applications.size} applications to delete")
-      stubLogger.infoMessages must contain (s"[Dry Run] Would have deleted application with id [${application1Id.toString}]")
-      stubLogger.infoMessages must contain (s"[Dry Run] Would have deleted application with id [${application2Id.toString}]")
+      stubLogger.infoMessages should contain (s"Found ${applications.size} applications to delete")
+      stubLogger.infoMessages should contain (s"[Dry Run] Would have deleted application with id [${application1Id.toString}]")
+      stubLogger.infoMessages should contain (s"[Dry Run] Would have deleted application with id [${application2Id.toString}]")
     }
   }
 }

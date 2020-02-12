@@ -51,9 +51,9 @@ trait ApiGatewayStore {
                        (implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                      (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]]
+                      (implicit hc: HeaderCarrier): Future[List[APIIdentifier]]
 
-  def resubscribeApi(originalApis: Seq[APIIdentifier],
+  def resubscribeApi(originalApis: List[APIIdentifier],
                      wso2Username: String,
                      wso2Password: String,
                      wso2ApplicationName: String,
@@ -113,7 +113,7 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
     Future.successful(HasSucceeded)
   }
 
-  override def resubscribeApi(originalApis: Seq[APIIdentifier],
+  override def resubscribeApi(originalApis: List[APIIdentifier],
                               wso2Username: String,
                               wso2Password: String,
                               wso2ApplicationName: String,
@@ -124,8 +124,8 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
   }
 
   override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                               (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] = {
-    Future.successful(Seq.empty)
+                               (implicit hc: HeaderCarrier): Future[List[APIIdentifier]] = {
+    Future.successful(List.empty)
   }
 }
 
@@ -136,7 +136,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
                                    (implicit val actorSystem: ActorSystem)
   extends ApiGatewayStore with Retrying {
 
-  val IgnoredContexts: Seq[String] = Seq("sso-in/sso", "web-session/sso-api")
+  val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
   val resubscribeMaxRetries = 5
 
@@ -229,7 +229,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
     } yield HasSucceeded
   }
 
-  override def resubscribeApi(originalApis: Seq[APIIdentifier],
+  override def resubscribeApi(originalApis: List[APIIdentifier],
                               wso2Username: String,
                               wso2Password: String,
                               wso2ApplicationName: String,
@@ -246,13 +246,13 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
 
       import Wso2ApiState._
 
-      def isApiUpdatedInWso2Store(wso2Apis: Seq[Wso2Api], expectedWso2ApiState: Wso2ApiState): Boolean = expectedWso2ApiState match {
+      def isApiUpdatedInWso2Store(wso2Apis: List[Wso2Api], expectedWso2ApiState: Wso2ApiState): Boolean = expectedWso2ApiState match {
         case API_ADDED => wso2Apis.contains(wso2Api)
         case API_REMOVED => !wso2Apis.contains(wso2Api)
       }
 
       def check(expectedWso2ApiState: Wso2ApiState) = {
-        wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName).flatMap { apis: Seq[Wso2Api] =>
+        wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName).flatMap { apis: List[Wso2Api] =>
           if (isApiUpdatedInWso2Store(apis, expectedWso2ApiState)) {
             Future.successful(HasSucceeded)
           } else {
@@ -282,7 +282,7 @@ class RealApiGatewayStore @Inject()(wso2APIStoreConnector: Wso2ApiStoreConnector
     }
 
   override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                               (implicit hc: HeaderCarrier): Future[Seq[APIIdentifier]] =
+                               (implicit hc: HeaderCarrier): Future[List[APIIdentifier]] =
     for {
       cookie <- wso2APIStoreConnector.login(wso2Username, wso2Password)
       subscriptions <- wso2APIStoreConnector.getSubscriptions(cookie, wso2ApplicationName)
@@ -333,11 +333,11 @@ class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
   }
 
   override def getSubscriptions(wso2Username: String, wso2Password: String, wso2ApplicationName: String)
-                               (implicit hc: HeaderCarrier) = Future.successful {
-    stubApplications.getOrElse(wso2ApplicationName, Nil)
+                               (implicit hc: HeaderCarrier): Future[List[APIIdentifier]] = Future.successful {
+    stubApplications.getOrElse(wso2ApplicationName, List.empty).toList
   }
 
-  override def resubscribeApi(originalApis: Seq[APIIdentifier], wso2Username: String, wso2Password: String,
+  override def resubscribeApi(originalApis: List[APIIdentifier], wso2Username: String, wso2Password: String,
                               wso2ApplicationName: String, api: APIIdentifier, rateLimitTier: RateLimitTier)
                              (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     Future.successful(HasSucceeded)
