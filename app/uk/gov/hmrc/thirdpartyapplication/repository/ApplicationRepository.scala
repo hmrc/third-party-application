@@ -133,6 +133,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
+  def recordDeleteNotificationSent(applicationId: UUID): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("deleteNotificationSent" -> Json.obj("$type" -> "date"))))
+
   private def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
     findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
       _.result[ApplicationData].head
@@ -301,19 +304,50 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchAll(): Future[List[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
+  def fetchWithProjection(query: JsObject, projection: JsObject): Future[Seq[JsObject]] = {
+    collection
+      .find(query, Some(projection))
+      .cursor[JsObject]()
+      .collect[Seq] (-1, Cursor.ContOnError[Seq[JsObject]]())
+  }
+
   def applicationsLastUsedBefore(lastUsedDate: DateTime): Future[Set[UUID]] = {
     val query = Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedDate))
     val projection = Json.obj("_id" -> 0, "id" -> 1)
 
     for {
-      results <-
-        collection
-          .find(query, Some(projection))
-          .cursor[BSONDocument]()
-          .collect[List] (-1, Cursor.ContOnError[List[BSONDocument]]())
-
-      applicationIds = results.flatMap(_.getAs[String]("id")).map(UUID.fromString)
+      results <- fetchWithProjection(query, projection)
+      applicationIds = results.map(r => (r \ "id").as[String]).map(UUID.fromString)
     } yield applicationIds.toSet
+  }
+
+  def applicationsRequiringDeletionPendingNotification(lastUsedDate: DateTime): Future[Seq[(UUID, String, DateTime, Set[String])]] = {
+    def administratorEmailAddresses(collaborators: JsArray): Set[String] =
+      collaborators.value
+        .filter(collaborator => (collaborator \ "role").as[String] == "ADMINISTRATOR")
+        .map(collaborator => (collaborator \ "emailAddress").as[String])
+        .toSet
+
+    val query =
+      Json.obj(
+        "lastAccess" -> Json.obj("$lte" -> lastUsedDate),
+        "$or" -> Json.arr(
+          Json.obj("deleteNotificationSent"-> Json.obj("$exists" -> false)), // No notification ever sent
+          Json.obj("deleteNotificationSent" -> Json.obj("$not" -> Json.obj("$lte" -> lastUsedDate))), // Exclude where notifications already sent
+          Json.obj("$expr" -> Json.obj("$gt" -> Json.arr("$lastAccess", "$deleteNotificationSent"))))) // Except if application used since previous notification
+    val projection = Json.obj("_id" -> 0, "id" -> 1, "name" -> 1, "lastAccess" -> 1, "collaborators" -> 1)
+
+    for {
+      results <- fetchWithProjection(query, projection)
+      applicationDetails: Seq[(UUID, String, DateTime, Set[String])] = results.map {
+        result => (
+          UUID.fromString((result \ "id").as[String]),
+          (result \ "name").as[String],
+          (result \ "lastAccess").as[DateTime],
+          administratorEmailAddresses((result \ "collaborators").as[JsArray])
+        )
+      }
+    } yield applicationDetails
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {

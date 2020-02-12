@@ -41,7 +41,6 @@ class ConfigurationModule extends Module {
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
-      bind[DeleteUnusedApplicationsJobConfig].toProvider[DeleteUnusedApplicationsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -51,6 +50,7 @@ class ConfigurationModule extends Module {
       bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
+      bind[ThirdPartyDeveloperConfig].toProvider[ThirdPartyDeveloperConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
@@ -105,22 +105,6 @@ class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: C
         .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(2, HOURS), enabled = true))
       ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
     }
-}
-
-@Singleton
-class DeleteUnusedApplicationsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[DeleteUnusedApplicationsJobConfig] with ServicesConfig {
-
-  override protected def mode: Mode = environment.mode
-  override def get(): DeleteUnusedApplicationsJobConfig = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.deleteUnusedApplicationsJob")
-      .getOrElse(JobConfig(FiniteDuration(10, MINUTES), FiniteDuration(1, DAYS), enabled = true))
-    val cutoffDuration: FiniteDuration = runModeConfiguration.underlying.as[Option[FiniteDuration]]("unusedApplicationsDeletionCutoff")
-      .getOrElse(FiniteDuration(365, DAYS)) // scalastyle:off magic.number
-    val dryRun: Boolean = runModeConfiguration.getBoolean("unusedApplicationsDeletionDryRun").getOrElse(true)
-
-    DeleteUnusedApplicationsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, cutoffDuration, dryRun)
-  }
 }
 
 @Singleton
@@ -245,6 +229,19 @@ class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfigurat
     ThirdPartyDelegatedAuthorityConfig(url)
   }
 }
+
+@Singleton
+class ThirdPartyDeveloperConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ThirdPartyDeveloperConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+    val url = baseUrl("third-party-developer")
+    ThirdPartyDeveloperConfig(url)
+  }
+}
+
 
 @Singleton
 class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)

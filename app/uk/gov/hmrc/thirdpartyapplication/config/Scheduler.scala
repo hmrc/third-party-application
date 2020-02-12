@@ -36,20 +36,21 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           refreshSubscriptionsScheduledJob: RefreshSubscriptionsScheduledJob,
                           reconcileRateLimitsJob: ReconcileRateLimitsScheduledJob,
                           reconcileRateLimitsJobConfig: ReconcileRateLimitsJobConfig,
-                          deleteUnusedApplicationsScheduledJob: DeleteUnusedApplicationsScheduledJob,
-                          deleteUnusedApplicationsJobConfig: DeleteUnusedApplicationsJobConfig,
+                          applicationToBeDeletedNotifications: ApplicationToBeDeletedNotifications,
+                          deleteUnusedApplicationsScheduledJob: DeleteUnusedApplications,
                           metricsJob: MetricsJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
-  override val scheduledJobs: List[ExclusiveScheduledJob] = {
-    val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) List(upliftVerificationExpiryJob) else List.empty
-    val refreshJob = if (refreshSubscriptionsJobConfig.enabled && !apiStorageConfig.awsOnly) List(refreshSubscriptionsScheduledJob) else List.empty
-    val rateLimitsJob = if (reconcileRateLimitsJobConfig.enabled && !apiStorageConfig.awsOnly) List(reconcileRateLimitsJob) else List.empty
-    val deleteUnusedApplicationsJob = if(deleteUnusedApplicationsJobConfig.enabled) List(deleteUnusedApplicationsScheduledJob) else List.empty
-    
+  override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
+    val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
+    val refreshJob = if (refreshSubscriptionsJobConfig.enabled && !apiStorageConfig.awsOnly) Seq(refreshSubscriptionsScheduledJob) else Seq.empty
+    val rateLimitsJob = if (reconcileRateLimitsJobConfig.enabled && !apiStorageConfig.awsOnly) Seq(reconcileRateLimitsJob) else Seq.empty
+
+    val enabledTimedJobs: Seq[TimedJob] = Seq[TimedJob](applicationToBeDeletedNotifications, deleteUnusedApplicationsScheduledJob).filter(_.isEnabled)
+
     // TODO : MetricsJob optional?
-    upliftJob ++ refreshJob ++ rateLimitsJob ++ deleteUnusedApplicationsJob :+ metricsJob
+    upliftJob ++ refreshJob ++ rateLimitsJob ++ enabledTimedJobs :+ metricsJob
   }
 
   onStart(app)

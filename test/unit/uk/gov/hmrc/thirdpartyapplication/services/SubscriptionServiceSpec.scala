@@ -393,7 +393,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       Standard(List.empty, None, None),
       DateTime.now,
       Some(DateTime.now),
-      rateLimitTier
+      rateLimitTier = rateLimitTier
     )
   }
 
