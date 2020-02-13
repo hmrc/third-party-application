@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import com.google.inject.Singleton
 import javax.inject.Inject
 import org.joda.time.Duration
 import play.api.Logger
@@ -27,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class RefreshSubscriptionsScheduledJob @Inject()(val lockKeeper: RefreshSubscriptionsJobLockKeeper,
                                                  subscriptionService: SubscriptionService,
                                                  jobConfig: RefreshSubscriptionsJobConfig) extends ScheduledMongoJob {

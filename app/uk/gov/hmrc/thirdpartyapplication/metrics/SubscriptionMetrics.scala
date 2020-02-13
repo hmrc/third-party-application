@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
+import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
@@ -26,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
+@Singleton
 class SubscriptionMetrics @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     Logger.info(s"Pomegranate - Starting - SubscriptionMetrics.metrics() about to calculate subscriptionCount map")

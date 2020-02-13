@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import com.google.inject.Singleton
 import javax.inject.Inject
 import org.joda.time.{DateTime, Duration}
 import play.api.Logger
@@ -31,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationExpiryJobLockKeeper,
                                             applicationRepository: ApplicationRepository,
                                             stateHistoryRepository: StateHistoryRepository,
