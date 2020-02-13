@@ -112,10 +112,10 @@ class ApplicationToBeDeletedNotifications @Inject()(configuration: Configuration
       Future.successful()
     } else {
       notificationResult._2 match {
-        case NotificationSent => applicationRepository.recordDeleteNotificationSent(notificationResult._1).map(_ => Future.successful())
+        case NotificationSent => applicationRepository.recordDeleteNotificationSent(notificationResult._1).map(_ => Future.successful(()))
         case NotificationFailed =>
           logger.warn(s"Sending notification failed for Application [${notificationResult._1}]")
-          Future.successful()
+          Future.successful(())
       }
     }
   }

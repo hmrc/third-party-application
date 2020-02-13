@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val counts: Future[(Int, Int)] = for {

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import javax.inject.Inject
+import javax.inject.{Singleton, Inject}
 import org.joda.time.Duration
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -29,6 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import scala.language.postfixOps
 
+@Singleton
 class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
                            metricOrchestrator: MetricOrchestrator) extends ScheduledMongoJob {
 

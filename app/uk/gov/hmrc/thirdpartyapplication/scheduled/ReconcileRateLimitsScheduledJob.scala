@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import com.google.inject.Singleton
 import javax.inject.Inject
 import org.joda.time.Duration
 import play.api.{Logger, LoggerLike}
@@ -32,6 +33,7 @@ import scala.concurrent.Future.successful
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class ReconcileRateLimitsScheduledJob @Inject()(val lockKeeper: ReconcileRateLimitsJobLockKeeper,
                                                 applicationRepository: ApplicationRepository,
                                                 wso2ApiStoreConnector: Wso2ApiStoreConnector,
