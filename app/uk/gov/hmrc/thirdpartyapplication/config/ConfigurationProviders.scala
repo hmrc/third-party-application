@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -30,9 +29,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, CredentialConfig}
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
-
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class ConfigurationModule extends Module {
 
@@ -40,7 +38,6 @@ class ConfigurationModule extends Module {
     List(
       bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
-      bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -93,18 +90,6 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
   }
-}
-
-@Singleton
-class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ReconcileRateLimitsJobConfig] with ServicesConfig {
-    override protected def mode: Mode = environment.mode
-
-    override def get(): ReconcileRateLimitsJobConfig = {
-      val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.reconcileRateLimitsJob")
-        .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(2, HOURS), enabled = true))
-      ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
-    }
 }
 
 @Singleton
