@@ -56,9 +56,13 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR))) = {
-    ApplicationData(applicationId, "MyApp", "myapp",
-      collaborators, Some("description"),
-      "aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa",
+    ApplicationData(
+      applicationId,
+      "MyApp",
+      "myapp",
+      collaborators,
+      Some("description"),
+      "aaaaaaaaaa",
       ApplicationTokens(productionToken), state, Standard(List.empty, None, None), HmrcTime.now, Some(HmrcTime.now))
   }
 

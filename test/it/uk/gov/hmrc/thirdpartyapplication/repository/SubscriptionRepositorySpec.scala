@@ -304,8 +304,6 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       name.toLowerCase,
       collaborators,
       Some("description"),
-      "username",
-      "password",
       "myapplication",
       ApplicationTokens(EnvironmentToken(clientId, generateWso2ClientSecret, generateAccessToken)),
       state,

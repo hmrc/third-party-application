@@ -276,8 +276,6 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       collaborators,
       Some("description"),
       "aaaaaaaaaa",
-      "aaaaaaaaaa",
-      "aaaaaaaaaa",
       ApplicationTokens(environmentToken),
       state,
       Standard(List.empty, None, None),

@@ -58,12 +58,19 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
   }
 
   "Application with Uplift request" should {
-    val app = ApplicationData(UUID.randomUUID(), "MyApp", "myapp",
-      Set.empty, None,
-      "a", "a", "a",
-      ApplicationTokens(EnvironmentToken("cid", "cs", "at")),
-      productionState("user1"),
-      Standard(List.empty, None, None), DateTimeUtils.now, Some(DateTimeUtils.now))
+    val app =
+      ApplicationData(
+        UUID.randomUUID(),
+        "MyApp",
+        "myapp",
+        Set.empty,
+        None,
+        "a",
+        ApplicationTokens(EnvironmentToken("cid", "cs", "at")),
+        productionState("user1"),
+        Standard(List.empty, None, None),
+        DateTimeUtils.now,
+        Some(DateTimeUtils.now))
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))
 
     "create object" in {
@@ -89,10 +96,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
           access = access,
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR))),
-        wso2Username = "wso2Username",
-        wso2Password = "wso2Password",
-        wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = EnvironmentToken("clientId", "clientSecret", "accessToken")
+          wso2ApplicationName = "wso2ApplicationName",
+          environmentToken = EnvironmentToken("clientId", "clientSecret", "accessToken")
       )
     }
 

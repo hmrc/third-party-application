@@ -152,8 +152,6 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       s"myapp-$id",
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
       Some("description"),
-      "username",
-      "password",
       "myapplication",
       ApplicationTokens(
         EnvironmentToken(prodClientId, "bbb", "ccc")

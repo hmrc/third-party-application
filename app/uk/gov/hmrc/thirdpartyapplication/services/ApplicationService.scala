@@ -349,8 +349,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
     Logger.info(s"Creating application ${application.name}")
 
-    val wso2Username = credentialGenerator.generate()
-    val wso2Password = credentialGenerator.generate()
     val wso2ApplicationName = credentialGenerator.generate()
 
     def createInWso2(): Future[EnvironmentToken] = {
@@ -368,7 +366,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => application
       }
 
-      val applicationData = ApplicationData.create(updatedApplication, wso2Username, wso2Password, wso2ApplicationName, environmentToken)
+      val applicationData = ApplicationData.create(updatedApplication, wso2ApplicationName, environmentToken)
 
       applicationRepository.save(applicationData)
     }

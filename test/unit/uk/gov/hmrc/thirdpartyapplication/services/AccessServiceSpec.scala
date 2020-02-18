@@ -172,9 +172,12 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def privilegedApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),
@@ -185,9 +188,12 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def ropcApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),
@@ -198,9 +204,12 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def standardApplicationDataWithOverrides(applicationId: UUID, overrides: Set[OverrideFlag]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
         EnvironmentToken("a", "b", "c")
       ),

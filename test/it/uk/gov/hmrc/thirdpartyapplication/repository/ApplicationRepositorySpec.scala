@@ -23,6 +23,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
@@ -227,7 +228,6 @@ class ApplicationRepositorySpec
               ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
 
-
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId.toString, secretToUpdate))
@@ -238,8 +238,6 @@ class ApplicationRepositorySpec
         else
           retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
       )
-
-
     }
   }
 
@@ -471,6 +469,24 @@ class ApplicationRepositorySpec
       result shouldBe None
     }
 
+  }
+
+  "fetch" should {
+
+    // API-3862: The wso2Username and wso2Password fields have been removed from ApplicationData, but will still exist in Mongo for most applications
+    // Test that documents are still correctly deserialised into ApplicationData objects
+    "retrieve an application when wso2Username and wso2Password exist" in {
+      val applicationId = UUID.randomUUID
+      val application = anApplicationData(applicationId)
+
+      await(applicationRepository.save(application))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Username" -> "legacyUsername"))))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Password" -> "legacyPassword"))))
+
+      val result = await(applicationRepository.fetch(applicationId))
+
+      result should not be None
+    }
   }
 
   "fetchAllWithNoSubscriptions" should {
@@ -1291,8 +1307,6 @@ class ApplicationRepositorySpec
       name.toLowerCase,
       users,
       Some("description"),
-      "username",
-      "password",
       "myapplication",
       ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
       state,

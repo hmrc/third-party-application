@@ -307,8 +307,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       collaborators,
       Some("description"),
       "aaaaaaaaaa",
-      "aaaaaaaaaa",
-      "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,
       Standard(List.empty, None, None),
