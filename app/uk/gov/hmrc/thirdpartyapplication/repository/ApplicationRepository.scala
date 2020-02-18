@@ -65,8 +65,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     "normalisedName" -> true,
     "collaborators" -> true,
     "description" -> true,
-    "wso2Username" -> true,
-    "wso2Password" -> true,
     "wso2ApplicationName" -> true,
     "tokens" -> true,
     "state" -> true,
