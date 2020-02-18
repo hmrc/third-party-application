@@ -281,7 +281,7 @@ object ClientSecret {
 case class EnvironmentToken(clientId: String,
                             wso2ClientSecret: String,
                             accessToken: String,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret("Default")))
+                            clientSecrets: List[ClientSecret] = List())
 
 case class ApplicationTokensResponse(production: EnvironmentTokenResponse,
                                      sandbox: EnvironmentTokenResponse)

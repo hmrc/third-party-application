@@ -1294,7 +1294,7 @@ class ApplicationRepositorySpec
       "username",
       "password",
       "myapplication",
-      ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken, List(ClientSecret("")))),
       state,
       access,
       HmrcTime.now,

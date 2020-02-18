@@ -320,7 +320,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The client secret is added to the production environment of the application")
       val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokensResponse]
-      fetchResponseJson.production.clientSecrets should have size 2
+      fetchResponseJson.production.clientSecrets should have size 1
       fetchResponseJson.sandbox.clientSecrets should have size 0
     }
 
