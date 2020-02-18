@@ -43,7 +43,6 @@ class ConfigurationModule extends Module {
       bind[AuthConfig].toProvider[AuthConfigProvider],
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
-      bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ThirdPartyDeveloperConfig].toProvider[ThirdPartyDeveloperConfigProvider],
@@ -160,19 +159,6 @@ class TotpConfigProvider @Inject()(val runModeConfiguration: Configuration, envi
   override def get() = {
     val url = baseUrl("totp")
     TotpConfig(url)
-  }
-}
-
-@Singleton
-class Wso2ApiStoreConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[Wso2ApiStoreConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val url = baseUrl("wso2-store")
-    val adminUsername = getConfString("wso2-store.username", "admin")
-    Wso2ApiStoreConfig(url, adminUsername)
   }
 }
 
