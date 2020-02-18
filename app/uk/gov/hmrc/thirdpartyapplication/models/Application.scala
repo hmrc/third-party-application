@@ -261,8 +261,6 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 case class APIIdentifier(context: String, version: String)
 
-case class Wso2Api(name: String, version: String)
-
 case class Collaborator(emailAddress: String, role: Role)
 
 case class ClientSecret(name: String,
@@ -289,10 +287,6 @@ case class ApplicationTokensResponse(production: EnvironmentTokenResponse,
 case class EnvironmentTokenResponse(clientId: String,
                                     accessToken: String,
                                     clientSecrets: List[ClientSecret])
-
-case class Wso2Credentials(clientId: String,
-                           accessToken: String,
-                           wso2Secret: String)
 
 object Role extends Enumeration {
   type Role = Value
@@ -390,30 +384,6 @@ object EnvironmentTokenResponse {
   def empty = {
     EnvironmentTokenResponse("", "", List.empty)
   }
-}
-
-object Wso2Api {
-
-  def create(api: APIIdentifier) = {
-    Wso2Api(name(api), api.version)
-  }
-
-  private def name(api: APIIdentifier) = {
-    s"${api.context.replaceAll("/", "--")}--${api.version}"
-  }
-
-}
-
-object APIIdentifier {
-
-  def create(wso2API: Wso2Api) = {
-    APIIdentifier(context(wso2API), wso2API.version)
-  }
-
-  private def context(wso2API: Wso2Api) = {
-    wso2API.name.dropRight(s"--${wso2API.version}".length).replaceAll("--", "/")
-  }
-
 }
 
 object RateLimitTier extends Enumeration {

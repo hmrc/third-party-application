@@ -126,7 +126,6 @@ object JsonFormatters {
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatEnvironmentTokenResponse = Json.format[EnvironmentTokenResponse]
   implicit val formatApplicationTokensResponse = Json.format[ApplicationTokensResponse]
-  implicit val formatWso2Credentials = Json.format[Wso2Credentials]
 
   implicit val formatValidationRequest = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]

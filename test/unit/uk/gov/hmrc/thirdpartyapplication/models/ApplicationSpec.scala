@@ -37,26 +37,6 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
     }
   }
 
-  "Wso2Api" should {
-
-    "construct a WSO2 name from the context and version" in {
-
-      Wso2Api.create(APIIdentifier("some/context", "1.0")) shouldBe Wso2Api("some--context--1.0", "1.0")
-
-    }
-
-  }
-
-  "API" should {
-
-    "deconstruct the context from a WSO2 api name" in {
-
-      APIIdentifier.create(Wso2Api("some--context--1.0", "1.0")) shouldBe APIIdentifier("some/context", "1.0")
-
-    }
-
-  }
-
   "Application with Uplift request" should {
     val app =
       ApplicationData(

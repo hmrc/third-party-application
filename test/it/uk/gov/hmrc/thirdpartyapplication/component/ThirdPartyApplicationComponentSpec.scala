@@ -18,9 +18,6 @@ package it.uk.gov.hmrc.thirdpartyapplication.component
 
 import java.util.UUID
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import com.github.tomakehurst.wiremock.stubbing.Scenario
-import it.uk.gov.hmrc.thirdpartyapplication.component.stubs.WSO2StoreStub.{WSO2Subscription, WSO2SubscriptionResponse}
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
@@ -78,11 +75,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   override protected def beforeEach(): Unit = {
     super.beforeEach()
     result(applicationRepository.removeAll(), timeout)
-    wso2Store.willAddUserSuccessfully()
-    wso2Store.willLoginAndReturnCookieFor(username, password, cookie)
-    wso2Store.willLogout(cookie)
-    wso2Store.willAddSubscription(wso2ApplicationName, context, version, RateLimitTier.BRONZE)
-    wso2Store.willRemoveSubscription(wso2ApplicationName, context, version)
 
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
   }
@@ -101,11 +93,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application1: ApplicationResponse = createApplication(wso2ApplicationName)
 
-      And("The application is subscribed to an API in WSO2")
-      wso2Store.willLoginAndReturnCookieFor("DUMMY", "DUMMY", "admin-cookie")
-      wso2Store.willReturnAllSubscriptions(wso2ApplicationName -> Seq(APIIdentifier(context, version)))
-      wso2Store.willLogout("admin-cookie")
-
       When("We fetch all applications")
       val fetchResponse = Http(s"$serviceUrl/application").asString
       fetchResponse.code shouldBe OK
@@ -123,11 +110,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application: ApplicationResponse = createApplication()
 
-      And("The applications are subscribed to an API in WSO2")
-      wso2Store.willLoginAndReturnCookieFor("DUMMY", "DUMMY", "admin-cookie")
-      wso2Store.willReturnAllSubscriptions(wso2ApplicationName -> Seq(APIIdentifier(context, version)))
-      wso2Store.willLogout("admin-cookie")
-
       When("We fetch the application by its ID")
       val fetchResponse = Http(s"$serviceUrl/application/${application.id}").asString
       fetchResponse.code shouldBe OK
@@ -142,11 +124,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A collaborator has access to two third party applications")
       val application1: ApplicationResponse = createApplication(applicationName1)
       val application2: ApplicationResponse = createApplication(applicationName2)
-
-      And("The applications are subscribed to an API in WSO2")
-      wso2Store.willLoginAndReturnCookieFor("DUMMY", "DUMMY", "admin-cookie")
-      wso2Store.willReturnAllSubscriptions(wso2ApplicationName -> Seq(APIIdentifier(context, version)))
-      wso2Store.willLogout("admin-cookie")
 
       When("We fetch the application by the collaborator email address")
       val fetchResponse = Http(s"$serviceUrl/application?emailAddress=$emailAddress").asString
@@ -201,10 +178,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("The gatekeeper is logged in")
       authConnector.willValidateLoggedInUserHasGatekeeperRole()
-
-      And("WSO2 returns successfully")
-      wso2Store.willAddApplication(wso2ApplicationName)
-      wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName)
 
       And("Totp returns successfully")
       totpConnector.willReturnTOTP(privilegedApplicationsScenario)
@@ -321,8 +294,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Delete an application") {
-      wso2Store.willRemoveApplication(wso2ApplicationName)
-      wso2Store.willReturnApplicationSubscriptions(wso2ApplicationName, Seq(APIIdentifier(context, version)))
       apiSubscriptionFields.willDeleteTheSubscriptionFields()
       thirdPartyDelegatedAuthorityConnector.willRevokeApplicationAuthorities()
 
@@ -345,60 +316,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
     scenario("Change rate limit tier for an application") {
 
-      val scenario0 = "withoutSubscriptions"
-      val scenario1 = "withAllSubscriptions"
-
-      val subscriptionListUrl = "/store/site/blocks/subscription/subscription-list/ajax/subscription-list.jag"
-      val uriParams = s"action=getSubscriptionByApplication&app=$wso2ApplicationName"
-
-      val withoutSubcriptionsResponse = WSO2SubscriptionResponse(error = false, apis = Seq())
-      val withAllSubcriptionsResponse = WSO2SubscriptionResponse(error = false, apis = Seq(WSO2Subscription(s"$context--$version", version)))
-
-      def willReturnApplicationSubscriptions(): Unit = {
-
-        val scenarioName = "change_rate-limit-tier"
-
-        wso2Store.stub.server.stubFor(
-          post(urlEqualTo(subscriptionListUrl))
-            .withRequestBody(equalTo(uriParams))
-            .inScenario(scenarioName)
-            .whenScenarioStateIs(Scenario.STARTED)
-            .willSetStateTo(scenario1)
-            .willReturn(
-              aResponse()
-                .withStatus(OK)
-                .withBody(Json.toJson(withoutSubcriptionsResponse).toString)
-            )
-        )
-
-        wso2Store.stub.server.stubFor(
-          post(urlEqualTo(subscriptionListUrl))
-            .withRequestBody(equalTo(uriParams))
-            .inScenario(scenarioName)
-            .whenScenarioStateIs(scenario0)
-            .willSetStateTo(scenario1)
-            .willReturn(
-              aResponse()
-                .withStatus(OK)
-                .withBody(Json.toJson(withoutSubcriptionsResponse).toString)
-            )
-        )
-
-        wso2Store.stub.server.stubFor(
-          post(urlEqualTo(subscriptionListUrl))
-            .withRequestBody(equalTo(uriParams))
-            .inScenario(scenarioName)
-            .whenScenarioStateIs(scenario1)
-            .willSetStateTo(scenario0)
-            .willReturn(
-              aResponse()
-                .withStatus(OK)
-                .withBody(Json.toJson(withAllSubcriptionsResponse).toString)
-            )
-        )
-
-      }
-
       Given("The gatekeeper is logged in")
       authConnector.willValidateLoggedInUserHasGatekeeperRole()
 
@@ -407,14 +324,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       And("An API is available for the application")
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
-
-      And("The application is subscribed to the API")
-      willReturnApplicationSubscriptions()
-
-      When("I change the rate limit tier of the application and all its subscriptions")
-      wso2Store.willUpdateApplication(wso2ApplicationName, RateLimitTier.SILVER)
-      wso2Store.willFetchApplication(wso2ApplicationName, RateLimitTier.SILVER)
-      wso2Store.willAddSubscription(wso2ApplicationName, context, version, RateLimitTier.SILVER)
 
       Then("The response is successful")
       val response = postData(path = s"/application/${application.id}/rate-limit-tier", data = """{ "rateLimitTier" : "SILVER" }""")
@@ -452,8 +361,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       And("An API")
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
-      And("The application is not subscribe to the API")
-      wso2Store.willReturnApplicationSubscriptions(wso2ApplicationName, Seq())
 
       And("I subscribe the application to an API")
       val subscribeResponse = postData(s"/application/${application.id}/subscription",
@@ -481,9 +388,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       And("An API")
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
-      And("The application is not subscribe to the API")
-      wso2Store.willReturnApplicationSubscriptions(wso2ApplicationName, Seq())
-
       When("I request to subscribe the application to the API")
       val subscribeResponse = postData(s"/application/${application.id}/subscription",
         s"""{ "context" : "$context", "version" : "$version" }""")
@@ -496,9 +400,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application = createApplication()
-
-      And("The application is subscribed to an API in WSO2")
-      wso2Store.willReturnApplicationSubscriptions(wso2ApplicationName, Seq(APIIdentifier(context, version)))
 
       When("I request to unsubscribe the application to an API")
       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id}/subscription?context=$context&version=$version")
@@ -553,9 +454,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {
-    wso2Store.willAddApplication(wso2ApplicationName)
-    wso2Store.willGenerateApplicationKey(appName, wso2ApplicationName)
-
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED
     Json.parse(createdResponse.body).as[ApplicationResponse]
