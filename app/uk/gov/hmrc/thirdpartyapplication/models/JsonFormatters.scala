@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, ST
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 
 import scala.language.implicitConversions
 
@@ -219,9 +218,7 @@ object MongoFormat {
   implicit val formatApplicationId= Json.format[ApplicationId]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
 
-  implicit val formatWso2RestoreData = Json.format[Wso2RestoreData]
 }
-
 
 object EnumJson {
 

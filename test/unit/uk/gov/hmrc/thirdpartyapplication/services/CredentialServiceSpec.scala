@@ -89,43 +89,6 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
-  "fetch wso2 credentials by clientId" should {
-
-    "return none when no application exists in the repository for the given application clientId" in new Setup {
-
-      val clientId = "aClientId"
-      ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
-
-      val result = await(underTest.fetchWso2Credentials(clientId))
-
-      result shouldBe None
-    }
-
-    "return wso2 credentials for the given client id" in new Setup {
-
-      val applicationId = randomUUID()
-      val applicationData = anApplicationData(applicationId)
-
-      ApplicationRepoMock.FetchByClientId.thenReturnWhen(environmentToken.clientId)(applicationData)
-
-      val result = await(underTest.fetchWso2Credentials(environmentToken.clientId))
-
-      result shouldBe Some(Wso2Credentials(environmentToken.clientId, environmentToken.accessToken, environmentToken.wso2ClientSecret))
-    }
-
-    "fail when the repository fails to return the application" in new Setup {
-
-      val applicationId = randomUUID()
-      val applicationData = anApplicationData(applicationId)
-
-      ApplicationRepoMock.FetchByClientId.thenFail(new RuntimeException("test error"))
-
-      intercept[RuntimeException] {
-        await(underTest.fetchWso2Credentials(applicationData.tokens.production.clientId))
-      }
-    }
-  }
-
   "validate credentials" should {
 
     "return none when no application exists in the repository for the given client id" in new Setup {

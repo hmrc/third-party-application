@@ -36,7 +36,6 @@ class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
-      bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
@@ -59,19 +58,6 @@ object ConfigHelper {
 
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
-  }
-}
-
-@Singleton
-class RefreshSubscriptionsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[RefreshSubscriptionsJobConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.refreshSubscriptionsJob")
-      .getOrElse(JobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true)) // scalastyle:off magic.number
-    RefreshSubscriptionsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 

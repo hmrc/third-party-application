@@ -64,7 +64,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
-      val result: EnvironmentToken = await(underTest.createApplication("myuser", "mypassword", applicationName))
+      val result: EnvironmentToken = await(underTest.createApplication(applicationName))
 
       result.clientId should have length 28
       result.wso2ClientSecret should have length 0
@@ -88,59 +88,11 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "delete an application in AWS" in new Setup {
       when(mockAwsApiGatewayConnector.deleteApplication(applicationName)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest.deleteApplication("myuser", "mypassword", applicationName))
+      await(underTest.deleteApplication(applicationName))
 
       verify(mockAwsApiGatewayConnector).deleteApplication(applicationName)(hc)
     }
 
   }
 
-  "addSubscription" should {
-    "return HasSucceeded" in new Setup {
-      val result: HasSucceeded = await(underTest.addSubscription(app, APIIdentifier("some/context", "1.0")))
-
-      result shouldBe HasSucceeded
-      verifyZeroInteractions(mockAwsApiGatewayConnector)
-    }
-  }
-
-  "removeSubscription" should {
-    "return HasSucceeded" in new Setup {
-      val result: HasSucceeded = await(underTest.removeSubscription(app, APIIdentifier("some/context", "1.0")))
-
-      result shouldBe HasSucceeded
-      verifyZeroInteractions(mockAwsApiGatewayConnector)
-    }
-
-  }
-
-  "resubscribeApi" should {
-    "return HasSucceeded" in new Setup {
-      val api = APIIdentifier("some/context", "1.0")
-      val anotherApi = APIIdentifier("some/context_2", "1.0")
-
-      val result: HasSucceeded = await(underTest.resubscribeApi(List(api, anotherApi), app.wso2Username, app.wso2Password, applicationName, api, SILVER))
-
-      result shouldBe HasSucceeded
-      verifyZeroInteractions(mockAwsApiGatewayConnector)
-    }
-  }
-
-  "getSubscriptions" should {
-    "return an empty sequence" in new Setup {
-      val result: Seq[APIIdentifier] = await(underTest.getSubscriptions(app.wso2Username, app.wso2Password, applicationName))
-
-      result shouldBe empty
-      verifyZeroInteractions(mockAwsApiGatewayConnector)
-    }
-  }
-
-  "checkApplicationRateLimitTier" should {
-    "return HasSucceeded" in new Setup {
-      val result: HasSucceeded = await(underTest.checkApplicationRateLimitTier(app.wso2Username, app.wso2Password, applicationName, SILVER))
-
-      result shouldBe HasSucceeded
-      verifyZeroInteractions(mockAwsApiGatewayConnector)
-    }
-  }
 }

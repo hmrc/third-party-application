@@ -163,8 +163,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(appName)
-      val createdApp = result(applicationRepository.fetch(application.id), timeout)
-        .getOrElse(fail())
+      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
       val response = Http(s"$serviceUrl/application/${application.id}/credentials").asString
@@ -174,26 +173,23 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       // scalastyle:off magic.number
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
         .map(cs => cs.copy(name = s"${"•" * 32}${cs.secret.takeRight(4)}"))
-      Json.parse(response.body) shouldBe Json.toJson(ApplicationTokensResponse(
-        EnvironmentTokenResponse(s"$appName-key", "token", expectedClientSecrets),
-        EnvironmentTokenResponse("", "", List.empty)))
+
+      val returnedResponse = Json.parse(response.body).as[ApplicationTokensResponse]
+      returnedResponse.production.clientId should be (application.clientId)
+      returnedResponse.production.accessToken.length should be (32)
+
+      // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
+      // We have to compare contents individually
+      val returnedClientSecret = returnedResponse.production.clientSecrets.head
+      returnedClientSecret.name should be (expectedClientSecrets.head.name)
+      returnedClientSecret.secret should be (expectedClientSecrets.head.secret)
+      returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
+
+      returnedResponse.sandbox.clientId should be ("")
+      returnedResponse.sandbox.accessToken should be ("")
+      returnedResponse.sandbox.clientSecrets.isEmpty should be (true)
     }
 
-    scenario("Fetch WSO2 credentials of an application") {
-
-      val appName = "appName"
-
-      Given("A third party application")
-      createApplication(appName)
-
-      When("We fetch the WSO2 credentials of the application")
-      val response = Http(s"$serviceUrl/application/wso2-credentials?clientId=$appName-key").asString
-      response.code shouldBe OK
-      val result = Json.parse(response.body).as[Wso2Credentials]
-
-      Then("The credentials are returned")
-      result shouldBe Wso2Credentials(s"$appName-key", "token", "secret")
-    }
   }
 
   feature("Privileged Applications") {

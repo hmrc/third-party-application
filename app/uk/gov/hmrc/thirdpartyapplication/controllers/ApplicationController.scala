@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
+
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
@@ -116,10 +117,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def fetchCredentials(applicationId: UUID) = Action.async {
     handleOption(credentialService.fetchCredentials(applicationId)
       .map(_.map(ApplicationTokensResponse.apply)))
-  }
-
-  def fetchWso2Credentials(clientId: String) = Action.async {
-    handleOption(credentialService.fetchWso2Credentials(clientId))
   }
 
   def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
