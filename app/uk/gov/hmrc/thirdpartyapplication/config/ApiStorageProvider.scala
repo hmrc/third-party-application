@@ -36,13 +36,7 @@ class ApiStorageProvider @Inject()(config: ApiStorageConfig,
                                    awsApiGatewayStore: AwsApiGatewayStore)
   extends Provider[ApiGatewayStore] {
 
-  override def get() =  {
-    if (config.skipWso2) {
-      stubApiGatewayStore
-    } else {
-      awsApiGatewayStore
-    }
-  }
+  override def get(): ApiGatewayStore = if (config.disableAwsCalls) stubApiGatewayStore else awsApiGatewayStore
 }
 
-case class ApiStorageConfig(skipWso2: Boolean, awsOnly: Boolean)
+case class ApiStorageConfig(disableAwsCalls: Boolean)

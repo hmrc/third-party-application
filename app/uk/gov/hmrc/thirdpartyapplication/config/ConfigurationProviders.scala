@@ -107,12 +107,11 @@ class ApiStorageConfigProvider @Inject()(val runModeConfiguration: Configuration
   override protected def mode = environment.mode
 
   override def get() = {
-    val skipWso2 =
-      runModeConfiguration.getBoolean(s"$env.skipWso2").
-      getOrElse(runModeConfiguration.getBoolean("skipWso2").
+    val disableAwsCalls =
+      runModeConfiguration.getBoolean(s"$env.disableAwsCalls").
+      getOrElse(runModeConfiguration.getBoolean("disableAwsCalls").
         getOrElse(false))
-    val awsOnly = runModeConfiguration.getBoolean("awsOnly").getOrElse(false)
-    ApiStorageConfig(skipWso2, awsOnly)
+    ApiStorageConfig(disableAwsCalls)
   }
 }
 

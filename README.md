@@ -46,9 +46,9 @@ endpoint on the Tax Platform Catalogue's API.
 
 Current Known Issues
 --------------------
-In some use cases, specifically if this microservice is running locally there may be a problem with Wso2.
-This can be resolved be entering application.conf and changing:
+In some use cases, specifically if this microservice is running locally, we may not want to make calls to AWS API Gateway.
+This can be disabled be entering application.conf and changing:
 
 ```
-Dev.skipWso2 to true.
+Dev.disableAwsCalls to true.
 ```

@@ -43,7 +43,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   implicit override lazy val app =
     GuiceApplicationBuilder()
-      .configure(Map("Test.skipWso2" -> false, "appName" -> "third-party-application"))
+      .configure(Map("Test.disableAwsCalls" -> false, "appName" -> "third-party-application"))
       .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
       .build()
 
