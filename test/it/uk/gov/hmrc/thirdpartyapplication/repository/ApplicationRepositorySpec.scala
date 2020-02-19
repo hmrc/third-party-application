@@ -60,11 +60,6 @@ class ApplicationRepositorySpec
     alphanumeric.take(lengthOfRandomClientId).mkString
   }
 
-  private def generateClientSecret = {
-    val lengthOfRandomSecret = 5
-    nextString(lengthOfRandomSecret)
-  }
-
   private def generateAccessToken = {
     val lengthOfRandomToken = 5
     nextString(lengthOfRandomToken)
@@ -199,7 +194,6 @@ class ApplicationRepositorySpec
         ApplicationTokens(
           EnvironmentToken(
             "aaa",
-            generateClientSecret,
             generateAccessToken,
             List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
@@ -221,7 +215,6 @@ class ApplicationRepositorySpec
         ApplicationTokens(
           EnvironmentToken(
             "aaa",
-            generateClientSecret,
             generateAccessToken,
             List(
               ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20))),
@@ -1164,7 +1157,7 @@ class ApplicationRepositorySpec
       users,
       Some("description"),
       "myapplication",
-      ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(prodClientId, generateAccessToken)),
       state,
       access,
       HmrcTime.now,

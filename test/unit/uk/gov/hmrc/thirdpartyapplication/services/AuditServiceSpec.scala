@@ -121,7 +121,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val id = UUID.randomUUID()
     val admin = Collaborator("test@example.com", ADMINISTRATOR)
     val tokens = ApplicationTokens(
-      EnvironmentToken("prodId", "prodSecret", "prodToken")
+      EnvironmentToken("prodId", "prodToken")
     )
     val previousApp = ApplicationData(
       id = id,

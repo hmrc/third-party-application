@@ -55,7 +55,7 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
     val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
     new SecureRandom().nextBytes(randomBytes)
     val accessToken = randomBytes.map("%02x".format(_)).mkString
-    EnvironmentToken((Random.alphanumeric take 28).mkString, "", accessToken)
+    EnvironmentToken((Random.alphanumeric take 28).mkString, accessToken)
   }
 
   override def createApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[EnvironmentToken] = {
@@ -76,7 +76,7 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  def dummyEnvironmentToken = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue", "dummyValue")
+  def dummyEnvironmentToken = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue")
 
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
 

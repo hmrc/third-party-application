@@ -41,7 +41,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
           collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR))
         ),
         applicationName,
-        EnvironmentToken("", "", serverToken, List.empty))
+        EnvironmentToken("", serverToken, List.empty))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

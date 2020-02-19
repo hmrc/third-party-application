@@ -179,7 +179,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Privileged(None, scopes),
@@ -195,7 +195,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Ropc(scopes),
@@ -211,7 +211,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),

@@ -154,7 +154,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        EnvironmentToken(prodClientId, "bbb", "ccc")
+        EnvironmentToken(prodClientId, "ccc")
       ),
       state,
       Standard(List.empty, None, None),

@@ -51,7 +51,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       Some("description"),
       applicationName,
       ApplicationTokens(
-        EnvironmentToken(nextString(2), nextString(2), serverToken)),
+        EnvironmentToken(nextString(2), serverToken)),
       testingState(),
       createdOn = DateTimeUtils.now,
       lastAccess = Some(DateTimeUtils.now))
@@ -65,7 +65,6 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val result: EnvironmentToken = await(underTest.createApplication(applicationName))
 
       result.clientId should have length 28
-      result.wso2ClientSecret should have length 0
       result.accessToken should have length 32
       verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc))
     }

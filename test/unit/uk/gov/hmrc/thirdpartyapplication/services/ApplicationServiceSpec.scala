@@ -57,7 +57,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -486,7 +486,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "send an audit event for each type of change" in new Setup {
       val admin = Collaborator("test@example.com", ADMINISTRATOR)
       val tokens = ApplicationTokens(
-        EnvironmentToken("prodId", "prodSecret", "prodToken")
+        EnvironmentToken("prodId", "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -781,7 +781,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken("aaa", "wso2Secret", serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = EnvironmentToken("aaa", serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 

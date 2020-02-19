@@ -59,7 +59,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val loggedInUser = "loggedin@example.com"
   private val firstSecret = aSecret("secret1")
   private val secondSecret = aSecret("secret2")
-  private val environmentToken = EnvironmentToken("aaa", "wso2Secret", "bbb", List(firstSecret, secondSecret))
+  private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
   private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
   private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
   private val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
