@@ -45,7 +45,6 @@ class ConfigurationModule extends Module {
       bind[TotpConfig].toProvider[TotpConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
-      bind[ThirdPartyDeveloperConfig].toProvider[ThirdPartyDeveloperConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
@@ -186,19 +185,6 @@ class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfigurat
     ThirdPartyDelegatedAuthorityConfig(url)
   }
 }
-
-@Singleton
-class ThirdPartyDeveloperConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ThirdPartyDeveloperConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val url = baseUrl("third-party-developer")
-    ThirdPartyDeveloperConfig(url)
-  }
-}
-
 
 @Singleton
 class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
