@@ -18,7 +18,7 @@ lazy val compile = Seq(
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.7.0",
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-25",
   "uk.gov.hmrc" %% "metrix" % "3.8.0-play-25",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.22.0-play-25",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.23.0-play-25",
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0"
