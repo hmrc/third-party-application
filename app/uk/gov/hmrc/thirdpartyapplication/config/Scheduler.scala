@@ -32,15 +32,17 @@ class SchedulerModule extends AbstractModule {
 @Singleton
 class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationExpiryJobConfig,
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
+                          metricsJobConfig: MetricsJobConfig,
                           metricsJob: MetricsJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
+    val mJob = if (metricsJobConfig.enabled) Seq(metricsJob) else Seq.empty
 
     // TODO : MetricsJob optional?
-    upliftJob :+ metricsJob
+    upliftJob ++ mJob
   }
 
   onStart(app)

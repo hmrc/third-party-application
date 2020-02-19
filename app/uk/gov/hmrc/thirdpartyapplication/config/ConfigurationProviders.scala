@@ -37,6 +37,7 @@ class ConfigurationModule extends Module {
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
+      bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -73,6 +74,22 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
       .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
+  }
+}
+
+
+@Singleton
+class MetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[MetricsJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.metricsJob")
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = false)) // scalastyle:off magic.number
+
+    MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
