@@ -52,7 +52,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer", "wso2-gateway-customizations")
+  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer")
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

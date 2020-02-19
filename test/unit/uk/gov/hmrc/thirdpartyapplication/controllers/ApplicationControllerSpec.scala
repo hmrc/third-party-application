@@ -954,7 +954,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
         )
@@ -975,7 +974,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(), lastAccessTime.getMillis)
         )
