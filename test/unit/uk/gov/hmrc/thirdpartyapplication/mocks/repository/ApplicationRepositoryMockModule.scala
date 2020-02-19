@@ -22,6 +22,7 @@ import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -235,6 +236,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenFail(failWith: Throwable) =
         when(aMock.recordClientSecretUsage(*,*)).thenReturn(failed(failWith))
+    }
+
+    object UpdateApplicationRateLimit {
+      def thenReturn(applicationId: UUID, rateLimit: RateLimitTier)(updatedApplication: ApplicationData) =
+        when(aMock.updateApplicationRateLimit(applicationId, rateLimit)).thenReturn(successful(updatedApplication))
+
+      def verifyCalledWith(applicationId: UUID, rateLimit: RateLimitTier) =
+        ApplicationRepoMock.verify.updateApplicationRateLimit(eqTo(applicationId), eqTo(rateLimit))
     }
 
   }

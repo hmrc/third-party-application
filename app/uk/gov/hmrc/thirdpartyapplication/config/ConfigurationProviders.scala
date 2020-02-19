@@ -21,7 +21,6 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
@@ -30,27 +29,22 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, CredentialConfig}
 
-import scala.concurrent.duration.{Duration, FiniteDuration}
-
 import scala.collection.JavaConverters._
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
-      bind[RefreshSubscriptionsJobConfig].toProvider[RefreshSubscriptionsJobConfigProvider],
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
-      bind[ReconcileRateLimitsJobConfig].toProvider[ReconcileRateLimitsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthConfig].toProvider[AuthConfigProvider],
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
-      bind[Wso2ApiStoreConfig].toProvider[Wso2ApiStoreConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
-      bind[ThirdPartyDeveloperConfig].toProvider[ThirdPartyDeveloperConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
@@ -62,19 +56,6 @@ object ConfigHelper {
 
   def getConfig[T](key: String, f: String => Option[T]): T = {
     f(key).getOrElse(throw new RuntimeException(s"[$key] is not configured!"))
-  }
-}
-
-@Singleton
-class RefreshSubscriptionsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[RefreshSubscriptionsJobConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.refreshSubscriptionsJob")
-      .getOrElse(JobConfig(FiniteDuration(120, SECONDS), FiniteDuration(60, DAYS), enabled = true)) // scalastyle:off magic.number
-    RefreshSubscriptionsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
@@ -93,18 +74,6 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
   }
-}
-
-@Singleton
-class ReconcileRateLimitsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ReconcileRateLimitsJobConfig] with ServicesConfig {
-    override protected def mode: Mode = environment.mode
-
-    override def get(): ReconcileRateLimitsJobConfig = {
-      val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.reconcileRateLimitsJob")
-        .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(2, HOURS), enabled = true))
-      ReconcileRateLimitsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
-    }
 }
 
 @Singleton
@@ -138,12 +107,11 @@ class ApiStorageConfigProvider @Inject()(val runModeConfiguration: Configuration
   override protected def mode = environment.mode
 
   override def get() = {
-    val skipWso2 =
-      runModeConfiguration.getBoolean(s"$env.skipWso2").
-      getOrElse(runModeConfiguration.getBoolean("skipWso2").
+    val disableAwsCalls =
+      runModeConfiguration.getBoolean(s"$env.disableAwsCalls").
+      getOrElse(runModeConfiguration.getBoolean("disableAwsCalls").
         getOrElse(false))
-    val awsOnly = runModeConfiguration.getBoolean("awsOnly").getOrElse(false)
-    ApiStorageConfig(skipWso2, awsOnly)
+    ApiStorageConfig(disableAwsCalls)
   }
 }
 
@@ -193,19 +161,6 @@ class TotpConfigProvider @Inject()(val runModeConfiguration: Configuration, envi
 }
 
 @Singleton
-class Wso2ApiStoreConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[Wso2ApiStoreConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val url = baseUrl("wso2-store")
-    val adminUsername = getConfString("wso2-store.username", "admin")
-    Wso2ApiStoreConfig(url, adminUsername)
-  }
-}
-
-@Singleton
 class AwsApiGatewayConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
   extends Provider[AwsApiGatewayConfig] with ServicesConfig {
 
@@ -229,19 +184,6 @@ class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val runModeConfigurat
     ThirdPartyDelegatedAuthorityConfig(url)
   }
 }
-
-@Singleton
-class ThirdPartyDeveloperConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
-  extends Provider[ThirdPartyDeveloperConfig] with ServicesConfig {
-
-  override protected def mode = environment.mode
-
-  override def get() = {
-    val url = baseUrl("third-party-developer")
-    ThirdPartyDeveloperConfig(url)
-  }
-}
-
 
 @Singleton
 class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)

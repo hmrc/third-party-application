@@ -56,17 +56,6 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     })
   }
 
-  def fetchWso2Credentials(clientId: String): Future[Option[Wso2Credentials]] = {
-    applicationRepository.fetchByClientId(clientId) map (_.flatMap { app =>
-      val environmentToken = app.tokens.production
-      if (environmentToken.clientId == clientId) {
-        Some(Wso2Credentials(environmentToken.clientId, environmentToken.accessToken, environmentToken.wso2ClientSecret))
-      } else {
-        None
-      }
-    })
-  }
-
   def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
     val newSecretValue = generateSecret()
     for {

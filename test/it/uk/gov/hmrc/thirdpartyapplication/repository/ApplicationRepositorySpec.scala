@@ -23,6 +23,7 @@ import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
@@ -57,11 +58,6 @@ class ApplicationRepositorySpec
   private def generateClientId = {
     val lengthOfRandomClientId = 10
     alphanumeric.take(lengthOfRandomClientId).mkString
-  }
-
-  private def generateClientSecret = {
-    val lengthOfRandomSecret = 5
-    nextString(lengthOfRandomSecret)
   }
 
   private def generateAccessToken = {
@@ -198,7 +194,6 @@ class ApplicationRepositorySpec
         ApplicationTokens(
           EnvironmentToken(
             "aaa",
-            generateClientSecret,
             generateAccessToken,
             List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
@@ -220,13 +215,11 @@ class ApplicationRepositorySpec
         ApplicationTokens(
           EnvironmentToken(
             "aaa",
-            generateClientSecret,
             generateAccessToken,
             List(
               ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20))),
               ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20))))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
-
 
       await(applicationRepository.save(application))
 
@@ -238,8 +231,6 @@ class ApplicationRepositorySpec
         else
           retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
       )
-
-
     }
   }
 
@@ -471,6 +462,24 @@ class ApplicationRepositorySpec
       result shouldBe None
     }
 
+  }
+
+  "fetch" should {
+
+    // API-3862: The wso2Username and wso2Password fields have been removed from ApplicationData, but will still exist in Mongo for most applications
+    // Test that documents are still correctly deserialised into ApplicationData objects
+    "retrieve an application when wso2Username and wso2Password exist" in {
+      val applicationId = UUID.randomUUID
+      val application = anApplicationData(applicationId)
+
+      await(applicationRepository.save(application))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Username" -> "legacyUsername"))))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Password" -> "legacyPassword"))))
+
+      val result = await(applicationRepository.fetch(applicationId))
+
+      result should not be None
+    }
   }
 
   "fetchAllWithNoSubscriptions" should {
@@ -1113,150 +1122,6 @@ class ApplicationRepositorySpec
     }
   }
 
-  "applicationsRequiringDeletionPendingNotification" should {
-    def applicationWithLastAccessDate(applicationId: UUID, name: String, lastAccessDate: DateTime, users: Set[Collaborator]): ApplicationData =
-      aNamedApplicationData(id = applicationId, name, prodClientId = generateClientId, users = users).copy(lastAccess = Some(lastAccessDate))
-
-    def applicationWithLastAccessDateAndNotificationDate(applicationId: UUID,
-                                                         name: String,
-                                                         lastAccessDate: DateTime,
-                                                         deleteNotificationDate: DateTime,
-                                                         users: Set[Collaborator]): ApplicationData =
-      aNamedApplicationData(id = applicationId, name, prodClientId = generateClientId, users = users)
-        .copy(lastAccess = Some(lastAccessDate), deleteNotificationSent = Some(deleteNotificationDate))
-
-    def adminUser(emailAddress: String): Collaborator = Collaborator(emailAddress, Role.ADMINISTRATOR)
-    def developerUser(emailAddress: String): Collaborator = Collaborator(emailAddress, Role.DEVELOPER)
-
-    "return only applications last accessed before specified date with no previous notification sent" in {
-      val oldApplicationId = UUID.randomUUID()
-      val applicationName = "Test Application"
-      val lastAccessDate = DateTime.now.minusMonths(18) // scalastyle:off magic.number
-      val cutoffDate = DateTime.now.minusMonths(11) // scalastyle:off magic.number
-      val adminUserEmail = "foo@bar.com"
-
-      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, applicationName, lastAccessDate, Set(adminUser(adminUserEmail)))))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), "foo", DateTime.now, Set(adminUser(adminUserEmail)))))
-
-      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
-        await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
-
-      retrievedApplications.size should be (1)
-      retrievedApplications.head._1 should be (oldApplicationId)
-      retrievedApplications.head._2 should be (applicationName)
-      retrievedApplications.head._3.isEqual(lastAccessDate) should be (true)
-      retrievedApplications.head._4.size should be (1)
-      retrievedApplications.head._4 should contain (adminUserEmail)
-    }
-
-    "not return applications that have had notifications sent within cutoff period" in {
-      val cutoffDate = DateTime.now.minusMonths(10)
-      val applicationWithNotificationSent =
-        applicationWithLastAccessDateAndNotificationDate(
-          UUID.randomUUID(),
-          "Test Application",
-          DateTime.now.minusMonths(12),
-          DateTime.now.minusMonths(11),
-          Set(adminUser("foo@bar.com")))
-
-      await(applicationRepository.save(applicationWithNotificationSent))
-
-      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
-        await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
-
-      retrievedApplications.isEmpty should be (true)
-    }
-
-    "return applications that have had notifications sent prior to last used date" in {
-      val cutoffDate = DateTime.now.minusMonths(11)
-      val applicationWithOldNotificationId: UUID = UUID.randomUUID
-      val applicationName = "Test Application"
-      val lastAccessDate = DateTime.now.minusMonths(12)
-      val adminUserEmail = "foo@bar.com"
-      val applicationWithOldNotification =
-        applicationWithLastAccessDateAndNotificationDate(
-          applicationWithOldNotificationId,
-          applicationName,
-          lastAccessDate,
-          DateTime.now.minusMonths(24),
-          Set(adminUser(adminUserEmail)))
-
-      await(applicationRepository.save(applicationWithOldNotification))
-
-      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
-        await(applicationRepository.applicationsRequiringDeletionPendingNotification(cutoffDate))
-
-      retrievedApplications.size should be (1)
-      retrievedApplications.head._1 should be (applicationWithOldNotificationId)
-      retrievedApplications.head._2 should be (applicationName)
-      retrievedApplications.head._3.isEqual(lastAccessDate) should be (true)
-      retrievedApplications.head._4.size should be (1)
-      retrievedApplications.head._4 should contain (adminUserEmail)
-    }
-
-    "return all administrator email addresses for application" in {
-      val adminUser1Email = "foo@bar.com"
-      val adminUser2Email = "bar@foo.com"
-      val adminUser3Email = "baz@baz.com"
-
-      await(applicationRepository.save(
-        applicationWithLastAccessDate(
-          UUID.randomUUID(),
-          "Test Application",
-          DateTime.now.minusMonths(18),
-          Set(adminUser(adminUser1Email), adminUser(adminUser2Email), adminUser(adminUser3Email)))))
-
-      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
-        await(applicationRepository.applicationsRequiringDeletionPendingNotification(DateTime.now.minusMonths(11)))
-
-      retrievedApplications.size should be (1)
-      retrievedApplications.head._4.size should be (3)
-      retrievedApplications.head._4 should contain (adminUser1Email)
-      retrievedApplications.head._4 should contain (adminUser2Email)
-      retrievedApplications.head._4 should contain (adminUser3Email)
-    }
-
-    "not return developer email addresses" in {
-      val adminUserEmail = "foo@bar.com"
-      val developer1Email = "bar@foo.com"
-      val developer2Email = "baz@baz.com"
-
-      await(applicationRepository.save(
-        applicationWithLastAccessDate(
-          UUID.randomUUID(),
-          "Test Application",
-          DateTime.now.minusMonths(18),
-          Set(adminUser(adminUserEmail), developerUser(developer1Email), developerUser(developer2Email)))))
-
-      val retrievedApplications: Seq[(UUID, String, DateTime, Set[String])] =
-        await(applicationRepository.applicationsRequiringDeletionPendingNotification(DateTime.now.minusMonths(11)))
-
-      retrievedApplications.size should be (1)
-      retrievedApplications.head._4.size should be (1)
-      retrievedApplications.head._4 should contain (adminUserEmail)
-      retrievedApplications.head._4 should not contain (developer1Email)
-      retrievedApplications.head._4 should not contain (developer2Email)
-    }
-  }
-
-  "deletionNotificationSent" should {
-    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
-      anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
-
-    "add timestamp of when notification was sent that application would be deleted" in {
-      val testStart: DateTime = DateTime.now
-      val oldApplicationId = UUID.randomUUID()
-      val applicationLastAccessed = DateTime.now.minusMonths(11)
-
-      val savedApplication = await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, applicationLastAccessed)))
-
-      val updatedApplication: ApplicationData = await(applicationRepository.recordDeleteNotificationSent(oldApplicationId))
-
-      savedApplication.deleteNotificationSent should be (None)
-      updatedApplication.deleteNotificationSent.get.isAfter(testStart) should be (true)
-    }
-  }
-
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
@@ -1291,10 +1156,8 @@ class ApplicationRepositorySpec
       name.toLowerCase,
       users,
       Some("description"),
-      "username",
-      "password",
       "myapplication",
-      ApplicationTokens(EnvironmentToken(prodClientId, generateClientSecret, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(prodClientId, generateAccessToken)),
       state,
       access,
       HmrcTime.now,

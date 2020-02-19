@@ -30,15 +30,12 @@ case class ApplicationData(id: UUID,
                            normalisedName: String,
                            collaborators: Set[Collaborator],
                            description: Option[String] = None,
-                           wso2Username: String,
-                           wso2Password: String,
                            wso2ApplicationName: String,
                            tokens: ApplicationTokens,
                            state: ApplicationState,
                            access: Access = Standard(List.empty, None, None),
                            createdOn: DateTime,
                            lastAccess: Option[DateTime],
-                           deleteNotificationSent: Option[DateTime] = None,
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
@@ -49,11 +46,7 @@ case class ApplicationData(id: UUID,
 
 object ApplicationData {
 
-  def create(application: CreateApplicationRequest,
-             wso2Username: String,
-             wso2Password: String,
-             wso2ApplicationName: String,
-             environmentToken: EnvironmentToken): ApplicationData = {
+  def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: EnvironmentToken): ApplicationData = {
 
     val applicationState = (application.environment, application.access.accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
@@ -68,8 +61,6 @@ object ApplicationData {
       application.name.toLowerCase,
       application.collaborators,
       application.description,
-      wso2Username,
-      wso2Password,
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,

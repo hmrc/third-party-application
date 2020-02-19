@@ -29,7 +29,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.{Environment, PRODUCTION}
@@ -57,7 +57,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -78,7 +78,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val mockLockKeeper = new MockLockKeeper(locked)
     val response = mock[HttpResponse]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector](withSettings.lenient())
-    val mockApplicationService = mock[ApplicationService]
     val mockGatekeeperService = mock[GatekeeperService]
 
     val applicationResponseCreator = new ApplicationResponseCreator()
@@ -487,7 +486,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "send an audit event for each type of change" in new Setup {
       val admin = Collaborator("test@example.com", ADMINISTRATOR)
       val tokens = ApplicationTokens(
-        EnvironmentToken("prodId", "prodSecret", "prodToken")
+        EnvironmentToken("prodId", "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -495,9 +494,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         name = "app name",
         normalisedName = "app name",
         collaborators = Set(admin),
-        wso2Password = "wso2Password",
         wso2ApplicationName = "wso2ApplicationName",
-        wso2Username = "wso2Username",
         tokens = tokens,
         state = testingState(),
         createdOn = HmrcTime.now,
@@ -539,8 +536,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AddCollaboratorRequest(admin, Collaborator(email, role), isRegistered, adminsToEmail)
     }
 
-//    val applicationId = UUID.randomUUID()
-//    val applicationData = anApplicationData(applicationId)
     val request = collaboratorRequest()
 
     "throw notFoundException if no application exists in the repository for the given application id" in new Setup {
@@ -786,7 +781,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken("aaa", "wso2Secret", serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = EnvironmentToken("aaa", serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
@@ -1158,90 +1153,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val uuid: UUID = UUID.randomUUID()
     val originalApplicationData: ApplicationData = anApplicationData(uuid)
     val updatedApplicationData: ApplicationData = originalApplicationData copy (rateLimitTier = Some(SILVER))
-    val apiIdentifier: APIIdentifier = APIIdentifier("myContext", "myVersion")
-    val anotherApiIdentifier: APIIdentifier = APIIdentifier("myContext-2", "myVersion-2")
-    val identifiers = List(apiIdentifier, anotherApiIdentifier)
 
-    "update the application in wso2 and mongo, and re-subscribe to the apis" in new Setup {
-      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
-      ApiGatewayStoreMock.ResubscribeApi.thenReturnHasSucceeded()
-
-      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
-      ApplicationRepoMock.Save.thenReturn(updatedApplicationData)
-      ApiGatewayStoreMock.GetSubscriptions.thenReturn(originalApplicationData)(identifiers)
-      ApiGatewayStoreMock.CheckRateLimitTier.thenReturnHasSucceededWhen(originalApplicationData, SILVER)
+    "update the application in mongo" in new Setup {
+      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(uuid, SILVER)(updatedApplicationData)
 
       await(underTest updateRateLimitTier(uuid, SILVER))
 
-      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, SILVER)
-
-      ApiGatewayStoreMock.ResubscribeApi.verifyCalledWith(identifiers, originalApplicationData, apiIdentifier, SILVER)
-      ApiGatewayStoreMock.ResubscribeApi.verifyCalledWith(identifiers, originalApplicationData, anotherApiIdentifier, SILVER)
-      ApplicationRepoMock.Save.verifyCalledWith(updatedApplicationData)
+      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(uuid, SILVER)
     }
 
-    "fail fast when retrieving application data fails" in new Setup {
-      ApplicationRepoMock.Fetch.thenFail(new RuntimeException)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
-
-      intercept[RuntimeException] {
-        await(underTest updateRateLimitTier(uuid, SILVER))
-      }
-
-      ApiGatewayStoreMock.UpdateApplication.verifyNeverCalled()
-      ApiGatewayStoreMock.ResubscribeApi.verifyNeverCalled()
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "fail fast when wso2 application update fails" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
-      ApiGatewayStoreMock.UpdateApplication.thenFail(new RuntimeException)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
-
-      intercept[RuntimeException] {
-        await(underTest updateRateLimitTier(uuid, SILVER))
-      }
-
-      ApiGatewayStoreMock.UpdateApplication.verifyCalled()
-      ApiGatewayStoreMock.ResubscribeApi.verifyNeverCalled()
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "fail when wso2 resubscribe fails, updating the application in wso2, but leaving the Mongo application in a wrong state" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
-//      ApplicationRepoMock.Save.thenReturn(updatedApplicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(uuid, List(apiIdentifier))
-      ApiGatewayStoreMock.UpdateApplication.thenFail(new RuntimeException)
-
-      intercept[RuntimeException] {
-        await(underTest updateRateLimitTier(uuid, SILVER))
-      }
-
-      ApiGatewayStoreMock.UpdateApplication.verifyCalled()
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "fail when one single api fails to resubscribe in wso2, updating the application in wso2, but leaving the Mongo application" +
-      " and some APIs (in wso2) in a wrong state" in new Setup {
-
-      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
-      ApiGatewayStoreMock.GetSubscriptions.thenReturn(originalApplicationData)(identifiers)
-      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
-
-      ApiGatewayStoreMock.CheckRateLimitTier.thenReturnHasSucceededWhen(originalApplicationData,SILVER)
-
-      ApiGatewayStoreMock.ResubscribeApi.thenReturnHasSucceededWhen(apiIdentifier)
-      ApiGatewayStoreMock.ResubscribeApi.thenFailWhen(anotherApiIdentifier)(new RuntimeException)
-
-      intercept[RuntimeException] {
-        await(underTest updateRateLimitTier(uuid, SILVER))
-      }
-
-      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, SILVER)
-      ApiGatewayStoreMock.ResubscribeApi.verifyCalledWith(identifiers, originalApplicationData, apiIdentifier, SILVER)
-      ApiGatewayStoreMock.ResubscribeApi.verifyCalledWith(identifiers, originalApplicationData, anotherApiIdentifier, SILVER)
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
   }
 
   "update IP whitelist" should {
@@ -1303,7 +1223,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
 
-      ApiGatewayStoreMock.RemoveSubscription.thenReturnHasSucceeded()
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
     }
 
@@ -1316,7 +1235,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       result shouldBe Deleted
     }
 
-    "call to WSO2 to delete the application" in new DeleteApplicationSetup {
+    "call to ApiGatewayStore to delete the application" in new DeleteApplicationSetup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
       ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
@@ -1324,17 +1243,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
       ApiGatewayStoreMock.DeleteApplication.verifyCalledWith(applicationData)
-    }
-
-    "call to WSO2 to remove the subscriptions" in new DeleteApplicationSetup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Delete.thenReturnHasSucceeded()
-      ApiSubscriptionFieldsConnectorMock.DeleteSubscriptions.thenReturnHasSucceeded()
-
-      await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
-
-      ApiGatewayStoreMock.RemoveSubscription.verifyCalledwith(applicationData, api1)
-      ApiGatewayStoreMock.RemoveSubscription.verifyCalledwith(applicationData, api2)
     }
 
     "call to the API Subscription Fields service to delete subscription field data" in new DeleteApplicationSetup {
@@ -1493,8 +1401,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       "myapp",
       collaborators,
       Some("description"),
-      "aaaaaaaaaa",
-      "aaaaaaaaaa",
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,

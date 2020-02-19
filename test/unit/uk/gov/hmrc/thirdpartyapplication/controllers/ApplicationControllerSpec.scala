@@ -485,37 +485,6 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
-  "fetch WSO2 credentials" should {
-    val clientId = "productionClientId"
-
-    "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      val wso2Credentials = Wso2Credentials(clientId, "accessToken", "wso2Secret")
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(Some(wso2Credentials)))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      status(result) shouldBe SC_OK
-      contentAsJson(result) shouldBe Json.toJson(wso2Credentials)
-    }
-
-    "fail with a 404 (not found) if no application exists for the given client id" in new Setup {
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(None))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-    }
-
-  }
-
   "add collaborators" should {
     val applicationId = UUID.randomUUID()
     val admin = "admin@example.com"
@@ -985,7 +954,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
         )
@@ -1006,7 +974,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(), lastAccessTime.getMillis)
         )

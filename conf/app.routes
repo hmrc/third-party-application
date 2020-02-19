@@ -6,7 +6,6 @@ GET           /collaborators                                         uk.gov.hmrc
 GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications
 
 GET           /application                                           uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
-GET           /application/wso2-credentials                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchWso2Credentials(clientId: String)
 GET           /application/subscriptions                             uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllAPISubscriptions()
 
 GET           /application/:id                                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetch(id: java.util.UUID)
@@ -57,5 +56,4 @@ POST          /application/:id/check-information                     uk.gov.hmrc
 
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: String, version: String)
 
-POST          /admin/application/restore-wso2-data                   uk.gov.hmrc.thirdpartyapplication.controllers.Wso2RestoreController.restoreWso2Data()
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()
