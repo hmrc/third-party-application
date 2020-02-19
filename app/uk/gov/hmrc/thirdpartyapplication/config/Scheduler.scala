@@ -32,8 +32,6 @@ class SchedulerModule extends AbstractModule {
 @Singleton
 class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationExpiryJobConfig,
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
-                          applicationToBeDeletedNotifications: ApplicationToBeDeletedNotifications,
-                          deleteUnusedApplicationsScheduledJob: DeleteUnusedApplications,
                           metricsJob: MetricsJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
@@ -41,10 +39,8 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
 
-    val enabledTimedJobs: Seq[TimedJob] = Seq[TimedJob](applicationToBeDeletedNotifications, deleteUnusedApplicationsScheduledJob).filter(_.isEnabled)
-
     // TODO : MetricsJob optional?
-    upliftJob ++ enabledTimedJobs :+ metricsJob
+    upliftJob :+ metricsJob
   }
 
   onStart(app)
