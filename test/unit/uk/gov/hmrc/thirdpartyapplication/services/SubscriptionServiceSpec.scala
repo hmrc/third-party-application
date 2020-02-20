@@ -20,7 +20,7 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils}
-import org.mockito.ArgumentCaptor
+import org.mockito.captor.{ArgCaptor, Captor}
 import org.scalatest.BeforeAndAfterAll
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiDefinitionConnectorMockModule
 
 import scala.concurrent.Future
@@ -43,7 +44,10 @@ import scala.concurrent.Future.successful
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApiDefinitionConnectorMockModule {
+  private val loggedInUser = "loggedin@example.com"
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
+
+  trait Setup extends ApiDefinitionConnectorMockModule with AuditServiceMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
@@ -51,16 +55,16 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
-    val mockAuditService = mock[AuditService]
+    val mockAuditService = AuditServiceMock.aMock
     val response = mock[WSResponse]
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, mockAuditService, mockApiGatewayStore)
+      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(*)(*)).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
@@ -71,9 +75,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   private def aSecret(secret: String): ClientSecret = {
     ClientSecret(secret, secret)
   }
-
-  private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   override def beforeAll() {
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
@@ -174,10 +175,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      val parametersCaptor: ArgumentCaptor[Map[String, String]] = ArgumentCaptor.forClass(classOf[Map[String, String]])
-
-      when(mockAuditService.audit(refEq(Subscribed), parametersCaptor.capture())(*)).thenReturn(Future.successful(AuditResult.Success))
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val result: HasSucceeded = await(underTest.createSubscriptionForApplication(applicationId, api))
 
@@ -185,7 +183,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
       verify(mockSubscriptionRepository).add(applicationId, api)
 
-      val capturedParameters: Map[String, String] = parametersCaptor.getValue
+      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.toString))
       capturedParameters.get("apiVersion") should be (Some(api.version))
       capturedParameters.get("apiContext") should be (Some(api.context))
@@ -264,17 +262,17 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "remove the API subscription from Mongo for the given application id when an application exists" in new Setup {
       val applicationData = anApplicationData(applicationId)
 
-      val parametersCaptor: ArgumentCaptor[Map[String, String]] = ArgumentCaptor.forClass(classOf[Map[String, String]])
-
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockAuditService.audit(refEq(Unsubscribed), parametersCaptor.capture())(*)).thenReturn(Future.successful(AuditResult.Success))
+      when(mockAuditService.audit(*, *)(*)).thenReturn(Future.successful(AuditResult.Success))
 
       val result = await(underTest.removeSubscriptionForApplication(applicationId, api))
 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
 
-      val capturedParameters: Map[String, String] = parametersCaptor.getValue
+      val parametersCaptor = ArgCaptor[Map[String, String]]
+      verify(mockAuditService).audit(refEq(Unsubscribed), parametersCaptor)(*)
+      val capturedParameters: Map[String, String] = parametersCaptor.value
       capturedParameters.get("applicationId") should be (Some(applicationId.toString))
       capturedParameters.get("apiVersion") should be (Some(api.version))
       capturedParameters.get("apiContext") should be (Some(api.context))

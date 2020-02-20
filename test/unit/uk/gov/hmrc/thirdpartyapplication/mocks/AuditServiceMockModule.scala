@@ -16,6 +16,8 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.mocks
 
+import org.mockito.captor.{ArgCaptor, Captor}
+import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -33,9 +35,6 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock,mode)
 
     object Audit {
-      def verifyNeverCalled() =
-        AuditServiceMock.verify(never).audit(*,*)(*)
-
       def thenReturnSuccessWhen(action: AuditAction, data: Map[String, String]) =
         when(aMock.audit(eqTo(action),eqTo(data))(*)).thenReturn(successful(AuditResult.Success))
 
@@ -43,11 +42,20 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.audit(*,*)(*)).thenReturn(successful(AuditResult.Success))
       }
 
-      def verifyCalled(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
-        AuditServiceMock.verify.audit(auditAction, data)(hc)
+      def verifyNeverCalled() =
+        AuditServiceMock.verify(never).audit(*,*)(*)
 
-      def verify(mode: org.mockito.verification.VerificationMode)(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
-        AuditServiceMock.verify.audit(auditAction, data)(hc)
+      def verifyCalled(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
+        AuditServiceMock.verify.audit(refEq(auditAction), eqTo(data))(eqTo(hc))
+
+      def verify(verificationMode: VerificationMode)(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
+        AuditServiceMock.verify(verificationMode).audit(refEq(auditAction), eqTo(data))(eqTo(hc))
+
+      def verifyData(auditAction: AuditAction) = {
+        val capture: Captor[Map[String, String]] = ArgCaptor[Map[String, String]]
+        AuditServiceMock.verify.audit(refEq(auditAction), capture)(*)
+        capture.value
+      }
     }
 
     object AuditWithTags {
