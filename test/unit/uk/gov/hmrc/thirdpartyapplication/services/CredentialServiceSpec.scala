@@ -20,7 +20,7 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.mockito.ArgumentCaptor
+import org.mockito.captor.ArgCaptor
 import play.api.LoggerLike
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
@@ -137,10 +137,10 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
 
-      val exceptionCaptor: ArgumentCaptor[Throwable] = ArgumentCaptor.forClass(classOf[Throwable])
-      verify(mockLogger).warn(any[String], exceptionCaptor.capture())
+      val exceptionCaptor = ArgCaptor[Throwable]
+      verify(mockLogger).warn(any[String], exceptionCaptor)
 
-      exceptionCaptor.getValue shouldBe thrownException
+      exceptionCaptor.value shouldBe thrownException
       result shouldBe Some(PRODUCTION)
     }
   }
