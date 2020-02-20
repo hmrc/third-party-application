@@ -20,7 +20,6 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -290,7 +289,6 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val result = await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
 
       result shouldBe UpliftRejected
-      val appDataArgCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
       ApplicationRepoMock.Save.verifyCalled() shouldBe expectedApplication
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
     }

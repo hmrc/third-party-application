@@ -21,7 +21,7 @@ import java.util.UUID
 import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentCaptor, ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded, PaginatedApplicationData}
@@ -212,8 +212,6 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(data: PaginatedApplicationData) =
         when(aMock.searchApplications(*)).thenReturn(successful(data))
     }
-
-    val captor: ArgumentCaptor[ApplicationData => Unit] = ArgumentCaptor.forClass(classOf[ApplicationData => Unit])
 
     object ProcessAll {
       def thenReturn() = {
