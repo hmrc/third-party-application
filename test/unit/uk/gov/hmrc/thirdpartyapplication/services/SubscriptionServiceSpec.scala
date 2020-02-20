@@ -55,7 +55,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
-    val mockAuditService = AuditServiceMock.aMock
+//    val mockAuditService = AuditServiceMock.aMock
     val response = mock[WSResponse]
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -263,16 +263,14 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockAuditService.audit(*, *)(*)).thenReturn(Future.successful(AuditResult.Success))
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val result = await(underTest.removeSubscriptionForApplication(applicationId, api))
 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
 
-      val parametersCaptor = ArgCaptor[Map[String, String]]
-      verify(mockAuditService).audit(refEq(Unsubscribed), parametersCaptor)(*)
-      val capturedParameters: Map[String, String] = parametersCaptor.value
+      val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.toString))
       capturedParameters.get("apiVersion") should be (Some(api.version))
       capturedParameters.get("apiContext") should be (Some(api.context))
