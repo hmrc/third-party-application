@@ -66,13 +66,6 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       HasSucceeded
     }
   }
-
-  // we don't want the AWS API Gateway to cause failures until we make the switch from WSO2
-  private def awsRecovery(errorMessage: String): PartialFunction[Throwable, HasSucceeded] = {
-    case NonFatal(e) =>
-      Logger.error(errorMessage, e)
-      HasSucceeded
-  }
 }
 
 case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
