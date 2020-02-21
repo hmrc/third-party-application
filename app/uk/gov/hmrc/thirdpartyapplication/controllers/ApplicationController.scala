@@ -151,12 +151,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def addClientSecret(applicationId: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokensResponse(token)))
-        } recover {
-          case e: NotFoundException => handleNotFound(e.getMessage)
+        } recover(
+          handleNotFound orElse {
           case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
           case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
           case e => handleException(e)
-        }
+        })
       }
     }
 
@@ -204,6 +204,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         PreconditionFailed(JsErrorResponse(INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
       case e: ApplicationAlreadyExists =>
         Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+      case e: NotFoundException => handleNotFound(e.getMessage)
       case unexpectedResponse =>
         handleException(unexpectedResponse)
     }

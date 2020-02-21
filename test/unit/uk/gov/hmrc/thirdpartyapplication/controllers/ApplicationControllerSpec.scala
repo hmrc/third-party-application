@@ -19,7 +19,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import akka.stream.Materializer
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
 import cats.implicits._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
@@ -934,7 +934,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "retrieve by server token" in new Setup {
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(aNewApplicationResponse())))
+      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(OptionT.pure(aNewApplicationResponse()))
 
       private val scenarios =
         Table(
@@ -983,7 +983,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     }
 
     "update last accessed time when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
+      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(OptionT.pure(applicationResponse))
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime"),
@@ -1423,7 +1423,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
       val resultUpliftedApplication: ApplicationResponse = aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
 
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(UpliftRequested)
+        .thenReturn(EitherT.pure(UpliftRequested))
 
       val result: Result = await(underTest.requestUplift(applicationId)(request
         .withBody(Json.toJson(upliftRequest))))
@@ -1434,7 +1434,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "return 404 if the application doesn't exist" in new Setup {
 
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(failed(new NotFoundException("application doesn't exist")))
+        .thenReturn(EitherT.leftT(new NotFoundException("application doesn't exist")))
 
       val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
 
@@ -1444,7 +1444,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with a 409 (conflict) when an application already exists for that application name" in new Setup {
 
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(failed(ApplicationAlreadyExists("applicationName")))
+        .thenReturn(EitherT.leftT(ApplicationAlreadyExists("applicationName")))
 
       val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
 
@@ -1454,7 +1454,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
     "fail with 412 (Precondition Failed) when the application is not in the TESTING state" in new Setup {
 
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(failed(new InvalidStateTransition(State.PRODUCTION, State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)))
+        .thenReturn(EitherT.leftT(new InvalidStateTransition(State.PRODUCTION, State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)))
 
       val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
 
@@ -1463,7 +1463,7 @@ class ApplicationControllerSpec extends UnitSpec with ScalaFutures with MockitoS
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.requestUplift(eqTo(applicationId), eqTo(requestedName), eqTo(requestedByEmailAddress))(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
+        .thenReturn(EitherT.liftF(failed(new RuntimeException("Expected test failure"))))
 
       val result: Result = await(underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest))))
 

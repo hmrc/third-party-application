@@ -38,6 +38,7 @@ import uk.gov.hmrc.play.test.UnitSpec
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.models.AsyncErrorOr._
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.{Environment, PRODUCTION}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
@@ -58,6 +59,10 @@ import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
 class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSugar with ArgumentMatchersSugar with BeforeAndAfterAll with ApplicationStateUtil {
+
+  def await[A](x: AsyncErrorOr[A])(implicit timeout: Duration): ErrorOr[A]  = Await.result(x.value, timeout)
+
+  def await[A](x: OptionT[Future, A])(implicit timeout: Duration): Option[A]  = Await.result(x.value, timeout)
 
   trait Setup {
 
@@ -1099,10 +1104,10 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
         .thenReturn(Seq(application, expectedApplication))
 
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      val result: ErrorOr[UpliftRequested.type] = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
       verify(mockApplicationRepository).save(expectedApplication)
-      result shouldBe UpliftRequested
+      result shouldBe Right(UpliftRequested)
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
     }
 
@@ -1133,7 +1138,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
       when(mockApplicationRepository.fetchApplicationsByName(application.name)).thenReturn(Seq.empty[ApplicationData])
 
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
+      val result: ErrorOr[UpliftRequested.type] = await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
       verify(mockAuditService).audit(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString))
     }
 
@@ -1146,7 +1151,7 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       mockApplicationRepositoryFetchToReturn(applicationId, Some(application))
       when(mockApplicationRepository.fetchApplicationsByName(requestedName)).thenReturn(Seq.empty[ApplicationData])
 
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      val result: ErrorOr[UpliftRequested.type] = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
       val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.toString, "newApplicationName" -> requestedName)
       verify(mockAuditService).audit(ApplicationUpliftRequested, expectedAuditDetails)
@@ -1172,9 +1177,8 @@ class ApplicationServiceSpec extends UnitSpec with ScalaFutures with MockitoSuga
       when(mockApplicationRepository.fetchApplicationsByName(requestedName))
         .thenReturn(Seq(application, anotherApplication))
 
-      intercept[ApplicationAlreadyExists] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-      }
+      val result = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      result shouldBe Left[Throwable, UpliftRequested.type](ApplicationAlreadyExists(requestedName))
     }
 
     "propagate the exception when the repository fail" in new Setup {

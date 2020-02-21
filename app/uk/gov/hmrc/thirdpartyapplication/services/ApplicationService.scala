@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnect
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.models.AsyncErrorOr._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
@@ -359,11 +360,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
 
     for {
-      app <- fetchApp2(applicationId)
+      app         <- fetchApp2(applicationId)
       upliftedApp = uplift(app)
-      _ <- EitherT.liftF(assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app)))
-      updatedApp <- EitherT.liftF(applicationRepository.save(upliftedApp))
-      _ <- EitherT.liftF(insertStateHistory(
+      _           <- assertAppHasUniqueNameAndAudit2(applicationName, app.access.accessType, Some(app))
+      updatedApp  <- fromFuture(applicationRepository.save(upliftedApp))
+      _           <- fromFuture(insertStateHistory(
         app,
         PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
         requestedByEmailAddress, COLLABORATOR,
@@ -417,7 +418,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
           if (cond) {
             val (action, data) = determineAuditDetails
             auditService.audit(action, data)
-            ApplicationAlreadyExists("boo").asLeft[HasSucceeded]
+            ApplicationAlreadyExists(submittedAppName).asLeft[HasSucceeded]
           } else {
             HasSucceeded.asRight[Throwable]
           }
@@ -551,8 +552,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       case Some(app) => successful(app)
     }
   }
-
-  type AsyncErrorOr[A] = EitherT[Future, Throwable, A]
 
   private def fetchApp2(applicationId: UUID): AsyncErrorOr[ApplicationData] = {
     lazy val notFoundException: Throwable = new NotFoundException(s"application not found for id: $applicationId")

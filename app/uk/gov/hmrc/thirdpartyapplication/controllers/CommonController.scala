@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpWhitelistException, ScopeNotFoundException}
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 import scala.util.{Failure, Success, Try}
 
 trait CommonController extends BaseController {
@@ -50,16 +51,24 @@ trait CommonController extends BaseController {
     }
   }
 
-  private[controllers] def recovery: PartialFunction[Throwable, Result] = {
-    case e: NotFoundException => handleNotFound(e.getMessage)
+  private[controllers] def recovery: PartialFunction[Throwable, Result] =
+    handleNotFound orElse {
     case e: ScopeNotFoundException => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
     case e: InvalidIpWhitelistException => BadRequest(JsErrorResponse(INVALID_IP_WHITELIST, e.getMessage))
-    case e: Throwable =>
+    case NonFatal(e) =>
       Logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)
   }
 
   private[controllers] def handleNotFound(message: String): Result = {
+    NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, message))
+  }
+
+  private[controllers] val handleNotFound: PartialFunction[Throwable, Result] = {
+    case e: NotFoundException => buildNotFoundResult(e.message)
+  }
+
+  private[controllers] def buildNotFoundResult(message: String): Result = {
     NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, message))
   }
 
