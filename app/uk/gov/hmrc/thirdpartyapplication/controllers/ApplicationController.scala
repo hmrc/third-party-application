@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 import cats.data.OptionT
-import cats.implicits._
+import cats.implicits.catsStdInstancesForFuture
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json.toJson
@@ -199,17 +199,21 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
 
   def requestUplift(id: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
-    withJsonBody[UpliftRequest] { upliftRequest =>
-      applicationService.requestUplift(id, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
-        .map(_ => NoContent)
-    } recover {
+    def handleFailure(t: Throwable): Result = t match {
       case _: InvalidStateTransition =>
         PreconditionFailed(JsErrorResponse(INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
       case e: ApplicationAlreadyExists =>
         Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-    } recover recovery
+      case unexpectedResponse =>
+        handleException(unexpectedResponse)
+    }
+    withJsonBody[UpliftRequest] { upliftRequest =>
+      applicationService.requestUplift(id, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
+        .fold[Result](handleFailure(_), _ => NoContent)
+        .recover(recovery)
+    }
   }
-
+//TODO Delete this?? duplicated
   private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
     future.map {
       case Some(v) => Ok(toJson(v))
@@ -260,20 +264,25 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     fetchAndUpdateApplication(() => applicationService.fetchByServerToken(serverToken), "No application was found for server token")
 
   private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchAndUpdateApplication(() => applicationService.fetchByClientId(clientId), "No application was found")
+    fetchAndUpdateApplication(() => OptionT(applicationService.fetchByClientId(clientId)), "No application was found")
 
-  private def fetchAndUpdateApplication(fetchFunction: () => Future[Option[ApplicationResponse]],
-                                        notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchFunction().flatMap {
-      case Some(application) =>
-        // If request has originated from an API gateway, record usage of the Application
+  private def fetchAndUpdateApplication(fetchFunction: () => OptionT[Future, ApplicationResponse],
+                                        notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] = {
+
+    lazy val found: (ApplicationResponse) => Future[Result] = { application =>
         hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
           case Some(userAgent) if apiGatewayUserAgents.contains(userAgent) =>
             applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
           case _ => successful(Ok(toJson(application)))
         }
-      case None => successful(handleNotFound(notFoundMessage))
-    } recover recovery
+    }
+
+    fetchFunction()
+      .toRight(handleNotFound(notFoundMessage))
+      .semiflatMap(found(_))
+      .fold(identity,identity)
+      .recover(recovery)
+  }
 
   private def fetchAllForCollaborator(emailAddress: String) = {
     applicationService.fetchAllForCollaborator(emailAddress).map(apps => Ok(toJson(apps))) recover recovery

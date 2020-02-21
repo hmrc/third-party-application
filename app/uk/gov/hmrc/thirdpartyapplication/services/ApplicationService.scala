@@ -20,6 +20,8 @@ import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
+import cats.data.EitherT
+import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
@@ -36,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, UpliftRequested, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -283,10 +285,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield ExtendedApplicationResponse(app, subscriptions)
   }
 
-  def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
-    applicationRepository.fetchByServerToken(serverToken) map {
-      _.map(application =>
-        ApplicationResponse(data = application))
+  import cats.data.OptionT
+  import cats.implicits._
+
+  def fetchByServerToken(serverToken: String): OptionT[Future, ApplicationResponse] = {
+    OptionT(applicationRepository.fetchByServerToken(serverToken)) map { application =>
+        ApplicationResponse(data = application)
     }
   }
 
@@ -347,7 +351,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def requestUplift(applicationId: UUID, applicationName: String,
-                    requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+                    requestedByEmailAddress: String)(implicit hc: HeaderCarrier): AsyncErrorOr[UpliftRequested.type] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
@@ -355,16 +359,16 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
 
     for {
-      app <- fetchApp(applicationId)
+      app <- fetchApp2(applicationId)
       upliftedApp = uplift(app)
-      _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-      updatedApp <- applicationRepository.save(upliftedApp)
-      _ <- insertStateHistory(
+      _ <- EitherT.liftF(assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app)))
+      updatedApp <- EitherT.liftF(applicationRepository.save(upliftedApp))
+      _ <- EitherT.liftF(insertStateHistory(
         app,
         PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
         requestedByEmailAddress, COLLABORATOR,
         (a: ApplicationData) => applicationRepository.save(a)
-      )
+      ))
       _ = Logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
         s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
       _ = auditService.audit(ApplicationUpliftRequested,
@@ -390,6 +394,35 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         throw ApplicationAlreadyExists(submittedAppName)
       }
     } yield ()
+  }
+
+  private def assertAppHasUniqueNameAndAudit2(submittedAppName: String,
+                                             accessType: AccessType,
+                                             existingApp: Option[ApplicationData] = None)
+                                            (implicit hc: HeaderCarrier): AsyncErrorOr[HasSucceeded] = {
+    import cats.implicits._
+
+    def determineAuditDetails: (AuditAction, Map[String,String]) = {
+      accessType match {
+        case PRIVILEGED => (CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
+        case ROPC => (CreateRopcApplicationRequestDeniedDueToNonUniqueName, Map("applicationName" -> submittedAppName))
+        case _ =>
+          (ApplicationUpliftRequestDeniedDueToNonUniqueName, AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
+      }
+    }
+
+    EitherT(
+      isDuplicateName(submittedAppName, existingApp.map(_.id))
+        .map( cond =>
+          if (cond) {
+            val (action, data) = determineAuditDetails
+            auditService.audit(action, data)
+            ApplicationAlreadyExists("boo").asLeft[HasSucceeded]
+          } else {
+            HasSucceeded.asRight[Throwable]
+          }
+        )
+    )
   }
 
   private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -517,6 +550,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       case None => failed(notFoundException)
       case Some(app) => successful(app)
     }
+  }
+
+  type AsyncErrorOr[A] = EitherT[Future, Throwable, A]
+
+  private def fetchApp2(applicationId: UUID): AsyncErrorOr[ApplicationData] = {
+    lazy val notFoundException: Throwable = new NotFoundException(s"application not found for id: $applicationId")
+    EitherT.fromOptionF(applicationRepository.fetch(applicationId),notFoundException)
   }
 
   def verifyUplift(verificationCode: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
