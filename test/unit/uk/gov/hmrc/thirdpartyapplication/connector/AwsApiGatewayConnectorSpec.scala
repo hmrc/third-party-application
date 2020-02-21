@@ -29,7 +29,7 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
-import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.connector.{AwsApiGatewayConfig, AwsApiGatewayConnector, UpdateApplicationUsagePlanRequest}
@@ -96,19 +96,16 @@ class AwsApiGatewayConnectorSpec
         .withRequestBody(equalToJson(Json.toJson(expectedRequest).toString())))
     }
 
-    "return HasSucceeded when application creation or update fails" in new Setup {
+    "return Upstream5xxResponse when application creation or update fails" in new Setup {
       stubFor(post(urlPathEqualTo(expectedUpdateURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+      intercept[Upstream5xxResponse] {
+        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+      }
 
-      wireMockServer.verify(postRequestedFor(urlEqualTo(expectedUpdateURL))
-        .withHeader(CONTENT_TYPE, equalTo(JSON))
-        .withHeader("x-api-key", equalTo(awsApiKey))
-        .withoutHeader(AUTHORIZATION)
-        .withRequestBody(equalToJson(Json.toJson(expectedRequest).toString())))
     }
   }
 
@@ -127,13 +124,15 @@ class AwsApiGatewayConnectorSpec
         .withoutHeader(AUTHORIZATION))
     }
 
-    "return HasSucceeded when application deletion fails" in new Setup {
+    "return Upstream5xxResponse when application deletion fails" in new Setup {
       stubFor(delete(urlPathEqualTo(expectedDeleteURL))
         .willReturn(
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      await(underTest.deleteApplication(applicationName)(hc)) shouldBe HasSucceeded
+      intercept[Upstream5xxResponse] {
+        await(underTest.deleteApplication(applicationName)(hc)) shouldBe HasSucceeded
+      }
     }
   }
 }

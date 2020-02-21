@@ -53,7 +53,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val gatekeeperUserId = "gate.keeper"
   val username = "a" * 10
   val password = "a" * 10
-  val wso2ApplicationName = "a" * 10
+  val awsApiGatewayApplicationName = "a" * 10
   val testCookieLength = 10
   val cookie = Random.alphanumeric.take(testCookieLength).mkString
   val serviceName = "service"
@@ -91,7 +91,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Fetch all applications") {
 
       Given("A third party application")
-      val application1: ApplicationResponse = createApplication(wso2ApplicationName)
+      val application1: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
 
       When("We fetch all applications")
       val fetchResponse = Http(s"$serviceUrl/application").asString
@@ -173,7 +173,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
     val privilegedApplicationsScenario = "Create Privileged application"
     scenario(privilegedApplicationsScenario) {
-
+      awsApiGatewayConnector.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
       val appName = "privileged-app-name"
 
       Given("The gatekeeper is logged in")
@@ -227,7 +227,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Remove collaborator to an application") {
-
+      emailConnector.willPostEmailNotification()
       Given("A third party application")
       val application = createApplication()
 
@@ -296,6 +296,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Delete an application") {
       apiSubscriptionFields.willDeleteTheSubscriptionFields()
       thirdPartyDelegatedAuthorityConnector.willRevokeApplicationAuthorities()
+      awsApiGatewayConnector.willDeleteApplication(awsApiGatewayApplicationName)
+      emailConnector.willPostEmailNotification()
 
       Given("The gatekeeper is logged in")
       authConnector.willValidateLoggedInUserHasGatekeeperRole()
@@ -315,7 +317,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Change rate limit tier for an application") {
-
       Given("The gatekeeper is logged in")
       authConnector.willValidateLoggedInUserHasGatekeeperRole()
 
@@ -430,7 +431,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   feature("Application name validation") {
-    scenario("for thye invalid name 'HMRC'") {
+    scenario("for the invalid name 'HMRC'") {
       When("I request if a name is invalid")
 
       val nameToCheck = "my invalid app name HMRC"
@@ -454,6 +455,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {
+    awsApiGatewayConnector.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED
     Json.parse(createdResponse.body).as[ApplicationResponse]
