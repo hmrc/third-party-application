@@ -87,7 +87,7 @@ class MetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration
   override def get() = {
 
     val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.metricsJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = false)) // scalastyle:off magic.number
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
     MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
