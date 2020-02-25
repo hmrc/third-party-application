@@ -23,12 +23,11 @@ import org.joda.time.Duration
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.language.postfixOps
 import scala.util.control.NonFatal
@@ -54,11 +53,10 @@ class SetClientSecretIdJob @Inject()(val lockKeeper: SetClientSecretIdJobLockKee
   }
 
   private def processApp(app: ApplicationData): Unit = {
-    if(app.tokens.production.clientSecrets.exists(_.id.isEmpty)) {
-      val updatedClientSecrets: Seq[ClientSecret] = app.tokens.production.clientSecrets map { clientSecret =>
-        clientSecret.id.fold(clientSecret.copy(id = Some(UUID.randomUUID().toString)))(_ => clientSecret)
+    app.tokens.production.clientSecrets foreach { clientSecret =>
+      if (clientSecret.id.isEmpty) {
+        applicationRepository.updateClientSecretId(app.id, clientSecret.secret, UUID.randomUUID().toString)
       }
-      applicationRepository.updateClientSecrets(app.id, updatedClientSecrets)
     }
   }
 }

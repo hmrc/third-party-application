@@ -150,7 +150,7 @@ class SetClientSecretIdJobSpec extends AsyncHmrcSpec with MongoSpecSupport with 
       Mockito.verify(applicationRepositorySpy).processAll(*)
       Mockito.verify(applicationRepositorySpy).collection
       Mockito.verify(applicationRepositorySpy, atLeastOnce).mat
-      Mockito.verify(applicationRepositorySpy, never).updateClientSecrets(*, *)
+      Mockito.verify(applicationRepositorySpy, never).updateClientSecretId(*, *, *)
     }
   }
 
