@@ -165,8 +165,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def validateCredentials: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[ValidationRequest] { vr: ValidationRequest =>
-      credentialService.validateCredentials(vr) map {
-        case Some(e) => Ok(Json.obj("environment" -> e))
+      credentialService.validateCredentials(vr).value map {
+        case Some(application) => Ok(toJson(application))
         case None => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
       } recover recovery
     }

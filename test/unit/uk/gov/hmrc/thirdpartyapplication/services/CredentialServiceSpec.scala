@@ -20,6 +20,7 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
 import play.api.LoggerLike
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -95,7 +96,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val clientId = "some-client-id"
       ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")))
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")).value)
 
       result shouldBe None
     }
@@ -105,7 +106,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val clientId = applicationData.tokens.production.clientId
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")))
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")).value)
 
       ApplicationRepoMock.RecordClientSecretUsage.verifyNeverCalled()
       result shouldBe None
@@ -113,20 +114,23 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "return environment when credentials match with an application" in new Setup {
       val applicationData = anApplicationData(randomUUID())
+      val updatedApplicationData = applicationData.copy(lastAccess = Some(DateTime.now))
+      val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
       val clientId = applicationData.tokens.production.clientId
       val applicationId = applicationData.id.toString
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
-      ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationId, clientSecret)(applicationData)
+      ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationId, clientSecret)(updatedApplicationData)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)).value)
 
-      result shouldBe Some(PRODUCTION)
+      result shouldBe Some(expectedApplicationResponse)
     }
 
     "return environment but write log if updating usage date fails" in new Setup {
       val applicationData = anApplicationData(randomUUID())
+      val expectedApplicationResponse = ApplicationResponse(data = applicationData)
       val clientId = applicationData.tokens.production.clientId
       val applicationId = applicationData.id.toString
       val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
@@ -135,13 +139,13 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)))
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)).value)
 
       val exceptionCaptor = ArgCaptor[Throwable]
       verify(mockLogger).warn(any[String], exceptionCaptor)
 
       exceptionCaptor.value shouldBe thrownException
-      result shouldBe Some(PRODUCTION)
+      result shouldBe Some(expectedApplicationResponse)
     }
   }
 
