@@ -154,6 +154,18 @@ class ApplicationRepositorySpec
     }
   }
 
+  "updateClientSecrets" should {
+    "set the new client secrets on an Application document" in {
+      val applicationId = UUID.randomUUID()
+      await(applicationRepository.save(anApplicationData(applicationId)))
+      val updatedClientSecrets = List(ClientSecret("first"), ClientSecret("second"), ClientSecret("third"))
+
+      val updatedApplication = await(applicationRepository.updateClientSecrets(applicationId, updatedClientSecrets))
+
+      updatedApplication.tokens.production.clientSecrets shouldBe updatedClientSecrets
+    }
+  }
+
   "recordApplicationUsage" should {
     "update the lastAccess property" in {
       val testStartTime = DateTime.now()

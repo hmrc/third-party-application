@@ -48,7 +48,8 @@ class ConfigurationModule extends Module {
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
-      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
+      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
+      bind[SetClientSecretIdJobConfig].toProvider[SetClientSecretIdJobConfigProvider]
     )
   }
 }
@@ -238,5 +239,20 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
 
     ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
+  }
+}
+
+@Singleton
+class SetClientSecretIdJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[SetClientSecretIdJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() = {
+
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"$env.setClientSecretIdJob")
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    SetClientSecretIdJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
