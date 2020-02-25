@@ -169,6 +169,60 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   }
 
+  feature("Validate Credentials") {
+    def validationRequest(clientId: String, clientSecret: String) =
+      s"""
+        | {
+        |   "clientId": "$clientId",
+        |   "clientSecret": "$clientSecret"
+        | }
+        |""".stripMargin
+
+    scenario("Return details of application when valid") {
+      Given("A third party application")
+      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val credentials = createdApplication.tokens.production
+
+      When("We attempt to validate the credentials")
+      val requestBody = validationRequest(credentials.clientId, credentials.clientSecrets.head.secret)
+      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+
+      Then("We get a successful response")
+      validationResponse.code shouldBe OK
+
+      And("The application is returned")
+      val returnedApplication = Json.parse(validationResponse.body).as[ApplicationResponse]
+      returnedApplication shouldBe application
+    }
+
+    scenario("Return UNAUTHORIZED if clientId is incorrect") {
+      Given("A third party application")
+      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+
+      When("We attempt to validate the credentials")
+      val requestBody = validationRequest("foo", "bar")
+      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+
+      Then("We get an UNAUTHORIZED response")
+      validationResponse.code shouldBe UNAUTHORIZED
+    }
+
+    scenario("Return UNAUTHORIZED if clientSecret is incorrect for valid clientId") {
+      Given("A third party application")
+      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val credentials = createdApplication.tokens.production
+
+      When("We attempt to validate the credentials")
+      val requestBody = validationRequest(credentials.clientId, "bar")
+      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+
+      Then("We get an UNAUTHORIZED response")
+      validationResponse.code shouldBe UNAUTHORIZED
+    }
+  }
+
   feature("Privileged Applications") {
 
     val privilegedApplicationsScenario = "Create Privileged application"

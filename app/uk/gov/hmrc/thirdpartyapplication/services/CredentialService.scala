@@ -111,9 +111,11 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     } yield EnvironmentTokenResponse(updatedApp.tokens.production)
   }
 
-  def validateCredentials(validation: ValidationRequest): Future[Option[Environment]] = {
-    def tokenIsValid(token: EnvironmentToken): Boolean =
+  def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
+    def productionTokenIsValid(application: ApplicationData): Boolean = {
+      val token = application.tokens.production
       token.clientId == validation.clientId && token.clientSecrets.exists(_.secret == validation.clientSecret)
+    }
 
     def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
       case NonFatal(e) =>
@@ -121,14 +123,13 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
         application
     }
 
-    (for {
-      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
-      if tokenIsValid(application.tokens.production)
-      env <- OptionT.pure[Future](PRODUCTION)
-      _ <-
+    for {
+      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId)).filter(productionTokenIsValid)
+      updatedApplication <-
         OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id.toString, validation.clientSecret)
           .recover(recoverFromFailedUsageDateUpdate(application)))
-    } yield env).value
+    } yield ApplicationResponse(data = updatedApplication)
+
   }
 
   private def fetchApp(applicationId: UUID) = {

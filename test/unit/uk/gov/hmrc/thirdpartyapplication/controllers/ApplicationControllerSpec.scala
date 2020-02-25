@@ -769,18 +769,16 @@ class ApplicationControllerSpec extends ControllerSpec
     val payload = s"""{"clientId":"${validation.clientId}", "clientSecret":"${validation.clientSecret}"}"""
 
     "succeed with a 200 (ok) if the credentials are valid for an application" in new Setup {
-
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(Some(PRODUCTION)))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
-      contentAsJson(result) shouldBe Json.obj("environment" -> PRODUCTION.toString)
     }
 
     "fail with a 401 if credentials are invalid for an application" in new Setup {
 
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(None))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.none)
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
@@ -789,7 +787,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
 
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.liftF(failed(new RuntimeException("Expected test failure"))))
 
       val result =underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
