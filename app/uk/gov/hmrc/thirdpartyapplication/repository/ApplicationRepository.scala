@@ -128,6 +128,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def updateApplicationIpWhitelist(applicationId: UUID, ipWhitelist: Set[String]): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipWhitelist" -> ipWhitelist)))
 
+  def updateClientSecretId(applicationId: UUID, clientSecret: String, clientSecretId: String): Future[ApplicationData] = {
+    findAndUpdate(
+      Json.obj("id" -> applicationId, "tokens.production.clientSecrets.secret" -> clientSecret),
+      Json.obj("$set" -> Json.obj("tokens.production.clientSecrets.$.id" -> clientSecretId)),
+      fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+  }
+
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 

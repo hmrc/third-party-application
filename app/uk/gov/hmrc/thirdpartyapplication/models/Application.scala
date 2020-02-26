@@ -266,7 +266,8 @@ case class Collaborator(emailAddress: String, role: Role)
 case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
-                        lastAccess: Option[DateTime] = None)
+                        lastAccess: Option[DateTime] = None,
+                        id: Option[String] = Some(UUID.randomUUID().toString))
 
 object ClientSecret {
   def maskSecret(secret: String): String = {

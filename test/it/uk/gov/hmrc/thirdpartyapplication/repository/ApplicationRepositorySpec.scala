@@ -154,6 +154,22 @@ class ApplicationRepositorySpec
     }
   }
 
+  "updateClientSecretId" should {
+    "set the ID on the correct client secret" in {
+      val applicationId = UUID.randomUUID()
+      val firstClientSecret = ClientSecret("first", id = Some("1"))
+      val secondClientSecret = ClientSecret("second", id = None)
+      val newId = "2"
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(firstClientSecret, secondClientSecret))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretId(applicationId, secondClientSecret.secret, newId))
+
+      updatedApplication.tokens.production.clientSecrets.size shouldBe 2
+      updatedApplication.tokens.production.clientSecrets.head shouldBe firstClientSecret
+      updatedApplication.tokens.production.clientSecrets(1) shouldBe secondClientSecret.copy(id = Some(newId))
+    }
+  }
+
   "recordApplicationUsage" should {
     "update the lastAccess property" in {
       val testStartTime = DateTime.now()
@@ -1137,9 +1153,10 @@ class ApplicationRepositorySpec
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
-                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
+                        checkInformation: Option[CheckInformation] = None,
+                        clientSecrets: List[ClientSecret] = List(ClientSecret(""))): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, users, checkInformation)
+    aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, users, checkInformation, clientSecrets)
   }
 
   def aNamedApplicationData(id: UUID,
@@ -1148,7 +1165,8 @@ class ApplicationRepositorySpec
                             state: ApplicationState = testingState(),
                             access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
-                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
+                            checkInformation: Option[CheckInformation] = None,
+                            clientSecrets: List[ClientSecret] = List(ClientSecret(""))): ApplicationData = {
 
     ApplicationData(
       id,
@@ -1157,7 +1175,7 @@ class ApplicationRepositorySpec
       users,
       Some("description"),
       "myapplication",
-      ApplicationTokens(EnvironmentToken(prodClientId, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(prodClientId, generateAccessToken, clientSecrets)),
       state,
       access,
       HmrcTime.now,
