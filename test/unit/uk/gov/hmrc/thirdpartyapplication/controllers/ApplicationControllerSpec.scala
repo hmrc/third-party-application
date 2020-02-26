@@ -129,11 +129,8 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken =
-    EnvironmentTokenResponse("111", "222", List(ClientSecret("333", "333")))
-  val controllerResponseTokens = ApplicationTokensResponse(
-    credentialServiceResponseToken,
-    EnvironmentTokenResponse("", "", List.empty))
+  val credentialServiceResponseToken = EnvironmentTokenResponse("111", "222", List(ClientSecret("333", "333")))
+  val controllerResponseTokens = ApplicationTokensResponse(credentialServiceResponseToken)
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -172,7 +169,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecrets("pTOTP", "sTOTP")
+    val totp = TotpSecrets("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -654,9 +651,7 @@ class ApplicationControllerSpec extends ControllerSpec
   "add client secret" should {
     val applicationId = UUID.randomUUID()
     val environmentTokenResponse = EnvironmentTokenResponse("clientId", "token", List(aSecret("secret1"), aSecret("secret2")))
-    val applicationTokensResponse = ApplicationTokensResponse(
-      environmentTokenResponse,
-      EnvironmentTokenResponse("", "", List.empty))
+    val applicationTokensResponse = ApplicationTokensResponse(environmentTokenResponse)
     val secretRequest = ClientSecretRequest("request")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
