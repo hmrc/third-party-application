@@ -18,8 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 
 case class Totp(secret: String, id: String)
-case class ApplicationTotps(production: Totp, sandbox: Totp)
-
-case class TotpIds(production: String, sandbox: String)
-
-case class TotpSecrets(production: String, sandbox: String)
+case class ApplicationTotps(production: Totp)
+case class TotpIds(production: String)
+case class TotpSecrets(production: String)

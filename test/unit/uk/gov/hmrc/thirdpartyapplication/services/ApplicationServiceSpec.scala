@@ -242,8 +242,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
       val prodTOTP = Totp("prodTotp", "prodTotpId")
-      val sandboxTOTP = Totp("sandboxTotp", "sandboxTotpId")
-      val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP, sandboxTOTP)
+      val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
       when(mockTotpConnector.generateTotp()).thenAnswer(successful(totpQueue.dequeue()))
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
@@ -251,10 +250,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
-        access = Privileged(totpIds = Some(TotpIds("prodTotpId", "sandboxTotpId")))
+        access = Privileged(totpIds = Some(TotpIds("prodTotpId")))
       )
-      val expectedTotp = ApplicationTotps(prodTOTP, sandboxTOTP)
-      createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret, expectedTotp.sandbox.secret))
+      val expectedTotp = ApplicationTotps(prodTOTP)
+      createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)

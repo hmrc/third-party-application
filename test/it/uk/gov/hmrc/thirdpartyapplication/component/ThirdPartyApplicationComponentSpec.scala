@@ -161,12 +161,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       returnedClientSecret.name should be (expectedClientSecrets.head.name)
       returnedClientSecret.secret should be (expectedClientSecrets.head.secret)
       returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
-
-      returnedResponse.sandbox.clientId should be ("")
-      returnedResponse.sandbox.accessToken should be ("")
-      returnedResponse.sandbox.clientSecrets.isEmpty should be (true)
     }
-
   }
 
   feature("Validate Credentials") {
@@ -245,9 +240,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecrets]
 
       totpIds match {
-        case TotpIds("prod-id", "sandbox-id") => totpSecrets shouldBe TotpSecrets("prod-secret", "sandbox-secret")
-        case TotpIds("sandbox-id", "prod-id") => totpSecrets shouldBe TotpSecrets("sandbox-secret", "prod-secret")
-        case TotpIds("prod-id", "prod-id") => totpSecrets shouldBe TotpSecrets("prod-secret", "prod-secret")
+        case TotpIds("prod-id") => totpSecrets shouldBe TotpSecrets("prod-secret")
+        case TotpIds("sandbox-id") => totpSecrets shouldBe TotpSecrets("sandbox-secret")
         case _ => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
       }
     }
@@ -344,7 +338,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The client secret is added to the production environment of the application")
       val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokensResponse]
       fetchResponseJson.production.clientSecrets should have size 2
-      fetchResponseJson.sandbox.clientSecrets should have size 0
     }
 
     scenario("Delete an application") {

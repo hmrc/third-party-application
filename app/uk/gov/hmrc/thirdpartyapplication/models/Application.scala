@@ -281,8 +281,7 @@ case class EnvironmentToken(clientId: String,
                             accessToken: String,
                             clientSecrets: List[ClientSecret] = List(ClientSecret("Default")))
 
-case class ApplicationTokensResponse(production: EnvironmentTokenResponse,
-                                     sandbox: EnvironmentTokenResponse)
+case class ApplicationTokensResponse(production: EnvironmentTokenResponse)
 
 case class EnvironmentTokenResponse(clientId: String,
                                     accessToken: String,
@@ -357,16 +356,6 @@ object ApplicationWithUpliftRequest {
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)
   }
 
-}
-
-object ApplicationTokensResponse {
-
-  def apply(environmentTokenResponse: EnvironmentTokenResponse): ApplicationTokensResponse = {
-    ApplicationTokensResponse(
-      production = environmentTokenResponse,
-      sandbox = EnvironmentTokenResponse.empty
-    )
-  }
 }
 
 object EnvironmentTokenResponse {
