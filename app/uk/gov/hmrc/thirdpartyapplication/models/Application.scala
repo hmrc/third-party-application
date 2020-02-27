@@ -277,15 +277,39 @@ object ClientSecret {
   }
 }
 
+trait Token {
+  def clientId: String
+  def accessToken: String
+  def clientSecrets: List[ClientSecret]
+}
+
 case class EnvironmentToken(clientId: String,
                             accessToken: String,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret("Default")))
-
-case class ApplicationTokensResponse(production: EnvironmentTokenResponse)
+                            clientSecrets: List[ClientSecret] = List(ClientSecret("Default"))) extends Token
 
 case class EnvironmentTokenResponse(clientId: String,
                                     accessToken: String,
-                                    clientSecrets: List[ClientSecret])
+                                    clientSecrets: List[ClientSecret]) extends Token
+
+// TODO remove production in the near future.  See APIS-4477
+case class ApplicationTokensResponse(
+   production: EnvironmentTokenResponse,
+   clientId: String,
+   accessToken: String,
+   clientSecrets: List[ClientSecret]
+) extends Token
+
+object ApplicationTokensResponse {
+  def apply(token: EnvironmentTokenResponse): ApplicationTokensResponse = {
+    new ApplicationTokensResponse(
+      production = token,
+      clientId = token.clientId,
+      accessToken = token.accessToken,
+      clientSecrets = token.clientSecrets
+    ) {}
+  }
+}
+
 
 object Role extends Enumeration {
   type Role = Value
