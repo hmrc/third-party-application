@@ -151,13 +151,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
         .map(cs => cs.copy(name = s"${"•" * 32}${cs.secret.takeRight(4)}"))
 
-      val returnedResponse = Json.parse(response.body).as[ApplicationTokensResponse]
-      returnedResponse.production.clientId should be (application.clientId)
-      returnedResponse.production.accessToken.length should be (32)
+      val returnedResponse = Json.parse(response.body).as[ApplicationTokenResponse]
+      returnedResponse.clientId should be (application.clientId)
+      returnedResponse.accessToken.length should be (32)
 
       // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
       // We have to compare contents individually
-      val returnedClientSecret = returnedResponse.production.clientSecrets.head
+      val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be (expectedClientSecrets.head.name)
       returnedClientSecret.secret should be (expectedClientSecrets.head.secret)
       returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
@@ -336,8 +336,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       fetchResponse.code shouldBe OK
 
       Then("The client secret is added to the production environment of the application")
-      val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokensResponse]
-      fetchResponseJson.production.clientSecrets should have size 2
+      val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokenResponse]
+      fetchResponseJson.clientSecrets should have size 2
     }
 
     scenario("Delete an application") {

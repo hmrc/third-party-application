@@ -287,29 +287,28 @@ case class EnvironmentToken(clientId: String,
                             accessToken: String,
                             clientSecrets: List[ClientSecret] = List(ClientSecret("Default"))) extends Token
 
-case class EnvironmentTokenResponse(clientId: String,
-                                    accessToken: String,
-                                    clientSecrets: List[ClientSecret]) extends Token
-
-// TODO remove production in the near future.  See APIS-4477
-case class ApplicationTokensResponse(
-   production: EnvironmentTokenResponse,
+case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
    clientSecrets: List[ClientSecret]
 ) extends Token
 
-object ApplicationTokensResponse {
-  def apply(token: EnvironmentTokenResponse): ApplicationTokensResponse = {
-    new ApplicationTokensResponse(
-      production = token,
+object ApplicationTokenResponse {
+  def apply(token: Token): ApplicationTokenResponse = {
+    val maskedClientSecrets: List[ClientSecret] = token.clientSecrets map { clientSecret =>
+      clientSecret.name match {
+        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
+        case _ => clientSecret
+      }
+    }
+
+    new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      clientSecrets = token.clientSecrets
+      clientSecrets = maskedClientSecrets
     ) {}
   }
 }
-
 
 object Role extends Enumeration {
   type Role = Value
@@ -380,23 +379,6 @@ object ApplicationWithUpliftRequest {
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)
   }
 
-}
-
-object EnvironmentTokenResponse {
-  def apply(environmentToken: EnvironmentToken): EnvironmentTokenResponse = {
-    val clientSecrets: List[ClientSecret] = environmentToken.clientSecrets map { clientSecret =>
-      clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
-      clientSecret.name match {
-        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
-        case _ => clientSecret
-      }
-    }
-    EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, clientSecrets)
-  }
-
-  def empty = {
-    EnvironmentTokenResponse("", "", List.empty)
-  }
 }
 
 object RateLimitTier extends Enumeration {

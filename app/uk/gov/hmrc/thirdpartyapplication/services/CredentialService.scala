@@ -50,13 +50,13 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       app => ApplicationResponse(data = app)))
   }
 
-  def fetchCredentials(applicationId: UUID): Future[Option[EnvironmentTokenResponse]] = {
+  def fetchCredentials(applicationId: UUID): Future[Option[ApplicationTokenResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map { app =>
-      EnvironmentTokenResponse(app.tokens.production)
+      ApplicationTokenResponse(app.tokens.production)
     })
   }
 
-  def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
+  def addClientSecret(id: java.util.UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     val newSecretValue = generateSecret()
     for {
       existingApp <- fetchApp(id)
@@ -65,7 +65,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       _ <- saveClientSecretToApp(existingApp, newSecret)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> existingApp.id.toString,
         "newClientSecret" -> newSecret.secret, "clientSecretType" -> "PRODUCTION"))
-    } yield EnvironmentTokenResponse(existingApp.tokens.production.copy(clientSecrets = existingSecrets :+ newSecret.copy(name = newSecretValue)))
+    } yield ApplicationTokenResponse(existingApp.tokens.production.copy(clientSecrets = existingSecrets :+ newSecret.copy(name = newSecretValue)))
   }
 
   private def saveClientSecretToApp(application: ApplicationData, newSecret: ClientSecret): Future[ApplicationData] = {
@@ -79,7 +79,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     applicationRepository.save(updatedApp)
   }
 
-  def deleteClientSecrets(id: java.util.UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[EnvironmentTokenResponse] = {
+  def deleteClientSecrets(id: java.util.UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
     def audit(clientSecret: ClientSecret) = {
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString,
@@ -108,7 +108,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       (updatedApp, removedSecrets) = updateApp(app)
       _ <- applicationRepository.save(updatedApp)
       _ <- Future.traverse(removedSecrets)(audit)
-    } yield EnvironmentTokenResponse(updatedApp.tokens.production)
+    } yield ApplicationTokenResponse(updatedApp.tokens.production)
   }
 
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
