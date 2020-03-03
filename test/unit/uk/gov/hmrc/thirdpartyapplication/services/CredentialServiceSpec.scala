@@ -63,7 +63,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
   private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
   private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
-  private val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
+  private val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
 
   "fetch credentials" should {
 
@@ -86,7 +86,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       val result = await(underTest.fetchCredentials(applicationId))
 
-      result shouldBe Some(environmentTokenResponse)
+      result shouldBe Some(tokenResponse)
     }
   }
 
@@ -169,7 +169,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val newSecret = (updatedProductionSecrets diff environmentToken.clientSecrets).head
       result.clientId shouldBe environmentToken.clientId
       result.accessToken shouldBe environmentToken.accessToken
-      result.clientSecrets.dropRight(1) shouldBe environmentTokenResponse.clientSecrets
+      result.clientSecrets.dropRight(1) shouldBe tokenResponse.clientSecrets
       result.clientSecrets.last.secret shouldBe updatedProductionSecrets.last.secret
       result.clientSecrets.last.name shouldBe newSecretValue
       updatedProductionSecrets.last.name shouldBe maskedSecretValue
@@ -225,7 +225,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val savedApp = ApplicationRepoMock.Save.verifyCalled()
       val updatedClientSecrets = savedApp.tokens.production.clientSecrets
       updatedClientSecrets should have size environmentToken.clientSecrets.size - secretsToRemove.length
-      result shouldBe environmentTokenResponse.copy(clientSecrets = environmentTokenResponse.clientSecrets.drop(1))
+      result shouldBe tokenResponse.copy(clientSecrets = tokenResponse.clientSecrets.drop(1))
 
       AuditServiceMock.Audit.verify(times(secretsToRemove.length))(
         ClientSecretRemoved,
