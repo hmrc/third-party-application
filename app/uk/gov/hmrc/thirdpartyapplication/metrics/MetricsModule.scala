@@ -59,10 +59,10 @@ class MetricsOrchestratorProvider @Inject()(configuration: Configuration,
 
 @Singleton
 class MetricsSourcesProvider @Inject()(rateLimitMetrics: RateLimitMetrics,
-                                       subscriptionMetrics: SubscriptionMetrics,
+                                       apisWithSubscriptionCount: ApisWithSubscriptionCount,
                                        missingMongoFields: MissingMongoFields,
                                        applicationsWithSubscriptionCount: ApplicationsWithSubscriptionCount) extends Provider[MetricsSources] {
-  override def get(): MetricsSources = MetricsSources(subscriptionMetrics, applicationsWithSubscriptionCount)
+  override def get(): MetricsSources = MetricsSources(apisWithSubscriptionCount, applicationsWithSubscriptionCount)
 }
 
 case class MetricsSources(metricSources: MetricSource*) {
