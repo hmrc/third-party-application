@@ -18,7 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.metrics
 
 import java.util.UUID
 
-import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionMetrics
+import uk.gov.hmrc.thirdpartyapplication.metrics.ApisWithSubscriptionCount
 import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, SubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
@@ -26,12 +26,12 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
-class SubscriptionMetricsSpec extends AsyncHmrcSpec with MetricsHelper {
+class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
   trait Setup {
     val mockSubscriptionsRepository: SubscriptionRepository = mock[SubscriptionRepository]
 
-    val metricUnderTest: SubscriptionMetrics = new SubscriptionMetrics(mockSubscriptionsRepository)
+    val metricUnderTest: ApisWithSubscriptionCount = new ApisWithSubscriptionCount(mockSubscriptionsRepository)
   }
 
   "metrics refresh" should {
@@ -39,7 +39,7 @@ class SubscriptionMetricsSpec extends AsyncHmrcSpec with MetricsHelper {
       SubscriptionData(new APIIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(UUID.randomUUID()).toSet)
 
     def expectedAPIName(subscription: (String, String, Int)): String =
-      s"subscriptionCount2.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
+      s"apisWithSubscriptionCountV1.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)

@@ -1080,9 +1080,9 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
-      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp1Name}") shouldBe Some(2)
-      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp2Name}") shouldBe Some(1)
-      result.get(s"applicationsWithSubscriptionCount.${sanitisedApp3Name}") shouldBe None
+      result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp1Name}") shouldBe Some(2)
+      result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp2Name}") shouldBe Some(1)
+      result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp3Name}") shouldBe None
     }
 
     "return Applications when more than 100 results bug" in {
