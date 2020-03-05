@@ -135,11 +135,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Fetch application credentials") {
-
       val appName = "appName"
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(appName)
+      postData(s"/application/${application.id}/client-secret", """{"name":"secret-1", "environment": "PRODUCTION"}""")
       val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
@@ -149,7 +149,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The credentials are returned")
       // scalastyle:off magic.number
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
-        .map(cs => cs.copy(name = s"${"•" * 32}${cs.secret.takeRight(4)}"))
 
       val returnedResponse = Json.parse(response.body).as[ApplicationTokenResponse]
       returnedResponse.clientId should be (application.clientId)
@@ -176,6 +175,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Return details of application when valid") {
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      postData(s"/application/${application.id}/client-secret", """{"name":"secret-1", "environment": "PRODUCTION"}""")
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       val credentials = createdApplication.tokens.production
 
@@ -326,9 +326,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Add a client secret") {
-
       Given("A third party application")
       val application = createApplication()
+      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      createdApp.tokens.production.clientSecrets should have size 0
 
       When("I request to add a production client secret")
       val fetchResponse = postData(s"/application/${application.id}/client-secret",
