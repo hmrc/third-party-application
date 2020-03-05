@@ -20,7 +20,7 @@ import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
 import play.api.{Application, Logger, LoggerLike}
 import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
-import uk.gov.hmrc.thirdpartyapplication.scheduled.{SetClientSecretIdJobConfig, _}
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
 
 class SchedulerModule extends AbstractModule {
   override def configure(): Unit = {
@@ -34,18 +34,15 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           metricsJobConfig: MetricsJobConfig,
                           metricsJob: MetricsJob,
-                          setClientSecretIdJobConfig: SetClientSecretIdJobConfig,
-                          setClientSecretIdJob: SetClientSecretIdJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
     val mJob = if (metricsJobConfig.enabled) Seq(metricsJob) else Seq.empty
-    val clientSecretJob = if(setClientSecretIdJobConfig.enabled) Seq(setClientSecretIdJob) else Seq.empty
 
     // TODO : MetricsJob optional?
-    upliftJob ++ mJob ++ clientSecretJob
+    upliftJob ++ mJob
   }
 
   onStart(app)

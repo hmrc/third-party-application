@@ -154,22 +154,6 @@ class ApplicationRepositorySpec
     }
   }
 
-  "updateClientSecretId" should {
-    "set the ID on the correct client secret" in {
-      val applicationId = UUID.randomUUID()
-      val firstClientSecret = ClientSecret("first", id = Some("1"))
-      val secondClientSecret = ClientSecret("second", id = None)
-      val newId = "2"
-      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(firstClientSecret, secondClientSecret))))
-
-      val updatedApplication = await(applicationRepository.updateClientSecretId(applicationId, secondClientSecret.secret, newId))
-
-      updatedApplication.tokens.production.clientSecrets.size shouldBe 2
-      updatedApplication.tokens.production.clientSecrets.head shouldBe firstClientSecret
-      updatedApplication.tokens.production.clientSecrets(1) shouldBe secondClientSecret.copy(id = Some(newId))
-    }
-  }
-
   "recordApplicationUsage" should {
     "update the lastAccess property" in {
       val testStartTime = DateTime.now()
