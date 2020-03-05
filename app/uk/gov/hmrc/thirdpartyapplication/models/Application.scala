@@ -285,7 +285,7 @@ trait Token {
 
 case class EnvironmentToken(clientId: String,
                             accessToken: String,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret("Default"))) extends Token
+                            clientSecrets: List[ClientSecret] = List()) extends Token
 
 case class ApplicationTokenResponse(
    clientId: String,
