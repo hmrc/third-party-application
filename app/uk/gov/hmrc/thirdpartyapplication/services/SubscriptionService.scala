@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, sequence, successful}
+import scala.concurrent.Future.{failed, successful}
 
 @Singleton
 class SubscriptionService @Inject()(applicationRepository: ApplicationRepository,
@@ -86,25 +86,22 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       versionSubscription <- versionSubscriptionFuture
       app <- fetchAppFuture
       _ = checkVersionSubscription(app, versionSubscription)
-      _ <- apiGatewayStore.addSubscription(app, apiIdentifier) map { _ =>
-        auditSubscription(Subscribed, app, apiIdentifier)
-      }
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
+      _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
   }
 
-  def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
+  def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
-      app <- fetchApp(applicationId)
-      _ <- apiGatewayStore.removeSubscription(app, apiIdentifier) map { _ =>
-        auditSubscription(Unsubscribed, app, apiIdentifier)
-      }
+      _ <- fetchApp(applicationId)
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
+      _ <- auditSubscription(Unsubscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
+  }
 
-  private def auditSubscription(action: AuditAction, app: ApplicationData, api: APIIdentifier)(implicit hc: HeaderCarrier): Unit = {
+  private def auditSubscription(action: AuditAction, applicationId: UUID, api: APIIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     auditService.audit(action, Map(
-      "applicationId" -> app.id.toString,
+      "applicationId" -> applicationId.toString,
       "apiVersion" -> api.version,
       "apiContext" -> api.context
     ))
@@ -117,48 +114,4 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     }
   }
 
-  def refreshSubscriptions()(implicit hc: HeaderCarrier): Future[Int] = {
-    def updateSubscriptions(app: ApplicationData, subscriptionsToAdd: List[APIIdentifier], subscriptionsToRemove: List[APIIdentifier]): Future[Int] = {
-      val addSubscriptions = sequence(subscriptionsToAdd.map { sub =>
-        Logger.warn(s"Inconsistency in subscription collection. Adding subscription in Mongo. appId=${app.id} context=${sub.context} version=${sub.version}")
-        subscriptionRepository.add(app.id, sub)
-      })
-      val removeSubscriptions = sequence(subscriptionsToRemove.map { sub =>
-        Logger.warn(s"Inconsistency in subscription collection. Removing subscription in Mongo. appId=${app.id} context=${sub.context} version=${sub.version}")
-        subscriptionRepository.remove(app.id, sub)
-      })
-
-      for {
-        added <- addSubscriptions
-        removed <- removeSubscriptions
-      } yield added.size + removed.size
-    }
-
-    //Processing applications 1 by 1 as WSO2 times out when too many subscriptions calls are made simultaneously
-    def processApplicationsOneByOne(apps: List[ApplicationData], total: Int = 0)(implicit hc: HeaderCarrier): Future[Int] = {
-      apps match {
-        case app :: tail => processApplication(app) flatMap (modified => processApplicationsOneByOne(tail, modified + total))
-        case Nil => successful(total)
-      }
-    }
-
-    def processApplication(app: ApplicationData)(implicit hc: HeaderCarrier): Future[Int] = {
-
-      val mongoSubscriptionsFuture = subscriptionRepository.getSubscriptions(app.id)
-
-      for {
-        mongoSubscriptions <- mongoSubscriptionsFuture
-        wso2Subscriptions <- apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
-        subscriptionsToAdd = wso2Subscriptions.filterNot(mongoSubscriptions.contains(_))
-        subscriptionsToRemove = mongoSubscriptions.filterNot(api => IgnoredContexts.contains(api.context)).filterNot(wso2Subscriptions.contains(_))
-        sub <- updateSubscriptions(app, subscriptionsToAdd, subscriptionsToRemove)
-      } yield sub
-    }
-
-    for {
-      apps <- applicationRepository.findAll()
-      _ = Logger.info(s"Found ${apps.length} applications for subscriptions refresh.")
-      subs <- processApplicationsOneByOne(apps)
-    } yield subs
-  }
 }

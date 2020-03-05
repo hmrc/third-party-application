@@ -20,7 +20,6 @@ import java.util.UUID
 
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
-import org.mockito.ArgumentCaptor
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -48,7 +47,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private def aSecret(secret: String) = ClientSecret(secret, secret)
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
     StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
@@ -56,9 +55,13 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR))) = {
-    ApplicationData(applicationId, "MyApp", "myapp",
-      collaborators, Some("description"),
-      "aaaaaaaaaa", "aaaaaaaaaa", "aaaaaaaaaa",
+    ApplicationData(
+      applicationId,
+      "MyApp",
+      "myapp",
+      collaborators,
+      Some("description"),
+      "aaaaaaaaaa",
       ApplicationTokens(productionToken), state, Standard(List.empty, None, None), HmrcTime.now, Some(HmrcTime.now))
   }
 
@@ -286,7 +289,6 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val result = await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
 
       result shouldBe UpliftRejected
-      val appDataArgCaptor = ArgumentCaptor.forClass(classOf[ApplicationData])
       ApplicationRepoMock.Save.verifyCalled() shouldBe expectedApplication
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
     }

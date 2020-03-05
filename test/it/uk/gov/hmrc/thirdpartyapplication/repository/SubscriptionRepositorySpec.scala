@@ -304,10 +304,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       name.toLowerCase,
       collaborators,
       Some("description"),
-      "username",
-      "password",
       "myapplication",
-      ApplicationTokens(EnvironmentToken(clientId, generateWso2ClientSecret, generateAccessToken)),
+      ApplicationTokens(EnvironmentToken(clientId, generateAccessToken)),
       state,
       access,
       DateTimeUtils.now,
@@ -318,11 +316,6 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   private def generateClientId = {
     val testClientIdLength = 10
     alphanumeric.take(testClientIdLength).mkString
-  }
-
-  private def generateWso2ClientSecret = {
-    val testClientSecretLength = 5
-    nextString(testClientSecretLength)
   }
 
   private def generateAccessToken = {

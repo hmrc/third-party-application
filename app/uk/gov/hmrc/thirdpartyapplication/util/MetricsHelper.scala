@@ -16,13 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.net.URLEncoder
-
 trait MetricsHelper {
 
 def sanitiseGrafanaNodeName(name: String) : String = {
 
-  name.replaceAll("[\\/\\\\\\.\\(\\)\\*\\&\\|\\!\\?\\@\\#\\']{1}", "_")
+  name.replaceAll("(\\W){1}", "_")
 }
 
 }

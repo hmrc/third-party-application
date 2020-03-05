@@ -52,7 +52,6 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   val applicationApprovedNotification = "apiApplicationApprovedNotification"
   val applicationRejectedNotification = "apiApplicationRejectedNotification"
   val applicationDeletedNotification = "apiApplicationDeletedNotification"
-  val applicationToBeDeletedNotification = "apiApplicationToBeDeletedNotification"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
@@ -105,28 +104,6 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   def sendApplicationDeletedNotification(application: String, requesterEmail: String, recipients: Set[String])(implicit hc: HeaderCarrier) = {
     post(SendEmailRequest(recipients, applicationDeletedNotification,
       Map("applicationName" -> application, "requestor" -> requesterEmail)))
-  }
-
-  def sendApplicationToBeDeletedNotification(userEmailAddress:String,
-                                             userFirstName: String,
-                                             userLastName: String,
-                                             applicationName: String,
-                                             environmentName: String,
-                                             timeSinceLastUse: String,
-                                             timeBeforeDeletion: String,
-                                             dateOfScheduledDeletion: String)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    post(
-      SendEmailRequest(
-        Set(userEmailAddress),
-        applicationToBeDeletedNotification,
-        Map(
-          "userFirstName" -> userFirstName,
-          "userLastName" -> userLastName,
-          "applicationName" -> applicationName,
-          "environmentName" -> environmentName,
-          "timeSinceLastUse" -> timeSinceLastUse,
-          "timeBeforeDeletion" -> timeBeforeDeletion,
-          "dateOfScheduledDeletion" -> dateOfScheduledDeletion)))
   }
 
   private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] = {

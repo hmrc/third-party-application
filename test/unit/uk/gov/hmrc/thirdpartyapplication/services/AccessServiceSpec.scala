@@ -172,11 +172,14 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def privilegedApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Privileged(None, scopes),
@@ -185,11 +188,14 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def ropcApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Ropc(scopes),
@@ -198,11 +204,14 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   private def standardApplicationDataWithOverrides(applicationId: UUID, overrides: Set[OverrideFlag]): ApplicationData =
     ApplicationData(
-      applicationId, "name", "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)), None,
-      "wso2Username", "wso2Password", "wso2ApplicationName",
+      applicationId,
+      "name",
+      "normalisedName",
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      None,
+      "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "b", "c")
+        EnvironmentToken("a", "c")
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),

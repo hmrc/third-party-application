@@ -31,13 +31,12 @@ import scala.language.postfixOps
 
 @Singleton
 class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
-                           metricOrchestrator: MetricOrchestrator) extends ScheduledMongoJob {
+                           metricOrchestrator: MetricOrchestrator,
+                           jobConfig: MetricsJobConfig) extends ScheduledMongoJob {
 
   override def name: String = "MetricsJob"
-
-  // TODO: Load these from config
-  override def interval: FiniteDuration = 1 hour
-  override def initialDelay: FiniteDuration = 2 minutes
+  override def interval: FiniteDuration = jobConfig.interval
+  override def initialDelay: FiniteDuration = jobConfig.initialDelay
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     Logger.info(s"Running Metrics Collection Process")
@@ -63,3 +62,6 @@ class MetricsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends Lock
 
   override val forceLockReleaseAfter: Duration = Duration.standardHours(2)
 }
+
+case class MetricsJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)
+

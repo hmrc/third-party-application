@@ -30,13 +30,13 @@ import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -135,55 +135,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def updateRateLimitTier(applicationId: UUID, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-
-    // NOTE: due to limitations in WSO2 API Manager, all requests to WSO2 Store need to be executed sequentially
-
     Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application $applicationId")
 
-    fetchApp(applicationId) flatMap { app =>
-
-      def updateWso2Subscriptions(): Future[List[HasSucceeded]] = {
-        apiGatewayStore.getSubscriptions(app.wso2Username, app.wso2Password, app.wso2ApplicationName) flatMap { originalApis =>
-          sequence(originalApis map { api =>
-            apiGatewayStore.resubscribeApi(originalApis, app.wso2Username, app.wso2Password, app.wso2ApplicationName, api, rateLimitTier)
-          })
-        }
-      }
-
-      def updateWso2Application(): Future[HasSucceeded] = {
-        for {
-          _ <- apiGatewayStore.updateApplication(app, rateLimitTier)
-          _ <- apiGatewayStore.checkApplicationRateLimitTier(app.wso2Username, app.wso2Password, app.wso2ApplicationName, rateLimitTier)
-        } yield HasSucceeded
-      }
-
-      def updateMongoApplication(): Future[ApplicationData] = {
-        applicationRepository.save(app.copy(rateLimitTier = Some(rateLimitTier)))
-      }
-
-      /*
-      NOTE:
-      The rate-limit-tier update is not an atomic operation in WSO2 Store.
-      The application rate-limit-tier is updated in the Mongo collection only if these steps pass successfully:
-       1) the rate-limit-tier is updated in WSO2 Store
-       2) all subscriptions are updated (removed and then added back, with the new rate limit tier) in WSO2 Store
-      If the rate-limit-tier update fails in WSO2 Store, we need to re-run again the whole rate-limit-tier operation.
-      If the subscriptions update fails in WSO2 Store, we need to manually remove and then add back the subscriptions first,
-      and then re-run again the whole rate-limit-tier operation.
-
-      There is a scheduled job (RefreshSubscriptionsScheduledJob) that runs automatically.
-      This job synchronises the subscriptions from WSO2 Store to Mongo.
-      Hence, if the rate-limit-tier operation fails while adding back a subscription in WSO2 Store,
-      that subscription will be lost also in Mongo when RefreshSubscriptionsScheduledJob finishes its execution.
-      */
-
-      for {
-        _ <- updateWso2Application()
-        _ <- updateWso2Subscriptions()
-        updatedApp <- updateMongoApplication()
-      } yield updatedApp
-    }
-
+    applicationRepository.updateApplicationRateLimit(applicationId, rateLimitTier)
   }
 
   def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
@@ -202,7 +156,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: APIIdentifier) = {
         for {
-          _ <- apiGatewayStore.removeSubscription(app, subscription)
           _ <- subscriptionRepository.remove(app.id, subscription)
         } yield HasSucceeded
       }
@@ -229,7 +182,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       app <- fetchApp(applicationId)
       _ <- deleteSubscriptions(app)
       _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
-      _ <- apiGatewayStore.deleteApplication(app.wso2Username, app.wso2Password, app.wso2ApplicationName)
+      _ <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
       _ <- applicationRepository.delete(applicationId)
       _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _ = auditFunction(app)
@@ -396,12 +349,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
     Logger.info(s"Creating application ${application.name}")
 
-    val wso2Username = credentialGenerator.generate()
-    val wso2Password = credentialGenerator.generate()
     val wso2ApplicationName = credentialGenerator.generate()
 
     def createInWso2(): Future[EnvironmentToken] = {
-      apiGatewayStore.createApplication(wso2Username, wso2Password, wso2ApplicationName)
+      apiGatewayStore.createApplication(wso2ApplicationName)
     }
 
     def saveApplication(environmentToken: EnvironmentToken, ids: Option[TotpIds]): Future[ApplicationData] = {
@@ -415,7 +366,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => application
       }
 
-      val applicationData = ApplicationData.create(updatedApplication, wso2Username, wso2Password, wso2ApplicationName, environmentToken)
+      val applicationData = ApplicationData.create(updatedApplication, wso2ApplicationName, environmentToken)
 
       applicationRepository.save(applicationData)
     }
@@ -427,43 +378,40 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => successful(Unit)
       }
 
-      applicationTotps <- generateApplicationTotps(application.access.accessType)
+      applicationTotp <- generateApplicationTotp(application.access.accessType)
       wso2EnvironmentToken <- createInWso2()
-      appData <- saveApplication(wso2EnvironmentToken, extractTotpIds(applicationTotps))
+      appData <- saveApplication(wso2EnvironmentToken, extractTotpId(applicationTotp))
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecrets(applicationTotps))
+    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
 
     f andThen {
       case Failure(_) =>
-        apiGatewayStore.deleteApplication(wso2Username, wso2Password, wso2ApplicationName)
+        apiGatewayStore.deleteApplication(wso2ApplicationName)
           .map(_ => Logger.info(s"deleted application: [$wso2ApplicationName]"))
     }
   }
 
-  private def generateApplicationTotps(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
+  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
 
-    def generateTotps() = {
-      val productionTotpFuture = totpConnector.generateTotp()
-      val sandboxTotpFuture = totpConnector.generateTotp()
+    def generateTotp() = {
       for {
-        productionTotp <- productionTotpFuture
-        sandboxTotp <- sandboxTotpFuture
-      } yield Some(ApplicationTotps(productionTotp, sandboxTotp))
+        productionTotp <- totpConnector.generateTotp()
+      } yield Some(ApplicationTotps(productionTotp))
     }
 
     accessType match {
-      case PRIVILEGED => generateTotps()
+      case PRIVILEGED => generateTotp()
       case _ => Future(None)
     }
   }
 
-  private def extractTotpIds(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
-    applicationTotps.map { t => TotpIds(t.production.id, t.sandbox.id) }
+  private def extractTotpId(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
+    applicationTotps.map { t => TotpIds(t.production.id) }
   }
 
-  private def extractTotpSecrets(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
-    applicationTotps.map { t => TotpSecrets(t.production.secret, t.sandbox.secret) }
+  private def extractTotpSecret(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
+    applicationTotps.map { t => TotpSecrets(t.production.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

@@ -52,8 +52,6 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID $requestId")
       HasSucceeded
-    } recover {
-      awsRecovery(s"Failed to create or update application '$applicationName' in AWS API Gateway")
     }
   }
 
@@ -66,16 +64,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       val requestId = (result.json \ "RequestId").as[String]
       Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID $requestId")
       HasSucceeded
-    } recover {
-      awsRecovery(s"Failed to delete application '$applicationName' from AWS API Gateway")
     }
-  }
-
-  // we don't want the AWS API Gateway to cause failures until we make the switch from WSO2
-  private def awsRecovery(errorMessage: String): PartialFunction[Throwable, HasSucceeded] = {
-    case NonFatal(e) =>
-      Logger.error(errorMessage, e)
-      HasSucceeded
   }
 }
 

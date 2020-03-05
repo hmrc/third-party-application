@@ -23,13 +23,12 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
-import uk.gov.hmrc.thirdpartyapplication.connector.{FetchUsersByEmailAddressesRequest, UpdateApplicationUsagePlanRequest}
+import uk.gov.hmrc.thirdpartyapplication.connector.UpdateApplicationUsagePlanRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreData
 
 import scala.language.implicitConversions
 
@@ -125,9 +124,7 @@ object JsonFormatters {
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
   implicit val formatUpdateIpWhitelistRequest = Json.format[UpdateIpWhitelistRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
-  implicit val formatEnvironmentTokenResponse = Json.format[EnvironmentTokenResponse]
-  implicit val formatApplicationTokensResponse = Json.format[ApplicationTokensResponse]
-  implicit val formatWso2Credentials = Json.format[Wso2Credentials]
+  implicit val formatApplicationTokensResponse = Json.format[ApplicationTokenResponse]
 
   implicit val formatValidationRequest = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
@@ -146,7 +143,6 @@ object JsonFormatters {
   implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretsRequest]
   implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
-  implicit val formatFetchUsersByEmailAddressesRequest = Json.format[FetchUsersByEmailAddressesRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]
@@ -193,15 +189,12 @@ object MongoFormat {
     (JsPath \ "normalisedName").read[String] and
     (JsPath \ "collaborators").read[Set[Collaborator]] and
     (JsPath \ "description").readNullable[String] and
-    (JsPath \ "wso2Username").read[String] and
-    (JsPath \ "wso2Password").read[String] and
     (JsPath \ "wso2ApplicationName").read[String] and
     (JsPath \ "tokens").read[ApplicationTokens] and
     (JsPath \ "state").read[ApplicationState] and
     (JsPath \ "access").read[Access] and
     (JsPath \ "createdOn").read[DateTime] and
     (JsPath \ "lastAccess").readNullable[DateTime] and
-    (JsPath \ "deleteNotificationSent").readNullable[DateTime] and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
@@ -219,9 +212,7 @@ object MongoFormat {
   implicit val formatApplicationId= Json.format[ApplicationId]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
 
-  implicit val formatWso2RestoreData = Json.format[Wso2RestoreData]
 }
-
 
 object EnumJson {
 

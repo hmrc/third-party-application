@@ -129,11 +129,8 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken =
-    EnvironmentTokenResponse("111", "222", List(ClientSecret("333", "333")))
-  val controllerResponseTokens = ApplicationTokensResponse(
-    credentialServiceResponseToken,
-    EnvironmentTokenResponse("", "", List.empty))
+  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecret("333", "333")))
+  val controllerResponseTokens = ApplicationTokenResponse(credentialServiceResponseToken)
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -172,7 +169,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecrets("pTOTP", "sTOTP")
+    val totp = TotpSecrets("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -485,37 +482,6 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
-  "fetch WSO2 credentials" should {
-    val clientId = "productionClientId"
-
-    "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      val wso2Credentials = Wso2Credentials(clientId, "accessToken", "wso2Secret")
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(Some(wso2Credentials)))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      status(result) shouldBe SC_OK
-      contentAsJson(result) shouldBe Json.toJson(wso2Credentials)
-    }
-
-    "fail with a 404 (not found) if no application exists for the given client id" in new Setup {
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(successful(None))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(mockCredentialService.fetchWso2Credentials(clientId)).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.fetchWso2Credentials(clientId)(request)
-
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
-    }
-
-  }
-
   "add collaborators" should {
     val applicationId = UUID.randomUUID()
     val admin = "admin@example.com"
@@ -684,16 +650,13 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "add client secret" should {
     val applicationId = UUID.randomUUID()
-    val environmentTokenResponse = EnvironmentTokenResponse("clientId", "token", List(aSecret("secret1"), aSecret("secret2")))
-    val applicationTokensResponse = ApplicationTokensResponse(
-      environmentTokenResponse,
-      EnvironmentTokenResponse("", "", List.empty))
+    val applicationTokensResponse = ApplicationTokenResponse("clientId", "token", List(aSecret("secret1"), aSecret("secret2")))
     val secretRequest = ClientSecretRequest("request")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-          .thenReturn(successful(environmentTokenResponse))
+          .thenReturn(successful(applicationTokensResponse))
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
@@ -705,7 +668,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "succeed with a 200 (ok) when request originates from outside gatekeeper" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.addClientSecret(eqTo(applicationId), eqTo(secretRequest))(*))
-          .thenReturn(successful(environmentTokenResponse))
+          .thenReturn(successful(applicationTokensResponse))
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
@@ -755,13 +718,13 @@ class ApplicationControllerSpec extends ControllerSpec
     val secrets = "ccc"
     val splitSecrets = secrets.split(",").toList
     val secretRequest = DeleteClientSecretsRequest(splitSecrets)
-    val environmentTokenResponse = EnvironmentTokenResponse("aaa", "bbb", List.empty)
+    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
-        .thenReturn(successful(environmentTokenResponse))
+        .thenReturn(successful(tokenResponse))
 
       val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
@@ -771,7 +734,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
-          .thenReturn(successful(environmentTokenResponse))
+          .thenReturn(successful(tokenResponse))
 
         val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
@@ -782,7 +745,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "succeed with a 204 for a PRIVILEGED or ROPC application when the request originates outside gatekeeper" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(splitSecrets))(*))
-          .thenReturn(successful(environmentTokenResponse))
+          .thenReturn(successful(tokenResponse))
 
         val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
@@ -800,18 +763,16 @@ class ApplicationControllerSpec extends ControllerSpec
     val payload = s"""{"clientId":"${validation.clientId}", "clientSecret":"${validation.clientSecret}"}"""
 
     "succeed with a 200 (ok) if the credentials are valid for an application" in new Setup {
-
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(Some(PRODUCTION)))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
       status(result) shouldBe SC_OK
-      contentAsJson(result) shouldBe Json.obj("environment" -> PRODUCTION.toString)
     }
 
     "fail with a 401 if credentials are invalid for an application" in new Setup {
 
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(successful(None))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.none)
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
@@ -820,7 +781,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
 
-      when(mockCredentialService.validateCredentials(validation)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.liftF(failed(new RuntimeException("Expected test failure"))))
 
       val result =underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
@@ -985,7 +946,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
         )
@@ -1006,7 +966,6 @@ class ApplicationControllerSpec extends ControllerSpec
         Table(
           ("headers", "expectedLastAccessTime"),
           (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(USER_AGENT -> "wso2-gateway-customizations"), updatedLastAccessTime.getMillis),
           (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis),
           (Seq(), lastAccessTime.getMillis)
         )

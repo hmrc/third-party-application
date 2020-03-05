@@ -22,21 +22,21 @@ import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.libs.json.{JsObject, _}
 import play.api.libs.json.Json._
+import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.bson.{BSONDateTime, BSONDocument, BSONObjectID}
+import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
+import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
@@ -65,8 +65,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     "normalisedName" -> true,
     "collaborators" -> true,
     "description" -> true,
-    "wso2Username" -> true,
-    "wso2Password" -> true,
     "wso2ApplicationName" -> true,
     "tokens" -> true,
     "state" -> true,
@@ -351,7 +349,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    import reactivemongo.akkastream.{cursorProducer, State}
+    import reactivemongo.akkastream.{State, cursorProducer}
 
     val sourceOfApps: Source[ApplicationData, Future[State]] =
       collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
@@ -390,7 +388,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       )
       (lookup, List[PipelineOperator](unwind, group))
     }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
-      .map(_.map(r=>s"applicationsWithSubscriptionCount.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
+      .map(_.map(r=>s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
 }
 

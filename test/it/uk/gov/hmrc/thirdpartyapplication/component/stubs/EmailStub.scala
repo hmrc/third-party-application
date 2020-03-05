@@ -14,18 +14,22 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers
+package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
 
-import javax.inject.{Inject, Singleton}
-import play.api.mvc.Action
-import uk.gov.hmrc.thirdpartyapplication.services.Wso2RestoreService
+import com.github.tomakehurst.wiremock.client.WireMock._
+import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+import play.api.http.Status.OK
 
-import scala.concurrent.ExecutionContext.Implicits.global
+object EmailStub extends Stub {
 
-@Singleton
-class Wso2RestoreController @Inject()(wso2RestoreService: Wso2RestoreService) extends CommonController {
+  override val stub: MockHost = MockHost(22223)
 
-  def restoreWso2Data() = Action.async {
-    wso2RestoreService.restoreData().map(_ => NoContent)
+  def willPostEmailNotification() = {
+    stub.mock.register(post(urlEqualTo("/hmrc/email"))
+      .willReturn(
+        aResponse()
+          .withStatus(OK)
+      )
+    )
   }
 }

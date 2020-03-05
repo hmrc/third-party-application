@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
+
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
@@ -51,7 +52,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer", "wso2-gateway-customizations")
+  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer")
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
@@ -115,11 +116,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def fetchCredentials(applicationId: UUID) = Action.async {
     handleOption(credentialService.fetchCredentials(applicationId)
-      .map(_.map(ApplicationTokensResponse.apply)))
-  }
-
-  def fetchWso2Credentials(clientId: String) = Action.async {
-    handleOption(credentialService.fetchWso2Credentials(clientId))
+      .map(_.map(ApplicationTokenResponse.apply)))
   }
 
   def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
@@ -148,7 +145,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def addClientSecret(applicationId: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
-        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokensResponse(token)))
+        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokenResponse(token)))
         } recover {
           case e: NotFoundException => handleNotFound(e.getMessage)
           case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
@@ -168,8 +165,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def validateCredentials: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[ValidationRequest] { vr: ValidationRequest =>
-      credentialService.validateCredentials(vr) map {
-        case Some(e) => Ok(Json.obj("environment" -> e))
+      credentialService.validateCredentials(vr).value map {
+        case Some(application) => Ok(toJson(application))
         case None => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
       } recover recovery
     }

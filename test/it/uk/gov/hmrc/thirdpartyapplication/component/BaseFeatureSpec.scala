@@ -33,14 +33,18 @@ abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Match
   val serviceUrl = s"http://localhost:$port"
   val timeout = 10 seconds
 
-  val wso2Store = WSO2StoreStub
   var thirdPartyDeveloper = ThirdPartyDeveloperStub
   val apiDefinition = ApiDefinitionStub
   val apiSubscriptionFields = ApiSubscriptionFieldsStub
   val thirdPartyDelegatedAuthorityConnector = ThirdPartyDelegatedAuthorityStub
   val authConnector = AuthStub
   val totpConnector = TOTPStub
-  val mocks = Seq(wso2Store, thirdPartyDeveloper, apiDefinition, apiSubscriptionFields, authConnector, totpConnector, thirdPartyDelegatedAuthorityConnector)
+  val awsApiGatewayConnector = AwsApiGatewayStub
+  val emailConnector = EmailStub
+  val mocks = {
+    Seq(thirdPartyDeveloper, apiDefinition, apiSubscriptionFields, authConnector, totpConnector,
+      thirdPartyDelegatedAuthorityConnector, awsApiGatewayConnector, emailConnector)
+  }
 
   override protected def beforeAll(): Unit = {
     mocks.foreach(m => if (!m.stub.server.isRunning) m.stub.server.start())

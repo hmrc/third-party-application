@@ -23,7 +23,7 @@ import org.joda.time.{DateTime, DateTimeUtils}
 import org.scalatest.BeforeAndAfterAll
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiDefinitionConnector, EmailConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.{ALPHA, APIStatus, STABLE}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
@@ -37,14 +37,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiDefinitionConnectorMockModule
 
-import scala.collection.Seq
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends AuditServiceMockModule with ApiDefinitionConnectorMockModule {
+  private val loggedInUser = "loggedin@example.com"
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
+
+  trait Setup extends ApiDefinitionConnectorMockModule with AuditServiceMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
@@ -54,7 +54,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val response = mock[WSResponse]
 
-    implicit val hc = HeaderCarrier().withExtraHeaders(
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
@@ -62,27 +62,15 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val underTest = new SubscriptionService(
       mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiGatewayStore)
 
-    when(mockApiGatewayStore.createApplication(*, *, *)(*)).thenReturn(successful(productionToken))
+    when(mockApiGatewayStore.createApplication(*)(*)).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
-    when(mockApiGatewayStore.addSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockApiGatewayStore.removeSubscription(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.add(*, *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
-
-    def mockAPIGatewayStoreWillReturnSubscriptions(wso2UserName: String,
-                                                   wso2Password: String,
-                                                   wso2ApplicationName: String,
-                                                   subscriptions: Future[List[APIIdentifier]]) = {
-      when(mockApiGatewayStore.getSubscriptions(wso2UserName, wso2Password, wso2ApplicationName)).thenReturn(subscriptions)
-    }
   }
 
   private def aSecret(secret: String): ClientSecret = {
     ClientSecret(secret, secret)
   }
-
-  private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", "wso2Secret", List(aSecret("secret1"), aSecret("secret2")))
 
   override def beforeAll() {
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
@@ -178,18 +166,23 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
     val api = anAPI()
 
-    "create a subscription in WSO2 and Mongo for the given application when an application exists in the repository" in new Setup {
+    "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
+      AuditServiceMock.Audit.thenReturnSuccess()
 
-      val result = await(underTest.createSubscriptionForApplication(applicationId, api))
+      val result: HasSucceeded = await(underTest.createSubscriptionForApplication(applicationId, api))
 
       result shouldBe HasSucceeded
-      AuditServiceMock.verify.audit(refEq(Subscribed), any[Map[String, String]])(refEq(hc))
-      verify(mockApiGatewayStore).addSubscription(refEq(applicationData), refEq(api))(*)
+
       verify(mockSubscriptionRepository).add(applicationId, api)
+
+      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
+      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
+      capturedParameters.get("apiVersion") should be (Some(api.version))
+      capturedParameters.get("apiContext") should be (Some(api.context))
     }
 
     "throw SubscriptionAlreadyExistsException if already subscribed" in new Setup {
@@ -202,7 +195,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(*, *)(*)
     }
 
     "throw NotFoundException if API version is in status alpha" in new Setup {
@@ -214,7 +206,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(*, *)(*)
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -224,7 +215,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(*, *)(*)
     }
 
     "throw a NotFoundException when the API does not exist" in new Setup {
@@ -237,7 +227,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.createSubscriptionForApplication(applicationId, api))
       }
 
-      verify(mockApiGatewayStore, never).addSubscription(*, *)(*)
     }
 
     "throw a NotFoundException when the version does not exist for the given context" in new Setup {
@@ -250,7 +239,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       intercept[NotFoundException] {
         await(underTest.createSubscriptionForApplication(applicationId, apiWithWrongVersion))
       }
-      verify(mockApiGatewayStore, never).addSubscription(*, *)(*)
     }
 
   }
@@ -267,96 +255,21 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       }
     }
 
-    "remove the API subscription from WSO2 and Mongo for the given application id when an application exists" in new Setup {
+    "remove the API subscription from Mongo for the given application id when an application exists" in new Setup {
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      AuditServiceMock.Audit.thenReturnSuccess()
 
       val result = await(underTest.removeSubscriptionForApplication(applicationId, api))
 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
-      verify(mockApiGatewayStore).removeSubscription(*, *)(*)
-      AuditServiceMock.verify.audit(refEq(Unsubscribed), any[Map[String, String]])(refEq(hc))
-    }
-  }
 
-  "refreshSubscriptions" should {
-    val applicationId = UUID.randomUUID()
-    val api = anAPI()
-    val applicationData = anApplicationData(applicationId)
-
-    "add in Mongo the subscriptions present in WSO2 and not in Mongo" in new Setup {
-
-      when(mockApplicationRepository.findAll()).thenReturn(successful(List(applicationData)))
-      mockAPIGatewayStoreWillReturnSubscriptions(
-        applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, successful(List(api)))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      val result = await(underTest.refreshSubscriptions())
-
-      result shouldBe 1
-      verify(mockSubscriptionRepository).add(applicationId, api)
-    }
-
-    "remove from Mongo the subscriptions not present in WSO2 " in new Setup {
-
-      when(mockApplicationRepository.findAll()).thenReturn(successful(List(applicationData)))
-      mockAPIGatewayStoreWillReturnSubscriptions(
-        applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, successful(List.empty))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api)))
-
-      val result = await(underTest.refreshSubscriptions())
-
-      result shouldBe 1
-      verify(mockSubscriptionRepository).remove(applicationId, api)
-    }
-
-    Seq("sso-in/sso", "web-session/sso-api") foreach { ignoredContext =>
-      s"not remove from Mongo the subscriptions not present in WSO2 for the $ignoredContext API" in new Setup {
-        when(mockApplicationRepository.findAll()).thenReturn(successful(List(applicationData)))
-        mockAPIGatewayStoreWillReturnSubscriptions(
-          applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, successful(List.empty))
-        val apiInMongo = anAPI(context = ignoredContext)
-        when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(apiInMongo)))
-
-        val result = await(underTest.refreshSubscriptions())
-
-        result shouldBe 0
-        verify(mockSubscriptionRepository, never).remove(applicationId, apiInMongo)
-      }
-    }
-
-    "process multiple applications" in new Setup {
-      val applicationId2 = UUID.randomUUID()
-      val applicationData2 = anApplicationData(applicationId2)
-
-      when(mockApplicationRepository.findAll()).thenReturn(successful(List(applicationData, applicationData2)))
-      mockAPIGatewayStoreWillReturnSubscriptions(
-        applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, successful(List(api)))
-      mockAPIGatewayStoreWillReturnSubscriptions(
-        applicationData2.wso2Username, applicationData2.wso2Password, applicationData2.wso2ApplicationName, successful(List(api)))
-      when(mockSubscriptionRepository.getSubscriptions(*)).thenReturn(successful(List.empty))
-
-      val result = await(underTest.refreshSubscriptions())
-
-      result shouldBe 2
-      verify(mockSubscriptionRepository).add(applicationId, api)
-      verify(mockSubscriptionRepository).add(applicationId2, api)
-    }
-
-    "not refresh the subscriptions when fetching the subscriptions from WSO2 fail" in new Setup {
-
-      when(mockApplicationRepository.findAll()).thenReturn(successful(List(applicationData)))
-      mockAPIGatewayStoreWillReturnSubscriptions(
-        applicationData.wso2Username, applicationData.wso2Password, applicationData.wso2ApplicationName, failed(new RuntimeException("Something went wrong")))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api)))
-
-      intercept[RuntimeException] {
-        await(underTest.refreshSubscriptions())
-      }
-
-      verify(mockSubscriptionRepository, never).remove(applicationId, api)
+      val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
+      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
+      capturedParameters.get("apiVersion") should be (Some(api.version))
+      capturedParameters.get("apiContext") should be (Some(api.context))
     }
   }
 
@@ -385,8 +298,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       "myapp",
       collaborators,
       Some("description"),
-      "aaaaaaaaaa",
-      "aaaaaaaaaa",
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,

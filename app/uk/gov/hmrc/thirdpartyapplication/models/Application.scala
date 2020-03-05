@@ -261,14 +261,13 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 case class APIIdentifier(context: String, version: String)
 
-case class Wso2Api(name: String, version: String)
-
 case class Collaborator(emailAddress: String, role: Role)
 
 case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
-                        lastAccess: Option[DateTime] = None)
+                        lastAccess: Option[DateTime] = None,
+                        id: String = UUID.randomUUID().toString)
 
 object ClientSecret {
   def maskSecret(secret: String): String = {
@@ -278,21 +277,38 @@ object ClientSecret {
   }
 }
 
+trait Token {
+  def clientId: String
+  def accessToken: String
+  def clientSecrets: List[ClientSecret]
+}
+
 case class EnvironmentToken(clientId: String,
-                            wso2ClientSecret: String,
                             accessToken: String,
-                            clientSecrets: List[ClientSecret] = List())
+                            clientSecrets: List[ClientSecret] = List()) extends Token
 
-case class ApplicationTokensResponse(production: EnvironmentTokenResponse,
-                                     sandbox: EnvironmentTokenResponse)
+case class ApplicationTokenResponse(
+   clientId: String,
+   accessToken: String,
+   clientSecrets: List[ClientSecret]
+) extends Token
 
-case class EnvironmentTokenResponse(clientId: String,
-                                    accessToken: String,
-                                    clientSecrets: List[ClientSecret])
+object ApplicationTokenResponse {
+  def apply(token: Token): ApplicationTokenResponse = {
+    val maskedClientSecrets: List[ClientSecret] = token.clientSecrets map { clientSecret =>
+      clientSecret.name match {
+        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
+        case _ => clientSecret
+      }
+    }
 
-case class Wso2Credentials(clientId: String,
-                           accessToken: String,
-                           wso2Secret: String)
+    new ApplicationTokenResponse(
+      clientId = token.clientId,
+      accessToken = token.accessToken,
+      clientSecrets = maskedClientSecrets
+    ) {}
+  }
+}
 
 object Role extends Enumeration {
   type Role = Value
@@ -361,57 +377,6 @@ object ApplicationWithUpliftRequest {
       throw new InconsistentDataState(s"cannot create with invalid state: ${upliftRequest.state}")
     }
     ApplicationWithUpliftRequest(app.id, app.name, upliftRequest.changedAt, app.state.name)
-  }
-
-}
-
-object ApplicationTokensResponse {
-
-  def apply(environmentTokenResponse: EnvironmentTokenResponse): ApplicationTokensResponse = {
-    ApplicationTokensResponse(
-      production = environmentTokenResponse,
-      sandbox = EnvironmentTokenResponse.empty
-    )
-  }
-}
-
-object EnvironmentTokenResponse {
-  def apply(environmentToken: EnvironmentToken): EnvironmentTokenResponse = {
-    val clientSecrets: List[ClientSecret] = environmentToken.clientSecrets map { clientSecret =>
-      clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
-      clientSecret.name match {
-        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
-        case _ => clientSecret
-      }
-    }
-    EnvironmentTokenResponse(environmentToken.clientId, environmentToken.accessToken, clientSecrets)
-  }
-
-  def empty = {
-    EnvironmentTokenResponse("", "", List.empty)
-  }
-}
-
-object Wso2Api {
-
-  def create(api: APIIdentifier) = {
-    Wso2Api(name(api), api.version)
-  }
-
-  private def name(api: APIIdentifier) = {
-    s"${api.context.replaceAll("/", "--")}--${api.version}"
-  }
-
-}
-
-object APIIdentifier {
-
-  def create(wso2API: Wso2Api) = {
-    APIIdentifier(context(wso2API), wso2API.version)
-  }
-
-  private def context(wso2API: Wso2Api) = {
-    wso2API.name.dropRight(s"--${wso2API.version}".length).replaceAll("--", "/")
   }
 
 }
