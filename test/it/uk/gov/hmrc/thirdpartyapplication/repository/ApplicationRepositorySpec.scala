@@ -1122,6 +1122,20 @@ class ApplicationRepositorySpec
     }
   }
 
+  "addClientSecret" should {
+    "append client secrets to an existing application" in {
+      val applicationId = UUID.randomUUID()
+
+      val savedApplication = await(applicationRepository.save(anApplicationData(applicationId)))
+
+      val clientSecret = ClientSecret("secret-name", "secret-value")
+      val updatedApplication = await(applicationRepository.addClientSecret(applicationId, clientSecret))
+
+      savedApplication.tokens.production.clientSecrets should not contain clientSecret
+      updatedApplication.tokens.production.clientSecrets should contain (clientSecret)
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
