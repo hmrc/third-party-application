@@ -58,9 +58,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   def addClientSecret(id: UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
       existingApp <- fetchApp(id)
-      existingSecrets = existingApp.tokens.production.clientSecrets
-
-      _ = if(existingSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+      _ = if(existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
       newSecretValue = generateSecret()
       newSecret = ClientSecret(maskSecret(newSecretValue), newSecretValue)
