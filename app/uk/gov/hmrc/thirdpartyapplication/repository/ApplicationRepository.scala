@@ -142,12 +142,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def addClientSecret(applicationId: UUID, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$push" -> Json.obj("tokens.production.clientSecrets" -> Json.toJson(clientSecret))))
 
-  def countClientSecrets(applicationId: UUID): Future[Int] =
-    fetch(applicationId) map {
-      case Some(app) => app.tokens.production.clientSecrets.size
-      case None => 0
-    }
-
   def recordClientSecretUsage(applicationId: String, clientSecret: String): Future[ApplicationData] =
     findAndUpdate(
       Json.obj("id" -> applicationId, "tokens.production.clientSecrets.secret" -> clientSecret),

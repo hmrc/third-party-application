@@ -24,7 +24,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, HasSucceeded, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
@@ -242,6 +242,12 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def verifyCalledWith(applicationId: UUID, rateLimit: RateLimitTier) =
         ApplicationRepoMock.verify.updateApplicationRateLimit(eqTo(applicationId), eqTo(rateLimit))
+    }
+
+    object AddClientSecret {
+      def thenReturn(applicationId: UUID, clientSecret: ClientSecret)(updatedApplication: ApplicationData) = {
+        when(aMock.addClientSecret(applicationId, clientSecret)).thenReturn(successful(updatedApplication))
+      }
     }
 
   }

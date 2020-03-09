@@ -156,33 +156,36 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "add the client secret and return it unmasked in the name" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
+      val newClientSecret = new ClientSecret(maskedSecretValue, newSecretValue)
+
+      val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
+      val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
+      val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
+
       when(mockGenerateSecret.apply()).thenReturn(newSecretValue)
 
-      val result = await(underTest.addClientSecret(applicationId, secretRequest))
+      ApplicationRepoMock.AddClientSecret.thenReturn(eqTo(applicationId), *)(applicationWithNewClientSecret)
 
-      val savedApp = ApplicationRepoMock.Save.verifyCalled()
-      val updatedProductionSecrets = savedApp.tokens.production.clientSecrets
-      updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
-      val newSecret = (updatedProductionSecrets diff environmentToken.clientSecrets).head
+      val result: ApplicationTokenResponse = await(underTest.addClientSecret(applicationId, secretRequest))
+
       result.clientId shouldBe environmentToken.clientId
       result.accessToken shouldBe environmentToken.accessToken
       result.clientSecrets.dropRight(1) shouldBe tokenResponse.clientSecrets
-      result.clientSecrets.last.secret shouldBe updatedProductionSecrets.last.secret
-      result.clientSecrets.last.name shouldBe newSecretValue
-      updatedProductionSecrets.last.name shouldBe maskedSecretValue
+      result.clientSecrets.last.secret shouldBe newSecretValue
+      result.clientSecrets.last.name shouldBe maskedSecretValue
 
       AuditServiceMock.Audit.verifyCalled(
         ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.secret, "clientSecretType" -> PRODUCTION.toString),
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> maskedSecretValue, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
@@ -191,7 +194,6 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
       val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 

@@ -1136,26 +1136,6 @@ class ApplicationRepositorySpec
     }
   }
 
-  "countClientSecrets" should {
-    "return the number of client secrets for a given application" in {
-      val applicationId = UUID.randomUUID()
-      val additionalClientSecret = ClientSecret("secret-name", "secret-value")
-
-      await(applicationRepository.save(anApplicationData(applicationId)))
-      await(applicationRepository.addClientSecret(applicationId, additionalClientSecret))
-
-      val secretCount = await(applicationRepository.countClientSecrets(applicationId))
-
-      secretCount should be (2)
-    }
-
-    "return zero if the application cannot be found" in {
-      val secretCount = await(applicationRepository.countClientSecrets(UUID.randomUUID))
-
-      secretCount should be (0)
-    }
-  }
-
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
