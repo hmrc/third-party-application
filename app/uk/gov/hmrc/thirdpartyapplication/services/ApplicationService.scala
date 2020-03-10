@@ -137,7 +137,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   def updateRateLimitTier(applicationId: UUID, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application $applicationId")
 
-    applicationRepository.updateApplicationRateLimit(applicationId, rateLimitTier)
+    for {
+      app <- fetchApp(applicationId)
+      _ <- apiGatewayStore.updateApplication(app, rateLimitTier)
+      updatedApplication <- applicationRepository.updateApplicationRateLimit(applicationId, rateLimitTier)
+    } yield updatedApplication
   }
 
   def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
