@@ -365,6 +365,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
 
     scenario("Change rate limit tier for an application") {
+
       Given("The gatekeeper is logged in")
       authConnector.willValidateLoggedInUserHasGatekeeperRole()
 
@@ -373,6 +374,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       And("An API is available for the application")
       apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+
+      And("AWS API Gateway is updated")
+      awsApiGatewayConnector.willCreateOrUpdateApplication(application.name, "", RateLimitTier.SILVER)
 
       Then("The response is successful")
       val response = postData(path = s"/application/${application.id}/rate-limit-tier", data = """{ "rateLimitTier" : "SILVER" }""")

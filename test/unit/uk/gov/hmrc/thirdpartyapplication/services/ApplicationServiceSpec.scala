@@ -1153,11 +1153,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val originalApplicationData: ApplicationData = anApplicationData(uuid)
     val updatedApplicationData: ApplicationData = originalApplicationData copy (rateLimitTier = Some(SILVER))
 
-    "update the application in mongo" in new Setup {
+    "update the application on AWS and in mongo" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
+      ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(uuid, SILVER)(updatedApplicationData)
 
       await(underTest updateRateLimitTier(uuid, SILVER))
 
+      ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, SILVER)
       ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(uuid, SILVER)
     }
 
