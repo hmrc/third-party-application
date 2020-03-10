@@ -33,23 +33,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future.successful
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     val mockLogger: LoggerLike = mock[LoggerLike]
-    val mockGenerateSecret: () => String = mock[() => String]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest: CredentialService = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, credentialConfig) {
+    val underTest: CredentialService =
+      new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig) {
       override val logger: LoggerLike = mockLogger
-      override val generateSecret: () => String = mockGenerateSecret
     }
   }
 
@@ -161,12 +160,12 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
       val newClientSecret = new ClientSecret(maskedSecretValue, newSecretValue)
 
+      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
+
       val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
       val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
       val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
       val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
-
-      when(mockGenerateSecret.apply()).thenReturn(newSecretValue)
 
       ApplicationRepoMock.AddClientSecret.thenReturn(eqTo(applicationId), *)(applicationWithNewClientSecret)
 

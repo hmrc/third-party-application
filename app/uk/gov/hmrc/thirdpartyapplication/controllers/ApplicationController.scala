@@ -143,7 +143,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def addClientSecret(applicationId: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def addClientSecret(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokenResponse(token)))
         } recover {

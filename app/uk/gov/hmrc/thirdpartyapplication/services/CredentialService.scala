@@ -38,11 +38,11 @@ import scala.util.control.NonFatal
 @Singleton
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
+                                  clientSecretService: ClientSecretService,
                                   config: CredentialConfig) {
 
   val clientSecretLimit = config.clientSecretLimit
   val logger: LoggerLike = Logger
-  val generateSecret: () => String = () => randomUUID.toString
 
   def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(
@@ -60,20 +60,17 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       existingApp <- fetchApp(id)
       _ = if(existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
-      newSecretValue = generateSecret()
-      newSecret = ClientSecret(maskSecret(newSecretValue), newSecretValue)
+      newSecret = clientSecretService.generateClientSecret()
 
       updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
   }
 
-  def deleteClientSecrets(id: java.util.UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+  def deleteClientSecrets(id: UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
-    def audit(clientSecret: ClientSecret) = {
-      auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString,
-        "removedClientSecret" -> clientSecret.secret))
-    }
+    def audit(clientSecret: ClientSecret) =
+      auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString, "removedClientSecret" -> clientSecret.secret))
 
     def updateApp(app: ApplicationData): (ApplicationData, Set[ClientSecret]) = {
       val numberOfSecretsToDelete = secrets.length
