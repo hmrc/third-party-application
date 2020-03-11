@@ -97,7 +97,6 @@ case class ApplicationResponse(id: UUID,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
                                access: Access = Standard(List.empty, None, None),
-                               environment: Option[Environment] = None,
                                state: ApplicationState = ApplicationState(name = TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
                                checkInformation: Option[CheckInformation] = None,
@@ -135,7 +134,6 @@ object ApplicationResponse {
       termsAndConditionsUrl(data),
       privacyPolicyUrl(data),
       data.access,
-      Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
@@ -157,7 +155,6 @@ case class ExtendedApplicationResponse(id: UUID,
                                        termsAndConditionsUrl: Option[String] = None,
                                        privacyPolicyUrl: Option[String] = None,
                                        access: Access = Standard(List.empty, None, None),
-                                       environment: Option[Environment] = None,
                                        state: ApplicationState = ApplicationState(name = TESTING),
                                        rateLimitTier: RateLimitTier = BRONZE,
                                        checkInformation: Option[CheckInformation] = None,
@@ -183,7 +180,6 @@ object ExtendedApplicationResponse {
       ApplicationResponse.termsAndConditionsUrl(data),
       ApplicationResponse.privacyPolicyUrl(data),
       data.access,
-      Some(Environment.PRODUCTION),
       data.state,
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
@@ -401,6 +397,10 @@ case object VerificationResent extends ApplicationStateChange
 
 case object Deleted extends ApplicationStateChange
 
-case object Blocked extends ApplicationStateChange
+trait Blocked extends ApplicationStateChange
 
-case object Unblocked extends ApplicationStateChange
+case object Blocked extends Blocked
+
+trait Unblocked extends ApplicationStateChange
+
+case object Unblocked extends Unblocked
