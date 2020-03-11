@@ -1632,8 +1632,7 @@ class ApplicationControllerSpec extends ControllerSpec
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
-      access,
-      environment = Some(environment)
+      access
     )
   }
 
@@ -1652,7 +1651,6 @@ class ApplicationControllerSpec extends ControllerSpec
       app.termsAndConditionsUrl,
       app.privacyPolicyUrl,
       app.access,
-      app.environment,
       app.state,
       app.rateLimitTier,
       app.checkInformation,

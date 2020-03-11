@@ -477,7 +477,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         termsAndConditionsUrl = None,
         privacyPolicyUrl = None,
         access = data.access,
-        environment = Some(Environment.PRODUCTION),
         state = data.state,
         rateLimitTier = SILVER))
     }
@@ -759,7 +758,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(applicationData.tokens.production.clientId))
 
       result.get.id shouldBe applicationId
-      result.get.environment shouldBe Some(PRODUCTION)
+      result.get.deployedTo shouldBe "PRODUCTION"
       result.get.collaborators shouldBe applicationData.collaborators
       result.get.createdOn shouldBe applicationData.createdOn
     }
