@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimit
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 import uk.gov.hmrc.time.DateTimeUtils
 
 trait ApplicationRequest {
@@ -269,14 +270,6 @@ case class ClientSecret(name: String,
                         lastAccess: Option[DateTime] = None,
                         id: String = UUID.randomUUID().toString)
 
-object ClientSecret {
-  def maskSecret(secret: String): String = {
-    val SecretMask = "••••••••••••••••••••••••••••••••"
-    val SecretLastDigitsLength = 4
-    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
-  }
-}
-
 trait Token {
   def clientId: String
   def accessToken: String
@@ -297,7 +290,7 @@ object ApplicationTokenResponse {
   def apply(token: Token): ApplicationTokenResponse = {
     val maskedClientSecrets: List[ClientSecret] = token.clientSecrets map { clientSecret =>
       clientSecret.name match {
-        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
+        case "" | "Default" => clientSecret.copy(name = s"${ClientSecretService.maskSecret(clientSecret.secret)}")
         case _ => clientSecret
       }
     }

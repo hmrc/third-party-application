@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-import java.util.UUID.randomUUID
 
 import cats.data.OptionT
 import cats.implicits._
@@ -25,9 +24,8 @@ import javax.inject.{Inject, Singleton}
 import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret.maskSecret
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 

@@ -20,7 +20,7 @@ import java.util.UUID
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret.maskSecret
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {

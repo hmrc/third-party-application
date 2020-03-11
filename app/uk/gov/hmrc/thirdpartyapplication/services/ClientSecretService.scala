@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret.maskSecret
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 
 class ClientSecretService {
 
@@ -32,4 +32,12 @@ class ClientSecretService {
     ClientSecret(secretName, secretValue)
   }
 
+}
+
+object ClientSecretService {
+  def maskSecret(secret: String): String = {
+    val SecretMask = "••••••••••••••••••••••••••••••••"
+    val SecretLastDigitsLength = 4
+    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
+  }
 }
