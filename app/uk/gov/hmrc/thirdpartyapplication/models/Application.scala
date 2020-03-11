@@ -401,6 +401,10 @@ case object VerificationResent extends ApplicationStateChange
 
 case object Deleted extends ApplicationStateChange
 
-case object Blocked extends ApplicationStateChange
+trait Blocked extends ApplicationStateChange
 
-case object Unblocked extends ApplicationStateChange
+case object Blocked extends Blocked
+
+trait Unblocked extends ApplicationStateChange
+
+case object Unblocked extends Unblocked

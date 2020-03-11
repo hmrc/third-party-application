@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, 
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, Unblocked, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -155,7 +155,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
 
-  def blockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def blockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Blocked] = {
     def block(application: ApplicationData): ApplicationData = {
       application.copy(blocked = true)
     }
@@ -166,7 +166,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield Blocked
   }
 
-  def unblockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def unblockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Unblocked] = {
     def unblock(application: ApplicationData): ApplicationData = {
       application.copy(blocked = false)
     }
