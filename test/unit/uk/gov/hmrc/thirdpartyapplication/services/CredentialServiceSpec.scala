@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import com.github.t3hnar.bcrypt._
 
 import scala.concurrent.Future.successful
 
@@ -53,7 +54,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret("", secret)
+    ClientSecret("", secret, hashedSecret = "hashed-secret")
   }
 
   private val loggedInUser = "loggedin@example.com"
@@ -158,7 +159,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
-      val newClientSecret = new ClientSecret(maskedSecretValue, newSecretValue)
+      val hashedSecret = newSecretValue.bcrypt
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = hashedSecret)
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
@@ -193,7 +195,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = v)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)

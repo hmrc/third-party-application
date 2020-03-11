@@ -16,12 +16,13 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
+import com.github.t3hnar.bcrypt._
+import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretService, ClientSecretServiceConfig}
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ClientSecretServiceSpec extends HmrcSpec {
 
-  val underTest = new ClientSecretService()
+  val underTest = new ClientSecretService(ClientSecretServiceConfig(5))
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
@@ -32,6 +33,8 @@ class ClientSecretServiceSpec extends HmrcSpec {
       generatedClientSecret.name.length should be (36)
       generatedClientSecret.name take 32 should be ("•" * 32)
       generatedClientSecret.name.slice(32, 36) should be (generatedClientSecret.secret takeRight 4)
+      generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret).isSuccess should be (true)
+      generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret).get should be (true)
     }
   }
 }

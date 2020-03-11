@@ -22,6 +22,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
+import com.github.t3hnar.bcrypt._
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -33,11 +34,11 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
 
     object GenerateClientSecret {
       def thenReturnWithSpecificSecret(secret: String) =
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret))
+        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt))
 
       def thenReturnWithRandomSecret() = {
-        val secretValue = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secretValue), secretValue))
+        val secret = UUID.randomUUID().toString
+        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt))
       }
     }
   }

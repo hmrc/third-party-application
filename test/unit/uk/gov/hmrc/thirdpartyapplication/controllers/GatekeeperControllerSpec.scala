@@ -19,7 +19,6 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import akka.stream.Materializer
-import com.codahale.metrics.SharedMetricRegistries
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
@@ -31,7 +30,7 @@ import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ErrorCode, _}
+import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.State._

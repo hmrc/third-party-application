@@ -69,7 +69,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret)
+    ClientSecret(secret, secret, hashedSecret = "hashed-secret")
   }
 
   override def beforeAll() {

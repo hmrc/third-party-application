@@ -21,13 +21,14 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+import play.api.Mode.Mode
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
 
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
@@ -48,6 +49,7 @@ class ConfigurationModule extends Module {
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
+      bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
     )
   }
@@ -224,6 +226,17 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
   override def get() = {
     val clientSecretLimit: Int = ConfigHelper.getConfig(s"clientSecretLimit", runModeConfiguration.getInt)
     CredentialConfig(clientSecretLimit)
+  }
+}
+
+@Singleton
+class ClientSecretServiceConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ClientSecretServiceConfig] with ServicesConfig {
+
+  override protected def mode: Mode = environment.mode
+  override def get(): ClientSecretServiceConfig = {
+    val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", runModeConfiguration.getInt)
+    ClientSecretServiceConfig(hashFunctionWorkFactor)
   }
 }
 

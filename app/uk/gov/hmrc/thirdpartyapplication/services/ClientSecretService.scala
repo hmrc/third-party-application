@@ -20,24 +20,33 @@ import java.util.UUID
 
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
+import com.github.t3hnar.bcrypt._
+import javax.inject.{Inject, Singleton}
 
-class ClientSecretService {
+@Singleton
+class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
   def generateClientSecret(): ClientSecret = {
     val secretValue = clientSecretValueGenerator()
-    val secretName = maskSecret(secretValue)
 
-    ClientSecret(secretName, secretValue)
+    ClientSecret(
+      name = maskSecret(secretValue),
+      secret = secretValue,
+      hashedSecret = secretValue.bcrypt(config.hashFunctionWorkFactor))
   }
 
 }
 
 object ClientSecretService {
+
   def maskSecret(secret: String): String = {
     val SecretMask = "••••••••••••••••••••••••••••••••"
     val SecretLastDigitsLength = 4
     s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
   }
+
 }
+
+case class ClientSecretServiceConfig(hashFunctionWorkFactor: Int)

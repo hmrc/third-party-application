@@ -268,7 +268,8 @@ case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
-                        id: String = UUID.randomUUID().toString)
+                        id: String = UUID.randomUUID().toString,
+                        hashedSecret: String)
 
 trait Token {
   def clientId: String
