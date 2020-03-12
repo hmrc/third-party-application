@@ -195,7 +195,7 @@ class ApplicationRepositorySpec
           EnvironmentToken(
             "aaa",
             generateAccessToken,
-            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = ""))))
+            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
       val generatedClientSecret = application.tokens.production.clientSecrets.head.secret
 
@@ -217,8 +217,8 @@ class ApplicationRepositorySpec
             "aaa",
             generateAccessToken,
             List(
-              ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = ""),
-              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = ""))))
+              ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None),
+              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
@@ -1128,7 +1128,7 @@ class ApplicationRepositorySpec
 
       val savedApplication = await(applicationRepository.save(anApplicationData(applicationId)))
 
-      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = "hashed-secret")
+      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = Some("hashed-secret"))
       val updatedApplication = await(applicationRepository.addClientSecret(applicationId, clientSecret))
 
       savedApplication.tokens.production.clientSecrets should not contain clientSecret
@@ -1152,7 +1152,7 @@ class ApplicationRepositorySpec
                         access: Access = Standard(List.empty, None, None),
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                         checkInformation: Option[CheckInformation] = None,
-                        clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = ""))): ApplicationData = {
+                        clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = None))): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, users, checkInformation, clientSecrets)
   }
@@ -1164,7 +1164,7 @@ class ApplicationRepositorySpec
                             access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                             checkInformation: Option[CheckInformation] = None,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = ""))): ApplicationData = {
+                            clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = None))): ApplicationData = {
 
     ApplicationData(
       id,

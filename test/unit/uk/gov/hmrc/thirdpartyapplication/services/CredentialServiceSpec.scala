@@ -54,7 +54,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret("", secret, hashedSecret = "hashed-secret")
+    ClientSecret("", secret, hashedSecret = None)
   }
 
   private val loggedInUser = "loggedin@example.com"
@@ -161,7 +161,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
       val hashedSecret = newSecretValue.bcrypt
-      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = hashedSecret)
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = Some(hashedSecret))
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
@@ -196,7 +196,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = v)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = None)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)

@@ -129,7 +129,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("333", "333", hashedSecret = "hashed-secret"))))
+  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("333", "333", hashedSecret = None))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -754,7 +754,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret, hashedSecret = "hashed-secret")
+    ClientSecret(secret, secret, hashedSecret = None)
   }
 
   "validate credentials" should {

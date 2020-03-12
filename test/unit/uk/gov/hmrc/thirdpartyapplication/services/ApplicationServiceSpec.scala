@@ -125,7 +125,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret, hashedSecret = "hashed-secret")
+    ClientSecret(secret, secret, hashedSecret = None)
   }
 
   trait LockedSetup extends Setup {

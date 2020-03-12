@@ -34,7 +34,7 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
     ClientSecret(
       name = maskSecret(secretValue),
       secret = secretValue,
-      hashedSecret = secretValue.bcrypt(config.hashFunctionWorkFactor))
+      hashedSecret = Some(secretValue.bcrypt(config.hashFunctionWorkFactor)))
   }
 
 }

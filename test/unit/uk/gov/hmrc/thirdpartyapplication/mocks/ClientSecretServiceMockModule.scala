@@ -34,11 +34,11 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
 
     object GenerateClientSecret {
       def thenReturnWithSpecificSecret(secret: String) =
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt))
+        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = Some(secret.bcrypt)))
 
       def thenReturnWithRandomSecret() = {
         val secret = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt))
+        when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = Some(secret.bcrypt)))
       }
     }
   }
