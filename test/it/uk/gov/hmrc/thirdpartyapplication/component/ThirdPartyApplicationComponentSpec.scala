@@ -236,13 +236,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createdResponse.code shouldBe CREATED
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      val totpId = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
-      val totpSecret = (Json.parse(createdResponse.body) \ "totp").as[TotpSecret]
+      val totpIds = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpIds]
+      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecrets]
 
-      totpId match {
-        case TotpId("prod-id","prod-id") => totpSecret shouldBe TotpSecret("prod-secret")
-        case TotpId("sandbox-id", "sandbox-id") => totpSecret shouldBe TotpSecret("sandbox-secret")
-        case _ => throw new IllegalStateException(s"Unexpected result - totpIds: $totpId, totpSecrets: $totpSecret")
+      totpIds match {
+        case TotpIds("prod-id") => totpSecrets shouldBe TotpSecrets("prod-secret")
+        case TotpIds("sandbox-id") => totpSecrets shouldBe TotpSecrets("sandbox-secret")
+        case _ => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
       }
     }
   }
