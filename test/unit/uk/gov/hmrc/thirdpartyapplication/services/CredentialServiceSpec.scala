@@ -63,7 +63,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
   private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
   private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
-  private val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
+  private val tokenResponse =
+    ApplicationTokenResponse("aaa", "bbb", List(ClientSecretResponse(firstSecretResponse), ClientSecretResponse(secondSecretResponse)))
 
   "fetch credentials" should {
 

@@ -129,8 +129,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecret("333", "333", hashedSecret = "hashed-secret")))
-  val controllerResponseTokens = ApplicationTokenResponse(credentialServiceResponseToken)
+  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("333", "333", hashedSecret = "hashed-secret"))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -461,7 +460,7 @@ class ApplicationControllerSpec extends ControllerSpec
       val result = underTest.fetchCredentials(applicationId)(request)
 
       status(result) shouldBe SC_OK
-      contentAsJson(result) shouldBe Json.toJson(controllerResponseTokens)
+      contentAsJson(result) shouldBe Json.toJson(credentialServiceResponseToken)
     }
 
     "fail with a 404 (not found) when no application exists for the given id" in new Setup {
@@ -650,7 +649,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "add client secret" should {
     val applicationId = UUID.randomUUID()
-    val applicationTokensResponse = ApplicationTokenResponse("clientId", "token", List(aSecret("secret1"), aSecret("secret2")))
+    val applicationTokensResponse = ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
     val secretRequest = ClientSecretRequest("request")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {

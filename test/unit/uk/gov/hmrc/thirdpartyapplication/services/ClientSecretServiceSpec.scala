@@ -33,8 +33,10 @@ class ClientSecretServiceSpec extends HmrcSpec {
       generatedClientSecret.name.length should be (36)
       generatedClientSecret.name take 32 should be ("•" * 32)
       generatedClientSecret.name.slice(32, 36) should be (generatedClientSecret.secret takeRight 4)
-      generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret).isSuccess should be (true)
-      generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret).get should be (true)
+
+      val hashedSecretCheck = generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret)
+      hashedSecretCheck.isSuccess should be (true)
+      hashedSecretCheck.get should be (true)
     }
   }
 }

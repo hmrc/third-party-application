@@ -284,23 +284,33 @@ case class EnvironmentToken(clientId: String,
 case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
-   clientSecrets: List[ClientSecret]
-) extends Token
+   clientSecrets: List[ClientSecretResponse]
+)
 
 object ApplicationTokenResponse {
   def apply(token: Token): ApplicationTokenResponse = {
-    val maskedClientSecrets: List[ClientSecret] = token.clientSecrets map { clientSecret =>
-      clientSecret.name match {
-        case "" | "Default" => clientSecret.copy(name = s"${ClientSecretService.maskSecret(clientSecret.secret)}")
-        case _ => clientSecret
-      }
-    }
-
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      clientSecrets = maskedClientSecrets
-    ) {}
+      clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
+    )
+  }
+}
+
+case class ClientSecretResponse(id: String,
+                                name: String,
+                                secret: String,
+                                createdOn: DateTime,
+                                lastAccess: Option[DateTime])
+
+object ClientSecretResponse {
+  def apply(clientSecret: ClientSecret): ClientSecretResponse = {
+    def clientSecretName: String = clientSecret.name match {
+      case "" | "Default" => s"${ClientSecretService.maskSecret(clientSecret.secret)}"
+      case _ => clientSecret.name
+    }
+
+    ClientSecretResponse(clientSecret.id, clientSecretName, clientSecret.secret, clientSecret.createdOn, clientSecret.lastAccess)
   }
 }
 
