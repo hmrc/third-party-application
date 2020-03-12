@@ -362,7 +362,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     def saveApplication(environmentToken: EnvironmentToken, id: Option[TotpId]): Future[ApplicationData] = {
 
       def newPrivilegedAccess = {
-        application.access.asInstanceOf[Privileged].copy(totpId = id)
+        application.access.asInstanceOf[Privileged].copy(totpIds = id)
       }
 
       val updatedApplication = id match {
@@ -384,10 +384,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
       applicationTotp <- generateApplicationTotp(application.access.accessType)
       wso2EnvironmentToken <- createInWso2()
-      appData <- saveApplication(wso2EnvironmentToken, extractTotpId(applicationTotp))
+      appData <- saveApplication(wso2EnvironmentToken, applicationTotp.map(_.toId))
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
+    } yield applicationResponseCreator.createApplicationResponse(appData, applicationTotp.map(_.toSecret))
 
     f andThen {
       case Failure(_) =>
@@ -408,14 +408,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       case PRIVILEGED => generateTotp()
       case _ => Future(None)
     }
-  }
-
-  private def extractTotpId(applicationTotps: Option[ApplicationTotp]): Option[TotpId] = {
-    applicationTotps.map { t => TotpId(t.production.id) }
-  }
-
-  private def extractTotpSecret(applicationTotps: Option[ApplicationTotp]): Option[TotpSecret] = {
-    applicationTotps.map { t => TotpSecret(t.production.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

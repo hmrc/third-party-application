@@ -57,8 +57,8 @@ object JsonFormatters {
     .format
 
   implicit val formatTotp = Json.format[Totp]
-  implicit val formatTotpIds = Json.format[TotpId]
-  implicit val formatTotpSecrets = Json.format[TotpSecret]
+  implicit val formatTotpId = Json.format[TotpId]
+  implicit val formatTotpSecret = Json.format[TotpSecret]
 
   private implicit val formatStandard = Json.format[Standard]
   private implicit val formatPrivileged = Json.format[Privileged]

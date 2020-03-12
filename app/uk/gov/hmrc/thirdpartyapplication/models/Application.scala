@@ -212,7 +212,7 @@ case class Standard(redirectUris: List[String] = List.empty,
   override val accessType = STANDARD
 }
 
-case class Privileged(totpId: Option[TotpId] = None, scopes: Set[String] = Set.empty) extends Access {
+case class Privileged(totpIds: Option[TotpId] = None, scopes: Set[String] = Set.empty) extends Access {
   override val accessType = PRIVILEGED
 }
 
@@ -362,8 +362,8 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 
 class ApplicationResponseCreator {
 
-  def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecret]) = {
-    CreateApplicationResponse(ApplicationResponse(applicationData), totpSecrets)
+  def createApplicationResponse(applicationData: ApplicationData, totpSecret: Option[TotpSecret]) = {
+    CreateApplicationResponse(ApplicationResponse(applicationData), totpSecret)
   }
 }
 

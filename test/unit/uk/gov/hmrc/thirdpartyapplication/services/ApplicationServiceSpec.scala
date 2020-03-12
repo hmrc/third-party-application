@@ -253,7 +253,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
-        access = Privileged(totpId = Some(TotpId("prodTotpId")))
+        access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
       val expectedTotp = ApplicationTotp(prodTOTP)
       createdApp.totp shouldBe Some(TotpSecret(expectedTotp.production.secret))
