@@ -359,13 +359,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       apiGatewayStore.createApplication(wso2ApplicationName)
     }
 
-    def saveApplication(environmentToken: EnvironmentToken, id: Option[TotpId]): Future[ApplicationData] = {
+    def saveApplication(environmentToken: EnvironmentToken, ids: Option[TotpIds]): Future[ApplicationData] = {
 
       def newPrivilegedAccess = {
-        application.access.asInstanceOf[Privileged].copy(totpIds = id)
+        application.access.asInstanceOf[Privileged].copy(totpIds = ids)
       }
 
-      val updatedApplication = id match {
+      val updatedApplication = ids match {
         case Some(_) if application.access.accessType == PRIVILEGED => application.copy(access = newPrivilegedAccess)
         case _ => application
       }
@@ -384,10 +384,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
       applicationTotp <- generateApplicationTotp(application.access.accessType)
       wso2EnvironmentToken <- createInWso2()
-      appData <- saveApplication(wso2EnvironmentToken, applicationTotp.map(_.toId))
+      appData <- saveApplication(wso2EnvironmentToken, extractTotpId(applicationTotp))
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, applicationTotp.map(_.toSecret))
+    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
 
     f andThen {
       case Failure(_) =>
@@ -396,18 +396,26 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotp]] = {
+  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
 
     def generateTotp() = {
       for {
         productionTotp <- totpConnector.generateTotp()
-      } yield Some(ApplicationTotp(productionTotp))
+      } yield Some(ApplicationTotps(productionTotp))
     }
 
     accessType match {
       case PRIVILEGED => generateTotp()
       case _ => Future(None)
     }
+  }
+
+  private def extractTotpId(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
+    applicationTotps.map { t => TotpIds(t.production.id) }
+  }
+
+  private def extractTotpSecret(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
+    applicationTotps.map { t => TotpSecrets(t.production.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

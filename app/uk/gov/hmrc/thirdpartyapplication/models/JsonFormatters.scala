@@ -57,8 +57,8 @@ object JsonFormatters {
     .format
 
   implicit val formatTotp = Json.format[Totp]
-  implicit val formatTotpId = Json.format[TotpId]
-  implicit val formatTotpSecret = Json.format[TotpSecret]
+  implicit val formatTotpIds = Json.format[TotpIds]
+  implicit val formatTotpSecrets = Json.format[TotpSecrets]
 
   private implicit val formatStandard = Json.format[Standard]
   private implicit val formatPrivileged = Json.format[Privileged]
@@ -145,7 +145,7 @@ object JsonFormatters {
   implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
-    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]
+    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]
     )(unlift(CreateApplicationResponse.unapply))
 }
 

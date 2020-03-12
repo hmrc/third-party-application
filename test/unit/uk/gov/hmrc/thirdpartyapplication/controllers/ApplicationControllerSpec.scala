@@ -169,7 +169,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecret("pTOTP")
+    val totp = TotpSecrets("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -190,7 +190,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
+      (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
       status(result) shouldBe SC_CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
     }
