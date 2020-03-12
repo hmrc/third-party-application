@@ -22,6 +22,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import com.github.t3hnar.bcrypt._
 import javax.inject.{Inject, Singleton}
+import org.joda.time.Duration
+import play.api.Logger
+import uk.gov.hmrc.time.DateTimeUtils
 
 @Singleton
 class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
@@ -31,12 +34,27 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
   def generateClientSecret(): ClientSecret = {
     val secretValue = clientSecretValueGenerator()
 
+
     ClientSecret(
       name = maskSecret(secretValue),
       secret = secretValue,
-      hashedSecret = Some(secretValue.bcrypt(config.hashFunctionWorkFactor)))
+      hashedSecret = Some(hashSecret(secretValue)))
   }
 
+  private def hashSecret(secret: String): String = {
+    /*
+     * Measure the time it takes to perform the hashing process - need to ensure we tune the work factor so that we don't introduce too much delay for
+     * legitimate users.
+     */
+    val startTime = DateTimeUtils.now
+    val hashedValue = secret.bcrypt(config.hashFunctionWorkFactor)
+    val endTime = DateTimeUtils.now
+
+    Logger.info(
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${config.hashFunctionWorkFactor}] took [${endTime.getMillis - startTime.getMillis}ms]")
+
+    hashedValue
+  }
 }
 
 object ClientSecretService {
