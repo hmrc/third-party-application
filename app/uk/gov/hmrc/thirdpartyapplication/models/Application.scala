@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimit
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 import uk.gov.hmrc.time.DateTimeUtils
 
 trait ApplicationRequest {
@@ -263,15 +264,8 @@ case class ClientSecret(name: String,
                         secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
-                        id: String = UUID.randomUUID().toString)
-
-object ClientSecret {
-  def maskSecret(secret: String): String = {
-    val SecretMask = "••••••••••••••••••••••••••••••••"
-    val SecretLastDigitsLength = 4
-    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
-  }
-}
+                        id: String = UUID.randomUUID().toString,
+                        hashedSecret: Option[String])
 
 trait Token {
   def clientId: String
@@ -286,23 +280,33 @@ case class EnvironmentToken(clientId: String,
 case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
-   clientSecrets: List[ClientSecret]
-) extends Token
+   clientSecrets: List[ClientSecretResponse]
+)
 
 object ApplicationTokenResponse {
   def apply(token: Token): ApplicationTokenResponse = {
-    val maskedClientSecrets: List[ClientSecret] = token.clientSecrets map { clientSecret =>
-      clientSecret.name match {
-        case "" | "Default" => clientSecret.copy(name = s"${ClientSecret.maskSecret(clientSecret.secret)}")
-        case _ => clientSecret
-      }
-    }
-
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      clientSecrets = maskedClientSecrets
-    ) {}
+      clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
+    )
+  }
+}
+
+case class ClientSecretResponse(id: String,
+                                name: String,
+                                secret: String,
+                                createdOn: DateTime,
+                                lastAccess: Option[DateTime])
+
+object ClientSecretResponse {
+  def apply(clientSecret: ClientSecret): ClientSecretResponse = {
+    def clientSecretName: String = clientSecret.name match {
+      case "" | "Default" => s"${ClientSecretService.maskSecret(clientSecret.secret)}"
+      case _ => clientSecret.name
+    }
+
+    ClientSecretResponse(clientSecret.id, clientSecretName, clientSecret.secret, clientSecret.createdOn, clientSecret.lastAccess)
   }
 }
 

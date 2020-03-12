@@ -124,7 +124,9 @@ object JsonFormatters {
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
   implicit val formatUpdateIpWhitelistRequest = Json.format[UpdateIpWhitelistRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
+  implicit val formatClientSecretResponse = Json.format[ClientSecretResponse]
   implicit val formatApplicationTokensResponse = Json.format[ApplicationTokenResponse]
+
 
   implicit val formatValidationRequest = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]

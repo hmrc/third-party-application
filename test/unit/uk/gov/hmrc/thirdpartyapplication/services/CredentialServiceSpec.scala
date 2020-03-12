@@ -33,28 +33,28 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import com.github.t3hnar.bcrypt._
 
 import scala.concurrent.Future.successful
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     val mockLogger: LoggerLike = mock[LoggerLike]
-    val mockGenerateSecret: () => String = mock[() => String]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
 
-    val underTest: CredentialService = new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, credentialConfig) {
+    val underTest: CredentialService =
+      new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig) {
       override val logger: LoggerLike = mockLogger
-      override val generateSecret: () => String = mockGenerateSecret
     }
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret("", secret)
+    ClientSecret("", secret, hashedSecret = None)
   }
 
   private val loggedInUser = "loggedin@example.com"
@@ -63,7 +63,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
   private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
   private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
-  private val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List(firstSecretResponse, secondSecretResponse))
+  private val tokenResponse =
+    ApplicationTokenResponse("aaa", "bbb", List(ClientSecretResponse(firstSecretResponse), ClientSecretResponse(secondSecretResponse)))
 
   "fetch credentials" should {
 
@@ -156,33 +157,37 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "add the client secret and return it unmasked in the name" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
-      when(mockGenerateSecret.apply()).thenReturn(newSecretValue)
+      val hashedSecret = newSecretValue.bcrypt
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = Some(hashedSecret))
 
-      val result = await(underTest.addClientSecret(applicationId, secretRequest))
+      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
-      val savedApp = ApplicationRepoMock.Save.verifyCalled()
-      val updatedProductionSecrets = savedApp.tokens.production.clientSecrets
-      updatedProductionSecrets should have size environmentToken.clientSecrets.size + 1
-      val newSecret = (updatedProductionSecrets diff environmentToken.clientSecrets).head
+      val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
+      val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
+      val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
+
+      ApplicationRepoMock.AddClientSecret.thenReturn(eqTo(applicationId), *)(applicationWithNewClientSecret)
+
+      val result: ApplicationTokenResponse = await(underTest.addClientSecret(applicationId, secretRequest))
+
       result.clientId shouldBe environmentToken.clientId
       result.accessToken shouldBe environmentToken.accessToken
       result.clientSecrets.dropRight(1) shouldBe tokenResponse.clientSecrets
-      result.clientSecrets.last.secret shouldBe updatedProductionSecrets.last.secret
-      result.clientSecrets.last.name shouldBe newSecretValue
-      updatedProductionSecrets.last.name shouldBe maskedSecretValue
+      result.clientSecrets.last.secret shouldBe newSecretValue
+      result.clientSecrets.last.name shouldBe maskedSecretValue
 
       AuditServiceMock.Audit.verifyCalled(
         ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> newSecret.secret, "clientSecretType" -> PRODUCTION.toString),
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> maskedSecretValue, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       intercept[NotFoundException](await(underTest.addClientSecret(applicationId, secretRequest)))
@@ -191,8 +196,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      when(mockGenerateSecret.apply()).thenReturn(randomUUID.toString)
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = None)))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)

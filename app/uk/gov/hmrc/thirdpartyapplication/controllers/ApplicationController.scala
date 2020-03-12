@@ -115,8 +115,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def fetchCredentials(applicationId: UUID) = Action.async {
-    handleOption(credentialService.fetchCredentials(applicationId)
-      .map(_.map(ApplicationTokenResponse.apply)))
+    handleOption(credentialService.fetchCredentials(applicationId))
   }
 
   def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
@@ -143,9 +142,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def addClientSecret(applicationId: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def addClientSecret(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
-        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(ApplicationTokenResponse(token)))
+        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token))
         } recover {
           case e: NotFoundException => handleNotFound(e.getMessage)
           case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))

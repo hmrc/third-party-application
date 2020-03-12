@@ -195,7 +195,7 @@ class ApplicationRepositorySpec
           EnvironmentToken(
             "aaa",
             generateAccessToken,
-            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20))))))
+            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
       val generatedClientSecret = application.tokens.production.clientSecrets.head.secret
 
@@ -217,8 +217,8 @@ class ApplicationRepositorySpec
             "aaa",
             generateAccessToken,
             List(
-              ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20))),
-              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20))))))
+              ClientSecret(name = "SecretToUpdate", secret = secretToUpdate, lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None),
+              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = None))))
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
@@ -1122,6 +1122,20 @@ class ApplicationRepositorySpec
     }
   }
 
+  "addClientSecret" should {
+    "append client secrets to an existing application" in {
+      val applicationId = UUID.randomUUID()
+
+      val savedApplication = await(applicationRepository.save(anApplicationData(applicationId)))
+
+      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = Some("hashed-secret"))
+      val updatedApplication = await(applicationRepository.addClientSecret(applicationId, clientSecret))
+
+      savedApplication.tokens.production.clientSecrets should not contain clientSecret
+      updatedApplication.tokens.production.clientSecrets should contain (clientSecret)
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
@@ -1138,7 +1152,7 @@ class ApplicationRepositorySpec
                         access: Access = Standard(List.empty, None, None),
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                         checkInformation: Option[CheckInformation] = None,
-                        clientSecrets: List[ClientSecret] = List(ClientSecret(""))): ApplicationData = {
+                        clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = None))): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, users, checkInformation, clientSecrets)
   }
@@ -1150,7 +1164,7 @@ class ApplicationRepositorySpec
                             access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
                             checkInformation: Option[CheckInformation] = None,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret(""))): ApplicationData = {
+                            clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = None))): ApplicationData = {
 
     ApplicationData(
       id,
