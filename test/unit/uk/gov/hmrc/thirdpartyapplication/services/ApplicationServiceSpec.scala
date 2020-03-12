@@ -25,6 +25,7 @@ import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.mockito.Mockito
 import org.scalatest.BeforeAndAfterAll
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
@@ -246,14 +247,16 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(mockTotpConnector.generateTotp()).thenAnswer(successful(totpQueue.dequeue()))
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+      import JsonFormatters._
+      println(Json.prettyPrint(Json.toJson(createdApp)))
 
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
-        access = Privileged(totpIds = Some(TotpIds("prodTotpId")))
+        access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
-      val expectedTotp = ApplicationTotps(prodTOTP)
-      createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret))
+      val expectedTotp = ApplicationTotp(prodTOTP)
+      createdApp.totp shouldBe Some(TotpSecret(expectedTotp.production.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)

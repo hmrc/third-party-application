@@ -18,6 +18,24 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 
 case class Totp(secret: String, id: String)
-case class ApplicationTotps(production: Totp)
-case class TotpIds(production: String)
-case class TotpSecrets(production: String)
+
+case class ApplicationTotp(production: Totp, secret: String, id: String) {
+  def toId: TotpId = TotpId(id)
+  def toSecret: TotpSecret = TotpSecret(secret)
+}
+
+object ApplicationTotp {
+  def apply(production: Totp): ApplicationTotp = ApplicationTotp(production, production.secret, production.id)
+}
+
+case class TotpId(production: String, id: String)
+
+case class TotpSecret(production: String, secret: String)
+
+object TotpSecret {
+  def apply(secret: String) = new TotpSecret(secret, secret)
+}
+
+object TotpId {
+  def apply(id: String) = new TotpId(id, id)
+}
