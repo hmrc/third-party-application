@@ -177,7 +177,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result.clientId shouldBe environmentToken.clientId
       result.accessToken shouldBe environmentToken.accessToken
       result.clientSecrets.dropRight(1) shouldBe tokenResponse.clientSecrets
-      result.clientSecrets.last.secret shouldBe newSecretValue
+      result.clientSecrets.last.secret shouldBe Some(newSecretValue)
       result.clientSecrets.last.name shouldBe maskedSecretValue
 
       AuditServiceMock.Audit.verifyCalled(
