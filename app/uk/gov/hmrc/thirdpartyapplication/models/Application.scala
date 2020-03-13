@@ -295,7 +295,7 @@ object ApplicationTokenResponse {
 
 case class ClientSecretResponse(id: String,
                                 name: String,
-                                secret: String,
+                                secret: Option[String],
                                 createdOn: DateTime,
                                 lastAccess: Option[DateTime])
 
@@ -306,7 +306,7 @@ object ClientSecretResponse {
       case _ => clientSecret.name
     }
 
-    ClientSecretResponse(clientSecret.id, clientSecretName, clientSecret.secret, clientSecret.createdOn, clientSecret.lastAccess)
+    ClientSecretResponse(clientSecret.id, clientSecretName, Some(clientSecret.secret), clientSecret.createdOn, clientSecret.lastAccess)
   }
 }
 
