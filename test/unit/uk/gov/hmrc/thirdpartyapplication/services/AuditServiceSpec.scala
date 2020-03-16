@@ -33,6 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   class Setup {

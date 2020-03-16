@@ -42,10 +42,9 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 @Singleton
@@ -62,8 +61,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    credentialGenerator: CredentialGenerator,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
-                                   nameValidationConfig: ApplicationNameValidationConfig) {
-
+                                   nameValidationConfig: ApplicationNameValidationConfig)(
+                                    implicit val ec: ExecutionContext) {
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 

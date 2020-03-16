@@ -30,11 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)
+class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[StateHistory, BSONObjectID]("stateHistory", mongo.mongoConnector.db, StateHistory.format, ReactiveMongoFormats.objectIdFormats) {
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats

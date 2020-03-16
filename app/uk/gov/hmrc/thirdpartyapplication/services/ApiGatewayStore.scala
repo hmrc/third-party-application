@@ -28,8 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import scala.collection._
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Random
 
 trait ApiGatewayStore {
@@ -49,7 +48,8 @@ trait ApiGatewayStore {
 }
 
 @Singleton
-class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector)(implicit val actorSystem: ActorSystem) extends ApiGatewayStore {
+class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector)
+                                  (implicit val actorSystem: ActorSystem, val ec: ExecutionContext) extends ApiGatewayStore {
 
   private def generateEnvironmentToken(): EnvironmentToken = {
     val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number

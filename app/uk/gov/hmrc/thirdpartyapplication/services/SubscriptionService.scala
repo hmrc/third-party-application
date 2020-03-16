@@ -29,8 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.{failed, successful}
 
 @Singleton
@@ -38,7 +37,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     subscriptionRepository: SubscriptionRepository,
                                     apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
-                                    apiGatewayStore: ApiGatewayStore) {
+                                    apiGatewayStore: ApiGatewayStore)(implicit val ec: ExecutionContext) {
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 

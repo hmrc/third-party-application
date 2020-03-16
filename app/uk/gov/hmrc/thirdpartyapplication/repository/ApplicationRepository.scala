@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+
 import java.util.UUID
 
 import akka.stream.Materializer
@@ -41,11 +42,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer)
+class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
   extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
     MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats)
     with MetricsHelper {
