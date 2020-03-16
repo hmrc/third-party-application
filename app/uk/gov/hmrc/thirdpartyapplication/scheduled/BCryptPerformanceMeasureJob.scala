@@ -33,8 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 class BCryptPerformanceMeasureJob @Inject()(logger: LoggerLike) extends ExclusiveScheduledJob {
 
   override def name: String = "bcrypt Performance Measurement"
-  override def initialDelay: FiniteDuration = FiniteDuration(2, TimeUnit.MINUTES) // Run on startup
-  override def interval: FiniteDuration = FiniteDuration(14, TimeUnit.DAYS) // Only run again if Kibana retention period is expiring
+  override def initialDelay: FiniteDuration = FiniteDuration(10, TimeUnit.MINUTES)
+  override def interval: FiniteDuration = FiniteDuration(4, TimeUnit.HOURS)
 
   val workFactorRangeToTest: Seq[Int] = 5 to 15
 
