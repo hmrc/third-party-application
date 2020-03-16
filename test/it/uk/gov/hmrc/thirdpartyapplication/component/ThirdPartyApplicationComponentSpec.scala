@@ -139,7 +139,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(appName)
-      postData(s"/application/${application.id}/client-secret", """{"name":"secret-1", "environment": "PRODUCTION"}""")
+      postData(s"/application/${application.id}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
       val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
@@ -175,7 +175,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Return details of application when valid") {
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
-      postData(s"/application/${application.id}/client-secret", """{"name":"secret-1", "environment": "PRODUCTION"}""")
+      postData(s"/application/${application.id}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       val credentials = createdApplication.tokens.production
 
@@ -333,7 +333,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       When("I request to add a production client secret")
       val fetchResponse = postData(s"/application/${application.id}/client-secret",
-        """{"name":"secret-1", "environment": "PRODUCTION"}""")
+        s"""{"actorEmailAddress": "$emailAddress"}""")
       fetchResponse.code shouldBe OK
 
       Then("The client secret is added to the production environment of the application")

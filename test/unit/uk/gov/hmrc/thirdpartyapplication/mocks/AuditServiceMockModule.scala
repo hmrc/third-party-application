@@ -45,7 +45,10 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
       def verifyNeverCalled() =
         AuditServiceMock.verify(never).audit(*,*)(*)
 
-      def verifyCalled(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
+      def verifyCalled() =
+        AuditServiceMock.verify.audit(*, *)(*)
+
+      def verifyCalledWith(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =
         AuditServiceMock.verify.audit(refEq(auditAction), eqTo(data))(eqTo(hc))
 
       def verify(verificationMode: VerificationMode)(auditAction: AuditAction, data: Map[String,String], hc: HeaderCarrier) =

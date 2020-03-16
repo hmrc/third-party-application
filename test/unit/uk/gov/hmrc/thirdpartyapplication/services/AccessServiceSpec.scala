@@ -51,16 +51,16 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       mockApplicationRepositoryFetchAndSave(privilegedApplicationDataWithScopes(applicationId), scopes1to3, Set.empty)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes2to4))(hc))
-      AuditServiceMock.Audit.verifyCalled(ScopeRemoved, Map("removedScope" -> scope1), hc)
-      AuditServiceMock.Audit.verifyCalled(ScopeAdded, Map("newScope" -> scope4), hc)
+      AuditServiceMock.Audit.verifyCalledWith(ScopeRemoved, Map("removedScope" -> scope1), hc)
+      AuditServiceMock.Audit.verifyCalledWith(ScopeAdded, Map("newScope" -> scope4), hc)
     }
 
     "invoke audit service for ropc scopes" in new ScopeFixture {
       mockApplicationRepositoryFetchAndSave(ropcApplicationDataWithScopes(applicationId), scopes1to3, Set.empty)
       AuditServiceMock.Audit.thenReturnSuccess()
       await(accessService.updateScopes(applicationId, ScopeRequest(scopes2to4))(hc))
-      AuditServiceMock.Audit.verifyCalled(ScopeRemoved, Map("removedScope" -> scope1), hc)
-      AuditServiceMock.Audit.verifyCalled(ScopeAdded, Map("newScope" -> scope4), hc)
+      AuditServiceMock.Audit.verifyCalledWith(ScopeRemoved, Map("removedScope" -> scope1), hc)
+      AuditServiceMock.Audit.verifyCalledWith(ScopeAdded, Map("newScope" -> scope4), hc)
     }
 
   }
@@ -132,8 +132,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
       await(accessService.updateOverrides(applicationId, OverridesRequest(newOverrides))(hc))
 
-      AuditServiceMock.Audit.verifyCalled(OverrideRemoved, Map("removedOverride" -> override1.overrideType.toString), hc)
-      AuditServiceMock.Audit.verifyCalled(OverrideAdded, Map("newOverride" -> override2.overrideType.toString), hc)
+      AuditServiceMock.Audit.verifyCalledWith(OverrideRemoved, Map("removedOverride" -> override1.overrideType.toString), hc)
+      AuditServiceMock.Audit.verifyCalledWith(OverrideAdded, Map("newOverride" -> override2.overrideType.toString), hc)
     }
 
   }

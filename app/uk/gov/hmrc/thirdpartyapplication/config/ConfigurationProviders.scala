@@ -163,7 +163,8 @@ class EmailConfigProvider @Inject()(val runModeConfiguration: Configuration, env
     val url = baseUrl("email")
     val devHubBaseUrl = ConfigHelper.getConfig(s"$env.devHubBaseUrl", runModeConfiguration.getString(_))
     val devHubTitle: String = "Developer Hub"
-    EmailConfig(url, devHubBaseUrl, devHubTitle)
+    val environmentName: String = runModeConfiguration.getString("environmentName").getOrElse("unknown")
+    EmailConfig(url, devHubBaseUrl, devHubTitle, environmentName)
   }
 }
 

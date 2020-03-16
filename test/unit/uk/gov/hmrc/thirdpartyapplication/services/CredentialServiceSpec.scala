@@ -19,6 +19,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import java.util.UUID.randomUUID
 
+import com.github.t3hnar.bcrypt._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
@@ -33,22 +34,22 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import com.github.t3hnar.bcrypt._
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 
 import scala.concurrent.Future.successful
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule with EmailConnectorMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
     val mockLogger: LoggerLike = mock[LoggerLike]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
 
     val underTest: CredentialService =
-      new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig) {
+      new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig, EmailConnectorMock.aMock) {
       override val logger: LoggerLike = mockLogger
     }
   }
@@ -58,6 +59,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   private val loggedInUser = "loggedin@example.com"
+  private val anotherAdminUser = "admin@example.com"
   private val firstSecret = aSecret("secret1")
   private val secondSecret = aSecret("secret2")
   private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
@@ -152,11 +154,15 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   "addClientSecret" should {
     val applicationId = randomUUID()
-    val applicationData = anApplicationData(applicationId)
-    val secretRequest = ClientSecretRequest("secret-1")
+    val applicationData = anApplicationData(
+      applicationId,
+      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR), Collaborator(anotherAdminUser, ADMINISTRATOR))
+    )
+    val secretRequest = ClientSecretRequest(loggedInUser)
 
-    "add the client secret and return it unmasked in the name" in new Setup {
+    "add the client secret and return it unmasked" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
 
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
@@ -180,11 +186,33 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result.clientSecrets.last.secret shouldBe Some(newSecretValue)
       result.clientSecrets.last.name shouldBe maskedSecretValue
 
-      AuditServiceMock.Audit.verifyCalled(
+      AuditServiceMock.Audit.verifyCalledWith(
         ClientSecretAdded,
         Map("applicationId" -> applicationId.toString, "newClientSecret" -> maskedSecretValue, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
+    }
+
+    "send a notification to the other admins" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
+      AuditServiceMock.Audit.thenReturnSuccess()
+
+      val newSecretValue: String = "secret3"
+      val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = Some(newSecretValue.bcrypt))
+      ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
+
+      val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
+      val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
+      val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
+      ApplicationRepoMock.AddClientSecret.thenReturn(eqTo(applicationId), *)(applicationWithNewClientSecret)
+
+      await(underTest.addClientSecret(applicationId, secretRequest))
+
+      EmailConnectorMock.SendAddedClientSecretNotification
+        .verifyCalledWith(secretRequest.actorEmailAddress, newSecretValue, applicationData.name, Set(anotherAdminUser))
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -208,23 +236,25 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "delete client secrets" should {
-
     val applicationId = randomUUID()
-    val applicationData = anApplicationData(applicationId)
+    val applicationData = anApplicationData(
+      applicationId,
+      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR), Collaborator(anotherAdminUser, ADMINISTRATOR))
+    )
 
     "remove a client secret form an app with more than one client secret" in new Setup {
-
       val secretsToRemove = List("secret1")
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
 
       AuditServiceMock.Audit.thenReturnSuccessWhen(
         ClientSecretRemoved,
         Map("applicationId" -> applicationId.toString, "removedClientSecret" -> secretsToRemove.head)
       )
 
-      val result = await(underTest.deleteClientSecrets(applicationId, secretsToRemove))
+      val result = await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove))
 
       val savedApp = ApplicationRepoMock.Save.verifyCalled()
       val updatedClientSecrets = savedApp.tokens.production.clientSecrets
@@ -238,13 +268,26 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       )
     }
 
+    "send a notification to the other admins" in new Setup {
+      val secretsToRemove = List("secret1")
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
+      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
+      AuditServiceMock.Audit.thenReturnSuccess()
+
+      await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove))
+
+      EmailConnectorMock.SendRemovedClientSecretNotification
+        .verifyCalledWith(loggedInUser, "secret1", applicationData.name, Set(anotherAdminUser))
+    }
+
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
 
       val secretsToRemove = List("secret1", "secret2")
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[IllegalArgumentException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
+      intercept[IllegalArgumentException](await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
       AuditServiceMock.Audit.verifyNeverCalled()
@@ -255,7 +298,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
-      intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
+      intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
       AuditServiceMock.Audit.verifyNeverCalled()
@@ -266,7 +309,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, secretsToRemove)))
+      intercept[NotFoundException](await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
       AuditServiceMock.Audit.verifyNeverCalled()

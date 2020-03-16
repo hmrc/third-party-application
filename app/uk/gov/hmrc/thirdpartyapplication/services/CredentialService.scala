@@ -22,7 +22,9 @@ import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
 import play.api.{Logger, LoggerLike}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
@@ -37,7 +39,8 @@ import scala.util.control.NonFatal
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   clientSecretService: ClientSecretService,
-                                  config: CredentialConfig) {
+                                  config: CredentialConfig,
+                                  emailConnector: EmailConnector) {
 
   val clientSecretLimit = config.clientSecretLimit
   val logger: LoggerLike = Logger
@@ -62,13 +65,19 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
       updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      notificationRecipients = existingApp.admins.filterNot(_.emailAddress == secretRequest.actorEmailAddress).map(_.emailAddress)
+      _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.secret, existingApp.name, notificationRecipients)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
   }
 
-  def deleteClientSecrets(id: UUID, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-
-    def audit(clientSecret: ClientSecret) =
+  def deleteClientSecrets(id: UUID, actorEmailAddress: String, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+    def audit(clientSecret: ClientSecret): Future[AuditResult] =
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString, "removedClientSecret" -> clientSecret.secret))
+
+    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HttpResponse] = {
+      val notificationRecipients = app.admins.filterNot(_.emailAddress == actorEmailAddress).map(_.emailAddress)
+      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.secret, app.name, notificationRecipients)
+    }
 
     def updateApp(app: ApplicationData): (ApplicationData, Set[ClientSecret]) = {
       val numberOfSecretsToDelete = secrets.length
@@ -92,6 +101,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       (updatedApp, removedSecrets) = updateApp(app)
       _ <- applicationRepository.save(updatedApp)
       _ <- Future.traverse(removedSecrets)(audit)
+      _ <- Future.traverse(removedSecrets)(sendNotification(_, app))
     } yield ApplicationTokenResponse(updatedApp.tokens.production)
   }
 
