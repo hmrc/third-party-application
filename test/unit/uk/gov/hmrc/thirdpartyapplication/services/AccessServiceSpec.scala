@@ -29,6 +29,8 @@ import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 class AccessServiceSpec extends AsyncHmrcSpec {
 
   "Access service update scopes function" should {

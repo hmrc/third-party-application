@@ -31,13 +31,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatApiIdentif
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)
+class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
-    MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats) {
+    MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats
+  ) {
 
   def searchCollaborators(context: String, version: String, partialEmail: Option[String]): Future[List[String]] = {
     val builder = collection.BatchCommands.AggregationFramework

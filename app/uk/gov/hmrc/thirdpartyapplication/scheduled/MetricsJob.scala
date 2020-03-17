@@ -16,23 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import javax.inject.{Singleton, Inject}
+import javax.inject.{Inject, Singleton}
 import org.joda.time.Duration
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.metrix.MetricOrchestrator
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{FiniteDuration, _}
+import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-
 import scala.language.postfixOps
 
 @Singleton
 class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
                            metricOrchestrator: MetricOrchestrator,
-                           jobConfig: MetricsJobConfig) extends ScheduledMongoJob {
+                           jobConfig: MetricsJobConfig)
+                          (implicit val ec: ExecutionContext) extends ScheduledMongoJob {
 
   override def name: String = "MetricsJob"
   override def interval: FiniteDuration = jobConfig.interval

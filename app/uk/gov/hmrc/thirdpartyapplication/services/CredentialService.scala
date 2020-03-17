@@ -29,15 +29,14 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
 class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   clientSecretService: ClientSecretService,
-                                  config: CredentialConfig) {
+                                  config: CredentialConfig)(implicit val ec: ExecutionContext) {
 
   val clientSecretLimit = config.clientSecretLimit
   val logger: LoggerLike = Logger

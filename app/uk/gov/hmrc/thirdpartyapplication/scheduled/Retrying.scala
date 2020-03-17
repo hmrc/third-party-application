@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import akka.actor.ActorSystem
 import akka.pattern.after
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
 
 // Taken from https://gist.github.com/viktorklang/9414163
 
 trait Retrying {
+  implicit def ec: ExecutionContext
   implicit val actorSystem: ActorSystem
 
   def retry[T](f: => Future[T], delay: FiniteDuration, retries: Int = 0): Future[T] = {

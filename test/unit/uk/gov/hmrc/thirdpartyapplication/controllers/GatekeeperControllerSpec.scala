@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, Gatekeepe
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 

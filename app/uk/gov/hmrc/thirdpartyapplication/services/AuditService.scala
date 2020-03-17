@@ -30,11 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag, Sta
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AuditService @Inject()(val auditConnector: AuditConnector) {
+class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec: ExecutionContext) {
 
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     audit(action, data, Map.empty)

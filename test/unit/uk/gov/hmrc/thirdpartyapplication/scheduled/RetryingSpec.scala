@@ -22,10 +22,10 @@ import play.api.test.Helpers.running
 import uk.gov.hmrc.thirdpartyapplication.scheduled.Retrying
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration._
 
-class RetryingSpec extends AsyncHmrcSpec with Retrying{
+class RetryingSpec(implicit val ec: ExecutionContext) extends AsyncHmrcSpec with Retrying{
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
