@@ -31,10 +31,11 @@ class EmailConnectorSpec extends ConnectorSpec {
   private val hubTestTitle = "Unit Test Hub Title"
   private val hubUrl = "http://localhost:9685"
   private val hubLink = s"$hubUrl/developer/registration"
+  private val environmentName = "sandbox"
 
   trait Setup {
     val mockHttpClient = mock[HttpClient]
-    val config = EmailConfig(baseUrl, hubUrl, hubTestTitle)
+    val config = EmailConfig(baseUrl, hubUrl, hubTestTitle, environmentName)
     val connector = new EmailConnector(mockHttpClient, config)
 
     def emailWillReturn(result: Future[HttpResponse]) = {
@@ -213,6 +214,44 @@ class EmailConnectorSpec extends ConnectorSpec {
       await(connector.sendApplicationDeletedNotification(application, adminEmail1, expectedToEmails))
 
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send added client secret notification email" in new Setup {
+      val expectedTemplateId = "apiAddedClientSecretNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val clientSecretName: String = "***cret"
+      val expectedParameters: Map[String, String] = Map(
+        "actorEmailAddress" -> adminEmail1,
+        "clientSecretEnding" -> "cret",
+        "applicationName" -> application,
+        "environmentName" -> environmentName,
+        "developerHubTitle" -> hubTestTitle
+      )
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendAddedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
+
+      val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      verifyEmailCalled(expectedRequest)
+    }
+
+    "send removed client secret notification email" in new Setup {
+      val expectedTemplateId = "apiRemovedClientSecretNotification"
+      val expectedToEmails = Set(adminEmail1, adminEmail2)
+      val clientSecretName: String = "***cret"
+      val expectedParameters: Map[String, String] = Map(
+        "actorEmailAddress" -> adminEmail1,
+        "clientSecretEnding" -> "cret",
+        "applicationName" -> application,
+        "environmentName" -> environmentName,
+        "developerHubTitle" -> hubTestTitle
+      )
+      emailWillReturn(Future(HttpResponse(OK)))
+
+      await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
+
+      val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       verifyEmailCalled(expectedRequest)
     }
   }

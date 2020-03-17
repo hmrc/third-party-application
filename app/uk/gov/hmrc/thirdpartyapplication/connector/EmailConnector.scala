@@ -42,6 +42,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   val serviceUrl = config.baseUrl
   val devHubBaseUrl = config.devHubBaseUrl
   val devHubTitle = config.devHubTitle
+  val environmentName = config.environmentName
 
   val addedCollaboratorConfirmation = "apiAddedDeveloperAsCollaboratorConfirmation"
   val addedCollaboratorNotification = "apiAddedDeveloperAsCollaboratorNotification"
@@ -52,6 +53,8 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   val applicationApprovedNotification = "apiApplicationApprovedNotification"
   val applicationRejectedNotification = "apiApplicationRejectedNotification"
   val applicationDeletedNotification = "apiApplicationDeletedNotification"
+  val addedClientSecretNotification = "apiAddedClientSecretNotification"
+  val removedClientSecretNotification = "apiRemovedClientSecretNotification"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
@@ -106,6 +109,35 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
       Map("applicationName" -> application, "requestor" -> requesterEmail)))
   }
 
+  def sendAddedClientSecretNotification(actorEmailAddress: String,
+                                        clientSecretName: String,
+                                        applicationName: String,
+                                        recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+  }
+
+  def sendRemovedClientSecretNotification(actorEmailAddress: String,
+                                          clientSecretName: String,
+                                          applicationName: String,
+                                          recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+  }
+
+  private def sendClientSecretNotification(templateId: String,
+                                           actorEmailAddress: String,
+                                           clientSecretName: String,
+                                           applicationName: String,
+                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+    post(SendEmailRequest(recipients, templateId,
+      Map(
+        "actorEmailAddress" -> actorEmailAddress,
+        "clientSecretEnding" -> clientSecretName.takeRight(4), // scalastyle:off magic.number
+        "applicationName" -> applicationName,
+        "environmentName" -> environmentName,
+        "developerHubTitle" -> devHubTitle
+      )))
+  }
+
   private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     val url = s"$serviceUrl/hmrc/email"
 
@@ -129,4 +161,4 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   }
 }
 
-case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String)
+case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)

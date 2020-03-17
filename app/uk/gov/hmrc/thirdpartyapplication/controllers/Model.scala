@@ -25,9 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag}
 case class ValidationRequest(clientId: String, clientSecret: String)
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[UUID])
 
-case class ClientSecretRequest(name: String)
+case class ClientSecretRequest(actorEmailAddress: String)
 
-case class DeleteClientSecretsRequest(secrets: List[String])
+case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
 
 case class UpliftRequest(applicationName: String, requestedByEmailAddress: String)
 
