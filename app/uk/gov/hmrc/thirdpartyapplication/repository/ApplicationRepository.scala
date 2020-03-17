@@ -142,6 +142,13 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def addClientSecret(applicationId: UUID, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$push" -> Json.obj("tokens.production.clientSecrets" -> Json.toJson(clientSecret))))
 
+  def updateClientSecretHash(applicationId: UUID, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
+    findAndUpdate(
+      Json.obj("id" -> applicationId.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
+      Json.obj("$set" -> Json.obj("tokens.production.clientSecrets.$.hashedSecret" -> hashedSecret)),
+      fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+
   def recordClientSecretUsage(applicationId: String, clientSecret: String): Future[ApplicationData] =
     findAndUpdate(
       Json.obj("id" -> applicationId, "tokens.production.clientSecrets.secret" -> clientSecret),
