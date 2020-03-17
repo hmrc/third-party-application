@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
@@ -55,7 +56,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   private def aSecret(secret: String): ClientSecret = {
-    ClientSecret("", secret, hashedSecret = None)
+    ClientSecret(maskSecret(secret), secret, hashedSecret = None)
   }
 
   private val loggedInUser = "loggedin@example.com"
@@ -212,7 +213,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.addClientSecret(applicationId, secretRequest))
 
       EmailConnectorMock.SendAddedClientSecretNotification
-        .verifyCalledWith(secretRequest.actorEmailAddress, newSecretValue, applicationData.name, Set(anotherAdminUser))
+        .verifyCalledWith(secretRequest.actorEmailAddress, maskedSecretValue, applicationData.name, Set(anotherAdminUser))
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -243,7 +244,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     )
 
     "remove a client secret form an app with more than one client secret" in new Setup {
-      val secretsToRemove = List("secret1")
+      val secretsToRemove = List(firstSecret.secret)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
@@ -269,7 +270,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "send a notification to the other admins" in new Setup {
-      val secretsToRemove = List("secret1")
+      val secretsToRemove = List(firstSecret.secret)
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
@@ -278,7 +279,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove))
 
       EmailConnectorMock.SendRemovedClientSecretNotification
-        .verifyCalledWith(loggedInUser, "secret1", applicationData.name, Set(anotherAdminUser))
+        .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(anotherAdminUser))
     }
 
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {

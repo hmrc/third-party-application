@@ -220,7 +220,7 @@ class EmailConnectorSpec extends ConnectorSpec {
     "send added client secret notification email" in new Setup {
       val expectedTemplateId = "apiAddedClientSecretNotification"
       val expectedToEmails = Set(adminEmail1, adminEmail2)
-      val clientSecret: String = "secret"
+      val clientSecretName: String = "***cret"
       val expectedParameters: Map[String, String] = Map(
         "actorEmailAddress" -> adminEmail1,
         "clientSecretEnding" -> "cret",
@@ -230,7 +230,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       )
       emailWillReturn(Future(HttpResponse(OK)))
 
-      await(connector.sendAddedClientSecretNotification(adminEmail1, clientSecret, application, expectedToEmails))
+      await(connector.sendAddedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
 
       val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       verifyEmailCalled(expectedRequest)
@@ -239,7 +239,7 @@ class EmailConnectorSpec extends ConnectorSpec {
     "send removed client secret notification email" in new Setup {
       val expectedTemplateId = "apiRemovedClientSecretNotification"
       val expectedToEmails = Set(adminEmail1, adminEmail2)
-      val clientSecret: String = "secret"
+      val clientSecretName: String = "***cret"
       val expectedParameters: Map[String, String] = Map(
         "actorEmailAddress" -> adminEmail1,
         "clientSecretEnding" -> "cret",
@@ -249,7 +249,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       )
       emailWillReturn(Future(HttpResponse(OK)))
 
-      await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecret, application, expectedToEmails))
+      await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
 
       val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       verifyEmailCalled(expectedRequest)

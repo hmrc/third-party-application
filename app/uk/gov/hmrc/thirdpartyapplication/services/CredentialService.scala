@@ -66,7 +66,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.filterNot(_.emailAddress == secretRequest.actorEmailAddress).map(_.emailAddress)
-      _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.secret, existingApp.name, notificationRecipients)
+      _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
   }
 
@@ -76,7 +76,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
     def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HttpResponse] = {
       val notificationRecipients = app.admins.filterNot(_.emailAddress == actorEmailAddress).map(_.emailAddress)
-      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.secret, app.name, notificationRecipients)
+      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, notificationRecipients)
     }
 
     def updateApp(app: ApplicationData): (ApplicationData, Set[ClientSecret]) = {

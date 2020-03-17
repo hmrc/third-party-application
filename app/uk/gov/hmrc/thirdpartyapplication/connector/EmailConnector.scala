@@ -110,28 +110,28 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   }
 
   def sendAddedClientSecretNotification(actorEmailAddress: String,
-                                        clientSecret: String,
+                                        clientSecretName: String,
                                         applicationName: String,
                                         recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecret, applicationName, recipients)
+    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
   }
 
   def sendRemovedClientSecretNotification(actorEmailAddress: String,
-                                          clientSecret: String,
+                                          clientSecretName: String,
                                           applicationName: String,
                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
-    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecret, applicationName, recipients)
+    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
   }
 
   private def sendClientSecretNotification(templateId: String,
                                            actorEmailAddress: String,
-                                           clientSecret: String,
+                                           clientSecretName: String,
                                            applicationName: String,
                                            recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
     post(SendEmailRequest(recipients, templateId,
       Map(
         "actorEmailAddress" -> actorEmailAddress,
-        "clientSecretEnding" -> clientSecret.takeRight(4), // scalastyle:off magic.number
+        "clientSecretEnding" -> clientSecretName.takeRight(4), // scalastyle:off magic.number
         "applicationName" -> applicationName,
         "environmentName" -> environmentName,
         "developerHubTitle" -> devHubTitle
