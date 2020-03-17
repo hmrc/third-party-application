@@ -25,13 +25,14 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class AccessController @Inject()(accessService: AccessService,
                                  val authConnector: AuthConnector,
                                  val applicationService: ApplicationService,
-                                 val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
+                                 val authConfig: AuthConfig)(
+                                implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
 
   def readScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
     accessService.readScopes(applicationId) map { scopeResponse =>

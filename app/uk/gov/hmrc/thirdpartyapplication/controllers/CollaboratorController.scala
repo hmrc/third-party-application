@@ -22,10 +22,10 @@ import play.api.mvc._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class CollaboratorController @Inject()(subscriptionService: SubscriptionService) extends CommonController {
+class CollaboratorController @Inject()(subscriptionService: SubscriptionService)(implicit val ec: ExecutionContext) extends CommonController {
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

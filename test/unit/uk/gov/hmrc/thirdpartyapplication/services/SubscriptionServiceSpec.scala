@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiDefinitionConnectorMockModule
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {

@@ -28,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.time.DateTimeUtils
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,7 +35,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationExpiryJobLockKeeper,
                                             applicationRepository: ApplicationRepository,
                                             stateHistoryRepository: StateHistoryRepository,
-                                            jobConfig: UpliftVerificationExpiryJobConfig) extends ScheduledMongoJob {
+                                            jobConfig: UpliftVerificationExpiryJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob {
 
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity
 

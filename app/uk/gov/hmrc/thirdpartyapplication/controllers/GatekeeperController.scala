@@ -26,11 +26,15 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, InvalidStateTransition, Unblocked}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class GatekeeperController @Inject()(val authConnector: AuthConnector, val applicationService: ApplicationService,
-  gatekeeperService: GatekeeperService, val authConfig: AuthConfig) extends CommonController with AuthorisationWrapper {
+class GatekeeperController @Inject()(
+                                      val authConnector: AuthConnector,
+                                      val applicationService: ApplicationService,
+                                      gatekeeperService: GatekeeperService,
+                                      val authConfig: AuthConfig)(
+                                      implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'"))

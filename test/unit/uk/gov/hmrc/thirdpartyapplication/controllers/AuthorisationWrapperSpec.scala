@@ -38,10 +38,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class AuthorisationWrapperSpec extends ControllerSpec {
+class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
   import play.api.test.Helpers._
 
@@ -52,6 +54,7 @@ class AuthorisationWrapperSpec extends ControllerSpec {
 
   trait Setup {
     val underTest = new AuthorisationWrapper {
+      implicit val ec: ExecutionContext = executionContext
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]

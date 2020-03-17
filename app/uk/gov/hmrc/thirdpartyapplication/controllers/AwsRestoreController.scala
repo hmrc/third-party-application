@@ -20,10 +20,10 @@ import javax.inject.{Inject, Singleton}
 import play.api.mvc.Action
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class AwsRestoreController @Inject()(awsRestoreService: AwsRestoreService) extends CommonController {
+class AwsRestoreController @Inject()(awsRestoreService: AwsRestoreService)(implicit val ec: ExecutionContext) extends CommonController {
 
   def restoreAwsData() = Action.async { implicit request =>
     awsRestoreService.restoreData().map(_ => NoContent)

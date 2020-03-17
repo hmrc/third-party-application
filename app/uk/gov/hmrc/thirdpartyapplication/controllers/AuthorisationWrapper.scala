@@ -33,10 +33,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import play.api.http.HeaderNames.AUTHORIZATION
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 trait AuthorisationWrapper {
+  implicit def ec: ExecutionContext
 
   val authConnector: AuthConnector
   val applicationService: ApplicationService

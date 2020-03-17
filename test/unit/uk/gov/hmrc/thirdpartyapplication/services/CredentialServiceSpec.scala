@@ -39,6 +39,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMoc
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {

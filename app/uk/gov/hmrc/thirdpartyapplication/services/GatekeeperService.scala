@@ -27,13 +27,12 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, 
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, Unblocked, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, Unblocked, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 @Singleton
@@ -42,7 +41,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  applicationService: ApplicationService) {
+                                  applicationService: ApplicationService)(implicit val ec: ExecutionContext) {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(id: UUID) = new InconsistentDataState(s"App not found for id: $id")

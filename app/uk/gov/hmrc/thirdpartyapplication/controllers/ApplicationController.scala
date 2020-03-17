@@ -36,9 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Try}
 
 @Singleton
@@ -47,7 +46,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
-                                      val authConfig: AuthConfig, gatekeeperService: GatekeeperService) extends CommonController with AuthorisationWrapper {
+                                      val authConfig: AuthConfig,
+                                      gatekeeperService: GatekeeperService)
+                                     (implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs

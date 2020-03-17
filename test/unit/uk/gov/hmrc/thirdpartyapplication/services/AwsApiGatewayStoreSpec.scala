@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AwsApiGatewayStore
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 
