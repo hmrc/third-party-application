@@ -25,6 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.time.DateTimeUtils
 
+import scala.util.{Failure, Success}
+
 @Singleton
 class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
@@ -37,7 +39,7 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
     ClientSecret(
       name = maskSecret(secretValue),
       secret = secretValue,
-      hashedSecret = Some(hashSecret(secretValue)))
+      hashedSecret = hashSecret(secretValue))
   }
 
   def hashSecret(secret: String): String = {
@@ -54,6 +56,15 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
     hashedValue
   }
+
+  def clientSecretIsValid(secret: String, candidateClientSecrets: Seq[ClientSecret]): Option[ClientSecret] =
+    candidateClientSecrets.find(clientSecret => {
+      secret.isBcryptedSafe(clientSecret.hashedSecret) match {
+        case Success(result) => result
+        case Failure(_) => false
+      }
+    })
+
 }
 
 object ClientSecretService {

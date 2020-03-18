@@ -45,7 +45,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   private val requestedByEmail = "john.smith@example.com"
 
-  private def aSecret(secret: String) = ClientSecret(secret, secret, hashedSecret = None)
+  private def aSecret(secret: String) = ClientSecret(secret, secret, hashedSecret = "hashed-secret")
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
