@@ -35,16 +35,17 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           metricsJobConfig: MetricsJobConfig,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
+                          hashExistingClientSecretsJob: HashExistingClientSecretsJob,
                           apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
     val mJob = if (metricsJobConfig.enabled) Seq(metricsJob) else Seq.empty
-    val bcryptJob = Seq(bcryptPerformanceMeasureJob)
+    val bcryptJobs = Seq(bcryptPerformanceMeasureJob, hashExistingClientSecretsJob)
 
     // TODO : MetricsJob optional?
-    upliftJob ++ mJob ++ bcryptJob
+    upliftJob ++ mJob ++ bcryptJobs
   }
 
   onStart(app)

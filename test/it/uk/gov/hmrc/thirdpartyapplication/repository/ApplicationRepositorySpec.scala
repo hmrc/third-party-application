@@ -1136,6 +1136,50 @@ class ApplicationRepositorySpec
     }
   }
 
+  "updateClientSecretHash" should {
+    "populate the hashedSecret field if it was not previously present" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = None)
+
+      val savedApplication = await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretHash(applicationId, clientSecret.id, "hashed-secret"))
+
+      savedApplication.tokens.production.clientSecrets.head.hashedSecret should be (None)
+      updatedApplication.tokens.production.clientSecrets.head.hashedSecret should be (Some("hashed-secret"))
+    }
+
+    "overwrite an existing hashedSecretField" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = Some("old-hashed-secret"))
+
+      val savedApplication = await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretHash(applicationId, clientSecret.id, "new-hashed-secret"))
+
+      savedApplication.tokens.production.clientSecrets.head.hashedSecret should be (Some("old-hashed-secret"))
+      updatedApplication.tokens.production.clientSecrets.head.hashedSecret should be (Some("new-hashed-secret"))
+    }
+
+    "update correct client secret where there are multiple" in {
+      val applicationId = UUID.randomUUID()
+
+      val clientSecret1 = ClientSecret("secret-name-1", "secret-value-1", hashedSecret = Some("old-hashed-secret-1"))
+      val clientSecret2 = ClientSecret("secret-name-2", "secret-value-2", hashedSecret = Some("old-hashed-secret-2"))
+      val clientSecret3 = ClientSecret("secret-name-3", "secret-value-3", hashedSecret = Some("old-hashed-secret-3"))
+
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret1, clientSecret2, clientSecret3))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretHash(applicationId, clientSecret2.id, "new-hashed-secret-2"))
+
+      val updatedClientSecrets = updatedApplication.tokens.production.clientSecrets
+      updatedClientSecrets.find(_.id == clientSecret2.id).get.hashedSecret should be (Some("new-hashed-secret-2"))
+
+      updatedClientSecrets.find(_.id == clientSecret1.id).get.hashedSecret should be (Some("old-hashed-secret-1"))
+      updatedClientSecrets.find(_.id == clientSecret3.id).get.hashedSecret should be (Some("old-hashed-secret-3"))
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
