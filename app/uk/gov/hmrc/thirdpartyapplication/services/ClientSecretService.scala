@@ -18,12 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import com.github.t3hnar.bcrypt._
 import javax.inject.{Inject, Singleton}
-import org.joda.time.Duration
 import play.api.Logger
+import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.time.DateTimeUtils
 
 @Singleton
@@ -41,7 +40,7 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
       hashedSecret = Some(hashSecret(secretValue)))
   }
 
-  private def hashSecret(secret: String): String = {
+  def hashSecret(secret: String): String = {
     /*
      * Measure the time it takes to perform the hashing process - need to ensure we tune the work factor so that we don't introduce too much delay for
      * legitimate users.
