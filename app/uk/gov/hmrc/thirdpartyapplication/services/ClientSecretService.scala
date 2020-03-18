@@ -25,7 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.time.DateTimeUtils
 
-import scala.util.{Failure, Success}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.{Future, blocking}
+import scala.util.Success
 
 @Singleton
 class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
@@ -34,7 +36,6 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
   def generateClientSecret(): ClientSecret = {
     val secretValue = clientSecretValueGenerator()
-
 
     ClientSecret(
       name = maskSecret(secretValue),
@@ -57,14 +58,27 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
     hashedValue
   }
 
-  def clientSecretIsValid(secret: String, candidateClientSecrets: Seq[ClientSecret]): Option[ClientSecret] =
-    candidateClientSecrets.find(clientSecret => {
-      secret.isBcryptedSafe(clientSecret.hashedSecret) match {
-        case Success(result) => result
-        case Failure(_) => false
-      }
-    })
+  def clientSecretIsValid(secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
 
+    /*
+     * As bcrypt operations are expensive, and we potentially need to do multiple here, we need to make use of some concurrency.
+     * We do need to be mindful of the amount of concurrent traffic we might see, and therefore how many threads we spin up.
+     */
+    val checks: Future[Seq[(Boolean, ClientSecret)]] = Future.sequence(
+      candidateClientSecrets.map(clientSecret => {
+        Future {
+          blocking {
+            secret.isBcryptedSafe(clientSecret.hashedSecret) match {
+              case Success(result)  => (result, clientSecret)
+              case _                => (false, clientSecret)
+            }
+          }
+        }
+      })
+    )
+
+    checks.map(seq => seq.find(_._1).map(_._2))
+  }
 }
 
 object ClientSecretService {

@@ -19,11 +19,13 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretService, ClientSecretServiceConfig}
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-class ClientSecretServiceSpec extends HmrcSpec {
+class ClientSecretServiceSpec extends AsyncHmrcSpec {
 
-  val underTest = new ClientSecretService(ClientSecretServiceConfig(5))
+  val fastWorkFactor = 5
+
+  val underTest = new ClientSecretService(ClientSecretServiceConfig(fastWorkFactor))
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
@@ -42,20 +44,21 @@ class ClientSecretServiceSpec extends HmrcSpec {
   }
 
   "clientSecretIsValid" should {
-    val fooSecret = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt)
-    val barSecret = ClientSecret(name = "secret-2", secret = "bar", hashedSecret = "bar".bcrypt)
-    val bazSecret = ClientSecret(name = "secret-3", secret = "baz", hashedSecret = "baz".bcrypt)
+    val fooSecret = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor))
+    val barSecret = ClientSecret(name = "secret-2", secret = "bar", hashedSecret = "bar".bcrypt(fastWorkFactor))
+    val bazSecret = ClientSecret(name = "secret-3", secret = "baz", hashedSecret = "baz".bcrypt(fastWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in {
-      val matchingSecret = underTest.clientSecretIsValid("bar", Seq(fooSecret, barSecret, bazSecret))
+      val matchingSecret = await(underTest.clientSecretIsValid("bar", Seq(fooSecret, barSecret, bazSecret)))
 
       matchingSecret should be (Some(barSecret))
     }
 
     "return None if the secret value provided does not match" in {
-      val matchingSecret = underTest.clientSecretIsValid("foobar", Seq(fooSecret, barSecret, bazSecret))
+      val matchingSecret = await(underTest.clientSecretIsValid("foobar", Seq(fooSecret, barSecret, bazSecret)))
 
       matchingSecret should be (None)
     }
+
   }
 }
