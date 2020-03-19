@@ -24,6 +24,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 import com.github.t3hnar.bcrypt._
 
+import scala.concurrent.Future
+
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   object ClientSecretServiceMock {
@@ -40,6 +42,14 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
         val secret = UUID.randomUUID().toString
         when(aMock.generateClientSecret()).thenReturn(ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt))
       }
+    }
+
+    object ClientSecretIsValid {
+      def thenReturnValidationResult(secret: String, candidateClientSecrets: Seq[ClientSecret])(matchingClientSecret: ClientSecret) =
+        when(aMock.clientSecretIsValid(secret, candidateClientSecrets)).thenReturn(Future.successful(Some(matchingClientSecret)))
+
+      def noMatchingClientSecret(secret: String, candidateClientSecrets: Seq[ClientSecret]) =
+        when(aMock.clientSecretIsValid(secret, candidateClientSecrets)).thenReturn(Future.successful(None))
     }
   }
 
