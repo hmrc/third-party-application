@@ -197,7 +197,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       )
     }
 
-    "send a notification to the other admins" in new Setup {
+    "send a notification to all admins" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
       AuditServiceMock.Audit.thenReturnSuccess()
@@ -216,7 +216,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.addClientSecret(applicationId, secretRequest))
 
       EmailConnectorMock.SendAddedClientSecretNotification
-        .verifyCalledWith(secretRequest.actorEmailAddress, maskedSecretValue, applicationData.name, Set(anotherAdminUser))
+        .verifyCalledWith(secretRequest.actorEmailAddress, maskedSecretValue, applicationData.name, Set(loggedInUser, anotherAdminUser))
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -272,7 +272,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       )
     }
 
-    "send a notification to the other admins" in new Setup {
+    "send a notification to all admins" in new Setup {
       val secretsToRemove = List(firstSecret.secret)
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenAnswer((a: ApplicationData) => successful(a))
@@ -282,7 +282,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.deleteClientSecrets(applicationId, loggedInUser, secretsToRemove))
 
       EmailConnectorMock.SendRemovedClientSecretNotification
-        .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(anotherAdminUser))
+        .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(loggedInUser, anotherAdminUser))
     }
 
     "throw an IllegalArgumentException when requested to remove all secrets" in new Setup {
