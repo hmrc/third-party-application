@@ -20,6 +20,7 @@ import java.util.UUID
 
 import com.github.t3hnar.bcrypt._
 import javax.inject.{Inject, Singleton}
+import org.joda.time.DateTime
 import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
@@ -27,7 +28,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
-import scala.util.Success
+import scala.util.{Failure, Success}
 
 @Singleton
 class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
@@ -59,26 +60,22 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
   }
 
   def clientSecretIsValid(secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
-
-    /*
-     * As bcrypt operations are expensive, and we potentially need to do multiple here, we need to make use of some concurrency.
-     * We do need to be mindful of the amount of concurrent traffic we might see, and therefore how many threads we spin up.
-     */
-    val checks: Future[Seq[(Boolean, ClientSecret)]] = Future.sequence(
-      candidateClientSecrets.map(clientSecret => {
-        Future {
-          blocking {
+    Future {
+      blocking {
+        candidateClientSecrets
+          .sortWith(lastUsedOrdering)
+          .find(clientSecret => {
             secret.isBcryptedSafe(clientSecret.hashedSecret) match {
-              case Success(result)  => (result, clientSecret)
-              case _                => (false, clientSecret)
+              case Success(result) => result
+              case Failure(_) => false
             }
-          }
-        }
-      })
-    )
-
-    checks.map(seq => seq.find(_._1).map(_._2))
+          })
+      }
+    }
   }
+
+  def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean =
+    (first, second) => first.lastAccess.getOrElse(new DateTime(0)).isAfter(second.lastAccess.getOrElse(new DateTime(0)))
 }
 
 object ClientSecretService {

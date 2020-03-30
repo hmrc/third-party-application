@@ -20,6 +20,7 @@ import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretService, ClientSecretServiceConfig}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.time.DateTimeUtils
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec {
 
@@ -60,5 +61,31 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
       matchingSecret should be (None)
     }
 
+  }
+
+  "lastUsedOrdering" should {
+    val mostRecent = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now))
+    val middle = ClientSecret(name = "secret-2", secret = "bar", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(1)))
+    val agesAgo =
+      ClientSecret(name = "secret-3", secret = "baz", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(10)))
+
+    "sort client secrets by most recently used" in {
+      val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
+
+      sortedList.head should be (mostRecent)
+      sortedList(1) should be (middle)
+      sortedList(2) should be (agesAgo)
+    }
+
+    "sort client secrets with no last used date to the end" in {
+      val noLastUsedDate = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
+
+      val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
+
+      sortedList.head should be (mostRecent)
+      sortedList(1) should be (middle)
+      sortedList(2) should be (agesAgo)
+      sortedList(3) should be (noLastUsedDate)
+    }
   }
 }
