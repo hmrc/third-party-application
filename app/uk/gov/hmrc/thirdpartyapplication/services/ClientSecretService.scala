@@ -76,6 +76,10 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
   def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean =
     (first, second) => first.lastAccess.getOrElse(new DateTime(0)).isAfter(second.lastAccess.getOrElse(new DateTime(0)))
+
+  def requiresRehash(hashedSecret: String): Boolean = workFactorOfHash(hashedSecret) != config.hashFunctionWorkFactor
+
+  def workFactorOfHash(hashedSecret: String): Int = hashedSecret.split("\\$")(2).toInt
 }
 
 object ClientSecretService {

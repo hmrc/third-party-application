@@ -88,4 +88,27 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
       sortedList(3) should be (noLastUsedDate)
     }
   }
+
+  "requiresRehash" should {
+    "return true if work factor used on existing hash is different to current configuration" in {
+      val hashedSecret = "foo".bcrypt(fastWorkFactor + 1)
+
+      underTest.requiresRehash(hashedSecret) should be (true)
+    }
+
+    "return false if work factor used on existing hash matches current configuration" in {
+      val hashedSecret = underTest.hashSecret("foo")
+
+      underTest.requiresRehash(hashedSecret) should be (false)
+    }
+  }
+
+  "workFactorOfHash" should {
+    "correctly identify the work factor used to hash a secret" in {
+      val workFactor = 6
+      val hashedSecret = "foo".bcrypt(workFactor)
+
+      underTest.workFactorOfHash(hashedSecret) should be (workFactor)
+    }
+  }
 }

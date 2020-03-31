@@ -42,7 +42,7 @@ class HashExistingClientSecretsJob @Inject()(val lockKeeper: HashExistingClientS
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     Logger.info(s"Running HashExistingClientSecretsJob")
-    applicationRepository.processAll(populateMissingHashes)
+    applicationRepository.processAll(updateHashedSecrets)
       .map(_ => RunningOfJobSuccessful)
       .recoverWith {
         case NonFatal(e) =>
@@ -51,9 +51,9 @@ class HashExistingClientSecretsJob @Inject()(val lockKeeper: HashExistingClientS
       }
   }
 
-  private def populateMissingHashes(app: ApplicationData): Unit = {
+  private def updateHashedSecrets(app: ApplicationData): Unit = {
     app.tokens.production.clientSecrets foreach { clientSecret =>
-      if (clientSecret.hashedSecret.isEmpty) {
+      if (clientSecretService.requiresRehash(clientSecret.hashedSecret)) {
         applicationRepository.updateClientSecretHash(app.id, clientSecret.id, clientSecretService.hashSecret(clientSecret.secret))
       }
     }
