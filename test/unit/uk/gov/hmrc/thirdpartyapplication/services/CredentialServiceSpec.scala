@@ -56,9 +56,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
-  private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(maskSecret(secret), secret, hashedSecret = None)
-  }
+  private def aSecret(secret: String): ClientSecret = ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt(4))
 
   private val loggedInUser = "loggedin@example.com"
   private val anotherAdminUser = "admin@example.com"
@@ -109,7 +107,9 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "return none when credentials don't match with an application" in new Setup {
       val applicationData = anApplicationData(randomUUID())
       val clientId = applicationData.tokens.production.clientId
+
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret("wrongSecret", applicationData.tokens.production.clientSecrets)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")).value)
 
@@ -117,34 +117,36 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe None
     }
 
-    "return environment when credentials match with an application" in new Setup {
+    "return application details when credentials match" in new Setup {
       val applicationData = anApplicationData(randomUUID())
       val updatedApplicationData = applicationData.copy(lastAccess = Some(DateTime.now))
       val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
       val clientId = applicationData.tokens.production.clientId
-      val applicationId = applicationData.id.toString
-      val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
+      val matchingClientSecret = applicationData.tokens.production.clientSecrets.head
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
-      ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationId, clientSecret)(updatedApplicationData)
+      ClientSecretServiceMock.ClientSecretIsValid
+        .thenReturnValidationResult(matchingClientSecret.secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
+      ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationData.id, matchingClientSecret.id)(updatedApplicationData)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)).value)
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, matchingClientSecret.secret)).value)
 
       result shouldBe Some(expectedApplicationResponse)
     }
 
-    "return environment but write log if updating usage date fails" in new Setup {
+    "return application details and write log if updating usage date fails" in new Setup {
       val applicationData = anApplicationData(randomUUID())
       val expectedApplicationResponse = ApplicationResponse(data = applicationData)
       val clientId = applicationData.tokens.production.clientId
-      val applicationId = applicationData.id.toString
-      val clientSecret = applicationData.tokens.production.clientSecrets.head.secret
+      val matchingClientSecret = applicationData.tokens.production.clientSecrets.head
       val thrownException = new RuntimeException
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
+      ClientSecretServiceMock.ClientSecretIsValid
+        .thenReturnValidationResult(matchingClientSecret.secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)
 
-      val result = await(underTest.validateCredentials(ValidationRequest(clientId, clientSecret)).value)
+      val result = await(underTest.validateCredentials(ValidationRequest(clientId, matchingClientSecret.secret)).value)
 
       val exceptionCaptor = ArgCaptor[Throwable]
       verify(mockLogger).warn(any[String], exceptionCaptor)
@@ -169,7 +171,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
       val hashedSecret = newSecretValue.bcrypt
-      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = Some(hashedSecret))
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = hashedSecret)
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
@@ -202,7 +204,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       val newSecretValue: String = "secret3"
       val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
-      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = Some(newSecretValue.bcrypt))
+      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = newSecretValue.bcrypt)
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
       val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
@@ -226,7 +228,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
-      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = None)))
+      val prodTokenWith5Secrets = environmentToken.copy(clientSecrets = List("1", "2", "3", "4", "5").map(v => ClientSecret(v, hashedSecret = "hashed-secret")))
       val applicationDataWith5Secrets = anApplicationData(applicationId).copy(tokens = ApplicationTokens(prodTokenWith5Secrets))
 
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)

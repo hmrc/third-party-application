@@ -149,9 +149,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)
 
-  def recordClientSecretUsage(applicationId: String, clientSecret: String): Future[ApplicationData] =
+  def recordClientSecretUsage(applicationId: UUID, clientSecretId: String): Future[ApplicationData] =
     findAndUpdate(
-      Json.obj("id" -> applicationId, "tokens.production.clientSecrets.secret" -> clientSecret),
+      Json.obj("id" -> applicationId, "tokens.production.clientSecrets.id" -> clientSecretId),
       Json.obj("$currentDate" -> Json.obj("tokens.production.clientSecrets.$.lastAccess" -> Json.obj("$type" -> "date"))),
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)

@@ -104,11 +104,6 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
-    def productionTokenIsValid(application: ApplicationData): Boolean = {
-      val token = application.tokens.production
-      token.clientId == validation.clientId && token.clientSecrets.exists(_.secret == validation.clientSecret)
-    }
-
     def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
       case NonFatal(e) =>
         logger.warn("Unable to update the client secret last access date", e)
@@ -116,9 +111,10 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     for {
-      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId)).filter(productionTokenIsValid)
+      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
+      matchedClientSecret <- OptionT(clientSecretService.clientSecretIsValid(validation.clientSecret, application.tokens.production.clientSecrets))
       updatedApplication <-
-        OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id.toString, validation.clientSecret)
+        OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
           .recover(recoverFromFailedUsageDateUpdate(application)))
     } yield ApplicationResponse(data = updatedApplication)
 

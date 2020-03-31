@@ -37,12 +37,12 @@ class HashExistingClientSecretsJob @Inject()(val lockKeeper: HashExistingClientS
                                              applicationRepository: ApplicationRepository) extends ScheduledMongoJob {
 
   override def name: String = "HashExistingClientSecrets"
-  override def initialDelay: FiniteDuration = FiniteDuration(5, TimeUnit.MINUTES) // scalastyle:off magic.number
+  override def initialDelay: FiniteDuration = FiniteDuration(2, TimeUnit.MINUTES) // scalastyle:off magic.number
   override def interval: FiniteDuration = FiniteDuration(24, TimeUnit.HOURS) // scalastyle:off magic.number
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     Logger.info(s"Running HashExistingClientSecretsJob")
-    applicationRepository.processAll(populateMissingHashes)
+    applicationRepository.processAll(updateHashedSecrets)
       .map(_ => RunningOfJobSuccessful)
       .recoverWith {
         case NonFatal(e) =>
@@ -51,9 +51,9 @@ class HashExistingClientSecretsJob @Inject()(val lockKeeper: HashExistingClientS
       }
   }
 
-  private def populateMissingHashes(app: ApplicationData): Unit = {
+  private def updateHashedSecrets(app: ApplicationData): Unit = {
     app.tokens.production.clientSecrets foreach { clientSecret =>
-      if (clientSecret.hashedSecret.isEmpty) {
+      if (clientSecretService.requiresRehash(clientSecret.hashedSecret)) {
         applicationRepository.updateClientSecretHash(app.id, clientSecret.id, clientSecretService.hashSecret(clientSecret.secret))
       }
     }

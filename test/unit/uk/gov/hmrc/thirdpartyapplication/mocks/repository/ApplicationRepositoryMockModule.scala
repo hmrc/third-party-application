@@ -229,8 +229,8 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def verifyNeverCalled() =
         ApplicationRepoMock.verify(never).recordClientSecretUsage(*,*)
 
-      def thenReturnWhen(applicationId: String, clientSecret: String)(applicationData: ApplicationData) =
-        when(aMock.recordClientSecretUsage(eqTo(applicationId),eqTo(clientSecret))).thenReturn(successful(applicationData))
+      def thenReturnWhen(applicationId: UUID, clientSecretId: String)(applicationData: ApplicationData) =
+        when(aMock.recordClientSecretUsage(eqTo(applicationId),eqTo(clientSecretId))).thenReturn(successful(applicationData))
 
       def thenFail(failWith: Throwable) =
         when(aMock.recordClientSecretUsage(*,*)).thenReturn(failed(failWith))
