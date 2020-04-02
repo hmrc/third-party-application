@@ -156,6 +156,14 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)
 
+  def deleteClientSecret(applicationId: UUID, clientSecretId: String): Future[ApplicationData] = {
+    findAndUpdate(
+      Json.obj("id" -> applicationId.toString),
+      Json.obj("$pull" -> Json.obj("tokens.production.clientSecrets" -> Json.obj("id" -> clientSecretId))),
+      fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+  }
+
   def fetchStandardNonTestingApps(): Future[List[ApplicationData]] = {
     find(s"$$and" -> Json.arr(
       Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)),

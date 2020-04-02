@@ -1169,6 +1169,26 @@ class ApplicationRepositorySpec
     }
   }
 
+  "deleteClientSecret" should {
+    "remove client secret with matching id" in {
+      val applicationId = UUID.randomUUID()
+
+      val clientSecretToRemove = ClientSecret("secret-name-1", "secret-value-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2 = ClientSecret("secret-name-2", "secret-value-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3 = ClientSecret("secret-name-3", "secret-value-3", hashedSecret = "old-hashed-secret-3")
+
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecretToRemove, clientSecret2, clientSecret3))))
+
+      val updatedApplication = await(applicationRepository.deleteClientSecret(applicationId, clientSecretToRemove.id))
+
+      val updatedClientSecrets = updatedApplication.tokens.production.clientSecrets
+      updatedClientSecrets.find(_.id == clientSecretToRemove.id) should be (None)
+      updatedClientSecrets.find(_.id == clientSecret2.id) should be (Some(clientSecret2))
+      updatedClientSecrets.find(_.id == clientSecret3.id) should be (Some(clientSecret3))
+    }
+
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
