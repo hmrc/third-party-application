@@ -69,6 +69,8 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
                            recipients: Set[String]): Future[HttpResponse] = {
         verify.sendRemovedClientSecretNotification(eqTo(actorEmailAddress), eqTo(clientSecret), eqTo(applicationName), eqTo(recipients))(*)
       }
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedClientSecretNotification(*, *, *, *)(*)
     }
   }
 }

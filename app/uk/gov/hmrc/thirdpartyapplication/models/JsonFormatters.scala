@@ -143,7 +143,8 @@ object JsonFormatters {
   implicit val formatOverridesResponse = Json.format[OverridesResponse]
   implicit val formatApplicationWithUpliftRequest = Json.format[ApplicationWithUpliftRequest]
   implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
-  implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretsRequest]
+  implicit val formatDeleteClientSecretsRequest = Json.format[DeleteClientSecretsRequest]
+  implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretRequest]
   implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (

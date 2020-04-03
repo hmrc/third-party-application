@@ -711,7 +711,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
-  "delete client secret" should {
+  "delete client secrets" should {
 
     val applicationId = UUID.randomUUID()
     val secrets = "ccc"
@@ -748,6 +748,48 @@ class ApplicationControllerSpec extends ControllerSpec
           .thenReturn(successful(tokenResponse))
 
         val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+        status(result) shouldBe SC_NO_CONTENT
+      })
+    }
+  }
+
+  "deleteClientSecret" should {
+
+    val applicationId = UUID.randomUUID()
+    val clientSecretId = UUID.randomUUID().toString
+    val actorEmailAddress = "actor@example.com"
+    val secretRequest = DeleteClientSecretRequest(actorEmailAddress)
+    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
+
+    "succeed with a 204 for a STANDARD application" in new Setup {
+
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
+        .thenReturn(successful(tokenResponse))
+
+      val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
+
+      status(result) shouldBe SC_NO_CONTENT
+    }
+
+    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
+        when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
+          .thenReturn(successful(tokenResponse))
+
+        val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
+
+        status(result) shouldBe SC_NO_CONTENT
+      })
+    }
+
+    "succeed with a 204 for a PRIVILEGED or ROPC application when the request originates outside gatekeeper" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
+        when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
+          .thenReturn(successful(tokenResponse))
+
+        val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
 
         status(result) shouldBe SC_NO_CONTENT
       })

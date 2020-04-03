@@ -103,6 +103,31 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     } yield ApplicationTokenResponse(updatedApp.tokens.production)
   }
 
+  def deleteClientSecret(applicationId: UUID,
+                         clientSecretId: String,
+                         actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+    def audit(applicationId: UUID, clientSecretId: String): Future[AuditResult] =
+      auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.toString, "removedClientSecret" -> clientSecretId))
+
+    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HttpResponse] = {
+      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
+    }
+
+    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecret =
+      application.tokens.production.clientSecrets
+        .find(_.id == clientSecretId)
+        .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]"))
+
+    for {
+      application <- fetchApp(applicationId)
+      clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
+      updatedApplication <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
+      _ <- audit(applicationId, clientSecretId)
+      _ <- sendNotification(clientSecretToUpdate, updatedApplication)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production)
+
+  }
+
   def validateCredentials(validation: ValidationRequest): OptionT[Future, ApplicationResponse] = {
     def recoverFromFailedUsageDateUpdate(application: ApplicationData): PartialFunction[Throwable, ApplicationData] = {
       case NonFatal(e) =>

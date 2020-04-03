@@ -163,6 +163,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
+  def deleteClientSecret(applicationId: java.util.UUID, clientSecretId: String) = {
+    Action.async(BodyParsers.parse.json) { implicit request =>
+      withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
+        credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
+      }
+    }
+  }
+
   def validateCredentials: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
     withJsonBody[ValidationRequest] { vr: ValidationRequest =>
       credentialService.validateCredentials(vr).value map {
