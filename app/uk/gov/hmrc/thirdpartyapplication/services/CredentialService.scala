@@ -113,15 +113,10 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
     }
 
-    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecret = {
-      val clientSecretToUpdate = application.tokens.production.clientSecrets.find(_.id == clientSecretId)
-
-      if(clientSecretToUpdate.isEmpty) {
-        throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]")
-      } else {
-        clientSecretToUpdate.get
-      }
-    }
+    def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecret =
+      application.tokens.production.clientSecrets
+        .find(_.id == clientSecretId)
+        .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]"))
 
     for {
       application <- fetchApp(applicationId)
