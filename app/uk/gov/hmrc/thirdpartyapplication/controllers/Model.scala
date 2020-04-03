@@ -27,6 +27,8 @@ case class ApplicationNameValidationRequest(applicationName: String, selfApplica
 
 case class ClientSecretRequest(actorEmailAddress: String)
 
+case class DeleteClientSecretRequest(actorEmailAddress: String)
+
 case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
 
 case class UpliftRequest(applicationName: String, requestedByEmailAddress: String)

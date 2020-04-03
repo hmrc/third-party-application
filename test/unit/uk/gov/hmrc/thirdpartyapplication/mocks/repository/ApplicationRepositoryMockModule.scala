@@ -22,9 +22,10 @@ import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, HasSucceeded, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
@@ -248,6 +249,24 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(applicationId: UUID, clientSecret: ClientSecret)(updatedApplication: ApplicationData) = {
         when(aMock.addClientSecret(applicationId, clientSecret)).thenReturn(successful(updatedApplication))
       }
+    }
+
+    object DeleteClientSecret {
+      def succeeds(application: ApplicationData, clientSecretId: String) = {
+        val otherClientSecrets = application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
+        val updatedApplication =
+          application
+            .copy(tokens =
+              ApplicationTokens(EnvironmentToken(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
+
+        when(aMock.deleteClientSecret(application.id, clientSecretId)).thenReturn(successful(updatedApplication))
+      }
+
+      def clientSecretNotFound(applicationId: UUID, clientSecretId: String) =
+        when(aMock.deleteClientSecret(applicationId, clientSecretId))
+          .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]"))
+
+      def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*, *)
     }
 
   }

@@ -320,6 +320,77 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
+  "deleteClientSecret" should {
+    val applicationId = randomUUID()
+    val applicationData = anApplicationData(
+      applicationId,
+      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR), Collaborator(anotherAdminUser, ADMINISTRATOR))
+    )
+
+    "remove a client secret form an app with more than one client secret" in new Setup {
+      val clientSecretIdToRemove: String = firstSecret.id
+
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
+      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
+
+      AuditServiceMock.Audit.thenReturnSuccessWhen(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> clientSecretIdToRemove)
+      )
+
+      val result = await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser))
+
+      val updatedClientSecrets = result.clientSecrets
+      updatedClientSecrets should have size environmentToken.clientSecrets.size - 1
+      updatedClientSecrets should not contain (firstSecret)
+
+      AuditServiceMock.Audit.verify(times(1))(
+        ClientSecretRemoved,
+        Map("applicationId" -> applicationId.toString, "removedClientSecret" -> clientSecretIdToRemove),
+        hc
+      )
+    }
+
+    "send a notification to all admins" in new Setup {
+      val clientSecretIdToRemove: String = firstSecret.id
+
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.DeleteClientSecret.succeeds(applicationData, clientSecretIdToRemove)
+      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
+      AuditServiceMock.Audit.thenReturnSuccess()
+
+      await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser))
+
+      EmailConnectorMock.SendRemovedClientSecretNotification
+        .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(loggedInUser, anotherAdminUser))
+    }
+
+    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
+      val clientSecretIdToRemove: String = firstSecret.id
+
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+
+      intercept[NotFoundException](await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser)))
+
+      ApplicationRepoMock.DeleteClientSecret.verifyNeverCalled()
+      AuditServiceMock.Audit.verifyNeverCalled()
+      EmailConnectorMock.SendRemovedClientSecretNotification.verifyNeverCalled()
+    }
+
+    "throw a NotFoundException when trying to delete a secret which does not exist" in new Setup {
+      val clientSecretIdToRemove = "notARealSecret"
+
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+
+      intercept[NotFoundException](await(underTest.deleteClientSecret(applicationId, clientSecretIdToRemove, loggedInUser)))
+
+      ApplicationRepoMock.DeleteClientSecret.verifyNeverCalled()
+      AuditServiceMock.Audit.verifyNeverCalled()
+      EmailConnectorMock.SendRemovedClientSecretNotification.verifyNeverCalled()
+    }
+  }
+
   private val requestedByEmail = "john.smith@example.com"
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
