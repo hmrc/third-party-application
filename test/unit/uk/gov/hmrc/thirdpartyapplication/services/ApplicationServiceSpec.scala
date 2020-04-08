@@ -79,6 +79,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val response = mock[HttpResponse]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector](withSettings.lenient())
     val mockGatekeeperService = mock[GatekeeperService]
+    val mockApiPlatformEventService = mock[ApiPlatformEventService](withSettings.lenient())
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
@@ -99,6 +100,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       mockStateHistoryRepository,
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
+      mockApiPlatformEventService,
       mockEmailConnector,
       mockTotpConnector,
       actorSystem,
@@ -117,6 +119,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(response))
+    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier])).thenReturn(successful(true))
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
                                                            subscriptions: List[APIIdentifier]) =

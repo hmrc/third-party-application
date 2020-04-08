@@ -271,3 +271,8 @@ object APIStatusJson {
   }
 
 }
+
+object ApplicationEventFormats {
+  implicit val actorFormats = Json.format[Actor]
+  implicit val teamMemberAddedEventFormats = Json.format[TeamMemberAddedEvent]
+}
