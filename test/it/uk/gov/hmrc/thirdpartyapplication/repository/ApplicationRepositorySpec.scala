@@ -1137,6 +1137,67 @@ class ApplicationRepositorySpec
     }
   }
 
+  "updateClientSecretName" should {
+    def namedClientSecret(id: String, name: String): ClientSecret =
+      ClientSecret(id = id, name = name, secret = UUID.randomUUID().toString, hashedSecret = "hashed-secret")
+    def clientSecretWithId(application: ApplicationData, clientSecretId: String): ClientSecret =
+      application.tokens.production.clientSecrets.find(_.id == clientSecretId).get
+    def otherClientSecrets(application: ApplicationData, clientSecretId: String): Seq[ClientSecret] =
+      application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
+
+    "populate the name where it was an empty String" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecretId = UUID.randomUUID().toString
+
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(namedClientSecret(clientSecretId, "")))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretName(applicationId, clientSecretId, "new-name"))
+
+      clientSecretWithId(updatedApplication, clientSecretId).name should be ("new-name")
+    }
+
+    "populate the name where it was Default" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecretId = UUID.randomUUID().toString
+
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(namedClientSecret(clientSecretId, "Default")))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretName(applicationId, clientSecretId, "new-name"))
+
+      clientSecretWithId(updatedApplication, clientSecretId).name should be ("new-name")
+    }
+
+    "populate the name where it was a masked String" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecretId = UUID.randomUUID().toString
+
+      await(applicationRepository.save(
+        anApplicationData(applicationId, clientSecrets = List(namedClientSecret(clientSecretId, "••••••••••••••••••••••••••••••••abc1")))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretName(applicationId, clientSecretId, "new-name"))
+
+      clientSecretWithId(updatedApplication, clientSecretId).name should be ("new-name")
+    }
+
+    "update correct client secret where there are multiple" in {
+      val applicationId = UUID.randomUUID()
+      val clientSecretId = UUID.randomUUID().toString
+
+      val clientSecret1 = namedClientSecret(UUID.randomUUID().toString, "secret-that-should-not-change")
+      val clientSecret2 = namedClientSecret(UUID.randomUUID().toString, "secret-that-should-not-change")
+      val clientSecret3 = namedClientSecret(clientSecretId, "secret-3")
+
+      await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret1, clientSecret2, clientSecret3))))
+
+      val updatedApplication = await(applicationRepository.updateClientSecretName(applicationId, clientSecretId, "new-name"))
+
+      clientSecretWithId(updatedApplication, clientSecretId).name should be ("new-name")
+      otherClientSecrets(updatedApplication, clientSecretId) foreach { otherSecret =>
+        otherSecret.name should be ("secret-that-should-not-change")
+      }
+    }
+  }
+
   "updateClientSecretHash" should {
     "overwrite an existing hashedSecretField" in {
       val applicationId = UUID.randomUUID()

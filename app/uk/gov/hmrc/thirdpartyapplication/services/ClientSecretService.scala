@@ -23,7 +23,6 @@ import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -39,7 +38,7 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
     val secretValue = clientSecretValueGenerator()
 
     ClientSecret(
-      name = maskSecret(secretValue),
+      name = secretValue.takeRight(4),
       secret = secretValue,
       hashedSecret = hashSecret(secretValue))
   }
@@ -80,16 +79,6 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
   def requiresRehash(hashedSecret: String): Boolean = workFactorOfHash(hashedSecret) != config.hashFunctionWorkFactor
 
   def workFactorOfHash(hashedSecret: String): Int = hashedSecret.split("\\$")(2).toInt
-}
-
-object ClientSecretService {
-
-  def maskSecret(secret: String): String = {
-    val SecretMask = "••••••••••••••••••••••••••••••••"
-    val SecretLastDigitsLength = 4
-    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
-  }
-
 }
 
 case class ClientSecretServiceConfig(hashFunctionWorkFactor: Int)
