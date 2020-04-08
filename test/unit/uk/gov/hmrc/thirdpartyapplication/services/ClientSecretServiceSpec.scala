@@ -34,9 +34,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
 
       generatedClientSecret.id.isEmpty should be (false)
       generatedClientSecret.secret.isEmpty should be (false)
-      generatedClientSecret.name.length should be (36)
-      generatedClientSecret.name take 32 should be ("•" * 32)
-      generatedClientSecret.name.slice(32, 36) should be (generatedClientSecret.secret takeRight 4)
+      generatedClientSecret.name should be (generatedClientSecret.secret takeRight 4)
 
       val hashedSecretCheck = generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret)
       hashedSecretCheck.isSuccess should be (true)
