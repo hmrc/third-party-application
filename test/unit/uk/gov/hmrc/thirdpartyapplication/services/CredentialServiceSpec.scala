@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService.maskSecret
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
@@ -56,17 +55,15 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
-  private def aSecret(secret: String): ClientSecret = ClientSecret(maskSecret(secret), secret, hashedSecret = secret.bcrypt(4))
+  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), secret, hashedSecret = secret.bcrypt(4))
 
   private val loggedInUser = "loggedin@example.com"
   private val anotherAdminUser = "admin@example.com"
   private val firstSecret = aSecret("secret1")
   private val secondSecret = aSecret("secret2")
   private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret))
-  private val firstSecretResponse = firstSecret.copy(name = "••••••••••••••••••••••••••••••••ret1")
-  private val secondSecretResponse = secondSecret.copy(name = "••••••••••••••••••••••••••••••••ret2")
   private val tokenResponse =
-    ApplicationTokenResponse("aaa", "bbb", List(ClientSecretResponse(firstSecretResponse), ClientSecretResponse(secondSecretResponse)))
+    ApplicationTokenResponse("aaa", "bbb", List(ClientSecretResponse(firstSecret), ClientSecretResponse(secondSecret)))
 
   "fetch credentials" should {
 
@@ -169,9 +166,9 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
 
       val newSecretValue: String = "secret3"
-      val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
+      val secretName: String = newSecretValue.takeRight(4)
       val hashedSecret = newSecretValue.bcrypt
-      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = hashedSecret)
+      val newClientSecret = ClientSecret(secretName, newSecretValue, hashedSecret = hashedSecret)
 
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
@@ -188,11 +185,11 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result.accessToken shouldBe environmentToken.accessToken
       result.clientSecrets.dropRight(1) shouldBe tokenResponse.clientSecrets
       result.clientSecrets.last.secret shouldBe Some(newSecretValue)
-      result.clientSecrets.last.name shouldBe maskedSecretValue
+      result.clientSecrets.last.name shouldBe secretName
 
       AuditServiceMock.Audit.verifyCalledWith(
         ClientSecretAdded,
-        Map("applicationId" -> applicationId.toString, "newClientSecret" -> maskedSecretValue, "clientSecretType" -> PRODUCTION.toString),
+        Map("applicationId" -> applicationId.toString, "newClientSecret" -> secretName, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
     }
@@ -203,8 +200,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val newSecretValue: String = "secret3"
-      val maskedSecretValue: String = s"••••••••••••••••••••••••••••••••ret3"
-      val newClientSecret = ClientSecret(maskedSecretValue, newSecretValue, hashedSecret = newSecretValue.bcrypt)
+      val secretName: String = newSecretValue.takeRight(4)
+      val newClientSecret = ClientSecret(secretName, newSecretValue, hashedSecret = newSecretValue.bcrypt)
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newSecretValue)
 
       val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
@@ -216,7 +213,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       await(underTest.addClientSecret(applicationId, secretRequest))
 
       EmailConnectorMock.SendAddedClientSecretNotification
-        .verifyCalledWith(secretRequest.actorEmailAddress, maskedSecretValue, applicationData.name, Set(loggedInUser, anotherAdminUser))
+        .verifyCalledWith(secretRequest.actorEmailAddress, secretName, applicationData.name, Set(loggedInUser, anotherAdminUser))
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {

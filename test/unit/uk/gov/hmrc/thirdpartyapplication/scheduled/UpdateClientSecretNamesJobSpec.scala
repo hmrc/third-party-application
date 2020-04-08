@@ -140,17 +140,30 @@ class UpdateClientSecretNamesJobSpec extends AsyncHmrcSpec with MongoSpecSupport
     }
 
     "update client secret names for all applications" in new Setup {
-      for (i <- 1 to 5) {
-        await(applicationRepository.save(anApplicationData(UUID.randomUUID(), List.fill(5)(namedClientSecret(UUID.randomUUID().toString, s"app-$i-secret")))))
+      def allNamesUpdated(clientSecrets: Seq[ClientSecret]) = {
+        clientSecrets foreach { cs =>
+          cs.name should be (expectedName(cs))
+        }
       }
+
+      private val application1 = anApplicationData(UUID.randomUUID(), List.fill(5)(namedClientSecret(UUID.randomUUID().toString, "application-1-secret")))
+      private val application2 = anApplicationData(UUID.randomUUID(), List.fill(5)(namedClientSecret(UUID.randomUUID().toString, "application-2-secret")))
+      private val application3 = anApplicationData(UUID.randomUUID(), List.fill(5)(namedClientSecret(UUID.randomUUID().toString, "application-3-secret")))
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
 
       await(underTest.execute)
 
-      await(applicationRepository.fetchAll()) foreach  { application =>
-        application.tokens.production.clientSecrets foreach { clientSecret =>
-          clientSecret.name should be (expectedName(clientSecret))
-        }
-      }
+      val updatedApplication1: ApplicationData = await(applicationRepository.fetch(application1.id)).get
+      val updatedApplication2: ApplicationData = await(applicationRepository.fetch(application2.id)).get
+      val updatedApplication3: ApplicationData = await(applicationRepository.fetch(application3.id)).get
+
+      allNamesUpdated(updatedApplication1.tokens.production.clientSecrets)
+      allNamesUpdated(updatedApplication2.tokens.production.clientSecrets)
+      allNamesUpdated(updatedApplication3.tokens.production.clientSecrets)
+
     }
   }
 

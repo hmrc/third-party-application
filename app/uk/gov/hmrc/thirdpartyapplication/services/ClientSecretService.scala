@@ -81,14 +81,4 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
   def workFactorOfHash(hashedSecret: String): Int = hashedSecret.split("\\$")(2).toInt
 }
 
-object ClientSecretService {
-
-  def maskSecret(secret: String): String = {
-    val SecretMask = "••••••••••••••••••••••••••••••••"
-    val SecretLastDigitsLength = 4
-    s"$SecretMask${secret.takeRight(SecretLastDigitsLength)}"
-  }
-
-}
-
 case class ClientSecretServiceConfig(hashFunctionWorkFactor: Int)

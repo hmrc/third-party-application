@@ -302,7 +302,7 @@ case class ClientSecretResponse(id: String,
 object ClientSecretResponse {
   def apply(clientSecret: ClientSecret): ClientSecretResponse = {
     def clientSecretName: String = clientSecret.name match {
-      case "" | "Default" => s"${ClientSecretService.maskSecret(clientSecret.secret)}"
+      case "" | "Default" => clientSecret.secret.takeRight(4)
       case _ => clientSecret.name
     }
 
