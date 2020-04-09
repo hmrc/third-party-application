@@ -60,13 +60,15 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       existingApp <- fetchApp(id)
       _ = if(existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
-      newSecret = clientSecretService.generateClientSecret()
+      generatedSecret = clientSecretService.generateClientSecret()
+      newSecret = generatedSecret._1
+      newSecretValue = generatedSecret._2
 
       updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
   def deleteClientSecrets(id: UUID, actorEmailAddress: String, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {

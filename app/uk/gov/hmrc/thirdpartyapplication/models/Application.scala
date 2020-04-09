@@ -284,11 +284,19 @@ case class ApplicationTokenResponse(
 )
 
 object ApplicationTokenResponse {
-  def apply(token: Token): ApplicationTokenResponse = {
+  def apply(token: Token): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
+    )
+
+  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse = {
+    val secret = "secret"
+    new ApplicationTokenResponse(
+      clientId = token.clientId,
+      accessToken = token.accessToken,
+      clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
     )
   }
 }
@@ -300,14 +308,16 @@ case class ClientSecretResponse(id: String,
                                 lastAccess: Option[DateTime])
 
 object ClientSecretResponse {
-  def apply(clientSecret: ClientSecret): ClientSecretResponse = {
-    def clientSecretName: String = clientSecret.name match {
-      case "" | "Default" => clientSecret.secret.takeRight(4)
-      case _ => clientSecret.name
-    }
+  def apply(clientSecret: ClientSecret): ClientSecretResponse =
+    ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
-    ClientSecretResponse(clientSecret.id, clientSecretName, Some(clientSecret.secret), clientSecret.createdOn, clientSecret.lastAccess)
-  }
+  def apply(clientSecret: ClientSecret, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
+    ClientSecretResponse(
+      clientSecret.id,
+      clientSecret.name,
+      if (clientSecret.id == newClientSecretId) Some(newClientSecret) else None,
+      clientSecret.createdOn,
+      clientSecret.lastAccess)
 }
 
 object Role extends Enumeration {

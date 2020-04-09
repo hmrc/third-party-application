@@ -158,7 +158,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       // We have to compare contents individually
       val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be (expectedClientSecrets.head.name)
-      returnedClientSecret.secret.get should be (expectedClientSecrets.head.secret)
+      returnedClientSecret.secret.isDefined should be (false)
       returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
     }
   }

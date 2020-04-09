@@ -30,13 +30,16 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
-      val generatedClientSecret = underTest.generateClientSecret()
+      val generatedClientSecret: (ClientSecret, String) = underTest.generateClientSecret()
 
-      generatedClientSecret.id.isEmpty should be (false)
-      generatedClientSecret.secret.isEmpty should be (false)
-      generatedClientSecret.name should be (generatedClientSecret.secret takeRight 4)
+      val clientSecret = generatedClientSecret._1
+      val clientSecretValue = generatedClientSecret._2
 
-      val hashedSecretCheck = generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret)
+      clientSecret.id.isEmpty should be (false)
+      clientSecret.secret.isEmpty should be (false)
+      clientSecret.name should be (clientSecretValue takeRight 4)
+
+      val hashedSecretCheck = clientSecretValue.isBcryptedSafe(clientSecret.hashedSecret)
       hashedSecretCheck.isSuccess should be (true)
       hashedSecretCheck.get should be (true)
     }

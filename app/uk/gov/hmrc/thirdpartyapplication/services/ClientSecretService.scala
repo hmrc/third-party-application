@@ -34,13 +34,10 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
-  def generateClientSecret(): ClientSecret = {
+  def generateClientSecret(): (ClientSecret, String) = {
     val secretValue = clientSecretValueGenerator()
 
-    ClientSecret(
-      name = secretValue.takeRight(4),
-      secret = secretValue,
-      hashedSecret = hashSecret(secretValue))
+    (ClientSecret(name = secretValue.takeRight(4), secret = secretValue, hashedSecret = hashSecret(secretValue)), secretValue)
   }
 
   def hashSecret(secret: String): String = {
