@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimit
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 import uk.gov.hmrc.time.DateTimeUtils
 
 trait ApplicationRequest {
@@ -261,7 +260,6 @@ case class APIIdentifier(context: String, version: String)
 case class Collaborator(emailAddress: String, role: Role)
 
 case class ClientSecret(name: String,
-                        secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
                         id: String = UUID.randomUUID().toString,
@@ -291,14 +289,12 @@ object ApplicationTokenResponse {
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
-  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse = {
-    val secret = "secret"
+  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
     )
-  }
 }
 
 case class ClientSecretResponse(id: String,

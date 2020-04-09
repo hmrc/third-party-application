@@ -37,7 +37,7 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
   def generateClientSecret(): (ClientSecret, String) = {
     val secretValue = clientSecretValueGenerator()
 
-    (ClientSecret(name = secretValue.takeRight(4), secret = secretValue, hashedSecret = hashSecret(secretValue)), secretValue)
+    (ClientSecret(name = secretValue.takeRight(4), hashedSecret = hashSecret(secretValue)), secretValue)
   }
 
   def hashSecret(secret: String): String = {

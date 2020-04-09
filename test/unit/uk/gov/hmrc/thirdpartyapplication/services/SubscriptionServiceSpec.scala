@@ -18,6 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 
+import com.github.t3hnar.bcrypt._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils}
 import org.scalatest.BeforeAndAfterAll
@@ -69,9 +70,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
   }
 
-  private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret, hashedSecret = "hashed-secret")
-  }
+  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4),  hashedSecret = secret.bcrypt(4))
 
   override def beforeAll() {
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())

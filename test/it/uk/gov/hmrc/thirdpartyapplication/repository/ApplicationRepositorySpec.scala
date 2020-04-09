@@ -211,7 +211,7 @@ class ApplicationRepositorySpec
       val testStartTime = DateTime.now()
       val applicationId = UUID.randomUUID()
       val secretToUpdate =
-        ClientSecret(name = "SecretToUpdate", secret = "secret", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret")
+        ClientSecret(name = "SecretToUpdate", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret")
       val applicationTokens =
         ApplicationTokens(
           EnvironmentToken(
@@ -227,7 +227,7 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId, secretToUpdate.id))
 
       retrieved.tokens.production.clientSecrets.foreach(retrievedClientSecret =>
-        if(retrievedClientSecret.secret == secretToUpdate.secret)
+        if(retrievedClientSecret.id == secretToUpdate.id)
           retrievedClientSecret.lastAccess.get.isAfter(testStartTime) shouldBe true
         else
           retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
@@ -1129,7 +1129,7 @@ class ApplicationRepositorySpec
 
       val savedApplication = await(applicationRepository.save(anApplicationData(applicationId)))
 
-      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = "hashed-secret")
+      val clientSecret = ClientSecret("secret-name", hashedSecret = "hashed-secret")
       val updatedApplication = await(applicationRepository.addClientSecret(applicationId, clientSecret))
 
       savedApplication.tokens.production.clientSecrets should not contain clientSecret
@@ -1138,8 +1138,7 @@ class ApplicationRepositorySpec
   }
 
   "updateClientSecretName" should {
-    def namedClientSecret(id: String, name: String): ClientSecret =
-      ClientSecret(id = id, name = name, secret = UUID.randomUUID().toString, hashedSecret = "hashed-secret")
+    def namedClientSecret(id: String, name: String): ClientSecret = ClientSecret(id = id, name = name, hashedSecret = "hashed-secret")
     def clientSecretWithId(application: ApplicationData, clientSecretId: String): ClientSecret =
       application.tokens.production.clientSecrets.find(_.id == clientSecretId).get
     def otherClientSecrets(application: ApplicationData, clientSecretId: String): Seq[ClientSecret] =
@@ -1201,7 +1200,7 @@ class ApplicationRepositorySpec
   "updateClientSecretHash" should {
     "overwrite an existing hashedSecretField" in {
       val applicationId = UUID.randomUUID()
-      val clientSecret = ClientSecret("secret-name", "secret-value", hashedSecret = "old-hashed-secret")
+      val clientSecret = ClientSecret("secret-name", hashedSecret = "old-hashed-secret")
 
       val savedApplication = await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret))))
 
@@ -1214,9 +1213,9 @@ class ApplicationRepositorySpec
     "update correct client secret where there are multiple" in {
       val applicationId = UUID.randomUUID()
 
-      val clientSecret1 = ClientSecret("secret-name-1", "secret-value-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2 = ClientSecret("secret-name-2", "secret-value-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3 = ClientSecret("secret-name-3", "secret-value-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecret1 = ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2 = ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3 = ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret1, clientSecret2, clientSecret3))))
 
@@ -1234,9 +1233,9 @@ class ApplicationRepositorySpec
     "remove client secret with matching id" in {
       val applicationId = UUID.randomUUID()
 
-      val clientSecretToRemove = ClientSecret("secret-name-1", "secret-value-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2 = ClientSecret("secret-name-2", "secret-value-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3 = ClientSecret("secret-name-3", "secret-value-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecretToRemove = ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2 = ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3 = ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecretToRemove, clientSecret2, clientSecret3))))
 

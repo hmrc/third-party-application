@@ -71,40 +71,6 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
-  def deleteClientSecrets(id: UUID, actorEmailAddress: String, secrets: List[String])(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-    def audit(clientSecret: ClientSecret): Future[AuditResult] =
-      auditService.audit(ClientSecretRemoved, Map("applicationId" -> id.toString, "removedClientSecret" -> clientSecret.secret))
-
-    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HttpResponse] = {
-      emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
-    }
-
-    def updateApp(app: ApplicationData): (ApplicationData, Set[ClientSecret]) = {
-      val numberOfSecretsToDelete = secrets.length
-      val existingSecrets = app.tokens.production.clientSecrets
-      val updatedSecrets = existingSecrets.filterNot(secret => secrets.contains(secret.secret))
-      if (existingSecrets.length - updatedSecrets.length != numberOfSecretsToDelete) {
-        throw new NotFoundException("Cannot find all secrets to delete")
-      }
-      if (updatedSecrets.isEmpty) {
-        throw new IllegalArgumentException("Cannot delete all client secrets")
-      }
-      val updatedProductionToken = app.tokens.production.copy(clientSecrets = updatedSecrets)
-      val updatedTokens = app.tokens.copy(production = updatedProductionToken)
-      val updatedApp = app.copy(tokens = updatedTokens)
-      val removedSecrets = existingSecrets.toSet -- updatedSecrets.toSet
-      (updatedApp, removedSecrets)
-    }
-
-    for {
-      app <- fetchApp(id)
-      (updatedApp, removedSecrets) = updateApp(app)
-      _ <- applicationRepository.save(updatedApp)
-      _ <- Future.traverse(removedSecrets)(audit)
-      _ <- Future.traverse(removedSecrets)(sendNotification(_, app))
-    } yield ApplicationTokenResponse(updatedApp.tokens.production)
-  }
-
   def deleteClientSecret(applicationId: UUID,
                          clientSecretId: String,
                          actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
