@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.Inject
+import play.api.Logger
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.TeamMemberAddedEvent
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,11 +38,17 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(CONTENT_TYPE -> JSON)
-
-    http.POST(
-      addEventURI(addTeamMemberUri),
-      event
-    ).map(_ => true)
+      if(config.enabled) {
+        http.POST(
+          addEventURI(addTeamMemberUri),
+          event
+        ).map(_ => {
+          Logger.debug(s"calling platform event service for application ${event.applicationId}")
+          true
+        })
+      }else{
+        Future.successful(true)
+      }
 
   }
 

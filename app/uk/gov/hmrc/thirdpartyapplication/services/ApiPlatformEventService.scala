@@ -34,7 +34,10 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
 
     val appId = appData.id.toString
     userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map(actor =>
-      apiPlatformEventsConnector.sendTeamMemberAddedEvent(TeamMemberAddedEvent(appId, actor, teamMemberEmail, teamMemberRole))(hc)
+      apiPlatformEventsConnector.sendTeamMemberAddedEvent(TeamMemberAddedEvent(applicationId = appId,
+        actor = actor,
+        teamMemberEmail = teamMemberEmail,
+        teamMemberRole = teamMemberRole))(hc)
     ) match {
       case Some(x) => x
       case None =>

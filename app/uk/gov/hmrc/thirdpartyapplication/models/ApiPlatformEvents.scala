@@ -19,14 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import org.joda.time.DateTime
 
 
-object EventType extends Enumeration{
+object EventType extends Enumeration {
   type AccessType = Value
   val TEAM_MEMBER_ADDED = Value
 
   implicit val applicationEventTypeFormat = EnumJson.enumFormat(EventType)
 }
 
-trait ApplicationEvent{
+trait ApplicationEvent {
   val applicationId: String
   val eventDateTime: DateTime
   val eventType: EventType.Value
@@ -35,8 +35,8 @@ trait ApplicationEvent{
 
 case class TeamMemberAddedEvent(override val applicationId: String,
                                 override val actor: Actor,
+                                override val eventDateTime: DateTime = DateTime.now(),
                                 teamMemberEmail: String,
                                 teamMemberRole: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.TEAM_MEMBER_ADDED
-  override val eventDateTime: DateTime = DateTime.now()
 }
