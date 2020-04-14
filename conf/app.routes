@@ -34,7 +34,6 @@ POST          /application/:id/subscription                          uk.gov.hmrc
 DELETE        /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.removeSubscriptionForApplication(id: java.util.UUID, context, version)
 
 POST          /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecret(id: java.util.UUID)
-POST          /application/:id/revoke-client-secrets                 uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecrets(id: java.util.UUID)
 POST          /application/:id/client-secret/:clientSecretId         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecret(id: java.util.UUID, clientSecretId: String)
 
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: java.util.UUID)

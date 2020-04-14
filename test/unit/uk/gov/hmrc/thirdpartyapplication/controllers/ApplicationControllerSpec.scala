@@ -21,6 +21,7 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
+import com.github.t3hnar.bcrypt._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
@@ -129,7 +130,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("333", "333", hashedSecret = "hashed-secret"))))
+  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -711,49 +712,6 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
-  "delete client secrets" should {
-
-    val applicationId = UUID.randomUUID()
-    val secrets = "ccc"
-    val splitSecrets = secrets.split(",").toList
-    val actorEmailAddress = "actor@example.com"
-    val secretRequest = DeleteClientSecretsRequest(actorEmailAddress, splitSecrets)
-    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
-
-    "succeed with a 204 for a STANDARD application" in new Setup {
-
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(actorEmailAddress), eqTo(splitSecrets))(*))
-        .thenReturn(successful(tokenResponse))
-
-      val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-      status(result) shouldBe SC_NO_CONTENT
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-        when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(actorEmailAddress), eqTo(splitSecrets))(*))
-          .thenReturn(successful(tokenResponse))
-
-        val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-        status(result) shouldBe SC_NO_CONTENT
-      })
-    }
-
-    "succeed with a 204 for a PRIVILEGED or ROPC application when the request originates outside gatekeeper" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-        when(mockCredentialService.deleteClientSecrets(eqTo(applicationId), eqTo(actorEmailAddress), eqTo(splitSecrets))(*))
-          .thenReturn(successful(tokenResponse))
-
-        val result = underTest.deleteClientSecrets(applicationId)(request.withBody(Json.toJson(secretRequest)))
-
-        status(result) shouldBe SC_NO_CONTENT
-      })
-    }
-  }
-
   "deleteClientSecret" should {
 
     val applicationId = UUID.randomUUID()
@@ -796,9 +754,7 @@ class ApplicationControllerSpec extends ControllerSpec
     }
   }
 
-  private def aSecret(secret: String): ClientSecret = {
-    ClientSecret(secret, secret, hashedSecret = "hashed-secret")
-  }
+  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "validate credentials" should {
     val validation = ValidationRequest("clientId", "clientSecret")

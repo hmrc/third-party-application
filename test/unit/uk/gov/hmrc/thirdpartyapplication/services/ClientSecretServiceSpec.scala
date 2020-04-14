@@ -24,28 +24,30 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec {
 
-  val fastWorkFactor = 5
+  val fastWorkFactor = 4
 
   val underTest = new ClientSecretService(ClientSecretServiceConfig(fastWorkFactor))
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
-      val generatedClientSecret = underTest.generateClientSecret()
+      val generatedClientSecret: (ClientSecret, String) = underTest.generateClientSecret()
 
-      generatedClientSecret.id.isEmpty should be (false)
-      generatedClientSecret.secret.isEmpty should be (false)
-      generatedClientSecret.name should be (generatedClientSecret.secret takeRight 4)
+      val clientSecret = generatedClientSecret._1
+      val clientSecretValue = generatedClientSecret._2
 
-      val hashedSecretCheck = generatedClientSecret.secret.isBcryptedSafe(generatedClientSecret.hashedSecret)
+      clientSecret.id.isEmpty should be (false)
+      clientSecret.name should be (clientSecretValue takeRight 4)
+
+      val hashedSecretCheck = clientSecretValue.isBcryptedSafe(clientSecret.hashedSecret)
       hashedSecretCheck.isSuccess should be (true)
       hashedSecretCheck.get should be (true)
     }
   }
 
   "clientSecretIsValid" should {
-    val fooSecret = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor))
-    val barSecret = ClientSecret(name = "secret-2", secret = "bar", hashedSecret = "bar".bcrypt(fastWorkFactor))
-    val bazSecret = ClientSecret(name = "secret-3", secret = "baz", hashedSecret = "baz".bcrypt(fastWorkFactor))
+    val fooSecret = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor))
+    val barSecret = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor))
+    val bazSecret = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in {
       val matchingSecret = await(underTest.clientSecretIsValid("bar", Seq(fooSecret, barSecret, bazSecret)))
@@ -62,10 +64,9 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
   }
 
   "lastUsedOrdering" should {
-    val mostRecent = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now))
-    val middle = ClientSecret(name = "secret-2", secret = "bar", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(1)))
-    val agesAgo =
-      ClientSecret(name = "secret-3", secret = "baz", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(10)))
+    val mostRecent = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now))
+    val middle = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(1)))
+    val agesAgo = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor), lastAccess = Some(DateTimeUtils.now.minusDays(10)))
 
     "sort client secrets by most recently used" in {
       val sortedList = List(middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
@@ -76,7 +77,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
     }
 
     "sort client secrets with no last used date to the end" in {
-      val noLastUsedDate = ClientSecret(name = "secret-1", secret = "foo", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
+      val noLastUsedDate = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor), lastAccess = None)
 
       val sortedList = List(noLastUsedDate, middle, agesAgo, mostRecent).sortWith(underTest.lastUsedOrdering)
 

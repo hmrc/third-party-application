@@ -158,7 +158,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       // We have to compare contents individually
       val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be (expectedClientSecrets.head.name)
-      returnedClientSecret.secret.get should be (expectedClientSecrets.head.secret)
+      returnedClientSecret.secret.isDefined should be (false)
       returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
     }
   }
@@ -175,12 +175,14 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Return details of application when valid") {
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
-      postData(s"/application/${application.id}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
+      val clientSecretCreationResponse = postData(s"/application/${application.id}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
+      val applicationToken = Json.parse(clientSecretCreationResponse.body).as[ApplicationTokenResponse]
+
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       val credentials = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest(credentials.clientId, credentials.clientSecrets.head.secret)
+      val requestBody = validationRequest(credentials.clientId, applicationToken.clientSecrets.head.secret.get)
       val validationResponse = postData(s"/application/credentials/validate", requestBody)
 
       Then("We get a successful response")

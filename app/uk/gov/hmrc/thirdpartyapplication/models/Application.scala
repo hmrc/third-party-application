@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimit
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 import uk.gov.hmrc.time.DateTimeUtils
 
 trait ApplicationRequest {
@@ -261,7 +260,6 @@ case class APIIdentifier(context: String, version: String)
 case class Collaborator(emailAddress: String, role: Role)
 
 case class ClientSecret(name: String,
-                        secret: String = UUID.randomUUID().toString,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
                         id: String = UUID.randomUUID().toString,
@@ -284,13 +282,19 @@ case class ApplicationTokenResponse(
 )
 
 object ApplicationTokenResponse {
-  def apply(token: Token): ApplicationTokenResponse = {
+  def apply(token: Token): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
-  }
+
+  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
+    new ApplicationTokenResponse(
+      clientId = token.clientId,
+      accessToken = token.accessToken,
+      clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
+    )
 }
 
 case class ClientSecretResponse(id: String,
@@ -300,14 +304,16 @@ case class ClientSecretResponse(id: String,
                                 lastAccess: Option[DateTime])
 
 object ClientSecretResponse {
-  def apply(clientSecret: ClientSecret): ClientSecretResponse = {
-    def clientSecretName: String = clientSecret.name match {
-      case "" | "Default" => clientSecret.secret.takeRight(4)
-      case _ => clientSecret.name
-    }
+  def apply(clientSecret: ClientSecret): ClientSecretResponse =
+    ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
-    ClientSecretResponse(clientSecret.id, clientSecretName, Some(clientSecret.secret), clientSecret.createdOn, clientSecret.lastAccess)
-  }
+  def apply(clientSecret: ClientSecret, newClientSecretId: String, newClientSecret: String): ClientSecretResponse =
+    ClientSecretResponse(
+      clientSecret.id,
+      clientSecret.name,
+      if (clientSecret.id == newClientSecretId) Some(newClientSecret) else None,
+      clientSecret.createdOn,
+      clientSecret.lastAccess)
 }
 
 object Role extends Enumeration {

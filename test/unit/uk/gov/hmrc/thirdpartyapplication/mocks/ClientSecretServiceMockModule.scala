@@ -34,12 +34,12 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock,mode)
 
     object GenerateClientSecret {
-      def thenReturnWithSpecificSecret(secret: String) =
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(secret.takeRight(4), secret, hashedSecret = secret.bcrypt))
+      def thenReturnWithSpecificSecret(id: String, secret: String) =
+        when(aMock.generateClientSecret()).thenReturn((ClientSecret(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
 
       def thenReturnWithRandomSecret() = {
         val secret = UUID.randomUUID().toString
-        when(aMock.generateClientSecret()).thenReturn(ClientSecret(secret.takeRight(4), secret, hashedSecret = secret.bcrypt))
+        when(aMock.generateClientSecret()).thenReturn((ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
       }
     }
 
