@@ -195,7 +195,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def deleteCollaborator(applicationId: UUID, collaborator: String, admin: String, adminsToEmail: Set[String])
+  def deleteCollaborator(applicationId: UUID, collaborator: String, adminsToEmail: Set[String])
                         (implicit hc: HeaderCarrier): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
       val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
@@ -203,7 +203,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       else applicationRepository.save(app.copy(collaborators = updatedCollaborators))
     }
 
-    def sendEmails(applicationName: String, collaboratorEmail: String, adminEmail: String, adminsToEmail: Set[String]): Future[HttpResponse] = {
+    def sendEmails(applicationName: String, collaboratorEmail: String, adminsToEmail: Set[String]): Future[HttpResponse] = {
       if (adminsToEmail.nonEmpty) emailConnector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, adminsToEmail)
       emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail))
     }
@@ -218,7 +218,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       app <- fetchApp(applicationId)
       updated <- deleteUser(app)
       _ = audit(app.collaborators.find(_.emailAddress == collaborator.toLowerCase))
-      _ = recoverAll(sendEmails(app.name, collaborator.toLowerCase, admin, adminsToEmail))
+      _ = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
     } yield updated.collaborators
   }
 
