@@ -262,7 +262,7 @@ class ApiPlatformEventsConfigProvider @Inject()(val runModeConfiguration: Config
   extends Provider[ApiPlatformEventsConfig] with ServicesConfig {
   override def get(): ApiPlatformEventsConfig = {
     val url = baseUrl("api-platform-events")
-    val enabled = runModeConfiguration.getBoolean("enabled").getOrElse(false)
+    val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConfig(url, enabled)
   }
 
