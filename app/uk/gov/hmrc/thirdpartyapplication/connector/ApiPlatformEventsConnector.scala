@@ -32,7 +32,7 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
 
   val serviceBaseUrl: String = s"${config.baseUrl}"
   private val applicationEventsUri = "/application-events"
-  private val addTeamMemberUri = "/addTeamMember"
+  private val teamMemberAddedUri = "/teamMemberAdded"
 
   def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(hc: HeaderCarrier): Future[Boolean] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
@@ -40,7 +40,7 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
       .withExtraHeaders(CONTENT_TYPE -> JSON)
       if(config.enabled) {
         http.POST(
-          addEventURI(addTeamMemberUri),
+          addEventURI(teamMemberAddedUri),
           event
         ).map(_ => {
           Logger.info(s"calling platform event service for application ${event.applicationId}")
