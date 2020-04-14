@@ -28,6 +28,7 @@ import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag, Standard}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,22 +44,10 @@ class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec
     auditConnector.sendEvent(DataEvent(
       auditSource = "third-party-application",
       auditType = action.auditType,
-      tags = hc.toAuditTags(action.name, "-") ++ userContext(hc) ++ tags,
+      tags = hc.toAuditTags(action.name, "-") ++ HeaderCarrierHelper.headersToUserContext(hc) ++ tags,
       detail = hc.toAuditDetails(data.toSeq: _*)
     ))
 
-  private def userContext(hc: HeaderCarrier) =
-    userContextFromHeaders(hc.headers.toMap)
-
-  private def userContextFromHeaders(headers: Map[String, String]) = {
-    def mapHeader(mapping: (String, String)): Option[(String, String)] =
-      headers.get(mapping._1) map (mapping._2 -> URLDecoder.decode(_, StandardCharsets.UTF_8.toString))
-
-    val email = mapHeader(LOGGED_IN_USER_EMAIL_HEADER -> "developerEmail")
-    val name = mapHeader(LOGGED_IN_USER_NAME_HEADER -> "developerFullName")
-
-    List(email, name).flatten.toMap
-  }
 }
 
 sealed trait AuditAction {

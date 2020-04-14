@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
 
+
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -46,6 +47,7 @@ class ConfigurationModule extends Module {
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
       bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
+      bind[ApiPlatformEventsConfig].toProvider[ApiPlatformEventsConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
@@ -253,4 +255,16 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
 
     ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
   }
+}
+
+@Singleton
+class ApiPlatformEventsConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[ApiPlatformEventsConfig] with ServicesConfig {
+  override def get(): ApiPlatformEventsConfig = {
+    val url = baseUrl("api-platform-events")
+    val enabled = runModeConfiguration.getBoolean("enabled").getOrElse(false)
+    ApiPlatformEventsConfig(url, enabled)
+  }
+
+  override protected def mode: Mode = environment.mode
 }
