@@ -43,10 +43,11 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
           addEventURI(addTeamMemberUri),
           event
         ).map(_ => {
-          Logger.debug(s"calling platform event service for application ${event.applicationId}")
+          Logger.info(s"calling platform event service for application ${event.applicationId}")
           true
         })
       }else{
+        Logger.info("call to platform events disabled")
         Future.successful(true)
       }
 
