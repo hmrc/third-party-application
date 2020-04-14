@@ -58,4 +58,4 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
   }
 }
 
-case class ApiPlatformEventsConfig(baseUrl: String, enabled: Boolean = false)
+case class ApiPlatformEventsConfig(baseUrl: String, enabled: Boolean)
