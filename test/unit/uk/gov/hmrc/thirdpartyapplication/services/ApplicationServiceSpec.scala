@@ -79,6 +79,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val response = mock[HttpResponse]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector](withSettings.lenient())
     val mockGatekeeperService = mock[GatekeeperService]
+    val mockApiPlatformEventService = mock[ApiPlatformEventService](withSettings.lenient())
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
@@ -99,6 +100,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       mockStateHistoryRepository,
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
+      mockApiPlatformEventService,
       mockEmailConnector,
       mockTotpConnector,
       actorSystem,
@@ -117,6 +119,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(response))
+    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier])).thenReturn(successful(true))
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
                                                            subscriptions: List[APIIdentifier]) =
@@ -559,6 +562,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         hc
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
+
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
+        eqTo(request.collaborator.emailAddress),
+        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
     }
 
     "send confirmation and notification emails to the developer and all relevant administrators when adding a registered collaborator" in new Setup {
@@ -578,6 +585,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
 
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
+        eqTo(request.collaborator.emailAddress),
+        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -598,6 +608,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest()))
 
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
+        eqTo(request.collaborator.emailAddress),
+        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
@@ -619,6 +632,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       val result: AddCollaboratorResponse =
         await(underTest.addCollaborator(applicationId, collaboratorRequest(admin = admin, isRegistered = true, adminsToEmail = Set.empty[String])))
+
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
+        eqTo(request.collaborator.emailAddress),
+        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))

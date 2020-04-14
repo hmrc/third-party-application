@@ -52,6 +52,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    stateHistoryRepository: StateHistoryRepository,
                                    subscriptionRepository: SubscriptionRepository,
                                    auditService: AuditService,
+                                   apiPlatformEventService: ApiPlatformEventService,
                                    emailConnector: EmailConnector,
                                    totpConnector: TotpConnector,
                                    system: ActorSystem,
@@ -129,6 +130,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role)
       _ <- addUser(app, collaborator)
       _ = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
+      _ = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
       _ = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
