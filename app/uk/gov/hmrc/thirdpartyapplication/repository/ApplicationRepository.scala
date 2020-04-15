@@ -139,22 +139,21 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       _.result[ApplicationData].head
     }
 
+  def updateClientSecretField(applicationId: UUID, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] =
+    findAndUpdate(
+      Json.obj("id" -> applicationId.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
+      Json.obj("$set" -> Json.obj(s"tokens.production.clientSecrets.$$.$fieldName" -> fieldValue)),
+      fetchNewObject = true)
+      .map(_.result[ApplicationData].head)
+
   def addClientSecret(applicationId: UUID, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$push" -> Json.obj("tokens.production.clientSecrets" -> Json.toJson(clientSecret))))
 
   def updateClientSecretName(applicationId: UUID, clientSecretId: String, newName: String): Future[ApplicationData] =
-    findAndUpdate(
-      Json.obj("id" -> applicationId.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
-      Json.obj("$set" -> Json.obj("tokens.production.clientSecrets.$.name" -> newName)),
-      fetchNewObject = true)
-      .map(_.result[ApplicationData].head)
+    updateClientSecretField(applicationId, clientSecretId, "name", newName)
 
   def updateClientSecretHash(applicationId: UUID, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
-    findAndUpdate(
-      Json.obj("id" -> applicationId.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
-      Json.obj("$set" -> Json.obj("tokens.production.clientSecrets.$.hashedSecret" -> hashedSecret)),
-      fetchNewObject = true)
-      .map(_.result[ApplicationData].head)
+    updateClientSecretField(applicationId, clientSecretId, "hashedSecret", hashedSecret)
 
   def recordClientSecretUsage(applicationId: UUID, clientSecretId: String): Future[ApplicationData] =
     findAndUpdate(

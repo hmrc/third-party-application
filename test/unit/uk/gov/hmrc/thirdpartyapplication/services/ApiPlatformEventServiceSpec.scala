@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.LOGGED_IN_USER_EMAIL_HEADER
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -91,8 +91,28 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         expectedResult = false)
     }
 
-    "not attempt to send event when the logged in user header is not set" in new Setup() {
+    "set actor to gatekeeper with default email when the logged in user header is not set" in new Setup() {
       implicit val newHc: HeaderCarrier = HeaderCarrier()
+      when(mockConnector.sendTeamMemberAddedEvent(any[TeamMemberAddedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(true))
+
+      val result: Boolean = await(objInTest.sendTeamMemberAddedEvent(appDataWithCollaboratorAdded, teamMemberEmail, teamMemberRole))
+
+      result shouldBe true
+
+      val argumentCaptor = ArgCaptor[TeamMemberAddedEvent]
+      verify(mockConnector).sendTeamMemberAddedEvent(argumentCaptor.capture)(any[HeaderCarrier])
+
+      val capturedEvent = argumentCaptor.value
+      val actor = capturedEvent.actor
+      actor.id shouldBe "admin@gatekeeper"
+      actor.actorType shouldBe ActorType.GATEKEEPER
+      capturedEvent.eventType shouldBe EventType.TEAM_MEMBER_ADDED
+      capturedEvent.teamMemberEmail shouldBe teamMemberEmail
+      capturedEvent.teamMemberRole shouldBe teamMemberRole
+    }
+
+    "return false when username header is set but not user email header" in new Setup() {
+      implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_NAME_HEADER -> "someuserName")
 
       val result: Boolean = await(objInTest.sendTeamMemberAddedEvent(appDataWithCollaboratorAdded, teamMemberEmail, teamMemberRole))
 

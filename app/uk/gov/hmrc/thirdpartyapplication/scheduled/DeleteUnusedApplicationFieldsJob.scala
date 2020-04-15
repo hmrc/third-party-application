@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import javax.inject.Inject
@@ -51,16 +50,25 @@ class DeleteUnusedApplicationFieldsJob @Inject()(val lockKeeper: DeleteUnusedApp
       }
   }
 
-  def deleteUnusedApplicationFields(application: ApplicationData): Unit = {
-    def removeSingleField(applicationId: UUID, fieldName: String): Future[ApplicationData] =
-      applicationRepository.updateApplication(applicationId, Json.obj("$unset" -> Json.obj(fieldName -> "")))
+  def deleteUnusedApplicationFields(application: ApplicationData): Future[Unit] = {
+    def removeSingleField(fieldName: String): Future[ApplicationData] =
+      applicationRepository.updateApplication(application.id, Json.obj("$unset" -> Json.obj(fieldName -> "")))
 
-    val removeWso2UsernameField = removeSingleField(application.id, "wso2Username")
-    val removeWso2PasswordField = removeSingleField(application.id, "wso2Password")
+    def removeSecretFieldFromClientSecrets() =
+      Future.sequence(
+        application.tokens.production.clientSecrets.indices
+          .map(i => removeSingleField(s"tokens.production.clientSecrets.$i.secret")))
+
+    val removeWso2UsernameField = removeSingleField("wso2Username")
+    val removeWso2PasswordField = removeSingleField("wso2Password")
+    val removeSandboxToken = removeSingleField("tokens.sandbox")
+    val removeSecretFields = removeSecretFieldFromClientSecrets()
 
     for {
       _ <- removeWso2UsernameField
       _ <- removeWso2PasswordField
+      _ <- removeSandboxToken
+      _ <- removeSecretFields
     } yield ()
   }
 
