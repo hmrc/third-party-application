@@ -61,16 +61,23 @@ class DeleteUnusedApplicationFieldsJob @Inject()(val lockKeeper: DeleteUnusedApp
         application.tokens.production.clientSecrets.indices
           .map(i => removeSingleField(s"tokens.production.clientSecrets.$i.secret")))
 
+    def removeWso2ClientSecretFieldFromClientSecrets() =
+      Future.sequence(
+        application.tokens.production.clientSecrets.indices
+          .map(i => removeSingleField(s"tokens.production.clientSecrets.$i.wso2ClientSecret")))
+
     val removeWso2UsernameField = removeSingleField("wso2Username")
     val removeWso2PasswordField = removeSingleField("wso2Password")
     val removeSandboxToken = removeSingleField("tokens.sandbox")
     val removeSecretFields = removeSecretFieldFromClientSecrets()
+    val removeWso2ClientSecretFields = removeWso2ClientSecretFieldFromClientSecrets()
 
     for {
       _ <- removeWso2UsernameField
       _ <- removeWso2PasswordField
       _ <- removeSandboxToken
       _ <- removeSecretFields
+      _ <- removeWso2ClientSecretFields
     } yield ()
   }
 

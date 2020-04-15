@@ -107,6 +107,9 @@ class DeleteUnusedApplicationFieldsJobSpec extends AsyncHmrcSpec with MongoSpecS
     def addSecretFieldToClientSecret(applicationId: UUID, clientSecretId: String) =
       applicationRepository.updateClientSecretField(applicationId, clientSecretId, "secret", UUID.randomUUID().toString)
 
+    def addWso2ClientSecretFieldToClientSecret(applicationId: UUID, clientSecretId: String) =
+      applicationRepository.updateClientSecretField(applicationId, clientSecretId, "wso2ClientSecret", UUID.randomUUID().toString)
+
     def fieldExistsInApplication(applicationId: UUID, fieldName: String): Future[Boolean] =
       applicationRepository.fetchWithProjection(
         Json.obj("id" -> applicationId, fieldName -> Json.obj("$exists" -> true)),
@@ -126,6 +129,11 @@ class DeleteUnusedApplicationFieldsJobSpec extends AsyncHmrcSpec with MongoSpecS
 
     def verifySecretFieldDoesNotExistInClientSecrets(applicationId: UUID, numberOfClientSecrets: Int) = {
       val clientSecretFields: Seq[String] = 0 until numberOfClientSecrets map (i => s"tokens.production.clientSecrets.$i.secret")
+      verifyFieldsDoNotExistInApplication(applicationId, clientSecretFields)
+    }
+
+    def verifyWso2ClientSecretFieldDoesNotExistInClientSecrets(applicationId: UUID, numberOfClientSecrets: Int) = {
+      val clientSecretFields: Seq[String] = 0 until numberOfClientSecrets map (i => s"tokens.production.clientSecrets.$i.wso2ClientSecret")
       verifyFieldsDoNotExistInApplication(applicationId, clientSecretFields)
     }
 
@@ -187,6 +195,30 @@ class DeleteUnusedApplicationFieldsJobSpec extends AsyncHmrcSpec with MongoSpecS
 
       verifyUnusedFieldsDoNotExistInApplication(applicationId)
       verifySecretFieldDoesNotExistInClientSecrets(applicationId, 3)
+    }
+
+    "delete all wso2ClientSecret fields in production client secrets" in new Setup {
+      private val applicationId = UUID.randomUUID()
+      private val clientSecret1Id = UUID.randomUUID().toString
+      private val clientSecret2Id = UUID.randomUUID().toString
+      private val clientSecret3Id = UUID.randomUUID().toString
+
+      await(createApplication(applicationId, List(aClientSecret(clientSecret1Id), aClientSecret(clientSecret2Id), aClientSecret(clientSecret3Id))))
+      await(addWso2ClientSecretFieldToClientSecret(applicationId, clientSecret1Id))
+      await(addWso2ClientSecretFieldToClientSecret(applicationId, clientSecret2Id))
+      await(addWso2ClientSecretFieldToClientSecret(applicationId, clientSecret3Id))
+
+      verifyFieldsExistInApplication(
+        applicationId,
+        Seq(
+          "tokens.production.clientSecrets.0.wso2ClientSecret",
+          "tokens.production.clientSecrets.1.wso2ClientSecret",
+          "tokens.production.clientSecrets.2.wso2ClientSecret"))
+
+      await(underTest.execute)
+
+      verifyUnusedFieldsDoNotExistInApplication(applicationId)
+      verifyWso2ClientSecretFieldDoesNotExistInClientSecrets(applicationId, 3)
     }
 
     "delete all the things" in new Setup {
