@@ -7,17 +7,16 @@ import akka.stream.{ActorMaterializer, Materializer}
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.Duration
 import org.scalatest.BeforeAndAfterEach
-import play.api.libs.json.{JsObject, Json}
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecret, Collaborator, EnvironmentToken, Role, Standard}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.scheduled.{DeleteUnusedApplicationFieldsJob, DeleteUnusedApplicationFieldsJobLockKeeper}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import org.scalatest.prop.TableDrivenPropertyChecks._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{ExecutionContext, Future}
@@ -77,6 +76,15 @@ class DeleteUnusedApplicationFieldsJobSpec extends AsyncHmrcSpec with MongoSpecS
     def addFieldToApplication(applicationId: UUID, fieldName: String, fieldValue: String) =
       applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj(fieldName -> fieldValue)))
 
+    def addSandboxToken(applicationId: UUID) =
+      applicationRepository.updateApplication(
+        applicationId,
+        Json.obj(
+          "$set" ->
+            Json.obj(
+              "tokens.sandbox" ->
+                Json.obj("clientId" -> UUID.randomUUID(), "accessToken" -> UUID.randomUUID(), "clientSecrets" -> Json.arr()))))
+
     def fieldExistsInApplication(applicationId: UUID, fieldName: String): Future[Boolean] =
       applicationRepository.fetchWithProjection(
         Json.obj("id" -> applicationId, fieldName -> Json.obj("$exists" -> true)),
@@ -109,6 +117,17 @@ class DeleteUnusedApplicationFieldsJobSpec extends AsyncHmrcSpec with MongoSpecS
       await(fieldExistsInApplication(applicationId, "wso2Password")) should be (false)
     }
 
+    "delete sandbox token sub-document" in new Setup {
+      private val applicationId = UUID.randomUUID()
 
+      await(createApplication(applicationId, List.empty))
+      await(addSandboxToken(applicationId))
+
+      await(fieldExistsInApplication(applicationId, "tokens.sandbox")) should be (true)
+
+      await(underTest.execute)
+
+      await(fieldExistsInApplication(applicationId, "tokens.sandbox")) should be (false)
+    }
   }
 }

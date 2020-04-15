@@ -57,10 +57,12 @@ class DeleteUnusedApplicationFieldsJob @Inject()(val lockKeeper: DeleteUnusedApp
 
     val removeWso2UsernameField = removeSingleField(application.id, "wso2Username")
     val removeWso2PasswordField = removeSingleField(application.id, "wso2Password")
+    val removeSandboxToken = removeSingleField(application.id, "tokens.sandbox")
 
     for {
       _ <- removeWso2UsernameField
       _ <- removeWso2PasswordField
+      _ <- removeSandboxToken
     } yield ()
   }
 
