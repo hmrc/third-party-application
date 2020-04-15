@@ -16,13 +16,16 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
+import net.bytebuddy.utility.JavaModule.Dispatcher.Enabled
+import org.mockito.MockSettings
+import org.mockito.internal.creation.MockSettingsImpl
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.scalatest.concurrent.ScalaFutures
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiPlatformEventsConfig, ApiPlatformEventsConnector}
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, HasSucceeded, TeamMemberAddedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, HasSucceeded, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -32,36 +35,84 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"http://example.com"
 
-  val event: TeamMemberAddedEvent = TeamMemberAddedEvent(applicationId = "jkkh",
+  val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN")
 
+  val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    teamMemberEmail = "teamMember@teamMember.com",
+    teamMemberRole = "ADMIN")
+
+
   trait Setup {
     val mockHttpClient: HttpClient = mock[HttpClient]
-    val config: ApiPlatformEventsConfig = ApiPlatformEventsConfig(baseUrl, enabled = true)
+    val mockConfig: ApiPlatformEventsConfig = mock[ApiPlatformEventsConfig](withSettings.lenient())
 
-    val underTest = new ApiPlatformEventsConnector(mockHttpClient, config)
+    val underTest = new ApiPlatformEventsConnector(mockHttpClient, mockConfig)
 
     def apiApplicationEventsWillReturn(result: Future[HttpResponse]): ScalaOngoingStubbing[Future[HttpResponse]] = {
       when(mockHttpClient.POST[TeamMemberAddedEvent, HttpResponse](*, *, *)(*, *, *, *)).thenReturn(result)
     }
+    def configSetUpWith(enabled: Boolean): ScalaOngoingStubbing[String] ={
+      when(mockConfig.enabled).thenReturn(enabled)
+      when(mockConfig.baseUrl).thenReturn(baseUrl)
+    }
   }
 
-  "ApiPlatformEventsConnector" should {
+  "ApiPlatformEventsConnector" when {
 
-    "should return true when httpclient receives CREATED status" in new Setup() {
-      apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
-      val result = await(underTest.sendTeamMemberAddedEvent(event)(hc))
+    "TeamMemberAddedEvents" should {
+      "should return true when httpclient receives CREATED status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
+        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
 
-      result shouldBe true
+        result shouldBe true
+      }
+
+      "should return true when connector is disabled" in new Setup() {
+        configSetUpWith(enabled = false)
+        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return false when httpclient receives internal server error status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
+        val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
+
+        result shouldBe true
+      }
+
     }
 
-    "should return false when httpclient receives internal server error status" in new Setup() {
-      apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
-      val result = await(underTest.sendTeamMemberAddedEvent(event)(hc))
+    "TeamMemberRemovedEvents" should {
+      "should return true when httpclient receives CREATED status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
+        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
 
-      result shouldBe true
+        result shouldBe true
+      }
+
+      "should return true when connector is disabled" in new Setup() {
+        configSetUpWith(enabled = false)
+        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return false when httpclient receives internal server error status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
+        val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
+
+        result shouldBe true
+      }
+
     }
   }
 

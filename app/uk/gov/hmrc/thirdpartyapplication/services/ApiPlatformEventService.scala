@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, Collaborator, TeamMemberAddedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, Collaborator, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,6 +42,24 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       case Some(x) => x
       case None =>
         Logger.error(s"send teamMemberAddedEvent for applicationId:$appId not possible")
+        Future.successful(false)
+    }
+
+  }
+
+  def sendTeamMemberRemovedEvent(appData: ApplicationData, teamMemberEmail: String, teamMemberRole: String)
+                                (implicit hc: HeaderCarrier): Future[Boolean] ={
+
+    val appId = appData.id.toString
+    userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map(actor =>
+      apiPlatformEventsConnector.sendTeamMemberRemovedEvent(TeamMemberRemovedEvent(applicationId = appId,
+        actor = actor,
+        teamMemberEmail = teamMemberEmail,
+        teamMemberRole = teamMemberRole))(hc)
+    ) match {
+      case Some(x) => x
+      case None =>
+        Logger.error(s"send teamMemberRemovedEvent for applicationId:$appId not possible")
         Future.successful(false)
     }
 

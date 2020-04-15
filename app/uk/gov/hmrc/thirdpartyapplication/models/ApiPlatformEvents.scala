@@ -22,7 +22,7 @@ import org.joda.time.DateTime
 object EventType extends Enumeration {
   type AccessType = Value
   val TEAM_MEMBER_ADDED = Value
-
+  val TEAM_MEMBER_REMOVED = Value
   implicit val applicationEventTypeFormat = EnumJson.enumFormat(EventType)
 }
 
@@ -39,4 +39,12 @@ case class TeamMemberAddedEvent(override val applicationId: String,
                                 teamMemberEmail: String,
                                 teamMemberRole: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.TEAM_MEMBER_ADDED
+}
+
+case class TeamMemberRemovedEvent(override val applicationId: String,
+                                  override val eventDateTime: DateTime = DateTime.now(),
+                                  override val actor: Actor,
+                                  teamMemberEmail: String,
+                                  teamMemberRole: String) extends ApplicationEvent {
+  override val eventType: EventType.Value = EventType.TEAM_MEMBER_REMOVED
 }

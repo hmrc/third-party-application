@@ -20,10 +20,10 @@ import javax.inject.Inject
 import play.api.Logger
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
-import uk.gov.hmrc.http.{HeaderCarrier, InternalServerException}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.TeamMemberAddedEvent
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -33,27 +33,37 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
   val serviceBaseUrl: String = s"${config.baseUrl}"
   private val applicationEventsUri = "/application-events"
   private val teamMemberAddedUri = "/teamMemberAdded"
+  private val teamMemberRemovedUri = "/teamMemberRemoved"
 
-  def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(hc: HeaderCarrier): Future[Boolean] = {
+  def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    postEvent(event, teamMemberAddedUri)(hc)
+  }
+
+  def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    postEvent(event, teamMemberRemovedUri)(hc)
+  }
+
+  private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(CONTENT_TYPE -> JSON)
-      if(config.enabled) {
-        http.POST(
-          addEventURI(teamMemberAddedUri),
-          event
-        ).map(_ => {
-          Logger.info(s"calling platform event service for application ${event.applicationId}")
-          true
-        })
-      }else{
-        Logger.info("call to platform events disabled")
-        Future.successful(true)
-      }
+    if (config.enabled) {
+      http.POST(
+        addEventURI(uri),
+        event
+      ).map(_ => {
+        Logger.info(s"calling platform event service for application ${event.applicationId}")
+        true
+      })
+    } else {
+      Logger.info("call to platform events disabled")
+      Future.successful(true)
+    }
 
   }
 
-  def addEventURI(path: String): String = {
+
+  private def addEventURI(path: String): String = {
     serviceBaseUrl + applicationEventsUri + path
   }
 }
