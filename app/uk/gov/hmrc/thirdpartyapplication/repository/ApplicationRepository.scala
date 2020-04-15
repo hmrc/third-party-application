@@ -134,7 +134,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def recordDeleteNotificationSent(applicationId: UUID): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("deleteNotificationSent" -> Json.obj("$type" -> "date"))))
 
-  private def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
+  def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
     findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
       _.result[ApplicationData].head
     }
