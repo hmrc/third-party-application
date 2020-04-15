@@ -48,8 +48,12 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
   }
 
   private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[Actor] ={
-    userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-      .map(email=> Actor(email, deriveActorType(email, collaborators)))
+    if(userContext.isEmpty){
+      Option(Actor("admin@gatekeeper", ActorType.GATEKEEPER))
+    }else {
+      userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
+        .map(email => Actor(email, deriveActorType(email, collaborators)))
+    }
   }
 
   private def deriveActorType(userEmail: String,  collaborators: Set[Collaborator]): ActorType.Value =
