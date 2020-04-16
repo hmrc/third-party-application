@@ -210,16 +210,23 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       emailConnector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail))
     }
 
-    def audit(collaborator: Option[Collaborator]) =
-      collaborator match {
+    def audit(collaborator: Option[Collaborator]) = collaborator match {
         case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
         case None => Logger.warn(s"Failed to audit collaborator removal for: $collaborator")
       }
 
+    def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
+
+    def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match{
+      case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      case None =>    Logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
+    }
+
     for {
       app <- fetchApp(applicationId)
       updated <- deleteUser(app)
-      _ = audit(app.collaborators.find(_.emailAddress == collaborator.toLowerCase))
+      _ = audit(findCollaborator(app))
+      _ = sendEvent(app, findCollaborator(app))
       _ = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
     } yield updated.collaborators
   }

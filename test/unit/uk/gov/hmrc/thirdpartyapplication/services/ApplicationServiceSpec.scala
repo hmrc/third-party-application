@@ -121,6 +121,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(response))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(response))
     when(mockApiPlatformEventService.sendTeamMemberAddedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier])).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
+      .thenReturn(successful(true))
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
                                                            subscriptions: List[APIIdentifier]) =
@@ -726,6 +728,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
         hc
       )
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
+        eqTo(collaborator),
+        eqTo("DEVELOPER"))(any[HeaderCarrier])
       result shouldBe updatedData.collaborators
     }
 
@@ -741,6 +746,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       result shouldBe updatedData.collaborators
+
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
+        eqTo(collaborator),
+        eqTo("DEVELOPER"))(any[HeaderCarrier])
+
     }
 
     "fail to delete last remaining admin user" in new DeleteCollaboratorsSetup {
@@ -755,6 +765,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.Save.verifyNeverCalled()
       verifyZeroInteractions(mockEmailConnector)
+      verifyZeroInteractions(mockApiPlatformEventService)
     }
   }
 

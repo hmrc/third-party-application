@@ -275,7 +275,9 @@ object APIStatusJson {
 object ApplicationEventFormats {
   implicit val actorFormats = Json.format[Actor]
   implicit val teamMemberAddedEventFormats = Json.format[TeamMemberAddedEvent]
+  implicit val teamMemberRemovedEventFormats = Json.format[TeamMemberRemovedEvent]
   implicit val formatApplicationEvent: Format[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
     .and[TeamMemberAddedEvent](EventType.TEAM_MEMBER_ADDED.toString)
+    .and[TeamMemberRemovedEvent](EventType.TEAM_MEMBER_REMOVED.toString)
     .format
 }
