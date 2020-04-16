@@ -74,7 +74,7 @@ class UpliftVerificationExpiryJobLockKeeper @Inject()(mongo: ReactiveMongoCompon
 
   override def lockId: String = "UpliftVerificationExpiryScheduler"
 
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
+  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
 }
 
 case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)

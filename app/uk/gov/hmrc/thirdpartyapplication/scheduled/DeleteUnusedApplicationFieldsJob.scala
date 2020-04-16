@@ -88,3 +88,5 @@ class DeleteUnusedApplicationFieldsJobLockKeeper @Inject()(mongo: ReactiveMongoC
   override def lockId: String = "DeleteUnusedApplicationFields"
   override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 }
+
+case class DeleteUnusedApplicationFieldsJobConfig(enabled: Boolean)

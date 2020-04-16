@@ -40,6 +40,7 @@ class ConfigurationModule extends Module {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
+      bind[DeleteUnusedApplicationFieldsJobConfig].toProvider[DeleteUnusedApplicationFieldsJobConfigProvider],
       bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -95,6 +96,17 @@ class MetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration
 
     MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
+}
+
+@Singleton
+class DeleteUnusedApplicationFieldsJobConfigProvider @Inject()(val runModeConfiguration: Configuration, environment: Environment)
+  extends Provider[DeleteUnusedApplicationFieldsJobConfig] with ServicesConfig {
+
+  override protected def mode = environment.mode
+
+  override def get() =
+    runModeConfiguration.underlying.as[Option[DeleteUnusedApplicationFieldsJobConfig]](s"$env.deleteUnusedApplicationFieldsJob")
+      .getOrElse(DeleteUnusedApplicationFieldsJobConfig(enabled = true))
 }
 
 @Singleton
