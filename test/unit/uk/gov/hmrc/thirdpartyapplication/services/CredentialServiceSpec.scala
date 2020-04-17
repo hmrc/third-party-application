@@ -105,7 +105,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val clientId = applicationData.tokens.production.clientId
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
-      ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret("wrongSecret", applicationData.tokens.production.clientSecrets)
+      ClientSecretServiceMock.ClientSecretIsValid.noMatchingClientSecret(applicationData.id, "wrongSecret", applicationData.tokens.production.clientSecrets)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "wrongSecret")).value)
 
@@ -123,7 +123,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
-        .thenReturnValidationResult(secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
+        .thenReturnValidationResult(applicationData.id, secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenReturnWhen(applicationData.id, matchingClientSecret.id)(updatedApplicationData)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, secret)).value)
@@ -141,7 +141,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
       ClientSecretServiceMock.ClientSecretIsValid
-        .thenReturnValidationResult(secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
+        .thenReturnValidationResult(applicationData.id, secret, applicationData.tokens.production.clientSecrets)(matchingClientSecret)
       ApplicationRepoMock.RecordClientSecretUsage.thenFail(thrownException)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, secret)).value)

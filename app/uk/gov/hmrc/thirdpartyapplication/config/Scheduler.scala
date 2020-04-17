@@ -35,16 +35,12 @@ class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationE
                           metricsJobConfig: MetricsJobConfig,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
-                          deleteUnusedApplicationFieldsJobConfig: DeleteUnusedApplicationFieldsJobConfig,
-                          deleteUnusedApplicationFieldsJob: DeleteUnusedApplicationFieldsJob,
-                          apiStorageConfig: ApiStorageConfig,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
     val mJob = if (metricsJobConfig.enabled) Seq(metricsJob) else Seq.empty
-    val deleteUnusedFieldsJob = if(deleteUnusedApplicationFieldsJobConfig.enabled) Seq(deleteUnusedApplicationFieldsJob) else Seq.empty
-    val bcryptJobs = Seq(bcryptPerformanceMeasureJob) ++ deleteUnusedFieldsJob
+    val bcryptJobs = Seq(bcryptPerformanceMeasureJob)
 
     // TODO : MetricsJob optional?
     upliftJob ++ mJob ++ bcryptJobs
