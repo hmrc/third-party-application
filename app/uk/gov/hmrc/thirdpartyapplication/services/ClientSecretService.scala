@@ -23,7 +23,6 @@ import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -58,11 +57,24 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
   }
 
   def clientSecretIsValid(applicationId: UUID, secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
+    /*
+     * *** WARNING ***
+     * This function is called every time an OAuth2 token is issued, and is therefore crucially important to the overall performance of the API Platform.
+     *
+     * As we use bcrypt to hash the secrets, there is a (deliberate) slowness to calculating the hash, and we may need to perform multiple comparisons for a
+     * given secret (applications can have up to 5 secrets associated), we can run in to some pretty major performance issues if we're not careful.
+     *
+     * ANY CHANGES TO THIS FUNCTION NEED TO BE THOROUGHLY PERFORMANCE TESTED
+     *
+     * Whilst it may look like the function would benefit from some parallelism, the instances running on the current MDTP platform only have 1 or 2 cores.
+     * Spinning up upto 5 threads per token request in this environment starts to degrade performance pretty quickly. This may change if Future Platform
+     * provides instances with more cores, but for now we should stick with doing things sequentially.
+     */
     Future {
       blocking {
         for {
           matchingClientSecret <- candidateClientSecrets
-            .sortWith(lastUsedOrdering)
+            .sortWith(lastUsedOrdering) // Assuming most clients use the same secret every time, we should match on the first comparison most of the time
             .find(clientSecret => {
               secret.isBcryptedSafe(clientSecret.hashedSecret) match {
                 case Success(result) => result
