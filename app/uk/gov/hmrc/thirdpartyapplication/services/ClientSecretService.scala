@@ -23,6 +23,8 @@ import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -30,7 +32,7 @@ import scala.concurrent.{Future, blocking}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
+class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
@@ -55,17 +57,22 @@ class ClientSecretService @Inject()(config: ClientSecretServiceConfig) {
     hashedValue
   }
 
-  def clientSecretIsValid(secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
+  def clientSecretIsValid(applicationId: UUID, secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
     Future {
       blocking {
-        candidateClientSecrets
-          .sortWith(lastUsedOrdering)
-          .find(clientSecret => {
-            secret.isBcryptedSafe(clientSecret.hashedSecret) match {
-              case Success(result) => result
-              case Failure(_) => false
-            }
-          })
+        for {
+          matchingClientSecret <- candidateClientSecrets
+            .sortWith(lastUsedOrdering)
+            .find(clientSecret => {
+              secret.isBcryptedSafe(clientSecret.hashedSecret) match {
+                case Success(result) => result
+                case Failure(_) => false
+              }
+            })
+          _ = if (requiresRehash(matchingClientSecret.hashedSecret)) {
+            applicationRepository.updateClientSecretHash(applicationId, matchingClientSecret.id, hashSecret(secret))
+          }
+        } yield matchingClientSecret
       }
     }
   }

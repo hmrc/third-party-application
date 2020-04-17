@@ -44,11 +44,11 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     }
 
     object ClientSecretIsValid {
-      def thenReturnValidationResult(secret: String, candidateClientSecrets: Seq[ClientSecret])(matchingClientSecret: ClientSecret) =
-        when(aMock.clientSecretIsValid(secret, candidateClientSecrets)).thenReturn(Future.successful(Some(matchingClientSecret)))
+      def thenReturnValidationResult(applicationId: UUID, secret: String, candidateClientSecrets: Seq[ClientSecret])(matchingClientSecret: ClientSecret) =
+        when(aMock.clientSecretIsValid(applicationId, secret, candidateClientSecrets)).thenReturn(Future.successful(Some(matchingClientSecret)))
 
-      def noMatchingClientSecret(secret: String, candidateClientSecrets: Seq[ClientSecret]) =
-        when(aMock.clientSecretIsValid(secret, candidateClientSecrets)).thenReturn(Future.successful(None))
+      def noMatchingClientSecret(applicationId: UUID, secret: String, candidateClientSecrets: Seq[ClientSecret]) =
+        when(aMock.clientSecretIsValid(applicationId, secret, candidateClientSecrets)).thenReturn(Future.successful(None))
     }
   }
 

@@ -16,17 +16,21 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.services
 
+import java.util.UUID
+
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretService, ClientSecretServiceConfig}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
+import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
-class ClientSecretServiceSpec extends AsyncHmrcSpec {
+class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule {
 
   val fastWorkFactor = 4
 
-  val underTest = new ClientSecretService(ClientSecretServiceConfig(fastWorkFactor))
+  val underTest = new ClientSecretService(ApplicationRepoMock.aMock, ClientSecretServiceConfig(fastWorkFactor))
 
   "generateClientSecret" should {
     "create new ClientSecret object using UUID for secret value" in {
@@ -45,20 +49,35 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec {
   }
 
   "clientSecretIsValid" should {
+    val applicationId = UUID.randomUUID()
     val fooSecret = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor))
     val barSecret = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor))
     val bazSecret = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor))
 
     "return the ClientSecret that matches the provided secret value" in {
-      val matchingSecret = await(underTest.clientSecretIsValid("bar", Seq(fooSecret, barSecret, bazSecret)))
+      val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "bar", Seq(fooSecret, barSecret, bazSecret)))
 
       matchingSecret should be (Some(barSecret))
+      ApplicationRepoMock.verifyZeroInteractions()
+    }
+
+    "return the ClientSecret that matches the provided secret value and rehash it if the work factor has changed" in {
+      val secretWithDifferentWorkFactor = ClientSecret(name = "secret-4", hashedSecret = "different-work-factor".bcrypt(fastWorkFactor + 1))
+
+      ApplicationRepoMock.UpdateClientSecretHash.thenReturn(applicationId, secretWithDifferentWorkFactor.id)(mock[ApplicationData])
+
+      val matchingSecret =
+        await(underTest.clientSecretIsValid(applicationId, "different-work-factor", Seq(fooSecret, barSecret, bazSecret, secretWithDifferentWorkFactor)))
+
+      matchingSecret should be (Some(secretWithDifferentWorkFactor))
+      ApplicationRepoMock.UpdateClientSecretHash.verifyCalledWith(applicationId, secretWithDifferentWorkFactor.id)
     }
 
     "return None if the secret value provided does not match" in {
-      val matchingSecret = await(underTest.clientSecretIsValid("foobar", Seq(fooSecret, barSecret, bazSecret)))
+      val matchingSecret = await(underTest.clientSecretIsValid(applicationId, "foobar", Seq(fooSecret, barSecret, bazSecret)))
 
       matchingSecret should be (None)
+      ApplicationRepoMock.verifyZeroInteractions()
     }
 
   }

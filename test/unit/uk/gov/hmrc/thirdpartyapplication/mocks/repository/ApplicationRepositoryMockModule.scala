@@ -251,6 +251,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
+    object UpdateClientSecretHash {
+      def thenReturn(applicationId: UUID, clientSecretId: String)(updatedApplication: ApplicationData) = {
+        when(aMock.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)).thenReturn(successful(updatedApplication))
+      }
+
+      def verifyCalledWith(applicationId: UUID, clientSecretId: String) =
+        ApplicationRepoMock.verify.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)
+    }
+
     object DeleteClientSecret {
       def succeeds(application: ApplicationData, clientSecretId: String) = {
         val otherClientSecrets = application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
