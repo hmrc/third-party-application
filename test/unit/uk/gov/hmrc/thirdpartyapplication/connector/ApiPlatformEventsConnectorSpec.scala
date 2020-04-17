@@ -25,7 +25,7 @@ import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiPlatformEventsConfig, ApiPlatformEventsConnector}
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, HasSucceeded, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ClientSecretAddedEvent, ClientSecretRemovedEvent, HasSucceeded, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -44,6 +44,14 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN")
+
+  val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    clientSecretId = "1234")
+
+  val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    clientSecretId = "1234")
 
 
   trait Setup {
@@ -86,7 +94,6 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
 
         result shouldBe true
       }
-
     }
 
     "TeamMemberRemovedEvents" should {
@@ -112,7 +119,57 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
 
         result shouldBe true
       }
+    }
 
+
+    "ClientSecretAdded" should {
+      "should return true when httpclient receives CREATED status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
+        val result = await(underTest.sentClientSecretAddedEvent(clientSecretAddedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return true when connector is disabled" in new Setup() {
+        configSetUpWith(enabled = false)
+        val result = await(underTest.sentClientSecretAddedEvent(clientSecretAddedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return false when httpclient receives internal server error status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
+        val result = await(underTest.sentClientSecretAddedEvent(clientSecretAddedEvent)(hc))
+
+        result shouldBe true
+      }
+    }
+
+    "ClientSecretRemoved" should {
+      "should return true when httpclient receives CREATED status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
+        val result = await(underTest.sentClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return true when connector is disabled" in new Setup() {
+        configSetUpWith(enabled = false)
+        val result = await(underTest.sentClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return false when httpclient receives internal server error status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
+        val result = await(underTest.sentClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
+
+        result shouldBe true
+      }
     }
   }
 

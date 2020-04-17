@@ -23,7 +23,7 @@ import play.api.http.HeaderNames.CONTENT_TYPE
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,6 +34,8 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
   private val applicationEventsUri = "/application-events"
   private val teamMemberAddedUri = "/teamMemberAdded"
   private val teamMemberRemovedUri = "/teamMemberRemoved"
+  private val clientSecretAddedUri =   "/clientSecretAdded"
+  private val clientSecretRemovedUri = "/clientSecretRemoved"
 
   def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
     postEvent(event, teamMemberAddedUri)(hc)
@@ -41,6 +43,14 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
 
   def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
     postEvent(event, teamMemberRemovedUri)(hc)
+  }
+
+  def sentClientSecretAddedEvent(event: ClientSecretAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    postEvent(event, clientSecretAddedUri)(hc)
+  }
+
+  def sentClientSecretRemovedEvent(event: ClientSecretRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    postEvent(event, clientSecretRemovedUri)(hc)
   }
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
