@@ -39,6 +39,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationReposi
 import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -47,11 +48,13 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val mockLogger: LoggerLike = mock[LoggerLike]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
+    val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService](withSettings.lenient())
+    when(mockApiPlatformEventService.sendClientSecretAddedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
 
     val underTest: CredentialService =
-      new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig, EmailConnectorMock.aMock) {
-      override val logger: LoggerLike = mockLogger
-    }
+    new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig, mockApiPlatformEventService, EmailConnectorMock.aMock) {
+        override val logger: LoggerLike = mockLogger
+      }
   }
 
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
@@ -193,6 +196,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         Map("applicationId" -> applicationId.toString, "newClientSecret" -> secretName, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
+
+
     }
 
     "send a notification to all admins" in new Setup {

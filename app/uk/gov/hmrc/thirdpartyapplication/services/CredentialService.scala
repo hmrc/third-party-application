@@ -39,6 +39,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   auditService: AuditService,
                                   clientSecretService: ClientSecretService,
                                   config: CredentialConfig,
+                                  apiPlatformEventService: ApiPlatformEventService,
                                   emailConnector: EmailConnector)(implicit val ec: ExecutionContext) {
 
   val clientSecretLimit = config.clientSecretLimit
@@ -65,8 +66,10 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       newSecretValue = generatedSecret._2
 
       updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
+      _ = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
       _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
+
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
@@ -91,6 +94,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
       updatedApplication <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
       _ <- audit(applicationId, clientSecretId)
+      _ <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication,clientSecretId)
       _ <- sendNotification(clientSecretToUpdate, updatedApplication)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
 
