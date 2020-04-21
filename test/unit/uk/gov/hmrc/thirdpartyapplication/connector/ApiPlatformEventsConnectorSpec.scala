@@ -16,16 +16,13 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.connector
 
-import net.bytebuddy.utility.JavaModule.Dispatcher.Enabled
-import org.mockito.MockSettings
-import org.mockito.internal.creation.MockSettingsImpl
 import org.mockito.stubbing.ScalaOngoingStubbing
 import org.scalatest.concurrent.ScalaFutures
 import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiPlatformEventsConfig, ApiPlatformEventsConnector}
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ClientSecretAddedEvent, ClientSecretRemovedEvent, HasSucceeded, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -53,6 +50,9 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     clientSecretId = "1234")
 
+  val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    oldRedirectUris = "originalUris", newRedirectUris = "newRedirectUris")
 
   trait Setup {
     val mockHttpClient: HttpClient = mock[HttpClient]
@@ -159,6 +159,31 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
       "should return true when connector is disabled" in new Setup() {
         configSetUpWith(enabled = false)
         val result = await(underTest.sentClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return false when httpclient receives internal server error status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(INTERNAL_SERVER_ERROR)))
+        val result = await(underTest.sentRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
+
+        result shouldBe true
+      }
+    }
+
+    "RedirectUrisUpdatedEvent" should {
+      "should return true when httpclient receives CREATED status" in new Setup() {
+        configSetUpWith(enabled = true)
+        apiApplicationEventsWillReturn(Future(HttpResponse(CREATED)))
+        val result = await(underTest.sentRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "should return true when connector is disabled" in new Setup() {
+        configSetUpWith(enabled = false)
+        val result = await(underTest.sentRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
 
         result shouldBe true
       }

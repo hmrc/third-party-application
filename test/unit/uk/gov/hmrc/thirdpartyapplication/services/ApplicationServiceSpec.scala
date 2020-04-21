@@ -123,6 +123,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     when(mockApiPlatformEventService.sendTeamMemberAddedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier])).thenReturn(successful(true))
     when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
       .thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
+      .thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
+      .thenReturn(successful(true))
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
                                                            subscriptions: List[APIIdentifier]) =
@@ -502,12 +506,12 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         createdOn = HmrcTime.now,
         lastAccess = Some(HmrcTime.now)
       )
-
+      val newRedirectUris =   List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
         access = Standard(
-          List("http://new-url.example.com"),
+          newRedirectUris,
           Some("http://new-url.example.com/terms-and-conditions"),
           Some("http://new-url.example.com/privacy-policy"))
       )
@@ -520,6 +524,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppRedirectUrisChanged), *)(*)
+      verify(mockApiPlatformEventService).sendRedirectUrisUpdatedEvent(eqTo(updatedApplication), eqTo(""), eqTo(newRedirectUris.mkString(",")))(any[HeaderCarrier])
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
     }
   }

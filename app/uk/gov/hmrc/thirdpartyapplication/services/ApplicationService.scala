@@ -211,15 +211,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def audit(collaborator: Option[Collaborator]) = collaborator match {
-        case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
-        case None => Logger.warn(s"Failed to audit collaborator removal for: $collaborator")
-      }
+      case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
+      case None => Logger.warn(s"Failed to audit collaborator removal for: $collaborator")
+    }
 
     def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
 
-    def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match{
+    def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
       case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      case None =>    Logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
+      case None => Logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
     }
 
     for {
@@ -291,12 +291,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-    import cats.data.OptionT
-    import cats.implicits._
+  import cats.data.OptionT
+  import cats.implicits._
 
-    def fetch(applicationId: UUID): OptionT[Future,ApplicationResponse] =
-      OptionT(applicationRepository.fetch(applicationId))
-        .map(application => ApplicationResponse(data = application))
+  def fetch(applicationId: UUID): OptionT[Future, ApplicationResponse] =
+    OptionT(applicationRepository.fetch(applicationId))
+      .map(application => ApplicationResponse(data = application))
 
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
@@ -467,9 +467,20 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       existing <- fetchApp(id)
       _ = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
+      _ = sendEventIfRedirectUrisChanged(existing, savedApp)
       _ = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
     } yield savedApp
   }
+
+  private def sendEventIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
+    (previousAppData.access, updatedAppData.access) match {
+      case (previous: Standard, updated: Standard) =>
+        if (previous.redirectUris != updated.redirectUris) {
+          apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
+        }
+    }
+  }
+
 
   private def fetchApp(applicationId: UUID) = {
     val notFoundException = new NotFoundException(s"application not found for id: $applicationId")
