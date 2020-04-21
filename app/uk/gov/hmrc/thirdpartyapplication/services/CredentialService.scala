@@ -94,7 +94,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
       clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
       updatedApplication <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
       _ <- audit(applicationId, clientSecretId)
-      _ <- apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication,clientSecretId)
+      _ <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication,clientSecretId)
       _ <- sendNotification(clientSecretToUpdate, updatedApplication)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
 
