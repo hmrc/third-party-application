@@ -25,6 +25,7 @@ object EventType extends Enumeration {
   val TEAM_MEMBER_REMOVED = Value
   val CLIENT_SECRET_ADDED = Value
   val CLIENT_SECRET_REMOVED = Value
+  val REDIRECT_URIS_UPDATED = Value
   implicit val applicationEventTypeFormat = EnumJson.enumFormat(EventType)
 }
 
@@ -63,4 +64,12 @@ case class ClientSecretRemovedEvent(override val applicationId: String,
                                   override val actor: Actor,
                                   clientSecretId: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.CLIENT_SECRET_REMOVED
+}
+
+case class RedirectUrisUpdatedEvent(override val applicationId: String,
+                                    override val eventDateTime: DateTime = DateTime.now(),
+                                    override val actor: Actor,
+                                    oldRedirectUris: String,
+                                    newRedirectUris: String) extends ApplicationEvent {
+  override val eventType: EventType.Value = EventType.REDIRECT_URIS_UPDATED
 }

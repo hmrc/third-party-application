@@ -273,15 +273,17 @@ object APIStatusJson {
 }
 
 object ApplicationEventFormats {
-  implicit val actorFormats = Json.format[Actor]
-  implicit val teamMemberAddedEventFormats = Json.format[TeamMemberAddedEvent]
-  implicit val teamMemberRemovedEventFormats = Json.format[TeamMemberRemovedEvent]
-  implicit val clientSecretAddedEventFormats = Json.format[ClientSecretAddedEvent]
-  implicit val clientSecretRemovedEventFormats = Json.format[ClientSecretRemovedEvent]
+  implicit val actorFormats: OFormat[Actor] = Json.format[Actor]
+  implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent] = Json.format[TeamMemberAddedEvent]
+  implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent] = Json.format[TeamMemberRemovedEvent]
+  implicit val clientSecretAddedEventFormats: OFormat[ClientSecretAddedEvent] = Json.format[ClientSecretAddedEvent]
+  implicit val clientSecretRemovedEventFormats: OFormat[ClientSecretRemovedEvent] = Json.format[ClientSecretRemovedEvent]
+  implicit val urisUpdatedEventFormats: OFormat[RedirectUrisUpdatedEvent] = Json.format[RedirectUrisUpdatedEvent]
   implicit val formatApplicationEvent: Format[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
     .and[TeamMemberAddedEvent](EventType.TEAM_MEMBER_ADDED.toString)
     .and[TeamMemberRemovedEvent](EventType.TEAM_MEMBER_REMOVED.toString)
     .and[ClientSecretAddedEvent](EventType.CLIENT_SECRET_ADDED.toString)
     .and[ClientSecretRemovedEvent](EventType.CLIENT_SECRET_REMOVED.toString)
+    .and[RedirectUrisUpdatedEvent](EventType.REDIRECT_URIS_UPDATED.toString)
     .format
 }

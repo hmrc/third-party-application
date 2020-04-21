@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -63,6 +63,15 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       })
   }
 
+  def sendRedirectUrisUpdatedEvent(appData: ApplicationData, oldRedirectUris: String, newRedirectUris: String)
+                                (implicit hc: HeaderCarrier): Future[Boolean] = {
+    val appId = appData.id.toString
+    handleResult(appId, eventType = "RedirectUrisUpdatedEvent",
+      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(RedirectUrisUpdatedEvent(appId, actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
+      })
+  }
+
   private def handleResult(appId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None =>
@@ -75,6 +84,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     case tmre: TeamMemberRemovedEvent => apiPlatformEventsConnector.sendTeamMemberRemovedEvent(tmre)
     case csae: ClientSecretAddedEvent => apiPlatformEventsConnector.sentClientSecretAddedEvent(csae)
     case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sentClientSecretRemovedEvent(csra)
+    case ruue  : RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sentRedirectUrisUpdatedEvent(ruue)
   }
 
   private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[Actor] = {
