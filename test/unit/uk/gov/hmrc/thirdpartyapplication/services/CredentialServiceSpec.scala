@@ -50,6 +50,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
     val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService](withSettings.lenient())
     when(mockApiPlatformEventService.sendClientSecretAddedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
+    when(mockApiPlatformEventService.sendClientSecretRemovedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
 
     val underTest: CredentialService =
     new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig, mockApiPlatformEventService, EmailConnectorMock.aMock) {
@@ -197,7 +198,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         hc
       )
 
-
+    verify(mockApiPlatformEventService).sendClientSecretAddedEvent(any[ApplicationData], eqTo(result.clientSecrets.last.id))(any[HeaderCarrier])
     }
 
     "send a notification to all admins" in new Setup {
@@ -272,6 +273,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         Map("applicationId" -> applicationId.toString, "removedClientSecret" -> clientSecretIdToRemove),
         hc
       )
+
+      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove))(any[HeaderCarrier])
     }
 
     "send a notification to all admins" in new Setup {
@@ -286,6 +289,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       EmailConnectorMock.SendRemovedClientSecretNotification
         .verifyCalledWith(loggedInUser, firstSecret.name, applicationData.name, Set(loggedInUser, anotherAdminUser))
+
+      verify(mockApiPlatformEventService).sendClientSecretRemovedEvent(any[ApplicationData], eqTo(clientSecretIdToRemove))(any[HeaderCarrier])
     }
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
