@@ -157,6 +157,8 @@ case object NameAscending extends ApplicationSort
 case object NameDescending extends ApplicationSort
 case object SubmittedAscending extends ApplicationSort
 case object SubmittedDescending extends ApplicationSort
+case object LastUseDateAscending extends ApplicationSort
+case object LastUseDateDescending extends ApplicationSort
 
 object ApplicationSort extends ApplicationSort {
   def apply(value: Option[String]): ApplicationSort = value match {
@@ -164,6 +166,8 @@ object ApplicationSort extends ApplicationSort {
     case Some("NAME_DESC") => NameDescending
     case Some("SUBMITTED_ASC") => SubmittedAscending
     case Some("SUBMITTED_DESC") => SubmittedDescending
+    case Some("LAST_USE_ASC") => LastUseDateAscending
+    case Some("LAST_USE_DESC") => LastUseDateDescending
     case _ => SubmittedAscending
   }
 }

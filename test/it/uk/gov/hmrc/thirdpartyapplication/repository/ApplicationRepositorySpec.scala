@@ -1113,6 +1113,48 @@ class ApplicationRepositorySpec
       result.applications.head.createdOn shouldBe secondCreatedOn
       result.applications.last.createdOn shouldBe firstCreatedOn
     }
+
+    "return applications sorted by lastAccess ascending" in {
+      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
+      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = LastUseDateAscending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.lastAccess shouldBe Some(oldestLastAccessDate)
+      result.applications.last.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+    }
+
+    "return applications sorted by lastAccess descending" in {
+      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
+      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = LastUseDateDescending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+      result.applications.last.lastAccess shouldBe Some(oldestLastAccessDate)
+    }
   }
 
   "processAll" should {

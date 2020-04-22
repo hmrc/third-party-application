@@ -280,6 +280,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     case NameDescending => sorting("name" -> -1)
     case SubmittedAscending => sorting("createdOn" -> 1)
     case SubmittedDescending => sorting("createdOn" -> -1)
+    case LastUseDateAscending => sorting("lastAccess" -> 1)
+    case LastUseDateDescending => sorting("lastAccess" -> -1)
     case _ => sorting("name" -> 1)
   }
 
