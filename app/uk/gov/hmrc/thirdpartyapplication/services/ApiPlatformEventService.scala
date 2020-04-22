@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -72,6 +72,25 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       })
   }
 
+  def sendApiSubscribedEvent(appData: ApplicationData, context: String, version: String)
+                                  (implicit hc: HeaderCarrier): Future[Boolean] = {
+    val appId = appData.id.toString
+    handleResult(appId, eventType = "ApiSubscribedEvent",
+      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ApiSubscribedEvent(appId, actor = actor, context = context, version = version))
+      })
+  }
+
+
+  def sendApiUnsubscribedEvent(appData: ApplicationData, context: String, version: String)
+                            (implicit hc: HeaderCarrier): Future[Boolean] = {
+    val appId = appData.id.toString
+    handleResult(appId, eventType = "ApiUnsubscribedEvent",
+      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+        actor => sendEvent(ApiUnsubscribedEvent(appId, actor = actor, context = context, version = version))
+      })
+  }
+
   private def handleResult(appId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None =>
@@ -82,9 +101,11 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
   private def sendEvent(appEvent: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = appEvent match {
     case tmae: TeamMemberAddedEvent => apiPlatformEventsConnector.sendTeamMemberAddedEvent(tmae)
     case tmre: TeamMemberRemovedEvent => apiPlatformEventsConnector.sendTeamMemberRemovedEvent(tmre)
-    case csae: ClientSecretAddedEvent => apiPlatformEventsConnector.sentClientSecretAddedEvent(csae)
-    case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sentClientSecretRemovedEvent(csra)
-    case ruue  : RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sentRedirectUrisUpdatedEvent(ruue)
+    case csae: ClientSecretAddedEvent => apiPlatformEventsConnector.sendClientSecretAddedEvent(csae)
+    case csra: ClientSecretRemovedEvent => apiPlatformEventsConnector.sendClientSecretRemovedEvent(csra)
+    case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)
+    case apse: ApiSubscribedEvent => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
+    case apuse: ApiUnsubscribedEvent => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
   }
 
   private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[Actor] = {

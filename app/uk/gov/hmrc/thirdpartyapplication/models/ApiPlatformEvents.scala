@@ -26,6 +26,8 @@ object EventType extends Enumeration {
   val CLIENT_SECRET_ADDED = Value
   val CLIENT_SECRET_REMOVED = Value
   val REDIRECT_URIS_UPDATED = Value
+  val API_SUBSCRIBED = Value
+  val API_UNSUBSCRIBED = Value
   implicit val applicationEventTypeFormat = EnumJson.enumFormat(EventType)
 }
 
@@ -72,4 +74,20 @@ case class RedirectUrisUpdatedEvent(override val applicationId: String,
                                     oldRedirectUris: String,
                                     newRedirectUris: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.REDIRECT_URIS_UPDATED
+}
+
+case class ApiSubscribedEvent(override val applicationId: String,
+                              override val eventDateTime:  DateTime = DateTime.now(),
+                              override val actor: Actor,
+                              context: String,
+                              version: String) extends ApplicationEvent {
+  override val eventType: EventType.Value = EventType.API_SUBSCRIBED
+}
+
+case class ApiUnsubscribedEvent(override val applicationId: String,
+                                override val eventDateTime:  DateTime = DateTime.now(),
+                                override val actor: Actor,
+                                context: String,
+                                version: String) extends ApplicationEvent {
+  override val eventType: EventType.Value = EventType.API_UNSUBSCRIBED
 }
