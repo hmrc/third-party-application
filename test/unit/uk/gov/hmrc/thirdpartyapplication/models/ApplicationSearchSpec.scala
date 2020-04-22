@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
@@ -77,6 +78,24 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (PrivilegedAccess)
+    }
+
+    "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
+      val expectedDateTime = DateTime.now(DateTimeZone.UTC)
+      val request = FakeRequest("GET", s"/applications?lastUseBefore=${expectedDateTime.getMillis}")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.filters.head should be (LastUseBeforeDate(expectedDateTime))
+    }
+
+    "correctly parse lastUseAfter into LastUseAfterDate filter" in {
+      val expectedDateTime = DateTime.now(DateTimeZone.UTC)
+      val request = FakeRequest("GET", s"/applications?lastUseAfter=${expectedDateTime.getMillis}")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      searchObject.filters.head should be (LastUseAfterDate(expectedDateTime))
     }
 
     "correctly parses multiple filters" in {

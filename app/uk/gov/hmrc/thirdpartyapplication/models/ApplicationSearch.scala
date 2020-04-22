@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.{DateTime, DateTimeZone}
+
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
                              filters: List[ApplicationSearchFilter] = List(),
@@ -39,6 +41,7 @@ object ApplicationSearch {
             case "status" => ApplicationStatusFilter(value.head)
             case "termsOfUse" => TermsOfUseStatusFilter(value.head)
             case "accessType" => AccessTypeFilter(value.head)
+            case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case _ => None // ignore anything that isn't a search filter
           }
       }
@@ -128,6 +131,22 @@ case object AccessTypeFilter extends AccessTypeFilter {
       case "STANDARD" => Some(StandardAccess)
       case "ROPC" => Some(ROPCAccess)
       case "PRIVILEGED" => Some(PrivilegedAccess)
+      case _ => None
+    }
+  }
+}
+
+sealed trait LastUseDateFilter extends ApplicationSearchFilter
+case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
+case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
+
+case object LastUseDateFilter extends LastUseDateFilter {
+  def asUTCTime(millisAsString: String): DateTime = new DateTime(millisAsString.toLong, DateTimeZone.UTC)
+
+  def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
+    queryType match {
+      case "lastUseBefore" => Some(LastUseBeforeDate(asUTCTime(value)))
+      case "lastUseAfter" => Some(LastUseAfterDate(asUTCTime(value)))
       case _ => None
     }
   }
