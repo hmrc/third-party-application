@@ -16,8 +16,21 @@ Parameter Name    | Data Type/Allowed Values                                    
 `accessType`      | `STANDARD`, `ROPC`, `PRIVILEGED`                                                  | Access type that Application uses
 `apiSubscription` | `ANY`, `NONE`, or specific API name                                               | Which API the Application is subscribed to
 `apiVersion`      | Version Number                                                                    | Version of the specific API that Application is subscribed to. Only relevant when the name of an API has been specified for `apiSubscription`
-`page`            | Number (Defaults to `1` if not specified)                                         | The page number to display (based on `pageSize`)
-`pageSize`        | Number (Defaults to `Int.MaxValue` if not specified)                              | The maximum number of results to return
+`lastUseBefore`   | Millisecond representation of a Date/Time (UTC Time Zone)                         | Applications that were last accessed *before* the specified date and time
+`lastUseAfter`    | Millisecond representation of a Date/Time (UTC Time Zone)                         | Applications that were last accessed *after* the specified date and time
+
+Additionally, the results can be sorted through use of the following query parameters:
+
+Parameter Name | Data Type/Allowed Values                                                                    | Description
+---------------|---------------------------------------------------------------------------------------------|------------
+`sort`         | `NAME_ASC`, `NAME_DESC`, `SUBMITTED_ASC`, `SUBMITTED_DESC`, `LAST_USE_ASC`, `LAST_USE_DESC` | Sort by application name, creation data, or last use date, ascending or descending respectively. Defaults to `SUBMITTED_ASC` if not specified
+
+Finally, the following query parameters are used to control the number of results returned:
+
+Parameter Name | Data Type/Allowed Values                             | Description
+---------------|------------------------------------------------------|------------
+`page`         | Number (Defaults to `1` if not specified)            | The page number to display (based on `pageSize`)
+`pageSize`     | Number (Defaults to `Int.MaxValue` if not specified) | The maximum number of results to return
 
 ### Examples
 
