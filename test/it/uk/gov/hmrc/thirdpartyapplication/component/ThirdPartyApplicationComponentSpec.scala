@@ -18,6 +18,7 @@ package it.uk.gov.hmrc.thirdpartyapplication.component
 
 import java.util.UUID
 
+import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
@@ -151,26 +152,26 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val expectedClientSecrets = createdApp.tokens.production.clientSecrets
 
       val returnedResponse = Json.parse(response.body).as[ApplicationTokenResponse]
-      returnedResponse.clientId should be (application.clientId)
-      returnedResponse.accessToken.length should be (32)
+      returnedResponse.clientId should be(application.clientId)
+      returnedResponse.accessToken.length should be(32)
 
       // Bug in JodaTime means we can't do a direct comparison between returnedResponse.production.clientSecrets and expectedClientSecrets
       // We have to compare contents individually
       val returnedClientSecret = returnedResponse.clientSecrets.head
-      returnedClientSecret.name should be (expectedClientSecrets.head.name)
-      returnedClientSecret.secret.isDefined should be (false)
-      returnedClientSecret.createdOn.getMillis should be (expectedClientSecrets.head.createdOn.getMillis)
+      returnedClientSecret.name should be(expectedClientSecrets.head.name)
+      returnedClientSecret.secret.isDefined should be(false)
+      returnedClientSecret.createdOn.getMillis should be(expectedClientSecrets.head.createdOn.getMillis)
     }
   }
 
   feature("Validate Credentials") {
     def validationRequest(clientId: String, clientSecret: String) =
       s"""
-        | {
-        |   "clientId": "$clientId",
-        |   "clientSecret": "$clientSecret"
-        | }
-        |""".stripMargin
+         | {
+         |   "clientId": "$clientId",
+         |   "clientSecret": "$clientSecret"
+         | }
+         |""".stripMargin
 
     scenario("Return details of application when valid") {
       Given("A third party application")
@@ -224,14 +225,14 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
     val privilegedApplicationsScenario = "Create Privileged application"
     scenario(privilegedApplicationsScenario) {
-      awsApiGatewayConnector.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+      awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
       val appName = "privileged-app-name"
 
       Given("The gatekeeper is logged in")
-      authConnector.willValidateLoggedInUserHasGatekeeperRole()
+      authStub.willValidateLoggedInUserHasGatekeeperRole()
 
       And("Totp returns successfully")
-      totpConnector.willReturnTOTP(privilegedApplicationsScenario)
+      totpStub.willReturnTOTP(privilegedApplicationsScenario)
 
       When("We create a privileged application")
       val createdResponse = postData("/application", applicationRequest(appName, privilegedAccess))
@@ -255,6 +256,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application = createApplication()
+      apiPlatformEventsStub.willReceiveTeamMemberAddedEvent()
 
       When("We request to add the developer as a collaborator of the application")
       val response = postData(s"/application/${application.id}/collaborator",
@@ -274,10 +276,14 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       result shouldBe AddCollaboratorResponse(registeredUser = true)
       val fetchedApplication = fetchApplication(application.id)
       fetchedApplication.collaborators should contain(Collaborator("test@example.com", Role.ADMINISTRATOR))
+
+      apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
 
     scenario("Remove collaborator to an application") {
-      emailConnector.willPostEmailNotification()
+      emailStub.willPostEmailNotification()
+      apiPlatformEventsStub.willReceiveTeamMemberRemovedEvent()
+
       Given("A third party application")
       val application = createApplication()
 
@@ -289,6 +295,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The collaborator is removed")
       val fetchedApplication = fetchApplication(application.id)
       fetchedApplication.collaborators should not contain Collaborator(emailAddress, Role.DEVELOPER)
+
+      apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
     }
   }
 
@@ -327,9 +335,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       fetchedAccess.overrides shouldBe originalOverrides
     }
 
-    scenario("Add a client secret") {
+    scenario("Add two client secrets then remove the last one") {
       Given("A third party application")
       val application = createApplication()
+      apiPlatformEventsStub.willReceiveApiSubscribedEvent()
+      apiPlatformEventsStub.willReceiveClientRemovedEvent()
+      emailStub.willPostEmailNotification()
       val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       createdApp.tokens.production.clientSecrets should have size 0
 
@@ -341,16 +352,37 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The client secret is added to the production environment of the application")
       val fetchResponseJson = Json.parse(fetchResponse.body).as[ApplicationTokenResponse]
       fetchResponseJson.clientSecrets should have size 1
+
+      apiPlatformEventsStub.verifyClientSecretAddedEventSent()
+
+      When("I request to add a second production client secret")
+      val secondfetchResponse = postData(s"/application/${application.id}/client-secret",
+        s"""{"actorEmailAddress": "$emailAddress"}""")
+      secondfetchResponse.code shouldBe OK
+
+      Then("The client secret is added to the production environment of the application")
+      val secondFetchResponseJson = Json.parse(secondfetchResponse.body).as[ApplicationTokenResponse]
+      val moreSecrets: Seq[ClientSecretResponse] = secondFetchResponseJson.clientSecrets
+      moreSecrets should have size 2
+
+      val clientSecretId = moreSecrets.last.id
+
+      When("I request to remove a production client secret")
+      val removeClientSecretResponse = postData(s"/application/${application.id}/client-secret/$clientSecretId",
+        s"""{"actorEmailAddress": "$emailAddress"}""")
+      removeClientSecretResponse.code shouldBe NO_CONTENT
+
+      apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
     }
 
     scenario("Delete an application") {
-      apiSubscriptionFields.willDeleteTheSubscriptionFields()
-      thirdPartyDelegatedAuthorityConnector.willRevokeApplicationAuthorities()
-      awsApiGatewayConnector.willDeleteApplication(awsApiGatewayApplicationName)
-      emailConnector.willPostEmailNotification()
+      apiSubscriptionFieldsStub.willDeleteTheSubscriptionFields()
+      thirdPartyDelegatedAuthorityStub.willRevokeApplicationAuthorities()
+      awsApiGatewayStub.willDeleteApplication(awsApiGatewayApplicationName)
+      emailStub.willPostEmailNotification()
 
       Given("The gatekeeper is logged in")
-      authConnector.willValidateLoggedInUserHasGatekeeperRole()
+      authStub.willValidateLoggedInUserHasGatekeeperRole()
 
       And("A third party application")
       val application = createApplication()
@@ -369,16 +401,16 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Change rate limit tier for an application") {
 
       Given("The gatekeeper is logged in")
-      authConnector.willValidateLoggedInUserHasGatekeeperRole()
+      authStub.willValidateLoggedInUserHasGatekeeperRole()
 
       And("A third party application with BRONZE rate limit tier exists")
       val application = createApplication()
 
       And("An API is available for the application")
-      apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       And("AWS API Gateway is updated")
-      awsApiGatewayConnector.willCreateOrUpdateApplication(application.name, "", RateLimitTier.SILVER)
+      awsApiGatewayStub.willCreateOrUpdateApplication(application.name, "", RateLimitTier.SILVER)
 
       Then("The response is successful")
       val response = postData(path = s"/application/${application.id}/rate-limit-tier", data = """{ "rateLimitTier" : "SILVER" }""")
@@ -394,10 +426,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val application = createApplication()
 
       And("The API is available for the application")
-      apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       And("The application is subscribed to an API")
-      result(subscriptionExists(application.id, context, version),timeout)
+      result(subscriptionExists(application.id, context, version), timeout)
 
       When("I fetch the API subscriptions of the application")
       val response = Http(s"$serviceUrl/application/${application.id}/subscription").asString
@@ -414,10 +446,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val application = createApplication("App with subscription")
 
       And("An API")
-      apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
 
       And("I subscribe the application to an API")
+      apiPlatformEventsStub.willReceiveApiSubscribedEvent()
       val subscribeResponse = postData(s"/application/${application.id}/subscription",
         s"""{ "context" : "$context", "version" : "$version" }""")
       And("The subscription is created")
@@ -439,9 +472,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application = createApplication()
+      apiPlatformEventsStub.willReceiveApiSubscribedEvent()
 
       And("An API")
-      apiDefinition.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       When("I request to subscribe the application to the API")
       val subscribeResponse = postData(s"/application/${application.id}/subscription",
@@ -449,12 +483,15 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("A 204 is returned")
       subscribeResponse.code shouldBe NO_CONTENT
+
+      apiPlatformEventsStub.verifyApiSubscribedEventSent()
     }
 
     scenario("Unsubscribe to an api") {
 
       Given("A third party application")
       val application = createApplication()
+      apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
 
       When("I request to unsubscribe the application to an API")
       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id}/subscription?context=$context&version=$version")
@@ -462,6 +499,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("A 204 is returned")
       unsubscribedResponse.code shouldBe NO_CONTENT
+
+      apiPlatformEventsStub.verifyApiUnsubscribedEventSent()
     }
   }
 
@@ -509,7 +548,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {
-    awsApiGatewayConnector.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
+    awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
     val createdResponse = postData("/application", applicationRequest(appName, access))
     createdResponse.code shouldBe CREATED
     Json.parse(createdResponse.body).as[ApplicationResponse]
@@ -519,7 +558,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     subscriptionRepository.add(applicationId, new APIIdentifier(apiContext, apiVersion))
   }
 
-  private def postData(path: String, data: String, method: String = "POST", extraHeaders: Seq[(String,String)] = Seq()): HttpResponse[String] = {
+  private def postData(path: String, data: String, method: String = "POST", extraHeaders: Seq[(String, String)] = Seq()): HttpResponse[String] = {
     val connTimeoutMs = 5000
     val readTimeoutMs = 10000
     Http(s"$serviceUrl$path").postData(data).method(method)

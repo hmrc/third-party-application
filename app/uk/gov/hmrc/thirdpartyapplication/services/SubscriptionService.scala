@@ -37,6 +37,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
                                     subscriptionRepository: SubscriptionRepository,
                                     apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
+                                    apiPlatformEventService: ApiPlatformEventService,
                                     apiGatewayStore: ApiGatewayStore)(implicit val ec: ExecutionContext) {
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
@@ -86,14 +87,16 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       app <- fetchAppFuture
       _ = checkVersionSubscription(app, versionSubscription)
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
+      _ <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
       _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
   }
 
   def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
-      _ <- fetchApp(applicationId)
+      app <- fetchApp(applicationId)
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
+      _ <- apiPlatformEventService.sendApiUnsubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
       _ <- auditSubscription(Unsubscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
   }

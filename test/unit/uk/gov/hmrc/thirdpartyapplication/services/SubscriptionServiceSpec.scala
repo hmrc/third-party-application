@@ -54,6 +54,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
+    val mockApiPlatformEventsService = mock[ApiPlatformEventService](withSettings.lenient())
     val response = mock[WSResponse]
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -62,12 +63,14 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiGatewayStore)
+      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiPlatformEventsService, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(*)(*)).thenReturn(successful(productionToken))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*, *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
+    when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
   }
 
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4),  hashedSecret = secret.bcrypt(4))
@@ -178,6 +181,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       result shouldBe HasSucceeded
 
       verify(mockSubscriptionRepository).add(applicationId, api)
+      verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.toString))
@@ -265,6 +269,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
       result shouldBe HasSucceeded
       verify(mockSubscriptionRepository).remove(applicationId, api)
+      verify(mockApiPlatformEventsService).sendApiUnsubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.toString))
