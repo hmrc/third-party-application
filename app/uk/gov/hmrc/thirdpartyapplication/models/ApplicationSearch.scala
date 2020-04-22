@@ -141,12 +141,12 @@ case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
 case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
 
 case object LastUseDateFilter extends LastUseDateFilter {
-  def asUTCTime(millisAsString: String): DateTime = new DateTime(millisAsString.toLong, DateTimeZone.UTC)
-
   def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
+    def asUTCTime(): DateTime = new DateTime(value.toLong, DateTimeZone.UTC)
+
     queryType match {
-      case "lastUseBefore" => Some(LastUseBeforeDate(asUTCTime(value)))
-      case "lastUseAfter" => Some(LastUseAfterDate(asUTCTime(value)))
+      case "lastUseBefore" => Some(LastUseBeforeDate(asUTCTime()))
+      case "lastUseAfter" => Some(LastUseAfterDate(asUTCTime()))
       case _ => None
     }
   }
