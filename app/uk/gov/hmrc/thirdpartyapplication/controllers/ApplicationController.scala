@@ -132,12 +132,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def deleteCollaborator(applicationId: UUID, email: String, adminsToEmail: String) = {
+  def deleteCollaborator(applicationId: UUID, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 
     Action.async { implicit request =>
-      applicationService.deleteCollaborator(applicationId, email, adminsToEmailSet) map (_ => NoContent) recover {
+      applicationService.deleteCollaborator(applicationId, email, adminsToEmailSet, notifyCollaborator) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery
     }

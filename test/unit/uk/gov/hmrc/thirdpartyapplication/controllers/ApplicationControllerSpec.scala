@@ -575,14 +575,15 @@ class ApplicationControllerSpec extends ControllerSpec
     val collaborator = "dev@example.com"
     val adminsToEmailSet = Set.empty[String]
     val adminsToEmailString = ""
+    val notifyCollaborator = true
 
     "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
       status(result) shouldBe SC_NO_CONTENT
     }
@@ -593,10 +594,10 @@ class ApplicationControllerSpec extends ControllerSpec
 
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
-          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
         status(result) shouldBe SC_NO_CONTENT
       })
@@ -605,10 +606,10 @@ class ApplicationControllerSpec extends ControllerSpec
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
-          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
 
-        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
         status(result) shouldBe SC_NO_CONTENT
       })
@@ -616,10 +617,10 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new NotFoundException(s"application not found for id: $applicationId")))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -627,10 +628,10 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new ApplicationNeedsAdmin))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
       verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
     }
@@ -638,10 +639,10 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet))(*))
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString)(request)
+      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
       status(result) shouldBe SC_INTERNAL_SERVER_ERROR
     }
