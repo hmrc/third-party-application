@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.format.ISODateTimeFormat
 import org.joda.time.{DateTime, DateTimeZone}
 
 case class ApplicationSearch(pageNumber: Int = 1,
@@ -141,12 +142,12 @@ case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
 case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
 
 case object LastUseDateFilter extends LastUseDateFilter {
-  def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
-    def asUTCTime(): DateTime = new DateTime(value.toLong, DateTimeZone.UTC)
+  private val dateFormatter = ISODateTimeFormat.dateTimeParser()
 
+  def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
     queryType match {
-      case "lastUseBefore" => Some(LastUseBeforeDate(asUTCTime()))
-      case "lastUseAfter" => Some(LastUseAfterDate(asUTCTime()))
+      case "lastUseBefore" => Some(LastUseBeforeDate(dateFormatter.parseDateTime(value)))
+      case "lastUseAfter" => Some(LastUseAfterDate(dateFormatter.parseDateTime(value)))
       case _ => None
     }
   }

@@ -8,16 +8,16 @@ Application Search
 ------------------
 Searching of Applications within the microservice is acheived by issuing a `GET` to the `/applications` endpoint, making use of the following Query Parameters:
 
-Parameter Name    | Data Type/Allowed Values                                                          | Description
-------------------|-----------------------------------------------------------------------------------|------------
-`search`          | Free Text                                                                         | Search Application names and identifiers
-`status`          | `CREATED`, `PENDING_GATEKEEPER_CHECK`, `PENDING_SUBMITTER_VERIFICATION`, `ACTIVE` | Retrieve Applications based on lifecycle status
-`termsOfUse`      | `ACCEPTED`, `NOT_ACCEPTED`                                                        | Whether owner of Application has accepted relevant Terms of Use
-`accessType`      | `STANDARD`, `ROPC`, `PRIVILEGED`                                                  | Access type that Application uses
-`apiSubscription` | `ANY`, `NONE`, or specific API name                                               | Which API the Application is subscribed to
-`apiVersion`      | Version Number                                                                    | Version of the specific API that Application is subscribed to. Only relevant when the name of an API has been specified for `apiSubscription`
-`lastUseBefore`   | Millisecond representation of a Date/Time (UTC Time Zone)                         | Applications that were last accessed *before* the specified date and time
-`lastUseAfter`    | Millisecond representation of a Date/Time (UTC Time Zone)                         | Applications that were last accessed *after* the specified date and time
+Parameter Name    | Data Type/Allowed Values                                                                                       | Description
+------------------|----------------------------------------------------------------------------------------------------------------|------------
+`search`          | Free Text                                                                                                      | Search Application names and identifiers
+`status`          | `CREATED`, `PENDING_GATEKEEPER_CHECK`, `PENDING_SUBMITTER_VERIFICATION`, `ACTIVE`                              | Retrieve Applications based on lifecycle status
+`termsOfUse`      | `ACCEPTED`, `NOT_ACCEPTED`                                                                                     | Whether owner of Application has accepted relevant Terms of Use
+`accessType`      | `STANDARD`, `ROPC`, `PRIVILEGED`                                                                               | Access type that Application uses
+`apiSubscription` | `ANY`, `NONE`, or specific API name                                                                            | Which API the Application is subscribed to
+`apiVersion`      | Version Number                                                                                                 | Version of the specific API that Application is subscribed to. Only relevant when the name of an API has been specified for `apiSubscription`
+`lastUseBefore`   | ISO Representation of date and (optionally) time (e.g. `2020-01-01` and `2020-01-01T15:35:22Z` are both valid) | Applications that were last accessed *before* the specified date and time
+`lastUseAfter`    | ISO Representation of date and (optionally) time (e.g. `2020-01-01` and `2020-01-01T15:35:22Z` are both valid) | Applications that were last accessed *after* the specified date and time
 
 Additionally, the results can be sorted through use of the following query parameters:
 
