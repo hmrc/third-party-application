@@ -146,19 +146,12 @@ case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
 case object LastUseDateFilter extends LastUseDateFilter {
   private val dateFormatter = ISODateTimeFormat.dateTimeParser()
 
-  def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
-    def parseDate() =
-      Try(dateFormatter.parseDateTime(value)) match {
-        case Success(value) => value
-        case Failure(exception) => throw InvalidDateFormat(exception.getMessage)
-      }
-
+  def apply(queryType: String, value: String): Option[LastUseDateFilter] =
     queryType match {
-      case "lastUseBefore" => Some(LastUseBeforeDate(parseDate()))
-      case "lastUseAfter" => Some(LastUseAfterDate(parseDate()))
+      case "lastUseBefore" => Some(LastUseBeforeDate(dateFormatter.parseDateTime(value)))
+      case "lastUseAfter" => Some(LastUseAfterDate(dateFormatter.parseDateTime(value)))
       case _ => None
     }
-  }
 }
 
 sealed trait ApplicationSort
