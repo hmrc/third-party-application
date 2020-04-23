@@ -38,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.{Failure, Success, Try}
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -247,9 +247,11 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def searchApplications = Action.async { implicit
-                                          request =>
-    applicationService.searchApplications(ApplicationSearch.fromQueryString(request.queryString)).map(apps => Ok(toJson(apps))) recover recovery
+  def searchApplications = Action.async { implicit request =>
+    Try(ApplicationSearch.fromQueryString(request.queryString)) match {
+      case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
+      case Failure(e) => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+    }
   }
 
   private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] =

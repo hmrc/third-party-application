@@ -16,6 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.{DateTime, DateTimeZone}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
@@ -77,6 +78,58 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (PrivilegedAccess)
+    }
+
+    "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
+      val dateAsISOString = "2020-02-22T16:35:00Z"
+      val expectedDateTime = new DateTime(2020, 2, 22, 16, 35, 0, DateTimeZone.UTC)
+
+      val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      val parsedFilter = searchObject.filters.head
+      parsedFilter.isInstanceOf[LastUseBeforeDate] should be (true)
+      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+    }
+
+    "correctly parse date only into LastUseBeforeDate filter" in {
+      val dateAsISOString = "2020-02-22"
+      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0)
+
+      val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      val parsedFilter = searchObject.filters.head
+      parsedFilter.isInstanceOf[LastUseBeforeDate] should be (true)
+      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+    }
+
+    "correctly parse lastUseAfter into LastUseAfterDate filter" in {
+      val dateAsISOString = "2020-02-22T16:35:00Z"
+      val expectedDateTime = new DateTime(2020, 2, 22, 16, 35, 0, DateTimeZone.UTC)
+
+      val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      val parsedFilter = searchObject.filters.head
+      parsedFilter.isInstanceOf[LastUseAfterDate] should be (true)
+      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+    }
+
+    "correctly parse date only into LastUseAfterDate filter" in {
+      val dateAsISOString = "2020-02-22"
+      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0)
+
+      val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
+
+      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
+
+      val parsedFilter = searchObject.filters.head
+      parsedFilter.isInstanceOf[LastUseAfterDate] should be (true)
+      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be (true)
     }
 
     "correctly parses multiple filters" in {

@@ -597,6 +597,9 @@ class ApplicationRepositorySpec
   }
 
   "Search" should {
+    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
+      anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
+
     "correctly include the skip and limit clauses" in {
       val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
       val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
@@ -923,6 +926,102 @@ class ApplicationRepositorySpec
       result.applications.head.id shouldBe expectedApplication.id
     }
 
+    "return applications last used before a certain date" in {
+      val oldApplicationId = UUID.randomUUID()
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe oldApplicationId
+    }
+
+    "return applications that are equal to the specified cutoff date when searching for older applications" in {
+      val oldApplicationId = UUID.randomUUID()
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, cutoffDate)))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 1
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe oldApplicationId
+    }
+
+    "return no results if no applications are last used before the cutoff date" in {
+      val cutoffDate = DateTime.now.minusMonths(12)
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.applications.size shouldBe 0
+    }
+
+    "return applications last used after a certain date" in {
+      val newerApplicationId = UUID.randomUUID()
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(newerApplicationId, DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now.minusMonths(18))))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe newerApplicationId
+    }
+
+    "return applications that are equal to the specified cutoff date when searching for newer applications" in {
+      val applicationId = UUID.randomUUID()
+      val cutoffDate = DateTime.now.minusMonths(12)
+
+      await(applicationRepository.save(applicationWithLastAccessDate(applicationId, cutoffDate)))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 1
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 1
+      result.applications.size shouldBe 1
+      result.applications.head.id shouldBe applicationId
+    }
+
+    "return no results if no applications are last used after the cutoff date" in {
+      val cutoffDate = DateTime.now
+      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now.minusMonths(6))))
+
+      val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
+
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.applications.size shouldBe 0
+    }
+
     "return applications sorted by name ascending" in {
       val firstName = "AAA first"
       val secondName = "ZZZ second"
@@ -1014,6 +1113,48 @@ class ApplicationRepositorySpec
       result.applications.head.createdOn shouldBe secondCreatedOn
       result.applications.last.createdOn shouldBe firstCreatedOn
     }
+
+    "return applications sorted by lastAccess ascending" in {
+      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
+      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = LastUseDateAscending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.lastAccess shouldBe Some(oldestLastAccessDate)
+      result.applications.last.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+    }
+
+    "return applications sorted by lastAccess descending" in {
+      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
+      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+
+      await(applicationRepository.save(secondApplication))
+      await(applicationRepository.save(firstApplication))
+
+      val applicationSearch = new ApplicationSearch(sort = LastUseDateDescending)
+      val result = await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size shouldBe 1
+      result.totals.head.total shouldBe 2
+      result.matching.size shouldBe 1
+      result.matching.head.total shouldBe 2
+      result.applications.size shouldBe 2
+      result.applications.head.lastAccess shouldBe Some(mostRecentlyAccessedDate)
+      result.applications.last.lastAccess shouldBe Some(oldestLastAccessDate)
+    }
   }
 
   "processAll" should {
@@ -1084,42 +1225,6 @@ class ApplicationRepositorySpec
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
       result.keys.count(_ => true) shouldBe 200
-    }
-  }
-
-  "applicationsLastUsed" should {
-    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
-      anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
-
-    "return only applications last accessed before specified date" in {
-      val oldApplicationId = UUID.randomUUID()
-      val cutoffDate = DateTime.now.minusMonths(12)
-
-      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
-
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
-
-      retrievedApplications.size should be (1)
-      retrievedApplications.head should be (oldApplicationId)
-    }
-
-    "match applications that are equal to the cutoff date" in {
-      val cutoffDate = DateTime.now.minusMonths(12)
-
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), cutoffDate)))
-
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(cutoffDate))
-
-      retrievedApplications.size should be (1)
-    }
-
-    "return empty collection if no applications match" in {
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
-
-      val retrievedApplications: Set[UUID] = await(applicationRepository.applicationsLastUsedBefore(DateTime.now.minusMonths(12)))
-
-      retrievedApplications.isEmpty should be (true)
     }
   }
 

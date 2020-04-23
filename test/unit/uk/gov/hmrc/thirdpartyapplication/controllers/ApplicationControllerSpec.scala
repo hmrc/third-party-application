@@ -1530,6 +1530,16 @@ class ApplicationControllerSpec extends ControllerSpec
 
       status(result) shouldBe SC_OK
     }
+
+    "return BAD REQUEST if date/time cannot be parsed for lastUseBefore query parameter" in new Setup {
+      val req: FakeRequest[AnyContentAsEmpty.type] = FakeRequest("GET", "/applications?lastUseBefore=foo")
+
+      val result = underTest.searchApplications(req)
+
+      verifyZeroInteractions(mockApplicationService)
+
+      status(result) shouldBe SC_BAD_REQUEST
+    }
   }
 
   "notStrideUserDeleteApplication" should {

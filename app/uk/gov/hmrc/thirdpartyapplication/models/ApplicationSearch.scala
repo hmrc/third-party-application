@@ -16,6 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
+
+import scala.util.{Failure, Success, Try}
+
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
                              filters: List[ApplicationSearchFilter] = List(),
@@ -39,6 +44,7 @@ object ApplicationSearch {
             case "status" => ApplicationStatusFilter(value.head)
             case "termsOfUse" => TermsOfUseStatusFilter(value.head)
             case "accessType" => AccessTypeFilter(value.head)
+            case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case _ => None // ignore anything that isn't a search filter
           }
       }
@@ -133,11 +139,28 @@ case object AccessTypeFilter extends AccessTypeFilter {
   }
 }
 
+sealed trait LastUseDateFilter extends ApplicationSearchFilter
+case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
+case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
+
+case object LastUseDateFilter extends LastUseDateFilter {
+  private val dateFormatter = ISODateTimeFormat.dateTimeParser()
+
+  def apply(queryType: String, value: String): Option[LastUseDateFilter] =
+    queryType match {
+      case "lastUseBefore" => Some(LastUseBeforeDate(dateFormatter.parseDateTime(value)))
+      case "lastUseAfter" => Some(LastUseAfterDate(dateFormatter.parseDateTime(value)))
+      case _ => None
+    }
+}
+
 sealed trait ApplicationSort
 case object NameAscending extends ApplicationSort
 case object NameDescending extends ApplicationSort
 case object SubmittedAscending extends ApplicationSort
 case object SubmittedDescending extends ApplicationSort
+case object LastUseDateAscending extends ApplicationSort
+case object LastUseDateDescending extends ApplicationSort
 
 object ApplicationSort extends ApplicationSort {
   def apply(value: Option[String]): ApplicationSort = value match {
@@ -145,6 +168,8 @@ object ApplicationSort extends ApplicationSort {
     case Some("NAME_DESC") => NameDescending
     case Some("SUBMITTED_ASC") => SubmittedAscending
     case Some("SUBMITTED_DESC") => SubmittedDescending
+    case Some("LAST_USE_ASC") => LastUseDateAscending
+    case Some("LAST_USE_DESC") => LastUseDateDescending
     case _ => SubmittedAscending
   }
 }
