@@ -16,7 +16,6 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.models
 
-import org.joda.time.format.{DateTimeFormatter, ISODateTimeFormat}
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.models._

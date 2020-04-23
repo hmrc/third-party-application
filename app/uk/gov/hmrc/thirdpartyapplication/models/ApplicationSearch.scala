@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-import org.joda.time.{DateTime, DateTimeZone}
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
