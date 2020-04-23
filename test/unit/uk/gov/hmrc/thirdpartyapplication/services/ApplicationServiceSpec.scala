@@ -702,6 +702,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val admin2: String = "admin2@example.com"
       val collaborator = "test@example.com"
       val adminsToEmail = Set(admin2)
+      val notifyCollaborator = true
       val collaborators = Set(
         Collaborator(admin, ADMINISTRATOR),
         Collaborator(admin2, ADMINISTRATOR),
@@ -714,7 +715,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "throw not found exception when no application exists in the repository for the given application id" in new DeleteCollaboratorsSetup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
-      intercept[NotFoundException](await(underTest.deleteCollaborator(applicationId, collaborator, adminsToEmail)))
+      intercept[NotFoundException](await(underTest.deleteCollaborator(applicationId, collaborator, adminsToEmail, notifyCollaborator)))
       ApplicationRepoMock.Save.verifyNeverCalled()
       verifyZeroInteractions(mockEmailConnector)
     }
@@ -723,10 +724,30 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(updatedData)
 
-      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, collaborator, adminsToEmail))
+      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, collaborator, adminsToEmail, notifyCollaborator))
 
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
+      AuditServiceMock.Audit.verifyCalledWith(
+        CollaboratorRemoved,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
+        hc
+      )
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
+        eqTo(collaborator),
+        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      result shouldBe updatedData.collaborators
+    }
+
+    "not send confirmation email to collaborator when notifyCollaborator is set to false" in new DeleteCollaboratorsSetup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.Save.thenReturn(updatedData)
+
+      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, collaborator, adminsToEmail, notifyCollaborator = false))
+
+      ApplicationRepoMock.Save.verifyCalledWith(updatedData)
+      verify(mockEmailConnector, never).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemoved,
@@ -745,7 +766,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, collaborator.toUpperCase, adminsToEmail))
+      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, collaborator.toUpperCase, adminsToEmail, notifyCollaborator))
 
       ApplicationRepoMock.Save.verifyCalledWith(updatedData)
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
@@ -766,7 +787,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.Fetch.thenReturn(applicationWithOneAdmin)
 
-      intercept[ApplicationNeedsAdmin](await(underTest.deleteCollaborator(applicationId, admin, adminsToEmail)))
+      intercept[ApplicationNeedsAdmin](await(underTest.deleteCollaborator(applicationId, admin, adminsToEmail, notifyCollaborator)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
       verifyZeroInteractions(mockEmailConnector)
