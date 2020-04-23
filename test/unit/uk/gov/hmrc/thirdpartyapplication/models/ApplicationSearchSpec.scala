@@ -132,6 +132,22 @@ class ApplicationSearchSpec extends HmrcSpec {
       parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be (true)
     }
 
+    "throw an InvalidDateFormat exception if lastUseBefore value does not parse" in {
+      val request = FakeRequest("GET", "/applications?lastUseBefore=foo")
+
+      intercept[InvalidDateFormat] {
+        ApplicationSearch.fromQueryString(request.queryString)
+      }
+    }
+
+    "throw an InvalidDateFormat exception if lastUseAfter value does not parse" in {
+      val request = FakeRequest("GET", "/applications?lastUseAfter=foo")
+
+      intercept[InvalidDateFormat] {
+        ApplicationSearch.fromQueryString(request.queryString)
+      }
+    }
+
     "correctly parses multiple filters" in {
       val expectedPageNumber: Int = 3
       val expectedPageSize: Int = 250

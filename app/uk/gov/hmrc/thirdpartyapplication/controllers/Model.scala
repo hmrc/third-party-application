@@ -77,6 +77,7 @@ object ErrorCode extends Enumeration {
   val SUBSCRIPTION_NOT_FOUND = Value("SUBSCRIPTION_NOT_FOUND")
   val FORBIDDEN = Value("FORBIDDEN")
   val INVALID_IP_WHITELIST = Value("INVALID_IP_WHITELIST")
+  val BAD_QUERY_PARAMETER = Value("BAD_QUERY_PARAMETER")
 }
 
 object JsErrorResponse {

@@ -41,3 +41,5 @@ case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scop
 case class OverrideNotFoundException(anOverride: String) extends RuntimeException(s"Override '$anOverride' not found")
 
 case class InvalidIpWhitelistException(message: String) extends RuntimeException(message)
+
+case class InvalidDateFormat(message: String) extends RuntimeException(message)

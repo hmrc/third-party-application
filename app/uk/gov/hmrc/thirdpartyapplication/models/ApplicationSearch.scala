@@ -19,6 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 
+import scala.util.{Failure, Success, Try}
+
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
                              filters: List[ApplicationSearchFilter] = List(),
@@ -145,9 +147,15 @@ case object LastUseDateFilter extends LastUseDateFilter {
   private val dateFormatter = ISODateTimeFormat.dateTimeParser()
 
   def apply(queryType: String, value: String): Option[LastUseDateFilter] = {
+    def parseDate() =
+      Try(dateFormatter.parseDateTime(value)) match {
+        case Success(value) => value
+        case Failure(exception) => throw InvalidDateFormat(exception.getMessage)
+      }
+
     queryType match {
-      case "lastUseBefore" => Some(LastUseBeforeDate(dateFormatter.parseDateTime(value)))
-      case "lastUseAfter" => Some(LastUseAfterDate(dateFormatter.parseDateTime(value)))
+      case "lastUseBefore" => Some(LastUseBeforeDate(parseDate()))
+      case "lastUseAfter" => Some(LastUseAfterDate(parseDate()))
       case _ => None
     }
   }
