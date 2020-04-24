@@ -18,8 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
-
-import scala.util.{Failure, Success, Try}
+import play.api.libs.json.Json
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
@@ -140,8 +140,33 @@ case object AccessTypeFilter extends AccessTypeFilter {
 }
 
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
-case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
-case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
+case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter {
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  def toMongoMatch =
+    Json.obj("$match" ->
+      Json.obj("$or" ->
+        Json.arr(
+          Json.obj("lastAccess" -> Json.obj("$lte" -> lastUseDate)),
+          Json.obj("$and" ->
+            Json.arr(
+              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
+              Json.obj("createdOn" -> Json.obj("$lte" -> lastUseDate)))))))
+}
+
+case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter {
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  def toMongoMatch =
+    Json.obj("$match" ->
+      Json.obj("$or" ->
+        Json.arr(
+          Json.obj("lastAccess" -> Json.obj("$gte" -> lastUseDate)),
+          Json.obj("$and" ->
+            Json.arr(
+              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
+              Json.obj("createdOn" -> Json.obj("$gte" -> lastUseDate)))))))
+}
 
 case object LastUseDateFilter extends LastUseDateFilter {
   private val dateFormatter = ISODateTimeFormat.dateTimeParser()
