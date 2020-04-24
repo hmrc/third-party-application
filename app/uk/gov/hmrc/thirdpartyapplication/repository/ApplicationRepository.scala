@@ -270,8 +270,22 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
 
       // Last Use Date
-      case lastUsedBefore: LastUseBeforeDate => matches("lastAccess" -> Json.obj("$lte" -> lastUsedBefore.lastUseDate))
-      case lastUsedAfter: LastUseAfterDate => matches("lastAccess" -> Json.obj("$gte" -> lastUsedAfter.lastUseDate))
+      case lastUsedBefore: LastUseBeforeDate => matches(
+        "$or" ->
+          Json.arr(
+            Json.obj("lastAccess" -> Json.obj("$lte" -> lastUsedBefore.lastUseDate)),
+            Json.obj("$and" ->
+              Json.arr(
+                Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
+                Json.obj("createdOn" -> Json.obj("$lte" -> lastUsedBefore.lastUseDate))))))
+      case lastUsedAfter: LastUseAfterDate => matches(
+        "$or" ->
+          Json.arr(
+            Json.obj("lastAccess" -> Json.obj("$gte" -> lastUsedAfter.lastUseDate)),
+            Json.obj("$and" ->
+              Json.arr(
+                Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
+                Json.obj("createdOn" -> Json.obj("$gte" -> lastUsedAfter.lastUseDate))))))
     }
   }
 
