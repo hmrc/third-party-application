@@ -140,36 +140,32 @@ case object AccessTypeFilter extends AccessTypeFilter {
 }
 
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
-case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter
-object LastUseBeforeDate {
+case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter {
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  def toMongoMatch(lastUseBeforeDate: LastUseBeforeDate) = {
+  def toMongoMatch =
     Json.obj("$match" ->
       Json.obj("$or" ->
         Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$lte" -> lastUseBeforeDate.lastUseDate)),
+          Json.obj("lastAccess" -> Json.obj("$lte" -> lastUseDate)),
           Json.obj("$and" ->
             Json.arr(
               Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn" -> Json.obj("$lte" -> lastUseBeforeDate.lastUseDate)))))))
-  }
+              Json.obj("createdOn" -> Json.obj("$lte" -> lastUseDate)))))))
 }
 
-case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter
-object LastUseAfterDate {
+case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter {
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  def toMongoMatch(lastUseAfterDate: LastUseAfterDate) = {
+  def toMongoMatch =
     Json.obj("$match" ->
       Json.obj("$or" ->
         Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$gte" -> lastUseAfterDate.lastUseDate)),
+          Json.obj("lastAccess" -> Json.obj("$gte" -> lastUseDate)),
           Json.obj("$and" ->
             Json.arr(
               Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn" -> Json.obj("$gte" -> lastUseAfterDate.lastUseDate)))))))
-  }
+              Json.obj("createdOn" -> Json.obj("$gte" -> lastUseDate)))))))
 }
 
 case object LastUseDateFilter extends LastUseDateFilter {

@@ -270,8 +270,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case ApplicationTextSearch => regexTextSearch(List("id", "name", "tokens.production.clientId"), applicationSearch.textToSearch.getOrElse(""))
 
       // Last Use Date
-      case lastUsedBefore: LastUseBeforeDate => LastUseBeforeDate.toMongoMatch(lastUsedBefore)
-      case lastUsedAfter: LastUseAfterDate => LastUseAfterDate.toMongoMatch(lastUsedAfter)
+      case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
+      case lastUsedAfter: LastUseAfterDate => lastUsedAfter.toMongoMatch
     }
   }
 
