@@ -413,6 +413,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
       .map(_.map(r=>s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
+
+  @deprecated("added temporarily to migrate collaborators to TPD")
+  def findAllUniqueCollaborators: Future[Set[String]] = {
+    collection.distinct[String, Set]("collaborators.emailAddress", None, Available, None)
+  }
+
 }
 
 sealed trait ApplicationModificationResult
