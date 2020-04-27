@@ -566,6 +566,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+  @deprecated("added temporarily to migrate collaborators to TPD")
+  def findAllUniqueCollaborators: Future[Set[String]] = {
+    applicationRepository.findAllUniqueCollaborators
+  }
+
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
