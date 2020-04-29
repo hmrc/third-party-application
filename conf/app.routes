@@ -2,7 +2,6 @@
 
 GET           /developer/applications                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.queryDispatcher()
 GET           /collaborators                                         uk.gov.hmrc.thirdpartyapplication.controllers.CollaboratorController.searchCollaborators(context: String, version: String, partialEmailMatch: Option[String])
-GET           /collaborators/all                                     uk.gov.hmrc.thirdpartyapplication.controllers.CollaboratorController.findAllUniqueCollaborators
 
 GET           /applications                                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.searchApplications
 

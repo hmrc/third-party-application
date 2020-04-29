@@ -22,7 +22,7 @@ import org.apache.http.HttpStatus._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -40,9 +40,9 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
     implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     val mockSubscriptionService = mock[SubscriptionService]
-    val mockApplicationService = mock[ApplicationService]
 
-    val underTest = new CollaboratorController(mockSubscriptionService, mockApplicationService)
+    val underTest = new CollaboratorController(
+      mockSubscriptionService)
   }
 
   "searchCollaborators" should {
@@ -59,17 +59,6 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
       status(result) shouldBe SC_OK
 
       contentAsJson(result).as[Seq[String]] shouldBe Seq("user@example.com")
-    }
-  }
-
-  "findAllUniqueCollaborators" should {
-    "succeed with a 200 (ok) and return the collaborators" in new Setup {
-      when(mockApplicationService.findAllUniqueCollaborators).thenReturn(Future.successful(Set("user@example.com")))
-
-      val result = underTest.findAllUniqueCollaborators(request)
-
-      status(result) shouldBe SC_OK
-      contentAsJson(result).as[Set[String]] shouldBe Set("user@example.com")
     }
   }
 }
