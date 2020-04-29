@@ -1394,23 +1394,6 @@ class ApplicationRepositorySpec
 
   }
 
-  "findAllUniqueCollaborators" should {
-    "return all collaborators without duplicates" in {
-      "joe.bloggs@example.com"
-      "john.doe@example.com"
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, users = Set(Collaborator("admin@example.com", Role.ADMINISTRATOR)))
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId,
-        users = Set(Collaborator("admin@example.com", Role.ADMINISTRATOR), Collaborator("joe.bloggs@example.com", Role.DEVELOPER)))
-      await(applicationRepository.save(application1))
-      await(applicationRepository.save(application2))
-
-      val result = await(applicationRepository.findAllUniqueCollaborators)
-
-      result.size shouldBe 2
-      result should contain allOf ("admin@example.com", "joe.bloggs@example.com")
-    }
-  }
-
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
     id = UUID.randomUUID(),
     prodClientId = generateClientId,
