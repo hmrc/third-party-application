@@ -30,6 +30,7 @@ case class JobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, ena
 trait ScheduledMongoJob extends ExclusiveScheduledJob with ScheduledJobState {
 
   val lockKeeper: LockKeeper
+  def isEnabled: Boolean
 
   def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful]
 

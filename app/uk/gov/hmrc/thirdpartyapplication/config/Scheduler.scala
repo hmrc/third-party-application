@@ -30,20 +30,15 @@ class SchedulerModule extends AbstractModule {
 }
 
 @Singleton
-class Scheduler @Inject()(upliftVerificationExpiryJobConfig: UpliftVerificationExpiryJobConfig,
-                          upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
-                          metricsJobConfig: MetricsJobConfig,
+class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
+                          renameContextJob: RenameContextJob,
                           app: Application) extends RunningOfScheduledJobs {
 
   override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
-    val upliftJob = if (upliftVerificationExpiryJobConfig.enabled) Seq(upliftVerificationExpiryJob) else Seq.empty
-    val mJob = if (metricsJobConfig.enabled) Seq(metricsJob) else Seq.empty
-    val bcryptJobs = Seq(bcryptPerformanceMeasureJob)
-
     // TODO : MetricsJob optional?
-    upliftJob ++ mJob ++ bcryptJobs
+    Seq(upliftVerificationExpiryJob, metricsJob, renameContextJob).filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 
   onStart(app)
