@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
 
-
 import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -52,7 +51,8 @@ class ConfigurationModule extends Module {
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
-      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider]
+      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
+      bind[RenameContextJobConfig].toProvider[RenameContextJobConfigProvider]
     )
   }
 }
@@ -267,4 +267,18 @@ class ApiPlatformEventsConfigProvider @Inject()(val runModeConfiguration: Config
   }
 
   override protected def mode: Mode = environment.mode
+}
+
+@Singleton
+class RenameContextJobConfigProvider  @Inject()(configuration: Configuration)
+  extends Provider[RenameContextJobConfig] {
+
+  override def get(): RenameContextJobConfig = {
+    val initialDelay = configuration.getString("renameContextJob.initialDelay").map(Duration.create(_).asInstanceOf[FiniteDuration])
+      .getOrElse(FiniteDuration(120, SECONDS))
+    val interval = configuration.getString("renameContextJob.interval").map(Duration.create(_).asInstanceOf[FiniteDuration])
+      .getOrElse(FiniteDuration(1, DAYS))
+    val enabled = configuration.getBoolean("renameContextJob.enabled").getOrElse(false)
+    RenameContextJobConfig(initialDelay, interval, enabled)
+  }
 }

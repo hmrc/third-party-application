@@ -16,52 +16,44 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import javax.inject.{Inject, Singleton}
+import com.google.inject.Singleton
+import javax.inject.Inject
 import org.joda.time.Duration
-import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.metrix.MetricOrchestrator
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.postfixOps
 
 @Singleton
-class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
-                           metricOrchestrator: MetricOrchestrator,
-                           jobConfig: MetricsJobConfig)
-                          (implicit val ec: ExecutionContext) extends ScheduledMongoJob {
+@scala.deprecated("this needs removing once it's run in prod")
+class RenameContextJob @Inject()(val lockKeeper: RenameContextJobLockKeeper,
+                                 subscriptionRepository: SubscriptionRepository,
+                                 jobConfig: RenameContextJobConfig)
+                                (implicit val ec: ExecutionContext) extends ScheduledMongoJob {
 
-  override def name: String = "MetricsJob"
+  override def name: String = "RenameContextJob"
   override def interval: FiniteDuration = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean = jobConfig.enabled
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    Logger.info(s"Running Metrics Collection Process")
-    metricOrchestrator
-      .attemptToUpdateAndRefreshMetrics()
-      .map(result => {
-        result.andLogTheResult()
-        RunningOfJobSuccessful
-      })
-      .recoverWith {
-        case e: RuntimeException => {
-          Logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
-          Future.failed(RunningOfJobFailed(name, e))
-        }
-      }
+    subscriptionRepository.updateContext(APIIdentifier("business-rates", "1.2"), "organisations/business-rates") map { _ =>
+      RunningOfJobSuccessful
+    } recoverWith {
+      case e: Throwable => Future.failed(RunningOfJobFailed(name, e))
+    }
   }
 }
 
-class MetricsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
+class RenameContextJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
   override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
 
-  override def lockId: String = "MetricsJob"
+  override def lockId: String = "RenameContextJob"
 
-  override val forceLockReleaseAfter: Duration = Duration.standardHours(2)
+  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
 }
 
-case class MetricsJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)
-
+case class RenameContextJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)

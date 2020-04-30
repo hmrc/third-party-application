@@ -40,10 +40,9 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity
 
   override def name: String = "UpliftVerificationExpiryJob"
-
   override def interval: FiniteDuration = jobConfig.interval
-
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
+  override val isEnabled: Boolean = jobConfig.enabled
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
     Logger.info(s"Set status back to testing for app{id=${app.id},name=${app.name},state." +

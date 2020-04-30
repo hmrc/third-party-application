@@ -114,6 +114,32 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
+  "updateContext" should {
+    "update only the matching subscription" in {
+      val matchingApiIdentifier = APIIdentifier("some-context", "1.0.0")
+      val updatedApiIdentifier = APIIdentifier("new-context", "1.0.0")
+      val differentVersionApiIdentifier = APIIdentifier("some-context", "2.0.0")
+      val differentContextApiIdentifier = APIIdentifier("some-other-context", "2.0.0")
+      await(subscriptionRepository.add(UUID.randomUUID(), matchingApiIdentifier))
+      await(subscriptionRepository.add(UUID.randomUUID(), differentVersionApiIdentifier))
+      await(subscriptionRepository.add(UUID.randomUUID(), differentContextApiIdentifier))
+
+      val Some(result) = await(subscriptionRepository.updateContext(matchingApiIdentifier, "new-context"))
+
+      result.apiIdentifier shouldBe updatedApiIdentifier
+      await(subscriptionRepository.count) shouldBe 3
+      await(subscriptionRepository.findAll()).map(_.apiIdentifier) should contain allOf(updatedApiIdentifier, differentVersionApiIdentifier, differentContextApiIdentifier)
+    }
+
+    "not fail when there is no matching subscription" in {
+      val anApiIdentifier = APIIdentifier("some-context", "1.0.0")
+
+      val result = await(subscriptionRepository.updateContext(anApiIdentifier, "new-context"))
+
+      result shouldBe None
+    }
+  }
+
   "find all" should {
     "retrieve all versions subscriptions" in {
       val application1 = UUID.randomUUID()
