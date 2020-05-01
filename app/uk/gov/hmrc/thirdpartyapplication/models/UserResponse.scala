@@ -27,5 +27,6 @@ case class UserResponse(email: String,
                         validated: Boolean)
 
 object UserResponse {
+  import DateTimeFormatters._
   implicit val format = Json.format[UserResponse]
 }

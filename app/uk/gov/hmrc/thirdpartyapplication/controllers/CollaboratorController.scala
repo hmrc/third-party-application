@@ -21,11 +21,20 @@ import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
+
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class CollaboratorController @Inject()(subscriptionService: SubscriptionService)(implicit val ec: ExecutionContext) extends CommonController {
+class CollaboratorController @Inject()(val applicationService: ApplicationService,
+                                      val authConnector: AuthConnector,
+                                      val authConfig: AuthConfig,
+                                      subscriptionService: SubscriptionService,
+                                      cc: ControllerComponents)(implicit val ec: ExecutionContext)
+    extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

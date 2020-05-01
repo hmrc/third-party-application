@@ -21,18 +21,21 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.BodyParsers.parse.json
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AccessController @Inject()(accessService: AccessService,
-                                 val authConnector: AuthConnector,
+class AccessController @Inject()(val authConnector: AuthConnector,
                                  val applicationService: ApplicationService,
-                                 val authConfig: AuthConfig)(
-                                implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
+                                 val authConfig: AuthConfig,
+                                 accessService: AccessService,
+                                 cc: ControllerComponents)(
+                                implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   def readScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
     accessService.readScopes(applicationId) map { scopeResponse =>

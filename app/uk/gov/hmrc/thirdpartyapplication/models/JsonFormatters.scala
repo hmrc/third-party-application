@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 
 import scala.language.implicitConversions
 
-object JsonFormatters {
+trait JsonFormatters extends DateTimeFormatters {
   implicit val formatSubscribersResponse = Json.format[SubscribersResponse]
   implicit val formatRole = EnumJson.enumFormat(Role)
   implicit val formatEnvironment = EnumJson.enumFormat(Environment)
@@ -273,6 +273,7 @@ object APIStatusJson {
 }
 
 object ApplicationEventFormats {
+  import DateTimeFormatters._
   implicit val actorFormats: OFormat[Actor] = Json.format[Actor]
   implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent] = Json.format[TeamMemberAddedEvent]
   implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent] = Json.format[TeamMemberRemovedEvent]
@@ -292,3 +293,5 @@ object ApplicationEventFormats {
     .and[ApiUnsubscribedEvent](EventType.API_UNSUBSCRIBED.toString)
     .format
 }
+
+object JsonFormatters extends JsonFormatters

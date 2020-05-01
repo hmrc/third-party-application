@@ -59,6 +59,7 @@ case class StateHistoryResponse(applicationId: UUID,
 object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
 
+  import uk.gov.hmrc.thirdpartyapplication.models.DateTimeFormatters._
   implicit val formatState = EnumJson.enumFormat(State)
   implicit val formatActor = Json.format[Actor]
   implicit val format = Json.format[StateHistoryResponse]

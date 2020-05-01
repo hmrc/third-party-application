@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -43,18 +44,19 @@ import scala.util.{Failure, Success, Try}
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,
+                                      val authConfig: AuthConfig,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
-                                      val authConfig: AuthConfig,
-                                      gatekeeperService: GatekeeperService)
-                                     (implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
+                                      gatekeeperService: GatekeeperService,
+                                      cc: ControllerComponents,
+                                      parse: PlayBodyParsers)
+                                     (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer")
-
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
@@ -62,7 +64,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(BodyParsers.parse.json) { implicit request =>
+  def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
     withJsonBody[CreateApplicationRequest] { application =>
       applicationService.create(application).map {
         result => Created(toJson(result))
@@ -73,7 +75,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def update(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) { implicit request =>
+  def update(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[UpdateApplicationRequest] { application =>
       applicationService.update(applicationId, application).map { result =>
         Ok(toJson(result))
@@ -81,7 +83,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateRateLimitTier(applicationId: UUID) = requiresAuthentication().async(BodyParsers.parse.json) { implicit request =>
+  def updateRateLimitTier(applicationId: UUID) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case scala.util.Success(rateLimitTier) =>
@@ -94,7 +96,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateIpWhitelist(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def updateIpWhitelist(applicationId: UUID) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpWhitelistRequest] { updateIpWhitelistRequest =>
       applicationService.updateIpWhitelist(applicationId, updateIpWhitelistRequest.ipWhitelist) map { _ =>
         NoContent
@@ -102,7 +104,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
+  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>
         applicationService.updateCheck(applicationId, checkInformation).map { result =>
@@ -119,7 +121,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
-  def addCollaborator(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def addCollaborator(applicationId: UUID) = Action.async(parse.json) { implicit request =>
     withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
       applicationService.addCollaborator(applicationId, collaboratorRequest) map {
         response => Ok(toJson(response))
@@ -143,7 +145,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def addClientSecret(applicationId: UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def addClientSecret(applicationId: UUID) = Action.async(parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token))
         } recover {
@@ -156,14 +158,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
   def deleteClientSecret(applicationId: java.util.UUID, clientSecretId: String) = {
-    Action.async(BodyParsers.parse.json) { implicit request =>
+    Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
         credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
       }
     }
   }
 
-  def validateCredentials: Action[JsValue] = Action.async(BodyParsers.parse.json) { implicit request =>
+  def validateCredentials: Action[JsValue] = Action.async(parse.json) { implicit request =>
     withJsonBody[ValidationRequest] { vr: ValidationRequest =>
       credentialService.validateCredentials(vr).value map {
         case Some(application) => Ok(toJson(application))
@@ -173,7 +175,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def validateApplicationName: Action[JsValue] =
-    Action.async(BodyParsers.parse.json) { implicit request =>
+    Action.async(parse.json) { implicit request =>
 
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
 
@@ -193,7 +195,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
 
-  def requestUplift(id: java.util.UUID) = Action.async(BodyParsers.parse.json) { implicit request =>
+  def requestUplift(id: java.util.UUID) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpliftRequest] { upliftRequest =>
       applicationService.requestUplift(id, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
@@ -337,7 +339,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def deleteApplication(id: UUID): Action[AnyContent] = (Action andThen strideAuthRefiner()).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
+  def deleteApplication(id: UUID): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
     def audit(app: ApplicationData): Future[AuditResult] = {
       Logger.info(s"Delete application ${app.id} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
@@ -360,7 +362,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     {
       if (request.isStrideAuth) {
-        withJsonBodyFromAnyContent[DeleteApplicationRequest] {
+          withJsonBodyFromAnyContent[DeleteApplicationRequest] {
           deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
         }
       } else {

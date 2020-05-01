@@ -20,11 +20,13 @@ import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, InvalidStateTransition, Unblocked}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 
@@ -33,8 +35,10 @@ class GatekeeperController @Inject()(
                                       val authConnector: AuthConnector,
                                       val applicationService: ApplicationService,
                                       gatekeeperService: GatekeeperService,
-                                      val authConfig: AuthConfig)(
-                                      implicit val ec: ExecutionContext) extends CommonController with AuthorisationWrapper {
+                                      val authConfig: AuthConfig,
+                                      cc: ControllerComponents)(
+                                      implicit val ec: ExecutionContext)  
+                                      extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'"))
