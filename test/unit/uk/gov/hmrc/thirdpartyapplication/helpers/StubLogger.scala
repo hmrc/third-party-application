@@ -18,7 +18,7 @@ package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
 import org.scalatest.mockito.MockitoSugar
 import org.slf4j
-import play.api.LoggerLike
+import play.api.{LoggerLike, MarkerContext}
 
 import scala.collection.mutable.ListBuffer
 
@@ -31,11 +31,11 @@ class StubLogger extends LoggerLike with MockitoSugar {
   val errorMessages = new ListBuffer[String]()
   val capturedExceptions = new ListBuffer[Throwable]()
 
-  override def info(message: => String): Unit = infoMessages += message
-  override def debug(message: => String): Unit = debugMessages += message
-  override def warn(message: => String): Unit = warnMessages += message
-  override def error(message: => String): Unit = errorMessages += message
-  override def error(message: => String, throwable: => Throwable): Unit = {
+  override def info(message: => String)(implicit mc: MarkerContext): Unit = infoMessages += message
+  override def debug(message: => String)(implicit mc: MarkerContext): Unit = debugMessages += message
+  override def warn(message: => String)(implicit mc: MarkerContext): Unit = warnMessages += message
+  override def error(message: => String)(implicit mc: MarkerContext): Unit = errorMessages += message
+  override def error(message: => String, throwable: => Throwable)(implicit mc: MarkerContext): Unit = {
     errorMessages += message
     capturedExceptions += throwable
   }

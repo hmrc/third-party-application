@@ -25,7 +25,7 @@ import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -63,7 +63,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
     when(mockAuthConfig.adminRole).thenReturn("ADMIN")
 
-    val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockAuthConfig) {
+    val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockAuthConfig, Helpers.stubControllerComponents()) {
       override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
     }
   }

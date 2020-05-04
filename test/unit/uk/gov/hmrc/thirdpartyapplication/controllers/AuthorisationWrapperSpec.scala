@@ -24,8 +24,8 @@ import cats.implicits._
 import controllers.Default
 import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
 import play.api.libs.json.{JsValue, Json}
-import play.api.mvc.BodyParsers
-import play.api.test.FakeRequest
+import play.api.mvc._
+import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -37,11 +37,11 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
@@ -52,9 +52,16 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   when(mockAuthConfig.enabled).thenReturn(true)
 
+
+  class TestAuthorisationWrapper(cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
+    val applicationService: ApplicationService = ???
+    val authConfig: AuthConfig = ???
+    val authConnector: AuthConnector = ???
+    implicit def ec = executionContext
+  }
+
   trait Setup {
-    val underTest = new AuthorisationWrapper {
-      implicit val ec: ExecutionContext = executionContext
+    val underTest = new TestAuthorisationWrapper(Helpers.stubControllerComponents()) {
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]

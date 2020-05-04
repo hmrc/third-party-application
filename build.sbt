@@ -13,6 +13,8 @@ lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
 val reactiveMongoVer = "0.18.8"
 
 lazy val playJsonVersion = "2.7.3"
+lazy val akkaVersion     = "2.5.23"
+lazy val akkaHttpVersion = "10.0.15"
 
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-26" % "1.7.0",
@@ -26,7 +28,13 @@ lazy val compile = Seq(
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0",
-  "com.github.t3hnar" %% "scala-bcrypt" % "4.1"
+  "com.github.t3hnar" %% "scala-bcrypt" % "4.1",
+
+  "com.typesafe.akka" %% "akka-stream"    % akkaVersion     force(),
+  "com.typesafe.akka" %% "akka-protobuf"  % akkaVersion     force(),
+  "com.typesafe.akka" %% "akka-slf4j"     % akkaVersion     force(),
+  "com.typesafe.akka" %% "akka-actor"     % akkaVersion     force(),
+  "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion force()
 )
 val scope = "test,it"
 

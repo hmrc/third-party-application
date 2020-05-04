@@ -318,7 +318,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def createSubscriptionForApplication(applicationId: UUID) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(BodyParsers.parse.json) {
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
         withJsonBody[APIIdentifier] { api =>
           subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {

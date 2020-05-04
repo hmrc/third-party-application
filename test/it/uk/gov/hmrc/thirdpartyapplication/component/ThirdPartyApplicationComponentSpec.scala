@@ -18,7 +18,6 @@ package it.uk.gov.hmrc.thirdpartyapplication.component
 
 import java.util.UUID
 
-import com.github.tomakehurst.wiremock.client.RequestPatternBuilder
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._

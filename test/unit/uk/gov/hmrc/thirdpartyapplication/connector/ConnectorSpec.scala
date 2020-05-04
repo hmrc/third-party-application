@@ -21,6 +21,4 @@ import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.CleanMetricsBeforeAndAfterEach
 
-abstract class ConnectorSpec
-  extends AsyncHmrcSpec with GuiceOneAppPerSuite
-    with LogSuppressing with CleanMetricsBeforeAndAfterEach {}
+abstract class ConnectorSpec extends AsyncHmrcSpec with GuiceOneAppPerSuite with LogSuppressing {}
