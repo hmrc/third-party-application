@@ -72,6 +72,8 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient())
     val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
+    val mockControllerComponents = mock[ControllerComponents]
+    val mockPlayBodyParsers = mock[PlayBodyParsers]
 
     val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -87,11 +89,13 @@ class ApplicationControllerSpec extends ControllerSpec
     val underTest = new ApplicationController(
       mockApplicationService,
       mockAuthConnector,
+      mockAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockAuthConfig,
-      mockGatekeeperService)
+      mockGatekeeperService,
+      mockControllerComponents,
+      mockPlayBodyParsers)
   }
 
 

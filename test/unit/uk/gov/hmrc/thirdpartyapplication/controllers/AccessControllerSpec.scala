@@ -23,7 +23,7 @@ import cats.data.OptionT
 import cats.implicits._
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.mvc.{AnyContentAsEmpty, ControllerComponents, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -54,6 +54,7 @@ class AccessControllerSpec extends ControllerSpec {
   private val mockAuthConnector = mock[AuthConnector]
   private val mockAccessService = mock[AccessService]
   private val mockAuthConfig = mock[AuthConfig]
+  private val mockControllerComponents = mock[ControllerComponents]
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
@@ -174,7 +175,7 @@ class AccessControllerSpec extends ControllerSpec {
 
   trait Fixture {
 
-    private[controllers] val accessController = new AccessController(mockAccessService, mockAuthConnector, mockApplicationService, mockAuthConfig)
+    private[controllers] val accessController = new AccessController(mockAuthConnector, mockApplicationService, mockAuthConfig, mockAccessService, mockControllerComponents)
 
     givenUserIsAuthenticated(accessController)
 
