@@ -31,7 +31,6 @@ class SchedulerModule extends AbstractModule {
   }
 }
 
-@Singleton
 class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,

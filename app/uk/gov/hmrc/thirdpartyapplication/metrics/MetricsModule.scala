@@ -53,7 +53,7 @@ class MetricsOrchestratorProvider @Inject()(configuration: Configuration,
   }
 
   override def get(): MetricOrchestrator = {
-    new MetricOrchestrator(metricsSources.asList, Lock, new MongoMetricRepository(), metrics.defaultRegistry)
+      new MetricOrchestrator(metricsSources.asList, Lock, new MongoMetricRepository(), metrics.defaultRegistry)
   }
 }
 

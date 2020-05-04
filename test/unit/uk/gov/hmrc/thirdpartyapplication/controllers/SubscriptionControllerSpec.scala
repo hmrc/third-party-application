@@ -28,6 +28,7 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
@@ -39,9 +40,9 @@ class SubscriptionControllerSpec extends ControllerSpec {
 
   val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 
-  override implicit lazy val app: Application = GuiceApplicationBuilder()
-    .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
-    .build
+  override def builder() : GuiceApplicationBuilder = 
+      super.builder()
+      .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
 
   trait Setup {
     implicit lazy val materializer: Materializer = app.materializer

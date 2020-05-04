@@ -21,7 +21,6 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, ControllerComponents, Result}
 import play.api.test.FakeRequest
@@ -31,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
