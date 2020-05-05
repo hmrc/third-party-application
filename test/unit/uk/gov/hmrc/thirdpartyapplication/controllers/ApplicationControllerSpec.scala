@@ -27,9 +27,9 @@ import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -70,11 +70,9 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
     val mockEnrolment: Enrolment = mock[Enrolment]
     val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient())
+    val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient().verboseLogging())
     val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockControllerComponents = Helpers.stubControllerComponents()
-    val mockPlayBodyParsers = mock[PlayBodyParsers]
 
     val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -95,8 +93,7 @@ class ApplicationControllerSpec extends ControllerSpec
       mockSubscriptionService,
       config,
       mockGatekeeperService,
-      mockControllerComponents,
-      mockPlayBodyParsers)
+      Helpers.stubControllerComponents())
   }
 
 
@@ -404,7 +401,6 @@ class ApplicationControllerSpec extends ControllerSpec
     val id = UUID.randomUUID()
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
-
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
       val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
@@ -412,9 +408,10 @@ class ApplicationControllerSpec extends ControllerSpec
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "sucessfully update approval information for applicaton" in new Setup {
+    "successfully update approval information for application" in new Setup {
       givenUserIsAuthenticated(underTest)
-      when(underTest.applicationService.fetch(id)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+
+      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)

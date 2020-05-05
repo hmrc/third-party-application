@@ -49,8 +49,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
-                                      cc: ControllerComponents,
-                                      parse: PlayBodyParsers)
+                                      cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
