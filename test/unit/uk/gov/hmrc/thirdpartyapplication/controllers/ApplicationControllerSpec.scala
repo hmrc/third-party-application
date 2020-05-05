@@ -55,6 +55,7 @@ class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers._
+  import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = fakeApplication().materializer
 
@@ -72,7 +73,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient())
     val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockControllerComponents = mock[ControllerComponents]
+    val mockControllerComponents = Helpers.stubControllerComponents()
     val mockPlayBodyParsers = mock[PlayBodyParsers]
 
     val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
