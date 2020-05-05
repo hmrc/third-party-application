@@ -62,8 +62,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    credentialGenerator: CredentialGenerator,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
-                                   nameValidationConfig: ApplicationNameValidationConfig)(
-                                    implicit val ec: ExecutionContext) {
+                                   nameValidationConfig: ApplicationNameValidationConfig,
+                                   tokenService: TokenService)(implicit val ec: ExecutionContext) {
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -179,7 +179,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
           val recipients = app.admins.map(_.emailAddress)
           emailConnector.sendApplicationDeletedNotification(app.name, requesterEmail, recipients)
         }
-        case None => Future.successful(())
+        case None => successful(())
       }
     }
 
@@ -363,12 +363,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val wso2ApplicationName = credentialGenerator.generate()
 
-    def createInWso2(): Future[EnvironmentToken] = {
-      apiGatewayStore.createApplication(wso2ApplicationName)
+    def createInApiGateway(appData: ApplicationData): Future[HasSucceeded] = {
+      if (appData.state.name == State.PRODUCTION) {
+        apiGatewayStore.createApplication(appData.wso2ApplicationName, appData.tokens.production.accessToken)
+      } else {
+        successful(HasSucceeded)
+      }
     }
 
-    def saveApplication(environmentToken: EnvironmentToken, ids: Option[TotpIds]): Future[ApplicationData] = {
-
+    def createAppData(ids: Option[TotpIds]): ApplicationData = {
       def newPrivilegedAccess = {
         application.access.asInstanceOf[Privileged].copy(totpIds = ids)
       }
@@ -378,9 +381,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => application
       }
 
-      val applicationData = ApplicationData.create(updatedApplication, wso2ApplicationName, environmentToken)
-
-      applicationRepository.save(applicationData)
+      ApplicationData.create(updatedApplication, wso2ApplicationName, tokenService.createEnvironmentToken())
     }
 
     val f = for {
@@ -391,8 +392,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
       applicationTotp <- generateApplicationTotp(application.access.accessType)
-      wso2EnvironmentToken <- createInWso2()
-      appData <- saveApplication(wso2EnvironmentToken, extractTotpId(applicationTotp))
+      appData = createAppData(extractTotpId(applicationTotp))
+      _ <- createInApiGateway(appData)
+      _ <- applicationRepository.save(appData)
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
     } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
@@ -508,6 +510,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
     def verifyPending(app: ApplicationData) = for {
+      _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
       _ <- applicationRepository.save(app.copy(state = app.state.toProduction))
       _ <- insertStateHistory(app, State.PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
         app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
@@ -535,7 +538,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       .nameBlackList
       .forall(name => checkNameIsValid(name))
 
-    Future.successful(!isValid)
+    successful(!isValid)
   }
 
   private def isDuplicateName(applicationName: String, thisApplicationId: Option[UUID])(implicit hc: HeaderCarrier): Future[Boolean] = {
@@ -551,7 +554,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         .fetchApplicationsByName(applicationName)
         .map(anyDuplicatesExcludingThis)
     } else {
-      Future.successful(false)
+      successful(false)
     }
   }
 

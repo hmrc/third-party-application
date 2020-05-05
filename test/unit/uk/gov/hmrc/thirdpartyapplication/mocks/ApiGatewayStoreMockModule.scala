@@ -36,16 +36,20 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object CreateApplication {
-      def thenReturn(environmentToken: EnvironmentToken) = {
-        when(aMock.createApplication(*)(*)).thenReturn(successful(environmentToken))
+      def thenReturnHasSucceeded() = {
+        when(aMock.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
       def thenFail(failsWith: Throwable) = {
-        when(aMock.createApplication(*)(*)).thenReturn(failed(failsWith))
+        when(aMock.createApplication(*, *)(*)).thenReturn(failed(failsWith))
       }
 
       def verifyCalled() = {
-        ApiGatewayStoreMock.verify.createApplication(*)(*)
+        ApiGatewayStoreMock.verify.createApplication(*, *)(*)
+      }
+
+      def verifyNeverCalled() = {
+        ApiGatewayStoreMock.verify(never).createApplication(*, *)(*)
       }
     }
 

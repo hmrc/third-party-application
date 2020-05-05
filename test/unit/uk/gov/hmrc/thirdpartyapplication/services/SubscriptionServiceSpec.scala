@@ -65,7 +65,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     val underTest = new SubscriptionService(
       mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiPlatformEventsService, mockApiGatewayStore)
 
-    when(mockApiGatewayStore.createApplication(*)(*)).thenReturn(successful(productionToken))
+    when(mockApiGatewayStore.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*, *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
