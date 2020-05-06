@@ -20,13 +20,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 trait DateTimeFormatters {
   import org.joda.time.DateTime
   import play.api.libs.json._
-  import play.api.libs.json.JodaReads._
   import play.api.libs.json.JodaWrites._
-
-  private val pattern = "yyyyMMddHHmmss"
-
-//  implicit val dateTimeWriter: Writes[DateTime] = jodaDateWrites(pattern)
-//  implicit val dateTimeReader: Reads[DateTime] = jodaDateReads(pattern)
 
   implicit val dateTimeWriter: Writes[DateTime] = JodaDateTimeNumberWrites
 

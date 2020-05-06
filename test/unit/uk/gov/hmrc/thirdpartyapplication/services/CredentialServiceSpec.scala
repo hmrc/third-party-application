@@ -18,7 +18,6 @@ package unit.uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 import java.util.UUID.randomUUID
-import org.mockito.MockitoSugar
 import com.github.t3hnar.bcrypt._
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.joda.time.DateTime
@@ -48,7 +47,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val mockLogger: LoggerLike = mock[LoggerLike]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
-    val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]//(withSettings.lenient())
+    val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]
     when(mockApiPlatformEventService.sendClientSecretAddedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
     when(mockApiPlatformEventService.sendClientSecretRemovedEvent(any[ApplicationData], any[String])(any[HeaderCarrier])).thenReturn(Future.successful(true))
 

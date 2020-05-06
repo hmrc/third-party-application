@@ -52,10 +52,10 @@ class AccessControllerSpec extends ControllerSpec {
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
 
-  val mockApplicationService = mock[ApplicationService]//(withSettings.lenient())
-  val mockAuthConnector = mock[AuthConnector]//(withSettings.lenient())
-  val mockAccessService = mock[AccessService]//(withSettings.lenient())
-  val mockAuthConfig = mock[AuthConfig]//(withSettings.lenient())
+  val mockApplicationService = mock[ApplicationService]
+  val mockAuthConnector = mock[AuthConnector]
+  val mockAccessService = mock[AccessService]
+  val mockAuthConfig = mock[AuthConfig]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {
