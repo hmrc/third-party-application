@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.security.SecureRandom
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -29,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Random
 
 trait ApiGatewayStore {
 
@@ -39,7 +35,7 @@ trait ApiGatewayStore {
    * deleteApplication() are still called 'wso2ApplicationName' to make it clear that these values are distinct from the other Application names/identifiers.
    */
 
-  def createApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[EnvironmentToken]
+  def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
   def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
@@ -51,18 +47,10 @@ trait ApiGatewayStore {
 class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector)
                                   (implicit val actorSystem: ActorSystem, val ec: ExecutionContext) extends ApiGatewayStore {
 
-  private def generateEnvironmentToken(): EnvironmentToken = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
-    new SecureRandom().nextBytes(randomBytes)
-    val accessToken = randomBytes.map("%02x".format(_)).mkString
-    EnvironmentToken((Random.alphanumeric take 28).mkString, accessToken)
-  }
-
-  override def createApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[EnvironmentToken] = {
-    val environmentToken = generateEnvironmentToken()
+  override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
-      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, environmentToken.accessToken, BRONZE)(hc)
-    } yield environmentToken
+      _ <- awsApiGatewayConnector.createOrUpdateApplication(wso2ApplicationName, accessToken, BRONZE)(hc)
+    } yield HasSucceeded
   }
 
   override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
@@ -76,13 +64,11 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  def dummyEnvironmentToken = EnvironmentToken(s"dummy-${UUID.randomUUID()}", "dummyValue")
-
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
 
-  override def createApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier) = Future.successful {
+  override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier) = Future.successful {
     stubApplications += (wso2ApplicationName -> mutable.ListBuffer.empty)
-    dummyEnvironmentToken
+    HasSucceeded
   }
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier) = Future.successful {

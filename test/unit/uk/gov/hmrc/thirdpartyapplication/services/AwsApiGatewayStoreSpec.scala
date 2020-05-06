@@ -59,14 +59,12 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "createApplication" should {
-    "create an application in AWS and generate token" in new Setup {
+    "create an application in AWS" in new Setup {
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc)))
         .thenReturn(successful(HasSucceeded))
 
-      val result: EnvironmentToken = await(underTest.createApplication(applicationName))
+      val result: HasSucceeded = await(underTest.createApplication(applicationName, serverToken))
 
-      result.clientId should have length 28
-      result.accessToken should have length 32
       verify(mockAwsApiGatewayConnector).createOrUpdateApplication(eqTo(applicationName), *, eqTo(BRONZE))(eqTo(hc))
     }
   }

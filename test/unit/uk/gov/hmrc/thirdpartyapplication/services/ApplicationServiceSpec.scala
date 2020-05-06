@@ -63,7 +63,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
-    with ApplicationRepositoryMockModule {
+    with ApplicationRepositoryMockModule with TokenServiceMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -111,7 +111,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
-      mockNameValidationConfig)
+      mockNameValidationConfig,
+      TokenServiceMock.aMock)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockStateHistoryRepository.insert(*)).thenAnswer((s:StateHistory) =>successful(s))
@@ -169,8 +170,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "Create" should {
 
-    "create a new standard application in Mongo and WSO2 for the PRINCIPAL (PRODUCTION) environment" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
+    "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
@@ -180,7 +181,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(),
         environment = Environment.PRODUCTION)
       createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
+      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       AuditServiceMock.Audit.verifyCalledWith(
@@ -194,8 +195,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       )
     }
 
-    "create a new standard application in Mongo and WSO2 for the SUBORDINATE (SANDBOX) environment" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
+    "create a new standard application in Mongo and the API gateway for the SUBORDINATE (SANDBOX) environment" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
 
@@ -219,31 +221,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       )
     }
 
-    "create a new standard application in Mongo and WSO2" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Standard())
-
-      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
-
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState())
-      createdApp.totp shouldBe None
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
-      ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
-      AuditServiceMock.Audit.verifyCalledWith(
-        AppCreated,
-        Map(
-          "applicationId" -> createdApp.application.id.toString,
-          "newApplicationName" -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
-        ),
-        hc
-      )
-    }
-
-    "create a new Privileged application in Mongo and WSO2 with a Production state" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
+    "create a new Privileged application in Mongo and the API gateway with a Production state" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Privileged())
       
@@ -277,8 +257,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       )
     }
 
-    "create a new ROPC application in Mongo and WSO2 with a Production state" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
+    "create a new ROPC application in Mongo and the API gateway with a Production state" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Ropc())
 
@@ -347,8 +328,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.verifyZeroInteractions()
     }
 
-    "delete application when failed to create app and generate tokens" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest()
+    "delete application when failed to create app in the API gateway" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(environment = Environment.SANDBOX)
 
       private val exception = new scala.RuntimeException("failed to generate tokens")
       ApiGatewayStoreMock.CreateApplication.thenFail(exception)
@@ -365,7 +347,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "delete application when failed to create state history" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest()
 
-      ApiGatewayStoreMock.CreateApplication.thenReturn(productionToken)
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
       when(mockStateHistoryRepository.insert(*)).thenReturn(failed(new RuntimeException("Expected test failure")))
@@ -927,7 +909,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   "verifyUplift" should {
     val upliftRequestedBy = "email@example.com"
 
-    "update the state of the application when application is in pendingRequesterVerification state" in new Setup {
+    "update the state of the application and create app in the API gateway when application is in pendingRequesterVerification state" in new Setup {
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
@@ -943,11 +926,13 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       val result: ApplicationStateChange = await(underTest.verifyUplift(generatedVerificationCode))
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
+      ApiGatewayStoreMock.CreateApplication.verifyCalled()
       result shouldBe UpliftVerified
       verify(mockStateHistoryRepository).insert(expectedStateHistory)
     }
 
     "fail if the application save fails" in new Setup {
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
       val saveException = new RuntimeException("application failed to save")
 
@@ -960,6 +945,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "rollback if saving the state history fails" in new Setup {
+      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
       ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
