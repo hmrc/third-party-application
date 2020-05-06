@@ -52,6 +52,12 @@ class AccessControllerSpec extends ControllerSpec {
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
 
+  val mockApplicationService = mock[ApplicationService]//(withSettings.lenient())
+  val mockAuthConnector = mock[AuthConnector]//(withSettings.lenient())
+  val mockAccessService = mock[AccessService]//(withSettings.lenient())
+  val mockAuthConfig = mock[AuthConfig]//(withSettings.lenient())
+  val mockControllerComponents = Helpers.stubControllerComponents()
+
   "Access controller read scopes function" should {
 
     "return http ok status when service read scopes succeeds" in new PrivilegedAndRopcFixture {
@@ -155,11 +161,7 @@ class AccessControllerSpec extends ControllerSpec {
 
   trait Fixture {
 
-    val mockApplicationService = mock[ApplicationService](withSettings.verboseLogging())
-    val mockAuthConnector = mock[AuthConnector](withSettings.verboseLogging())
-    val mockAccessService = mock[AccessService](withSettings.verboseLogging())
-    val mockAuthConfig = mock[AuthConfig](withSettings.verboseLogging())
-    val mockControllerComponents = Helpers.stubControllerComponents()
+
 
     def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
       when(mockAccessService.readScopes(*)).thenReturn(eventualScopeResponse)
@@ -219,6 +221,7 @@ class AccessControllerSpec extends ControllerSpec {
         ),
       OptionT.pure[Future](applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
       )
+      testBlock
       testBlock
     }
   }

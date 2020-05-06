@@ -124,16 +124,16 @@ trait AuthorisationWrapper {
 
     lazy val FAILED_ACCESS_TYPE = successful(Some(Results.Forbidden(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
 
-    def failedError(e: Throwable) = Some(Results.InternalServerError(JsErrorResponse(APPLICATION_NOT_FOUND, e.getMessage)))
+    def localRecovery: PartialFunction[Throwable, Option[Result]] = {
+      case e: NotFoundException => Some(Results.NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, e.getMessage)))
+    }
 
     def filter[A](request: Request[A]): Future[Option[Result]] =
       deriveAccessType(request) flatMap {
         case Some(accessType) if toMatchAccessTypes.contains(accessType) => authenticate(request)
         case Some(_)          if failOnAccessTypeMismatch                => FAILED_ACCESS_TYPE
         case _                                                           => successful(None)
-      } recover {
-        case NonFatal(e) => failedError(e)
-      }
+      } recover localRecovery
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }

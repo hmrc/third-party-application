@@ -70,11 +70,11 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
     val mockEnrolment: Enrolment = mock[Enrolment]
     val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient().verboseLogging())
-    val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
+    val mockApplicationService: ApplicationService = mock[ApplicationService]//(withSettings.lenient().verboseLogging())
+    val mockAuthConnector: AuthConnector = mock[AuthConnector]//(withSettings.lenient())
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
-    val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
+    val mockAuthConfig: AuthConfig = mock[AuthConfig]//(withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")

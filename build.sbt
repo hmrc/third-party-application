@@ -43,7 +43,7 @@ lazy val test = Seq(
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
   "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "2.0.1" % scope,
+  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope,
   "org.mockito" %% "mockito-scala-scalatest" % "1.7.1" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
 )

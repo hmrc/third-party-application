@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+
 trait DateTimeFormatters {
   import org.joda.time.DateTime
   import play.api.libs.json._
@@ -24,9 +25,19 @@ trait DateTimeFormatters {
 
   private val pattern = "yyyyMMddHHmmss"
 
-  implicit val dateTimeWriter: Writes[DateTime] = jodaDateWrites(pattern)
-  implicit val dateTimeJsReader: Reads[DateTime] = jodaDateReads(pattern)
-  implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeJsReader, dateTimeWriter)
+//  implicit val dateTimeWriter: Writes[DateTime] = jodaDateWrites(pattern)
+//  implicit val dateTimeReader: Reads[DateTime] = jodaDateReads(pattern)
+
+  implicit val dateTimeWriter: Writes[DateTime] = JodaDateTimeNumberWrites
+
+  implicit val dateTimeReader: Reads[DateTime] = new Reads[DateTime] {
+    def reads(json: JsValue): JsResult[DateTime] = json match {
+      case JsNumber(n) => JsSuccess(new DateTime(n.toLong))
+      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
+    }
+  }
+
+  implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 
 object DateTimeFormatters extends DateTimeFormatters

@@ -20,6 +20,7 @@ import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc.{AnyContent, Request, Result, Results}
 import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpWhitelistException, ScopeNotFoundException}
 
@@ -28,11 +29,11 @@ import scala.util.{Failure, Success, Try}
 
 // TODO : Sort these helper methods with plans to remove them
 trait JsonUtils extends Results {
-
-  // def withJsonBody[T]
-  // (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
-  //   withJson(request.body)(f)
-  // }
+  self: BackendController =>
+   override def withJsonBody[T]
+   (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+     withJson(request.body)(f)
+   }
 
   def withJsonBodyFromAnyContent[T]
   (f: T => Future[Result])(implicit request: Request[AnyContent], m: Manifest[T], reads: Reads[T], d: DummyImplicit): Future[Result] = {
