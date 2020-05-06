@@ -57,7 +57,6 @@ class ConfigurationModule extends Module {
   }
 }
 
-// TODO - Remove when config is working
 object ConfigHelper {
 
   def getConfig[T](key: String, f: String => Option[T]): T = {
