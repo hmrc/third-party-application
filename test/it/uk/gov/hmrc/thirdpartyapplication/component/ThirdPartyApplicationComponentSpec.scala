@@ -46,7 +46,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     GuiceApplicationBuilder()
         .configure(Map("Test.disableAwsCalls" -> false, "appName" -> "third-party-application"))
         .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
-        .disable(classOf[SchedulerModule])
         .build()
 
   val applicationName1 = "My 1st Application"

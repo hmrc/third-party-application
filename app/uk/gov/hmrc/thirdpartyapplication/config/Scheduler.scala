@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.config
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
 import play.api.{Application, Logger, LoggerLike}
-import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
+import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs, ScheduledJob}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import play.api.inject.ApplicationLifecycle
 import scala.concurrent.ExecutionContext
@@ -31,6 +31,7 @@ class SchedulerModule extends AbstractModule {
   }
 }
 
+@Singleton
 class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
@@ -40,7 +41,7 @@ class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJ
                           (implicit val ec: ExecutionContext)
                           extends RunningOfScheduledJobs {
 
-  override val scheduledJobs: Seq[ExclusiveScheduledJob] = {
+  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
     // TODO : MetricsJob optional?
     Seq(upliftVerificationExpiryJob, metricsJob, renameContextJob).filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
