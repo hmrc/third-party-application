@@ -211,7 +211,6 @@ class AccessControllerSpec extends ControllerSpec {
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
-    ()
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
         ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
