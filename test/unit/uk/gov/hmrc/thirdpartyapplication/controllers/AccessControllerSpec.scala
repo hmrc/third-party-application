@@ -21,9 +21,8 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, Result}
+import play.api.mvc.{AnyContentAsEmpty, ControllerComponents, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
@@ -31,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
@@ -41,6 +39,7 @@ import scala.concurrent.Future.{failed, successful}
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
+  import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = fakeApplication().materializer
 
@@ -50,18 +49,16 @@ class AccessControllerSpec extends ControllerSpec {
   private val overridesRequest = OverridesRequest(overrides)
   private val applicationId = UUID.randomUUID()
 
-  private val mockApplicationService = mock[ApplicationService]
-  private val mockAuthConnector = mock[AuthConnector]
-  private val mockAccessService = mock[AccessService]
-  private val mockAuthConfig = mock[AuthConfig]
-
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
   implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
 
-  "Access controller read scopes function" should {
+  val mockApplicationService = mock[ApplicationService]
+  val mockAuthConnector = mock[AuthConnector]
+  val mockAccessService = mock[AccessService]
+  val mockAuthConfig = mock[AuthConfig]
+  val mockControllerComponents = Helpers.stubControllerComponents()
 
-    def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.readScopes(*)).thenReturn(eventualScopeResponse)
+  "Access controller read scopes function" should {
 
     "return http ok status when service read scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
@@ -87,9 +84,6 @@ class AccessControllerSpec extends ControllerSpec {
   }
 
   "Access controller update scopes function" should {
-
-    def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(*, any[ScopeRequest])(*)).thenReturn(eventualScopeResponse)
 
     "return http ok status when service update scopes succeeds" in new PrivilegedAndRopcFixture {
       testWithPrivilegedAndRopc({
@@ -124,9 +118,6 @@ class AccessControllerSpec extends ControllerSpec {
 
   "Access controller read overrides function" should {
 
-    def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.readOverrides(*)).thenReturn(eventualOverridesResponse)
-
     "return http ok status when service read overrides succeeds" in new StandardFixture {
       mockAccessServiceReadOverridesToReturn(successful(OverridesResponse(overrides)))
       val result = invokeAccessControllerReadOverridesWith(applicationId)
@@ -149,9 +140,6 @@ class AccessControllerSpec extends ControllerSpec {
 
   "Access controller update overrides function" should {
 
-    def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.updateOverrides(*, any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
-
     "return http ok status when service update overrides succeeds" in new StandardFixture {
       mockAccessServiceUpdateOverridesToReturn(successful(OverridesResponse(overrides)))
       val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
@@ -165,7 +153,6 @@ class AccessControllerSpec extends ControllerSpec {
     }
 
     "return http internal server error status when service update overrides fails" in new StandardFixture {
-
       mockAccessServiceUpdateOverridesToReturn(failed(new RuntimeException("testing testing 123")))
       val result = invokeAccessControllerUpdateOverridesWith(applicationId, overridesRequest)
       status(result) shouldBe INTERNAL_SERVER_ERROR
@@ -174,7 +161,21 @@ class AccessControllerSpec extends ControllerSpec {
 
   trait Fixture {
 
-    private[controllers] val accessController = new AccessController(mockAccessService, mockAuthConnector, mockApplicationService, mockAuthConfig)
+
+
+    def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
+      when(mockAccessService.readScopes(*)).thenReturn(eventualScopeResponse)
+
+    def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
+      when(mockAccessService.updateScopes(*,*)(*)).thenReturn(eventualScopeResponse)
+
+    def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
+      when(mockAccessService.readOverrides(*)).thenReturn(eventualOverridesResponse)
+
+    def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
+      when(mockAccessService.updateOverrides(*, any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
+
+    private[controllers] val accessController = new AccessController(mockAuthConnector, mockApplicationService, mockAuthConfig, mockAccessService, mockControllerComponents)
 
     givenUserIsAuthenticated(accessController)
 
@@ -194,8 +195,6 @@ class AccessControllerSpec extends ControllerSpec {
 
 
   trait StandardFixture extends Fixture {
-
-
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
       ApplicationResponse(
         applicationId,
@@ -212,7 +211,6 @@ class AccessControllerSpec extends ControllerSpec {
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
-
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
         ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))

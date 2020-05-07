@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.scalatest.MockitoSugar
+import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
 import org.scalatest.{Matchers, OptionValues, WordSpec}
 import org.scalatestplus.play.WsScalaTestClient
 import play.api.test.{DefaultAwaitTimeout, FutureAwaits}

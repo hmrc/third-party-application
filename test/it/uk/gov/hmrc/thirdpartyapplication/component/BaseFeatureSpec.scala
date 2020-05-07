@@ -21,13 +21,13 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import it.uk.gov.hmrc.thirdpartyapplication.component.stubs._
 import org.scalatest._
-import org.scalatestplus.play.OneServerPerSuite
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
 
 abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Matchers
-  with BeforeAndAfterEach with BeforeAndAfterAll with OneServerPerSuite {
+  with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {
 
   override lazy val port = 19111
   val serviceUrl = s"http://localhost:$port"

@@ -16,17 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import org.joda.time.DateTime
-import play.api.libs.json.Json
 
-case class UserResponse(email: String,
-                        firstName: String,
-                        lastName: String,
-                        registrationTime: DateTime,
-                        lastModified: DateTime,
-                        validated: Boolean)
+trait DateTimeFormatters {
+  import org.joda.time.DateTime
+  import play.api.libs.json._
+  import play.api.libs.json.JodaWrites._
 
-object UserResponse {
-  import DateTimeFormatters._
-  implicit val format = Json.format[UserResponse]
+  implicit val dateTimeWriter: Writes[DateTime] = JodaDateTimeNumberWrites
+
+  implicit val dateTimeReader: Reads[DateTime] = new Reads[DateTime] {
+    def reads(json: JsValue): JsResult[DateTime] = json match {
+      case JsNumber(n) => JsSuccess(new DateTime(n.toLong))
+      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
+    }
+  }
+
+  implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
 }
+
+object DateTimeFormatters extends DateTimeFormatters

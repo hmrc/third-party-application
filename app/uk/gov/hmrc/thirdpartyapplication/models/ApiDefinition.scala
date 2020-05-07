@@ -38,7 +38,8 @@ case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Opt
 object ApiAccess {
   def build(config: Option[Configuration]): ApiAccess = ApiAccess(
     `type` = APIAccessType.PRIVATE,
-    whitelistedApplicationIds = config.flatMap(_.getStringList("whitelistedApplicationIds").map(_.asScala.toList).orElse(Some(List.empty[String]))))
+    whitelistedApplicationIds = config.flatMap(_.getStringList("whitelistedApplicationIds").map(_.asScala.toList).orElse(Some(List.empty[String])))
+  )
 }
 
 object ApiStatus extends Enumeration {

@@ -19,11 +19,12 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
 import org.apache.http.HttpStatus._
-import play.api.test.FakeRequest
+import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers._
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,10 +40,17 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
+    val mockApplicationService = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
+    val mockAuthConnector = mock[AuthConnector]
+    val mockAuthConfig = mock[AuthConfig]
 
     val underTest = new CollaboratorController(
-      mockSubscriptionService)
+      mockApplicationService,
+      mockAuthConnector,
+      mockAuthConfig,
+      mockSubscriptionService,
+      Helpers.stubControllerComponents())
   }
 
   "searchCollaborators" should {

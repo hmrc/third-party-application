@@ -72,15 +72,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     lazy val locked = false
     protected val mockitoTimeout = 1000
-    val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
-    val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockEmailConnector: EmailConnector = mock[EmailConnector](withSettings.lenient())
-    val mockTotpConnector: TotpConnector = mock[TotpConnector](withSettings.lenient())
+    val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
+    val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
+    val mockEmailConnector: EmailConnector = mock[EmailConnector]
+    val mockTotpConnector: TotpConnector = mock[TotpConnector]
     val mockLockKeeper = new MockLockKeeper(locked)
     val response = mock[HttpResponse]
-    val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector](withSettings.lenient())
+    val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService = mock[GatekeeperService]
-    val mockApiPlatformEventService = mock[ApiPlatformEventService](withSettings.lenient())
+    val mockApiPlatformEventService = mock[ApiPlatformEventService]
 
     val applicationResponseCreator = new ApplicationResponseCreator()
 
@@ -89,9 +89,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       LOGGED_IN_USER_NAME_HEADER -> "John Smith"
     )
 
-    val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator](withSettings.lenient())
+    val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
 
-    val mockNameValidationConfig = mock[ApplicationNameValidationConfig](withSettings.lenient())
+    val mockNameValidationConfig = mock[ApplicationNameValidationConfig]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)
@@ -1253,7 +1253,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       type T = ApplicationData => Future[AuditResult]
       val mockAuditResult = mock[Future[AuditResult]]
-      val auditFunction: T = mock[T](withSettings.lenient())
+      val auditFunction: T = mock[T]
 
       when(auditFunction.apply(*)).thenReturn(mockAuditResult)
 

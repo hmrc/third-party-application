@@ -27,9 +27,9 @@ import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.{Json, JsValue}
 import play.api.mvc._
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -55,6 +55,7 @@ class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers._
+  import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = fakeApplication().materializer
 
@@ -69,11 +70,11 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
     val mockEnrolment: Enrolment = mock[Enrolment]
     val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService](withSettings.lenient())
-    val mockAuthConnector: AuthConnector = mock[AuthConnector](withSettings.lenient())
+    val mockApplicationService: ApplicationService = mock[ApplicationService]
+    val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
-    val mockAuthConfig: AuthConfig = mock[AuthConfig](withSettings.lenient())
+    val mockAuthConfig: AuthConfig = mock[AuthConfig]
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -87,11 +88,12 @@ class ApplicationControllerSpec extends ControllerSpec
     val underTest = new ApplicationController(
       mockApplicationService,
       mockAuthConnector,
+      mockAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,
-      mockAuthConfig,
-      mockGatekeeperService)
+      mockGatekeeperService,
+      Helpers.stubControllerComponents())
   }
 
 
@@ -399,7 +401,6 @@ class ApplicationControllerSpec extends ControllerSpec
     val id = UUID.randomUUID()
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
-
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
       val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
@@ -407,9 +408,10 @@ class ApplicationControllerSpec extends ControllerSpec
       verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "sucessfully update approval information for applicaton" in new Setup {
+    "successfully update approval information for application" in new Setup {
       givenUserIsAuthenticated(underTest)
-      when(underTest.applicationService.fetch(id)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+
+      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)
