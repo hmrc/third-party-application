@@ -21,7 +21,7 @@ import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import play.api.Mode.Mode
+import org.joda.time.format.ISODateTimeFormat
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.{RunMode, ServicesConfig}
@@ -52,7 +52,8 @@ class ConfigurationModule extends Module {
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
-      bind[RenameContextJobConfig].toProvider[RenameContextJobConfigProvider]
+      bind[RenameContextJobConfig].toProvider[RenameContextJobConfigProvider],
+      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
     )
   }
 }
@@ -250,7 +251,7 @@ class ApiPlatformEventsConfigProvider @Inject()(val runModeConfiguration: Config
 }
 
 @Singleton
-class RenameContextJobConfigProvider  @Inject()(configuration: Configuration, runMode: RunMode)
+class RenameContextJobConfigProvider @Inject()(configuration: Configuration, runMode: RunMode)
   extends ServicesConfig(configuration, runMode)
   with Provider[RenameContextJobConfig] {
 
@@ -263,3 +264,20 @@ class RenameContextJobConfigProvider  @Inject()(configuration: Configuration, ru
     RenameContextJobConfig(initialDelay, interval, enabled)
   }
 }
+
+@Singleton
+class ResetLastAccessDateJobConfigProvider @Inject()(configuration: Configuration, runMode: RunMode)
+  extends ServicesConfig(configuration, runMode)
+    with Provider[ResetLastAccessDateJobConfig] {
+
+  override def get(): ResetLastAccessDateJobConfig = {
+    val dateFormatter = ISODateTimeFormat.date()
+
+    val enabled = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
+    val dryRun = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
+    val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
+
+    ResetLastAccessDateJobConfig(dateFormatter.parseLocalDate(noLastAccessDateBeforeAsString), enabled, dryRun)
+  }
+}
+
