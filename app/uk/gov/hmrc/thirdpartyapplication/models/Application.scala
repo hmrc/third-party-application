@@ -78,6 +78,7 @@ case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, versio
 case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             confirmedName: Boolean = false,
                             apiSubscriptionsConfirmed: Boolean = false,
+                            apiSubscriptionConfigurationsConfirmed: Boolean = false,
                             providedPrivacyPolicyURL: Boolean = false,
                             providedTermsAndConditionsURL: Boolean = false,
                             applicationDetails: Option[String] = None,

@@ -76,6 +76,7 @@ trait JsonFormatters extends DateTimeFormatters {
     (JsPath \ "contactDetails").readNullable[ContactDetails] and
       (JsPath \ "confirmedName").read[Boolean] and
       ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
       (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
       (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
       (JsPath \ "applicationDetails").readNullable[String] and
@@ -162,6 +163,7 @@ object MongoFormat {
     (JsPath \ "contactDetails").readNullable[ContactDetails] and
       (JsPath \ "confirmedName").read[Boolean] and
       ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
       (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
       (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
       (JsPath \ "applicationDetails").readNullable[String] and
