@@ -17,9 +17,9 @@ lazy val akkaVersion     = "2.5.23"
 lazy val akkaHttpVersion = "10.0.15"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.7.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.8.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.10.0-play-26",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "com.typesafe.play" %% "play-json" % playJsonVersion,
   "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
@@ -55,7 +55,7 @@ def tmpMacWorkaround =
     Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
   } else Seq()
 
-lazy val plugins: Seq[Plugins] = Seq(_root_.play.sbt.PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = (project in file("."))
@@ -66,6 +66,7 @@ lazy val microservice = (project in file("."))
   .settings(defaultSettings(): _*)
   .settings(
     name := appName,
+    scalaVersion := "2.12.11",
     libraryDependencies ++= appDependencies,
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,

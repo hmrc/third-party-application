@@ -26,7 +26,6 @@ import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
@@ -42,7 +41,7 @@ class DummyCredentialGenerator extends CredentialGenerator {
 
 class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
-  override def fakeApplication = 
+  override def fakeApplication =
     GuiceApplicationBuilder()
         .configure(Map("Test.disableAwsCalls" -> false, "appName" -> "third-party-application"))
         .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])

@@ -34,7 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.scheduled.{UpliftVerificationExpiryJob,
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -74,6 +73,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
     val config = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
 
+
+    import scala.concurrent.ExecutionContext.Implicits.global
     val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, config)
 
     def whenSaveCalledWork =
@@ -87,6 +88,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
   override def afterAll(): Unit = {
     DateTimeUtils.setCurrentMillisSystem()
   }
+
+  import scala.concurrent.ExecutionContext.Implicits.global
 
   "uplift verification expiry job execution" should {
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
