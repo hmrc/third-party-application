@@ -22,7 +22,7 @@ import play.api.libs.json.{Json, Reads}
 class JsonFormatSpec extends WordSpec with Matchers {
 
   implicit val jsonFormat: Reads[CheckInformation] = JsonFormatters.checkInformationFormat
-  
+
   "CheckInformation parsing from REST API Json" should {
     "parse fully populated json" in {
       val json =
@@ -30,6 +30,7 @@ class JsonFormatSpec extends WordSpec with Matchers {
           |{
           |    "confirmedName" : true,
           |    "apiSubscriptionsConfirmed" : true,
+          |    "apiSubscriptionConfigurationsConfirmed" : true,
           |    "providedPrivacyPolicyURL" : true,
           |    "providedTermsAndConditionsURL" : true,
           |    "teamConfirmed" : true
@@ -40,25 +41,36 @@ class JsonFormatSpec extends WordSpec with Matchers {
 
       checkInformation.confirmedName shouldBe true
       checkInformation.apiSubscriptionsConfirmed shouldBe true
+      checkInformation.apiSubscriptionConfigurationsConfirmed shouldBe true
       checkInformation.providedPrivacyPolicyURL shouldBe true
       checkInformation.providedTermsAndConditionsURL shouldBe true
       checkInformation.teamConfirmed shouldBe true
     }
   }
 
-  "default teamConfirmed to false if missing from Json" in {
-    val json =
+  val jsonWithoutDefaultingFields =
       """
         |{
         |    "confirmedName" : false,
-        |    "apiSubscriptionsConfirmed" : false,
         |    "providedPrivacyPolicyURL" : false,
         |    "providedTermsAndConditionsURL" : false
         |}
         |""".stripMargin
 
-    val checkInformation: CheckInformation = Json.parse(json).as[CheckInformation]
+  "default teamConfirmed to false if missing from Json" in {
+    val checkInformation: CheckInformation = Json.parse(jsonWithoutDefaultingFields).as[CheckInformation]
 
     checkInformation.teamConfirmed shouldBe false
+  }
+
+  "default subscriptionsConfirmed to false if missing from Json" in {
+    val checkInformation: CheckInformation = Json.parse(jsonWithoutDefaultingFields).as[CheckInformation]
+
+    checkInformation.apiSubscriptionsConfirmed shouldBe false
+  }
+  "default subscriptionConfigurationsConfirmed to false if missing from Json" in {
+    val checkInformation: CheckInformation = Json.parse(jsonWithoutDefaultingFields).as[CheckInformation]
+
+    checkInformation.apiSubscriptionConfigurationsConfirmed shouldBe false
   }
 }
