@@ -40,7 +40,6 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {

@@ -28,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.scheduled.{RenameContextJob, RenameCont
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,8 +57,11 @@ class RenameContextJobSpec extends AsyncHmrcSpec with MongoSpecSupport {
     val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
     val config = RenameContextJobConfig(initialDelay, interval, enabled = true)
 
+    import scala.concurrent.ExecutionContext.Implicits.global
     val underTest = new RenameContextJob(mockLockKeeper, mockSubscriptionRepository, config)
   }
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
   "rename context job execution" should {
     "rename the business rates context" in new Setup {
