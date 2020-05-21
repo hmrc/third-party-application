@@ -19,7 +19,7 @@ lazy val akkaHttpVersion = "10.0.15"
 lazy val compile = Seq(
   "uk.gov.hmrc" %% "bootstrap-play-26" % "1.8.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0-play-26",
+  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "com.typesafe.play" %% "play-json" % playJsonVersion,
   "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
