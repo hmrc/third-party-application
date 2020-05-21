@@ -139,13 +139,4 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
       Json.obj("$pull" -> Json.obj("applications" -> applicationId))
     ).map(_ => HasSucceeded)
   }
-
-  @scala.deprecated("only needed temporarily for a job")
-  def updateContext(apiIdentifier: APIIdentifier, newContext: String) = {
-    findAndUpdate(
-      makeSelector(apiIdentifier),
-      Json.obj("$set" -> Json.obj("apiIdentifier.context" -> newContext)),
-      fetchNewObject = true)
-      .map(_.result[SubscriptionData])
-  }
 }

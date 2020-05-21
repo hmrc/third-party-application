@@ -36,7 +36,6 @@ class SchedulerModule extends AbstractModule {
 class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
-                          renameContextJob: RenameContextJob,
                           resetLastAccessDateJob: ResetLastAccessDateJob,
                           override val applicationLifecycle: ApplicationLifecycle,
                           override val application: Application)
@@ -45,7 +44,7 @@ class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJ
 
   override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
     // TODO : MetricsJob optional?
-    Seq(upliftVerificationExpiryJob, metricsJob, renameContextJob, resetLastAccessDateJob).filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
+    Seq(upliftVerificationExpiryJob, metricsJob, resetLastAccessDateJob).filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 }
 
