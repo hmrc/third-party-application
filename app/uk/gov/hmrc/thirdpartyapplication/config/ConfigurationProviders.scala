@@ -52,7 +52,6 @@ class ConfigurationModule extends Module {
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
-      bind[RenameContextJobConfig].toProvider[RenameContextJobConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
     )
   }
@@ -247,21 +246,6 @@ class ApiPlatformEventsConfigProvider @Inject()(val runModeConfiguration: Config
     val url = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConfig(url, enabled)
-  }
-}
-
-@Singleton
-class RenameContextJobConfigProvider @Inject()(configuration: Configuration, runMode: RunMode)
-  extends ServicesConfig(configuration, runMode)
-  with Provider[RenameContextJobConfig] {
-
-  override def get(): RenameContextJobConfig = {
-    val initialDelay = configuration.getOptional[String]("renameContextJob.initialDelay").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(120, SECONDS))
-    val interval = configuration.getOptional[String]("renameContextJob.interval").map(Duration.create(_).asInstanceOf[FiniteDuration])
-      .getOrElse(FiniteDuration(1, DAYS))
-    val enabled = configuration.getBoolean("renameContextJob.enabled").getOrElse(false)
-    RenameContextJobConfig(initialDelay, interval, enabled)
   }
 }
 
