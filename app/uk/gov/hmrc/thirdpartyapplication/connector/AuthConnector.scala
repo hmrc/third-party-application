@@ -34,4 +34,5 @@ case class AuthConfig(baseUrl: String,
                       superUserRole: String,
                       adminRole: String,
                       enabled: Boolean,
-                      canDeleteApplications: Boolean)
+                      canDeleteApplications: Boolean,
+                      authorisationKey: String)

@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import cats.data.OptionT
 import cats.implicits._
@@ -344,8 +345,17 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
+    def isAuthorised = {
+      def base64Decode(stringToDecode: String): String = new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
+
+      request.headers.get("Authorization") match {
+        case Some(authHeader) => authConfig.authorisationKey == base64Decode(authHeader)
+        case _ => false
+      }
+    }
+
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-        if (authConfig.canDeleteApplications) {
+        if (authConfig.canDeleteApplications || isAuthorised) {
 
           applicationService.fetch(id)
             .flatMap(_ => OptionT.liftF(applicationService.deleteApplication(id, None, audit)))

@@ -16,7 +16,8 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import akka.stream.Materializer
 import cats.data.OptionT
@@ -27,7 +28,7 @@ import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{Json, JsValue}
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
@@ -1550,6 +1551,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    def base64Encode(stringToEncode: String): String = new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
 
     "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](application))
@@ -1561,7 +1563,7 @@ class ApplicationControllerSpec extends ControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
-    "fail with a 400 error when a production application is requested to be deleted" in new CannotDeleteApplications with NotStrideAuthConfig {
+    "fail with a 400 error when a production application is requested to be deleted and authorisation key is missing" in new CannotDeleteApplications with NotStrideAuthConfig {
       when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
 
@@ -1569,6 +1571,35 @@ class ApplicationControllerSpec extends ControllerSpec
 
       status(result) shouldBe SC_BAD_REQUEST
       verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+    }
+
+    "fail with a 400 error when a production application is requested to be deleted and authorisation key is invalid" in new CannotDeleteApplications with NotStrideAuthConfig {
+      when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
+      when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
+      when(mockAuthConfig.authorisationKey).thenReturn("foo")
+
+      val result = underTest.deleteApplication(applicationId)(request
+        .withBody(Json.toJson(deleteRequest))
+        .withHeaders(AUTHORIZATION -> "bar")
+        .asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe SC_BAD_REQUEST
+      verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+    }
+
+    "succeed when a production application is requested to be deleted and authorisation key is valid" in new CannotDeleteApplications with NotStrideAuthConfig {
+      when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
+      when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
+      val authorisationKey = "foo"
+      when(mockAuthConfig.authorisationKey).thenReturn(authorisationKey)
+
+      val result = underTest.deleteApplication(applicationId)(request
+        .withBody(Json.toJson(deleteRequest))
+        .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
+        .asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe SC_NO_CONTENT
+      verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
     "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new NotStrideAuthConfig {
