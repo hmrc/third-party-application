@@ -38,6 +38,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 import scala.concurrent.Future.{failed, successful}
+import scala.util.Try
 
 trait AuthorisationWrapper {
   self: BaseController =>
@@ -57,10 +58,10 @@ trait AuthorisationWrapper {
 
       def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
         def matchesAuthorisationKey: Boolean = {
-          def base64Decode(stringToDecode: String): String = new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
+          def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
           request.headers.get("Authorization") match {
-            case Some(authHeader) => authConfig.authorisationKey == base64Decode(authHeader)
+            case Some(authHeader) => base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
             case _ => false
           }
         }
