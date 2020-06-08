@@ -274,7 +274,8 @@ trait Token {
 
 case class EnvironmentToken(clientId: String,
                             accessToken: String,
-                            clientSecrets: List[ClientSecret] = List()) extends Token
+                            clientSecrets: List[ClientSecret] = List(),
+                            lastAccessTokenUsage: Option[DateTime] = None) extends Token
 
 case class ApplicationTokenResponse(
    clientId: String,

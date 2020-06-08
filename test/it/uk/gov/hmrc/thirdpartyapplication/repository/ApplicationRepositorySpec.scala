@@ -172,6 +172,23 @@ class ApplicationRepositorySpec
     }
   }
 
+  "recordServerTokenUsage" should {
+    "update the lastAccess and lastAccessTokenUsage properties" in {
+      val testStartTime = DateTime.now()
+      val applicationId = UUID.randomUUID()
+      val application =
+        anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
+          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
+      application.tokens.production.lastAccessTokenUsage shouldBe None
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordServerTokenUsage(applicationId))
+
+      retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
+      retrieved.tokens.production.lastAccessTokenUsage.get.isAfter(testStartTime) shouldBe true
+    }
+  }
+
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {
       val testStartTime = DateTime.now()
