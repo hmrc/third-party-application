@@ -248,6 +248,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield ExtendedApplicationResponse(app, subscriptions)
   }
 
+  def recordServerTokenUsage(applicationId: UUID): Future[ExtendedApplicationResponse] = {
+    for {
+      app <- applicationRepository.recordServerTokenUsage(applicationId)
+      subscriptions <- subscriptionRepository.getSubscriptions(app.id)
+    } yield ExtendedApplicationResponse(app, subscriptions)
+  }
+
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>

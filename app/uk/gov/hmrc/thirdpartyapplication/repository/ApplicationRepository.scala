@@ -131,6 +131,11 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
+  def recordServerTokenUsage(applicationId: UUID): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj(
+      "lastAccess" -> Json.obj("$type" -> "date"),
+      "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
+
   def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
     findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
       _.result[ApplicationData].head
