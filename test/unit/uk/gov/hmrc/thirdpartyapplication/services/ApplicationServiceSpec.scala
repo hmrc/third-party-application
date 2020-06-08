@@ -374,6 +374,20 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
+  "recordServerTokenUsage" should {
+    "update the Application and return an ExtendedApplicationResponse" in new Setup {
+      val subscriptions: List[APIIdentifier] = List(APIIdentifier("myContext", "myVersion"))
+      ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
+
+      val applicationResponse: ExtendedApplicationResponse = await(underTest.recordServerTokenUsage(applicationId))
+
+      applicationResponse.id shouldBe applicationId
+      applicationResponse.subscriptions shouldBe subscriptions
+      ApplicationRepoMock.RecordServerTokenUsage.verifyCalledWith(applicationId)
+    }
+  }
+
   "Update" should {
     val applicationRequest = anExistingApplicationRequest()
 

@@ -256,19 +256,28 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   private def fetchByServerToken(serverToken: String)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchAndUpdateApplication(() => applicationService.fetchByServerToken(serverToken), "No application was found for server token")
+    fetchAndUpdateApplication(
+      () => applicationService.fetchByServerToken(serverToken),
+      appId => applicationService.recordServerTokenUsage(appId),
+      "No application was found for server token"
+    )
 
   private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier): Future[Result] =
-    fetchAndUpdateApplication(() => applicationService.fetchByClientId(clientId), "No application was found")
+    fetchAndUpdateApplication(
+      () => applicationService.fetchByClientId(clientId),
+      appId => applicationService.recordApplicationUsage(appId),
+      "No application was found for client id"
+    )
 
   private def fetchAndUpdateApplication(fetchFunction: () => Future[Option[ApplicationResponse]],
+                                        updateFunction: UUID => Future[ExtendedApplicationResponse],
                                         notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
     fetchFunction().flatMap {
       case Some(application) =>
         // If request has originated from an API gateway, record usage of the Application
         hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
           case Some(userAgent) if apiGatewayUserAgents.contains(userAgent) =>
-            applicationService.recordApplicationUsage(application.id).map(updatedApp => Ok(toJson(updatedApp)))
+            updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp)))
           case _ => successful(Ok(toJson(application)))
         }
       case None => successful(handleNotFound(notFoundMessage))

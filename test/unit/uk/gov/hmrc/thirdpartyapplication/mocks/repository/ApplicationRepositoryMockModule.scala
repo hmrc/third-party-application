@@ -201,6 +201,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.recordApplicationUsage(applicationId)).thenReturn(successful(applicationData))
     }
 
+    object RecordServerTokenUsage {
+      def thenReturnWhen(applicationId: UUID)(applicationData: ApplicationData) =
+        when(aMock.recordServerTokenUsage(applicationId)).thenReturn(successful(applicationData))
+
+      def verifyCalledWith(applicationId: UUID) =
+        ApplicationRepoMock.verify.recordServerTokenUsage(eqTo(applicationId))
+    }
+
     object UpdateIpWhitelist {
       def verifyCalledWith(applicationId: UUID, newIpWhitelist: Set[String]) =
         ApplicationRepoMock.verify.updateApplicationIpWhitelist(eqTo(applicationId),eqTo(newIpWhitelist))

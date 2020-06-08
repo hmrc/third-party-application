@@ -877,6 +877,7 @@ class ApplicationControllerSpec extends ControllerSpec
       val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
 
       when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+      when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
     }
 
     def validateResult(result: Future[Result], expectedResponseCode: Int,
@@ -944,7 +945,7 @@ class ApplicationControllerSpec extends ControllerSpec
       validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
     }
 
-    "update last accessed time when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
+    "update last accessed time and server token usage when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
       when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
       val scenarios =
         Table(
@@ -960,6 +961,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))
       }
     }
 
@@ -980,6 +982,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        verify(underTest.applicationService).recordApplicationUsage(eqTo(applicationId))
       }
     }
   }
