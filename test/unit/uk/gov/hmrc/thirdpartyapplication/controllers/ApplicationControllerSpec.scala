@@ -32,7 +32,7 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.auth.core.{Enrolment, SessionRecordNotFound}
+import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
@@ -98,12 +98,14 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
 
-  trait CannotDeleteApplications extends Setup{
-    override def canDeleteApplications() = false
+  trait SandboxDeleteApplications extends Setup {
+    override def canDeleteApplications() = true
+    override def enabled() = false
   }
 
-  trait NotStrideAuthConfig extends Setup{
-    override def enabled() = false
+  trait ProductionDeleteApplications extends Setup {
+    override def canDeleteApplications() = false
+    override def enabled() = true
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -1553,7 +1555,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
     def base64Encode(stringToEncode: String): String = new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
 
-    "succeed when a sandbox application is successfully deleted" in new NotStrideAuthConfig {
+    "succeed when a sandbox application is successfully deleted" in new SandboxDeleteApplications {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
 
@@ -1563,31 +1565,34 @@ class ApplicationControllerSpec extends ControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
-    "fail with a 400 error when a production application is requested to be deleted and authorisation key is missing" in new CannotDeleteApplications with NotStrideAuthConfig {
+    "fail with a 400 error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
       when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe SC_BAD_REQUEST
-      verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
-    "fail with a 400 error when a production application is requested to be deleted and authorisation key is invalid" in new CannotDeleteApplications with NotStrideAuthConfig {
+    "fail with an authorisation error when a production application is requested to be deleted and auth key is invalid" in new ProductionDeleteApplications {
+      givenUserIsNotAuthenticated(underTest)
       when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
       when(mockAuthConfig.authorisationKey).thenReturn("foo")
 
-      val result = underTest.deleteApplication(applicationId)(request
-        .withBody(Json.toJson(deleteRequest))
-        .withHeaders(AUTHORIZATION -> "bar")
-        .asInstanceOf[FakeRequest[AnyContent]])
+      val error = intercept[AuthorisationException] {
+        await(underTest.deleteApplication(applicationId)(request
+          .withBody(Json.toJson(deleteRequest))
+          .withHeaders(AUTHORIZATION -> "bar")
+          .asInstanceOf[FakeRequest[AnyContent]]))
+      }
 
-      status(result) shouldBe SC_BAD_REQUEST
-      verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+      error.getMessage shouldBe "Session record not found"
+      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
-    "succeed when a production application is requested to be deleted and authorisation key is valid" in new CannotDeleteApplications with NotStrideAuthConfig {
+    "succeed when a production application is requested to be deleted and authorisation key is valid" in new ProductionDeleteApplications {
       when(mockApplicationService.fetch(*)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*, *, * ) (*)).thenReturn(successful(Deleted))
       val authorisationKey = "foo"
@@ -1602,13 +1607,13 @@ class ApplicationControllerSpec extends ControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
-    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new NotStrideAuthConfig {
+    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new SandboxDeleteApplications {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe SC_NOT_FOUND
-      verify(mockApplicationService,times(0)).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
   }
 

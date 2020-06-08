@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
+import java.nio.charset.StandardCharsets
+import java.util.{Base64, UUID}
 
 import javax.inject.Inject
-
-
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
@@ -38,7 +37,7 @@ import play.api.http.HeaderNames.AUTHORIZATION
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
-import scala.concurrent.Future.{successful, failed}
+import scala.concurrent.Future.{failed, successful}
 
 trait AuthorisationWrapper {
   self: BaseController =>
@@ -51,25 +50,40 @@ trait AuthorisationWrapper {
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction
 
-  case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, request: Request[A]) extends WrappedRequest[A](request)
+  case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, matchesAuthorisationKey: Boolean, request: Request[A]) extends WrappedRequest[A](request)
 
-  def strideAuthRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, OptionalStrideAuthRequest] = new ActionRefiner[Request, OptionalStrideAuthRequest] {
-    def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
-      val strideAuthSuccess =
-        if (authConfig.enabled && request.headers.get(AUTHORIZATION).isDefined) {
-          implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
-          val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
-          authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => true }
-        } else {
-          Future.successful(false)
+  def strideAuthRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, OptionalStrideAuthRequest] =
+    new ActionRefiner[Request, OptionalStrideAuthRequest] {
+
+      def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
+        def matchesAuthorisationKey: Boolean = {
+          def base64Decode(stringToDecode: String): String = new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
+
+          request.headers.get("Authorization") match {
+            case Some(authHeader) => authConfig.authorisationKey == base64Decode(authHeader)
+            case _ => false
+          }
         }
 
-      strideAuthSuccess.flatMap(isStrideAuthenticated => {
-        Future.successful(Right[Result, OptionalStrideAuthRequest[A]](OptionalStrideAuthRequest[A](isStrideAuth = isStrideAuthenticated, request)))
-      })
-    }
+        val strideAuthSuccess =
+          if (authConfig.enabled && request.headers.get(AUTHORIZATION).isDefined) {
+            if (matchesAuthorisationKey) {
+              Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, true, request))
+            } else {
+              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+              val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+              authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => OptionalStrideAuthRequest[A](isStrideAuth = true, false, request))
+            }
+          } else {
+            Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, false, request))
+          }
 
-    override protected def executionContext: ExecutionContext = ec
+        strideAuthSuccess.flatMap(strideAuthRequest => {
+          Future.successful(Right[Result, OptionalStrideAuthRequest[A]](strideAuthRequest))
+        })
+      }
+
+      override protected def executionContext: ExecutionContext = ec
   }
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
@@ -119,7 +133,8 @@ trait AuthorisationWrapper {
         .value
   }
 
-  private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext) extends ActionFilter[Request] {
+  private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
+                                              (implicit ec: ExecutionContext) extends ActionFilter[Request] {
     def executionContext = ec
 
     lazy val FAILED_ACCESS_TYPE = successful(Some(Results.Forbidden(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
