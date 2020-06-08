@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.nio.charset.StandardCharsets
-import java.util.{Base64, UUID}
+import java.util.UUID
 
 import cats.data.OptionT
 import cats.implicits._
@@ -28,6 +27,7 @@ import play.api.libs.json._
 import play.api.mvc._
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
@@ -36,7 +36,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
@@ -345,18 +344,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
-    def isAuthorised = {
-      def base64Decode(stringToDecode: String): String = new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8)
-
-      request.headers.get("Authorization") match {
-        case Some(authHeader) => authConfig.authorisationKey == base64Decode(authHeader)
-        case _ => false
-      }
-    }
-
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-        if (authConfig.canDeleteApplications || isAuthorised) {
-
+        if (authConfig.canDeleteApplications || request.matchesAuthorisationKey) {
           applicationService.fetch(id)
             .flatMap(_ => OptionT.liftF(applicationService.deleteApplication(id, None, audit)))
             .fold(handleNotFound("No application was found"))(_ => NoContent)
