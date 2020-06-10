@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
 
-import scala.collection.JavaConverters._
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class ConfigurationModule extends Module {
@@ -196,8 +195,8 @@ class ApplicationControllerConfigProvider @Inject()(val runModeConfiguration: Co
   with Provider[ApplicationControllerConfig] {
 
   override def get() = {
-    val fetchApplicationTtlInSecs: Int = ConfigHelper.getConfig("fetchApplicationTtlInSeconds", runModeConfiguration.getInt)
-    val fetchSubscriptionTtlInSecs: Int = ConfigHelper.getConfig("fetchSubscriptionTtlInSeconds", runModeConfiguration.getInt)
+    val fetchApplicationTtlInSecs: Int = ConfigHelper.getConfig("fetchApplicationTtlInSeconds", runModeConfiguration.getOptional[Int])
+    val fetchSubscriptionTtlInSecs: Int = ConfigHelper.getConfig("fetchSubscriptionTtlInSeconds", runModeConfiguration.getOptional[Int])
     ApplicationControllerConfig(fetchApplicationTtlInSecs, fetchSubscriptionTtlInSecs)
   }
 }
@@ -208,7 +207,7 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
   with Provider[CredentialConfig] {
 
   override def get() = {
-    val clientSecretLimit: Int = ConfigHelper.getConfig(s"clientSecretLimit", runModeConfiguration.getInt)
+    val clientSecretLimit: Int = ConfigHelper.getConfig(s"clientSecretLimit", runModeConfiguration.getOptional[Int])
     CredentialConfig(clientSecretLimit)
   }
 }
@@ -219,7 +218,7 @@ class ClientSecretServiceConfigProvider @Inject()(val runModeConfiguration: Conf
   with Provider[ClientSecretServiceConfig] {
 
   override def get(): ClientSecretServiceConfig = {
-    val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", runModeConfiguration.getInt)
+    val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", runModeConfiguration.getOptional[Int])
     ClientSecretServiceConfig(hashFunctionWorkFactor)
   }
 }
@@ -230,8 +229,8 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val runModeConfigu
   with Provider[ApplicationNameValidationConfig] {
 
   override def get() = {
-    val nameBlackList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getStringList).asScala.toList
-    val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getBoolean)
+    val nameBlackList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", runModeConfiguration.getOptional[Seq[String]]).toList
+    val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", runModeConfiguration.getOptional[Boolean])
 
     ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
   }

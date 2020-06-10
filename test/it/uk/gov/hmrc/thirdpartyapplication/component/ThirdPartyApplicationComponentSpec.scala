@@ -195,7 +195,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
     scenario("Return UNAUTHORIZED if clientId is incorrect") {
       Given("A third party application")
-      val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
+      createApplication(awsApiGatewayApplicationName)
 
       When("We attempt to validate the credentials")
       val requestBody = validationRequest("foo", "bar")

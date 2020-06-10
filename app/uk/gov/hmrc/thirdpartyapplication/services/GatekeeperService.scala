@@ -154,7 +154,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
 
-  def blockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Blocked] = {
+  def blockApplication(applicationId: UUID): Future[Blocked] = {
     def block(application: ApplicationData): ApplicationData = {
       application.copy(blocked = true)
     }
@@ -165,7 +165,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield Blocked
   }
 
-  def unblockApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Unblocked] = {
+  def unblockApplication(applicationId: UUID): Future[Unblocked] = {
     def unblock(application: ApplicationData): ApplicationData = {
       application.copy(blocked = false)
     }
@@ -175,7 +175,6 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       _ <- applicationRepository.save(unblock(app))
     } yield Unblocked
   }
-
 
   private def fetchApp(applicationId: UUID): Future[ApplicationData] = {
     lazy val notFoundException = new NotFoundException(s"application not found for id: $applicationId")

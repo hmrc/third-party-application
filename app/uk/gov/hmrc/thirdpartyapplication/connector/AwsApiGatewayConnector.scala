@@ -27,7 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
 
 @Singleton
 class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConfig)

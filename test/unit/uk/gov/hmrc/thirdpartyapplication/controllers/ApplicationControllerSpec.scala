@@ -30,7 +30,7 @@ import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import play.api.test.{FakeRequest, Helpers}
+import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}

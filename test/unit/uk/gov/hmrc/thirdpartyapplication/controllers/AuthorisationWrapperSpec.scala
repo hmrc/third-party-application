@@ -21,10 +21,9 @@ import java.util.UUID
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
-import controllers.Default
-import org.apache.http.HttpStatus.{SC_NOT_FOUND, SC_OK}
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
+import play.api.mvc.Results.Ok
 import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
@@ -52,7 +51,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   when(mockAuthConfig.enabled).thenReturn(true)
 
 
-  class TestAuthorisationWrapper(cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
+  class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
     val applicationService: ApplicationService = ???
     val authConfig: AuthConfig = ???
     val authConnector: AuthConnector = ???
@@ -60,13 +59,16 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   }
 
   trait Setup {
-    val underTest = new TestAuthorisationWrapper(Helpers.stubControllerComponents()) {
+    val stubControllerComponents = Helpers.stubControllerComponents()
+    val underTest = new TestAuthorisationWrapper(stubControllerComponents) {
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]
       override val authConfig: AuthConfig = mockAuthConfig
     }
     val request = FakeRequest()
+
+    val parse = stubControllerComponents.parsers
 
     def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.fromOption(application))
@@ -81,23 +83,23 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
       givenUserIsAuthenticated(underTest)
 
-      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        successful(Default.Ok("")))(privilegedRequest)
+      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
+        successful(Ok("")))(privilegedRequest)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "accept the request when access type in the payload is ROPC and user is authenticated" in new Setup {
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => successful(Default.Ok("")))(ropcRequest)) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(ROPC).async(parse.json)(_ => successful(Ok("")))(ropcRequest)) shouldBe OK
     }
 
     "skip gatekeeper authentication for payload with STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
-      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        successful(Default.Ok("")))(standardRequest)
+      val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
+        successful(Ok("")))(standardRequest)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       verifyZeroInteractions(underTest.authConnector)
     }
 
@@ -105,15 +107,15 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(PRIVILEGED).async(BodyParsers.parse.json)(_ =>
-        successful(Default.Ok("")))(privilegedRequest))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
+        successful(Ok("")))(privilegedRequest))
       )
     }
 
     "throws SessionRecordNotFound when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(BodyParsers.parse.json)(_ => successful(Default.Ok("")))(ropcRequest)))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(ROPC).async(parse.json)(_ => successful(Ok("")))(ropcRequest)))
     }
   }
 
@@ -129,24 +131,24 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
       givenUserIsAuthenticated(underTest)
 
-      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "accept the request when access type of the application is ROPC and gatekeeper is logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsAuthenticated(underTest)
-      status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Default.Ok("")))(request)) shouldBe SC_OK
+      status(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Ok("")))(request)) shouldBe OK
     }
 
     "skip gatekeeper authentication for STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, Some(standardApplication))
 
-      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       verifyZeroInteractions(underTest.authConnector)
     }
 
@@ -157,23 +159,23 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       givenUserIsNotAuthenticated(underTest)
 
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)))
     }
 
     "throws SessionRecordNotFound when access type of the application is ROPC and gatekeeper is not logged in" in new Setup {
       mockFetchApplicationToReturn(applicationId, Some(ropcApplication))
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Default.Ok("")))(request)))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, ROPC).async(_ => successful(Ok("")))(request)))
     }
 
     "return a 404 (Not Found) when the application doesn't exist" in new Setup {
 
       mockFetchApplicationToReturn(applicationId, None)
 
-      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Default.Ok("")))(request)
+      val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)
 
-      status(result) shouldBe SC_NOT_FOUND
+      status(result) shouldBe NOT_FOUND
       contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
     }
   }
@@ -184,16 +186,16 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
       givenUserIsAuthenticated(underTest)
 
-      val result = underTest.requiresAuthentication().async(_ => successful(Default.Ok("")))(request)
+      val result = underTest.requiresAuthentication().async(_ => successful(Ok("")))(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "throws SessionRecordNotFound when the gatekeeper is not logged in" in new Setup {
 
       givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthentication().async(_ => successful(Default.Ok("")))(request)))
+      assertThrows[SessionRecordNotFound](await(underTest.requiresAuthentication().async(_ => successful(Ok("")))(request)))
     }
   }
 

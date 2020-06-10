@@ -16,7 +16,7 @@
 
 package unit.uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.scalatest.mockito.MockitoSugar
+import org.scalatestplus.mockito.MockitoSugar
 import org.slf4j
 import play.api.{LoggerLike, MarkerContext}
 

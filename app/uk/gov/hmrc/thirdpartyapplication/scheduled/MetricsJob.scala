@@ -25,7 +25,6 @@ import uk.gov.hmrc.metrix.MetricOrchestrator
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
-import scala.language.postfixOps
 
 @Singleton
 class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,

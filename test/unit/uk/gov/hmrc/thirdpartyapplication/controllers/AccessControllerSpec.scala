@@ -22,7 +22,7 @@ import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
-import play.api.mvc.{AnyContentAsEmpty, ControllerComponents, Result}
+import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}

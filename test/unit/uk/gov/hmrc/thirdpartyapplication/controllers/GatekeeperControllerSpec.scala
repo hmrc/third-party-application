@@ -20,7 +20,6 @@ import java.util.UUID
 
 import akka.stream.Materializer
 import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
-import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import play.api.Logger
 import play.api.libs.json.Json
@@ -42,6 +41,7 @@ import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
+import play.api.test.Helpers._
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -320,11 +320,11 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.blockApplication(*)(*)).thenReturn(successful(Blocked))
+      when(mockGatekeeperService.blockApplication(*)).thenReturn(successful(Blocked))
 
       val result = underTest.blockApplication(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       verify(mockGatekeeperService).blockApplication(applicationId)
     }
   }
@@ -337,11 +337,11 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       givenUserIsAuthenticated(underTest)
 
-      when(mockGatekeeperService.unblockApplication(*)(*)).thenReturn(successful(Unblocked))
+      when(mockGatekeeperService.unblockApplication(*)).thenReturn(successful(Unblocked))
 
       val result = underTest.unblockApplication(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       verify(mockGatekeeperService).unblockApplication(applicationId)
     }
   }

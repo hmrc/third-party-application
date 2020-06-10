@@ -75,13 +75,13 @@ class GatekeeperController @Inject()(
       } recover recovery
   }
 
-  def blockApplication(id: UUID) = requiresAuthentication().async { implicit request =>
+  def blockApplication(id: UUID) = requiresAuthentication().async { _ =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok
     } recover recovery
   }
 
-  def unblockApplication(id: UUID) = requiresAuthentication().async { implicit request =>
+  def unblockApplication(id: UUID) = requiresAuthentication().async { _ =>
     gatekeeperService.unblockApplication(id) map {
       case Unblocked => Ok
     } recover recovery

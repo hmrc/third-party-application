@@ -20,7 +20,7 @@ import java.util.UUID
 
 import com.github.tomakehurst.wiremock.client.WireMock._
 import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
-import play.api.http.Status.{CREATED, OK}
+import play.api.http.Status.OK
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 
 object AwsApiGatewayStub extends Stub {

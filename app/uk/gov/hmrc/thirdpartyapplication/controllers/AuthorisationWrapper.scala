@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
 
-import javax.inject.Inject
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
@@ -33,11 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_F
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import play.api.http.HeaderNames.AUTHORIZATION
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 import scala.util.Try
 
 trait AuthorisationWrapper {

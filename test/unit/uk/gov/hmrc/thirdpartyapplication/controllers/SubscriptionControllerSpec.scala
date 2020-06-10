@@ -19,7 +19,6 @@ package unit.uk.gov.hmrc.thirdpartyapplication.controllers
 import java.util.UUID
 
 import akka.stream.Materializer
-import play.api.Application
 import play.api.http.Writeable
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
@@ -28,7 +27,6 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
