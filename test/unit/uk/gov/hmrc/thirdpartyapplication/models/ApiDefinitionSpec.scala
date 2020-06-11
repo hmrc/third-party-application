@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.models
+package unuk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._

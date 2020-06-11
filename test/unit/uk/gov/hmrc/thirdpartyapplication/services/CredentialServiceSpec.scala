@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.services
+package unuk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
 import java.util.UUID.randomUUID
@@ -33,9 +33,9 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import unit.uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
+import unuk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import unuk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import unuk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

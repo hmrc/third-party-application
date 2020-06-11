@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.controllers
+package unuk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.util.UUID
 
@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
-import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import unuk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext

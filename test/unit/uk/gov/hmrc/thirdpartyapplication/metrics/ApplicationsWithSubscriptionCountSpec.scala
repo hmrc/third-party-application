@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.metrics
+package unuk.gov.hmrc.thirdpartyapplication.metrics
 
 import uk.gov.hmrc.thirdpartyapplication.metrics.ApplicationsWithSubscriptionCount
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository

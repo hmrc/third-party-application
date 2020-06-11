@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
+package unuk.gov.hmrc.thirdpartyapplication.scheduled
 
 import uk.gov.hmrc.thirdpartyapplication.scheduled.BCryptPerformanceMeasureJob
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import unit.uk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
+import unuk.gov.hmrc.thirdpartyapplication.helpers.StubLogger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 

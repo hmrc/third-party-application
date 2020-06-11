@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.connector
+package unuk.gov.hmrc.thirdpartyapplication.connector
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import unit.uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
+import unuk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 
 abstract class ConnectorSpec extends AsyncHmrcSpec with NoMetricsGuiceOneAppPerSuite with LogSuppressing {}

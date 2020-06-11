@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
+package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import java.net.URLEncoder
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import it.uk.gov.hmrc.thirdpartyapplication.component.{Stub, MockHost}
+import uk.gov.hmrc.thirdpartyapplication.component.{Stub, MockHost}
 import play.api.http.Status.OK
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.UserResponse

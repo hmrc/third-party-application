@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
+package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.NO_CONTENT
 
-object ApiSubscriptionFieldsStub extends Stub {
+object ThirdPartyDelegatedAuthorityStub extends Stub {
+  override val stub = MockHost(22228)
 
-  override val stub = MockHost(22227)
-
-  def willDeleteTheSubscriptionFields() = {
-    stub.mock.register(get(urlPathMatching(s"/field/application/*"))
+  def willRevokeApplicationAuthorities() = {
+    stub.mock.register(delete(urlPathMatching("/authority/*"))
       .willReturn(aResponse().withStatus(NO_CONTENT)))
   }
 }

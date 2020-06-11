@@ -14,22 +14,18 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
+package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
-import play.api.http.Status.OK
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+import play.api.http.Status.NO_CONTENT
 
-object EmailStub extends Stub {
+object ApiSubscriptionFieldsStub extends Stub {
 
-  override val stub: MockHost = MockHost(22223)
+  override val stub = MockHost(22227)
 
-  def willPostEmailNotification() = {
-    stub.mock.register(post(urlEqualTo("/hmrc/email"))
-      .willReturn(
-        aResponse()
-          .withStatus(OK)
-      )
-    )
+  def willDeleteTheSubscriptionFields() = {
+    stub.mock.register(get(urlPathMatching(s"/field/application/*"))
+      .willReturn(aResponse().withStatus(NO_CONTENT)))
   }
 }

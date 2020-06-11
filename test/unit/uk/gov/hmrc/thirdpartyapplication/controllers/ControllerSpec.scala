@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.controllers
+package unuk.gov.hmrc.thirdpartyapplication.controllers
 
 import common.uk.gov.hmrc.thirdpartyapplication.common.LogSuppressing
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import unit.uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
+import unuk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 
 abstract class ControllerSpec extends AsyncHmrcSpec with NoMetricsGuiceOneAppPerSuite
   with LogSuppressing { }

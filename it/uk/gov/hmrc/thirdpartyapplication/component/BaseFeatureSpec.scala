@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component
+package uk.gov.hmrc.thirdpartyapplication.component
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
-import it.uk.gov.hmrc.thirdpartyapplication.component.stubs._
+import uk.gov.hmrc.thirdpartyapplication.component.stubs._
 import org.scalatest._
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 

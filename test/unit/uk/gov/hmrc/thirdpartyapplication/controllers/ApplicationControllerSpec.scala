@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.controllers
+package unuk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.nio.charset.StandardCharsets
 import java.util.{Base64, UUID}
@@ -46,7 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpW
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
-import unit.uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import unuk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

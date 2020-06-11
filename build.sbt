@@ -72,31 +72,25 @@ lazy val microservice = (project in file("."))
     routesGenerator := InjectedRoutesGenerator,
     majorVersion := 0
   )
-  .settings(
-    unmanagedSourceDirectories in Compile += baseDirectory.value / "common",
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
-  )
   .settings(playPublishingSettings: _*)
-  // .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
   .settings(
     testOptions in Test := Seq(Tests.Filter(unitFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
     fork in Test := false,
     parallelExecution in Test := false
   )
   .configs(IntegrationTest)
-  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
   .settings(
+    Defaults.itSettings,
     fork in IntegrationTest := false,
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "test")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
     testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    testOptions in IntegrationTest := Seq(Tests.Filter(itFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
+    testOptions in IntegrationTest := Seq(Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
     parallelExecution in IntegrationTest := false)
   .settings(
     resolvers += Resolver.jcenterRepo
   )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
-  .settings(ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)))
 
 lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
 
@@ -113,7 +107,6 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
   }
 
 def unitFilter(name: String): Boolean = name startsWith "unit"
-def itFilter(name: String): Boolean = name startsWith "it"
 
 // Coverage configuration
 coverageMinimum := 89

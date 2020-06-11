@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.models
+package unuk.gov.hmrc.thirdpartyapplication.models
 
 import java.util.UUID
 

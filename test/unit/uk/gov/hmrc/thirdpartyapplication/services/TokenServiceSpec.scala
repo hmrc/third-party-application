@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.services
+package unuk.gov.hmrc.thirdpartyapplication.services
 
 import uk.gov.hmrc.thirdpartyapplication.models.EnvironmentToken
 import uk.gov.hmrc.thirdpartyapplication.services.TokenService

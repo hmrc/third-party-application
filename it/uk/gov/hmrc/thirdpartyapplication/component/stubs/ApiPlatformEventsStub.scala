@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
+package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.CREATED
 
 object ApiPlatformEventsStub extends Stub {

@@ -24,7 +24,7 @@ import play.api.LoggerLike
 
 import scala.collection.mutable
 
-import scala.collection.JavaConversions._
+import scala.collection.JavaConverters._
 
 class SuppressedLogFilter(val messagesContaining: String) extends Filter[ILoggingEvent] {
   private val suppressedEntries = new mutable.MutableList[ILoggingEvent]()
@@ -54,7 +54,7 @@ class SuppressedLogFilter(val messagesContaining: String) extends Filter[ILoggin
 trait LogSuppressing {
   def withSuppressedLoggingFrom(logger: Logger, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit) {
 
-    val appenders = logger.iteratorForAppenders().toList
+    val appenders = logger.iteratorForAppenders().asScala
     val appendersWithFilters = appenders.map(appender => appender->appender.getCopyOfAttachedFiltersList)
 
     val filter = new SuppressedLogFilter(messagesContaining)
@@ -64,7 +64,7 @@ trait LogSuppressing {
     finally {
       appendersWithFilters.foreach { case(appender, filters) =>
         appender.clearAllFilters
-        filters.foreach(appender.addFilter(_))
+        filters.asScala.foreach(appender.addFilter(_))
       }
     }
   }

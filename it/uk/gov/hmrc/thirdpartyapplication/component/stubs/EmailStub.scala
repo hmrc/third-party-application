@@ -14,27 +14,21 @@
  * limitations under the License.
  */
 
-package it.uk.gov.hmrc.thirdpartyapplication.component.stubs
-
-import java.util.UUID
+package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
 import com.github.tomakehurst.wiremock.client.WireMock._
-import it.uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
+import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.OK
-import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.ApiDefinition
 
-object ApiDefinitionStub extends Stub {
+object EmailStub extends Stub {
 
-  override val stub = MockHost(22221)
+  override val stub: MockHost = MockHost(22223)
 
-  def willReturnApisForApplication(applicationId: UUID, apiDefinitions: Seq[ApiDefinition]) = {
-    stub.mock.register(get(urlEqualTo(s"/api-definition?applicationId=$applicationId"))
+  def willPostEmailNotification() = {
+    stub.mock.register(post(urlEqualTo("/hmrc/email"))
       .willReturn(
         aResponse()
           .withStatus(OK)
-          .withBody(Json.toJson(apiDefinitions).toString())
       )
     )
   }

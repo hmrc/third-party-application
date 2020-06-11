@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.util
+package unuk.gov.hmrc.thirdpartyapplication.util
 
 import org.scalatest.{Matchers, WordSpec}
 import uk.gov.hmrc.http.HeaderCarrier

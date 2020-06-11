@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.scheduled
+package unuk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.UUID
 

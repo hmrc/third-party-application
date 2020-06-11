@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package unit.uk.gov.hmrc.thirdpartyapplication.mocks
+package unuk.gov.hmrc.thirdpartyapplication.mocks
 
 import java.util.UUID
 
