@@ -89,7 +89,7 @@ lazy val microservice = (project in file("."))
     fork in IntegrationTest := false,
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "test")).value,
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    // testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     testOptions in IntegrationTest := Seq(Tests.Filter(itFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
     parallelExecution in IntegrationTest := false)
   .settings(
@@ -98,12 +98,6 @@ lazy val microservice = (project in file("."))
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
   .settings(ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)))
 
-
-// lazy val allPhases = "tt->test;test->test;test->compile;compile->compile"
-// lazy val allItPhases = "tit->it;it->it;it->compile;compile->compile"
-
-// lazy val TemplateTest = config("tt") extend Test
-// lazy val TemplateItTest = config("tit") extend IntegrationTest
 lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
 
   credentials += SbtCredentials,
