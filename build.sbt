@@ -84,7 +84,7 @@ lazy val microservice = (project in file("."))
     parallelExecution in Test := false
   )
   .configs(IntegrationTest)
-  // .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
+  .settings(inConfig(IntegrationTest)(Defaults.itSettings): _*)
   .settings(
     fork in IntegrationTest := false,
     unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "test")).value,
