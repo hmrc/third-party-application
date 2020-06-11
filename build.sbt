@@ -24,7 +24,7 @@ lazy val compile = Seq(
   "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
   "uk.gov.hmrc" %% "metrix" % "4.4.0-play-26",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.26.0-play-26",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.27.0-play-26",
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0",
