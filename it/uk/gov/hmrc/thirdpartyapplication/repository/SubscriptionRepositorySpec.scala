@@ -20,7 +20,7 @@ import java.util.UUID
 
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
-import common.uk.gov.hmrc.thirdpartyapplication.testutils.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}

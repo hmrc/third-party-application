@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
+
 class MetricsHelperSpec extends HmrcSpec with MetricsHelper {
 
   "sanitiseGrafanaNodeName" should {
