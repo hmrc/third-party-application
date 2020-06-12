@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
 import java.util.UUID
 
 import javax.inject.{Inject, Singleton}
@@ -29,7 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag, Standard}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.{ExecutionContext, Future}
 

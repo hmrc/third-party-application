@@ -21,8 +21,6 @@ import java.util.UUID
 import play.api.Configuration
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.APIStatus
 
-import scala.collection.JavaConverters._
-
 case class ApiDefinition(serviceName: String,
                          name: String,
                          context: String,
@@ -38,7 +36,11 @@ case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Opt
 object ApiAccess {
   def build(config: Option[Configuration]): ApiAccess = ApiAccess(
     `type` = APIAccessType.PRIVATE,
-    whitelistedApplicationIds = config.flatMap(_.getStringList("whitelistedApplicationIds").map(_.asScala.toList).orElse(Some(List.empty[String])))
+    whitelistedApplicationIds = config.flatMap(
+                                  _.getOptional[Seq[String]]("whitelistedApplicationIds")
+                                  .map(_.toList)
+                                  .orElse(Some(List.empty[String]))
+                                )
   )
 }
 

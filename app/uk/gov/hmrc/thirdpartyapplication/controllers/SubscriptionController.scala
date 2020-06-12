@@ -33,7 +33,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
                                      (implicit val ec: ExecutionContext)
                                      extends BackendController(cc) with JsonUtils {
 
-  def getSubscribers(context: String, version: String): Action[AnyContent] = Action.async { implicit request =>
+  def getSubscribers(context: String, version: String): Action[AnyContent] = Action.async {_ =>
     subscriptionRepository.getSubscribers(APIIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 

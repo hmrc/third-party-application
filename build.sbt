@@ -24,7 +24,7 @@ lazy val compile = Seq(
   "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
   "uk.gov.hmrc" %% "metrix" % "4.4.0-play-26",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.26.0-play-26",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.27.0-play-26",
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0",
@@ -72,38 +72,27 @@ lazy val microservice = (project in file("."))
     routesGenerator := InjectedRoutesGenerator,
     majorVersion := 0
   )
-  .settings(
-    unmanagedSourceDirectories in Compile += baseDirectory.value / "common",
-    unmanagedResourceDirectories in Compile += baseDirectory.value / "resources"
-  )
   .settings(playPublishingSettings: _*)
-  .settings(inConfig(TemplateTest)(Defaults.testSettings): _*)
   .settings(
-    testOptions in Test := Seq(Tests.Filter(unitFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
-    fork in Test := false,
-    parallelExecution in Test := false
+    Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    Test / fork := false,
+    Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "test", baseDirectory.value / "shared-test"),
+    Test / parallelExecution := false
   )
   .configs(IntegrationTest)
-  .settings(inConfig(TemplateItTest)(Defaults.itSettings): _*)
   .settings(
-    fork in IntegrationTest := false,
-    unmanagedSourceDirectories in IntegrationTest := (baseDirectory in IntegrationTest) (base => Seq(base / "test")).value,
+    Defaults.itSettings,
+    IntegrationTest / fork := false,
+    IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    testGrouping in IntegrationTest := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
-    testOptions in IntegrationTest := Seq(Tests.Filter(itFilter), Tests.Argument(TestFrameworks.ScalaTest, "-eT")),
-    parallelExecution in IntegrationTest := false)
+    IntegrationTest / testGrouping := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
+    IntegrationTest / parallelExecution := false)
   .settings(
     resolvers += Resolver.jcenterRepo
   )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
-  .settings(ivyScala := ivyScala.value map (_.copy(overrideScalaVersion = true)))
 
-
-lazy val allPhases = "tt->test;test->test;test->compile;compile->compile"
-lazy val allItPhases = "tit->it;it->it;it->compile;compile->compile"
-
-lazy val TemplateTest = config("tt") extend Test
-lazy val TemplateItTest = config("tit") extend IntegrationTest
 lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
 
   credentials += SbtCredentials,
@@ -113,15 +102,18 @@ lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
 ) ++
   publishAllArtefacts
 
-def oneForkedJvmPerTest(tests: Seq[TestDefinition]) =
-  tests map {
-    test => Group(test.name, Seq(test), SubProcess(ForkOptions(runJVMOptions = Seq("-Dtest.name=" + test.name))))
+def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
+  tests map { test =>
+    Group(
+      test.name,
+      Seq(test),
+      SubProcess(
+        ForkOptions().withRunJVMOptions(Vector(s"-Dtest.name=${test.name}"))
+      )
+    )
   }
 
-def unitFilter(name: String): Boolean = name startsWith "unit"
-def itFilter(name: String): Boolean = name startsWith "it"
-
 // Coverage configuration
-coverageMinimum := 89
+coverageMinimum := 90
 coverageFailOnMinimum := true
 coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo"

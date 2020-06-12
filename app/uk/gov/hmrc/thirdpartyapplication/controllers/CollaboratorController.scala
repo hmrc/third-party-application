@@ -43,7 +43,7 @@ class CollaboratorController @Inject()(val applicationService: ApplicationServic
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
-  def searchCollaborators(context: String, version: String, partialEmailMatch: Option[String]) = Action.async { implicit request =>
+  def searchCollaborators(context: String, version: String, partialEmailMatch: Option[String]) = Action.async { _ =>
     subscriptionService.searchCollaborators(context, version, partialEmailMatch).map(apps => Ok(toJson(apps)))
   }
 }
