@@ -23,7 +23,6 @@ import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
 import org.mockito.BDDMockito.given
@@ -34,9 +33,10 @@ import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, SessionRecordNotFound}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers._
+import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
@@ -46,7 +46,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpW
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -55,8 +54,8 @@ import scala.concurrent.Future.{failed, successful}
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
-  import play.api.test.Helpers._
   import play.api.test.Helpers
+  import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = fakeApplication().materializer
 
@@ -135,7 +134,8 @@ class ApplicationControllerSpec extends ControllerSpec
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
-  val credentialServiceResponseToken = ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+  val credentialServiceResponseToken: ApplicationTokenResponse =
+    ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -656,7 +656,8 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "add client secret" should {
     val applicationId = UUID.randomUUID()
-    val applicationTokensResponse = ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
+    val applicationTokensResponse =
+      ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
     val secretRequest = ClientSecretRequest("actor@example.com")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
@@ -815,7 +816,6 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "Allow a valid app with an optional selfApplicationId" in new Setup {
       val applicationName = "my valid app name"
-      val appId = UUID.randomUUID()
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
       when(mockApplicationService.validateApplicationName(*, *)(*))
@@ -1679,6 +1679,7 @@ class ApplicationControllerSpec extends ControllerSpec
       collaborators,
       DateTimeUtils.now,
       Some(DateTimeUtils.now),
+      None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
