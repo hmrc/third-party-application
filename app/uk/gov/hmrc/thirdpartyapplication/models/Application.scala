@@ -94,7 +94,7 @@ case class ApplicationResponse(id: UUID,
                                collaborators: Set[Collaborator],
                                createdOn: DateTime,
                                lastAccess: Option[DateTime],
-                               serverTokenLastAccess: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
+                               lastAccessTokenUsage: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
                                redirectUris: List[String] = List.empty,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
@@ -282,7 +282,7 @@ case class EnvironmentToken(clientId: String,
 case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
-   accessTokenLastAccess: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
+   lastAccessTokenUsage: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
    clientSecrets: List[ClientSecretResponse]
 )
 
@@ -291,7 +291,7 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      accessTokenLastAccess = token.lastAccessTokenUsage,
+      lastAccessTokenUsage = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
@@ -299,7 +299,7 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      accessTokenLastAccess = token.lastAccessTokenUsage,
+      lastAccessTokenUsage = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
     )
 }

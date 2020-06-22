@@ -477,7 +477,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         collaborators = data.collaborators,
         createdOn = data.createdOn,
         lastAccess = data.lastAccess,
-        serverTokenLastAccess = productionToken.lastAccessTokenUsage,
+        lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
         redirectUris = List.empty,
         termsAndConditionsUrl = None,
         privacyPolicyUrl = None,
