@@ -282,7 +282,6 @@ case class EnvironmentToken(clientId: String,
 case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
-   lastAccessTokenUsage: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
    clientSecrets: List[ClientSecretResponse]
 )
 
@@ -291,7 +290,6 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      lastAccessTokenUsage = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
@@ -299,7 +297,6 @@ object ApplicationTokenResponse {
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
-      lastAccessTokenUsage = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
     )
 }

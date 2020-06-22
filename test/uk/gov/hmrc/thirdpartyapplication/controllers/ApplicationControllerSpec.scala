@@ -135,7 +135,7 @@ class ApplicationControllerSpec extends ControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse("111", "222", None, List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR),
@@ -657,7 +657,7 @@ class ApplicationControllerSpec extends ControllerSpec
   "add client secret" should {
     val applicationId = UUID.randomUUID()
     val applicationTokensResponse =
-      ApplicationTokenResponse("clientId", "token", None, List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
+      ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
     val secretRequest = ClientSecretRequest("actor@example.com")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
@@ -725,7 +725,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val clientSecretId = UUID.randomUUID().toString
     val actorEmailAddress = "actor@example.com"
     val secretRequest = DeleteClientSecretRequest(actorEmailAddress)
-    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", None, List.empty)
+    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
