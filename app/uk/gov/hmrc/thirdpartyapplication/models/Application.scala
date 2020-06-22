@@ -286,14 +286,14 @@ case class ApplicationTokenResponse(
 )
 
 object ApplicationTokenResponse {
-  def apply(token: EnvironmentToken): ApplicationTokenResponse =
+  def apply(token: Token): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
-  def apply(token: EnvironmentToken, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
+  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
