@@ -94,6 +94,7 @@ case class ApplicationResponse(id: UUID,
                                collaborators: Set[Collaborator],
                                createdOn: DateTime,
                                lastAccess: Option[DateTime],
+                               serverTokenLastAccess: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
                                redirectUris: List[String] = List.empty,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
@@ -131,6 +132,7 @@ object ApplicationResponse {
       data.collaborators,
       data.createdOn,
       data.lastAccess,
+      data.tokens.production.lastAccessTokenUsage,
       redirectUris(data),
       termsAndConditionsUrl(data),
       privacyPolicyUrl(data),
@@ -280,21 +282,24 @@ case class EnvironmentToken(clientId: String,
 case class ApplicationTokenResponse(
    clientId: String,
    accessToken: String,
+   accessTokenLastAccess: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
    clientSecrets: List[ClientSecretResponse]
 )
 
 object ApplicationTokenResponse {
-  def apply(token: Token): ApplicationTokenResponse =
+  def apply(token: EnvironmentToken): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
+      accessTokenLastAccess = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_) }
     )
 
-  def apply(token: Token, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
+  def apply(token: EnvironmentToken, newClientSecretId: String, newClientSecret: String): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
       accessToken = token.accessToken,
+      accessTokenLastAccess = token.lastAccessTokenUsage,
       clientSecrets = token.clientSecrets map { ClientSecretResponse(_, newClientSecretId, newClientSecret) }
     )
 }

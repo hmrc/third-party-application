@@ -23,7 +23,7 @@ import akka.actor.ActorSystem
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTimeUtils
+import org.joda.time.{DateTime, DateTimeUtils}
 import org.mockito.Mockito
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -57,7 +57,8 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
+  val serverTokenLastAccess = DateTime.now
+  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -476,6 +477,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         collaborators = data.collaborators,
         createdOn = data.createdOn,
         lastAccess = data.lastAccess,
+        serverTokenLastAccess = productionToken.lastAccessTokenUsage,
         redirectUris = List.empty,
         termsAndConditionsUrl = None,
         privacyPolicyUrl = None,
