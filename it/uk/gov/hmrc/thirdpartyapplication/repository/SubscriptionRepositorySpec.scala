@@ -177,6 +177,53 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
+  "getSubscriptionsForDeveloper" should {
+    val developerEmail = "john.doe@example.com"
+
+    "return only the APIs that the user's apps are subscribed to, without duplicates" in {
+      val app1 = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq(developerEmail))
+      await(applicationRepository.save(app1))
+      val app2 = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq(developerEmail))
+      await(applicationRepository.save(app2))
+      val someoneElsesApp = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq("someone-else@example.com"))
+      await(applicationRepository.save(someoneElsesApp))
+
+      val helloWorldApi1 = APIIdentifier("hello-world", "1.0")
+      val helloWorldApi2 = APIIdentifier("hello-world", "2.0")
+      val helloVatApi = APIIdentifier("hello-vat", "1.0")
+      val helloAgentsApi = APIIdentifier("hello-agents", "1.0")
+      await(subscriptionRepository.add(app1.id, helloWorldApi1))
+      await(subscriptionRepository.add(app1.id, helloVatApi))
+      await(subscriptionRepository.add(app2.id, helloWorldApi2))
+      await(subscriptionRepository.add(app2.id, helloVatApi))
+      await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
+
+      val result: Set[APIIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerEmail))
+
+      result shouldBe Set(helloWorldApi1, helloWorldApi2, helloVatApi)
+    }
+
+    "return empty when the user's apps are not subscribed to any API" in {
+      val app = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq(developerEmail))
+      await(applicationRepository.save(app))
+
+      val result: Set[APIIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerEmail))
+
+      result shouldBe Set.empty
+    }
+
+    "return empty when the user is not a collaborator of any apps" in {
+      val app = anApplicationData(id = UUID.randomUUID(), clientId = generateClientId, user = Seq("someone-else@example.com"))
+      await(applicationRepository.save(app))
+      val api = APIIdentifier("hello-world", "1.0")
+      await(subscriptionRepository.add(app.id, api))
+
+      val result: Set[APIIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerEmail))
+
+      result shouldBe Set.empty
+    }
+  }
+
   "getSubscribers" should {
     val application1 = UUID.randomUUID()
     val application2 = UUID.randomUUID()
