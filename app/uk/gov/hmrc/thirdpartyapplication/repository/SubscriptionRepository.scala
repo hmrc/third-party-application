@@ -111,6 +111,16 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
   }
 
+  def getSubscriptionsForDeveloper(email: String): Future[Set[APIIdentifier]] = {
+    val builder = collection.BatchCommands.AggregationFramework
+    val pipeline = List(
+      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
+      builder.Match(Json.obj("applications.collaborators.emailAddress" -> email)),
+      builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
+    )
+    collection.aggregateWith[APIIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[APIIdentifier]]())
+  }
+
   def getSubscribers(apiIdentifier: APIIdentifier): Future[Set[UUID]] = {
     val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
     collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {

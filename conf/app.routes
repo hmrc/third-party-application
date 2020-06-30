@@ -54,5 +54,6 @@ GET           /gatekeeper/application/:id                            uk.gov.hmrc
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: java.util.UUID)
 
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: String, version: String)
+GET           /developer/:email/subscriptions                        uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(email: String)
 
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()

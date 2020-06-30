@@ -37,6 +37,9 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
     subscriptionRepository.getSubscribers(APIIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 
+  def getSubscriptionsForDeveloper(email: String): Action[AnyContent] = Action.async {_ =>
+    subscriptionRepository.getSubscriptionsForDeveloper(email).map(subscriptions => Ok(toJson(subscriptions))) recover recovery
+  }
 }
 
 case class SubscribersResponse(subscribers: Set[UUID])
