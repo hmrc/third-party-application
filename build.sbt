@@ -17,14 +17,14 @@ lazy val akkaVersion     = "2.5.23"
 lazy val akkaHttpVersion = "10.0.15"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.8.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.14.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "com.typesafe.play" %% "play-json" % playJsonVersion,
   "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
   "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
-  "uk.gov.hmrc" %% "metrix" % "4.4.0-play-26",
-  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.27.0-play-26",
+  "uk.gov.hmrc" %% "metrix" % "4.7.0-play-26",
+  "uk.gov.hmrc" %% "simple-reactivemongo" % "7.30.0-play-26",
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0",
@@ -39,7 +39,7 @@ lazy val compile = Seq(
 val scope = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.19.0-play-26" % scope,
+  "uk.gov.hmrc" %% "reactivemongo-test" % "4.21.0-play-26" % scope,
   "org.pegdown" % "pegdown" % "1.6.0" % scope,
   "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
   "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
