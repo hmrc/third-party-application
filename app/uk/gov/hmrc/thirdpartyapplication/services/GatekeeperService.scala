@@ -74,6 +74,10 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+  def fetchAppStateHistoryById(id: UUID): Future[List[StateHistory]] = {
+    stateHistoryRepository.fetchByApplicationId(id)
+  }
+
   def approveUplift(applicationId: UUID, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def approve(existing: ApplicationData) = existing.copy(state = existing.state.toPendingRequesterVerification)
 

@@ -50,6 +50,7 @@ POST          /verify-uplift/:code                                   uk.gov.hmrc
 
 GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
 GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: java.util.UUID)
+GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: java.util.UUID)
 
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: java.util.UUID)
 

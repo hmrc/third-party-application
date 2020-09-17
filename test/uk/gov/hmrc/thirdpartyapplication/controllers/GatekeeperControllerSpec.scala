@@ -133,6 +133,23 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
+  "fetchAppStateHistoryById" should {
+    val appId = UUID.randomUUID()
+
+    "return app with history" in new Setup {
+      val expectedStateHistories = List(aStateHistory(appId), aStateHistory(appId, PRODUCTION))
+
+      givenUserIsAuthenticated(underTest)
+
+      when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
+
+      val result = underTest.fetchAppStateHistoryById(appId)(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expectedStateHistories)
+    }
+  }
+
   "approveUplift" should {
     val applicationId = UUID.randomUUID()
     val gatekeeperUserId = "big.boss.gatekeeper"
@@ -348,6 +365,10 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
+  }
+
+  private def aStateHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
+    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), None, None, DateTimeUtils.now)
   }
 
   private def anAppResult(id: UUID = UUID.randomUUID(),
