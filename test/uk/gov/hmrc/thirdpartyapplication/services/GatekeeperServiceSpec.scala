@@ -54,8 +54,8 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
   }
 
-  private def aStateHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), None, None, HmrcTime.now)
+  private def aStateHistoryResponse(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
+    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, HmrcTime.now)
   }
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
@@ -169,10 +169,11 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     "return app" in new Setup {
       val app1 = anApplicationData(appId)
-      val expectedHistories = List(aStateHistory(app1.id), aStateHistory(app1.id, State.PRODUCTION))
+      val returnedHistories = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
+      val expectedHistories = List(aStateHistoryResponse(app1.id), aStateHistoryResponse(app1.id, State.PRODUCTION))
 
       ApplicationRepoMock.Fetch.thenReturn(app1)
-      when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(successful(expectedHistories))
+      when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(successful(returnedHistories))
 
       val result = await(underTest.fetchAppStateHistoryById(appId))
 

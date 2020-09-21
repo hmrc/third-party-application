@@ -137,7 +137,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val appId = UUID.randomUUID()
 
     "return app with history" in new Setup {
-      val expectedStateHistories = List(aStateHistory(appId), aStateHistory(appId, PRODUCTION))
+      val expectedStateHistories = List(aHistory(appId), aHistory(appId, PRODUCTION))
 
       givenUserIsAuthenticated(underTest)
 
