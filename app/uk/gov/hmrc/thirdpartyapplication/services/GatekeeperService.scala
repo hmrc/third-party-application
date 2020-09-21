@@ -74,8 +74,10 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAppStateHistoryById(id: UUID): Future[List[StateHistory]] = {
-    stateHistoryRepository.fetchByApplicationId(id)
+  def fetchAppStateHistoryById(id: UUID): Future[List[StateHistoryResponse]] = {
+    for {
+      history <- stateHistoryRepository.fetchByApplicationId(id)
+    } yield history.map(StateHistoryResponse.from)
   }
 
   def approveUplift(applicationId: UUID, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
