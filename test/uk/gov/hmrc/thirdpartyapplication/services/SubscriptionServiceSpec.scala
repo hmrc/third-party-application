@@ -135,32 +135,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       ))
       )
     }
-
-    "filter API versions in status alpha" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
-        anAPIDefinition("context", List(anAPIVersion(), anAPIVersion("2.0", status = ALPHA)))
-      )
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
-
-      result shouldBe List(
-        ApiSubscription("name", "service", "context", List(VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = false)))
-      )
-    }
-
-    "filter API if all its versions are in status alpha" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(anApplicationData(applicationId))))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
-        anAPIDefinition("context", List(anAPIVersion("2.0", status = ALPHA)))
-      )
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
-
-      result shouldBe empty
-    }
   }
 
   "createSubscriptionForApplication" should {
@@ -200,17 +174,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
     }
 
-    "throw NotFoundException if API version is in status alpha" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition(versions = List(anAPIVersion(status = ALPHA))))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      intercept[NotFoundException] {
-        await(underTest.createSubscriptionForApplication(applicationId, api))
-      }
-
-    }
-
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
 
@@ -243,7 +206,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.createSubscriptionForApplication(applicationId, apiWithWrongVersion))
       }
     }
-
   }
 
   "removeSubscriptionForApplication" should {

@@ -30,7 +30,8 @@ class ApiDefinitionConnector @Inject()(httpClient: HttpClient, config: ApiDefini
 
   def fetchAllAPIs(applicationId: UUID)(implicit rds: HttpReads[List[ApiDefinition]], hc: HeaderCarrier): Future[List[ApiDefinition]] = {
     val url = s"${config.baseUrl}/api-definition?applicationId=$applicationId"
-    httpClient.GET[List[ApiDefinition]](url).map(result => result) recover {
+    httpClient.GET[List[ApiDefinition]](url)
+    .recover {
       case e => throw new RuntimeException(s"Unexpected response from $url: ${e.getMessage}")
     }
   }

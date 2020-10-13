@@ -22,7 +22,6 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
-import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.ALPHA
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -46,18 +45,12 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 
-
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
   def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[List[ApiSubscription]] = {
-    def fetchApis: Future[List[ApiDefinition]] = apiDefinitionConnector.fetchAllAPIs(applicationId) map {
-      _.map(api => api.copy(versions = api.versions.filterNot(_.status == ALPHA)))
-        .filterNot(_.versions.isEmpty)
-    }
-
     for {
       _ <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
-      apis <- fetchApis
+      apis <- apiDefinitionConnector.fetchAllAPIs(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
     } yield apis.map(api => ApiSubscription.from(api, subscriptions))
   }
@@ -68,9 +61,10 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def createSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
 
-    def versionSubscriptionFuture: Future[Option[VersionSubscription]] = fetchAllSubscriptionsForApplication(applicationId) map { apis =>
-      apis.find(_.context == apiIdentifier.context) flatMap (_.versions.find(_.version.version == apiIdentifier.version))
-    }
+    def versionSubscriptionFuture: Future[Option[VersionSubscription]] = 
+      fetchAllSubscriptionsForApplication(applicationId) map { apis =>
+        apis.find(_.context == apiIdentifier.context) flatMap (_.versions.find(_.version.version == apiIdentifier.version))
+      }
 
     def fetchAppFuture = fetchApp(applicationId)
 
