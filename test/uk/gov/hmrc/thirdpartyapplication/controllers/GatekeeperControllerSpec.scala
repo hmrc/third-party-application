@@ -42,6 +42,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import play.api.test.Helpers._
+import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
+import cats.data.OptionT
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -55,6 +57,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val mockGatekeeperService = mock[GatekeeperService]
     val mockAuthConnector = mock[AuthConnector]
     val mockApplicationService = mock[ApplicationService]
+    val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers = HeaderCarrier()
 
     val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
@@ -63,7 +66,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
     when(mockAuthConfig.adminRole).thenReturn("ADMIN")
 
-    val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockAuthConfig, Helpers.stubControllerComponents()) {
+    val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, mockAuthConfig, Helpers.stubControllerComponents()) {
       override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
     }
   }
@@ -73,6 +76,75 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     contentAsJson(result) shouldBe Json.obj(
       "code" -> ErrorCode.FORBIDDEN.toString, "message" -> "Insufficient enrolments"
     )
+  }
+
+  private def anAPIJson() = {
+    """{ "context" : "some-context", "version" : "1.0" }"""
+  }
+
+  "createSubscriptionForApplication" should {
+    val applicationId = UUID.randomUUID()
+    val body = anAPIJson()
+
+    "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
+      when(underTest.applicationService.fetch(applicationId))//.thenReturn(OptionT.none)
+
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
+
+      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+    }
+
+    "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+        .thenReturn(successful(HasSucceeded))
+
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
+
+      status(result) shouldBe SC_NO_CONTENT
+    }
+
+    "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
+      new PrivilegedAndRopcSetup {
+
+        givenUserIsAuthenticated(underTest)
+
+        testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
+          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+            .thenReturn(successful(HasSucceeded))
+
+          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe SC_NO_CONTENT
+        })
+      }
+
+    "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
+      new PrivilegedAndRopcSetup {
+
+        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
+          assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
+        })
+      }
+
+    "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+
+      val body = """{ "json": "invalid" }"""
+
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
+
+      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
+
+      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+    }
+
   }
 
   "Fetch apps" should {

@@ -29,12 +29,17 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, Gatekeepe
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
+import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
+import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
+import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
 
 @Singleton
 class GatekeeperController @Inject()(
                                       val authConnector: AuthConnector,
                                       val applicationService: ApplicationService,
                                       gatekeeperService: GatekeeperService,
+                                      subscriptionService: SubscriptionService,
                                       val authConfig: AuthConfig,
                                       cc: ControllerComponents)(
                                       implicit val ec: ExecutionContext)  
@@ -100,4 +105,14 @@ class GatekeeperController @Inject()(
   def fetchAppStateHistoryById(id: UUID) = requiresAuthentication().async {
     gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
+
+  def createSubscriptionForApplication(applicationId: UUID) =
+    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
+      implicit request =>
+        withJsonBody[APIIdentifier] { api =>
+          subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api).map(_ => NoContent) recover {
+            case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
+          } recover recovery
+        }
+    }
 }

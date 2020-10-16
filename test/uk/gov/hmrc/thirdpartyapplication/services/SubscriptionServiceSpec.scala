@@ -208,6 +208,32 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     }
   }
 
+  "createSubscriptionForApplicationMinusChecks" should {
+    val applicationId = UUID.randomUUID()
+    val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
+    val api = anAPI()
+
+    "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
+
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
+      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
+      AuditServiceMock.Audit.thenReturnSuccess()
+
+      val result: HasSucceeded = await(underTest.createSubscriptionForApplicationMinusChecks(applicationId, api))
+
+      result shouldBe HasSucceeded
+
+      verify(mockSubscriptionRepository).add(applicationId, api)
+      verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
+
+      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
+      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
+      capturedParameters.get("apiVersion") should be (Some(api.version))
+      capturedParameters.get("apiContext") should be (Some(api.context))
+    }
+  }
+
   "removeSubscriptionForApplication" should {
     val applicationId = UUID.randomUUID()
     val api = anAPI()
