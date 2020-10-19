@@ -84,6 +84,15 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
       _ <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
       _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
+  }  
+  
+  def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    for {
+      app <- fetchApp(applicationId)
+      _ <- subscriptionRepository.add(applicationId, apiIdentifier)
+      _ <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
+      _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
+    } yield HasSucceeded
   }
 
   def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
