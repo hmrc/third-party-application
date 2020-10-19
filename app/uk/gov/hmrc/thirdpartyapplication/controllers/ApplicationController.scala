@@ -335,16 +335,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
     }
 
-  def createSubscriptionForApplication2(applicationId: UUID) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
-      implicit request =>
-        withJsonBody[APIIdentifier] { api =>
-          subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
-            case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
-          } recover recovery
-        }
-    }
-
   def removeSubscriptionForApplication(applicationId: UUID, context: String, version: String) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, APIIdentifier(context, version)).map(_ => NoContent) recover recovery

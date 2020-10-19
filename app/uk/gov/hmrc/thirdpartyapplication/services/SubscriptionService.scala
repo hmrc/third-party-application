@@ -87,7 +87,6 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   }  
   
   def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-
     for {
       app <- fetchApp(applicationId)
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)

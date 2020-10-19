@@ -31,17 +31,20 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
+import uk.gov.hmrc.thirdpartyapplication.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.State._
+import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
+import cats.implicits._
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import play.api.test.Helpers._
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
 
@@ -52,6 +55,14 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   val authTokenHeader = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer = fakeApplication().materializer
   implicit lazy val request = FakeRequest()
+
+  private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val privilegedAccess = Privileged(scopes = Set("scope1"))
+  private val ropcAccess = Ropc()
+
+  val collaborators: Set[Collaborator] = Set(
+    Collaborator("admin@example.com", ADMINISTRATOR),
+    Collaborator("dev@example.com", DEVELOPER))
 
   trait Setup {
     val mockGatekeeperService = mock[GatekeeperService]
@@ -71,6 +82,49 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
+  trait PrivilegedAndRopcSetup extends Setup {
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: UUID, testBlock: => Unit): Unit = {
+      givenUserIsAuthenticated(underTest)
+
+      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
+    }
+
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: UUID, testBlock: => Unit): Unit = {
+      givenUserIsNotAuthenticated(underTest)
+
+      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
+    }
+
+    private def testWithPrivilegedAndRopc(applicationId: UUID, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
+      when(underTest.applicationService.fetch(applicationId))
+        .thenReturn(
+          OptionT.pure[Future](aNewApplicationResponse(privilegedAccess)),
+          OptionT.pure[Future](aNewApplicationResponse(ropcAccess))
+        )
+      testBlock
+      testBlock
+    }
+  }
+
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+    new ApplicationResponse(
+      UUID.randomUUID(),
+      "clientId",
+      "gatewayId",
+      "My Application",
+      environment.toString,
+      Some("Description"),
+      collaborators,
+      DateTimeUtils.now,
+      Some(DateTimeUtils.now),
+      None,
+      standardAccess.redirectUris,
+      standardAccess.termsAndConditionsUrl,
+      standardAccess.privacyPolicyUrl,
+      access
+    )
+  }
+
   def verifyForbidden(result: Future[Result]): Unit = {
     status(result) shouldBe 403
     contentAsJson(result) shouldBe Json.obj(
@@ -87,21 +141,21 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val body = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId))//.thenReturn(OptionT.none)
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
@@ -110,10 +164,10 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
         givenUserIsAuthenticated(underTest)
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+          when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
-          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe SC_NO_CONTENT
+          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
         })
       }
 
@@ -132,17 +186,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -180,7 +234,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return app with history" in new Setup {
-      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, PRODUCTION)))
+      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       givenUserIsAuthenticated(underTest)
 
@@ -193,7 +247,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-
       givenUserIsAuthenticated(underTest)
 
       when(mockGatekeeperService.fetchAppWithHistory(appId))
@@ -209,7 +262,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val appId = UUID.randomUUID()
 
     "return app with history" in new Setup {
-      val expectedStateHistories = List(aHistory(appId), aHistory(appId, PRODUCTION))
+      val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
 
       givenUserIsAuthenticated(underTest)
 
@@ -262,7 +315,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       givenUserIsAuthenticated(underTest)
 
       when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
-        .thenReturn(failed(new InvalidStateTransition(TESTING, PENDING_REQUESTER_VERIFICATION, PENDING_GATEKEEPER_APPROVAL)))
+        .thenReturn(failed(new InvalidStateTransition(State.TESTING, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL)))
 
       val result = underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)))
 
@@ -321,7 +374,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       givenUserIsAuthenticated(underTest)
 
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
-        .thenReturn(failed(new InvalidStateTransition(PENDING_REQUESTER_VERIFICATION, TESTING, PENDING_GATEKEEPER_APPROVAL)))
+        .thenReturn(failed(new InvalidStateTransition(State.PENDING_REQUESTER_VERIFICATION, State.TESTING, State.PENDING_GATEKEEPER_APPROVAL)))
 
       val result = underTest.rejectUplift(applicationId)(testReq)
 
@@ -356,7 +409,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "successfully resend verification when user is authorised" in new Setup {
-
       givenUserIsAuthenticated(underTest)
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId)).thenReturn(successful(VerificationResent))
@@ -381,7 +433,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       givenUserIsAuthenticated(underTest)
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
-        .thenReturn(failed(new InvalidStateTransition(PENDING_REQUESTER_VERIFICATION, PENDING_REQUESTER_VERIFICATION, PENDING_REQUESTER_VERIFICATION)))
+        .thenReturn(failed(new InvalidStateTransition(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)))
 
       val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
 
@@ -400,9 +452,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
-
   "blockApplication" should {
-
     val applicationId: UUID = UUID.randomUUID()
 
     "block the application" in new Setup {
@@ -419,7 +469,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "unblockApplication" should {
-
     val applicationId: UUID = UUID.randomUUID()
 
     "unblock the application" in new Setup {
@@ -435,12 +484,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
-  private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
+  private def aHistory(appId: UUID, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
-  }
-
-  private def aStateHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), None, None, DateTimeUtils.now)
   }
 
   private def anAppResult(id: UUID = UUID.randomUUID(),
@@ -454,7 +499,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
-  private def anAppResponse(id: UUID = UUID.randomUUID()) = {
-    new ApplicationResponse(id, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+  private def anAppResponse(appId: UUID = UUID.randomUUID()) = {
+    new ApplicationResponse(appId, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
   }
 }
