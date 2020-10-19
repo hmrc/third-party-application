@@ -32,7 +32,6 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
 import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
-import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
 
 @Singleton
 class GatekeeperController @Inject()(
