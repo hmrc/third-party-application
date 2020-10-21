@@ -30,6 +30,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -95,9 +96,18 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
+  @deprecated("IpWhitelist superseded by IpAllowlist")
   def updateIpWhitelist(applicationId: UUID) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpWhitelistRequest] { updateIpWhitelistRequest =>
       applicationService.updateIpWhitelist(applicationId, updateIpWhitelistRequest.ipWhitelist) map { _ =>
+        NoContent
+      } recover recovery
+    }
+  }
+
+  def updateIpAllowlist(applicationId: UUID) = Action.async(parse.json) { implicit request =>
+    withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
+      applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
         NoContent
       } recover recovery
     }

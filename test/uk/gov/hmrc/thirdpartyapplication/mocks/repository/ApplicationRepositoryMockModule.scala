@@ -25,7 +25,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, IpAllowlist, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
@@ -215,6 +215,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnWhen(applicationId: UUID, newIpWhitelist: Set[String])(updatedApplicationData: ApplicationData) =
         when(aMock.updateApplicationIpWhitelist(applicationId, newIpWhitelist)).thenReturn(successful(updatedApplicationData))
+    }
+
+    object UpdateIpAllowlist {
+      def verifyCalledWith(applicationId: UUID, newIpAllowlist: IpAllowlist) =
+        ApplicationRepoMock.verify.updateApplicationIpAllowlist(eqTo(applicationId),eqTo(newIpAllowlist))
+
+      def thenReturnWhen(applicationId: UUID, newIpAllowlist: IpAllowlist)(updatedApplicationData: ApplicationData) =
+        when(aMock.updateApplicationIpAllowlist(applicationId, newIpAllowlist)).thenReturn(successful(updatedApplicationData))
     }
 
     object SearchApplications {

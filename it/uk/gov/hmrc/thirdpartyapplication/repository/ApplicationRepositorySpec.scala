@@ -142,7 +142,7 @@ class ApplicationRepositorySpec
   }
 
   "updateApplicationIpWhitelist" should {
-    "set the ipWhitelist field on an Application document" in {
+    "set the ipWhitelist and ipAllowlist.allowlist fields on an Application document" in {
       val applicationId = UUID.randomUUID()
       await(applicationRepository.save(anApplicationData(applicationId)))
       val updatedIpWhitelist = Set("192.168.100.0/22", "192.168.104.1/32")
@@ -150,6 +150,20 @@ class ApplicationRepositorySpec
       val updatedApplication = await(applicationRepository.updateApplicationIpWhitelist(applicationId, updatedIpWhitelist))
 
       updatedApplication.ipWhitelist shouldBe updatedIpWhitelist
+      updatedApplication.ipAllowlist.allowlist shouldBe updatedIpWhitelist
+    }
+  }
+
+  "updateApplicationIpAllowlist" should {
+    "set the ipWhitelist and ipAllowlist fields on an Application document" in {
+      val applicationId = UUID.randomUUID()
+      await(applicationRepository.save(anApplicationData(applicationId)))
+      val updatedIpAllowlist = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
+
+      val updatedApplication = await(applicationRepository.updateApplicationIpAllowlist(applicationId, updatedIpAllowlist))
+
+      updatedApplication.ipWhitelist shouldBe updatedIpAllowlist.allowlist
+      updatedApplication.ipAllowlist shouldBe updatedIpAllowlist
     }
   }
 

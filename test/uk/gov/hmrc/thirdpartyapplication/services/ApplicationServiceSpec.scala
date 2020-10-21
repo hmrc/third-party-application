@@ -1231,7 +1231,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail when the IP address is out of range" in new Setup {
-      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
         await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("392.168.100.0/22")))
       }
 
@@ -1239,7 +1239,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail when the mask is out of range" in new Setup {
-      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
         await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.168.100.0/55")))
       }
 
@@ -1247,8 +1247,45 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail when the format is invalid" in new Setup {
-      val error: InvalidIpWhitelistException = intercept[InvalidIpWhitelistException] {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
         await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.100.0/22")))
+      }
+
+      error.getMessage shouldBe "Could not parse [192.100.0/22]"
+    }
+  }
+
+  "update IP allowlist" should {
+    "update the IP allowlist in the application in Mongo" in new Setup {
+      val newIpAllowlist: IpAllowlist = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
+      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, ipAllowlist = newIpAllowlist)
+      ApplicationRepoMock.UpdateIpAllowlist.thenReturnWhen(applicationId, newIpAllowlist)(updatedApplicationData)
+
+      val result: ApplicationData = await(underTest.updateIpAllowlist(applicationId, newIpAllowlist))
+
+      result shouldBe updatedApplicationData
+      ApplicationRepoMock.UpdateIpAllowlist.verifyCalledWith(applicationId, newIpAllowlist)
+    }
+
+    "fail when the IP address is out of range" in new Setup {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
+        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("392.168.100.0/22"))))
+      }
+
+      error.getMessage shouldBe "Value [392] not in range [0,255]"
+    }
+
+    "fail when the mask is out of range" in new Setup {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
+        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("192.168.100.0/55"))))
+      }
+
+      error.getMessage shouldBe "Value [55] not in range [0,32]"
+    }
+
+    "fail when the format is invalid" in new Setup {
+      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
+        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("192.100.0/22"))))
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
@@ -1448,7 +1485,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,
-                                ipWhitelist: Set[String] = Set.empty) = {
+                                ipWhitelist: Set[String] = Set.empty,
+                                ipAllowlist: IpAllowlist = IpAllowlist()) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1463,6 +1501,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
-      ipWhitelist = ipWhitelist)
+      ipWhitelist = ipWhitelist,
+      ipAllowlist = ipAllowlist)
   }
 }
