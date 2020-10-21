@@ -34,7 +34,7 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
                                      extends BackendController(cc) with JsonUtils {
 
   def getSubscribers(context: String, version: String): Action[AnyContent] = Action.async {_ =>
-    subscriptionRepository.getSubscribers(APIIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
+    subscriptionRepository.getSubscribers(ApiIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 
   def getSubscriptionsForDeveloper(email: String): Action[AnyContent] = Action.async {_ =>

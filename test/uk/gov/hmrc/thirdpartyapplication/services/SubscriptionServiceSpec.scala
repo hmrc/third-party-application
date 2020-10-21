@@ -84,7 +84,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
   "isSubscribed" should {
     val applicationId = UUID.randomUUID()
-    val api = APIIdentifier("context", "1.0")
+    val api = ApiIdentifier("context", "1.0")
 
     "return true when the application is subscribed to a given API version" in new Setup {
       when(mockSubscriptionRepository.isSubscribed(applicationId, api)).thenReturn(successful(true))
@@ -306,7 +306,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     ApiDefinition("service", "name", context, versions, Some(false))
 
   private def anAPI(context: String = "some-context", version: String = "1.0") = {
-    new APIIdentifier(context, version)
+    new ApiIdentifier(context, version)
   }
 
 }

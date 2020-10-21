@@ -96,7 +96,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     )
   )
 
-  def isSubscribed(applicationId: UUID, apiIdentifier: APIIdentifier) = {
+  def isSubscribed(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
     collection.count(Some(Json.obj("$and" -> Json.arr(
       Json.obj("applications" -> applicationId.toString),
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
@@ -107,21 +107,21 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
       }
   }
 
-  def getSubscriptions(applicationId: UUID): Future[List[APIIdentifier]] = {
+  def getSubscriptions(applicationId: UUID): Future[List[ApiIdentifier]] = {
     find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
   }
 
-  def getSubscriptionsForDeveloper(email: String): Future[Set[APIIdentifier]] = {
+  def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
     val builder = collection.BatchCommands.AggregationFramework
     val pipeline = List(
       builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
       builder.Match(Json.obj("applications.collaborators.emailAddress" -> email)),
       builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
     )
-    collection.aggregateWith[APIIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[APIIdentifier]]())
+    collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
   }
 
-  def getSubscribers(apiIdentifier: APIIdentifier): Future[Set[UUID]] = {
+  def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[UUID]] = {
     val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
     collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
       case Some(subscriptionData) => subscriptionData.applications.toSet
@@ -129,13 +129,13 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     }
   }
 
-  private def makeSelector(apiIdentifier: APIIdentifier) = {
+  private def makeSelector(apiIdentifier: ApiIdentifier) = {
     Json.obj("$and" -> Json.arr(
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
       Json.obj("apiIdentifier.version" -> apiIdentifier.version)))
   }
 
-  def add(applicationId: UUID, apiIdentifier: APIIdentifier) = {
+  def add(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
     collection.update.one(
       makeSelector(apiIdentifier),
       Json.obj("$addToSet" -> Json.obj("applications" -> applicationId)),
@@ -143,7 +143,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     ).map(_ => HasSucceeded)
   }
 
-  def remove(applicationId: UUID, apiIdentifier: APIIdentifier) = {
+  def remove(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
     collection.update.one(
       makeSelector(apiIdentifier),
       Json.obj("$pull" -> Json.obj("applications" -> applicationId))

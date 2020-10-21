@@ -64,7 +64,7 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
 @Singleton
 class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
 
-  lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[APIIdentifier]] = concurrent.TrieMap()
+  lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[ApiIdentifier]] = concurrent.TrieMap()
 
   override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier) = Future.successful {
     stubApplications += (wso2ApplicationName -> mutable.ListBuffer.empty)

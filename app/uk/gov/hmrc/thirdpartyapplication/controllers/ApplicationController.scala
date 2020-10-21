@@ -239,7 +239,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case ("emailAddress" :: _, _) =>
         fetchAllForCollaborator(request.queryString("emailAddress").head)
       case ("subscribesTo" :: "version" :: _, _) =>
-        fetchAllBySubscriptionVersion(APIIdentifier(request.queryString("subscribesTo").head, request.queryString("version").head))
+        fetchAllBySubscriptionVersion(ApiIdentifier(request.queryString("subscribesTo").head, request.queryString("version").head))
       case ("subscribesTo" :: _, _) =>
         fetchAllBySubscription(request.queryString("subscribesTo").head)
       case ("noSubscriptions" :: _, _) =>
@@ -299,7 +299,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllBySubscriptionVersion(apiContext: APIIdentifier) = {
+  private def fetchAllBySubscriptionVersion(apiContext: ApiIdentifier) = {
     applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
   }
 
@@ -318,7 +318,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def isSubscribed(id: java.util.UUID, context: String, version: String) = Action.async {
-    val api = APIIdentifier(context, version)
+    val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(id, api) map {
       case true => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
       case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application $id is not subscribed to $context $version"))
@@ -328,7 +328,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def createSubscriptionForApplication(applicationId: UUID) =
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
-        withJsonBody[APIIdentifier] { api =>
+        withJsonBody[ApiIdentifier] { api =>
           subscriptionService.createSubscriptionForApplication(applicationId, api).map(_ => NoContent) recover {
             case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
           } recover recovery
@@ -337,7 +337,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def removeSubscriptionForApplication(applicationId: UUID, context: String, version: String) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
-      subscriptionService.removeSubscriptionForApplication(applicationId, APIIdentifier(context, version)).map(_ => NoContent) recover recovery
+      subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
     }
   }
 

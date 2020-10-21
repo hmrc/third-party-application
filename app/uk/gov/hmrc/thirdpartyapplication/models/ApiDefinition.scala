@@ -59,7 +59,7 @@ case class ApiSubscription(name: String, serviceName: String, context: String, v
 
 object ApiSubscription {
 
-  def from(apiDefinition: ApiDefinition, subscribedApis: List[APIIdentifier]): ApiSubscription = {
+  def from(apiDefinition: ApiDefinition, subscribedApis: List[ApiIdentifier]): ApiSubscription = {
     val versionSubscriptions: List[VersionSubscription] = apiDefinition.versions.map { v =>
       VersionSubscription(v, subscribedApis.exists(s => s.context == apiDefinition.context && s.version == v.version))
     }
@@ -70,4 +70,4 @@ object ApiSubscription {
 
 case class VersionSubscription(version: ApiVersion, subscribed: Boolean)
 
-case class SubscriptionData(apiIdentifier: APIIdentifier, applications: Set[UUID])
+case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[UUID])

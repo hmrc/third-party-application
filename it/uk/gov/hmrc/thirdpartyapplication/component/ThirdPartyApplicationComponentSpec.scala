@@ -554,7 +554,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def subscriptionExists(applicationId: UUID, apiContext: String, apiVersion: String) = {
-    subscriptionRepository.add(applicationId, new APIIdentifier(apiContext, apiVersion))
+    subscriptionRepository.add(applicationId, new ApiIdentifier(apiContext, apiVersion))
   }
 
   private def postData(path: String, data: String, method: String = "POST", extraHeaders: Seq[(String, String)] = Seq()): HttpResponse[String] = {
