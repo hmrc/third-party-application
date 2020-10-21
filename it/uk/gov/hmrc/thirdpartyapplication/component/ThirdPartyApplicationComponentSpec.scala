@@ -424,8 +424,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application = createApplication()
 
-      And("The API is available for the application")
-      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
+      // And("The API is available for the application")
+      // apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       And("The application is subscribed to an API")
       result(subscriptionExists(application.id, context, version), timeout)
@@ -434,9 +434,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val response = Http(s"$serviceUrl/application/${application.id}/subscription").asString
 
       Then("The API subscription is returned")
-      val actualApiSubscription = Json.parse(response.body).as[Seq[ApiSubscription]]
-      actualApiSubscription shouldBe
-        List(ApiSubscription(apiName, serviceName, context, List(VersionSubscription(anApiDefinition.versions.head, subscribed = true))))
+      val actualApiSubscription = Json.parse(response.body).as[Set[ApiIdentifier]]
+      actualApiSubscription shouldBe Set(ApiIdentifier(context, version)) 
     }
 
     scenario("Fetch All API Subscriptions") {
@@ -446,7 +445,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       And("An API")
       apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
-
 
       And("I subscribe the application to an API")
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()

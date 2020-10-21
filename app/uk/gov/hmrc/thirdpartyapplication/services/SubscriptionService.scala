@@ -47,45 +47,17 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
-  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[List[ApiSubscription]] = {
+  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Set[ApiIdentifier]] = {
     for {
       _ <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
-      apis <- apiDefinitionConnector.fetchAllAPIs(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
-    } yield apis.map(api => ApiSubscription.from(api, subscriptions))
+    } yield subscriptions.toSet
   }
 
   def isSubscribed(applicationId: UUID, api: ApiIdentifier): Future[Boolean] = {
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
-  def createSubscriptionForApplication(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-
-    def versionSubscriptionFuture: Future[Option[VersionSubscription]] = 
-      fetchAllSubscriptionsForApplication(applicationId) map { apis =>
-        apis.find(_.context == apiIdentifier.context) flatMap (_.versions.find(_.version.version == apiIdentifier.version))
-      }
-
-    def fetchAppFuture = fetchApp(applicationId)
-
-    def checkVersionSubscription(app: ApplicationData, versionSubscriptionMaybe: Option[VersionSubscription]): Unit = {
-      versionSubscriptionMaybe match {
-        case None => throw new NotFoundException(s"API $apiIdentifier is not available for application $applicationId")
-        case Some(versionSubscription) if versionSubscription.subscribed => throw SubscriptionAlreadyExistsException(app.name, apiIdentifier)
-        case _ =>
-      }
-    }
-
-    for {
-      versionSubscription <- versionSubscriptionFuture
-      app <- fetchAppFuture
-      _ = checkVersionSubscription(app, versionSubscription)
-      _ <- subscriptionRepository.add(applicationId, apiIdentifier)
-      _ <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
-      _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
-    } yield HasSucceeded
-  }  
-  
   def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)

@@ -25,7 +25,7 @@ import org.scalatest.BeforeAndAfterAll
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.{ALPHA, APIStatus, STABLE}
+import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.{APIStatus, STABLE}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -120,91 +120,12 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "fetch all API subscriptions from api-definition for the given application id when an application exists" in new Setup {
       val applicationData = anApplicationData(applicationId)
 
-      when(mockApplicationRepository.fetch(applicationId))
-        .thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(
-        anAPIDefinition("context", List(anAPIVersion("1.0"), anAPIVersion("2.0")))
-      )
+      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(anAPI("context", "1.0"))))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
-      result shouldBe List(ApiSubscription("name", "service", "context", List(
-        VersionSubscription(ApiVersion("1.0", STABLE, None), subscribed = true),
-        VersionSubscription(ApiVersion("2.0", STABLE, None), subscribed = false)
-      ))
-      )
-    }
-  }
-
-  "createSubscriptionForApplication" should {
-    val applicationId = UUID.randomUUID()
-    val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
-    val api = anAPI()
-
-    "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val result: HasSucceeded = await(underTest.createSubscriptionForApplication(applicationId, api))
-
-      result shouldBe HasSucceeded
-
-      verify(mockSubscriptionRepository).add(applicationId, api)
-      verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
-
-      val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
-      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
-      capturedParameters.get("apiVersion") should be (Some(api.version))
-      capturedParameters.get("apiContext") should be (Some(api.context))
-    }
-
-    "throw SubscriptionAlreadyExistsException if already subscribed" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api)))
-
-      intercept[SubscriptionAlreadyExistsException] {
-        await(underTest.createSubscriptionForApplication(applicationId, api))
-      }
-
-    }
-
-    "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
-
-      intercept[NotFoundException] {
-        await(underTest.createSubscriptionForApplication(applicationId, api))
-      }
-
-    }
-
-    "throw a NotFoundException when the API does not exist" in new Setup {
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnEmpty()
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      intercept[NotFoundException] {
-        await(underTest.createSubscriptionForApplication(applicationId, api))
-      }
-
-    }
-
-    "throw a NotFoundException when the version does not exist for the given context" in new Setup {
-      val apiWithWrongVersion = api.copy(version = "10.0")
-
-      when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
-
-      intercept[NotFoundException] {
-        await(underTest.createSubscriptionForApplication(applicationId, apiWithWrongVersion))
-      }
+      result shouldBe Set(anAPI("context", "1.0"))
     }
   }
 
