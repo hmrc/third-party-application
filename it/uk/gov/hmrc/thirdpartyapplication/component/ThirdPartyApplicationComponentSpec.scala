@@ -424,9 +424,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application = createApplication()
 
-      // And("The API is available for the application")
-      // apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
-
       And("The application is subscribed to an API")
       result(subscriptionExists(application.id, context, version), timeout)
 
