@@ -25,7 +25,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{APIIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
@@ -181,10 +181,10 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchAllForApiIdentifier {
-      def thenReturnEmptyWhen(apiIdentifier: APIIdentifier) =
+      def thenReturnEmptyWhen(apiIdentifier: ApiIdentifier) =
         when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(List.empty))
 
-      def thenReturnWhen(apiIdentifier: APIIdentifier)(apps: ApplicationData*) =
+      def thenReturnWhen(apiIdentifier: ApiIdentifier)(apps: ApplicationData*) =
         when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(apps.toList))
     }
 

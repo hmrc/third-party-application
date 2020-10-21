@@ -55,11 +55,11 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield apis.map(api => ApiSubscription.from(api, subscriptions))
   }
 
-  def isSubscribed(applicationId: UUID, api: APIIdentifier): Future[Boolean] = {
+  def isSubscribed(applicationId: UUID, api: ApiIdentifier): Future[Boolean] = {
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
-  def createSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createSubscriptionForApplication(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
 
     def versionSubscriptionFuture: Future[Option[VersionSubscription]] = 
       fetchAllSubscriptionsForApplication(applicationId) map { apis =>
@@ -86,7 +86,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield HasSucceeded
   }  
   
-  def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
@@ -95,7 +95,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield HasSucceeded
   }
 
-  def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: APIIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
@@ -104,7 +104,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield HasSucceeded
   }
 
-  private def auditSubscription(action: AuditAction, applicationId: UUID, api: APIIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditSubscription(action: AuditAction, applicationId: UUID, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     auditService.audit(action, Map(
       "applicationId" -> applicationId.toString,
       "apiVersion" -> api.version,

@@ -165,10 +165,10 @@ case class ExtendedApplicationResponse(id: UUID,
                                        ipWhitelist: Set[String] = Set.empty,
                                        trusted: Boolean = false,
                                        serverToken: String,
-                                       subscriptions: List[APIIdentifier])
+                                       subscriptions: List[ApiIdentifier])
 
 object ExtendedApplicationResponse {
-  def apply(data: ApplicationData, subscriptions: List[APIIdentifier]): ExtendedApplicationResponse = {
+  def apply(data: ApplicationData, subscriptions: List[ApiIdentifier]): ExtendedApplicationResponse = {
     ExtendedApplicationResponse(
       data.id,
       data.tokens.production.clientId,
@@ -258,7 +258,7 @@ case class ApplicationWithUpliftRequest(id: UUID,
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
-case class APIIdentifier(context: String, version: String)
+case class ApiIdentifier(context: String, version: String)
 
 case class Collaborator(emailAddress: String, role: Role)
 
