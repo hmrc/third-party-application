@@ -1078,7 +1078,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "given a version" should {
       val version = "1.0"
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo&version=$version")
-      val apiIdentifier = APIIdentifier(subscribesTo, version)
+      val apiIdentifier = ApiIdentifier(subscribesTo, version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
         val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
@@ -1121,7 +1121,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val applicationId: UUID = UUID.randomUUID()
     val context: String = "context"
     val version: String = "1.0"
-    val api = APIIdentifier(context, version)
+    val api = ApiIdentifier(context, version)
 
     "succeed with a 200 (ok) when the application is subscribed to a given API version" in new Setup {
 
@@ -1687,7 +1687,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   private def anAPI() = {
-    new APIIdentifier("some-context", "1.0")
+    new ApiIdentifier("some-context", "1.0")
   }
 
   private def anAPISubscription() = {

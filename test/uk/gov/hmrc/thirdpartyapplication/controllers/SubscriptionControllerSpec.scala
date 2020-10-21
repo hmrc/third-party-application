@@ -24,7 +24,7 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.models.APIIdentifier
+import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.Future
@@ -49,7 +49,7 @@ class SubscriptionControllerSpec extends ControllerSpec {
   "getSubscribers" should {
 
     "return the subscribers from the repository" in new Setup {
-      private val apiIdentifier = APIIdentifier("hello", "1.0")
+      private val apiIdentifier = ApiIdentifier("hello", "1.0")
       private val subscribers = Set(UUID.randomUUID(), UUID.randomUUID())
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
@@ -60,7 +60,7 @@ class SubscriptionControllerSpec extends ControllerSpec {
     }
 
     "return the subscribers from the repository for a multi-segment API" in new Setup {
-      private val apiIdentifier = APIIdentifier("hello/world", "1.0")
+      private val apiIdentifier = ApiIdentifier("hello/world", "1.0")
       private val subscribers = Set(UUID.randomUUID(), UUID.randomUUID())
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
@@ -71,7 +71,7 @@ class SubscriptionControllerSpec extends ControllerSpec {
     }
 
     "return 500 if something goes wrong" in new Setup {
-      private val apiIdentifier = APIIdentifier("hello", "1.0")
+      private val apiIdentifier = ApiIdentifier("hello", "1.0")
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(failed(new RuntimeException("something went wrong")))
 
       val result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
@@ -86,13 +86,13 @@ class SubscriptionControllerSpec extends ControllerSpec {
     val developerEmail = "john.doe@example.com"
 
     "return the subscriptions from the repository" in new Setup {
-      val expectedSubscriptions = Set(APIIdentifier("hello-world", "1.0"))
+      val expectedSubscriptions = Set(ApiIdentifier("hello-world", "1.0"))
       when(mockSubscriptionRepository.getSubscriptionsForDeveloper(developerEmail)).thenReturn(successful(expectedSubscriptions))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/$developerEmail/subscriptions"))
 
       status(result) shouldBe OK
-      contentAsJson(result).as[Set[APIIdentifier]] shouldBe expectedSubscriptions
+      contentAsJson(result).as[Set[ApiIdentifier]] shouldBe expectedSubscriptions
     }
 
     "return 500 if something goes wrong" in new Setup {

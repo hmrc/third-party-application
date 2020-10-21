@@ -33,7 +33,7 @@ class InconsistentDataState(message: String) extends RuntimeException(message)
 
 case class ApplicationAlreadyExists(applicationName: String) extends RuntimeException
 
-case class SubscriptionAlreadyExistsException(name: String, api: APIIdentifier)
+case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
   extends RuntimeException(s"Application: '$name' is already Subscribed to API: ${api.context}: ${api.version}")
 
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")

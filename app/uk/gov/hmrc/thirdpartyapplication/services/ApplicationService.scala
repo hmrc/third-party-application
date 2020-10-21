@@ -169,7 +169,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     Logger.info(s"Deleting application $applicationId")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
-      def deleteSubscription(subscription: APIIdentifier) = {
+      def deleteSubscription(subscription: ApiIdentifier) = {
         for {
           _ <- subscriptionRepository.remove(app.id, subscription)
         } yield HasSucceeded
@@ -296,7 +296,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAllBySubscription(apiIdentifier: APIIdentifier): Future[List[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiIdentifier: ApiIdentifier): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForApiIdentifier(apiIdentifier) map {
       _.map(application => ApplicationResponse(data = application))
     }

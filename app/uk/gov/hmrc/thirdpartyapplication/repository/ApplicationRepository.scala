@@ -328,7 +328,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def fetchAllForContext(apiContext: String): Future[List[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
-  def fetchAllForApiIdentifier(apiIdentifier: APIIdentifier): Future[List[ApplicationData]] =
+  def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
       apiVersion = Some(apiIdentifier.version))).map(_.applications)
 

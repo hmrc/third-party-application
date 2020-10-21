@@ -108,7 +108,7 @@ trait JsonFormatters extends DateTimeFormatters {
   }
 
   implicit val formatApplicationState = Json.format[ApplicationState]
-  implicit val formatApiIdentifier = Json.format[APIIdentifier]
+  implicit val formatApiIdentifier = Json.format[ApiIdentifier]
   implicit val formatCollaborator = Json.format[Collaborator]
   implicit val formatClientSecret = Json.format[ClientSecret]
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
@@ -187,7 +187,7 @@ object MongoFormat {
   implicit val formatClientSecret = Json.format[ClientSecret]
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
-  implicit val formatApiIdentifier = Json.format[APIIdentifier]
+  implicit val formatApiIdentifier = Json.format[ApiIdentifier]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
 
   val ipAllowlistReads: Reads[IpAllowlist] = (

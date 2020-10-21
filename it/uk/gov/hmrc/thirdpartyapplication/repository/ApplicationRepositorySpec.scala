@@ -571,7 +571,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
       await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application2.id, application3.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(APIIdentifier("context", "version-2")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
 
       result shouldBe Seq(application2)
     }
@@ -586,7 +586,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id, application3.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(APIIdentifier("context", "version-2")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
 
       result shouldBe Seq(application2, application3)
     }
@@ -600,7 +600,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
       await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application1.id, application2.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(APIIdentifier("other", "version-1")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("other", "version-1")))
 
       result shouldBe Seq.empty
     }
@@ -1431,7 +1431,7 @@ class ApplicationRepositorySpec
   )
 
   def aSubscriptionData(context: String, version: String, applicationIds: UUID*) = {
-    SubscriptionData(APIIdentifier(context, version), Set(applicationIds: _*))
+    SubscriptionData(ApiIdentifier(context, version), Set(applicationIds: _*))
   }
 
   def anApplicationData(id: UUID,
