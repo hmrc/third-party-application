@@ -145,12 +145,22 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApplication
   }
 
+  @deprecated("IpWhitelist superseded by IpAllowlist")
   def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     for {
       validatedIpWhitelist <- fromTry(Try(newIpWhitelist.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
-        case e: IllegalArgumentException => throw InvalidIpWhitelistException(e.getMessage)
+        case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
       }
       updatedApp <- applicationRepository.updateApplicationIpWhitelist(applicationId, validatedIpWhitelist)
+    } yield updatedApp
+  }
+
+  def updateIpAllowlist(applicationId: UUID, newIpAllowlist: IpAllowlist)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+    for {
+      _ <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
+        case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
+      }
+      updatedApp <- applicationRepository.updateApplicationIpAllowlist(applicationId, newIpAllowlist)
     } yield updatedApp
   }
 

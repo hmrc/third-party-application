@@ -114,6 +114,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
+  implicit val formatIpAllowlist = Json.format[IpAllowlist]
 
   implicit val formatApplicationData = Json.format[ApplicationData]
 
@@ -124,6 +125,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
   implicit val formatUpdateIpWhitelistRequest = Json.format[UpdateIpWhitelistRequest]
+  implicit val formatUpdateIpAllowlistRequest = Json.format[UpdateIpAllowlistRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatClientSecretResponse = Json.format[ClientSecretResponse]
   implicit val formatApplicationTokensResponse = Json.format[ApplicationTokenResponse]
@@ -188,6 +190,12 @@ object MongoFormat {
   implicit val formatApiIdentifier = Json.format[ApiIdentifier]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
 
+  val ipAllowlistReads: Reads[IpAllowlist] = (
+    ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
+    ((JsPath \ "allowlist").read[Set[String]]or Reads.pure(Set.empty[String]))
+  )(IpAllowlist.apply _)
+  implicit val formatIpAllowlist = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+
   val applicationDataReads: Reads[ApplicationData] = (
     (JsPath \ "id").read[UUID] and
     (JsPath \ "name").read[String] and
@@ -204,7 +212,8 @@ object MongoFormat {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipWhitelist").read[Set[String]] or Reads.pure(Set.empty[String]))
+    ((JsPath \ "ipWhitelist").read[Set[String]] or Reads.pure(Set.empty[String])) and
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
   implicit val formatApplicationData = {

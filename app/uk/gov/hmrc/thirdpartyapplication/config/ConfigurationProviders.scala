@@ -51,7 +51,8 @@ class ConfigurationModule extends Module {
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
       bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
-      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
+      bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider],
+      bind[MigrateIpAllowlistJobConfig].toProvider[MigrateIpAllowlistJobConfigProvider]
     )
   }
 }
@@ -264,3 +265,12 @@ class ResetLastAccessDateJobConfigProvider @Inject()(configuration: Configuratio
   }
 }
 
+@Singleton
+class MigrateIpAllowlistJobConfigProvider @Inject()(configuration: Configuration, runMode: RunMode)
+  extends ServicesConfig(configuration, runMode) with Provider[MigrateIpAllowlistJobConfig] {
+
+  override def get(): MigrateIpAllowlistJobConfig = {
+    val enabled = configuration.getOptional[Boolean]("migrateIpAllowlistJob.enabled").getOrElse(false)
+    MigrateIpAllowlistJobConfig(enabled)
+  }
+}

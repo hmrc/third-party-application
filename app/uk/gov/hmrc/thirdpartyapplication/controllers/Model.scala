@@ -20,7 +20,7 @@ import java.util.UUID
 
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
-import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, OverrideFlag}
+import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
 
 case class ValidationRequest(clientId: String, clientSecret: String)
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[UUID])
@@ -55,6 +55,13 @@ case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
 case class UpdateIpWhitelistRequest(ipWhitelist: Set[String])
 
+case class UpdateIpAllowlistRequest(required: Boolean, allowlist: Set[String])
+object UpdateIpAllowlistRequest {
+  def toIpAllowlist(updateIpAllowlistRequest: UpdateIpAllowlistRequest): IpAllowlist = {
+    IpAllowlist(updateIpAllowlistRequest.required, updateIpAllowlistRequest.allowlist)
+  }
+}
+
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)
@@ -76,7 +83,7 @@ object ErrorCode extends Enumeration {
   val INVALID_STATE_TRANSITION = Value("INVALID_STATE_TRANSITION")
   val SUBSCRIPTION_NOT_FOUND = Value("SUBSCRIPTION_NOT_FOUND")
   val FORBIDDEN = Value("FORBIDDEN")
-  val INVALID_IP_WHITELIST = Value("INVALID_IP_WHITELIST")
+  val INVALID_IP_ALLOWLIST = Value("INVALID_IP_ALLOWLIST")
   val BAD_QUERY_PARAMETER = Value("BAD_QUERY_PARAMETER")
 }
 
@@ -87,4 +94,3 @@ object JsErrorResponse {
       "message" -> message
     )
 }
-

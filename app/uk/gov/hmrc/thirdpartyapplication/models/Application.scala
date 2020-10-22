@@ -104,7 +104,8 @@ case class ApplicationResponse(id: UUID,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                ipWhitelist: Set[String] = Set.empty,
-                               trusted: Boolean = false)
+                               trusted: Boolean = false,
+                               ipAllowlist: IpAllowlist = IpAllowlist())
 
 object ApplicationResponse {
 
@@ -141,7 +142,8 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      data.ipWhitelist)
+      data.ipWhitelist,
+      ipAllowlist= data.ipAllowlist)
   }
 }
 
@@ -165,7 +167,8 @@ case class ExtendedApplicationResponse(id: UUID,
                                        ipWhitelist: Set[String] = Set.empty,
                                        trusted: Boolean = false,
                                        serverToken: String,
-                                       subscriptions: List[ApiIdentifier])
+                                       subscriptions: List[ApiIdentifier],
+                                       ipAllowlist: IpAllowlist = IpAllowlist())
 
 object ExtendedApplicationResponse {
   def apply(data: ApplicationData, subscriptions: List[ApiIdentifier]): ExtendedApplicationResponse = {
@@ -189,7 +192,8 @@ object ExtendedApplicationResponse {
       data.blocked,
       data.ipWhitelist,
       serverToken = data.tokens.production.accessToken,
-      subscriptions = subscriptions)
+      subscriptions = subscriptions,
+      ipAllowlist = data.ipAllowlist)
   }
 }
 

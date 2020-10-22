@@ -42,7 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpWhitelistException, _}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpAllowlistException, _}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
@@ -1516,11 +1516,45 @@ class ApplicationControllerSpec extends ControllerSpec
       val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["392.168.100.0/22"] }""")
       val errorMessage = "invalid IP whitelist"
       when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*))
-        .thenReturn(Future.failed(InvalidIpWhitelistException(errorMessage)))
+        .thenReturn(Future.failed(InvalidIpAllowlistException(errorMessage)))
 
       val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
 
-      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_WHITELIST)
+      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_ALLOWLIST)
+    }
+  }
+
+  "update IP allowlist" should {
+    "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
+
+      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
+
+      status(result) shouldBe SC_NO_CONTENT
+    }
+
+    "fail when the JSON message is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
+      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
+
+      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
+
+      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
+    }
+
+    "fail when the IP allowlist is invalid" in new Setup {
+      val applicationId: UUID = UUID.randomUUID()
+      val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["392.168.100.0/22"] }""")
+      val errorMessage = "invalid IP allowlist"
+      when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)(*))
+        .thenReturn(Future.failed(InvalidIpAllowlistException(errorMessage)))
+
+      val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
+
+      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_ALLOWLIST)
     }
   }
 
