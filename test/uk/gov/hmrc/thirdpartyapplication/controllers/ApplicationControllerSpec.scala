@@ -1169,7 +1169,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "succeed with a 200 (ok) when subscriptions are found for the application" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*))
-        .thenReturn(successful(List(anAPISubscription())))
+        .thenReturn(successful(Set(anAPI())))
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
@@ -1177,7 +1177,7 @@ class ApplicationControllerSpec extends ControllerSpec
     }
 
     "succeed with a 200 (ok) when no subscriptions are found for the application" in new Setup {
-      when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*)).thenReturn(successful(List.empty))
+      when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId))(*)).thenReturn(successful(Set.empty))
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
@@ -1241,7 +1241,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
@@ -1255,7 +1255,7 @@ class ApplicationControllerSpec extends ControllerSpec
         givenUserIsAuthenticated(underTest)
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-          when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+          when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
           status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe SC_NO_CONTENT
@@ -1282,7 +1282,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplication(eqTo(applicationId), *)(*))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
