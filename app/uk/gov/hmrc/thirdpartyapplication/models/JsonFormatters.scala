@@ -285,6 +285,7 @@ object APIStatusJson {
 
 object ApplicationEventFormats {
   import DateTimeFormatters._
+  implicit val eventIdFormat: Format[EventId] = Json.valueFormat[EventId]
   implicit val actorFormats: OFormat[Actor] = Json.format[Actor]
   implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent] = Json.format[TeamMemberAddedEvent]
   implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent] = Json.format[TeamMemberRemovedEvent]
