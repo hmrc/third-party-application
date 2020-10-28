@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.http.HeaderCarrier
@@ -44,7 +42,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationName = "myapplication"
     val serverToken: String = nextString(2)
     val app = ApplicationData(
-      UUID.randomUUID(),
+      ApplicationId.random(),
       "MyApp",
       "myapp",
       Set.empty,

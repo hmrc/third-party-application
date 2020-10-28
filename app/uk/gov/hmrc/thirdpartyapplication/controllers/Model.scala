@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 case class ValidationRequest(clientId: String, clientSecret: String)
-case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[UUID])
+case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 
 case class ClientSecretRequest(actorEmailAddress: String)
 

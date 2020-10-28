@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.util.UUID
-
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 class StateHistorySpec extends HmrcSpec {
 
-  val applicationId = UUID.randomUUID()
+  val applicationId = ApplicationId.random()
   val now = DateTimeUtils.now
   val actor = Actor("admin@example.com", ActorType.COLLABORATOR)
 

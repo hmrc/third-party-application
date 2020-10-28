@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
@@ -32,6 +30,7 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 @Singleton
 class GatekeeperController @Inject()(
@@ -51,7 +50,7 @@ class GatekeeperController @Inject()(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'"))
 
 
-  def approveUplift(id: UUID) = requiresAuthentication().async(parse.json) {
+  def approveUplift(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[ApproveUpliftRequest] { approveUpliftPayload =>
         gatekeeperService.approveUplift(id, approveUpliftPayload.gatekeeperUserId)
@@ -61,7 +60,7 @@ class GatekeeperController @Inject()(
       } recover recovery
   }
 
-  def rejectUplift(id: UUID) = requiresAuthentication().async(parse.json) {
+  def rejectUplift(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[RejectUpliftRequest] {
         gatekeeperService.rejectUplift(id, _).map(_ => NoContent)
@@ -70,7 +69,7 @@ class GatekeeperController @Inject()(
       } recover recovery
   }
 
-  def resendVerification(id: UUID) = requiresAuthentication().async(parse.json) {
+  def resendVerification(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>
       withJsonBody[ResendVerificationRequest] { resendVerificationPayload =>
         gatekeeperService.resendVerification(id, resendVerificationPayload.gatekeeperUserId).map(_ => NoContent)
@@ -79,13 +78,13 @@ class GatekeeperController @Inject()(
       } recover recovery
   }
 
-  def blockApplication(id: UUID) = requiresAuthentication().async { _ =>
+  def blockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
     gatekeeperService.blockApplication(id) map {
       case Blocked => Ok
     } recover recovery
   }
 
-  def unblockApplication(id: UUID) = requiresAuthentication().async { _ =>
+  def unblockApplication(id: ApplicationId) = requiresAuthentication().async { _ =>
     gatekeeperService.unblockApplication(id) map {
       case Unblocked => Ok
     } recover recovery
@@ -97,15 +96,15 @@ class GatekeeperController @Inject()(
     } recover recovery
   }
 
-  def fetchAppById(id: UUID) = requiresAuthentication().async {
+  def fetchAppById(id: ApplicationId) = requiresAuthentication().async {
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
-  def fetchAppStateHistoryById(id: UUID) = requiresAuthentication().async {
+  def fetchAppStateHistoryById(id: ApplicationId) = requiresAuthentication().async {
     gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: UUID) =
+  def createSubscriptionForApplication(applicationId: ApplicationId) =
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
         withJsonBody[ApiIdentifier] { api =>

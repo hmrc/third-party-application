@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.ControllerComponents
@@ -27,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationSer
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 @Singleton
 class AccessController @Inject()(val authConnector: AuthConnector,
@@ -36,13 +35,13 @@ class AccessController @Inject()(val authConnector: AuthConnector,
                                  cc: ControllerComponents)(
                                 implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
-  def readScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>
+  def readScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>
     accessService.readScopes(applicationId) map { scopeResponse =>
       Ok(toJson(scopeResponse))
     } recover recovery
   }
 
-  def updateScopes(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
+  def updateScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[ScopeRequest] { scopeRequest =>
       accessService.updateScopes(applicationId, scopeRequest) map { scopeResponse =>
         Ok(toJson(scopeResponse))
@@ -50,13 +49,13 @@ class AccessController @Inject()(val authConnector: AuthConnector,
     }
   }
 
-  def readOverrides(applicationId: UUID) = requiresAuthenticationForStandardApplications(applicationId).async { _ =>
+  def readOverrides(applicationId: ApplicationId) = requiresAuthenticationForStandardApplications(applicationId).async { _ =>
     accessService.readOverrides(applicationId) map { overrideResponse =>
       Ok(toJson(overrideResponse))
     } recover recovery
   }
 
-  def updateOverrides(applicationId: UUID) = requiresAuthenticationForStandardApplications(applicationId).async(parse.json) { implicit request =>
+  def updateOverrides(applicationId: ApplicationId) = requiresAuthenticationForStandardApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[OverridesRequest] { overridesRequest =>
       accessService.updateOverrides(applicationId, overridesRequest) map { overridesResponse =>
         Ok(toJson(overridesResponse))

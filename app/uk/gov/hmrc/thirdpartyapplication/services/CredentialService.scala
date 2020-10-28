@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
@@ -45,40 +43,40 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   val clientSecretLimit = config.clientSecretLimit
   val logger: LoggerLike = Logger
 
-  def fetch(applicationId: UUID): Future[Option[ApplicationResponse]] = {
+  def fetch(applicationId: ApplicationId): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(
       app => ApplicationResponse(data = app)))
   }
 
-  def fetchCredentials(applicationId: UUID): Future[Option[ApplicationTokenResponse]] = {
+  def fetchCredentials(applicationId: ApplicationId): Future[Option[ApplicationTokenResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map { app =>
       ApplicationTokenResponse(app.tokens.production)
     })
   }
 
-  def addClientSecret(id: UUID, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+  def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
-      existingApp <- fetchApp(id)
+      existingApp <- fetchApp(applicationId)
       _ = if(existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
       generatedSecret = clientSecretService.generateClientSecret()
       newSecret = generatedSecret._1
       newSecretValue = generatedSecret._2
 
-      updatedApplication <- applicationRepository.addClientSecret(id, newSecret)
+      updatedApplication <- applicationRepository.addClientSecret(applicationId, newSecret)
       _ = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
-      _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> id.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
-  def deleteClientSecret(applicationId: UUID,
+  def deleteClientSecret(applicationId: ApplicationId,
                          clientSecretId: String,
                          actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
-    def audit(applicationId: UUID, clientSecretId: String): Future[AuditResult] =
-      auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.toString, "removedClientSecret" -> clientSecretId))
+    def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
+      auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 
     def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HttpResponse] = {
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
@@ -118,7 +116,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  private def fetchApp(applicationId: UUID) = {
+  private def fetchApp(applicationId: ApplicationId) = {
     val notFoundException = new NotFoundException(s"application not found for id: $applicationId")
     applicationRepository.fetch(applicationId).flatMap {
       case None => Future.failed(notFoundException)

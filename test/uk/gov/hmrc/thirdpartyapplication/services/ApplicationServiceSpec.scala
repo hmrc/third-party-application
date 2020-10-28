@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
 import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
@@ -69,7 +68,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId: UUID = UUID.randomUUID()
+    val applicationId: ApplicationId = ApplicationId.random()
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
     lazy val locked = false
@@ -131,7 +130,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
       .thenReturn(successful(true))
 
-    def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: UUID,
+    def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
 
@@ -189,7 +188,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.toString,
+          "applicationId" -> createdApp.application.id.value.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
@@ -217,7 +216,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.toString,
+          "applicationId" -> createdApp.application.id.value.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
@@ -243,7 +242,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.toString,
+          "applicationId" -> createdApp.application.id.value.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
@@ -279,7 +278,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.toString,
+          "applicationId" -> createdApp.application.id.value.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
@@ -305,7 +304,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.toString,
+          "applicationId" -> createdApp.application.id.value.toString,
           "newApplicationName" -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
@@ -316,7 +315,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Privileged())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(UUID.randomUUID()))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random()))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
 
       intercept[ApplicationAlreadyExists] {
@@ -332,7 +331,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(UUID.randomUUID()))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random()))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
 
       intercept[ApplicationAlreadyExists] {
@@ -557,7 +556,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   }
 
   "add collaborator with userId" should {
-    val admin: String = "admin@example.com"
     val admin2: String = "admin2@example.com"
     val email: String = "test@example.com"
     val testUserId = UserId.random
@@ -1164,7 +1162,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "block a duplicate app name" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = UUID.randomUUID()))
+      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random()))
 
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(List.empty[String])
@@ -1252,7 +1250,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
 
       await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
-      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.toString), hc)
+      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.value.toString), hc)
     }
 
     "send an Audit event when an application uplift is successfully requested with a name change" in new Setup {
@@ -1264,7 +1262,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
 
-      val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.toString, "newApplicationName" -> requestedName)
+      val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.value.toString, "newApplicationName" -> requestedName)
       AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, expectedAuditDetails, hc)
     }
 
@@ -1283,7 +1281,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val application: ApplicationData = anApplicationData(applicationId, testingState())
-      val anotherApplication: ApplicationData = anApplicationData(UUID.randomUUID(), productionState("admin@example.com"))
+      val anotherApplication: ApplicationData = anApplicationData(ApplicationId.random(), productionState("admin@example.com"))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,anotherApplication)
@@ -1304,19 +1302,17 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "update rate limit tier" should {
 
-    val uuid: UUID = UUID.randomUUID()
-    val originalApplicationData: ApplicationData = anApplicationData(uuid)
-    val updatedApplicationData: ApplicationData = originalApplicationData copy (rateLimitTier = Some(SILVER))
-
     "update the application on AWS and in mongo" in new Setup {
+      val originalApplicationData: ApplicationData = anApplicationData(applicationId)
+      val updatedApplicationData: ApplicationData = originalApplicationData copy (rateLimitTier = Some(SILVER))
       ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
       ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
-      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(uuid, SILVER)(updatedApplicationData)
+      ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(applicationId, SILVER)(updatedApplicationData)
 
-      await(underTest updateRateLimitTier(uuid, SILVER))
+      await(underTest.updateRateLimitTier(applicationId, SILVER))
 
       ApiGatewayStoreMock.UpdateApplication.verifyCalledWith(originalApplicationData, SILVER)
-      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(uuid, SILVER)
+      ApplicationRepoMock.UpdateApplicationRateLimit.verifyCalledWith(applicationId, SILVER)
     }
 
   }
@@ -1335,7 +1331,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the IP address is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("392.168.100.0/22")))
+        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("392.168.100.0/22")))
       }
 
       error.getMessage shouldBe "Value [392] not in range [0,255]"
@@ -1343,7 +1339,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the mask is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.168.100.0/55")))
+        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("192.168.100.0/55")))
       }
 
       error.getMessage shouldBe "Value [55] not in range [0,32]"
@@ -1351,7 +1347,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the format is invalid" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(UUID.randomUUID(), Set("192.100.0/22")))
+        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("192.100.0/22")))
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
@@ -1372,7 +1368,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the IP address is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("392.168.100.0/22"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("392.168.100.0/22"))))
       }
 
       error.getMessage shouldBe "Value [392] not in range [0,255]"
@@ -1380,7 +1376,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the mask is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("192.168.100.0/55"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("192.168.100.0/55"))))
       }
 
       error.getMessage shouldBe "Value [55] not in range [0,32]"
@@ -1388,7 +1384,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail when the format is invalid" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(UUID.randomUUID(), IpAllowlist(required = true, Set("192.100.0/22"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("192.100.0/22"))))
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
@@ -1411,9 +1407,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(auditFunction.apply(*)).thenReturn(mockAuditResult)
 
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api1, api2)))
-      when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
 
-      when(mockStateHistoryRepository.deleteByApplicationId(*)).thenReturn(successful(HasSucceeded))
+      when(mockStateHistoryRepository.deleteByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
 
@@ -1528,9 +1524,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: ApplicationData = anApplicationData(UUID.randomUUID(), access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(UUID.randomUUID(), access = Privileged())
-      val ropcApplicationData: ApplicationData = anApplicationData(UUID.randomUUID(), access = Ropc())
+      val standardApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Standard())
+      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Privileged())
+      val ropcApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -1564,7 +1560,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)))
   }
 
-  private def anApplicationDataWithCollaboratorWithUserId(applicationId: UUID,
+  private def anApplicationDataWithCollaboratorWithUserId(applicationId: ApplicationId,
                                 state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)),
                                 access: Access = Standard(),
@@ -1611,7 +1607,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   private val requestedByEmail = "john.smith@example.com"
 
-  private def anApplicationData(applicationId: UUID,
+  private def anApplicationData(applicationId: ApplicationId,
                                 state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, None)),
                                 access: Access = Standard(),

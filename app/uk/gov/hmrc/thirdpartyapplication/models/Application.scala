@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.security.MessageDigest
-import java.util.UUID
 
 import com.google.common.base.Charsets
 import org.apache.commons.codec.binary.Base64
@@ -27,10 +26,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, ST
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
+import java.{util => ju}
 
 trait ApplicationRequest {
   val name: String
@@ -86,7 +85,7 @@ case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             teamConfirmed: Boolean = false,
                             termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
 
-case class ApplicationResponse(id: UUID,
+case class ApplicationResponse(id: ApplicationId,
                                clientId: String,
                                gatewayId: String,
                                name: String,
@@ -148,7 +147,7 @@ object ApplicationResponse {
   }
 }
 
-case class ExtendedApplicationResponse(id: UUID,
+case class ExtendedApplicationResponse(id: ApplicationId,
                                        clientId: String,
                                        gatewayId: String,
                                        name: String,
@@ -206,8 +205,8 @@ case class PaginatedApplicationData(applications: List[ApplicationData], totals:
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
-case class ApplicationId(id: String, name: String)
-case class ApplicationWithSubscriptionCount(_id: ApplicationId, count: Int)
+case class ApplicationLabel(id: String, name: String)
+case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
 
 sealed trait Access {
   val accessType: AccessType.Value
@@ -256,7 +255,7 @@ object OverrideType extends Enumeration {
   val PERSIST_LOGIN_AFTER_GRANT, GRANT_WITHOUT_TAXPAYER_CONSENT, SUPPRESS_IV_FOR_AGENTS, SUPPRESS_IV_FOR_ORGANISATIONS, SUPPRESS_IV_FOR_INDIVIDUALS = Value
 }
 
-case class ApplicationWithUpliftRequest(id: UUID,
+case class ApplicationWithUpliftRequest(id: ApplicationId,
                                         name: String,
                                         submittedOn: DateTime,
                                         state: State)
@@ -270,7 +269,7 @@ case class Collaborator(emailAddress: String, role: Role, userId: Option[UserId]
 case class ClientSecret(name: String,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
-                        id: String = UUID.randomUUID().toString, 
+                        id: String = ju.UUID.randomUUID().toString,
                         hashedSecret: String)
 
 trait Token {
@@ -367,13 +366,12 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
   def toPendingRequesterVerification = {
     requireState(requirement = State.PENDING_GATEKEEPER_APPROVAL, transitionTo = State.PENDING_REQUESTER_VERIFICATION)
 
-    def verificationCode(input: String = UUID.randomUUID().toString): String = {
+    def verificationCode(input: String = ju.UUID.randomUUID().toString): String = {
       def urlSafe(encoded: String) = encoded.replace("=", "").replace("/", "_").replace("+", "-")
 
       val digest = MessageDigest.getInstance("SHA-256")
       urlSafe(new String(Base64.encodeBase64(digest.digest(input.getBytes(Charsets.UTF_8))), Charsets.UTF_8))
     }
-
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = DateTimeUtils.now)
   }
 

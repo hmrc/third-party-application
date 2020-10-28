@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.nio.charset.StandardCharsets
-import java.util.{Base64, UUID}
+import java.util.{Base64}
 
 import cats.data.OptionT
 import cats.implicits._
@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
 import scala.util.Try
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 trait AuthorisationWrapper {
   self: BaseController =>
@@ -87,14 +88,14 @@ trait AuthorisationWrapper {
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
-  def requiresAuthenticationFor(uuid: UUID, accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
+  def requiresAuthenticationFor(uuid: ApplicationId, accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
     Action andThen RepositoryBasedApplicationTypeFilter(uuid, accessTypes.toList, false)
 
-  def requiresAuthenticationForStandardApplications(uuid: UUID): ActionBuilder[Request, AnyContent] =
+  def requiresAuthenticationForStandardApplications(uuid: ApplicationId): ActionBuilder[Request, AnyContent] =
     Action andThen RepositoryBasedApplicationTypeFilter(uuid, List(STANDARD), true)
 
-  def requiresAuthenticationForPrivilegedOrRopcApplications(uuid: UUID): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, List(PRIVILEGED, ROPC), false)
+  def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
 
 
   private def authenticate[A](input: Request[A]): Future[Option[Result]] = {
@@ -118,7 +119,7 @@ trait AuthorisationWrapper {
       Future((Json.parse(request.body.toString) \ "access" \ "accessType").asOpt[AccessType])
   }
 
-  private case class RepositoryBasedApplicationTypeFilter(applicationId: UUID, toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
+  private case class RepositoryBasedApplicationTypeFilter(applicationId: ApplicationId, toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
                                                               extends ApplicationTypeFilter(toMatchAccessTypes, failOnAccessTypeMismatch) {
     private def error[A](e: Exception): OptionT[Future,A] = {
       OptionT.liftF(Future.failed(e))
@@ -127,7 +128,7 @@ trait AuthorisationWrapper {
     final protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]] =
       applicationService.fetch(applicationId)
         .map(app => app.access.accessType)
-        .orElse(error(new NotFoundException(s"application $applicationId doesn't exist")))
+        .orElse(error(new NotFoundException(s"application ${applicationId.value} doesn't exist")))
         .value
   }
 

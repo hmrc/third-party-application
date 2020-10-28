@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
@@ -44,9 +42,9 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   applicationService: ApplicationService)(implicit val ec: ExecutionContext) {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
-    def appError(id: UUID) = new InconsistentDataState(s"App not found for id: $id")
+    def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
 
-    def historyError(id: UUID) = new InconsistentDataState(s"History not found for id: $id")
+    def historyError(applicationId: ApplicationId) = new InconsistentDataState(s"History not found for id: ${applicationId.value}")
 
     def latestUpliftRequestState(histories: List[StateHistory]) = {
       for ((id, history) <- histories.groupBy(_.applicationId))
@@ -64,23 +62,23 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield DataUtil.zipper(appsMap, historyMap, ApplicationWithUpliftRequest.create, appError, historyError)
   }
 
-  def fetchAppWithHistory(id: UUID): Future[ApplicationWithHistory] = {
+  def fetchAppWithHistory(applicationId: ApplicationId): Future[ApplicationWithHistory] = {
     for {
-      app <- fetchApp(id)
-      history <- stateHistoryRepository.fetchByApplicationId(id)
+      app <- fetchApp(applicationId)
+      history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
       ApplicationWithHistory(ApplicationResponse(data = app),
         history.map(StateHistoryResponse.from))
     }
   }
 
-  def fetchAppStateHistoryById(id: UUID): Future[List[StateHistoryResponse]] = {
+  def fetchAppStateHistoryById(id: ApplicationId): Future[List[StateHistoryResponse]] = {
     for {
       history <- stateHistoryRepository.fetchByApplicationId(id)
     } yield history.map(StateHistoryResponse.from)
   }
 
-  def approveUplift(applicationId: UUID, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def approveUplift(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def approve(existing: ApplicationData) = existing.copy(state = existing.state.toPendingRequesterVerification)
 
     def sendEmails(app: ApplicationData) = {
@@ -106,7 +104,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def rejectUplift(applicationId: UUID, request: RejectUpliftRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def rejectUplift(applicationId: ApplicationId, request: RejectUpliftRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def reject(existing: ApplicationData) = {
       existing.state.requireState(State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)
       existing.copy(state = existing.state.toTesting)
@@ -128,7 +126,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield UpliftRejected
   }
 
-  def resendVerification(applicationId: UUID, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def resendVerification(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def rejectIfNotPendingVerification(existing: ApplicationData) = {
       existing.state.requireState(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)
       existing
@@ -149,7 +147,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   }
 
-  def deleteApplication(applicationId: UUID, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
         auditGatekeeperAction(request.gatekeeperUserId.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.toString))
     }
@@ -160,7 +158,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
 
-  def blockApplication(applicationId: UUID): Future[Blocked] = {
+  def blockApplication(applicationId: ApplicationId): Future[Blocked] = {
     def block(application: ApplicationData): ApplicationData = {
       application.copy(blocked = true)
     }
@@ -171,7 +169,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield Blocked
   }
 
-  def unblockApplication(applicationId: UUID): Future[Unblocked] = {
+  def unblockApplication(applicationId: ApplicationId): Future[Unblocked] = {
     def unblock(application: ApplicationData): ApplicationData = {
       application.copy(blocked = false)
     }
@@ -182,8 +180,8 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     } yield Unblocked
   }
 
-  private def fetchApp(applicationId: UUID): Future[ApplicationData] = {
-    lazy val notFoundException = new NotFoundException(s"application not found for id: $applicationId")
+  private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] = {
+    lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
       case None => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)

@@ -16,21 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component.stubs
 
-import java.util.UUID
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.OK
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.ApiDefinition
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 object ApiDefinitionStub extends Stub {
 
   override val stub = MockHost(22221)
 
-  def willReturnApisForApplication(applicationId: UUID, apiDefinitions: Seq[ApiDefinition]) = {
-    stub.mock.register(get(urlEqualTo(s"/api-definition?applicationId=$applicationId"))
+  def willReturnApisForApplication(applicationId: ApplicationId, apiDefinitions: Seq[ApiDefinition]) = {
+    stub.mock.register(get(urlEqualTo(s"/api-definition?applicationId=${applicationId.value}"))
       .willReturn(
         aResponse()
           .withStatus(OK)

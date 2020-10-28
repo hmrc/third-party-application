@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule {
 
@@ -48,7 +47,7 @@ class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMo
   }
 
   "clientSecretIsValid" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
     val fooSecret = ClientSecret(name = "secret-1", hashedSecret = "foo".bcrypt(fastWorkFactor))
     val barSecret = ClientSecret(name = "secret-2", hashedSecret = "bar".bcrypt(fastWorkFactor))
     val bazSecret = ClientSecret(name = "secret-3", hashedSecret = "baz".bcrypt(fastWorkFactor))

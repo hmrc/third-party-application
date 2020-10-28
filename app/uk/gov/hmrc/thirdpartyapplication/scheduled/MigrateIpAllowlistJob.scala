@@ -31,7 +31,7 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
-@deprecated("Remove once the migration is complete")
+@deprecated("Remove once the migration is complete","?")
 class MigrateIpAllowlistJob @Inject()(val lockKeeper: MigrateIpAllowlistJobLockKeeper,
                                        applicationRepository: ApplicationRepository,
                                        jobConfig: MigrateIpAllowlistJobConfig) extends ScheduledMongoJob {

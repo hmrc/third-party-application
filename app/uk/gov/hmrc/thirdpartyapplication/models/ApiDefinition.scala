@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.util.UUID
-
 import play.api.Configuration
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.APIStatus
 
@@ -70,4 +68,4 @@ object ApiSubscription {
 
 case class VersionSubscription(version: ApiVersion, subscribed: Boolean)
 
-case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[UUID])
+case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])

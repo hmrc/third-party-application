@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import java.util.UUID
-
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, SubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
@@ -35,7 +34,7 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
   "metrics refresh" should {
     def subscriptionDetails(subscription: (String, String, Int)): SubscriptionData =
-      SubscriptionData(new ApiIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(UUID.randomUUID()).toSet)
+      SubscriptionData(new ApiIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(ApplicationId.random()).toSet)
 
     def expectedAPIName(subscription: (String, String, Int)): String =
       s"apisWithSubscriptionCountV1.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"

@@ -45,7 +45,7 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
   override val isEnabled: Boolean = jobConfig.enabled
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
-    Logger.info(s"Set status back to testing for app{id=${app.id},name=${app.name},state." +
+    Logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
       updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting))

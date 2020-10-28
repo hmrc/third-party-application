@@ -142,7 +142,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
+    
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val accessService = new AccessService(ApplicationRepoMock.aMock, AuditServiceMock.aMock)
@@ -172,7 +173,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
     val overrides = Set[OverrideFlag](override1, override2, override3, override4)
   }
 
-  private def privilegedApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
+  private def privilegedApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
     ApplicationData(
       applicationId,
       "name",
@@ -188,7 +189,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       DateTimeUtils.now,
       Some(DateTimeUtils.now))
 
-  private def ropcApplicationDataWithScopes(applicationId: UUID)(scopes: Set[String]): ApplicationData =
+  private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
     ApplicationData(
       applicationId,
       "name",
@@ -204,7 +205,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       DateTimeUtils.now,
       Some(DateTimeUtils.now))
 
-  private def standardApplicationDataWithOverrides(applicationId: UUID, overrides: Set[OverrideFlag]): ApplicationData =
+  private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
     ApplicationData(
       applicationId,
       "name",

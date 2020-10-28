@@ -82,7 +82,7 @@ class ApplicationRepositorySpec
 
     "create an application and retrieve it from database" in {
 
-      val application = anApplicationData(UUID.randomUUID())
+      val application = anApplicationData(ApplicationId.random())
 
       await(applicationRepository.save(application))
 
@@ -93,7 +93,7 @@ class ApplicationRepositorySpec
 
     "update an application" in {
 
-      val application = anApplicationData(UUID.randomUUID())
+      val application = anApplicationData(ApplicationId.random())
 
       await(applicationRepository.save(application))
 
@@ -116,7 +116,7 @@ class ApplicationRepositorySpec
   "updateApplicationRateLimit" should {
 
     "set the rateLimitTier field on an Application document" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       await(
         applicationRepository.save(
           anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE))))
@@ -129,7 +129,7 @@ class ApplicationRepositorySpec
     }
 
     "set the rateLimitTier field on an Application document where none previously existed" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       await(
         applicationRepository.save(
           anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = None)))
@@ -144,7 +144,7 @@ class ApplicationRepositorySpec
 
   "updateApplicationIpWhitelist" should {
     "set the ipWhitelist and ipAllowlist.allowlist fields on an Application document" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       await(applicationRepository.save(anApplicationData(applicationId)))
       val updatedIpWhitelist = Set("192.168.100.0/22", "192.168.104.1/32")
 
@@ -157,7 +157,7 @@ class ApplicationRepositorySpec
 
   "updateApplicationIpAllowlist" should {
     "set the ipWhitelist and ipAllowlist fields on an Application document" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       await(applicationRepository.save(anApplicationData(applicationId)))
       val updatedIpAllowlist = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
 
@@ -172,7 +172,7 @@ class ApplicationRepositorySpec
     "update the lastAccess property" in {
       val testStartTime = DateTime.now()
 
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
 
       val application =
         anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
@@ -189,7 +189,7 @@ class ApplicationRepositorySpec
   "recordServerTokenUsage" should {
     "update the lastAccess and lastAccessTokenUsage properties" in {
       val testStartTime = DateTime.now()
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val application =
         anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
           .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
@@ -206,7 +206,7 @@ class ApplicationRepositorySpec
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {
       val testStartTime = DateTime.now()
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
       val generatedClientSecretId = application.tokens.production.clientSecrets.head.id
 
@@ -220,7 +220,7 @@ class ApplicationRepositorySpec
 
     "update an existing lastAccess property for a client secret" in {
       val testStartTime = DateTime.now()
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationTokens =
         ApplicationTokens(
           EnvironmentToken(
@@ -240,7 +240,7 @@ class ApplicationRepositorySpec
 
     "update the correct client secret when there are multiple" in {
       val testStartTime = DateTime.now()
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val secretToUpdate =
         ClientSecret(name = "SecretToUpdate", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret")
       val applicationTokens =
@@ -270,8 +270,8 @@ class ApplicationRepositorySpec
 
     "retrieve the application for a given client id when it has a matching client id" in {
 
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(ApplicationId.random(), "aaa", productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(ApplicationId.random(), "zzz", productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -288,8 +288,8 @@ class ApplicationRepositorySpec
 
     "retrieve the application when it is matched for access token" in {
 
-      val application1 = anApplicationData(UUID.randomUUID(), "aaa", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(UUID.randomUUID(), "zzz", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(ApplicationId.random(), "aaa", productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(ApplicationId.random(), "zzz", productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -303,8 +303,8 @@ class ApplicationRepositorySpec
   "fetchAllForEmailAddress" should {
 
     "retrieve all the applications for a given collaborator email address" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -318,10 +318,10 @@ class ApplicationRepositorySpec
 
   "fetchStandardNonTestingApps" should {
     "retrieve all the standard applications not in TESTING state" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user1"))
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = productionState("user2"))
-      val application4 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user2"))
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user1"))
+      val application3 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId, state = productionState("user2"))
+      val application4 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId, state = pendingRequesterVerificationState("user2"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -338,19 +338,19 @@ class ApplicationRepositorySpec
     }
 
     "not return Privileged applications" in {
-      val application1 = anApplicationData(UUID.randomUUID(), state = productionState("gatekeeper"), access = Privileged())
+      val application1 = anApplicationData(ApplicationId.random(), state = productionState("gatekeeper"), access = Privileged())
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "not return ROPC applications" in {
-      val application1 = anApplicationData(UUID.randomUUID(), state = productionState("gatekeeper"), access = Ropc())
+      val application1 = anApplicationData(ApplicationId.random(), state = productionState("gatekeeper"), access = Ropc())
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
 
     "return empty list when all apps  in TESTING state" in {
-      val application1 = anApplicationData(UUID.randomUUID())
+      val application1 = anApplicationData(ApplicationId.random())
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) shouldBe Nil
     }
@@ -362,7 +362,7 @@ class ApplicationRepositorySpec
       val applicationName = "appName"
       val applicationNormalisedName = "appname"
 
-      val application = anApplicationData(id = UUID.randomUUID())
+      val application = anApplicationData(id = ApplicationId.random())
         .copy(normalisedName = applicationNormalisedName)
 
       await(applicationRepository.save(application))
@@ -375,7 +375,7 @@ class ApplicationRepositorySpec
     "dont retrieve the application if it's a non-matching name" in {
       val applicationNormalisedName = "appname"
 
-      val application = anApplicationData(id = UUID.randomUUID())
+      val application = anApplicationData(id = ApplicationId.random())
         .copy(normalisedName = applicationNormalisedName)
 
       await(applicationRepository.save(application))
@@ -453,21 +453,21 @@ class ApplicationRepositorySpec
   "fetchVerifiableBy" should {
 
     "retrieve the application with verificationCode when in pendingRequesterVerification state" in {
-      val application = anApplicationData(UUID.randomUUID(), state = pendingRequesterVerificationState("requestorEmail@example.com"))
+      val application = anApplicationData(ApplicationId.random(), state = pendingRequesterVerificationState("requestorEmail@example.com"))
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode))
       retrieved shouldBe Some(application)
     }
 
     "retrieve the application with verificationCode when in production state" in {
-      val application = anApplicationData(UUID.randomUUID(), state = productionState("requestorEmail@example.com"))
+      val application = anApplicationData(ApplicationId.random(), state = productionState("requestorEmail@example.com"))
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode))
       retrieved shouldBe Some(application)
     }
 
     "not retrieve the application with an unknown verificationCode" in {
-      val application = anApplicationData(UUID.randomUUID(), state = pendingRequesterVerificationState("requestorEmail@example.com"))
+      val application = anApplicationData(ApplicationId.random(), state = pendingRequesterVerificationState("requestorEmail@example.com"))
       await(applicationRepository.save(application))
       val retrieved = await(applicationRepository.fetchVerifiableUpliftBy("aDifferentVerificationCode"))
       retrieved shouldBe None
@@ -479,7 +479,7 @@ class ApplicationRepositorySpec
 
     "delete an application from the database" in {
 
-      val application = anApplicationData(UUID.randomUUID())
+      val application = anApplicationData(ApplicationId.random())
 
       await(applicationRepository.save(application))
 
@@ -501,12 +501,12 @@ class ApplicationRepositorySpec
     // API-3862: The wso2Username and wso2Password fields have been removed from ApplicationData, but will still exist in Mongo for most applications
     // Test that documents are still correctly deserialised into ApplicationData objects
     "retrieve an application when wso2Username and wso2Password exist" in {
-      val applicationId = UUID.randomUUID
+      val applicationId = ApplicationId.random
       val application = anApplicationData(applicationId)
 
       await(applicationRepository.save(application))
-      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Username" -> "legacyUsername"))))
-      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.toString), Json.obj("$set" -> Json.obj("wso2Password" -> "legacyPassword"))))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.value.toString), Json.obj("$set" -> Json.obj("wso2Username" -> "legacyUsername"))))
+      await(applicationRepository.findAndUpdate(Json.obj("id" -> applicationId.value.toString), Json.obj("$set" -> Json.obj("wso2Password" -> "legacyPassword"))))
 
       val result = await(applicationRepository.fetch(applicationId))
 
@@ -517,8 +517,8 @@ class ApplicationRepositorySpec
   "fetchAllWithNoSubscriptions" should {
     "fetch only those applications with no subscriptions" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version", application1.id)))
@@ -532,8 +532,8 @@ class ApplicationRepositorySpec
   "fetchAll" should {
     "fetch all existing applications" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
@@ -544,9 +544,9 @@ class ApplicationRepositorySpec
   "fetchAllForContext" should {
     "fetch only those applications when the context matches" in {
 
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -562,9 +562,9 @@ class ApplicationRepositorySpec
 
   "fetchAllForApiIdentifier" should {
     "fetch only those applications when the context and version matches" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -578,9 +578,9 @@ class ApplicationRepositorySpec
     }
 
     "fetch multiple applications with the same matching context and versions" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -593,8 +593,8 @@ class ApplicationRepositorySpec
     }
 
     "fetch no applications when the context and version do not match" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
@@ -628,13 +628,13 @@ class ApplicationRepositorySpec
   }
 
   "Search" should {
-    def applicationWithLastAccessDate(applicationId: UUID, lastAccessDate: DateTime): ApplicationData =
+    def applicationWithLastAccessDate(applicationId: ApplicationId, lastAccessDate: DateTime): ApplicationData =
       anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
 
     "correctly include the skip and limit clauses" in {
-      val application1 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application2 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val application3 = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val application1 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val application3 = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
@@ -652,7 +652,7 @@ class ApplicationRepositorySpec
     }
 
     "return applications based on application state filter" in {
-      val applicationInTest = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationInTest = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, DateTime.now())
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
@@ -670,8 +670,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications based on access type filter" in {
-      val standardApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val ropcApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId, access = Ropc())
+      val standardApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val ropcApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId, access = Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -688,8 +688,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications with no API subscriptions" in {
-      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationWithSubscriptions = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithSubscriptions))
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
@@ -707,8 +707,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications with any API subscriptions" in {
-      val applicationWithSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val applicationWithoutSubscriptions = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationWithSubscriptions = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val applicationWithoutSubscriptions = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithSubscriptions))
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)))
@@ -726,15 +726,15 @@ class ApplicationRepositorySpec
     }
 
     "return applications with search text matching application id" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationName = "Test Application 1"
 
       val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(applicationId.toString))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(applicationId.value.toString))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -747,11 +747,11 @@ class ApplicationRepositorySpec
     }
 
     "return applications with search text matching application name" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationName = "Test Application 2"
 
       val application = aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -768,12 +768,12 @@ class ApplicationRepositorySpec
     }
 
     "return applications with search text matching client id" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientId = generateClientId
       val applicationName = "Test Application"
 
       val application = aNamedApplicationData(applicationId, applicationName, prodClientId = clientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -794,9 +794,9 @@ class ApplicationRepositorySpec
 
       // Applications with the same name, but different access levels
       val standardApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId)
+        aNamedApplicationData(id = ApplicationId.random(), applicationName, prodClientId = generateClientId)
       val ropcApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), applicationName, prodClientId = generateClientId, access = Ropc())
+        aNamedApplicationData(id = ApplicationId.random(), applicationName, prodClientId = generateClientId, access = Ropc())
       await(applicationRepository.save(standardApplication))
       await(applicationRepository.save(ropcApplication))
 
@@ -814,10 +814,10 @@ class ApplicationRepositorySpec
     }
 
     "return applications matching search text in a case-insensitive manner" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
 
       val application = aNamedApplicationData(applicationId, "TEST APPLICATION", prodClientId = generateClientId)
-      val randomOtherApplication = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
+      val randomOtherApplication = anApplicationData(ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -834,14 +834,14 @@ class ApplicationRepositorySpec
     }
 
     "return applications with terms of use agreed" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithTermsOfUseAgreed =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(checkInformation))
-      val applicationWithNoTermsOfUseAgreed = anApplicationData(UUID.randomUUID(), prodClientId = generateClientId)
+      val applicationWithNoTermsOfUseAgreed = anApplicationData(ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
 
@@ -858,7 +858,7 @@ class ApplicationRepositorySpec
     }
 
     "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
@@ -866,7 +866,7 @@ class ApplicationRepositorySpec
       val applicationWithNoCheckInformation =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId)
       val applicationWithTermsOfUseAgreed =
-        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
+        anApplicationData(ApplicationId.random(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
       await(applicationRepository.save(applicationWithNoCheckInformation))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
@@ -883,7 +883,7 @@ class ApplicationRepositorySpec
     }
 
     "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
       val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
@@ -893,7 +893,7 @@ class ApplicationRepositorySpec
       val applicationWithNoTermsOfUseAgreed =
         aNamedApplicationData(applicationId, applicationName, prodClientId = generateClientId, checkInformation = Some(emptyCheckInformation))
       val applicationWithTermsOfUseAgreed =
-        anApplicationData(UUID.randomUUID(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
+        anApplicationData(ApplicationId.random(), prodClientId = generateClientId, checkInformation = Some(checkInformation))
       await(applicationRepository.save(applicationWithNoTermsOfUseAgreed))
       await(applicationRepository.save(applicationWithTermsOfUseAgreed))
 
@@ -913,8 +913,8 @@ class ApplicationRepositorySpec
       val expectedAPIContext = "match-this-api"
       val otherAPIContext = "do-not-match-this-api"
 
-      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val expectedApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val otherApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(expectedApplication))
       await(applicationRepository.save(otherApplication))
       await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
@@ -937,8 +937,8 @@ class ApplicationRepositorySpec
       val expectedAPIVersion = "version-1"
       val otherAPIVersion = "version-2"
 
-      val expectedApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val otherApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val expectedApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val otherApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
       await(applicationRepository.save(expectedApplication))
       await(applicationRepository.save(otherApplication))
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, expectedAPIVersion, expectedApplication.id)))
@@ -958,11 +958,11 @@ class ApplicationRepositorySpec
     }
 
     "return applications last used before a certain date" in {
-      val oldApplicationId = UUID.randomUUID()
+      val oldApplicationId = ApplicationId.random()
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now)))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -977,12 +977,12 @@ class ApplicationRepositorySpec
     }
 
     "include applications with no lastAccess date where they were created before cutoff date" in {
-      val oldApplicationId = UUID.randomUUID()
+      val oldApplicationId = ApplicationId.random()
       val oldApplication = anApplicationData(oldApplicationId).copy(createdOn = DateTime.now.minusMonths(18), lastAccess = None)
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(oldApplication))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now)))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -997,7 +997,7 @@ class ApplicationRepositorySpec
     }
 
     "return applications that are equal to the specified cutoff date when searching for older applications" in {
-      val oldApplicationId = UUID.randomUUID()
+      val oldApplicationId = ApplicationId.random()
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, cutoffDate)))
@@ -1016,7 +1016,7 @@ class ApplicationRepositorySpec
 
     "return no results if no applications are last used before the cutoff date" in {
       val cutoffDate = DateTime.now.minusMonths(12)
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now)))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -1026,11 +1026,11 @@ class ApplicationRepositorySpec
     }
 
     "return applications last used after a certain date" in {
-      val newerApplicationId = UUID.randomUUID()
+      val newerApplicationId = ApplicationId.random()
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(newerApplicationId, DateTime.now)))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now.minusMonths(18))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1045,12 +1045,12 @@ class ApplicationRepositorySpec
     }
 
     "include applications with no lastAccess date where they were created after cutoff date" in {
-      val newerApplicationId = UUID.randomUUID()
+      val newerApplicationId = ApplicationId.random()
       val newerApplication = anApplicationData(newerApplicationId).copy(lastAccess = None)
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(newerApplication))
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now.minusMonths(18))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1065,7 +1065,7 @@ class ApplicationRepositorySpec
     }
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val cutoffDate = DateTime.now.minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(applicationId, cutoffDate)))
@@ -1084,7 +1084,7 @@ class ApplicationRepositorySpec
 
     "return no results if no applications are last used after the cutoff date" in {
       val cutoffDate = DateTime.now
-      await(applicationRepository.save(applicationWithLastAccessDate(UUID.randomUUID(), DateTime.now.minusMonths(6))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random(), DateTime.now.minusMonths(6))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1097,9 +1097,9 @@ class ApplicationRepositorySpec
       val firstName = "AAA first"
       val secondName = "ZZZ second"
       val firstApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), name = firstName, prodClientId = generateClientId)
+        aNamedApplicationData(id = ApplicationId.random(), name = firstName, prodClientId = generateClientId)
       val secondApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), name = secondName, prodClientId = generateClientId)
+        aNamedApplicationData(id = ApplicationId.random(), name = secondName, prodClientId = generateClientId)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -1120,9 +1120,9 @@ class ApplicationRepositorySpec
       val firstName = "AAA first"
       val secondName = "ZZZ second"
       val firstApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), name = firstName, prodClientId = generateClientId)
+        aNamedApplicationData(id = ApplicationId.random(), name = firstName, prodClientId = generateClientId)
       val secondApplication =
-        aNamedApplicationData(id = UUID.randomUUID(), name = secondName, prodClientId = generateClientId)
+        aNamedApplicationData(id = ApplicationId.random(), name = secondName, prodClientId = generateClientId)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -1143,9 +1143,9 @@ class ApplicationRepositorySpec
       val firstCreatedOn = HmrcTime.now.minusDays(2)
       val secondCreatedOn = HmrcTime.now.minusDays(1)
       val firstApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
+        anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
+        anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -1166,9 +1166,9 @@ class ApplicationRepositorySpec
       val firstCreatedOn = HmrcTime.now.minusDays(2)
       val secondCreatedOn = HmrcTime.now.minusDays(1)
       val firstApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
+        anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
-        anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
+        anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId).copy(createdOn = secondCreatedOn)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -1188,8 +1188,8 @@ class ApplicationRepositorySpec
     "return applications sorted by lastAccess ascending" in {
       val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
       val oldestLastAccessDate = HmrcTime.now.minusDays(2)
-      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
-      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+      val firstApplication = applicationWithLastAccessDate(ApplicationId.random(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(ApplicationId.random(), oldestLastAccessDate)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -1209,8 +1209,8 @@ class ApplicationRepositorySpec
     "return applications sorted by lastAccess descending" in {
       val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
       val oldestLastAccessDate = HmrcTime.now.minusDays(2)
-      val firstApplication = applicationWithLastAccessDate(UUID.randomUUID(), mostRecentlyAccessedDate)
-      val secondApplication = applicationWithLastAccessDate(UUID.randomUUID(), oldestLastAccessDate)
+      val firstApplication = applicationWithLastAccessDate(ApplicationId.random(), mostRecentlyAccessedDate)
+      val secondApplication = applicationWithLastAccessDate(ApplicationId.random(), oldestLastAccessDate)
 
       await(applicationRepository.save(secondApplication))
       await(applicationRepository.save(firstApplication))
@@ -1234,8 +1234,8 @@ class ApplicationRepositorySpec
     }
 
     "ensure function is called for every Application in collection" in {
-      val firstApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
-      val secondApplication = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+      val firstApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
+      val secondApplication = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
 
       await(applicationRepository.save(firstApplication))
       await(applicationRepository.save(secondApplication))
@@ -1259,9 +1259,9 @@ class ApplicationRepositorySpec
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
 
-      val application1 = aNamedApplicationData(id = UUID.randomUUID(), name = "organisations/trusts", prodClientId = generateClientId)
-      val application2 = aNamedApplicationData(id = UUID.randomUUID(), name = "application.com", prodClientId = generateClientId)
-      val application3 = aNamedApplicationData(id = UUID.randomUUID(), name = "Get) Vat Done (Fast)", prodClientId = generateClientId)
+      val application1 = aNamedApplicationData(id = ApplicationId.random(), name = "organisations/trusts", prodClientId = generateClientId)
+      val application2 = aNamedApplicationData(id = ApplicationId.random(), name = "application.com", prodClientId = generateClientId)
+      val application3 = aNamedApplicationData(id = ApplicationId.random(), name = "Get) Vat Done (Fast)", prodClientId = generateClientId)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -1287,7 +1287,7 @@ class ApplicationRepositorySpec
         val api = s"api-$i"
         val apiVersion = s"api-$i-version-$i"
 
-        val application = anApplicationData(id = UUID.randomUUID(), prodClientId = generateClientId)
+        val application = anApplicationData(id = ApplicationId.random(), prodClientId = generateClientId)
         await(applicationRepository.save(application))
 
         await(subscriptionRepository.insert(aSubscriptionData(api, apiVersion, application.id)))
@@ -1301,7 +1301,7 @@ class ApplicationRepositorySpec
 
   "addClientSecret" should {
     "append client secrets to an existing application" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
 
       val savedApplication = await(applicationRepository.save(anApplicationData(applicationId)))
 
@@ -1321,7 +1321,7 @@ class ApplicationRepositorySpec
       application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
 
     "populate the name where it was an empty String" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientSecretId = UUID.randomUUID().toString
 
       await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(namedClientSecret(clientSecretId, "")))))
@@ -1332,7 +1332,7 @@ class ApplicationRepositorySpec
     }
 
     "populate the name where it was Default" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientSecretId = UUID.randomUUID().toString
 
       await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(namedClientSecret(clientSecretId, "Default")))))
@@ -1343,7 +1343,7 @@ class ApplicationRepositorySpec
     }
 
     "populate the name where it was a masked String" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientSecretId = UUID.randomUUID().toString
 
       await(applicationRepository.save(
@@ -1355,7 +1355,7 @@ class ApplicationRepositorySpec
     }
 
     "update correct client secret where there are multiple" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientSecretId = UUID.randomUUID().toString
 
       val clientSecret1 = namedClientSecret(UUID.randomUUID().toString, "secret-that-should-not-change")
@@ -1375,7 +1375,7 @@ class ApplicationRepositorySpec
 
   "updateClientSecretHash" should {
     "overwrite an existing hashedSecretField" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
       val clientSecret = ClientSecret("secret-name", hashedSecret = "old-hashed-secret")
 
       val savedApplication = await(applicationRepository.save(anApplicationData(applicationId, clientSecrets = List(clientSecret))))
@@ -1387,7 +1387,7 @@ class ApplicationRepositorySpec
     }
 
     "update correct client secret where there are multiple" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
 
       val clientSecret1 = ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
       val clientSecret2 = ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
@@ -1407,7 +1407,7 @@ class ApplicationRepositorySpec
 
   "deleteClientSecret" should {
     "remove client secret with matching id" in {
-      val applicationId = UUID.randomUUID()
+      val applicationId = ApplicationId.random()
 
       val clientSecretToRemove = ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
       val clientSecret2 = ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
@@ -1426,16 +1426,16 @@ class ApplicationRepositorySpec
   }
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
-    id = UUID.randomUUID(),
+    id = ApplicationId.random(),
     prodClientId = generateClientId,
     state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
   )
 
-  def aSubscriptionData(context: String, version: String, applicationIds: UUID*) = {
+  def aSubscriptionData(context: String, version: String, applicationIds: ApplicationId*) = {
     SubscriptionData(ApiIdentifier(context, version), Set(applicationIds: _*))
   }
 
-  def anApplicationData(id: UUID,
+  def anApplicationData(id: ApplicationId,
                         prodClientId: String = "aaa",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
@@ -1443,10 +1443,10 @@ class ApplicationRepositorySpec
                         checkInformation: Option[CheckInformation] = None,
                         clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", prodClientId, state, access, users, checkInformation, clientSecrets)
+    aNamedApplicationData(id, s"myApp-${id.value}", prodClientId, state, access, users, checkInformation, clientSecrets)
   }
 
-  def aNamedApplicationData(id: UUID,
+  def aNamedApplicationData(id: ApplicationId,
                             name: String,
                             prodClientId: String = "aaa",
                             state: ApplicationState = testingState(),

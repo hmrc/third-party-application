@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -43,18 +41,18 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
 
-  def fetchAllSubscriptionsForApplication(applicationId: UUID)(implicit hc: HeaderCarrier): Future[Set[ApiIdentifier]] = {
+  def fetchAllSubscriptionsForApplication(applicationId: ApplicationId): Future[Set[ApiIdentifier]] = {
     for {
       _ <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
       subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
     } yield subscriptions.toSet
   }
 
-  def isSubscribed(applicationId: UUID, api: ApiIdentifier): Future[Boolean] = {
+  def isSubscribed(applicationId: ApplicationId, api: ApiIdentifier): Future[Boolean] = {
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
-  def createSubscriptionForApplicationMinusChecks(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def createSubscriptionForApplicationMinusChecks(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
       _ <- subscriptionRepository.add(applicationId, apiIdentifier)
@@ -63,7 +61,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield HasSucceeded
   }
 
-  def removeSubscriptionForApplication(applicationId: UUID, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def removeSubscriptionForApplication(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
       _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
@@ -72,15 +70,15 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     } yield HasSucceeded
   }
 
-  private def auditSubscription(action: AuditAction, applicationId: UUID, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditSubscription(action: AuditAction, applicationId: ApplicationId, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     auditService.audit(action, Map(
-      "applicationId" -> applicationId.toString,
+      "applicationId" -> applicationId.value.toString,
       "apiVersion" -> api.version,
       "apiContext" -> api.context
     ))
   }
 
-  private def fetchApp(applicationId: UUID) = {
+  private def fetchApp(applicationId: ApplicationId) = {
     applicationRepository.fetch(applicationId).flatMap {
       case Some(app) => successful(app)
       case _ => failed(new NotFoundException(s"Application not found for id: $applicationId"))

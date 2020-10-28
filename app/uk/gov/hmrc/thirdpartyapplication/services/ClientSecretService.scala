@@ -29,6 +29,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 import scala.util.{Failure, Success}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 @Singleton
 class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) {
@@ -56,7 +57,7 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
     hashedValue
   }
 
-  def clientSecretIsValid(applicationId: UUID, secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
+  def clientSecretIsValid(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecret]): Future[Option[ClientSecret]] = {
     /*
      * *** WARNING ***
      * This function is called every time an OAuth2 token is issued, and is therefore crucially important to the overall performance of the API Platform.

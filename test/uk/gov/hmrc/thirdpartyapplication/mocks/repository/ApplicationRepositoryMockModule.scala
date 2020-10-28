@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import java.util.UUID
-
 import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
@@ -30,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApplicationRepoMock {
@@ -46,19 +45,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetch(eqTo(applicationData.id))).thenReturn(successful(Some(applicationData)))
 
       def thenReturnNone() =
-        when(aMock.fetch(*)).thenReturn(successful(None))
+        when(aMock.fetch(*[ApplicationId])).thenReturn(successful(None))
 
-      def thenReturnNoneWhen(applicationId: UUID) =
+      def thenReturnNoneWhen(applicationId: ApplicationId) =
         when(aMock.fetch(eqTo(applicationId))).thenReturn(successful(None))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.fetch(*)).thenReturn(failed(failWith))
+        when(aMock.fetch(*[ApplicationId])).thenReturn(failed(failWith))
 
-      def verifyCalledWith(applicationId: UUID) =
+      def verifyCalledWith(applicationId: ApplicationId) =
         ApplicationRepoMock.verify.fetch(eqTo(applicationId))
 
-      def verifyFetch(): UUID = {
-        val applicationDataArgumentCaptor = ArgCaptor[UUID]
+      def verifyFetch(): ApplicationId = {
+        val applicationDataArgumentCaptor = ArgCaptor[ApplicationId]
         ApplicationRepoMock.verify.fetch(applicationDataArgumentCaptor)
         applicationDataArgumentCaptor.value
       }
@@ -138,11 +137,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object Delete {
-      def verifyCalledWith(id: UUID) =
+      def verifyCalledWith(id: ApplicationId) =
         ApplicationRepoMock.verify.delete(eqTo(id))
 
       def thenReturnHasSucceeded() =
-        when(aMock.delete(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.delete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
     }
 
     object FetchByServerToken {
@@ -197,32 +196,32 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object RecordApplicationUsage {
-      def thenReturnWhen(applicationId: UUID)(applicationData: ApplicationData) =
-        when(aMock.recordApplicationUsage(applicationId)).thenReturn(successful(applicationData))
+      def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
+        when(aMock.recordApplicationUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
     }
 
     object RecordServerTokenUsage {
-      def thenReturnWhen(applicationId: UUID)(applicationData: ApplicationData) =
-        when(aMock.recordServerTokenUsage(applicationId)).thenReturn(successful(applicationData))
+      def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
+        when(aMock.recordServerTokenUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
 
-      def verifyCalledWith(applicationId: UUID) =
+      def verifyCalledWith(applicationId: ApplicationId) =
         ApplicationRepoMock.verify.recordServerTokenUsage(eqTo(applicationId))
     }
 
     object UpdateIpWhitelist {
-      def verifyCalledWith(applicationId: UUID, newIpWhitelist: Set[String]) =
+      def verifyCalledWith(applicationId: ApplicationId, newIpWhitelist: Set[String]) =
         ApplicationRepoMock.verify.updateApplicationIpWhitelist(eqTo(applicationId),eqTo(newIpWhitelist))
 
-      def thenReturnWhen(applicationId: UUID, newIpWhitelist: Set[String])(updatedApplicationData: ApplicationData) =
+      def thenReturnWhen(applicationId: ApplicationId, newIpWhitelist: Set[String])(updatedApplicationData: ApplicationData) =
         when(aMock.updateApplicationIpWhitelist(applicationId, newIpWhitelist)).thenReturn(successful(updatedApplicationData))
     }
 
     object UpdateIpAllowlist {
-      def verifyCalledWith(applicationId: UUID, newIpAllowlist: IpAllowlist) =
+      def verifyCalledWith(applicationId: ApplicationId, newIpAllowlist: IpAllowlist) =
         ApplicationRepoMock.verify.updateApplicationIpAllowlist(eqTo(applicationId),eqTo(newIpAllowlist))
 
-      def thenReturnWhen(applicationId: UUID, newIpAllowlist: IpAllowlist)(updatedApplicationData: ApplicationData) =
-        when(aMock.updateApplicationIpAllowlist(applicationId, newIpAllowlist)).thenReturn(successful(updatedApplicationData))
+      def thenReturnWhen(applicationId: ApplicationId, newIpAllowlist: IpAllowlist)(updatedApplicationData: ApplicationData) =
+        when(aMock.updateApplicationIpAllowlist(eqTo(applicationId), eqTo(newIpAllowlist))).thenReturn(successful(updatedApplicationData))
     }
 
     object SearchApplications {
@@ -244,35 +243,35 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object RecordClientSecretUsage {
       def verifyNeverCalled() =
-        ApplicationRepoMock.verify(never).recordClientSecretUsage(*,*)
+        ApplicationRepoMock.verify(never).recordClientSecretUsage(*[ApplicationId],*)
 
-      def thenReturnWhen(applicationId: UUID, clientSecretId: String)(applicationData: ApplicationData) =
+      def thenReturnWhen(applicationId: ApplicationId, clientSecretId: String)(applicationData: ApplicationData) =
         when(aMock.recordClientSecretUsage(eqTo(applicationId),eqTo(clientSecretId))).thenReturn(successful(applicationData))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.recordClientSecretUsage(*,*)).thenReturn(failed(failWith))
+        when(aMock.recordClientSecretUsage(*[ApplicationId],*)).thenReturn(failed(failWith))
     }
 
     object UpdateApplicationRateLimit {
-      def thenReturn(applicationId: UUID, rateLimit: RateLimitTier)(updatedApplication: ApplicationData) =
-        when(aMock.updateApplicationRateLimit(applicationId, rateLimit)).thenReturn(successful(updatedApplication))
+      def thenReturn(applicationId: ApplicationId, rateLimit: RateLimitTier)(updatedApplication: ApplicationData) =
+        when(aMock.updateApplicationRateLimit(eqTo(applicationId), eqTo(rateLimit))).thenReturn(successful(updatedApplication))
 
-      def verifyCalledWith(applicationId: UUID, rateLimit: RateLimitTier) =
+      def verifyCalledWith(applicationId: ApplicationId, rateLimit: RateLimitTier) =
         ApplicationRepoMock.verify.updateApplicationRateLimit(eqTo(applicationId), eqTo(rateLimit))
     }
 
     object AddClientSecret {
-      def thenReturn(applicationId: UUID, clientSecret: ClientSecret)(updatedApplication: ApplicationData) = {
-        when(aMock.addClientSecret(applicationId, clientSecret)).thenReturn(successful(updatedApplication))
+      def thenReturn(applicationId: ApplicationId)(updatedApplication: ApplicationData) = {
+        when(aMock.addClientSecret(eqTo(applicationId), *)).thenReturn(successful(updatedApplication))
       }
     }
 
     object UpdateClientSecretHash {
-      def thenReturn(applicationId: UUID, clientSecretId: String)(updatedApplication: ApplicationData) = {
+      def thenReturn(applicationId: ApplicationId, clientSecretId: String)(updatedApplication: ApplicationData) = {
         when(aMock.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)).thenReturn(successful(updatedApplication))
       }
 
-      def verifyCalledWith(applicationId: UUID, clientSecretId: String) =
+      def verifyCalledWith(applicationId: ApplicationId, clientSecretId: String) =
         ApplicationRepoMock.verify.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)
     }
 
@@ -284,23 +283,21 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
             .copy(tokens =
               ApplicationTokens(EnvironmentToken(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
 
-        when(aMock.deleteClientSecret(application.id, clientSecretId)).thenReturn(successful(updatedApplication))
+        when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))
       }
 
-      def clientSecretNotFound(applicationId: UUID, clientSecretId: String) =
-        when(aMock.deleteClientSecret(applicationId, clientSecretId))
-          .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]"))
+      def clientSecretNotFound(applicationId: ApplicationId, clientSecretId: String) =
+        when(aMock.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId)))
+          .thenThrow(new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
 
-      def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*, *)
+      def verifyNeverCalled() = ApplicationRepoMock.verify(never).deleteClientSecret(*[ApplicationId], *)
     }
-
   }
 
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {
 
     val aMock = mock[ApplicationRepository]
-
   }
 
   object LenientApplicationRepoMock extends BaseApplicationRepoMock {

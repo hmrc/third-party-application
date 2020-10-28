@@ -70,7 +70,8 @@ lazy val microservice = (project in file("."))
     libraryDependencies ++= appDependencies,
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
-    majorVersion := 0
+    majorVersion := 0,
+    routesImport += "uk.gov.hmrc.thirdpartyapplication.controllers.binders._"
   )
   .settings(playPublishingSettings: _*)
   .settings(

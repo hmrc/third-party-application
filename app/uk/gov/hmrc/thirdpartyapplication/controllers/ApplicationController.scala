@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
@@ -75,7 +73,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def update(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
+  def update(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) { implicit request =>
     withJsonBody[UpdateApplicationRequest] { application =>
       applicationService.update(applicationId, application).map { result =>
         Ok(toJson(result))
@@ -83,7 +81,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateRateLimitTier(applicationId: UUID) = requiresAuthentication().async(parse.json) { implicit request =>
+  def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case scala.util.Success(rateLimitTier) =>
@@ -96,8 +94,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  @deprecated("IpWhitelist superseded by IpAllowlist")
-  def updateIpWhitelist(applicationId: UUID) = Action.async(parse.json) { implicit request =>
+  @deprecated("IpWhitelist superseded by IpAllowlist","?")
+  def updateIpWhitelist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpWhitelistRequest] { updateIpWhitelistRequest =>
       applicationService.updateIpWhitelist(applicationId, updateIpWhitelistRequest.ipWhitelist) map { _ =>
         NoContent
@@ -105,7 +103,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateIpAllowlist(applicationId: UUID) = Action.async(parse.json) { implicit request =>
+  def updateIpAllowlist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
       applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
         NoContent
@@ -113,7 +111,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateCheck(applicationId: UUID) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
+  def updateCheck(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
     implicit request =>
       withJsonBody[CheckInformation] { checkInformation =>
         applicationService.updateCheck(applicationId, checkInformation).map { result =>
@@ -122,15 +120,15 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       }
   }
 
-  def fetch(applicationId: UUID) = Action.async {
+  def fetch(applicationId: ApplicationId) = Action.async {
     handleOptionT(applicationService.fetch(applicationId))
   }
 
-  def fetchCredentials(applicationId: UUID) = Action.async {
+  def fetchCredentials(applicationId: ApplicationId) = Action.async {
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
-  def addCollaborator(applicationId: UUID) = Action.async(parse.json) { implicit request =>
+  def addCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
       applicationService.addCollaborator(applicationId, collaboratorRequest) map {
         response => Ok(toJson(response))
@@ -143,7 +141,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def deleteCollaborator(applicationId: UUID, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
+  def deleteCollaborator(applicationId: ApplicationId, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 
@@ -154,7 +152,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def addClientSecret(applicationId: UUID) = Action.async(parse.json) { implicit request =>
+  def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token))
         } recover {
@@ -166,7 +164,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       }
     }
 
-  def deleteClientSecret(applicationId: java.util.UUID, clientSecretId: String) = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
     Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>
         credentialService.deleteClientSecret(applicationId, clientSecretId, deleteClientSecretRequest.actorEmailAddress).map(_ => NoContent) recover recovery
@@ -204,9 +202,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
 
-  def requestUplift(id: java.util.UUID) = Action.async(parse.json) { implicit request =>
+  def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpliftRequest] { upliftRequest =>
-      applicationService.requestUplift(id, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
+      applicationService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
     } recover {
       case _: InvalidStateTransition =>
@@ -280,7 +278,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     )
 
   private def fetchAndUpdateApplication(fetchFunction: () => Future[Option[ApplicationResponse]],
-                                        updateFunction: UUID => Future[ExtendedApplicationResponse],
+                                        updateFunction: ApplicationId => Future[ExtendedApplicationResponse],
                                         notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
     fetchFunction().flatMap {
       case Some(application) =>
@@ -322,20 +320,20 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       .map(subs => Ok(toJson(subs))) recover recovery
   )
 
-  def fetchAllSubscriptions(applicationId: UUID) = Action.async { implicit request =>
+  def fetchAllSubscriptions(applicationId: ApplicationId) = Action.async { _ =>
     subscriptionService.fetchAllSubscriptionsForApplication(applicationId)
       .map(subs => Ok(toJson(subs))) recover recovery
   }
 
-  def isSubscribed(id: java.util.UUID, context: String, version: String) = Action.async {
+  def isSubscribed(applicationId: ApplicationId, context: String, version: String) = Action.async {
     val api = ApiIdentifier(context, version)
-    subscriptionService.isSubscribed(id, api) map {
+    subscriptionService.isSubscribed(applicationId, api) map {
       case true => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
-      case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application $id is not subscribed to $context $version"))
+      case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId.value} is not subscribed to $context $version"))
     } recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: UUID) =
+  def createSubscriptionForApplication(applicationId: ApplicationId) =
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
         withJsonBody[ApiIdentifier] { api =>
@@ -343,7 +341,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
     }
 
-  def removeSubscriptionForApplication(applicationId: UUID, context: String, version: String) = {
+  def removeSubscriptionForApplication(applicationId: ApplicationId, context: String, version: String) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
     }
@@ -355,9 +353,9 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def deleteApplication(id: UUID): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
+  def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
     def audit(app: ApplicationData): Future[AuditResult] = {
-      Logger.info(s"Delete application ${app.id} - ${app.name}")
+      Logger.info(s"Delete application ${app.id.value} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
