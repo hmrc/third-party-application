@@ -35,7 +35,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiDefinitionConnectorMockModule
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -45,7 +44,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  trait Setup extends ApiDefinitionConnectorMockModule with AuditServiceMockModule {
+  trait Setup extends AuditServiceMockModule {
 
     lazy val locked = false
     val mockApiGatewayStore = mock[ApiGatewayStore](withSettings.lenient())
@@ -62,7 +61,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     )
 
     val underTest = new SubscriptionService(
-      mockApplicationRepository, mockSubscriptionRepository, ApiDefinitionConnectorMock.aMock, AuditServiceMock.aMock, mockApiPlatformEventsService, mockApiGatewayStore)
+      mockApplicationRepository, mockSubscriptionRepository, AuditServiceMock.aMock, mockApiPlatformEventsService, mockApiGatewayStore)
 
     when(mockApiGatewayStore.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
@@ -113,7 +112,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
         await(underTest.fetchAllSubscriptionsForApplication(applicationId))
       }
 
-      ApiDefinitionConnectorMock.verifyZeroInteractions()
       verifyZeroInteractions(mockSubscriptionRepository)
     }
 
@@ -137,7 +135,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      ApiDefinitionConnectorMock.FetchAllAPIs.thenReturnWhen(applicationId)(anAPIDefinition())
       when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List.empty))
       AuditServiceMock.Audit.thenReturnSuccess()
 
