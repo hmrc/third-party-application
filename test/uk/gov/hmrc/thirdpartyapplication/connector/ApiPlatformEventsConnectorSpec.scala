@@ -31,33 +31,52 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"http://example.com"
 
-  val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(applicationId = "jkkh",
+  val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN")
 
-  val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(applicationId = "jkkh",
+  val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN")
 
-  val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(applicationId = "jkkh",
+  val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     clientSecretId = "1234")
 
-  val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(applicationId = "jkkh",
+  val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     clientSecretId = "1234")
 
-  val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(applicationId = "jkkh",
+  val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    oldRedirectUris = "originalUris", newRedirectUris = "newRedirectUris")
+    oldRedirectUris = "originalUris",
+    newRedirectUris = "newRedirectUris")
 
-  val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR), context = "context", version = "2.0")
+  val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    context = "context",
+    version = "2.0")
 
-  val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR), context = "context", version = "2.0")
+  val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
+    id = EventId.random,
+    applicationId = "jkkh",
+    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    context = "context",
+    version = "2.0")
 
   trait Setup {
     val mockHttpClient: HttpClient = mock[HttpClient]

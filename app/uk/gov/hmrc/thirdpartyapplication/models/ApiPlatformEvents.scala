@@ -16,8 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.util.UUID
+import java.util.UUID.randomUUID
+
 import org.joda.time.DateTime
 
+
+case class EventId(value: UUID) extends AnyVal
+object EventId {
+  def random: EventId = EventId(randomUUID())
+}
 
 object EventType extends Enumeration {
   type AccessType = Value
@@ -32,13 +40,15 @@ object EventType extends Enumeration {
 }
 
 trait ApplicationEvent {
+  val id: EventId
   val applicationId: String
   val eventDateTime: DateTime
   val eventType: EventType.Value
   val actor: Actor
 }
 
-case class TeamMemberAddedEvent(override val applicationId: String,
+case class TeamMemberAddedEvent(override val id: EventId,
+                                override val applicationId: String,
                                 override val actor: Actor,
                                 override val eventDateTime: DateTime = DateTime.now(),
                                 teamMemberEmail: String,
@@ -46,7 +56,8 @@ case class TeamMemberAddedEvent(override val applicationId: String,
   override val eventType: EventType.Value = EventType.TEAM_MEMBER_ADDED
 }
 
-case class TeamMemberRemovedEvent(override val applicationId: String,
+case class TeamMemberRemovedEvent(override val id: EventId,
+                                  override val applicationId: String,
                                   override val eventDateTime: DateTime = DateTime.now(),
                                   override val actor: Actor,
                                   teamMemberEmail: String,
@@ -54,21 +65,24 @@ case class TeamMemberRemovedEvent(override val applicationId: String,
   override val eventType: EventType.Value = EventType.TEAM_MEMBER_REMOVED
 }
 
-case class ClientSecretAddedEvent(override val applicationId: String,
+case class ClientSecretAddedEvent(override val id: EventId,
+                                  override val applicationId: String,
                                   override val eventDateTime: DateTime = DateTime.now(),
                                   override val actor: Actor,
                                   clientSecretId: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.CLIENT_SECRET_ADDED
 }
 
-case class ClientSecretRemovedEvent(override val applicationId: String,
-                                  override val eventDateTime: DateTime = DateTime.now(),
-                                  override val actor: Actor,
-                                  clientSecretId: String) extends ApplicationEvent {
+case class ClientSecretRemovedEvent(override val id: EventId,
+                                    override val applicationId: String,
+                                    override val eventDateTime: DateTime = DateTime.now(),
+                                    override val actor: Actor,
+                                    clientSecretId: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.CLIENT_SECRET_REMOVED
 }
 
-case class RedirectUrisUpdatedEvent(override val applicationId: String,
+case class RedirectUrisUpdatedEvent(override val id: EventId,
+                                    override val applicationId: String,
                                     override val eventDateTime: DateTime = DateTime.now(),
                                     override val actor: Actor,
                                     oldRedirectUris: String,
@@ -76,7 +90,8 @@ case class RedirectUrisUpdatedEvent(override val applicationId: String,
   override val eventType: EventType.Value = EventType.REDIRECT_URIS_UPDATED
 }
 
-case class ApiSubscribedEvent(override val applicationId: String,
+case class ApiSubscribedEvent(override val id: EventId,
+                              override val applicationId: String,
                               override val eventDateTime:  DateTime = DateTime.now(),
                               override val actor: Actor,
                               context: String,
@@ -84,7 +99,8 @@ case class ApiSubscribedEvent(override val applicationId: String,
   override val eventType: EventType.Value = EventType.API_SUBSCRIBED
 }
 
-case class ApiUnsubscribedEvent(override val applicationId: String,
+case class ApiUnsubscribedEvent(override val id: EventId,
+                                override val applicationId: String,
                                 override val eventDateTime:  DateTime = DateTime.now(),
                                 override val actor: Actor,
                                 context: String,

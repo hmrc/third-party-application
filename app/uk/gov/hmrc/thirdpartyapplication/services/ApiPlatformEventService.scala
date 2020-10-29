@@ -21,7 +21,7 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -33,7 +33,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "ClientSecretAdded",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ClientSecretAddedEvent(appId, actor = actor, clientSecretId = clientSecretId))
+        actor => sendEvent(ClientSecretAddedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
       })
   }
 
@@ -41,7 +41,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "ClientSecretRemoved",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ClientSecretRemovedEvent(appId, actor = actor, clientSecretId = clientSecretId))
+        actor => sendEvent(ClientSecretRemovedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
       })
   }
 
@@ -50,7 +50,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "TeamMemberAddedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberAddedEvent(appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+        actor => sendEvent(TeamMemberAddedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       })
   }
 
@@ -59,7 +59,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "TeamMemberRemovedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(TeamMemberRemovedEvent(appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
+        actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       })
   }
 
@@ -68,7 +68,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "RedirectUrisUpdatedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(RedirectUrisUpdatedEvent(appId, actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
+        actor => sendEvent(RedirectUrisUpdatedEvent(EventId.random, appId, actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
       })
   }
 
@@ -77,7 +77,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "ApiSubscribedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiSubscribedEvent(appId, actor = actor, context = context, version = version))
+        actor => sendEvent(ApiSubscribedEvent(EventId.random, appId, actor = actor, context = context, version = version))
       })
   }
 
@@ -87,7 +87,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
     val appId = appData.id.toString
     handleResult(appId, eventType = "ApiUnsubscribedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiUnsubscribedEvent(appId, actor = actor, context = context, version = version))
+        actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appId, actor = actor, context = context, version = version))
       })
   }
 
