@@ -135,7 +135,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def updateRateLimitTier(applicationId: ApplicationId, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application $applicationId")
+    Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
 
     for {
       app <- fetchApp(applicationId)
@@ -165,7 +165,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application $applicationId")
+    Logger.info(s"Deleting application ${applicationId.value}")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: ApiIdentifier) = {

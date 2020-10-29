@@ -91,10 +91,10 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       })
   }
 
-  private def handleResult(appId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
+  private def handleResult(applicationId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None =>
-      Logger.error(s"send $eventType for applicationId:$appId not possible")
+      Logger.error(s"send $eventType for applicationId:${applicationId} not possible")
       Future.successful(false)
   }
 

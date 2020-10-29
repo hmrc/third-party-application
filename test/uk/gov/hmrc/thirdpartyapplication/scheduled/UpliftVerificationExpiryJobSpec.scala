@@ -151,8 +151,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
   def anApplicationData(id: ApplicationId, prodClientId: String, state: ApplicationState = testingState()): ApplicationData = {
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      s"myApp-${id.value}",
+      s"myapp-${id.value}",
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       Some("description"),
       "myapplication",

@@ -85,7 +85,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     def findClientSecretToDelete(application: ApplicationData, clientSecretId: String): ClientSecret =
       application.tokens.production.clientSecrets
         .find(_.id == clientSecretId)
-        .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [$applicationId]"))
+        .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
 
     for {
       application <- fetchApp(applicationId)
@@ -117,7 +117,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
-    val notFoundException = new NotFoundException(s"application not found for id: $applicationId")
+    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
       case None => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)

@@ -563,7 +563,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
-        .thenReturn(failed(new NotFoundException(s"application not found for id: $applicationId")))
+        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
@@ -649,7 +649,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(failed(new NotFoundException(s"application not found for id: $applicationId")))
+        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
 
       val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 

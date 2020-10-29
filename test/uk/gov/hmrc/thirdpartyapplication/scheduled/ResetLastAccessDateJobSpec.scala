@@ -132,8 +132,8 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
   def anApplicationData(id: ApplicationId = ApplicationId.random(), lastAccessDate: DateTime): ApplicationData = {
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      s"myApp-${id.value}",
+      s"myapp-${id.value}",
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       Some("description"),
       "myapplication",

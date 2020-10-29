@@ -334,7 +334,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
                         user: Seq[String] = List("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-$id", clientId, state, access, user, checkInformation)
+    aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
 
   def aNamedApplicationData(id: ApplicationId,

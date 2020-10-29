@@ -173,7 +173,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)
 
       status(result) shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
+      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application ${applicationId.value} doesn't exist")
     }
   }
 

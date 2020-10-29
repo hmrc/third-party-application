@@ -78,7 +78,7 @@ class AccessService @Inject()(applicationRepository: ApplicationRepository, audi
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] =
     applicationRepository.fetch(applicationId).flatMap {
       case Some(applicationData) => successful(applicationData)
-      case None => failed(new NotFoundException(s"application not found for id: $applicationId"))
+      case None => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
     }
 
   private def getPrivilegedAccess(applicationData: ApplicationData): Privileged =
