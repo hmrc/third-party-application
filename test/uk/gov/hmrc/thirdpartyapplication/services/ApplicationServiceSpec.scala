@@ -563,12 +563,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val testUserId = UserId.random
     val adminsToEmail = Set(admin2)
     
-    def collaboratorRequest(admin: String = admin,
-                            email: String = email,
+    def collaboratorRequest(email: String = email,
                             role: Role = DEVELOPER,
                             isRegistered: Boolean = false,
                             adminsToEmail: Set[String] = adminsToEmail) = {
-      AddCollaboratorRequest(admin, Collaborator(email, role, testUserId), isRegistered, adminsToEmail)
+      AddCollaboratorRequest(Collaborator(email, role, testUserId), isRegistered, adminsToEmail)
     }
 
     val request = collaboratorRequest()
@@ -601,12 +600,11 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val email: String = "test@example.com"
     val adminsToEmail = Set(admin2)
     
-    def collaboratorRequest(admin: String = admin,
-                            email: String = email,
+    def collaboratorRequest(email: String = email,
                             role: Role = DEVELOPER,
                             isRegistered: Boolean = false,
                             adminsToEmail: Set[String] = adminsToEmail) = {
-      AddCollaboratorRequest(admin, Collaborator(email, role, None), isRegistered, adminsToEmail)
+      AddCollaboratorRequest(Collaborator(email, role, None), isRegistered, adminsToEmail)
     }
 
     val request = collaboratorRequest()
@@ -703,7 +701,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Save.thenReturn(expected)
 
       val result: AddCollaboratorResponse =
-        await(underTest.addCollaborator(applicationId, collaboratorRequest(admin = admin, isRegistered = true, adminsToEmail = Set.empty[String])))
+        await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true, adminsToEmail = Set.empty[String])))
 
       verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
         eqTo(request.collaborator.emailAddress),

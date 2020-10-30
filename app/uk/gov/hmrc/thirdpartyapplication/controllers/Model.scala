@@ -39,7 +39,7 @@ case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)
 
 case class ResendVerificationRequest(gatekeeperUserId: String)
 
-case class AddCollaboratorRequest(adminEmail: String, collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[String])
+case class AddCollaboratorRequest(collaborator: Collaborator, isRegistered: Boolean, adminsToEmail: Set[String])
 
 case class AddCollaboratorResponse(registeredUser: Boolean)
 

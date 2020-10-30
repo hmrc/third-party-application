@@ -496,7 +496,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val isRegistered = false
     val adminsToEmail = Set.empty[String]
     val userId = UserId.random
-    val addCollaboratorRequestWithUserId = AddCollaboratorRequest(admin, Collaborator(email, role, userId), isRegistered, adminsToEmail)
+    val addCollaboratorRequestWithUserId = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
     val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.get.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
@@ -519,7 +519,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val role = DEVELOPER
     val isRegistered = false
     val adminsToEmail = Set.empty[String]
-    val addCollaboratorRequest = AddCollaboratorRequest(admin, Collaborator(email, role, None), isRegistered, adminsToEmail)
+    val addCollaboratorRequest = AddCollaboratorRequest(Collaborator(email, role, None), isRegistered, adminsToEmail)
     val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
