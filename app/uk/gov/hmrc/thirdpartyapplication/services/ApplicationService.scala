@@ -94,11 +94,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def addCollaborator(applicationId: UUID, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    def validateCollaborator(app: ApplicationData, email: String, role: Role): Collaborator = {
+    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: Option[UUID]): Collaborator = {
       val normalised = email.toLowerCase
       if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
 
-      Collaborator(normalised, role)
+      // TODO: Add 
+      Collaborator(normalised, role, userId)
     }
 
     def addUser(app: ApplicationData, collaborator: Collaborator): Future[Set[Collaborator]] = {
@@ -127,7 +128,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     for {
       app <- fetchApp(applicationId)
-      collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role)
+      collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
       _ <- addUser(app, collaborator)
       _ = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
       _ = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)

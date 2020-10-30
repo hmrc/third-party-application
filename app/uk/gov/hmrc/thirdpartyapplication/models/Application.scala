@@ -264,7 +264,7 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 case class ApiIdentifier(context: String, version: String)
 
-case class Collaborator(emailAddress: String, role: Role)
+case class Collaborator(emailAddress: String, role: Role, userId: Option[UUID])
 
 case class ClientSecret(name: String,
                         createdOn: DateTime = DateTimeUtils.now,
