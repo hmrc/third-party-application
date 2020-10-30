@@ -264,7 +264,16 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 case class ApiIdentifier(context: String, version: String)
 
-case class Collaborator(emailAddress: String, role: Role, userId: Option[UUID])
+case class UserId(value: String) extends AnyVal
+
+object UserId {
+  import play.api.libs.json.Json
+  implicit val applicationIdFormat = Json.valueFormat[UserId]
+
+  def random: UserId = UserId(UUID.randomUUID().toString)
+}
+
+case class Collaborator(emailAddress: String, role: Role, userId: Option[UserId])
 
 case class ClientSecret(name: String,
                         createdOn: DateTime = DateTimeUtils.now,

@@ -94,7 +94,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def addCollaborator(applicationId: UUID, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
-    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: Option[UUID]): Collaborator = {
+    def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: Option[UserId]): Collaborator = {
       val normalised = email.toLowerCase
       if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
 
