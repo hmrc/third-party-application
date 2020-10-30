@@ -120,7 +120,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   "AuditHelper calculateAppChanges" should {
 
     val id = UUID.randomUUID()
-    val admin = Collaborator("test@example.com", ADMINISTRATOR)
+    val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
     val tokens = ApplicationTokens(
       EnvironmentToken("prodId", "prodToken")
     )

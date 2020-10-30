@@ -28,6 +28,7 @@ import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
@@ -50,6 +51,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val applicationName1 = "My 1st Application"
   val applicationName2 = "My 2nd Application"
   val emailAddress = "user@example.com"
+  val userId = UserId.random
+  val adminUserId = UserId.random
+  val testUserId = UserId.random
   val gatekeeperUserId = "gate.keeper"
   val username = "a" * 10
   val password = "a" * 10
@@ -259,11 +263,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       When("We request to add the developer as a collaborator of the application")
       val response = postData(s"/application/${application.id}/collaborator",
-        """{
+        s"""{
           | "adminEmail":"admin@example.com",
           | "collaborator": {
           |   "emailAddress": "test@example.com",
-          |   "role":"ADMINISTRATOR"
+          |   "role":"ADMINISTRATOR",
+          |   "userId":"${testUserId.get.value}"
           | },
           | "isRegistered": true,
           | "adminsToEmail": []
@@ -274,7 +279,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Then("The collaborator is added")
       result shouldBe AddCollaboratorResponse(registeredUser = true)
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Role.ADMINISTRATOR))
+      fetchedApplication.collaborators should contain(Collaborator("test@example.com", Role.ADMINISTRATOR, testUserId))
 
       apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
@@ -293,7 +298,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The collaborator is removed")
       val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Role.DEVELOPER)
+      fetchedApplication.collaborators should not contain Collaborator(emailAddress, Role.DEVELOPER, userId)
 
       apiPlatformEventsStub.verifyTeamMemberRemovedEventSent()
     }
@@ -571,11 +576,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
        |"collaborators": [
        | {
        |   "emailAddress": "admin@example.com",
-       |   "role": "ADMINISTRATOR"
+       |   "role": "ADMINISTRATOR",
+       |   "userId": "${adminUserId.get.value}"
        | },
        | {
        |   "emailAddress": "$emailAddress",
-       |   "role": "DEVELOPER"
+       |   "role": "DEVELOPER",
+       |   "userId": "${userId.get.value}"
        | }
        |]
        |}""".stripMargin.replaceAll("\n", "")

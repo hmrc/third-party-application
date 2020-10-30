@@ -75,7 +75,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
           name = "an application",
           access = access,
           environment = environment,
-          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR))),
+          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random))),
           wso2ApplicationName = "wso2ApplicationName",
           environmentToken = EnvironmentToken("clientId", "accessToken")
       )

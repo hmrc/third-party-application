@@ -98,7 +98,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       val normalised = email.toLowerCase
       if (app.collaborators.exists(_.emailAddress == normalised)) throw new UserAlreadyExists
 
-      // TODO: Add 
       Collaborator(normalised, role, userId)
     }
 

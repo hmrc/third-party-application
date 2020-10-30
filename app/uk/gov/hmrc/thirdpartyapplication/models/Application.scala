@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, ST
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
@@ -264,21 +265,12 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 case class ApiIdentifier(context: String, version: String)
 
-case class UserId(value: String) extends AnyVal
-
-object UserId {
-  import play.api.libs.json.Json
-  implicit val applicationIdFormat = Json.valueFormat[UserId]
-
-  def random: UserId = UserId(UUID.randomUUID().toString)
-}
-
 case class Collaborator(emailAddress: String, role: Role, userId: Option[UserId])
 
 case class ClientSecret(name: String,
                         createdOn: DateTime = DateTimeUtils.now,
                         lastAccess: Option[DateTime] = None,
-                        id: String = UUID.randomUUID().toString,
+                        id: String = UUID.randomUUID().toString, 
                         hashedSecret: String)
 
 trait Token {

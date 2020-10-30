@@ -29,6 +29,7 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
@@ -1438,7 +1439,7 @@ class ApplicationRepositorySpec
                         prodClientId: String = "aaa",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
-                        users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+                        users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                         checkInformation: Option[CheckInformation] = None,
                         clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
 
@@ -1450,7 +1451,7 @@ class ApplicationRepositorySpec
                             prodClientId: String = "aaa",
                             state: ApplicationState = testingState(),
                             access: Access = Standard(List.empty, None, None),
-                            users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+                            users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                             checkInformation: Option[CheckInformation] = None,
                             clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
 

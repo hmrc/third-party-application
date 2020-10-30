@@ -46,6 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpA
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -138,8 +139,8 @@ class ApplicationControllerSpec extends ControllerSpec
     ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR),
-    Collaborator("dev@example.com", DEVELOPER))
+    Collaborator("admin@example.com", ADMINISTRATOR,UserId.random),
+    Collaborator("dev@example.com", DEVELOPER, UserId.random))
 
   private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
@@ -487,6 +488,30 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
+"add collaborators with UserId" should {
+    val applicationId = UUID.randomUUID()
+    val admin = "admin@example.com"
+    val email = "test@example.com"
+    val role = DEVELOPER
+    val isRegistered = false
+    val adminsToEmail = Set.empty[String]
+    val userId = UserId.random
+    val addCollaboratorRequestWithUserId = AddCollaboratorRequest(admin, Collaborator(email, role, userId), isRegistered, adminsToEmail)
+    val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.get.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
+    val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
+
+    "succeed with a 200 (ok) for a STANDARD application" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      val response = AddCollaboratorResponse(registeredUser = true)
+      when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequestWithUserId))(*)).thenReturn(successful(response))
+
+      val result = underTest.addCollaborator(applicationId)(addRequest(request))
+
+      status(result) shouldBe SC_OK
+      contentAsJson(result) shouldBe Json.toJson(response)
+    }
+  }
+
   "add collaborators" should {
     val applicationId = UUID.randomUUID()
     val admin = "admin@example.com"
@@ -494,7 +519,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val role = DEVELOPER
     val isRegistered = false
     val adminsToEmail = Set.empty[String]
-    val addCollaboratorRequest = AddCollaboratorRequest(admin, Collaborator(email, role), isRegistered, adminsToEmail)
+    val addCollaboratorRequest = AddCollaboratorRequest(admin, Collaborator(email, role, None), isRegistered, adminsToEmail)
     val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
@@ -586,7 +611,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
+        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
       val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
@@ -600,7 +625,7 @@ class ApplicationControllerSpec extends ControllerSpec
       testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
           eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
+          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
         val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
@@ -612,7 +637,7 @@ class ApplicationControllerSpec extends ControllerSpec
       testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
         when(underTest.applicationService.deleteCollaborator(
           eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR))))
+          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
         val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
@@ -1750,5 +1775,5 @@ class ApplicationControllerSpec extends ControllerSpec
   private def anUpdateApplicationRequest(access: Access) = UpdateApplicationRequest("My Application", access, Some("Description"))
 
   private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest("My Application", access, Some("Description"),
-    Environment.PRODUCTION, Set(Collaborator("admin@example.com", ADMINISTRATOR), Collaborator("dev@example.com", ADMINISTRATOR)))
+    Environment.PRODUCTION, Set(Collaborator("admin@example.com", ADMINISTRATOR, UserId.random), Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)))
 }
