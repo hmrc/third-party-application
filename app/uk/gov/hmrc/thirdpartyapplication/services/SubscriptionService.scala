@@ -21,10 +21,7 @@ import java.util.UUID
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiDefinitionConnector
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
@@ -34,7 +31,6 @@ import scala.concurrent.Future.{failed, successful}
 @Singleton
 class SubscriptionService @Inject()(applicationRepository: ApplicationRepository,
                                     subscriptionRepository: SubscriptionRepository,
-                                    apiDefinitionConnector: ApiDefinitionConnector,
                                     auditService: AuditService,
                                     apiPlatformEventService: ApiPlatformEventService,
                                     apiGatewayStore: ApiGatewayStore)(implicit val ec: ExecutionContext) {

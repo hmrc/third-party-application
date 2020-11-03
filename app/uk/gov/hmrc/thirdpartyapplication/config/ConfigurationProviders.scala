@@ -38,7 +38,6 @@ class ConfigurationModule extends Module {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
-      bind[ApiDefinitionConfig].toProvider[ApiDefinitionConfigProvider],
       bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthConfig].toProvider[AuthConfigProvider],
@@ -91,16 +90,6 @@ class MetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
     MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
-  }
-}
-
-@Singleton
-class ApiDefinitionConfigProvider @Inject()(val runModeConfiguration: Configuration, runMode: RunMode)
-  extends ServicesConfig(runModeConfiguration, runMode) with Provider[ApiDefinitionConfig] {
-
-  override def get() = {
-    val url = baseUrl("api-definition")
-    ApiDefinitionConfig(url)
   }
 }
 
