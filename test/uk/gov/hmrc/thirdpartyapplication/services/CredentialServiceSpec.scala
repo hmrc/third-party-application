@@ -160,7 +160,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationId = randomUUID()
     val applicationData = anApplicationData(
       applicationId,
-      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR), Collaborator(anotherAdminUser, ADMINISTRATOR))
+      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
     )
     val secretRequest = ClientSecretRequest(loggedInUser)
 
@@ -245,7 +245,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationId = randomUUID()
     val applicationData = anApplicationData(
       applicationId,
-      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR), Collaborator(anotherAdminUser, ADMINISTRATOR))
+      collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
     )
 
     "remove a client secret form an app with more than one client secret" in new Setup {
@@ -319,7 +319,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val requestedByEmail = "john.smith@example.com"
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR))) = {
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))) = {
     ApplicationData(
       applicationId,
       "MyApp",

@@ -37,7 +37,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
         CreateApplicationRequest(
           name = applicationName,
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR))
+          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR, UserId.random))
         ),
         applicationName,
         EnvironmentToken("", serverToken, List.empty))

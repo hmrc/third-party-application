@@ -61,8 +61,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   private val ropcAccess = Ropc()
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR),
-    Collaborator("dev@example.com", DEVELOPER))
+    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+    Collaborator("dev@example.com", DEVELOPER, UserId.random))
 
   trait Setup {
     val mockGatekeeperService = mock[GatekeeperService]

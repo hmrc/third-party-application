@@ -47,6 +47,7 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -57,6 +58,7 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
+  val loggedInUserId = UserId.random
   val serverTokenLastAccess = DateTime.now
   private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
@@ -166,6 +168,34 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   override def afterAll() {
     DateTimeUtils.setCurrentMillisSystem()
+  }
+
+  "Create with Colloborator userId" should {
+
+    "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      ApplicationRepoMock.Save.thenAnswer(successful)
+
+      val applicationRequest: CreateApplicationRequest = aNewApplicationRequestWithCollaboratorWithUserId(access = Standard(), environment = Environment.PRODUCTION)
+
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+
+      val expectedApplicationData: ApplicationData = anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(),
+        environment = Environment.PRODUCTION)
+      createdApp.totp shouldBe None
+      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
+      ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
+      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      AuditServiceMock.Audit.verifyCalledWith(
+        AppCreated,
+        Map(
+          "applicationId" -> createdApp.application.id.toString,
+          "newApplicationName" -> applicationRequest.name,
+          "newApplicationDescription" -> applicationRequest.description.get
+        ),
+        hc
+      )
+    }
   }
 
   "Create" should {
@@ -487,7 +517,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "send an audit event for each type of change" in new Setup {
-      val admin = Collaborator("test@example.com", ADMINISTRATOR)
+      val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
       val tokens = ApplicationTokens(
         EnvironmentToken("prodId", "prodToken")
       )
@@ -526,18 +556,55 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
+  "add collaborator with userId" should {
+    val admin: String = "admin@example.com"
+    val admin2: String = "admin2@example.com"
+    val email: String = "test@example.com"
+    val testUserId = UserId.random
+    val adminsToEmail = Set(admin2)
+    
+    def collaboratorRequest(email: String = email,
+                            role: Role = DEVELOPER,
+                            isRegistered: Boolean = false,
+                            adminsToEmail: Set[String] = adminsToEmail) = {
+      AddCollaboratorRequest(Collaborator(email, role, testUserId), isRegistered, adminsToEmail)
+    }
+
+    val request = collaboratorRequest()
+
+    "update collaborators when application exists in the repository for the given application id" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
+      ApplicationRepoMock.Save.thenReturn(expected)
+
+      private val addRequest = collaboratorRequest(isRegistered = true)
+      val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
+
+      ApplicationRepoMock.Save.verifyCalledWith(expected)
+      AuditServiceMock.Audit.verifyCalledWith(
+        CollaboratorAdded,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        hc
+      )
+      result shouldBe AddCollaboratorResponse(registeredUser = true)
+
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
+        eqTo(request.collaborator.emailAddress),
+        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+    }
+  }
+
   "add collaborator" should {
     val admin: String = "admin@example.com"
     val admin2: String = "admin2@example.com"
     val email: String = "test@example.com"
     val adminsToEmail = Set(admin2)
-
-    def collaboratorRequest(admin: String = admin,
-                            email: String = email,
+    
+    def collaboratorRequest(email: String = email,
                             role: Role = DEVELOPER,
                             isRegistered: Boolean = false,
                             adminsToEmail: Set[String] = adminsToEmail) = {
-      AddCollaboratorRequest(admin, Collaborator(email, role), isRegistered, adminsToEmail)
+      AddCollaboratorRequest(Collaborator(email, role, None), isRegistered, adminsToEmail)
     }
 
     val request = collaboratorRequest()
@@ -575,9 +642,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator] = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator(admin2, ADMINISTRATOR),
-        Collaborator("dev@example.com", DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, UserId.random),
+        Collaborator(admin2, ADMINISTRATOR, UserId.random),
+        Collaborator("dev@example.com", DEVELOPER, UserId.random))
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
@@ -600,9 +667,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator] = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator(admin2, ADMINISTRATOR),
-        Collaborator("dev@example.com", DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, UserId.random),
+        Collaborator(admin2, ADMINISTRATOR, UserId.random),
+        Collaborator("dev@example.com", DEVELOPER, UserId.random))
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
@@ -625,8 +692,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       val admin = "theonlyadmin@example.com"
       val collaborators: Set[Collaborator] = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator("dev@example.com", DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, UserId.random),
+        Collaborator("dev@example.com", DEVELOPER, UserId.random))
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
@@ -634,7 +701,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Save.thenReturn(expected)
 
       val result: AddCollaboratorResponse =
-        await(underTest.addCollaborator(applicationId, collaboratorRequest(admin = admin, isRegistered = true, adminsToEmail = Set.empty[String])))
+        await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true, adminsToEmail = Set.empty[String])))
 
       verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
         eqTo(request.collaborator.emailAddress),
@@ -651,8 +718,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val collaborators: Set[Collaborator] = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator("dev@example.com", DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, UserId.random),
+        Collaborator("dev@example.com", DEVELOPER, UserId.random))
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
       val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
@@ -693,6 +760,43 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
+"delete collaborator with userId" should {
+    trait DeleteCollaboratorsSetup extends Setup {
+      val admin = "admin@example.com"
+      val admin2: String = "admin2@example.com"
+      val testEmail = "test@example.com"
+      val testUserId = UserId.random
+      val adminsToEmail = Set(admin2)
+      val notifyCollaborator = true
+      val collaborators = Set(
+        Collaborator(admin, ADMINISTRATOR, None),
+        Collaborator(admin2, ADMINISTRATOR, None),
+        Collaborator(testEmail, DEVELOPER, testUserId))
+      override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
+      val updatedData = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(testEmail, DEVELOPER, testUserId))
+    }
+
+    "remove collaborator and send confirmation and notification emails" in new DeleteCollaboratorsSetup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      ApplicationRepoMock.Save.thenReturn(updatedData)
+
+      val result: Set[Collaborator] = await(underTest.deleteCollaborator(applicationId, testEmail, adminsToEmail, notifyCollaborator))
+
+      ApplicationRepoMock.Save.verifyCalledWith(updatedData)
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorConfirmation(applicationData.name, Set(testEmail))
+      verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(testEmail, applicationData.name, adminsToEmail)
+      AuditServiceMock.Audit.verifyCalledWith(
+        CollaboratorRemoved,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(testEmail, DEVELOPER, testUserId)),
+        hc
+      )
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
+        eqTo(testEmail),
+        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      result shouldBe updatedData.collaborators
+    }
+  }
+
   "delete collaborator" should {
     trait DeleteCollaboratorsSetup extends Setup {
       val admin = "admin@example.com"
@@ -701,13 +805,12 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val adminsToEmail = Set(admin2)
       val notifyCollaborator = true
       val collaborators = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator(admin2, ADMINISTRATOR),
-        Collaborator(collaborator, DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, None),
+        Collaborator(admin2, ADMINISTRATOR, None),
+        Collaborator(collaborator, DEVELOPER, None))
       override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val updatedData = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(collaborator, DEVELOPER))
+      val updatedData = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(collaborator, DEVELOPER, None))
     }
-
 
     "throw not found exception when no application exists in the repository for the given application id" in new DeleteCollaboratorsSetup {
       ApplicationRepoMock.Fetch.thenReturnNone()
@@ -728,7 +831,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, UserId.random)),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
@@ -748,7 +851,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       verify(mockEmailConnector, Mockito.timeout(mockitoTimeout)).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
         CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER)),
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, UserId.random)),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
@@ -778,8 +881,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "fail to delete last remaining admin user" in new DeleteCollaboratorsSetup {
       val onlyOneAdmin: Set[Collaborator] = Set(
-        Collaborator(admin, ADMINISTRATOR),
-        Collaborator(collaborator, DEVELOPER))
+        Collaborator(admin, ADMINISTRATOR, None),
+        Collaborator(collaborator, DEVELOPER, None))
       val applicationWithOneAdmin: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = onlyOneAdmin)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationWithOneAdmin)
@@ -1456,9 +1559,38 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
+  private def aNewApplicationRequestWithCollaboratorWithUserId(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+    CreateApplicationRequest("MyApp", access, Some("description"), environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)))
+  }
+
+  private def anApplicationDataWithCollaboratorWithUserId(applicationId: UUID,
+                                state: ApplicationState = productionState(requestedByEmail),
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)),
+                                access: Access = Standard(),
+                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
+                                environment: Environment = Environment.PRODUCTION,
+                                ipWhitelist: Set[String] = Set.empty) = {
+    ApplicationData(
+      applicationId,
+      "MyApp",
+      "myapp",
+      collaborators,
+      Some("description"),
+      "aaaaaaaaaa",
+      ApplicationTokens(productionToken),
+      state,
+      access,
+      HmrcTime.now,
+      Some(HmrcTime.now),
+      rateLimitTier = rateLimitTier,
+      environment = environment.toString,
+      ipWhitelist = ipWhitelist)
+  }
+
   private def aNewApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequest("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR)))
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, None)))
   }
 
   private def anExistingApplicationRequest() = {
@@ -1473,15 +1605,15 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Some("Description"),
       environment = Environment.PRODUCTION,
       Set(
-        Collaborator(loggedInUser, ADMINISTRATOR),
-        Collaborator("dev@example.com", DEVELOPER)))
+        Collaborator(loggedInUser, ADMINISTRATOR, None),
+        Collaborator("dev@example.com", DEVELOPER, None)))
   }
 
   private val requestedByEmail = "john.smith@example.com"
 
   private def anApplicationData(applicationId: UUID,
                                 state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR)),
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, None)),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,

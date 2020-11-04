@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
@@ -59,7 +60,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR))) = {
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -276,10 +277,10 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenAnswer()
 
-      val admin1 = Collaborator("admin1@example.com", Role.ADMINISTRATOR)
-      val admin2 = Collaborator("admin2@example.com", Role.ADMINISTRATOR)
-      val requester = Collaborator(upliftRequestedBy, Role.ADMINISTRATOR)
-      val developer = Collaborator("somedev@example.com", Role.DEVELOPER)
+      val admin1 = Collaborator("admin1@example.com", Role.ADMINISTRATOR, UserId.random)
+      val admin2 = Collaborator("admin2@example.com", Role.ADMINISTRATOR, UserId.random)
+      val requester = Collaborator(upliftRequestedBy, Role.ADMINISTRATOR, UserId.random)
+      val developer = Collaborator("somedev@example.com", Role.DEVELOPER, UserId.random)
 
       val application = anApplicationData(
         applicationId, pendingGatekeeperApprovalState(upliftRequestedBy), collaborators = Set(admin1, admin2, requester, developer))

@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.{APIStatus, STABLE}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -200,7 +201,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   private val requestedByEmail = "john.smith@example.com"
 
   private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR)),
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random)),
                                 rateLimitTier: Option[RateLimitTier] = Some(BRONZE)) = {
     new ApplicationData(
       applicationId,

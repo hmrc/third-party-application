@@ -29,6 +29,7 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
@@ -344,7 +345,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
                             user: Seq[String] = List("user@example.com"),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
-    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR)).toSet
+    val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
 
     ApplicationData(
       id,

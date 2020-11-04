@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -176,7 +177,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -192,7 +193,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
@@ -208,7 +209,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       applicationId,
       "name",
       "normalisedName",
-      Set(Collaborator("user@example.com", Role.ADMINISTRATOR)),
+      Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       None,
       "wso2ApplicationName",
       ApplicationTokens(
