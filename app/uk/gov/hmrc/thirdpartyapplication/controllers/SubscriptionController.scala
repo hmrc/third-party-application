@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc._
@@ -42,4 +40,4 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
   }
 }
 
-case class SubscribersResponse(subscribers: Set[UUID])
+case class SubscribersResponse(subscribers: Set[ApplicationId])

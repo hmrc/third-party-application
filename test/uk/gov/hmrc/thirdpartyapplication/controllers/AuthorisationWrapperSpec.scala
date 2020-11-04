@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
@@ -69,7 +67,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
     val parse = stubControllerComponents.parsers
 
-    def mockFetchApplicationToReturn(id: UUID, application: Option[ApplicationResponse]) =
+    def mockFetchApplicationToReturn(id: ApplicationId, application: Option[ApplicationResponse]) =
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.fromOption(application))
   }
 
@@ -119,7 +117,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   }
 
   "Authenticate for Access Type, Role and Application ID" should {
-    val applicationId = UUID.randomUUID
+    val applicationId = ApplicationId.random
     val ropcApplication = application(Ropc())
     val privilegedApplication = application(Privileged())
     val standardApplication = application(Standard())
@@ -175,7 +173,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       val result = underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)
 
       status(result) shouldBe NOT_FOUND
-      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application $applicationId doesn't exist")
+      contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_NOT_FOUND, s"application ${applicationId.value} doesn't exist")
     }
   }
 
@@ -202,6 +200,6 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   private def application(access: Access) =
     ApplicationResponse(
-      UUID.randomUUID, "clientId", "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+      ApplicationId.random, "clientId", "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
 
 }

@@ -40,7 +40,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
   "Application with Uplift request" should {
     val app =
       ApplicationData(
-        UUID.randomUUID(),
+        ApplicationId.random(),
         "MyApp",
         "myapp",
         Set.empty,

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, JsString, Json}
@@ -96,9 +94,9 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     )
   )
 
-  def isSubscribed(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
+  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     collection.count(Some(Json.obj("$and" -> Json.arr(
-      Json.obj("applications" -> applicationId.toString),
+      Json.obj("applications" -> applicationId.value.toString),
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
       Json.obj("apiIdentifier.version" -> apiIdentifier.version)))))
       .map {
@@ -107,8 +105,8 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
       }
   }
 
-  def getSubscriptions(applicationId: UUID): Future[List[ApiIdentifier]] = {
-    find("applications" -> applicationId.toString).map(_.map(_.apiIdentifier))
+  def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
+    find("applications" -> applicationId.value.toString).map(_.map(_.apiIdentifier))
   }
 
   def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
@@ -121,7 +119,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
   }
 
-  def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[UUID]] = {
+  def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
     val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
     collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
       case Some(subscriptionData) => subscriptionData.applications.toSet
@@ -135,18 +133,18 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
       Json.obj("apiIdentifier.version" -> apiIdentifier.version)))
   }
 
-  def add(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
+  def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     collection.update.one(
       makeSelector(apiIdentifier),
-      Json.obj("$addToSet" -> Json.obj("applications" -> applicationId)),
+      Json.obj("$addToSet" -> Json.obj("applications" -> applicationId.value)),
       upsert = true
     ).map(_ => HasSucceeded)
   }
 
-  def remove(applicationId: UUID, apiIdentifier: ApiIdentifier) = {
+  def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     collection.update.one(
       makeSelector(apiIdentifier),
-      Json.obj("$pull" -> Json.obj("applications" -> applicationId))
+      Json.obj("$pull" -> Json.obj("applications" -> applicationId.value))
     ).map(_ => HasSucceeded)
   }
 }

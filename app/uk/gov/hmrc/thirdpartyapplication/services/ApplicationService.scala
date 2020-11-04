@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import akka.actor.ActorSystem
@@ -81,18 +80,18 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def update[T <: ApplicationRequest](id: UUID, application: T)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
-    updateApp(id)(application) map (app => ApplicationResponse(data = app))
+  def update[T <: ApplicationRequest](applicationId: ApplicationId, application: T)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
+    updateApp(applicationId)(application) map (app => ApplicationResponse(data = app))
   }
 
-  def updateCheck(id: UUID, checkInformation: CheckInformation): Future[ApplicationResponse] = {
+  def updateCheck(applicationId: ApplicationId, checkInformation: CheckInformation): Future[ApplicationResponse] = {
     for {
-      existing <- fetchApp(id)
+      existing <- fetchApp(applicationId)
       savedApp <- applicationRepository.save(existing.copy(checkInformation = Some(checkInformation)))
     } yield ApplicationResponse(data = savedApp)
   }
 
-  def addCollaborator(applicationId: UUID, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
+  def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
     def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: Option[UserId]): Collaborator = {
       val normalised = email.toLowerCase
@@ -135,8 +134,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield AddCollaboratorResponse(request.isRegistered)
   }
 
-  def updateRateLimitTier(applicationId: UUID, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application $applicationId")
+  def updateRateLimitTier(applicationId: ApplicationId, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+    Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
 
     for {
       app <- fetchApp(applicationId)
@@ -145,8 +144,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApplication
   }
 
-  @deprecated("IpWhitelist superseded by IpAllowlist")
-  def updateIpWhitelist(applicationId: UUID, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  @deprecated("IpWhitelist superseded by IpAllowlist","?")
+  def updateIpWhitelist(applicationId: ApplicationId, newIpWhitelist: Set[String])(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     for {
       validatedIpWhitelist <- fromTry(Try(newIpWhitelist.map(new SubnetUtils(_).getInfo.getCidrSignature))) recover {
         case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
@@ -155,7 +154,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApp
   }
 
-  def updateIpAllowlist(applicationId: UUID, newIpAllowlist: IpAllowlist)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  def updateIpAllowlist(applicationId: ApplicationId, newIpAllowlist: IpAllowlist): Future[ApplicationData] = {
     for {
       _ <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
         case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
@@ -164,9 +163,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApp
   }
 
-  def deleteApplication(applicationId: UUID, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
+  def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application $applicationId")
+    Logger.info(s"Deleting application ${applicationId.value}")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: ApiIdentifier) = {
@@ -207,7 +206,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def deleteCollaborator(applicationId: UUID, collaborator: String, adminsToEmail: Set[String], notifyCollaborator: Boolean)
+  def deleteCollaborator(applicationId: ApplicationId, collaborator: String, adminsToEmail: Set[String], notifyCollaborator: Boolean)
                         (implicit hc: HeaderCarrier): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
       val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
@@ -251,14 +250,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def recordApplicationUsage(applicationId: UUID): Future[ExtendedApplicationResponse] = {
+  def recordApplicationUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
     for {
       app <- applicationRepository.recordApplicationUsage(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(app.id)
     } yield ExtendedApplicationResponse(app, subscriptions)
   }
 
-  def recordServerTokenUsage(applicationId: UUID): Future[ExtendedApplicationResponse] = {
+  def recordServerTokenUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
     for {
       app <- applicationRepository.recordServerTokenUsage(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(app.id)
@@ -311,7 +310,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   import cats.data.OptionT
   import cats.implicits._
 
-  def fetch(applicationId: UUID): OptionT[Future, ApplicationResponse] =
+  def fetch(applicationId: ApplicationId): OptionT[Future, ApplicationResponse] =
     OptionT(applicationRepository.fetch(applicationId))
       .map(application => ApplicationResponse(data = application))
 
@@ -328,7 +327,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def requestUplift(applicationId: UUID, applicationName: String,
+  def requestUplift(applicationId: ApplicationId, applicationName: String,
                     requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
@@ -455,12 +454,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
     auditService.audit(AppCreated, Map(
-      "applicationId" -> app.id.toString,
+      "applicationId" -> app.id.value.toString,
       "newApplicationName" -> app.name,
       "newApplicationDescription" -> app.description.getOrElse("")
     ))
 
-  private def updateApp(id: UUID)(application: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def updateApp(applicationId: ApplicationId)(application: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     Logger.info(s"Updating application ${application.name}")
 
     def updatedAccess(existing: ApplicationData): Access =
@@ -483,7 +482,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
     for {
-      existing <- fetchApp(id)
+      existing <- fetchApp(applicationId)
       _ = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
       _ = sendEventIfRedirectUrisChanged(existing, savedApp)
@@ -497,12 +496,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         if (previous.redirectUris != updated.redirectUris) {
           apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
         }
+      case _ => ()
     }
   }
 
 
-  private def fetchApp(applicationId: UUID) = {
-    val notFoundException = new NotFoundException(s"application not found for id: $applicationId")
+  private def fetchApp(applicationId: ApplicationId) = {
+    val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
       case None => failed(notFoundException)
       case Some(app) => successful(app)
@@ -516,9 +516,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       successful(UpliftVerified)
     }
 
-    def findLatestUpliftRequester(appId: UUID): Future[String] = for {
-      history <- stateHistoryRepository.fetchLatestByStateForApplication(appId, State.PENDING_GATEKEEPER_APPROVAL)
-      state = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: $appId"))
+    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
+      history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
+      state = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
     } yield state.actor.id
 
     def audit(app: ApplicationData) =
@@ -558,7 +558,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     successful(!isValid)
   }
 
-  private def isDuplicateName(applicationName: String, thisApplicationId: Option[UUID])(implicit hc: HeaderCarrier): Future[Boolean] = {
+  private def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] = {
 
     def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
 
@@ -575,8 +575,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[UUID])
-                             (implicit hc: HeaderCarrier): Future[ApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]) : Future[ApplicationNameValidationResult] = {
     for {
       isBlacklisted <- isBlacklistedName(applicationName)
       isDuplicate <- isDuplicateName(applicationName, selfApplicationId)

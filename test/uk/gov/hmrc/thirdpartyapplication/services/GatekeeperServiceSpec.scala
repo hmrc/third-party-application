@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
@@ -51,16 +49,16 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  private def aHistory(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
+  private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
     StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
   }
 
-  private def aStateHistoryResponse(appId: UUID, state: State = PENDING_GATEKEEPER_APPROVAL) = {
+  private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, HmrcTime.now)
   }
 
-  private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))) = {
+  private def anApplicationData(applicationId: ApplicationId, state: ApplicationState = productionState(requestedByEmail),
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR,  UserId.random))) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -114,8 +112,8 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   "fetch nonTestingApps with submitted date" should {
 
     "return apps" in new Setup {
-      val app1 = anApplicationData(UUID.randomUUID())
-      val app2 = anApplicationData(UUID.randomUUID())
+      val app1 = anApplicationData(ApplicationId.random)
+      val app2 = anApplicationData(ApplicationId.random)
       val history1 = aHistory(app1.id)
       val history2 = aHistory(app2.id)
 
@@ -130,7 +128,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "fetch application with history" should {
-    val appId: UUID = UUID.randomUUID()
+    val appId = ApplicationId.random
 
     "return app" in new Setup {
       val app1 = anApplicationData(appId)
@@ -166,7 +164,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "fetchAppStateHistoryById" should {
-    val appId: UUID = UUID.randomUUID()
+    val appId = ApplicationId.random
 
     "return app" in new Setup {
       val app1 = anApplicationData(appId)
@@ -183,7 +181,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "approveUplift" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random
     val upliftRequestedBy = "email@example.com"
     val gatekeeperUserId: String = "big.boss.gatekeeper"
 
@@ -294,7 +292,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "rejectUplift" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random
     val upliftRequestedBy = "email@example.com"
     val gatekeeperUserId = "big.boss.gatekeeper"
     val rejectReason = "Reason of rejection"
@@ -378,7 +376,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   }
 
   "resendVerification" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random
     val upliftRequestedBy = "email@example.com"
     val gatekeeperUserId: String = "big.boss.gatekeeper"
 
@@ -422,7 +420,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   "blockApplication" should {
 
-    val applicationId: UUID = UUID.randomUUID()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(applicationId)
     val updatedApplication = applicationData.copy(blocked = true)
 
@@ -441,7 +439,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   "unblockApplication" should {
 
-    val applicationId: UUID = UUID.randomUUID()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(applicationId).copy(blocked = true)
     val updatedApplication = applicationData.copy(blocked = false)
 

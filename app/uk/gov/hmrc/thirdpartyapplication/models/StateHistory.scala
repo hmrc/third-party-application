@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.util.UUID
-
 import org.joda.time.DateTime
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.ActorType
@@ -34,7 +32,7 @@ object ActorType extends Enumeration {
 
 case class Actor(id: String, actorType: ActorType)
 
-case class StateHistory(applicationId: UUID,
+case class StateHistory(applicationId: ApplicationId,
                         state: State,
                         actor: Actor,
                         previousState: Option[State] = None,
@@ -50,7 +48,7 @@ object StateHistory {
   implicit val format = Json.format[StateHistory]
 }
 
-case class StateHistoryResponse(applicationId: UUID,
+case class StateHistoryResponse(applicationId: ApplicationId,
                                 state: State,
                                 actor: Actor,
                                 notes: Option[String],

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.util.UUID
 import java.util.concurrent.TimeUnit
 
 import javax.inject.Inject
@@ -31,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLockKeeper,
                                        applicationRepository: ApplicationRepository,
@@ -50,11 +50,11 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
   }
 
   def updateLastAccessDate(earliestLastAccessDate: DateTime, dryRun: Boolean): ApplicationData => Unit = {
-    def updateApplicationRecord(applicationId: UUID, applicationName: String) = {
+    def updateApplicationRecord(applicationId: ApplicationId, applicationName: String) = {
       if (dryRun) {
-        Logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName ($applicationId)] would have had lastAccess set to [$earliestLastAccessDate]")
+        Logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
-        Logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName ($applicationId)] to [$earliestLastAccessDate]")
+        Logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
         applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj("lastAccess" -> earliestLastAccessDate)))
       }
     }

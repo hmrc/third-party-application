@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import java.util.UUID
-
 import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
@@ -25,7 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.time.DateTimeUtils
 
-case class ApplicationData(id: UUID,
+case class ApplicationData(id: ApplicationId,
                            name: String,
                            normalisedName: String,
                            collaborators: Set[Collaborator],
@@ -57,7 +55,7 @@ object ApplicationData {
     val createdOn = DateTimeUtils.now
 
     ApplicationData(
-      UUID.randomUUID,
+      ApplicationId.random,
       application.name,
       application.name.toLowerCase,
       application.collaborators,

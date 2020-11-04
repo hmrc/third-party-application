@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils}
@@ -66,8 +64,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
     when(mockApiGatewayStore.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
-    when(mockSubscriptionRepository.add(*, *)).thenReturn(successful(HasSucceeded))
-    when(mockSubscriptionRepository.remove(*, *)).thenReturn(successful(HasSucceeded))
+    when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
+    when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
     when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
   }
@@ -83,7 +81,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "isSubscribed" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
     val api = ApiIdentifier("context", "1.0")
 
     "return true when the application is subscribed to a given API version" in new Setup {
@@ -104,7 +102,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "fetchAllSubscriptionsForApplication" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
@@ -129,7 +127,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "createSubscriptionForApplicationMinusChecks" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
     val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
     val api = anAPI()
 
@@ -147,14 +145,14 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       verify(mockApiPlatformEventsService).sendApiSubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
-      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
+      capturedParameters.get("applicationId") should be (Some(applicationId.value.toString))
       capturedParameters.get("apiVersion") should be (Some(api.version))
       capturedParameters.get("apiContext") should be (Some(api.context))
     }
   }
 
   "removeSubscriptionForApplication" should {
-    val applicationId = UUID.randomUUID()
+    val applicationId = ApplicationId.random()
     val api = anAPI()
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
@@ -178,7 +176,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       verify(mockApiPlatformEventsService).sendApiUnsubscribedEvent(any[ApplicationData], eqTo(api.context), eqTo(api.version))(any[HeaderCarrier])
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
-      capturedParameters.get("applicationId") should be (Some(applicationId.toString))
+      capturedParameters.get("applicationId") should be (Some(applicationId.value.toString))
       capturedParameters.get("apiVersion") should be (Some(api.version))
       capturedParameters.get("apiContext") should be (Some(api.context))
     }
@@ -200,7 +198,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
   private val requestedByEmail = "john.smith@example.com"
 
-  private def anApplicationData(applicationId: UUID, state: ApplicationState = productionState(requestedByEmail),
+  private def anApplicationData(applicationId: ApplicationId, state: ApplicationState = productionState(requestedByEmail),
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random)),
                                 rateLimitTier: Option[RateLimitTier] = Some(BRONZE)) = {
     new ApplicationData(

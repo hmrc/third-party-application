@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -128,11 +129,11 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
-  def anApplicationData(id: UUID = UUID.randomUUID(), lastAccessDate: DateTime): ApplicationData = {
+  def anApplicationData(id: ApplicationId = ApplicationId.random(), lastAccessDate: DateTime): ApplicationData = {
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      s"myApp-${id.value}",
+      s"myapp-${id.value}",
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       Some("description"),
       "myapplication",

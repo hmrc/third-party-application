@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.util.UUID
-
 import org.joda.time.DateTime
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
@@ -197,7 +195,7 @@ object MongoFormat {
   implicit val formatIpAllowlist = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
   val applicationDataReads: Reads[ApplicationData] = (
-    (JsPath \ "id").read[UUID] and
+    (JsPath \ "id").read[ApplicationId] and
     (JsPath \ "name").read[String] and
     (JsPath \ "normalisedName").read[String] and
     (JsPath \ "collaborators").read[Set[Collaborator]] and
@@ -223,7 +221,7 @@ object MongoFormat {
   implicit val formatPaginationTotla = Json.format[PaginationTotal]
   implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
-  implicit val formatApplicationId= Json.format[ApplicationId]
+  implicit val formatApplicationLabel= Json.format[ApplicationLabel]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
 
 }

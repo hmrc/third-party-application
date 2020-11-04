@@ -16,15 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.util.UUID
-
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -46,10 +43,9 @@ class AccessControllerSpec extends ControllerSpec {
   private val scopes = Set("scope")
   private val scopeRequest = ScopeRequest(scopes)
   private val overridesRequest = OverridesRequest(overrides)
-  private val applicationId = UUID.randomUUID()
+  private val applicationId = ApplicationId.random()
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
-  implicit private val headerCarrier: HeaderCarrier = HeaderCarrier()
 
   val mockApplicationService = mock[ApplicationService]
   val mockAuthConnector = mock[AuthConnector]
@@ -163,31 +159,31 @@ class AccessControllerSpec extends ControllerSpec {
 
 
     def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.readScopes(*)).thenReturn(eventualScopeResponse)
+      when(mockAccessService.readScopes(*[ApplicationId])).thenReturn(eventualScopeResponse)
 
     def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(*,*)(*)).thenReturn(eventualScopeResponse)
+      when(mockAccessService.updateScopes(*[ApplicationId],*)(*)).thenReturn(eventualScopeResponse)
 
     def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.readOverrides(*)).thenReturn(eventualOverridesResponse)
+      when(mockAccessService.readOverrides(*[ApplicationId])).thenReturn(eventualOverridesResponse)
 
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
-      when(mockAccessService.updateOverrides(*, any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
+      when(mockAccessService.updateOverrides(*[ApplicationId], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
     private[controllers] val accessController = new AccessController(mockAuthConnector, mockApplicationService, mockAuthConfig, mockAccessService, mockControllerComponents)
 
     givenUserIsAuthenticated(accessController)
 
-    def invokeAccessControllerReadScopesWith(applicationId: UUID): Future[Result] =
+    def invokeAccessControllerReadScopesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readScopes(applicationId)(fakeRequest)
 
-    def invokeAccessControllerUpdateScopesWith(applicationId: UUID, scopeRequest: ScopeRequest): Future[Result] =
+    def invokeAccessControllerUpdateScopesWith(applicationId: ApplicationId, scopeRequest: ScopeRequest): Future[Result] =
       accessController.updateScopes(applicationId)(fakeRequest.withBody(Json.toJson(scopeRequest)))
 
-    def invokeAccessControllerReadOverridesWith(applicationId: UUID): Future[Result] =
+    def invokeAccessControllerReadOverridesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readOverrides(applicationId)(fakeRequest)
 
-    def invokeAccessControllerUpdateOverridesWith(applicationId: UUID, overridesRequest: OverridesRequest): Future[Result] =
+    def invokeAccessControllerUpdateOverridesWith(applicationId: ApplicationId, overridesRequest: OverridesRequest): Future[Result] =
       accessController.updateOverrides(applicationId)(fakeRequest.withBody(Json.toJson(overridesRequest)))
   }
 

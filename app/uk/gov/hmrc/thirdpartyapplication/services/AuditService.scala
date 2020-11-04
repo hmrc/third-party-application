@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
@@ -29,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 
 @Singleton
 class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec: ExecutionContext) {
@@ -194,14 +193,14 @@ object AuditAction {
 
 object AuditHelper {
 
-  def applicationId(applicationId: UUID) = Map("applicationId" -> applicationId.toString)
+  def applicationId(applicationId: ApplicationId) = Map("applicationId" -> applicationId.value.toString)
 
   def calculateAppNameChange(previous: ApplicationData, updated: ApplicationData) =
     if (previous.name != updated.name) Map("newApplicationName" -> updated.name)
     else Map.empty
 
   def gatekeeperActionDetails(app: ApplicationData) =
-    Map("applicationId" -> app.id.toString,
+    Map("applicationId" -> app.id.value.toString,
       "applicationName" -> app.name,
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
       "applicationAdmins" -> app.admins.map(_.emailAddress).mkString(", ")
@@ -209,7 +208,7 @@ object AuditHelper {
 
   def calculateAppChanges(previous: ApplicationData, updated: ApplicationData) = {
     val common = Map(
-      "applicationId" -> updated.id.toString)
+      "applicationId" -> updated.id.value.toString)
 
     val genericEvents = Set(calcNameChange(previous, updated))
 

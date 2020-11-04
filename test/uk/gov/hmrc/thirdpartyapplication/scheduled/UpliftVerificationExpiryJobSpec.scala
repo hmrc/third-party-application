@@ -93,8 +93,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
   "uplift verification expiry job execution" should {
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1 = anApplicationData(UUID.randomUUID(), "aaa")
-      val app2 = anApplicationData(UUID.randomUUID(), "aaa")
+      val app1 = anApplicationData(ApplicationId.random(), "aaa")
+      val app2 = anApplicationData(ApplicationId.random(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -129,8 +129,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1 = anApplicationData(UUID.randomUUID(), "aaa")
-      val app2 = anApplicationData(UUID.randomUUID(), "aaa")
+      val app1 = anApplicationData(ApplicationId.random(), "aaa")
+      val app2 = anApplicationData(ApplicationId.random(), "aaa")
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -148,11 +148,11 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
   }
 
-  def anApplicationData(id: UUID, prodClientId: String, state: ApplicationState = testingState()): ApplicationData = {
+  def anApplicationData(id: ApplicationId, prodClientId: String, state: ApplicationState = testingState()): ApplicationData = {
     ApplicationData(
       id,
-      s"myApp-$id",
-      s"myapp-$id",
+      s"myApp-${id.value}",
+      s"myapp-${id.value}",
       Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
       Some("description"),
       "myapplication",

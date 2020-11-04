@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-
-import java.util.UUID
-
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
 import javax.inject.{Inject, Singleton}
@@ -118,59 +115,59 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   )
 
   def save(application: ApplicationData): Future[ApplicationData] = {
-    findAndUpdate(Json.obj("id" -> application.id.toString), Json.toJson(application).as[JsObject], upsert = true, fetchNewObject = true)
+    findAndUpdate(Json.obj("id" -> application.id.value.toString), Json.toJson(application).as[JsObject], upsert = true, fetchNewObject = true)
       .map(_.result[ApplicationData].head)
   }
 
-  def updateApplicationRateLimit(applicationId: UUID, rateLimit: RateLimitTier): Future[ApplicationData] =
+  def updateApplicationRateLimit(applicationId: ApplicationId, rateLimit: RateLimitTier): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("rateLimitTier" -> rateLimit.toString)))
 
-  @deprecated("IpWhitelist superseded by IpAllowlist")
-  def updateApplicationIpWhitelist(applicationId: UUID, ipWhitelist: Set[String]): Future[ApplicationData] =
+  @deprecated("IpWhitelist superseded by IpAllowlist", "?")
+  def updateApplicationIpWhitelist(applicationId: ApplicationId, ipWhitelist: Set[String]): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipWhitelist" -> ipWhitelist, "ipAllowlist.allowlist" -> ipWhitelist)))
 
-  def updateApplicationIpAllowlist(applicationId: UUID, ipAllowlist: IpAllowlist): Future[ApplicationData] =
+  def updateApplicationIpAllowlist(applicationId: ApplicationId, ipAllowlist: IpAllowlist): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipWhitelist" -> ipAllowlist.allowlist, "ipAllowlist" -> ipAllowlist)))
 
-  def recordApplicationUsage(applicationId: UUID): Future[ApplicationData] =
+  def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
-  def recordServerTokenUsage(applicationId: UUID): Future[ApplicationData] =
+  def recordServerTokenUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj(
       "lastAccess" -> Json.obj("$type" -> "date"),
       "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
 
-  def updateApplication(applicationId: UUID, updateStatement: JsObject): Future[ApplicationData] =
-    findAndUpdate(Json.obj("id" -> applicationId.toString), updateStatement, fetchNewObject = true) map {
+  def updateApplication(applicationId: ApplicationId, updateStatement: JsObject): Future[ApplicationData] =
+    findAndUpdate(Json.obj("id" -> applicationId.value.toString), updateStatement, fetchNewObject = true) map {
       _.result[ApplicationData].head
     }
 
-  def updateClientSecretField(applicationId: UUID, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] =
+  def updateClientSecretField(applicationId: ApplicationId, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] =
     findAndUpdate(
-      Json.obj("id" -> applicationId.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
+      Json.obj("id" -> applicationId.value.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
       Json.obj("$set" -> Json.obj(s"tokens.production.clientSecrets.$$.$fieldName" -> fieldValue)),
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)
 
-  def addClientSecret(applicationId: UUID, clientSecret: ClientSecret): Future[ApplicationData] =
+  def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$push" -> Json.obj("tokens.production.clientSecrets" -> Json.toJson(clientSecret))))
 
-  def updateClientSecretName(applicationId: UUID, clientSecretId: String, newName: String): Future[ApplicationData] =
+  def updateClientSecretName(applicationId: ApplicationId, clientSecretId: String, newName: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "name", newName)
 
-  def updateClientSecretHash(applicationId: UUID, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
+  def updateClientSecretHash(applicationId: ApplicationId, clientSecretId: String, hashedSecret: String): Future[ApplicationData] =
     updateClientSecretField(applicationId, clientSecretId, "hashedSecret", hashedSecret)
 
-  def recordClientSecretUsage(applicationId: UUID, clientSecretId: String): Future[ApplicationData] =
+  def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] =
     findAndUpdate(
       Json.obj("id" -> applicationId, "tokens.production.clientSecrets.id" -> clientSecretId),
       Json.obj("$currentDate" -> Json.obj("tokens.production.clientSecrets.$.lastAccess" -> Json.obj("$type" -> "date"))),
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)
 
-  def deleteClientSecret(applicationId: UUID, clientSecretId: String): Future[ApplicationData] = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
     findAndUpdate(
-      Json.obj("id" -> applicationId.toString),
+      Json.obj("id" -> applicationId.value.toString),
       Json.obj("$pull" -> Json.obj("tokens.production.clientSecrets" -> Json.obj("id" -> clientSecretId))),
       fetchNewObject = true)
       .map(_.result[ApplicationData].head)
@@ -183,7 +180,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     ))
   }
 
-  def fetch(id: UUID): Future[Option[ApplicationData]] = find("id" -> id).map(_.headOption)
+  def fetch(id: ApplicationId): Future[Option[ApplicationData]] = find("id" -> id.value).map(_.headOption)
 
   def fetchApplicationsByName(name: String): Future[List[ApplicationData]] = {
     val query: (String, JsValueWrapper) = f"$$and" -> Json.arr(
@@ -237,7 +234,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
-    def specificAPISubscription(apiContext: String, apiVersion: String = "") = {
+    def specificAPISubscription(apiContext: String, apiVersion: String) = {
       if (apiVersion.isEmpty) {
         matches("subscribedApis.apiIdentifier.context" -> apiContext)
       } else {
@@ -278,6 +275,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       // Last Use Date
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
       case lastUsedAfter: LastUseAfterDate => lastUsedAfter.toMongoMatch
+      case _  => Json.obj() // Only here to complete the match
     }
   }
 
@@ -353,8 +351,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     sourceOfApps.runWith(Sink.foreach(function)).map(_ => ())
   }
 
-  def delete(id: UUID): Future[HasSucceeded] = {
-    remove("id" -> id).map(_ => HasSucceeded)
+  def delete(id: ApplicationId): Future[HasSucceeded] = {
+    remove("id" -> id.value).map(_ => HasSucceeded)
   }
 
   def documentsWithFieldMissing(fieldName: String): Future[Int] = {

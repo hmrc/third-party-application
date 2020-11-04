@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import org.mockito.ArgumentMatcher
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
@@ -96,7 +94,6 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "add as much user context as possible where only partial data exists" in new Setup {
       val data = Map("some-header" -> "la-di-dah")
       val email = "test@example.com"
-      val name = "John Smith"
       implicit val emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
 
       val event = DataEvent(
@@ -119,7 +116,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   "AuditHelper calculateAppChanges" should {
 
-    val id = UUID.randomUUID()
+    val id = ApplicationId.random()
     val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
     val tokens = ApplicationTokens(
       EnvironmentToken("prodId", "prodToken")
@@ -146,7 +143,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     )
 
     val commonAuditData = Map(
-      "applicationId" -> id.toString
+      "applicationId" -> id.value.toString
     )
 
     val appNameAudit =

@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.UUID
-
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
@@ -33,10 +31,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class AccessService @Inject()(applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
 
-  def readScopes(applicationId: UUID): Future[ScopeResponse] =
+  def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
     fetchApp(applicationId) map getScopes map ScopeResponse
 
-  def updateScopes(applicationId: UUID, scopeRequest: ScopeRequest)
+  def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)
                   (implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
 
     def updateWithScopes(applicationData: ApplicationData, newScopes: Set[String]): ApplicationData = {
@@ -58,10 +56,10 @@ class AccessService @Inject()(applicationRepository: ApplicationRepository, audi
     } yield ScopeResponse(getScopes(persistedApplicationData))
   }
 
-  def readOverrides(applicationId: UUID): Future[OverridesResponse] =
+  def readOverrides(applicationId: ApplicationId): Future[OverridesResponse] =
     fetchApp(applicationId) map getOverrides map OverridesResponse
 
-  def updateOverrides(applicationId: UUID, overridesRequest: OverridesRequest)
+  def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)
                      (implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
 
     def updateWithOverrides(applicationData: ApplicationData, newOverrides: Set[OverrideFlag]): ApplicationData =
@@ -77,10 +75,10 @@ class AccessService @Inject()(applicationRepository: ApplicationRepository, audi
     } yield OverridesResponse(getOverrides(persistedApplicationData))
   }
 
-  private def fetchApp(applicationId: UUID): Future[ApplicationData] =
+  private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] =
     applicationRepository.fetch(applicationId).flatMap {
       case Some(applicationData) => successful(applicationData)
-      case None => failed(new NotFoundException(s"application not found for id: $applicationId"))
+      case None => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
     }
 
   private def getPrivilegedAccess(applicationData: ApplicationData): Privileged =
