@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.util.UUID
+import java.{util => ju}
 
-case class UserId(value: String) extends AnyVal
+case class UserId(value: ju.UUID) extends AnyVal
 
 object UserId {
   import play.api.libs.json.Json
   implicit val userIdFormat = Json.valueFormat[UserId]
 
-  def random: Option[UserId] = Some(UserId(UUID.randomUUID().toString))
+  def random: Option[UserId] = Some(UserId(ju.UUID.randomUUID()))
 }

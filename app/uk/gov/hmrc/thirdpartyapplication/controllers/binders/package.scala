@@ -17,22 +17,29 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.mvc.PathBindable
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.{UserId, ApplicationId}
 import play.api.mvc.QueryStringBindable
 import java.{util => ju}
 import scala.util.Try
 
 package object binders {
-  private def eitherFromString(text: String): Either[String, ApplicationId] = {
+  private def applicationIdFromString(text: String): Either[String, ApplicationId] = {
     Try(ju.UUID.fromString(text))
     .toOption
-    .toRight(s"Cannot accept $text as applicationId")
+    .toRight(s"Cannot accept $text as ApplicationId")
     .map(ApplicationId(_))
+  }
+
+  private def userIdFromString(text: String): Either[String, UserId] = {
+    Try(ju.UUID.fromString(text))
+    .toOption
+    .toRight(s"Cannot accept $text as UserId")
+    .map(UserId(_))
   }
 
   implicit def applicationIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ApplicationId] = new PathBindable[ApplicationId] {
     override def bind(key: String, value: String): Either[String, ApplicationId] = {
-      textBinder.bind(key, value).flatMap(eitherFromString)
+      textBinder.bind(key, value).flatMap(applicationIdFromString)
     }
 
     override def unbind(key: String, applicationId: ApplicationId): String = {
@@ -42,11 +49,21 @@ package object binders {
 
   implicit def applicationIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ApplicationId] {
     override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ApplicationId]] = {
-      textBinder.bind(key, params).map(_.flatMap(eitherFromString))
+      textBinder.bind(key, params).map(_.flatMap(applicationIdFromString))
     }
 
     override def unbind(key: String, applicationId: ApplicationId): String = {
       textBinder.unbind(key, applicationId.value.toString())
+    }
+  }
+
+    implicit def userIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[UserId] = new PathBindable[UserId] {
+    override def bind(key: String, value: String): Either[String, UserId] = {
+      textBinder.bind(key, value).flatMap(userIdFromString)
+    }
+
+    override def unbind(key: String, userId: UserId): String = {
+      userId.value.toString()
     }
   }
 }
