@@ -60,6 +60,7 @@ lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = (project in file("."))
   .enablePlugins(plugins: _*)
+  .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
