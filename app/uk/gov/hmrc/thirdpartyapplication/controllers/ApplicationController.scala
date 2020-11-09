@@ -54,7 +54,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
-  val apiGatewayUserAgents: List[String] = List("APIPlatformAuthorizer")
+  val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
+
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
 
@@ -283,11 +284,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     fetchFunction().flatMap {
       case Some(application) =>
         // If request has originated from an API gateway, record usage of the Application
-        hc.headers.find(_._1 == USER_AGENT).map(_._2) match {
-          case Some(userAgent) if apiGatewayUserAgents.contains(userAgent) =>
-            updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp)))
-          case _ => successful(Ok(toJson(application)))
-        }
+        hc.headers
+        .find(_._1 == USER_AGENT)
+        .map(_._2)
+        .map(_.split(","))
+        .flatMap(_.find(_ == apiGatewayUserAgent))
+        .fold(successful(Ok(toJson(application))))(_ => updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp))))
       case None => successful(handleNotFound(notFoundMessage))
     } recover recovery
 
