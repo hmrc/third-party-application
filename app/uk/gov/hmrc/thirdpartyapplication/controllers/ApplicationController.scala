@@ -55,11 +55,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
+  val INTERNAL_USER_AGENT = "X-GATEWAY_USER_AGENT"
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
+    def renamedHeader(key: String, newKey: String) = request.headers.get(key) map (newKey -> _)
 
-    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), header(USER_AGENT)).flatten
+    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), renamedHeader(USER_AGENT, INTERNAL_USER_AGENT)).flatten
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 
@@ -285,7 +287,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case Some(application) =>
         // If request has originated from an API gateway, record usage of the Application
         hc.headers
-        .find(_._1 == USER_AGENT)
+        .find(_._1 == INTERNAL_USER_AGENT)
         .map(_._2)
         .map(_.split(","))
         .flatMap(_.find(_ == apiGatewayUserAgent))
