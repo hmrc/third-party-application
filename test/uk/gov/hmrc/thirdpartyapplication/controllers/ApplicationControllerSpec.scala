@@ -901,9 +901,6 @@ class ApplicationControllerSpec extends ControllerSpec
       val applicationResponse: ApplicationResponse =
         aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
-
-      when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
-      when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
     }
 
     def validateResult(result: Future[Result], expectedResponseCode: Int,
@@ -972,43 +969,58 @@ class ApplicationControllerSpec extends ControllerSpec
     }
 
     "update last accessed time and server token usage when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
-      when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
       val scenarios =
         Table(
-          ("headers", "expectedLastAccessTime"),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis)
+          ("headers", "expectedLastAccessTime", "shouldUpdate"),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.getMillis, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.getMillis,true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis, false),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis, false)
         )
 
-      forAll(scenarios) { (headers, expectedLastAccessTime) =>
+      forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
+        when(underTest.applicationService.fetchByServerToken(serverToken)).thenReturn(Future(Some(applicationResponse)))
+        when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+        when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+
         val result =
           underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
-        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
-        verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))
+        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
+        if(shouldUpdate) {
+          verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))
+        }
+        reset(underTest.applicationService)
       }
     }
 
     "update last accessed time when an API gateway retrieves Application by Client Id" in new LastAccessedSetup {
-      when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
-
       val scenarios =
         Table(
-          ("headers", "expectedLastAccessTime"),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis),
-          (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis),
-          (Seq(), lastAccessTime.getMillis)
+          ("headers", "expectedLastAccessTime","shouldUpdate"),
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.getMillis, true),
+          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
+          (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis,false),
+          (Seq(), lastAccessTime.getMillis,false)
         )
 
-      forAll(scenarios) { (headers, expectedLastAccessTime) =>
+      forAll(scenarios) { (headers, expectedLastAccessTime,shouldUpdate) =>
+        when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(applicationResponse)))
+        when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+        when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
+
         val result =
           underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*))
 
         validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
-        verify(underTest.applicationService).recordApplicationUsage(eqTo(applicationId))
+        if(shouldUpdate) {
+          verify(underTest.applicationService).recordApplicationUsage(eqTo(applicationId))
+        }          
+        reset(underTest.applicationService)
       }
     }
   }
