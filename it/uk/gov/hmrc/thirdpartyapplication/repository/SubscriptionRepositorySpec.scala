@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -31,7 +29,6 @@ import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
