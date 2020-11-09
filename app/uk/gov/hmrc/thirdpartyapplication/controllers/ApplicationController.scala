@@ -55,7 +55,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
-  val INTERNAL_USER_AGENT = "X-GATEWAY_USER_AGENT"
+  val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
