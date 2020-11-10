@@ -157,6 +157,12 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     }
   }
 
+  def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
+      applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map(_ => Ok) recover recovery
+    }
+  }
+
   def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
       withJsonBody[ClientSecretRequest] { secret =>
         credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token))
