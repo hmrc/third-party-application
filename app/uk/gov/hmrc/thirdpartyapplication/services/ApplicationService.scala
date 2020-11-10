@@ -240,7 +240,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updated.collaborators
   }
 
-  def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[ApplicationData] = {
+  def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[ApplicationData]] = {
     applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
