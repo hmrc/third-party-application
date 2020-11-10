@@ -28,7 +28,7 @@ import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFou
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
@@ -238,6 +238,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ = sendEvent(app, findCollaborator(app))
       _ = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
     } yield updated.collaborators
+  }
+
+  def fixCollaborator(applicationId: ApplicationId, fixCollaboratorRequest: FixCollaboratorRequest): Future[Option[ApplicationData]] = {
+    applicationRepository.updateCollaboratorId(applicationId, fixCollaboratorRequest.emailAddress, fixCollaboratorRequest.userId)
   }
 
   private def hasAdmin(updated: Set[Collaborator]): Boolean = {

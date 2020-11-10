@@ -20,6 +20,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 case class ValidationRequest(clientId: String, clientSecret: String)
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
@@ -64,6 +65,8 @@ object UpdateIpAllowlistRequest {
 case class DeleteApplicationRequest(gatekeeperUserId: String, requestedByEmailAddress: String)
 
 case class DeleteSubordinateApplicationRequest(applicationId: String)
+
+case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
