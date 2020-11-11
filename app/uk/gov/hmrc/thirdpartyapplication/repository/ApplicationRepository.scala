@@ -138,7 +138,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
 
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
-    println(s"pomegranate ***** $applicationId, $collaboratorEmailAddress, $collaboratorUser")
     val qry = Json.obj("$and" -> Json.arr(
                   Json.obj("id" -> applicationId.value.toString),
                   Json.obj("collaborators" -> 
