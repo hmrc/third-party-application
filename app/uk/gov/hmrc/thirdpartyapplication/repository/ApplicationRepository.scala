@@ -138,21 +138,22 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
 
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
+    println(s"TPA ************** $applicationId, $collaboratorEmailAddress, $collaboratorUser")
     val qry = Json.obj("$and" -> Json.arr(
                   Json.obj("id" -> applicationId.value.toString),
                   Json.obj("collaborators" -> 
                     Json.obj("$elemMatch" -> 
                       Json.obj(
                         "emailAddress" -> collaboratorEmailAddress,
-                        "id" -> Json.obj("$exists" -> false)
+                        "userId" -> Json.obj("$exists" -> false)
                       )
                     )
                   )
               ))
-    val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.id" -> collaboratorUser))
+    val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.userId" -> collaboratorUser))
 
     findAndUpdate(qry, updateStatement, fetchNewObject = true) map {
-      _.result[ApplicationData].headOption
+      _.result[ApplicationData]
     }
   }
 
