@@ -144,15 +144,15 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
                     Json.obj("$elemMatch" -> 
                       Json.obj(
                         "emailAddress" -> collaboratorEmailAddress,
-                        "id" -> Json.obj("$exists" -> false)
+                        "userId" -> Json.obj("$exists" -> false)
                       )
                     )
                   )
               ))
-    val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.id" -> collaboratorUser))
+    val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.userId" -> collaboratorUser))
 
     findAndUpdate(qry, updateStatement, fetchNewObject = true) map {
-      _.result[ApplicationData].headOption
+      _.result[ApplicationData]
     }
   }
 
