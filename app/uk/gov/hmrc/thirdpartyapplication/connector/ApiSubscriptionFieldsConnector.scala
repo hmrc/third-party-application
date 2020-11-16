@@ -17,19 +17,17 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
+import uk.gov.hmrc.http.HttpReads.Implicits._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApiSubscriptionFieldsConnector @Inject()(httpClient: HttpClient, config: ApiSubscriptionFieldsConfig)(implicit val ec: ExecutionContext)  {
 
   def deleteSubscriptions(clientId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    httpClient.DELETE(s"${config.baseUrl}/field/application/$clientId") map (_ => HasSucceeded) recover {
-      case _: NotFoundException => HasSucceeded
-    }
+    httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/field/application/$clientId") map (_ => HasSucceeded)
   }
 }
 

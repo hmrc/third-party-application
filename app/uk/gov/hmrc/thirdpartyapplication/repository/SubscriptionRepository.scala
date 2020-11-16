@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.{ExecutionContext, Future}
+import reactivemongo.api.ReadConcern
 
 @Singleton
 class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
@@ -95,14 +96,17 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   )
 
   def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    collection.count(Some(Json.obj("$and" -> Json.arr(
-      Json.obj("applications" -> applicationId.value.toString),
-      Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version)))))
-      .map {
-        case 1 => true
-        case _ => false
-      }
+    val selector = Some(Json.obj("$and" -> Json.arr(
+        Json.obj("applications" -> applicationId.value.toString),
+        Json.obj("apiIdentifier.context" -> apiIdentifier.context),
+        Json.obj("apiIdentifier.version" -> apiIdentifier.version))
+      ))
+
+    collection.count(selector, None, 0, None, ReadConcern.Available)
+    .map {
+      case 1 => true
+      case _ => false
+    }
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {

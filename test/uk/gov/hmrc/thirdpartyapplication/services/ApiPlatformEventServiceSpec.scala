@@ -446,7 +446,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
 
 
     def testService(f: (ApplicationData, Map[String, String]) => Future[Boolean],
-                    expectedResult: Boolean)(implicit hc: HeaderCarrier) = {
+                    expectedResult: Boolean) = {
       val data = Map("teamMemberEmail" -> teamMemberEmail,
         "teamMemberRole" -> teamMemberRole,
         "clientSecretId" -> clientSecretId,

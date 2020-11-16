@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatAp
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
                                           (implicit val ec: ExecutionContext) {
@@ -62,11 +63,13 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
                               (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+
+    import uk.gov.hmrc.http.HttpReads.Implicits._   
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
       .withExtraHeaders(CONTENT_TYPE -> JSON)
     if (config.enabled) {
-      http.POST(
+      http.POST[ApplicationEvent, Unit](
         addEventURI(uri),
         event
       ).map(_ => {

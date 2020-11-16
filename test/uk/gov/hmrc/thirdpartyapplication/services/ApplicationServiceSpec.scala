@@ -1555,13 +1555,13 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
-  private def aNewApplicationRequestWithCollaboratorWithUserId(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+  private def aNewApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
     CreateApplicationRequest("MyApp", access, Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)))
   }
 
   private def anApplicationDataWithCollaboratorWithUserId(applicationId: ApplicationId,
-                                state: ApplicationState = productionState(requestedByEmail),
+                                state: ApplicationState,
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, loggedInUserId)),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),

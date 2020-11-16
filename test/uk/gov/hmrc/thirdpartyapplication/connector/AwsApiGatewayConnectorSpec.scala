@@ -29,7 +29,7 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import play.api.libs.json.Json
-import uk.gov.hmrc.http.{HeaderCarrier, Upstream5xxResponse}
+import uk.gov.hmrc.http.{HeaderCarrier}
 import uk.gov.hmrc.http.logging.Authorization
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class AwsApiGatewayConnectorSpec
   extends ConnectorSpec
@@ -101,9 +102,9 @@ class AwsApiGatewayConnectorSpec
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      intercept[Upstream5xxResponse] {
+      intercept[UpstreamErrorResponse] {
         await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
-      }
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
 
     }
   }
@@ -129,9 +130,9 @@ class AwsApiGatewayConnectorSpec
           aResponse()
             .withStatus(INTERNAL_SERVER_ERROR)))
 
-      intercept[Upstream5xxResponse] {
+      intercept[UpstreamErrorResponse] {
         await(underTest.deleteApplication(applicationName)(hc)) shouldBe HasSucceeded
-      }
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }

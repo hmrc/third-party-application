@@ -56,26 +56,28 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   val addedClientSecretNotification = "apiAddedClientSecretNotification"
   val removedClientSecretNotification = "apiRemovedClientSecretNotification"
 
-  def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
       Map("role" -> role,
         "applicationName" -> application,
         "developerHubLink" -> s"$devHubBaseUrl/developer/registration",
         "developerHubTitle" -> devHubTitle)))
-  }
+      .map(_ => ())  }
 
   def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])
-                                       (implicit hc: HeaderCarrier): Future[HttpResponse] = {
+                                       (implicit hc: HeaderCarrier): Future[Unit] = {
     post(SendEmailRequest(recipients, addedCollaboratorNotification,
       Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+      .map(_ => ())
   }
 
-  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     post(SendEmailRequest(recipients, removedCollaboratorConfirmation,
       Map("applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+      .map(_ => ())
   }
 
-  def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     post(SendEmailRequest(recipients, removedCollaboratorNotification,
       Map("email" -> email, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
   }
@@ -112,14 +114,14 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   def sendAddedClientSecretNotification(actorEmailAddress: String,
                                         clientSecretName: String,
                                         applicationName: String,
-                                        recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+                                        recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
   }
 
   def sendRemovedClientSecretNotification(actorEmailAddress: String,
                                           clientSecretName: String,
                                           applicationName: String,
-                                          recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+                                          recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
   }
 
@@ -127,7 +129,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
                                            actorEmailAddress: String,
                                            clientSecretName: String,
                                            applicationName: String,
-                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
     post(SendEmailRequest(recipients, templateId,
       Map(
         "actorEmailAddress" -> actorEmailAddress,
@@ -138,7 +140,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
       )))
   }
 
-  private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+  private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[Unit] = {
     val url = s"$serviceUrl/hmrc/email"
 
     def extractError(response: HttpResponse): RuntimeException = {
@@ -148,12 +150,14 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
           s"Unable send email. Unexpected error for url=$url status=${response.status} response=${response.body}")
       }
     }
+  
+    import uk.gov.hmrc.http.HttpReads.Implicits._
 
     httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
       .map { response =>
         Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
-          case status if status >= 200 && status <= 299 => response
+          case status if status >= 200 && status <= 299 => (())
           case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
           case _ => throw extractError(response)
         }
