@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatAp
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
                                           (implicit val ec: ExecutionContext) {
