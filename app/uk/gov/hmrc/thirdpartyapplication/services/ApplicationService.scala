@@ -106,7 +106,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendNotificationEmails(applicationName: String, collaborator: Collaborator, registeredUser: Boolean,
-                               adminsToEmail: Set[String])(implicit hc: HeaderCarrier): Future[Unit] = {
+                               adminsToEmail: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
       def roleForEmail(role: Role) = {
         role match {
           case ADMINISTRATOR => "admin"

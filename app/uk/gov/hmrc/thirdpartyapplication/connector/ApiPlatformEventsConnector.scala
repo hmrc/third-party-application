@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatAp
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
                                           (implicit val ec: ExecutionContext) {
@@ -75,6 +76,11 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
         Logger.info(s"calling platform event service for application ${event.applicationId}")
         true
       })
+      .recover {
+        case NonFatal(e) => 
+          Logger.warn(s"calling platform event service failed for application ${event.applicationId}")
+          false
+      }
     } else {
       Logger.info("call to platform events disabled")
       Future.successful(true)

@@ -78,7 +78,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 
-    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[Unit] = {
+    def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HasSucceeded] = {
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))
     }
 
