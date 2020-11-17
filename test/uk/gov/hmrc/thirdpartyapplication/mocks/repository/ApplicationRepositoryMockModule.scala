@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, ClientSecret, EnvironmentToken, HasSucceeded, IpAllowlist, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, EnvironmentToken, HasSucceeded, IpAllowlist, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future

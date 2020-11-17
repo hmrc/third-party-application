@@ -497,7 +497,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
-  private def anAppResponse(appId: ApplicationId = ApplicationId.random()) = {
+  private def anAppResponse(appId: ApplicationId) = {
     new ApplicationResponse(appId, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
   }
 }

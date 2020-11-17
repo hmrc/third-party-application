@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 import java.util.UUID
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
+import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -36,13 +36,17 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
     val underTest = new ApiSubscriptionFieldsConnector(mockHttpClient, config)
 
-    def apiSubscriptionFieldsWillReturn(result: Future[HttpResponse]) = {
-      when(mockHttpClient.DELETE[HttpResponse](*,*)(*, *, *)).thenReturn(result)
+    def apiSubscriptionFieldsWillReturn(result: Option[Unit]) = {
+      when(mockHttpClient.DELETE[Option[Unit]](*,*)(*, *, *)).thenReturn(Future.successful(result))
+    }
+
+    def apiSubscriptionFieldsWillFail(result: Throwable) = {
+      when(mockHttpClient.DELETE[Option[Unit]](*,*)(*, *, *)).thenReturn(Future.failed(result))
     }
 
     def verifyApiSubscriptionFieldsCalled(clientId: String) = {
       val expectedUrl = s"${config.baseUrl}/field/application/$clientId"
-      verify(mockHttpClient).DELETE[HttpResponse](eqTo(expectedUrl), *)(*, *, *)
+      verify(mockHttpClient).DELETE[Option[Unit]](eqTo(expectedUrl), *)(*, *, *)
     }
   }
 
@@ -50,17 +54,18 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
     val clientId = UUID.randomUUID().toString
 
-    "succeed when the remote call returns No Content" in new Setup {
+    "succeed when the remote call returns successfully" in new Setup {
 
-      apiSubscriptionFieldsWillReturn(Future(HttpResponse(NO_CONTENT)))
+      apiSubscriptionFieldsWillReturn(Some(()))
 
       await(underTest.deleteSubscriptions(clientId))
 
       verifyApiSubscriptionFieldsCalled(clientId)
     }
 
-    "succeed when the remote call returns Not Found" in new Setup {
-      apiSubscriptionFieldsWillReturn(Future(HttpResponse(NOT_FOUND)))
+    "succeed when the remote call returns not found" in new Setup {
+
+      apiSubscriptionFieldsWillReturn(None)
 
       await(underTest.deleteSubscriptions(clientId))
 
@@ -68,9 +73,9 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
     }
 
     "fail when the remote call returns Internal Server Error" in new Setup {
-      apiSubscriptionFieldsWillReturn(Future.failed(Upstream5xxResponse("", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR)))
+      apiSubscriptionFieldsWillFail(UpstreamErrorResponse("", INTERNAL_SERVER_ERROR))
 
-      intercept[Upstream5xxResponse] {
+      intercept[UpstreamErrorResponse] {
         await(underTest.deleteSubscriptions(clientId))
       }
 

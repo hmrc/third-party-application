@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.http.Status.{CREATED, INTERNAL_SERVER_ERROR}
-import play.api.libs.json.Json
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, Upstream5xxResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.HeaderCarrier
+import play.api.http.Status.INTERNAL_SERVER_ERROR
 
 class TotpConnectorSpec extends ConnectorSpec {
 
@@ -45,9 +45,8 @@ class TotpConnectorSpec extends ConnectorSpec {
 
     "return the Totp when it is successfully created" in new Setup {
 
-      val responseBody = Json.obj("secret" -> totpSecret, "id" -> totpId)
-      when(mockHttpClient.POSTEmpty[HttpResponse](*,*)(*, *, *))
-        .thenReturn(Future(HttpResponse(CREATED, Some(responseBody))))
+      when(mockHttpClient.POSTEmpty[Totp](*,*)(*, *, *))
+        .thenReturn(Future(Totp(totpSecret, totpId)))
 
       val result = await(underTest.generateTotp())
 
@@ -56,9 +55,8 @@ class TotpConnectorSpec extends ConnectorSpec {
 
     "fail when the Totp creation fails" in new Setup {
 
-      when(mockHttpClient.POSTEmpty[HttpResponse](*,*)(*, *, *))
-        .thenReturn(Future.failed(Upstream5xxResponse("", INTERNAL_SERVER_ERROR, INTERNAL_SERVER_ERROR)))
-
+      when(mockHttpClient.POSTEmpty[Totp](*,*)(*, *, *))
+        .thenReturn(Future.failed(UpstreamErrorResponse("", INTERNAL_SERVER_ERROR)))
       intercept[RuntimeException] {
         await(underTest.generateTotp())
       }

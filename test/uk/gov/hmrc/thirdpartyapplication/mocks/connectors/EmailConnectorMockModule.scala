@@ -16,15 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.connectors
 
-import org.mockito.stubbing.ScalaOngoingStubbing
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import play.api.http.Status.OK
-import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -38,35 +36,35 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verifyZeroInteractions(): Unit = MockitoSugar.verifyZeroInteractions(aMock)
 
     object SendAddedClientSecretNotification {
-      def thenReturnOk(): ScalaOngoingStubbing[Future[HttpResponse]] = {
-        when(aMock.sendAddedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HttpResponse(OK)))
+      def thenReturnOk() = {
+        when(aMock.sendAddedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalled(): Future[HttpResponse] = {
+      def verifyCalled(): Future[HasSucceeded] = {
         verify.sendAddedClientSecretNotification(*, *, *, *)(*)
       }
 
       def verifyCalledWith(actorEmailAddress: String,
                            clientSecret: String,
                            applicationName: String,
-                           recipients: Set[String]): Future[HttpResponse] = {
+                           recipients: Set[String]): Future[HasSucceeded] = {
         verify.sendAddedClientSecretNotification(eqTo(actorEmailAddress), eqTo(clientSecret), eqTo(applicationName), eqTo(recipients))(*)
       }
     }
 
     object SendRemovedClientSecretNotification {
-      def thenReturnOk(): ScalaOngoingStubbing[Future[HttpResponse]] = {
-        when(aMock.sendRemovedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HttpResponse(OK)))
+      def thenReturnOk() = {
+        when(aMock.sendRemovedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalled(): Future[HttpResponse] = {
+      def verifyCalled(): Future[HasSucceeded] = {
         verify.sendRemovedClientSecretNotification(*, *, *, *)(*)
       }
 
       def verifyCalledWith(actorEmailAddress: String,
                            clientSecret: String,
                            applicationName: String,
-                           recipients: Set[String]): Future[HttpResponse] = {
+                           recipients: Set[String]): Future[HasSucceeded] = {
         verify.sendRemovedClientSecretNotification(eqTo(actorEmailAddress), eqTo(clientSecret), eqTo(applicationName), eqTo(recipients))(*)
       }
 

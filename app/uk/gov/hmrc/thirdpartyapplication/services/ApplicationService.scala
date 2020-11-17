@@ -24,7 +24,7 @@ import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
@@ -106,7 +106,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendNotificationEmails(applicationName: String, collaborator: Collaborator, registeredUser: Boolean,
-                               adminsToEmail: Set[String])(implicit hc: HeaderCarrier): Future[HttpResponse] = {
+                               adminsToEmail: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
       def roleForEmail(role: Role) = {
         role match {
           case ADMINISTRATOR => "admin"
