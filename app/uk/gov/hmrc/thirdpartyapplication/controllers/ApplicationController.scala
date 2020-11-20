@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
+import play.api.http.HeaderNames
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -389,6 +390,7 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     }
 
     {
+      Logger.info(s"Pomegranate : Content length ${request.headers.get(HeaderNames.CONTENT_LENGTH)}")
       if (request.isStrideAuth) {
           withJsonBodyFromAnyContent[DeleteApplicationRequest] {
           deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
