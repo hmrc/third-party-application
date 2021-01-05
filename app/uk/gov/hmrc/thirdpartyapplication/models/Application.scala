@@ -397,7 +397,7 @@ object ApplicationWithUpliftRequest {
 object RateLimitTier extends Enumeration {
   type RateLimitTier = Value
 
-  val PLATINUM, GOLD, SILVER, BRONZE = Value
+  val RHODIUM, PLATINUM, GOLD, SILVER, BRONZE = Value
 }
 
 sealed trait ApplicationStateChange
