@@ -235,7 +235,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
-    val sort = List(convertToSortClause(applicationSearch.sort))
+    val sort = convertToSortClause(applicationSearch.sort)
 
     val pagination = List(
       Json.obj(f"$$skip" -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
@@ -298,14 +298,15 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }
   }
 
-  private def convertToSortClause(sort: ApplicationSort): JsObject = sort match {
-    case NameAscending => sorting("name" -> 1)
-    case NameDescending => sorting("name" -> -1)
-    case SubmittedAscending => sorting("createdOn" -> 1)
-    case SubmittedDescending => sorting("createdOn" -> -1)
-    case LastUseDateAscending => sorting("lastAccess" -> 1)
-    case LastUseDateDescending => sorting("lastAccess" -> -1)
-    case _ => sorting("name" -> 1)
+  private def convertToSortClause(sort: ApplicationSort): List[JsObject] = sort match {
+    case NameAscending => List(sorting("name" -> 1))
+    case NameDescending => List(sorting("name" -> -1))
+    case SubmittedAscending => List(sorting("createdOn" -> 1))
+    case SubmittedDescending => List(sorting("createdOn" -> -1))
+    case LastUseDateAscending => List(sorting("lastAccess" -> 1))
+    case LastUseDateDescending => List(sorting("lastAccess" -> -1))
+    case NoSorting => List()
+    case _ => List(sorting("name" -> 1))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): JsObject =
