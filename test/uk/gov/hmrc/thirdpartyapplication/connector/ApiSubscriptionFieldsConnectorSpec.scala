@@ -27,14 +27,26 @@ import scala.concurrent.Future
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
+    def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
+      stubFor(
+        post(urlMatching("/application-events/.*"))
+        .withJsonRequestBody(request)
+        .willReturn(
+          aResponse()
+          .withStatus(CREATED)
+        )
+      )
+
   implicit val hc: HeaderCarrier = HeaderCarrier()
   val baseUrl = s"http://example.com"
 
   trait Setup {
-    val mockHttpClient = mock[HttpClient]
-    val config = ApiSubscriptionFieldsConfig(baseUrl)
+    val http: HttpClient = app.injector.instanceOf[HttpClient]
 
-    val underTest = new ApiSubscriptionFieldsConnector(mockHttpClient, config)
+    val config: ApiSubscriptionFieldsConfig = ApiSubscriptionFieldsConfig(wireMockUrl)
+
+    val underTest = new ApiSubscriptionFieldsConnector(http, config)
+
 
     def apiSubscriptionFieldsWillReturn(result: Option[Unit]) = {
       when(mockHttpClient.DELETE[Option[Unit]](*,*)(*, *, *)).thenReturn(Future.successful(result))
