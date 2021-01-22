@@ -8,16 +8,14 @@ import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
 
 lazy val appName = "third-party-application"
 
-lazy val appDependencies: Seq[ModuleID] = compile ++ test ++ tmpMacWorkaround
+lazy val appDependencies: Seq[ModuleID] = compile ++ test
 
 val reactiveMongoVer = "0.18.8"
 
-lazy val playJsonVersion = "2.7.3"
-lazy val akkaVersion     = "2.5.23"
-lazy val akkaHttpVersion = "10.0.15"
+lazy val playJsonVersion = "2.8.1"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.14.0",
+  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.16.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "com.typesafe.play" %% "play-json" % playJsonVersion,
@@ -27,13 +25,7 @@ lazy val compile = Seq(
   "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
   "commons-net" % "commons-net" % "3.6",
   "org.typelevel" %% "cats-core" % "2.0.0",
-  "com.github.t3hnar" %% "scala-bcrypt" % "4.1",
-
-  "com.typesafe.akka" %% "akka-stream"    % akkaVersion     force(),
-  "com.typesafe.akka" %% "akka-protobuf"  % akkaVersion     force(),
-  "com.typesafe.akka" %% "akka-slf4j"     % akkaVersion     force(),
-  "com.typesafe.akka" %% "akka-actor"     % akkaVersion     force(),
-  "com.typesafe.akka" %% "akka-http-core" % akkaHttpVersion force()
+  "com.github.t3hnar" %% "scala-bcrypt" % "4.1"
 )
 val scope = "test,it"
 
@@ -46,13 +38,6 @@ lazy val test = Seq(
   "org.mockito" %% "mockito-scala-scalatest" % "1.14.0" % scope,
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
 )
-
-// Temporary Workaround for intermittent (but frequent) failures of Mongo integration tests when running on a Mac
-// See Jira story GG-3666 for further information
-def tmpMacWorkaround =
-  if (sys.props.get("os.name").exists(_.toLowerCase.contains("mac"))) {
-    Seq("org.reactivemongo" % "reactivemongo-shaded-native" % "0.16.1-osx-x86-64" % "runtime,test,it")
-  } else Seq()
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
