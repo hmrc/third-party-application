@@ -44,18 +44,12 @@ class AwsApiGatewayConnectorSpec
     with GuiceOneAppPerSuite
     with BeforeAndAfterAll {
 
-  private val stubPort = sys.env.getOrElse("WIREMOCK", "22221").toInt
-  private val stubHost = "localhost"
-  private val wireMockUrl = s"http://$stubHost:$stubPort"
-  private val wireMockServer = new WireMockServer(wireMockConfig().port(stubPort))
-
   private val applicationName = "api-platform-app"
   private val requestedUsagePlan: RateLimitTier.Value = SILVER
   private val apiKeyValue: String = UUID.randomUUID().toString
 
   trait Setup {
     SharedMetricRegistries.clear()
-    WireMock.reset()
     implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
     val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
@@ -63,20 +57,11 @@ class AwsApiGatewayConnectorSpec
 
     val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
 
-    val http: HttpClient = fakeApplication.injector.instanceOf[HttpClient]
+    val http: HttpClient = app.injector.instanceOf[HttpClient]
     val awsApiKey: String = UUID.randomUUID().toString
     val config: AwsApiGatewayConfig = AwsApiGatewayConfig(wireMockUrl, awsApiKey)
 
     val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(http, config)
-  }
-
-  override def beforeAll() {
-    wireMockServer.start()
-    WireMock.configureFor(stubHost, stubPort)
-  }
-
-  override def afterAll() {
-    wireMockServer.stop()
   }
 
   "createOrUpdateApplication" should {

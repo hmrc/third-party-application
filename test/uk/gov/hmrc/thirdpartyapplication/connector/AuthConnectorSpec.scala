@@ -27,7 +27,7 @@ class AuthConnectorSpec extends ConnectorSpec {
 
     val mockAuthConfig = mock[AuthConfig]
 
-    val httpClient = fakeApplication().injector.instanceOf[HttpClient]
+    val httpClient = app.injector.instanceOf[HttpClient]
     val connector = new AuthConnector(httpClient, mockAuthConfig)
 
     val url = "AUrl"

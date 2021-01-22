@@ -30,7 +30,7 @@ import uk.gov.hmrc.http.UpstreamErrorResponse
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  val baseUrl = s"http://example.com"
+  val baseUrl = wireMockUrl
 
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
