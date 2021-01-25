@@ -148,6 +148,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretRequest]
   implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
   implicit val formatFixCollaboratorRequest = Json.format[FixCollaboratorRequest]
+  implicit val formatDeleteCollaboratorRequest = Json.format[DeleteCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]

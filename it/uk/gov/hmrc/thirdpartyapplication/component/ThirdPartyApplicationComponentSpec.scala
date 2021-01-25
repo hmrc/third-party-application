@@ -268,7 +268,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
           | "collaborator": {
           |   "emailAddress": "test@example.com",
           |   "role":"ADMINISTRATOR",
-          |   "userId":"${testUserId.get.value}"
+          |   "userId":"${testUserId.value}"
           | },
           | "isRegistered": true,
           | "adminsToEmail": []
@@ -577,12 +577,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
        | {
        |   "emailAddress": "admin@example.com",
        |   "role": "ADMINISTRATOR",
-       |   "userId": "${adminUserId.get.value}"
+       |   "userId": "${adminUserId.value}"
        | },
        | {
        |   "emailAddress": "$emailAddress",
        |   "role": "DEVELOPER",
-       |   "userId": "${userId.get.value}"
+       |   "userId": "${userId.value}"
        | }
        |]
        |}""".stripMargin.replaceAll("\n", "")
