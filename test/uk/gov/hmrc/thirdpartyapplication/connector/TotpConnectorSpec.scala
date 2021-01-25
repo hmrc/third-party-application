@@ -21,8 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.http.HeaderCarrier
 import play.api.http.Status._
 import com.github.tomakehurst.wiremock.client.WireMock._

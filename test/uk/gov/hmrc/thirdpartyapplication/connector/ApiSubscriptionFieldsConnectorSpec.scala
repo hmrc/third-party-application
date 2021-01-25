@@ -21,24 +21,16 @@ import java.util.UUID
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
+import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
+import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.http.Status._
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
-    def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
-      stubFor(
-        post(urlMatching("/application-events/.*"))
-        .withJsonRequestBody(request)
-        .willReturn(
-          aResponse()
-          .withStatus(CREATED)
-        )
-      )
-
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  val baseUrl = s"http://example.com"
+
+  val clientId = UUID.randomUUID().toString
 
   trait Setup {
     val http: HttpClient = app.injector.instanceOf[HttpClient]
@@ -48,50 +40,35 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
     val underTest = new ApiSubscriptionFieldsConnector(http, config)
 
 
-    def apiSubscriptionFieldsWillReturn(result: Option[Unit]) = {
-      when(mockHttpClient.DELETE[Option[Unit]](*,*)(*, *, *)).thenReturn(Future.successful(result))
-    }
-
-    def apiSubscriptionFieldsWillFail(result: Throwable) = {
-      when(mockHttpClient.DELETE[Option[Unit]](*,*)(*, *, *)).thenReturn(Future.failed(result))
-    }
-
-    def verifyApiSubscriptionFieldsCalled(clientId: String) = {
-      val expectedUrl = s"${config.baseUrl}/field/application/$clientId"
-      verify(mockHttpClient).DELETE[Option[Unit]](eqTo(expectedUrl), *)(*, *, *)
-    }
+    def apiSubscriptionFieldsWillReturn(status: Int) =
+      stubFor(
+        delete(urlEqualTo(s"/field/application/$clientId"))
+        .willReturn(
+          aResponse()
+          .withStatus(status)
+        )
+      ) 
   }
 
   "ApiSubscriptionFieldsConnector" should {
-
-    val clientId = UUID.randomUUID().toString
-
     "succeed when the remote call returns successfully" in new Setup {
-
-      apiSubscriptionFieldsWillReturn(Some(()))
+      apiSubscriptionFieldsWillReturn(OK)
 
       await(underTest.deleteSubscriptions(clientId))
-
-      verifyApiSubscriptionFieldsCalled(clientId)
     }
 
     "succeed when the remote call returns not found" in new Setup {
-
-      apiSubscriptionFieldsWillReturn(None)
+      apiSubscriptionFieldsWillReturn(NOT_FOUND)
 
       await(underTest.deleteSubscriptions(clientId))
-
-      verifyApiSubscriptionFieldsCalled(clientId)
     }
 
     "fail when the remote call returns Internal Server Error" in new Setup {
-      apiSubscriptionFieldsWillFail(UpstreamErrorResponse("", INTERNAL_SERVER_ERROR))
+      apiSubscriptionFieldsWillReturn(INTERNAL_SERVER_ERROR)
 
       intercept[UpstreamErrorResponse] {
         await(underTest.deleteSubscriptions(clientId))
       }
-
-      verifyApiSubscriptionFieldsCalled(clientId)
     }
   }
 }

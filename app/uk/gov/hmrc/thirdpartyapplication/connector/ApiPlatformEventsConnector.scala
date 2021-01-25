@@ -27,7 +27,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HttpReads.Implicits._   
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
-                                          (implicit val ec: ExecutionContext) extends RepsonseUtils {
+                                          (implicit val ec: ExecutionContext) extends ResponseUtils {
 
   val serviceBaseUrl: String = s"${config.baseUrl}"
   private val applicationEventsUri = "/application-events"
