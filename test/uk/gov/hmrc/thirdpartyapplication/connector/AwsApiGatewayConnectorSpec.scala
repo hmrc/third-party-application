@@ -38,7 +38,6 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
   private val requestedUsagePlan: RateLimitTier.Value = SILVER
   private val apiKeyValue: String = UUID.randomUUID().toString
 
-  // __.write[String].contramap( (r: RequestId) => r.value )
   implicit val requestIdWrites: Writes[RequestId] = 
     (JsPath \ "RequestId").write[String].contramap( (r: RequestId) => r.value )
 
