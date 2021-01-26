@@ -16,21 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import org.mockito.stubbing.ScalaOngoingStubbing
-import org.scalatest.concurrent.ScalaFutures
-import play.api.http.Status.{INTERNAL_SERVER_ERROR}
 import uk.gov.hmrc.http.{HeaderCarrier}
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models._
+import com.github.tomakehurst.wiremock.client.WireMock._
+import play.api.http.Status._
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
-class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
+
+class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  val baseUrl = s"http://example.com"
 
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
@@ -79,41 +77,50 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     context = "context",
     version = "2.0")
 
-  trait Setup {
-    val mockHttpClient: HttpClient = mock[HttpClient]
-    val mockConfig: ApiPlatformEventsConfig = mock[ApiPlatformEventsConfig](withSettings.lenient())
+  abstract class Setup(enabled: Boolean = true) {
+    val http: HttpClient = app.injector.instanceOf[HttpClient]
 
-    val underTest = new ApiPlatformEventsConnector(mockHttpClient, mockConfig)
+    val config: ApiPlatformEventsConfig = ApiPlatformEventsConfig(wireMockUrl, enabled)
 
-    def apiApplicationEventsWillReturnCreated = when(mockHttpClient.POST[ApplicationEvent, Unit](*, *, *)(*, *, *, *)).thenReturn(Future.successful(()))
-    def apiApplicationEventsWillFailWith(status: Int) = when(mockHttpClient.POST[ApplicationEvent, Unit](*, *, *)(*, *, *, *)).thenReturn(Future.failed(UpstreamErrorResponse("Bang",status)))
-    
-    def configSetUpWith(enabled: Boolean): ScalaOngoingStubbing[String] ={
-      when(mockConfig.enabled).thenReturn(enabled)
-      when(mockConfig.baseUrl).thenReturn(baseUrl)
-    }
+    val underTest = new ApiPlatformEventsConnector(http, config)
+
+    def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
+      stubFor(
+        post(urlMatching("/application-events/.*"))
+        .withJsonRequestBody(request)
+        .willReturn(
+          aResponse()
+          .withStatus(CREATED)
+        )
+      )
+
+    def apiApplicationEventsWillFailWith(status: Int) = 
+      stubFor(
+        post(urlMatching("/application-events/.*"))
+        .willReturn(
+          aResponse()
+          .withStatus(status)
+        )
+      )
   }
 
   "ApiPlatformEventsConnector" when {
 
     "TeamMemberAddedEvents" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(teamMemberAddedEvent)
         val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendTeamMemberAddedEvent(teamMemberAddedEvent)(hc))
 
@@ -122,23 +129,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     }
 
     "TeamMemberRemovedEvents" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(teamMemberRemovedEvent)
         val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendTeamMemberRemovedEvent(teamMemberRemovedEvent)(hc))
 
@@ -148,23 +152,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
 
 
     "ClientSecretAdded" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(clientSecretAddedEvent)
         val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendClientSecretAddedEvent(clientSecretAddedEvent)(hc))
 
@@ -173,73 +174,64 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     }
 
     "ClientSecretRemoved" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(clientSecretRemovedEvent)
         val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
+        val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
 
         result shouldBe false
       }
     }
 
     "RedirectUrisUpdatedEvent" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(redirectUrisUpdatedEvent)
         val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
-        val result = await(underTest.sendClientSecretRemovedEvent(clientSecretRemovedEvent)(hc))
+        val result = await(underTest.sendRedirectUrisUpdatedEvent(redirectUrisUpdatedEvent)(hc))
 
         result shouldBe false
       }
     }
 
     "ApiSubscribedEvent" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(apiSubscribedEvent)
         val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendApiSubscribedEvent(apiSubscribedEvent)(hc))
 
@@ -248,23 +240,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec with ScalaFutures {
     }
 
     "ApiUnsubscribedEvent" should {
-      "should return true when httpclient receives CREATED status" in new Setup() {
-        configSetUpWith(enabled = true)
-        apiApplicationEventsWillReturnCreated
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventsWillReturnCreated(apiUnSubscribedEvent)
         val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return true when connector is disabled" in new Setup() {
-        configSetUpWith(enabled = false)
+      "return true when connector is disabled" in new Setup(false) {
         val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
 
         result shouldBe true
       }
 
-      "should return false when httpclient receives internal server error status" in new Setup() {
-        configSetUpWith(enabled = true)
+      "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
 

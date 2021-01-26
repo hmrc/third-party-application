@@ -21,22 +21,22 @@ import uk.gov.hmrc.thirdpartyapplication.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.http.HeaderCarrier
-import play.api.http.Status.INTERNAL_SERVER_ERROR
+import play.api.http.Status._
+import com.github.tomakehurst.wiremock.client.WireMock._
 
 class TotpConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  private val baseUrl = s"http://example.com"
+  private val baseUrl = wireMockUrl
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+
     val applicationName: String = "third-party-application"
-    val mockHttpClient = mock[HttpClient]
+    val httpClient = app.injector.instanceOf[HttpClient]
     val config = TotpConfig(baseUrl)
-    val underTest = new TotpConnector(mockHttpClient, config)
+    val underTest = new TotpConnector(httpClient, config)
   }
 
   "generateTotp" should {
@@ -44,9 +44,16 @@ class TotpConnectorSpec extends ConnectorSpec {
     val totpSecret = "aTotp"
 
     "return the Totp when it is successfully created" in new Setup {
+      import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.formatTotp
 
-      when(mockHttpClient.POSTEmpty[Totp](*,*)(*, *, *))
-        .thenReturn(Future(Totp(totpSecret, totpId)))
+      stubFor(
+        post(urlEqualTo("/time-based-one-time-password/secret"))
+          .willReturn(
+            aResponse()
+              .withStatus(OK)
+              .withJsonBody(Totp(totpSecret, totpId))
+          )
+      )
 
       val result = await(underTest.generateTotp())
 
@@ -54,9 +61,14 @@ class TotpConnectorSpec extends ConnectorSpec {
     }
 
     "fail when the Totp creation fails" in new Setup {
+      stubFor(
+        post(urlEqualTo("/time-based-one-time-password/secret"))
+          .willReturn(
+            aResponse()
+              .withStatus(INTERNAL_SERVER_ERROR)
+          )
+      )
 
-      when(mockHttpClient.POSTEmpty[Totp](*,*)(*, *, *))
-        .thenReturn(Future.failed(UpstreamErrorResponse("", INTERNAL_SERVER_ERROR)))
       intercept[RuntimeException] {
         await(underTest.generateTotp())
       }

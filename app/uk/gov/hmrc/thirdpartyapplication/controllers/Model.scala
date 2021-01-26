@@ -68,6 +68,12 @@ case class DeleteSubordinateApplicationRequest(applicationId: String)
 
 case class FixCollaboratorRequest(emailAddress: String, userId: UserId)
 
+case class DeleteCollaboratorRequest(
+  email: String,
+  adminsToEmail: Set[String],
+  notifyCollaborator: Boolean
+)
+
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
 

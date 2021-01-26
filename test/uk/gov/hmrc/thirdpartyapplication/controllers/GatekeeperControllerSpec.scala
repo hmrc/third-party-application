@@ -51,7 +51,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   import play.api.test.Helpers._
 
   val authTokenHeader = "authorization" -> "authorizationToken"
-  implicit lazy val materializer: Materializer = fakeApplication().materializer
+  implicit lazy val materializer: Materializer = app.materializer
   implicit lazy val request = FakeRequest()
 
   private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

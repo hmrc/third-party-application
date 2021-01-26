@@ -20,4 +20,8 @@ import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 
-abstract class ConnectorSpec extends AsyncHmrcSpec with NoMetricsGuiceOneAppPerSuite with LogSuppressing {}
+abstract class ConnectorSpec
+    extends AsyncHmrcSpec 
+    with NoMetricsGuiceOneAppPerSuite 
+    with LogSuppressing 
+    with WiremockSugar {}

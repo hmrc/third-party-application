@@ -18,18 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import javax.inject.Inject
 import play.api.Logger
-import play.api.http.ContentTypes.JSON
-import play.api.http.HeaderNames.CONTENT_TYPE
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.http.HttpClient
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.control.NonFatal
+import uk.gov.hmrc.http.HttpReads.Implicits._   
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
-                                          (implicit val ec: ExecutionContext) {
+                                          (implicit val ec: ExecutionContext) extends ResponseUtils {
 
   val serviceBaseUrl: String = s"${config.baseUrl}"
   private val applicationEventsUri = "/application-events"
@@ -64,21 +62,19 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
 
-    import uk.gov.hmrc.http.HttpReads.Implicits._   
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
       .copy(authorization = None)
-      .withExtraHeaders(CONTENT_TYPE -> JSON)
+
     if (config.enabled) {
-      http.POST[ApplicationEvent, Unit](
+      http.POST[ApplicationEvent, ErrorOr[Unit]](
         addEventURI(uri),
         event
-      ).map(_ => {
-        Logger.info(s"calling platform event service for application ${event.applicationId}")
-        true
-      })
-      .recover {
-        case NonFatal(e) => 
-          Logger.warn(s"calling platform event service failed for application ${event.applicationId}")
+      ).map {
+        case Right(_) =>
+          Logger.info(s"calling platform event service for application ${event.applicationId}")
+          true
+        case Left(e) =>
+          Logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
           false
       }
     } else {

@@ -147,7 +147,15 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     }
   }
 
-  def deleteCollaborator(applicationId: ApplicationId, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
+  def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
+      applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {
+        case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
+      } recover recovery
+    }
+  }
+
+  def deleteCollaboratorByEmail(applicationId: ApplicationId, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
 
     val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
 

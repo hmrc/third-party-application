@@ -33,7 +33,7 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication().materializer
+  implicit lazy val materializer: Materializer = app.materializer
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")

@@ -21,6 +21,7 @@ import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.DeveloperIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
@@ -35,8 +36,13 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
     subscriptionRepository.getSubscribers(ApiIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 
-  def getSubscriptionsForDeveloper(email: String): Action[AnyContent] = Action.async {_ =>
-    subscriptionRepository.getSubscriptionsForDeveloper(email).map(subscriptions => Ok(toJson(subscriptions))) recover recovery
+  def getSubscriptionsForDeveloper(developerId: DeveloperIdentifier): Action[AnyContent] = Action.async {_ =>
+    (developerId match {
+      case EmailIdentifier(email) => 
+        subscriptionRepository.getSubscriptionsForDeveloper(email)
+      case UuidIdentifier(userId) =>
+        subscriptionRepository.getSubscriptionsForDeveloper(userId)
+    }).map(subscriptions => Ok(toJson(subscriptions))) recover recovery
   }
 }
 

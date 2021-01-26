@@ -16,30 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.http.HttpResponse
 
-import scala.concurrent.ExecutionContext.Implicits.global
+trait ResponseUtils {
 
-class AuthConnectorSpec extends ConnectorSpec {
-  trait Setup {
-    implicit val hc = HeaderCarrier()
+  type ErrorOr[T] = Either[UpstreamErrorResponse, T]
 
-    val mockAuthConfig = mock[AuthConfig]
-
-    val httpClient = fakeApplication().injector.instanceOf[HttpClient]
-    val connector = new AuthConnector(httpClient, mockAuthConfig)
-
-    val url = "AUrl"
-
-    when(mockAuthConfig.baseUrl).thenReturn(url)
+  def mapOrThrow[T](fn: HttpResponse => T)(response: ErrorOr[HttpResponse]) : T = response match {
+    case Left(err) => throw err
+    case Right(r) => fn(r)
   }
 
-  "auth connector" should {
-
-    "get the base url from the app config" in new Setup {
-      val result = connector.serviceUrl
-      result shouldBe url
-    }
-  }
+  def statusOrThrow = mapOrThrow(_.status) _
 }

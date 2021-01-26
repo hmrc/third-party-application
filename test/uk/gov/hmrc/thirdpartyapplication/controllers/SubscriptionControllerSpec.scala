@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 class SubscriptionControllerSpec extends ControllerSpec {
 
@@ -81,7 +82,7 @@ class SubscriptionControllerSpec extends ControllerSpec {
     }
   }
 
-  "getSubscriptionsForDeveloper" should {
+  "getSubscriptionsForDeveloper using email" should {
     val developerEmail = "john.doe@example.com"
 
     "return the subscriptions from the repository" in new Setup {
@@ -98,6 +99,30 @@ class SubscriptionControllerSpec extends ControllerSpec {
       when(mockSubscriptionRepository.getSubscriptionsForDeveloper(developerEmail)).thenReturn(failed(new RuntimeException("something went wrong")))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/$developerEmail/subscriptions"))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+      (contentAsJson(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"
+      (contentAsJson(result) \ "message").as[String] shouldBe "An unexpected error occurred"
+    }
+  }
+
+  "getSubscriptionsForDeveloper using userid" should {
+    val userId = UserId.random
+
+    "return the subscriptions from the repository" in new Setup {
+      val expectedSubscriptions = Set(ApiIdentifier("hello-world", "1.0"))
+      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(userId)).thenReturn(successful(expectedSubscriptions))
+
+      val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).as[Set[ApiIdentifier]] shouldBe expectedSubscriptions
+    }
+
+    "return 500 if something goes wrong" in new Setup {
+      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(userId)).thenReturn(failed(new RuntimeException("something went wrong")))
+
+      val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"

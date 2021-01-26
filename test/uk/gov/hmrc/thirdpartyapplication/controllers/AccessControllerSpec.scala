@@ -37,7 +37,7 @@ class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
-  implicit lazy val materializer: Materializer = fakeApplication().materializer
+  implicit lazy val materializer: Materializer = app.materializer
 
   private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes = Set("scope")

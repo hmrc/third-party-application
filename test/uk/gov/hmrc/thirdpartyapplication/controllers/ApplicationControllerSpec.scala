@@ -23,9 +23,7 @@ import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
-import org.apache.http.HttpStatus._
 import org.joda.time.DateTime
-import org.mockito.BDDMockito.given
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
@@ -62,6 +60,7 @@ class ApplicationControllerSpec extends ControllerSpec
   implicit lazy val materializer: Materializer = fakeApplication().materializer
 
   trait Setup {
+    app
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
@@ -186,7 +185,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
-      status(result) shouldBe SC_CREATED
+      status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
     }
 
@@ -198,7 +197,7 @@ class ApplicationControllerSpec extends ControllerSpec
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
       (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
-      status(result) shouldBe SC_CREATED
+      status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
     }
 
@@ -208,7 +207,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
-      status(result) shouldBe SC_CREATED
+      status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
     }
 
@@ -236,7 +235,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      status(result) shouldBe SC_CONFLICT
+      status(result) shouldBe CONFLICT
       contentAsJson(result) shouldBe JsErrorResponse(APPLICATION_ALREADY_EXISTS, "Application already exists with name: appName")
     }
 
@@ -246,10 +245,12 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "fail with a 422 (unprocessable entity) when duplicate email is provided" in new Setup {
+
+      val id = UserId.random
 
       val body: String =
         s"""{
@@ -261,14 +262,14 @@ class ApplicationControllerSpec extends ControllerSpec
            |  "overrides" : []
            |},
            |"collaborators": [
-           |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"},
-           |{"emailAddress": "ADMIN@example.com","role": "ADMINISTRATOR"}
+           |{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${id.value}"},
+           |{"emailAddress": "ADMIN@example.com","role": "ADMINISTRATOR", "userId": "${id.value}"}
            |]
            |}""".stripMargin.replaceAll("\n", "")
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: duplicate email in collaborator"
     }
 
@@ -287,12 +288,12 @@ class ApplicationControllerSpec extends ControllerSpec
             ],
             "overrides" : []
           },
-          "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"}]
+          "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR", "userId": "${UserId.random.value}"}]
           }"""
 
       val result = underTest.create()(request.withBody(Json.parse(createApplicationRequestJson)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 
@@ -302,7 +303,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
 
     }
 
@@ -318,11 +319,13 @@ class ApplicationControllerSpec extends ControllerSpec
            |"collaborators": [
            |{
            |"emailAddress": "admin@example.com",
-           |"role": "ADMINISTRATOR"
+           |"role": "ADMINISTRATOR",
+           |"userId": "${UserId.random.value}"
            |},
            |{
            |"emailAddress": "dev@example.com",
-           |"role": "developer"
+           |"role": "developer",
+           |"userId": "${UserId.random.value}"
            |}]
            |}""".stripMargin.replaceAll("\n", "")
 
@@ -335,7 +338,7 @@ class ApplicationControllerSpec extends ControllerSpec
            |}""".stripMargin.replaceAll("\n", "")
 
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldBe Json.toJson(Json.parse(expected))
     }
 
@@ -346,7 +349,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
@@ -361,7 +364,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.update(id)(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
@@ -370,7 +373,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.update(id)(request.withBody(Json.toJson(standardApplicationRequest)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
@@ -393,7 +396,7 @@ class ApplicationControllerSpec extends ControllerSpec
           }"""
       val result = underTest.update(id)(request.withBody(Json.parse(updateApplicationRequestJson)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
 
@@ -410,7 +413,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "successfully update approval information for application" in new Setup {
@@ -422,7 +425,7 @@ class ApplicationControllerSpec extends ControllerSpec
       val jsonBody: JsValue = Json.toJson(checkInformation)
       val result = underTest.updateCheck(id)(request.withBody(jsonBody))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
   }
 
@@ -434,7 +437,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetch(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
@@ -442,7 +445,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetch(applicationId)(request)
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -450,7 +453,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetch(applicationId)(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
@@ -467,7 +470,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(credentialServiceResponseToken)
     }
 
@@ -476,7 +479,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -484,7 +487,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchCredentials(applicationId)(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -498,7 +501,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val adminsToEmail = Set.empty[String]
     val userId = UserId.random
     val addCollaboratorRequestWithUserId = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
-    val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.get.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
+    val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role", "userId": "${userId.value}"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
@@ -508,21 +511,20 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(response)
     }
   }
 
   "add collaborators" should {
     val applicationId = ApplicationId.random()
-    val admin = "admin@example.com"
     val email = "test@example.com"
     val role = DEVELOPER
+    val userId = UserId.random
     val isRegistered = false
     val adminsToEmail = Set.empty[String]
-    val addCollaboratorRequest = AddCollaboratorRequest(Collaborator(email, role, None), isRegistered, adminsToEmail)
-    val payload = s"""{"adminEmail":"$admin", "collaborator":{"emailAddress":"$email", "role":"$role"}, "isRegistered": $isRegistered, "adminsToEmail": []}"""
-    val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
+    val addCollaboratorRequest = AddCollaboratorRequest(Collaborator(email, role, userId), isRegistered, adminsToEmail)
+    val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.toJson(addCollaboratorRequest))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
@@ -531,7 +533,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(response)
     }
 
@@ -544,7 +546,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(response)
       })
     }
@@ -556,7 +558,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(response)
       })
     }
@@ -567,7 +569,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 422 (unprocessable) if role is invalid" in new Setup {
@@ -575,7 +577,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(request.withBody(Json.obj("emailAddress" -> s"$email", "role" -> "invalid")))
 
-      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, ErrorCode.INVALID_REQUEST_PAYLOAD)
+      verifyErrorResult(result, UNPROCESSABLE_ENTITY, ErrorCode.INVALID_REQUEST_PAYLOAD)
     }
 
     "fail with a 409 (conflict) if email already registered with different role" in new Setup {
@@ -585,7 +587,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-      verifyErrorResult(result, SC_CONFLICT, ErrorCode.USER_ALREADY_EXISTS)
+      verifyErrorResult(result, CONFLICT, ErrorCode.USER_ALREADY_EXISTS)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -595,12 +597,12 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
 
-  "remove collaborator" should {
+  "remove collaborator by email" should {
     val applicationId = ApplicationId.random()
     val admin = "admin@example.com"
     val collaborator = "dev@example.com"
@@ -614,9 +616,9 @@ class ApplicationControllerSpec extends ControllerSpec
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
@@ -628,9 +630,9 @@ class ApplicationControllerSpec extends ControllerSpec
           eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
-        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+        val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-        status(result) shouldBe SC_NO_CONTENT
+        status(result) shouldBe NO_CONTENT
       })
     }
 
@@ -640,9 +642,9 @@ class ApplicationControllerSpec extends ControllerSpec
           eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
           .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
 
-        val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+        val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-        status(result) shouldBe SC_NO_CONTENT
+        status(result) shouldBe NO_CONTENT
       })
     }
 
@@ -651,9 +653,9 @@ class ApplicationControllerSpec extends ControllerSpec
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
@@ -662,9 +664,9 @@ class ApplicationControllerSpec extends ControllerSpec
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new ApplicationNeedsAdmin))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-      verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
+      verifyErrorResult(result, FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -673,11 +675,93 @@ class ApplicationControllerSpec extends ControllerSpec
         eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = underTest.deleteCollaborator(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
+      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
+  }
+
+  "remove collaborator" should {
+    val applicationId = ApplicationId.random()
+    val admin = "admin@example.com"
+    val collaborator = "dev@example.com"
+    val adminsToEmailSet = Set.empty[String]
+    val notifyCollaborator = true
+    lazy val myRequest =
+      FakeRequest()
+      .withMethod(POST)
+      .withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+      .withBody(Json.toJson(DeleteCollaboratorRequest(collaborator, adminsToEmailSet, notifyCollaborator)))
+    
+    "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(underTest.applicationService.deleteCollaborator(
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+
+      val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+      status(result) shouldBe NO_CONTENT
+    }
+
+    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
+      givenUserIsAuthenticated(underTest)
+
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
+        when(underTest.applicationService.deleteCollaborator(
+          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+
+        val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+        status(result) shouldBe NO_CONTENT
+      })
+    }
+
+    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
+        when(underTest.applicationService.deleteCollaborator(
+          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
+
+        val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+        status(result) shouldBe NO_CONTENT
+      })
+    }
+
+    "fail with a 404 (not found) if no application exists for the given id" in new Setup {
+      when(underTest.applicationService.deleteCollaborator(
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
+
+      val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+    }
+
+    "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(underTest.applicationService.deleteCollaborator(
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+        .thenReturn(failed(new ApplicationNeedsAdmin))
+
+      val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+      verifyErrorResult(result, FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      when(underTest.applicationService.deleteCollaborator(
+        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.deleteCollaborator(applicationId)(myRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
   }
 
   "add client secret" should {
@@ -693,7 +777,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
@@ -705,7 +789,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
         contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
       })
     }
@@ -717,7 +801,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
-        verifyErrorResult(result, SC_FORBIDDEN, ErrorCode.CLIENT_SECRET_LIMIT_EXCEEDED)
+        verifyErrorResult(result, FORBIDDEN, ErrorCode.CLIENT_SECRET_LIMIT_EXCEEDED)
       })
     }
 
@@ -728,7 +812,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
-        verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+        verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
       })
     }
 
@@ -739,7 +823,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
-        status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+        status(result) shouldBe INTERNAL_SERVER_ERROR
       })
     }
 
@@ -761,7 +845,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
@@ -771,7 +855,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
 
-        status(result) shouldBe SC_NO_CONTENT
+        status(result) shouldBe NO_CONTENT
       })
     }
 
@@ -782,7 +866,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.deleteClientSecret(applicationId, clientSecretId)(request.withBody(Json.toJson(secretRequest)))
 
-        status(result) shouldBe SC_NO_CONTENT
+        status(result) shouldBe NO_CONTENT
       })
     }
   }
@@ -798,7 +882,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "fail with a 401 if credentials are invalid for an application" in new Setup {
@@ -807,7 +891,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
-      verifyErrorResult(result, SC_UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS)
+      verifyErrorResult(result, UNAUTHORIZED, ErrorCode.INVALID_CREDENTIALS)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -816,7 +900,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result =underTest.validateCredentials(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -833,7 +917,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
 
       contentAsJson(result) shouldBe Json.obj()
 
@@ -849,7 +933,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
 
       contentAsJson(result) shouldBe Json.obj()
 
@@ -865,7 +949,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
 
       contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
 
@@ -881,7 +965,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
 
       contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
 
@@ -916,7 +1000,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
-      validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
+      validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
 
     "retrieve by server token" in new Setup {
@@ -931,7 +1015,7 @@ class ApplicationControllerSpec extends ControllerSpec
       forAll(scenarios) { (serverTokenHeader, expectedVaryHeader) =>
         val result =underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken))
 
-        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
+        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
       }
     }
 
@@ -940,7 +1024,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.queryDispatcher()(FakeRequest())
 
-      validateResult(result, SC_OK, None, None)
+      validateResult(result, OK, None, None)
       contentAsJson(result).as[Seq[JsValue]] should have size 2
     }
 
@@ -949,7 +1033,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
 
-      validateResult(result, SC_OK, None, None)
+      validateResult(result, OK, None, None)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown from fetchAll" in new Setup {
@@ -957,7 +1041,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.queryDispatcher()(FakeRequest())
 
-      validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
+      validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
 
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
@@ -965,7 +1049,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
-      validateResult(result, SC_INTERNAL_SERVER_ERROR, None, None)
+      validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
 
     "update last accessed time and server token usage when an API gateway retrieves Application by Server Token" in new LastAccessedSetup {
@@ -988,7 +1072,7 @@ class ApplicationControllerSpec extends ControllerSpec
           underTest.queryDispatcher()(request.withHeaders(headers: _*))
 
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
-        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
+        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         if(shouldUpdate) {
           verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))
         }
@@ -1015,7 +1099,7 @@ class ApplicationControllerSpec extends ControllerSpec
         val result =
           underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*))
 
-        validateResult(result, SC_OK, Some(s"max-age=$applicationTtlInSecs"), None)
+        validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
         if(shouldUpdate) {
           verify(underTest.applicationService).recordApplicationUsage(eqTo(applicationId))
@@ -1039,7 +1123,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
-      status(underTest.queryDispatcher()(queryRequest)) shouldBe SC_OK
+      status(underTest.queryDispatcher()(queryRequest)) shouldBe OK
     }
 
     "succeed with a 200 (ok) when applications are found for the collaborator and the environment" in new Setup {
@@ -1051,7 +1135,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
-      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe SC_OK
+      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
 
     "succeed with a 200 (ok) when no applications are found for the collaborator" in new Setup {
@@ -1059,7 +1143,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.queryDispatcher()(queryRequest)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsString(result) shouldBe "[]"
     }
 
@@ -1068,7 +1152,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.queryDispatcher()(queryRequest)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -1089,7 +1173,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
 
         contentAsJson(result) shouldBe Json.toJson(response)
       }
@@ -1099,7 +1183,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
 
         contentAsString(result) shouldBe "[]"
       }
@@ -1109,7 +1193,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+        status(result) shouldBe INTERNAL_SERVER_ERROR
       }
     }
 
@@ -1128,7 +1212,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
 
         contentAsJson(result) shouldBe Json.toJson(response)
 
@@ -1139,7 +1223,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_OK
+        status(result) shouldBe OK
 
         contentAsString(result) shouldBe "[]"
       }
@@ -1149,7 +1233,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
         val result = underTest.queryDispatcher()(queryRequest)
 
-        status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+        status(result) shouldBe INTERNAL_SERVER_ERROR
       }
     }
   }
@@ -1163,32 +1247,32 @@ class ApplicationControllerSpec extends ControllerSpec
 
     "succeed with a 200 (ok) when the application is subscribed to a given API version" in new Setup {
 
-      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(successful(true))
+      when(mockSubscriptionService.isSubscribed(applicationId, api)).thenReturn(successful(true))
 
       val result = underTest.isSubscribed(applicationId, context, version)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsJson(result) shouldBe Json.toJson(api)
       headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe Some(s"max-age=$subscriptionTtlInSecs")
     }
 
     "fail with a 404 (not found) when the application is not subscribed to a given API version" in new Setup {
 
-      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(successful(false))
+      when(mockSubscriptionService.isSubscribed(applicationId, api)).thenReturn(successful(false))
 
       val result = underTest.isSubscribed(applicationId, context, version)(request)
 
-      status(result) shouldBe SC_NOT_FOUND
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.SUBSCRIPTION_NOT_FOUND)
+      status(result) shouldBe NOT_FOUND
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.SUBSCRIPTION_NOT_FOUND)
       headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe None
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      given(mockSubscriptionService.isSubscribed(applicationId, api)).willReturn(failed(new RuntimeException("something went wrong")))
+      when(mockSubscriptionService.isSubscribed(applicationId, api)).thenReturn(failed(new RuntimeException("something went wrong")))
 
       val result = underTest.isSubscribed(applicationId, context, version)(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
       headers(result).get(HeaderNames.CACHE_CONTROL) shouldBe None
     }
   }
@@ -1202,7 +1286,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
-      status(result) shouldBe SC_NOT_FOUND
+      status(result) shouldBe NOT_FOUND
     }
 
     "succeed with a 200 (ok) when subscriptions are found for the application" in new Setup {
@@ -1211,7 +1295,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "succeed with a 200 (ok) when no subscriptions are found for the application" in new Setup {
@@ -1220,7 +1304,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsString(result) shouldBe "[]"
     }
 
@@ -1230,7 +1314,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllSubscriptions(applicationId)(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -1245,7 +1329,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllAPISubscriptions()(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "succeed with a 200 (ok) when no subscriptions are found for any application" in new Setup {
@@ -1253,7 +1337,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllAPISubscriptions()(request)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
       contentAsString(result) shouldBe "[]"
     }
 
@@ -1262,7 +1346,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.fetchAllAPISubscriptions()(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 
@@ -1275,7 +1359,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
@@ -1285,7 +1369,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
@@ -1297,7 +1381,7 @@ class ApplicationControllerSpec extends ControllerSpec
           when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
-          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe SC_NO_CONTENT
+          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
         })
       }
 
@@ -1316,7 +1400,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -1326,7 +1410,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -1339,7 +1423,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "succeed with a 204 (no content) when a subscription is successfully removed from a STANDARD application" in new Setup {
@@ -1349,7 +1433,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
@@ -1361,7 +1445,7 @@ class ApplicationControllerSpec extends ControllerSpec
           when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
-          status(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)) shouldBe SC_NO_CONTENT
+          status(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)) shouldBe NO_CONTENT
         })
       }
 
@@ -1379,7 +1463,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
   }
@@ -1392,7 +1476,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(underTest.applicationService.verifyUplift(eqTo(verificationCode))(*)).thenReturn(successful(UpliftVerified))
 
       val result = underTest.verifyUplift(verificationCode)(request)
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "verify uplift failed" in new Setup {
@@ -1402,7 +1486,7 @@ class ApplicationControllerSpec extends ControllerSpec
         .thenReturn(failed(InvalidUpliftVerificationCode(verificationCode)))
 
       val result = underTest.verifyUplift(verificationCode)(request)
-      status(result) shouldBe SC_BAD_REQUEST
+      status(result) shouldBe BAD_REQUEST
     }
   }
 
@@ -1421,7 +1505,7 @@ class ApplicationControllerSpec extends ControllerSpec
       val result = underTest.requestUplift(applicationId)(request
         .withBody(Json.toJson(upliftRequest)))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "return 404 if the application doesn't exist" in new Setup {
@@ -1431,7 +1515,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
-      verifyErrorResult(result, SC_NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
     "fail with a 409 (conflict) when an application already exists for that application name" in new Setup {
@@ -1441,7 +1525,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
-      verifyErrorResult(result, SC_CONFLICT, ErrorCode.APPLICATION_ALREADY_EXISTS)
+      verifyErrorResult(result, CONFLICT, ErrorCode.APPLICATION_ALREADY_EXISTS)
     }
 
     "fail with 412 (Precondition Failed) when the application is not in the TESTING state" in new Setup {
@@ -1451,7 +1535,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
-      verifyErrorResult(result, SC_PRECONDITION_FAILED, ErrorCode.INVALID_STATE_TRANSITION)
+      verifyErrorResult(result, PRECONDITION_FAILED, ErrorCode.INVALID_STATE_TRANSITION)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -1460,7 +1544,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
-      verifyErrorResult(result, SC_INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
+      verifyErrorResult(result, INTERNAL_SERVER_ERROR, ErrorCode.UNKNOWN_ERROR)
     }
   }
 
@@ -1476,7 +1560,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
 
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
     }
 
@@ -1485,7 +1569,7 @@ class ApplicationControllerSpec extends ControllerSpec
       givenUserIsAuthenticated(underTest)
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
-      status(result) shouldBe SC_UNPROCESSABLE_ENTITY
+      status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldBe Json.toJson(Json.parse(
         """
          {
@@ -1503,7 +1587,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
       verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
     }
 
@@ -1516,7 +1600,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
     "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
@@ -1537,7 +1621,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpWhitelist(applicationId)(request.withBody(validUpdateIpWhitelistJson))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "fail when the JSON message is invalid" in new Setup {
@@ -1547,7 +1631,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
 
-      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
+      verifyErrorResult(result, UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
     }
 
     "fail when the IP whitelist is invalid" in new Setup {
@@ -1559,7 +1643,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
 
-      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_ALLOWLIST)
+      verifyErrorResult(result, BAD_REQUEST, INVALID_IP_ALLOWLIST)
     }
   }
 
@@ -1571,7 +1655,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
     }
 
     "fail when the JSON message is invalid" in new Setup {
@@ -1581,7 +1665,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
 
-      verifyErrorResult(result, SC_UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
+      verifyErrorResult(result, UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
     }
 
     "fail when the IP allowlist is invalid" in new Setup {
@@ -1593,7 +1677,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.updateIpAllowlist(applicationId)(request.withBody(validUpdateIpAllowlistJson))
 
-      verifyErrorResult(result, SC_BAD_REQUEST, INVALID_IP_ALLOWLIST)
+      verifyErrorResult(result, BAD_REQUEST, INVALID_IP_ALLOWLIST)
     }
   }
 
@@ -1609,7 +1693,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.searchApplications(req)
 
-      status(result) shouldBe SC_OK
+      status(result) shouldBe OK
     }
 
     "return BAD REQUEST if date/time cannot be parsed for lastUseBefore query parameter" in new Setup {
@@ -1619,7 +1703,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       verifyZeroInteractions(mockApplicationService)
 
-      status(result) shouldBe SC_BAD_REQUEST
+      status(result) shouldBe BAD_REQUEST
     }
   }
 
@@ -1637,7 +1721,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
@@ -1647,7 +1731,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
-      status(result) shouldBe SC_BAD_REQUEST
+      status(result) shouldBe BAD_REQUEST
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
@@ -1679,7 +1763,7 @@ class ApplicationControllerSpec extends ControllerSpec
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
         .asInstanceOf[FakeRequest[AnyContent]])
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
 
@@ -1688,7 +1772,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
-      status(result) shouldBe SC_NOT_FOUND
+      status(result) shouldBe NOT_FOUND
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
     }
   }
@@ -1707,7 +1791,7 @@ class ApplicationControllerSpec extends ControllerSpec
         .withHeaders(AUTHORIZATION -> "foo")
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
-      status(result) shouldBe SC_NO_CONTENT
+      status(result) shouldBe NO_CONTENT
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest)) (*)
     }
 
@@ -1720,7 +1804,7 @@ class ApplicationControllerSpec extends ControllerSpec
         .withHeaders(AUTHORIZATION -> "foo")
         .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
 
-      status(result) shouldBe SC_INTERNAL_SERVER_ERROR
+      status(result) shouldBe INTERNAL_SERVER_ERROR
       verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest)) (*)
     }
   }

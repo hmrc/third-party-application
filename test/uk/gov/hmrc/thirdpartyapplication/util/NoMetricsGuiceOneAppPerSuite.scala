@@ -34,4 +34,3 @@ trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
         .disable(classOf[SchedulerModule])
   }
 }
-
