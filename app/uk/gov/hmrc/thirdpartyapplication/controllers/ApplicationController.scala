@@ -315,6 +315,10 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
       case None => successful(handleNotFound(notFoundMessage))
     } recover recovery
 
+  def fetchAllForCollaborator(userId: UserId) = Action.async {
+    applicationService.fetchAllForCollaborator(userId).map(apps => Ok(toJson(apps))) recover recovery
+  }
+
   private def fetchAllForCollaborator(emailAddress: String) = {
     applicationService.fetchAllForCollaborator(emailAddress).map(apps => Ok(toJson(apps))) recover recovery
   }
@@ -398,7 +402,6 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     }
 
     {
-      Logger.info(s"Pomegranate : Content length ${request.headers.get(HeaderNames.CONTENT_LENGTH)}")
       if (request.isStrideAuth) {
           withJsonBodyFromAnyContent[DeleteApplicationRequest] {
           deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)

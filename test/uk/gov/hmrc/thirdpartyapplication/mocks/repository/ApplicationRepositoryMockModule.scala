@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApplicationRepoMock {
@@ -177,6 +178,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
       def thenReturnEmptyWhen(emailAddress: String) =
         when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(List.empty))
+    }
+
+    object fetchAllForUserId {
+      def thenReturnWhen(userId: UserId)(apps: ApplicationData*) =
+        when(aMock.fetchAllForUserId(eqTo(userId))).thenReturn(successful(apps.toList))
     }
 
     object FetchAllForApiIdentifier {
