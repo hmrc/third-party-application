@@ -492,7 +492,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   }
 
-"add collaborators with UserId" should {
+  "add collaborators with UserId" should {
     val applicationId = ApplicationId.random()
     val admin = "admin@example.com"
     val email = "test@example.com"
@@ -1107,15 +1107,12 @@ class ApplicationControllerSpec extends ControllerSpec
         reset(underTest.applicationService)
       }
     }
-  }
-
-  "fetchAllForCollaborator" should {
 
     val emailAddress = "dev@example.com"
     val environment = "PRODUCTION"
     val queryRequest = FakeRequest("GET", s"?emailAddress=$emailAddress")
 
-    "succeed with a 200 (ok) when applications are found for the collaborator" in new Setup {
+    "succeed with a 200 when applications are found for a collaborator by email address" in new Setup {
       val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
       val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
       val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
@@ -1126,7 +1123,7 @@ class ApplicationControllerSpec extends ControllerSpec
       status(underTest.queryDispatcher()(queryRequest)) shouldBe OK
     }
 
-    "succeed with a 200 (ok) when applications are found for the collaborator and the environment" in new Setup {
+    "succeed with a 200 when applications are found for the collaborator by email address and environment" in new Setup {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?emailAddress=$emailAddress&environment=$environment")
       val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
       val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
@@ -1138,7 +1135,7 @@ class ApplicationControllerSpec extends ControllerSpec
       status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
 
-    "succeed with a 200 (ok) when no applications are found for the collaborator" in new Setup {
+    "succeed with a 200 when no applications are found for the collaborator by email address" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(successful(Nil))
 
       val result = underTest.queryDispatcher()(queryRequest)
@@ -1147,10 +1144,42 @@ class ApplicationControllerSpec extends ControllerSpec
       contentAsString(result) shouldBe "[]"
     }
 
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+    "fail with a 500 when an exception is thrown" in new Setup {
       when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
       val result = underTest.queryDispatcher()(queryRequest)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+  }
+
+  "fetchAllForCollaborator" should {
+    val userId = UserId.random
+
+    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
+      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
+      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
+      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
+
+      when(underTest.applicationService.fetchAllForCollaborator(userId))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+
+      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
+    }
+
+    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId)).thenReturn(successful(Nil))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
+
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe "[]"
+    }
+
+    "fail with a 500 when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId)).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }

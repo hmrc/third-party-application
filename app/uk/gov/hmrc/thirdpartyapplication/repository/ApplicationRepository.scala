@@ -225,6 +225,10 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("tokens.production.accessToken" -> serverToken).map(_.headOption)
   }
 
+  def fetchAllForUserId(userId: UserId): Future[List[ApplicationData]] = {
+    find("collaborators.userId" -> userId.value)
+  }
+
   def fetchAllForEmailAddress(emailAddress: String): Future[List[ApplicationData]] = {
     find("collaborators.emailAddress" -> emailAddress)
   }

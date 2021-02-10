@@ -963,6 +963,17 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       await(underTest.fetchAllForCollaborator(emailAddress)).size shouldBe 3
     }
 
+    "fetch all applications for a given collaborator user id" in new Setup {
+      val userId = UserId.random
+      val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
+      val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
+      val ropcApplicationData: ApplicationData = anApplicationData(applicationId, access = Ropc())
+
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
+
+      await(underTest.fetchAllForCollaborator(userId)).size shouldBe 3
+    }
+
   }
 
   "fetchAllBySubscription" should {
