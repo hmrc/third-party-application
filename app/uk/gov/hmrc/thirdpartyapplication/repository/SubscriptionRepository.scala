@@ -117,7 +117,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     val builder = collection.BatchCommands.AggregationFramework
     val pipeline = List(
       builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Match(Json.obj("applications.collaborators.id" -> userId.value)),
+      builder.Match(Json.obj("applications.collaborators.userId" -> userId.value)),
       builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
     )
     collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
