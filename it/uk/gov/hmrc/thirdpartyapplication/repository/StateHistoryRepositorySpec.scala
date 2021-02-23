@@ -57,7 +57,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       result shouldBe stateHistory
       val savedStateHistories = await(repository.findAll())
-      savedStateHistories shouldBe Seq(stateHistory)
+      savedStateHistories shouldBe List(stateHistory)
     }
   }
 
@@ -73,7 +73,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       val result = await(repository.fetchByApplicationId(applicationId))
 
-      result shouldBe Seq(stateHistory)
+      result shouldBe List(stateHistory)
     }
   }
 
@@ -94,7 +94,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       val result = await(repository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL))
 
-      result shouldBe Seq(pendingHistory1, pendingHistory2, pendingHistory3)
+      result shouldBe List(pendingHistory1, pendingHistory2, pendingHistory3)
     }
   }
 
@@ -131,7 +131,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       await(repository.deleteByApplicationId(applicationId))
 
-      await(repository.findAll()) shouldBe Seq(anotherAppStateHistory)
+      await(repository.findAll()) shouldBe List(anotherAppStateHistory)
     }
   }
 

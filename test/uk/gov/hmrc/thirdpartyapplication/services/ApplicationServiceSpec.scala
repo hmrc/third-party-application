@@ -985,14 +985,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
       val apiContext = "some-context"
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
+      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
 
       result.size shouldBe 0
     }
@@ -1004,7 +1004,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 1
-      result shouldBe Seq(applicationData).map(app => ApplicationResponse(data = app))
+      result shouldBe List(applicationData).map(app => ApplicationResponse(data = app))
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
@@ -1012,7 +1012,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
 
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
+      val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
 
       result.size shouldBe 0
     }
@@ -1023,7 +1023,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "return no matching applications if application has a subscription" in new Setup {
       ApplicationRepoMock.FetchAllWithNoSubscriptions.thenReturnNone()
 
-      val result: Seq[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
+      val result: List[ApplicationResponse] = await(underTest.fetchAllWithNoSubscriptions())
 
       result.size shouldBe 0
     }

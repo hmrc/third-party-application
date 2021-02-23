@@ -311,7 +311,7 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.fetchAllForEmailAddress("user@example.com"))
 
-      retrieved shouldBe Seq(application1, application2)
+      retrieved shouldBe List(application1, application2)
     }
 
   }
@@ -369,7 +369,7 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.fetchApplicationsByName(applicationName))
 
-      retrieved shouldBe Seq(application)
+      retrieved shouldBe List(application)
     }
 
     "dont retrieve the application if it's a non-matching name" in {
@@ -382,7 +382,7 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.fetchApplicationsByName("non-matching-name"))
 
-      retrieved shouldBe Seq.empty
+      retrieved shouldBe List.empty
     }
   }
 
@@ -525,7 +525,7 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.fetchAllWithNoSubscriptions())
 
-      result shouldBe Seq(application2)
+      result shouldBe List(application2)
     }
   }
 
@@ -537,7 +537,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
-      await(applicationRepository.fetchAll()) shouldBe Seq(application1, application2)
+      await(applicationRepository.fetchAll()) shouldBe List(application1, application2)
     }
   }
 
@@ -556,7 +556,7 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.fetchAllForContext("context"))
 
-      result shouldBe Seq(application1, application2)
+      result shouldBe List(application1, application2)
     }
   }
 
@@ -574,7 +574,7 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
 
-      result shouldBe Seq(application2)
+      result shouldBe List(application2)
     }
 
     "fetch multiple applications with the same matching context and versions" in {
@@ -589,7 +589,7 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
 
-      result shouldBe Seq(application2, application3)
+      result shouldBe List(application2, application3)
     }
 
     "fetch no applications when the context and version do not match" in {
@@ -603,7 +603,7 @@ class ApplicationRepositorySpec
 
       val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("other", "version-1")))
 
-      result shouldBe Seq.empty
+      result shouldBe List.empty
     }
   }
 
