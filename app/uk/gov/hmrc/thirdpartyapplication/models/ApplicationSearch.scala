@@ -23,7 +23,7 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
-                             filters: List[ApplicationSearchFilter] = List(),
+                             filters: List[ApplicationSearchFilter] = List.empty,
                              textToSearch: Option[String] = None,
                              apiContext: Option[String] = None,
                              apiVersion: Option[String] = None,
@@ -31,8 +31,8 @@ case class ApplicationSearch(pageNumber: Int = 1,
 
 object ApplicationSearch {
   def fromQueryString(queryString: Map[String, Seq[String]]): ApplicationSearch = {
-    def pageNumber = queryString.getOrElse("page", List()).headOption.getOrElse("1").toInt
-    def pageSize = queryString.getOrElse("pageSize", List()).headOption.getOrElse(Int.MaxValue.toString).toInt
+    def pageNumber = queryString.getOrElse("page", List.empty).headOption.getOrElse("1").toInt
+    def pageSize = queryString.getOrElse("pageSize", List.empty).headOption.getOrElse(Int.MaxValue.toString).toInt
 
     def filters = queryString
       .map {
@@ -52,10 +52,10 @@ object ApplicationSearch {
       .flatten
       .toList
 
-    def searchText = queryString.getOrElse("search", List()).headOption
-    def apiContext = queryString.getOrElse("apiSubscription", List()).headOption.flatMap(_.split("--").headOption)
-    def apiVersion = queryString.getOrElse("apiSubscription", List()).headOption.flatMap(_.split("--").lift(1))
-    def sort = ApplicationSort(queryString.getOrElse("sort", List()).headOption)
+    def searchText = queryString.getOrElse("search", List.empty).headOption
+    def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption)
+    def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1))
+    def sort = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)
   }

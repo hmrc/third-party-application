@@ -123,7 +123,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       await(subscriptionRepository.add(application2, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierB))
       val retrieved = await(subscriptionRepository.findAll())
-      retrieved shouldBe Seq(
+      retrieved shouldBe List(
         subscriptionData("some-context-a", "1.0.0", application1, application2),
         subscriptionData("some-context-b", "1.0.2", application2))
     }
@@ -165,13 +165,13 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result shouldBe Seq(api1, api2)
+      result shouldBe List(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result shouldBe Seq.empty
+      result shouldBe List.empty
     }
   }
 
@@ -179,11 +179,11 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     val developerEmail = "john.doe@example.com"
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq(developerEmail))
+      val app1 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app1))
-      val app2 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq(developerEmail))
+      val app2 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app2))
-      val someoneElsesApp = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq("someone-else@example.com"))
+      val someoneElsesApp = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List("someone-else@example.com"))
       await(applicationRepository.save(someoneElsesApp))
 
       val helloWorldApi1 = ApiIdentifier("hello-world", "1.0")
@@ -202,7 +202,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
 
     "return empty when the user's apps are not subscribed to any API" in {
-      val app = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq(developerEmail))
+      val app = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app))
 
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerEmail))
@@ -211,7 +211,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
 
     "return empty when the user is not a collaborator of any apps" in {
-      val app = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq("someone-else@example.com"))
+      val app = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List("someone-else@example.com"))
       await(applicationRepository.save(app))
       val api = ApiIdentifier("hello-world", "1.0")
       await(subscriptionRepository.add(app.id, api))
@@ -276,13 +276,13 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   "Get API Version Collaborators" should {
     "return email addresses" in {
 
-      val app1 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq("match1@example.com", "match2@example.com"))
+      val app1 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List("match1@example.com", "match2@example.com"))
       await(applicationRepository.save(app1))
 
-      val app2 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq("match3@example.com"))
+      val app2 = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List("match3@example.com"))
       await(applicationRepository.save(app2))
 
-      val doNotMatchApp = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = Seq("donotmatch@example.com"))
+      val doNotMatchApp = anApplicationData(id = ApplicationId.random(), clientId = generateClientId, user = List("donotmatch@example.com"))
       await(applicationRepository.save(doNotMatchApp))
 
       val api1 = ApiIdentifier("some-context-api1", "1.0")
@@ -305,7 +305,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       val app1 = anApplicationData(
         id = ApplicationId.random(),
         clientId = generateClientId,
-        user = Seq(matchEmail, "donot@example.com"))
+        user = List(matchEmail, "donot@example.com"))
 
       await(applicationRepository.save(app1))
 
@@ -328,7 +328,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
                         clientId: String = "aaa",
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
-                        user: Seq[String] = List("user@example.com"),
+                        user: List[String] = List("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
@@ -339,7 +339,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
                             clientId: String = "aaa",
                             state: ApplicationState = testingState(),
                             access: Access = Standard(List.empty, None, None),
-                            user: Seq[String] = List("user@example.com"),
+                            user: List[String] = List("user@example.com"),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet

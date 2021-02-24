@@ -366,7 +366,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The client secret is added to the production environment of the application")
       val secondFetchResponseJson = Json.parse(secondfetchResponse.body).as[ApplicationTokenResponse]
-      val moreSecrets: Seq[ClientSecretResponse] = secondFetchResponseJson.clientSecrets
+      val moreSecrets: List[ClientSecretResponse] = secondFetchResponseJson.clientSecrets
       moreSecrets should have size 2
 
       val clientSecretId = moreSecrets.last.id

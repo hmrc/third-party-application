@@ -359,13 +359,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def fetchAll(): Future[List[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
 
-  def fetchWithProjection(query: JsObject, projection: JsObject): Future[Seq[JsObject]] = {
-    collection
-      .find(query, Some(projection))
-      .cursor[JsObject]()
-      .collect[Seq] (-1, Cursor.ContOnError[Seq[JsObject]]())
-  }
-
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     import reactivemongo.akkastream.{State, cursorProducer}
 
