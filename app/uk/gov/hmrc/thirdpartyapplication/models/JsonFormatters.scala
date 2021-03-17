@@ -122,7 +122,6 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatExtendedApplicationResponse = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
-  implicit val formatUpdateIpWhitelistRequest = Json.format[UpdateIpWhitelistRequest]
   implicit val formatUpdateIpAllowlistRequest = Json.format[UpdateIpAllowlistRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatClientSecretResponse = Json.format[ClientSecretResponse]
@@ -212,7 +211,6 @@ object MongoFormat {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipWhitelist").read[Set[String]] or Reads.pure(Set.empty[String])) and
     ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 

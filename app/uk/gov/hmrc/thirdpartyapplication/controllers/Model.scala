@@ -53,8 +53,6 @@ case class OverridesResponse(overrides: Set[OverrideFlag])
 
 case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
-case class UpdateIpWhitelistRequest(ipWhitelist: Set[String])
-
 case class UpdateIpAllowlistRequest(required: Boolean, allowlist: Set[String])
 object UpdateIpAllowlistRequest {
   def toIpAllowlist(updateIpAllowlistRequest: UpdateIpAllowlistRequest): IpAllowlist = {

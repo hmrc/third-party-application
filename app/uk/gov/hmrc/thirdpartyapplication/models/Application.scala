@@ -103,7 +103,6 @@ case class ApplicationResponse(id: ApplicationId,
                                rateLimitTier: RateLimitTier = BRONZE,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
-                               ipWhitelist: Set[String] = Set.empty,
                                trusted: Boolean = false,
                                ipAllowlist: IpAllowlist = IpAllowlist())
 
@@ -142,7 +141,6 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      data.ipWhitelist,
       ipAllowlist= data.ipAllowlist)
   }
 }
@@ -164,7 +162,6 @@ case class ExtendedApplicationResponse(id: ApplicationId,
                                        rateLimitTier: RateLimitTier = BRONZE,
                                        checkInformation: Option[CheckInformation] = None,
                                        blocked: Boolean = false,
-                                       ipWhitelist: Set[String] = Set.empty,
                                        trusted: Boolean = false,
                                        serverToken: String,
                                        subscriptions: List[ApiIdentifier],
@@ -190,7 +187,6 @@ object ExtendedApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      data.ipWhitelist,
       serverToken = data.tokens.production.accessToken,
       subscriptions = subscriptions,
       ipAllowlist = data.ipAllowlist)

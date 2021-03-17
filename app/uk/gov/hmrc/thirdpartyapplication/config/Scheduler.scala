@@ -37,7 +37,6 @@ class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJ
                           metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
                           resetLastAccessDateJob: ResetLastAccessDateJob,
-                          migrateIpAllowlistJob: MigrateIpAllowlistJob,
                           override val applicationLifecycle: ApplicationLifecycle,
                           override val application: Application)
                           (implicit val ec: ExecutionContext)
@@ -45,7 +44,7 @@ class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJ
 
   override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
     // TODO : MetricsJob optional?
-    Seq(upliftVerificationExpiryJob, metricsJob, resetLastAccessDateJob, migrateIpAllowlistJob)
+    Seq(upliftVerificationExpiryJob, metricsJob, resetLastAccessDateJob)
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 }

@@ -100,15 +100,6 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     }
   }
 
-  @deprecated("IpWhitelist superseded by IpAllowlist","?")
-  def updateIpWhitelist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpdateIpWhitelistRequest] { updateIpWhitelistRequest =>
-      applicationService.updateIpWhitelist(applicationId, updateIpWhitelistRequest.ipWhitelist) map { _ =>
-        NoContent
-      } recover recovery
-    }
-  }
-
   def updateIpAllowlist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
       applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
