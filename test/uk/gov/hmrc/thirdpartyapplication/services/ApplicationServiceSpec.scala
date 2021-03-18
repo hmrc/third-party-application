@@ -1333,43 +1333,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   }
 
-  "update IP whitelist" should {
-    "update the IP whitelist in the application in Mongo" in new Setup {
-      val newIpWhitelist: Set[String] = Set("192.168.100.0/22", "192.168.104.1/32")
-      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, ipWhitelist = newIpWhitelist)
-      ApplicationRepoMock.UpdateIpWhitelist.thenReturnWhen(applicationId, newIpWhitelist)(updatedApplicationData)
-
-      val result: ApplicationData = await(underTest.updateIpWhitelist(applicationId, newIpWhitelist))
-
-      result shouldBe updatedApplicationData
-      ApplicationRepoMock.UpdateIpWhitelist.verifyCalledWith(applicationId, newIpWhitelist)
-    }
-
-    "fail when the IP address is out of range" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("392.168.100.0/22")))
-      }
-
-      error.getMessage shouldBe "Value [392] not in range [0,255]"
-    }
-
-    "fail when the mask is out of range" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("192.168.100.0/55")))
-      }
-
-      error.getMessage shouldBe "Value [55] not in range [0,32]"
-    }
-
-    "fail when the format is invalid" in new Setup {
-      val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpWhitelist(ApplicationId.random(), Set("192.100.0/22")))
-      }
-
-      error.getMessage shouldBe "Could not parse [192.100.0/22]"
-    }
-  }
-
   "update IP allowlist" should {
     "update the IP allowlist in the application in Mongo" in new Setup {
       val newIpAllowlist: IpAllowlist = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
@@ -1581,8 +1544,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
                                 collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION,
-                                ipWhitelist: Set[String] = Set.empty) = {
+                                environment: Environment = Environment.PRODUCTION) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1596,8 +1558,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       HmrcTime.now,
       Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
-      environment = environment.toString,
-      ipWhitelist = ipWhitelist)
+      environment = environment.toString)
   }
 
   private def aNewApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
@@ -1629,7 +1590,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,
-                                ipWhitelist: Set[String] = Set.empty,
                                 ipAllowlist: IpAllowlist = IpAllowlist()) = {
     ApplicationData(
       applicationId,
@@ -1645,7 +1605,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Some(HmrcTime.now),
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
-      ipWhitelist = ipWhitelist,
       ipAllowlist = ipAllowlist)
   }
 }

@@ -38,7 +38,6 @@ case class ApplicationData(id: ApplicationId,
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
                            blocked: Boolean = false,
-                           ipWhitelist: Set[String] = Set.empty,
                            ipAllowlist: IpAllowlist = IpAllowlist()) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }

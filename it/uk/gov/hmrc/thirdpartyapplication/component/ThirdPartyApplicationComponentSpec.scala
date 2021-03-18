@@ -64,7 +64,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val apiName = "apiName"
   val context = "myapi"
   val version = "1.0"
-  val anApiDefinition = ApiDefinition(serviceName, apiName, context, List(ApiVersion(version, ApiStatus.STABLE, None)), None)
   val standardAccess = Standard(
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
@@ -410,9 +409,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       And("A third party application with BRONZE rate limit tier exists")
       val application = createApplication()
 
-      And("An API is available for the application")
-      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
-
       And("AWS API Gateway is updated")
       awsApiGatewayStub.willCreateOrUpdateApplication(application.name, "", RateLimitTier.SILVER)
 
@@ -445,9 +441,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application = createApplication("App with subscription")
 
-      And("An API")
-      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
-
       And("I subscribe the application to an API")
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
       val subscribeResponse = postData(s"/application/${application.id.value}/subscription",
@@ -472,9 +465,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       Given("A third party application")
       val application = createApplication()
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
-
-      And("An API")
-      apiDefinitionStub.willReturnApisForApplication(application.id, Seq(anApiDefinition))
 
       When("I request to subscribe the application to the API")
       val subscribeResponse = postData(s"/application/${application.id.value}/subscription",

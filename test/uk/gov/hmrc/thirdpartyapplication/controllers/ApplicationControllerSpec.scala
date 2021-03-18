@@ -1642,40 +1642,6 @@ class ApplicationControllerSpec extends ControllerSpec
     }
   }
 
-  "update IP whitelist" should {
-    "succeed with a 204 (no content) when the IP whitelist is successfully added to the application" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
-      val validUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(validUpdateIpWhitelistJson))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "fail when the JSON message is invalid" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
-      val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
-      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
-
-      verifyErrorResult(result, UNPROCESSABLE_ENTITY, INVALID_REQUEST_PAYLOAD)
-    }
-
-    "fail when the IP whitelist is invalid" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
-      val invalidUpdateIpWhitelistJson: JsValue = Json.parse("""{ "ipWhitelist" : ["392.168.100.0/22"] }""")
-      val errorMessage = "invalid IP whitelist"
-      when(underTest.applicationService.updateIpWhitelist(eqTo(applicationId), *)(*))
-        .thenReturn(Future.failed(InvalidIpAllowlistException(errorMessage)))
-
-      val result = underTest.updateIpWhitelist(applicationId)(request.withBody(invalidUpdateIpWhitelistJson))
-
-      verifyErrorResult(result, BAD_REQUEST, INVALID_IP_ALLOWLIST)
-    }
-  }
-
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
       val applicationId: ApplicationId = ApplicationId.random()
@@ -1888,7 +1854,6 @@ class ApplicationControllerSpec extends ControllerSpec
       app.rateLimitTier,
       app.checkInformation,
       app.blocked,
-      app.ipWhitelist,
       app.trusted,
       ju.UUID.randomUUID().toString,
       List.empty
