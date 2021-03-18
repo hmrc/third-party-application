@@ -19,29 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import play.api.Configuration
 import uk.gov.hmrc.thirdpartyapplication.models.ApiStatus.APIStatus
 
-case class ApiDefinition(serviceName: String,
-                         name: String,
-                         context: String,
-                         versions: List[ApiVersion],
-                         isTestSupport: Option[Boolean] = None)
-
-case class ApiVersion(version: String,
-                      status: APIStatus,
-                      access: Option[ApiAccess])
-
-case class ApiAccess(`type`: APIAccessType.Value, whitelistedApplicationIds: Option[List[String]])
-
-object ApiAccess {
-  def build(config: Option[Configuration]): ApiAccess = ApiAccess(
-    `type` = APIAccessType.PRIVATE,
-    whitelistedApplicationIds = config.flatMap(
-                                  _.getOptional[Seq[String]]("whitelistedApplicationIds")
-                                  .map(_.toList)
-                                  .orElse(Some(List.empty[String]))
-                                )
-  )
-}
-
 object ApiStatus extends Enumeration {
   type APIStatus = Value
   val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
@@ -51,21 +28,5 @@ object APIAccessType extends Enumeration {
   type APIAccessType = Value
   val PRIVATE, PUBLIC = Value
 }
-
-case class ApiSubscription(name: String, serviceName: String, context: String, versions: List[VersionSubscription],
-                           isTestSupport: Boolean = false)
-
-object ApiSubscription {
-
-  def from(apiDefinition: ApiDefinition, subscribedApis: List[ApiIdentifier]): ApiSubscription = {
-    val versionSubscriptions: List[VersionSubscription] = apiDefinition.versions.map { v =>
-      VersionSubscription(v, subscribedApis.exists(s => s.context == apiDefinition.context && s.version == v.version))
-    }
-    ApiSubscription(apiDefinition.name, apiDefinition.serviceName, apiDefinition.context, versionSubscriptions,
-      apiDefinition.isTestSupport.getOrElse(false))
-  }
-}
-
-case class VersionSubscription(version: ApiVersion, subscribed: Boolean)
 
 case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])

@@ -88,22 +88,6 @@ trait JsonFormatters extends DateTimeFormatters {
 
   implicit val formatAPIStatus = APIStatusJson.apiStatusFormat(ApiStatus)
   implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
-  implicit val formatAPIAccess = Json.format[ApiAccess]
-  implicit val formatAPIVersion = Json.format[ApiVersion]
-  implicit val formatVersionSubscription = Json.format[VersionSubscription]
-  implicit val formatApiSubscription = Json.format[ApiSubscription]
-
-  val apiDefinitionReads: Reads[ApiDefinition] = (
-    (JsPath \ "serviceName").read[String] and
-      (JsPath \ "name").read[String] and
-      (JsPath \ "context").read[String] and
-      (JsPath \ "versions").read[List[ApiVersion]] and
-      (JsPath \ "isTestSupport").readNullable[Boolean]
-    ) (ApiDefinition.apply _)
-
-  implicit val formatAPIDefinition = {
-    Format(apiDefinitionReads, Json.writes[ApiDefinition])
-  }
 
   implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatApiIdentifier = Json.format[ApiIdentifier]
