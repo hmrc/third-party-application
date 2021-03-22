@@ -277,6 +277,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+    def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ApplicationResponse]] = {
+    applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment).map {
+      _.map(application => ApplicationResponse(data = application))
+    }
+  }
+
   def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
       _.map(application => ApplicationResponse(data = application))

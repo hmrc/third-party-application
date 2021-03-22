@@ -27,6 +27,7 @@ import org.joda.time.DateTime
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
+import play.api.test.Helpers._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, SessionRecordNotFound}
@@ -1109,6 +1110,7 @@ class ApplicationControllerSpec extends ControllerSpec
     }
 
     val emailAddress = "dev@example.com"
+    val userId = UserId.random
     val environment = "PRODUCTION"
     val queryRequest = FakeRequest("GET", s"?emailAddress=$emailAddress")
 
@@ -1121,18 +1123,6 @@ class ApplicationControllerSpec extends ControllerSpec
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
       status(underTest.queryDispatcher()(queryRequest)) shouldBe OK
-    }
-
-    "succeed with a 200 when applications are found for the collaborator by email address and environment" in new Setup {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?emailAddress=$emailAddress&environment=$environment")
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-
-      when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
-
-      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
 
     "succeed with a 200 when no applications are found for the collaborator by email address" in new Setup {
@@ -1150,6 +1140,42 @@ class ApplicationControllerSpec extends ControllerSpec
       val result = underTest.queryDispatcher()(queryRequest)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "succeed with a 200 when applications are found for the collaborator by email address and environment" in new Setup {
+      val queryRequestWithEnvironment = FakeRequest("GET", s"?emailAddress=$emailAddress&environment=$environment")
+      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
+      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
+      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
+
+      when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+
+      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
+    }
+    
+    "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup {
+      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.asText}&environment=$environment")
+      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
+      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
+      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
+
+      when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+
+      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
+    }
+     
+    "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup {
+      val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
+      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
+      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
+      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
+
+      when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
+        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
+
+      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe BAD_REQUEST
     }
   }
 

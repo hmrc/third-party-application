@@ -17,12 +17,24 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.{util => ju}
+import scala.util.control.NonFatal
 
-case class UserId(value: ju.UUID) extends AnyVal
+case class UserId(value: ju.UUID) extends AnyVal {
+  def asText = value.toString()
+}
 
 object UserId {
   import play.api.libs.json.Json
   implicit val userIdFormat = Json.valueFormat[UserId]
 
   def random: UserId = UserId(ju.UUID.randomUUID())
+
+  def fromString(raw: String): Option[UserId] = {
+    try {
+      Some(UserId(ju.UUID.fromString(raw)))
+    }
+    catch {
+      case NonFatal(e) => None
+    }
+  }
 }

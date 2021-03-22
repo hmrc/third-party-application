@@ -225,6 +225,10 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("collaborators.userId" -> userId.value)
   }
 
+  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ApplicationData]] = {
+    find("collaborators.userId" -> userId.value, "environment" -> environment)
+  }
+
   def fetchAllForEmailAddress(emailAddress: String): Future[List[ApplicationData]] = {
     find("collaborators.emailAddress" -> emailAddress)
   }

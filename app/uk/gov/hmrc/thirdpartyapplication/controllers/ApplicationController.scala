@@ -39,7 +39,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import scala.concurrent.Future.successful
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success, Try}
-import play.api.http.HeaderNames
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -256,6 +255,15 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
         fetchByClientId(request.queryString("clientId").head)
           .map(addHeaders(_.header.status == OK,
             CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
+      case ("environment" :: "userId" :: _, _) =>
+        val rawQueryParameter = request.queryString("userId")
+        val ouserId = UserId.fromString(rawQueryParameter.head)
+
+        ouserId.fold(
+          successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${rawQueryParameter.head} is not a valid user Id")))
+        )(
+          userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head)
+        )
       case ("emailAddress" :: "environment" :: _, _) =>
         fetchAllForCollaboratorAndEnvironment(request.queryString("emailAddress").head, request.queryString("environment").head)
       case ("emailAddress" :: _, _) =>
@@ -312,6 +320,10 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
 
   private def fetchAllForCollaborator(emailAddress: String) = {
     applicationService.fetchAllForCollaborator(emailAddress).map(apps => Ok(toJson(apps))) recover recovery
+  }
+
+  private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String) = {
+    applicationService.fetchAllForUserIdAndEnvironment(userId, environment).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String) = {
