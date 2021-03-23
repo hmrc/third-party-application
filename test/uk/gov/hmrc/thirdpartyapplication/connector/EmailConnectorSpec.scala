@@ -58,12 +58,29 @@ class EmailConnectorSpec extends ConnectorSpec {
     val application = "Test Application"
 
     "send added collaborator confirmation email" in new Setup {
+      val role = "admin"
       val expectedTemplateId = "apiAddedDeveloperAsCollaboratorConfirmation"
       val expectedToEmails = Set(collaboratorEmail)
       val expectedParameters: Map[String, String] = Map(
-        "role" -> role,
-        "applicationName" -> application,
-        "developerHubLink" -> hubLink,
+        "article"           -> "an",
+        "role"              -> role,
+        "applicationName"   -> application,
+        "developerHubTitle" -> hubTestTitle
+      )
+      val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendAddedCollaboratorConfirmation(role, application, expectedToEmails))
+    }
+
+    "send added collaborator confirmation email with article for developer" in new Setup {
+      val role = "developer"
+      val expectedTemplateId = "apiAddedDeveloperAsCollaboratorConfirmation"
+      val expectedToEmails = Set(collaboratorEmail)
+      val expectedParameters: Map[String, String] = Map(
+        "article"           -> "a",
+        "role"              -> role,
+        "applicationName"   -> application,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
