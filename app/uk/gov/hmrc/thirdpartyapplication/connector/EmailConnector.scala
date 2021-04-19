@@ -58,10 +58,13 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   val removedClientSecretNotification = "apiRemovedClientSecretNotification"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val article = if(role == "admin") "an" else "a"
+
     post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
-      Map("role" -> role,
-        "applicationName" -> application,
-        "developerHubLink" -> s"$devHubBaseUrl/developer/registration",
+      Map(
+        "article"           -> article,
+        "role"              -> role,
+        "applicationName"   -> application,
         "developerHubTitle" -> devHubTitle)))
       .map(_ => HasSucceeded)
   }
