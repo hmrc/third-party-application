@@ -51,7 +51,7 @@ lazy val microservice = (project in file("."))
   .settings(defaultSettings(): _*)
   .settings(
     name := appName,
-    scalaVersion := "2.12.11",
+    scalaVersion := "2.12.12",
     libraryDependencies ++= appDependencies,
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
@@ -74,9 +74,6 @@ lazy val microservice = (project in file("."))
     IntegrationTest / testGrouping := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution := false)
-  .settings(
-    resolvers += Resolver.jcenterRepo
-  )
   .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
 
 lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
