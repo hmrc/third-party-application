@@ -68,7 +68,7 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val runModeConfigurati
   with Provider[UpliftVerificationExpiryJobConfig] {
 
   override def get() = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"upliftVerificationExpiryJob")
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]]("upliftVerificationExpiryJob")
       .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
 
     val validity: FiniteDuration = runModeConfiguration.getOptional[FiniteDuration]("upliftVerificationValidity")
@@ -85,7 +85,7 @@ class MetricsJobConfigProvider @Inject()(val runModeConfiguration: Configuration
   with Provider[MetricsJobConfig] {
 
   override def get() = {
-    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]](s"metricsJob")
+    val jobConfig = runModeConfiguration.underlying.as[Option[JobConfig]]("metricsJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
     MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
@@ -107,7 +107,7 @@ class ApiStorageConfigProvider @Inject()(val runModeConfiguration: Configuration
   extends Provider[ApiStorageConfig] {
 
   override def get() = {
-    val disableAwsCalls = runModeConfiguration.getOptional[Boolean](s"disableAwsCalls").getOrElse(false)
+    val disableAwsCalls = runModeConfiguration.getOptional[Boolean]("disableAwsCalls").getOrElse(false)
     ApiStorageConfig(disableAwsCalls)
   }
 }
@@ -137,7 +137,7 @@ class EmailConfigProvider @Inject()(val runModeConfiguration: Configuration, run
 
   override def get() = {
     val url = baseUrl("email")
-    val devHubBaseUrl = ConfigHelper.getConfig(s"devHubBaseUrl", runModeConfiguration.getOptional[String](_))
+    val devHubBaseUrl = ConfigHelper.getConfig("devHubBaseUrl", runModeConfiguration.getOptional[String](_))
     val devHubTitle: String = "Developer Hub"
     val environmentName: String = runModeConfiguration.getOptional[String]("environmentName").getOrElse("unknown")
     EmailConfig(url, devHubBaseUrl, devHubTitle, environmentName)
@@ -196,7 +196,7 @@ class CredentialConfigProvider @Inject()(val runModeConfiguration: Configuration
   with Provider[CredentialConfig] {
 
   override def get() = {
-    val clientSecretLimit: Int = ConfigHelper.getConfig(s"clientSecretLimit", runModeConfiguration.getOptional[Int])
+    val clientSecretLimit: Int = ConfigHelper.getConfig("clientSecretLimit", runModeConfiguration.getOptional[Int])
     CredentialConfig(clientSecretLimit)
   }
 }
