@@ -21,7 +21,7 @@ import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.NO_CONTENT
 
 object ThirdPartyDelegatedAuthorityStub extends Stub {
-  override val stub = MockHost(22228)
+  override val stub = MockHost(19606)
 
   def willRevokeApplicationAuthorities() = {
     stub.mock.register(delete(urlPathMatching("/authority/*"))

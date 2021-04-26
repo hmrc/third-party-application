@@ -24,7 +24,7 @@ import uk.gov.hmrc.auth.core.Enrolment
 
 object AuthStub extends Stub {
 
-  override val stub = MockHost(22225)
+  override val stub = MockHost(18500)
 
   val json = Json.obj(
     "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),

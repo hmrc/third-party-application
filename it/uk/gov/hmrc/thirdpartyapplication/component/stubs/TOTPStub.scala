@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 
 object TOTPStub extends Stub {
 
-  override val stub = MockHost(22226)
+  override val stub = MockHost(19988)
 
   private val productionState = "productionState"
   private val sandboxState = "sandboxState"

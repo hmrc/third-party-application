@@ -22,7 +22,7 @@ import play.api.http.Status.OK
 
 object EmailStub extends Stub {
 
-  override val stub: MockHost = MockHost(22223)
+  override val stub: MockHost = MockHost(18300)
 
   def willPostEmailNotification() = {
     stub.mock.register(post(urlEqualTo("/hmrc/email"))

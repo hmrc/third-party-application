@@ -22,7 +22,7 @@ import play.api.http.Status.NO_CONTENT
 
 object ApiSubscriptionFieldsStub extends Stub {
 
-  override val stub = MockHost(22227)
+  override val stub = MockHost(19650)
 
   def willDeleteTheSubscriptionFields() = {
     stub.mock.register(get(urlPathMatching(s"/field/application/*"))

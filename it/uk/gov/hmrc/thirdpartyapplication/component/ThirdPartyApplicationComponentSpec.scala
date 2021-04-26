@@ -44,7 +44,15 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   override def fakeApplication =
     GuiceApplicationBuilder()
-        .configure(Map("Test.disableAwsCalls" -> false, "appName" -> "third-party-application"))
+        .configure(Map(
+          "microservice.services.api-subscription-fields.port" -> 19650,
+          "microservice.services.api-platform-events.port" -> 16700,
+          "microservice.services.api-gateway-stub.port" -> 19607,
+          "microservice.services.auth.port" -> 18500,
+          "microservice.services.email.port" -> 18300,
+          "microservice.services.third-party-delegated-authority.port" -> 19606,
+          "microservice.services.totp.port" -> 19988,
+        ))
         .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
         .build()
 
@@ -483,7 +491,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
 
       When("I request to unsubscribe the application to an API")
-      val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
+git       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
         .method("DELETE").asString
 
       Then("A 204 is returned")
