@@ -491,7 +491,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
 
       When("I request to unsubscribe the application to an API")
-git       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
+       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
         .method("DELETE").asString
 
       Then("A 204 is returned")
