@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 
 object AwsApiGatewayStub extends Stub {
 
-  override val stub: MockHost = MockHost(22229)
+  override val stub: MockHost = MockHost(19607)
 
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"/v1/usage-plans/$rateLimitTier/api-keys"
   private def deleteAPIKeyURL(applicationName: String): String = s"/v1/api-keys/$applicationName"

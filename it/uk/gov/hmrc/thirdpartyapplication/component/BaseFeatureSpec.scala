@@ -33,7 +33,6 @@ abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Match
   val serviceUrl = s"http://localhost:$port"
   val timeout = 10 seconds
 
-  var thirdPartyDeveloperStub = ThirdPartyDeveloperStub
   val apiSubscriptionFieldsStub = ApiSubscriptionFieldsStub
   val thirdPartyDelegatedAuthorityStub = ThirdPartyDelegatedAuthorityStub
   val authStub = AuthStub
@@ -42,7 +41,7 @@ abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Match
   val emailStub = EmailStub
   val apiPlatformEventsStub = ApiPlatformEventsStub
   val mocks = {
-    Seq(thirdPartyDeveloperStub, apiSubscriptionFieldsStub, authStub, totpStub,
+    Seq(apiSubscriptionFieldsStub, authStub, totpStub,
       thirdPartyDelegatedAuthorityStub, awsApiGatewayStub, emailStub, apiPlatformEventsStub)
   }
 

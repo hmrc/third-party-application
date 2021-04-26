@@ -22,7 +22,7 @@ import play.api.http.Status.CREATED
 
 object ApiPlatformEventsStub extends Stub {
 
-  override val stub: MockHost = MockHost(22299)
+  override val stub: MockHost = MockHost(16700)
 
   private val clientSecretAddedEventURL: String = "/application-events/clientSecretAdded"
   private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
