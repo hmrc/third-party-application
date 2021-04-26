@@ -81,5 +81,5 @@ In some use cases, specifically if this microservice is running locally, we may 
 This can be disabled be entering application.conf and changing:
 
 ```
-Dev.disableAwsCalls to true.
+disableAwsCalls to true.
 ```
