@@ -25,7 +25,7 @@ import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
-import reactivemongo.api.{Cursor, FailoverStrategy, ReadPreference}
+import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository

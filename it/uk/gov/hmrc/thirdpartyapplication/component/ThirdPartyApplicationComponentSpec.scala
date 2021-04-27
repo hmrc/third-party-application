@@ -42,17 +42,20 @@ class DummyCredentialGenerator extends CredentialGenerator {
 
 class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
+  val configOverrides = Map[String,Any](
+    "microservice.services.api-subscription-fields.port" -> 19650,
+    "microservice.services.api-platform-events.port" -> 16700,
+    "microservice.services.api-gateway-stub.port" -> 19607,
+    "microservice.services.auth.port" -> 18500,
+    "microservice.services.email.port" -> 18300,
+    "microservice.services.third-party-delegated-authority.port" -> 19606,
+    "microservice.services.totp.port" -> 19988,
+    "mongodb.uri" -> "mongodb://localhost:27017/third-party-application-test"          
+  )
+
   override def fakeApplication =
     GuiceApplicationBuilder()
-        .configure(Map(
-          "microservice.services.api-subscription-fields.port" -> 19650,
-          "microservice.services.api-platform-events.port" -> 16700,
-          "microservice.services.api-gateway-stub.port" -> 19607,
-          "microservice.services.auth.port" -> 18500,
-          "microservice.services.email.port" -> 18300,
-          "microservice.services.third-party-delegated-authority.port" -> 19606,
-          "microservice.services.totp.port" -> 19988,
-        ))
+        .configure(configOverrides)
         .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
         .build()
 
