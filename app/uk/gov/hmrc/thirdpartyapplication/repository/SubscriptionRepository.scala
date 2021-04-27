@@ -123,7 +123,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
   }
   
-  @deprecated
+  @Deprecated
   def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
     val builder = collection.BatchCommands.AggregationFramework
     val pipeline = List(
