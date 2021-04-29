@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
+import play.api.libs.json.Json
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -37,7 +38,6 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-    implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     val mockApplicationService = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
@@ -58,10 +58,13 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
       private val context="api1"
       private val version="1.0"
       private val partialemail = "partialemail"
+      implicit val writes = Json.writes[SearchCollaboratorsRequest]
+      implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+                                              .withBody(Json.toJson(SearchCollaboratorsRequest(context, version, Some(partialemail))))
 
       when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(List("user@example.com")))
 
-      val result = underTest.searchCollaborators(context, version, Some(partialemail))(request)
+      val result = underTest.searchCollaborators()(request)
 
       status(result) shouldBe SC_OK
 
