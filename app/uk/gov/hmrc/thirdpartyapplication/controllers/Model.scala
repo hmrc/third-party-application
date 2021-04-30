@@ -22,7 +22,11 @@ import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, Over
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
+
+case class SearchCollaboratorsRequest(apiContext: String, apiVersion: String, partialEmailMatch: Option[String])
+
 case class ValidationRequest(clientId: String, clientSecret: String)
+
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 
 case class ClientSecretRequest(actorEmailAddress: String)
