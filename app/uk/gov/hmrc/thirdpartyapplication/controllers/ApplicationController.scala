@@ -18,27 +18,38 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import cats.data.OptionT
 import cats.implicits._
-import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
+import uk.gov.hmrc.thirdpartyapplication.models.AccessType.PRIVILEGED
+import uk.gov.hmrc.thirdpartyapplication.models.AccessType.ROPC
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
+import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
+import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
+import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.Future.successful
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -57,7 +68,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
   // This header is not expected to reach outside but is used to pass information further down the call stack.
   // TODO - tidy this up to use a better way to decorate calls with the knowledge they came from API Gateway (or not)
-val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
+  val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
   
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)
@@ -241,7 +252,7 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
 
   def queryDispatcher() = Action.async { implicit request =>
     val queryBy = request.queryString.keys.toList.sorted
-    val serverToken = hc.headers find (_._1 == SERVER_TOKEN_HEADER) map (_._2)
+    val serverToken = hc.valueOf(SERVER_TOKEN_HEADER)
 
     def addHeaders(pred: Result => Boolean, headers: (String, String)*)(res: Result): Result =
       if (pred(res)) res.withHeaders(headers: _*) else res
@@ -305,7 +316,7 @@ val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
     fetchFunction().flatMap {
       case Some(application) =>
         // If request has originated from an API gateway, record usage of the Application
-        hc.headers
+        hc.extraHeaders
         .find(_._1 == INTERNAL_USER_AGENT)
         .map(_._2)
         .map(_.split(","))

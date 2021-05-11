@@ -16,35 +16,55 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.concurrent.TimeUnit
-
 import akka.actor.ActorSystem
-import javax.inject.{Inject, Singleton}
 import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.lock.{LockKeeper, LockMongoRepository, LockRepository}
+import uk.gov.hmrc.http.ForbiddenException
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.lock.LockKeeper
+import uk.gov.hmrc.lock.LockMongoRepository
+import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{ApiSubscriptionFieldsConnector, EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
+import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
+import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
+import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
+import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.models.ActorType.COLLABORATOR
+import uk.gov.hmrc.thirdpartyapplication.models.ActorType.GATEKEEPER
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, State, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_GATEKEEPER_APPROVAL
+import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
+import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.models.State.TESTING
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, _}
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
+import java.util.concurrent.TimeUnit
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Try}
+import scala.util.Failure
+import scala.util.Try
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -606,8 +626,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) = hc.headers find (_._1 == LOGGED_IN_USER_EMAIL_HEADER) map (_._2) getOrElse ""
-
+  private def loggedInUser(implicit hc: HeaderCarrier) = 
+    hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
+    .getOrElse("")
 }
 
 @Singleton

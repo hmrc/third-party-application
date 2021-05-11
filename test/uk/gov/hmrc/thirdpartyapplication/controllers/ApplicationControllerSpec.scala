@@ -16,41 +16,50 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.nio.charset.StandardCharsets
-import java.util.{Base64}
-
 import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.joda.time.DateTime
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.{JsValue, Json}
+import play.api.libs.json.JsValue
+import play.api.libs.json.Json
 import play.api.mvc._
-import play.api.test.Helpers._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.auth.core.{AuthorisationException, Enrolment, SessionRecordNotFound}
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.auth.core.AuthorisationException
+import uk.gov.hmrc.auth.core.Enrolment
+import uk.gov.hmrc.auth.core.SessionRecordNotFound
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
+import uk.gov.hmrc.thirdpartyapplication.models.InvalidIpAllowlistException
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, InvalidIpAllowlistException, _}
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, CredentialService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
+import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
+import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
+import java.{util => ju}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
-import java.{util => ju}
+import scala.concurrent.Future.failed
+import scala.concurrent.Future.successful
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -58,10 +67,9 @@ class ApplicationControllerSpec extends ControllerSpec
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication().materializer
+  implicit lazy val materializer: Materializer = app.materializer
 
   trait Setup {
-    app
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
@@ -156,17 +164,17 @@ class ApplicationControllerSpec extends ControllerSpec
         X_REQUEST_ID_HEADER -> "requestId"
       )
 
-      underTest.hc(req).headers should contain(LOGGED_IN_USER_NAME_HEADER -> "John Smith")
-      underTest.hc(req).headers should contain(LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com")
-      underTest.hc(req).headers should contain(X_REQUEST_ID_HEADER -> "requestId")
+      underTest.hc(req).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(LOGGED_IN_USER_NAME_HEADER -> "John Smith")
+      underTest.hc(req).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com")
+      underTest.hc(req).headers(Seq(X_REQUEST_ID_HEADER)) should contain(X_REQUEST_ID_HEADER -> "requestId")
     }
 
     "contain each header if only one exists" in new Setup {
       val nameHeader: (String, String) = LOGGED_IN_USER_NAME_HEADER -> "John Smith"
       val emailHeader: (String, String) = LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com"
 
-      underTest.hc(request.withHeaders(nameHeader)).headers should contain(nameHeader)
-      underTest.hc(request.withHeaders(emailHeader)).headers should contain(emailHeader)
+      underTest.hc(request.withHeaders(nameHeader)).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(nameHeader)
+      underTest.hc(request.withHeaders(emailHeader)).headers(Seq(LOGGED_IN_USER_EMAIL_HEADER)) should contain(emailHeader)
     }
   }
 
@@ -979,12 +987,11 @@ class ApplicationControllerSpec extends ControllerSpec
     val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
     trait LastAccessedSetup extends Setup {
-      val lastAccessTime: DateTime = DateTime.now().minusDays(10) //scalastyle:ignore magic.number
       val updatedLastAccessTime: DateTime = DateTime.now()
+      val lastAccessTime: DateTime = updatedLastAccessTime.minusDays(10) //scalastyle:ignore magic.number
       val applicationId: ApplicationId = ApplicationId.random()
 
-      val applicationResponse: ApplicationResponse =
-        aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
+      val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
     }
 
@@ -999,7 +1006,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
 
-      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
       validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
@@ -1014,7 +1021,7 @@ class ApplicationControllerSpec extends ControllerSpec
           ("X-SERVER-TOKEN", "X-server-token"))
 
       forAll(scenarios) { (serverTokenHeader, expectedVaryHeader) =>
-        val result =underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken))
+        val result = underTest.queryDispatcher()(request.withHeaders(serverTokenHeader -> serverToken))
 
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(expectedVaryHeader))
       }
@@ -1023,7 +1030,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "retrieve all" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(Future(List(aNewApplicationResponse(), aNewApplicationResponse())))
 
-      private val result =underTest.queryDispatcher()(FakeRequest())
+      private val result = underTest.queryDispatcher()(FakeRequest())
 
       validateResult(result, OK, None, None)
       contentAsJson(result).as[Seq[JsValue]] should have size 2
@@ -1032,7 +1039,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "retrieve when no subscriptions" in new Setup {
       when(underTest.applicationService.fetchAllWithNoSubscriptions()).thenReturn(Future(List(aNewApplicationResponse())))
 
-      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?noSubscriptions=true"))
 
       validateResult(result, OK, None, None)
     }
@@ -1040,7 +1047,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 500 (internal server error) when an exception is thrown from fetchAll" in new Setup {
       when(underTest.applicationService.fetchAll()).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result =underTest.queryDispatcher()(FakeRequest())
+      private val result = underTest.queryDispatcher()(FakeRequest())
 
       validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
@@ -1048,7 +1055,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result =underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
 
       validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
@@ -1069,10 +1076,10 @@ class ApplicationControllerSpec extends ControllerSpec
         when(underTest.applicationService.recordApplicationUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
         when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
 
-        val result =
-          underTest.queryDispatcher()(request.withHeaders(headers: _*))
+        val result = underTest.queryDispatcher()(request.withHeaders(headers: _*))
+        val actualLastAccessTime = (contentAsJson(result) \ "lastAccess").as[Long]
 
-        (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
+        actualLastAccessTime shouldBe expectedLastAccessTime
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), Some(SERVER_TOKEN_HEADER))
         if(shouldUpdate) {
           verify(underTest.applicationService).recordServerTokenUsage(eqTo(applicationId))

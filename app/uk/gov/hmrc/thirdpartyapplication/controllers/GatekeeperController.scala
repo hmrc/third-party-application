@@ -19,18 +19,19 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, InvalidStateTransition, Unblocked}
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
-import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
 class GatekeeperController @Inject()(

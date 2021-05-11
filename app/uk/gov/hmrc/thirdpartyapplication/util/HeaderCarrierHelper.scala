@@ -28,14 +28,16 @@ object HeaderCarrierHelper {
   val DEVELOPER_FULLNAME_KEY = "developerFullName"
 
   def headersToUserContext(hc: HeaderCarrier) =
-    userContextFromHeaders(hc.headers.toMap)
+    userContextFromHeaders(hc.extraHeaders.filter(pair => Seq(LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER).contains(pair._1)).toMap)
 
   private def userContextFromHeaders(headers: Map[String, String]) = {
-    def mapHeader(mapping: (String, String)): Option[(String, String)] =
-      headers.get(mapping._1) map (mapping._2 -> URLDecoder.decode(_, StandardCharsets.UTF_8.toString))
+    def mapHeader(oldKey: String, newKey: String): Option[(String, String)] = 
+      headers
+        .get(oldKey)
+        .map(value => newKey -> URLDecoder.decode(value, StandardCharsets.UTF_8.toString))
 
-    val email = mapHeader(LOGGED_IN_USER_EMAIL_HEADER -> DEVELOPER_EMAIL_KEY)
-    val name = mapHeader(LOGGED_IN_USER_NAME_HEADER -> DEVELOPER_FULLNAME_KEY)
+    val email = mapHeader(LOGGED_IN_USER_EMAIL_HEADER, DEVELOPER_EMAIL_KEY)
+    val name = mapHeader(LOGGED_IN_USER_NAME_HEADER, DEVELOPER_FULLNAME_KEY)
 
     List(email, name).flatten.toMap
   }
