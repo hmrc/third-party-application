@@ -19,8 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 import java.util.UUID
 
 import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, UpstreamErrorResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._

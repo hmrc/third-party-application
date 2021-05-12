@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.{HeaderCarrier}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._

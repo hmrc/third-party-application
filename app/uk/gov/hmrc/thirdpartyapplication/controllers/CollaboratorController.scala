@@ -19,9 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc._
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.play.bootstrap.controller.BackendController
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}

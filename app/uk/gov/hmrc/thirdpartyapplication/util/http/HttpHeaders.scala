@@ -17,6 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.util.http
 
 import play.api.http.HeaderNames
+import uk.gov.hmrc.http.HeaderCarrier
+
+object HeaderCarrierUtils {
+    implicit class HeaderCarrierImprovements(val hc: HeaderCarrier) {
+        def valueOf(headerName: String): Option[String] = (hc.headers(Seq(headerName)) ++ hc.extraHeaders).find(_._1.toLowerCase == headerName.toLowerCase).map(_._2)
+    }
+}
 
 object HttpHeaders extends HeaderNames {
   val X_REQUEST_ID_HEADER = "X-Request-ID"

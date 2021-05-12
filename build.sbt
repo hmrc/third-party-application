@@ -15,7 +15,7 @@ val reactiveMongoVer = "0.18.8"
 lazy val playJsonVersion = "2.8.1"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-play-26" % "1.16.0",
+  "uk.gov.hmrc" %% "bootstrap-backend-play-26" % "4.0.0",
   "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
   "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
   "com.typesafe.play" %% "play-json" % playJsonVersion,

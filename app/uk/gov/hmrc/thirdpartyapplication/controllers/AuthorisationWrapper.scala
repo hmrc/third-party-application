@@ -26,7 +26,7 @@ import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.HeaderCarrierConverter
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
@@ -69,7 +69,7 @@ trait AuthorisationWrapper {
             if (matchesAuthorisationKey) {
               Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, true, request))
             } else {
-              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromHeadersAndSession(request.headers, None)
+              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
               val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
               authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => OptionalStrideAuthRequest[A](isStrideAuth = true, false, request))
             }
@@ -100,7 +100,7 @@ trait AuthorisationWrapper {
 
   private def authenticate[A](input: Request[A]): Future[Option[Result]] = {
     if (authConfig.enabled) {
-      implicit val hc = HeaderCarrierConverter.fromHeadersAndSession(input.headers, None)
+      implicit val hc = HeaderCarrierConverter.fromRequestAndSession(input, input.session)
       val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
       authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     } else {

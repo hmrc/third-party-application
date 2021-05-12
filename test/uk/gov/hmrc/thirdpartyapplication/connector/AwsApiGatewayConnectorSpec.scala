@@ -23,9 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
-import uk.gov.hmrc.http.{HeaderCarrier}
-import uk.gov.hmrc.http.logging.Authorization
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient}
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
 import scala.concurrent.ExecutionContext.Implicits.global
