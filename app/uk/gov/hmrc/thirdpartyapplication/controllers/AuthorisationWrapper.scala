@@ -99,11 +99,8 @@ trait AuthorisationWrapper {
 
 
   private def authenticate[A](input: Request[A]): Future[Option[Result]] = {
-    println(s"POMEGRANITE: authConfig=${authConfig.copy(authorisationKey = "Size "+authConfig.authorisationKey.length.toString)}")
     if (authConfig.enabled) {
-      val headerKeys = input.headers.keys;
-      println(s"POMEGRANITE: headerKeys=$headerKeys")
-      implicit val hc = HeaderCarrierConverter.fromRequestAndSession(input, input.session)
+      implicit val hc = HeaderCarrierConverter.fromRequest(input)
       val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
       authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     } else {
