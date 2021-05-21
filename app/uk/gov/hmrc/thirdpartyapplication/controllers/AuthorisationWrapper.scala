@@ -65,11 +65,11 @@ trait AuthorisationWrapper {
         }
 
         val strideAuthSuccess =
-          if (authConfig.enabled && request.headers.get(AUTHORIZATION).isDefined) {
+          if (authConfig.enabled && request.headers.hasHeader(AUTHORIZATION)) {
             if (matchesAuthorisationKey) {
               Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, true, request))
             } else {
-              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
+              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
               val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
               authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => OptionalStrideAuthRequest[A](isStrideAuth = true, false, request))
             }
