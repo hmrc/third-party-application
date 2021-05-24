@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.UpstreamErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.Totp
-import uk.gov.hmrc.http.HttpReads.Implicits._
 
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 import scala.util.control.NonFatal
-import uk.gov.hmrc.http.UpstreamErrorResponse
 
 @Singleton
 class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConfig)(implicit val ec: ExecutionContext)   {

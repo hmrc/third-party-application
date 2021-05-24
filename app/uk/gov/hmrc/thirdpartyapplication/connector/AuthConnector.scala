@@ -16,11 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.{Inject, Singleton}
-
 import uk.gov.hmrc.auth.core.PlayAuthConnector
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
 
+import javax.inject.Inject
+import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
 @Singleton

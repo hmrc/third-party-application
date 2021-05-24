@@ -16,16 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.{Inject, Singleton}
 import play.api.Logger
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success, Try}
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
+import scala.util.Failure
+import scala.util.Success
+import scala.util.Try
 
 case class SendEmailRequest(to: Set[String],
                             templateId: String,
