@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.HttpReads.Implicits._   
+import javax.inject.Inject
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
                                           (implicit val ec: ExecutionContext) extends ResponseUtils {

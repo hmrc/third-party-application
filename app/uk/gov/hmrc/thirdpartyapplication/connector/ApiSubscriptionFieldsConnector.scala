@@ -16,14 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.http.UpstreamErrorResponse
 import play.api.http.Status._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.http.HttpClient
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.UpstreamErrorResponse
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class ApiSubscriptionFieldsConnector @Inject()(httpClient: HttpClient, config: ApiSubscriptionFieldsConfig)(implicit val ec: ExecutionContext) extends ResponseUtils {

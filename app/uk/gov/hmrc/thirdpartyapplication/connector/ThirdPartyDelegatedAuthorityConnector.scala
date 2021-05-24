@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.bootstrap.http.HttpClient
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
+import javax.inject.Singleton
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future
 
 @Singleton
 class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
