@@ -17,8 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
 
-abstract class ControllerSpec extends AsyncHmrcSpec with NoMetricsGuiceOneAppPerSuite
+abstract class ControllerSpec extends AsyncHmrcSpec
   with LogSuppressing { }

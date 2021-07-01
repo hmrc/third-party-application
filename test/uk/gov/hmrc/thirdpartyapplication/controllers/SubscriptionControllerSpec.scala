@@ -29,8 +29,10 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 
-class SubscriptionControllerSpec extends ControllerSpec {
+class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite {
 
   import play.api.test.Helpers._
   import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -42,7 +44,7 @@ class SubscriptionControllerSpec extends ControllerSpec {
       .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
 
   trait Setup {
-    implicit lazy val materializer: Materializer = app.materializer
+    implicit lazy val materializer: Materializer = NoMaterializer
     def callEndpointWith[A: Writeable](request: Request[A]): Future[Result] = route(app, request).get
   }
 
@@ -75,30 +77,6 @@ class SubscriptionControllerSpec extends ControllerSpec {
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(failed(new RuntimeException("something went wrong")))
 
       val result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      (contentAsJson(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"
-      (contentAsJson(result) \ "message").as[String] shouldBe "An unexpected error occurred"
-    }
-  }
-
-  "getSubscriptionsForDeveloper using email" should {
-    val developerEmail = "john.doe@example.com"
-
-    "return the subscriptions from the repository" in new Setup {
-      val expectedSubscriptions = Set(ApiIdentifier("hello-world", "1.0"))
-      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(developerEmail)).thenReturn(successful(expectedSubscriptions))
-
-      val result = callEndpointWith(FakeRequest(GET, s"/developer/$developerEmail/subscriptions"))
-
-      status(result) shouldBe OK
-      contentAsJson(result).as[Set[ApiIdentifier]] shouldBe expectedSubscriptions
-    }
-
-    "return 500 if something goes wrong" in new Setup {
-      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(developerEmail)).thenReturn(failed(new RuntimeException("something went wrong")))
-
-      val result = callEndpointWith(FakeRequest(GET, s"/developer/$developerEmail/subscriptions"))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"

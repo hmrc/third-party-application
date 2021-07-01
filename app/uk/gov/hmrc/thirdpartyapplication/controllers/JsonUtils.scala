@@ -36,7 +36,7 @@ trait JsonUtils extends Results {
    }
 
   def withJsonBodyFromAnyContent[T]
-  (f: T => Future[Result])(implicit request: Request[AnyContent], m: Manifest[T], reads: Reads[T], d: DummyImplicit): Future[Result] = {
+  (f: T => Future[Result])(implicit request: Request[AnyContent], reads: Reads[T], d: DummyImplicit): Future[Result] = {
     request.body.asJson match {
       case Some(json) => withJson(json)(f)
       case _ => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Payload")))

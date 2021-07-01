@@ -29,12 +29,13 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 import play.api.libs.json.Json
+import play.api.test.NoMaterializer
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = app.materializer
+  implicit lazy val materializer: Materializer = NoMaterializer
 
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
