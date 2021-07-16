@@ -41,7 +41,8 @@ case class CreateApplicationRequest(override val name: String,
                                     override val access: Access = Standard(List.empty, None, None, Set.empty),
                                     override val description: Option[String] = None,
                                     environment: Environment,
-                                    collaborators: Set[Collaborator]) extends ApplicationRequest {
+                                    collaborators: Set[Collaborator],
+                                    subscriptions: List[ApiIdentifier] = List.empty) extends ApplicationRequest {
 
   def normaliseCollaborators: CreateApplicationRequest = {
     val normalised = collaborators.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))

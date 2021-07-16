@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, ST
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 
 import scala.language.implicitConversions
 
@@ -100,7 +101,16 @@ trait JsonFormatters extends DateTimeFormatters {
 
   implicit val formatApplicationData = Json.format[ApplicationData]
 
-  implicit val formatCreateApplicationRequest = Json.format[CreateApplicationRequest]
+  val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
+    (JsPath \ "name").read[String] and
+    (JsPath \ "access").read[Access] and
+    (JsPath \ "description").readNullable[String] and
+    (JsPath \ "environment").read[Environment] and
+    (JsPath \ "collaborators").read[Set[Collaborator]] and
+    ((JsPath \ "subscriptions").read[List[ApiIdentifier]] or Reads.pure(List.empty[ApiIdentifier]))
+  )(CreateApplicationRequest.apply _)
+  implicit val formatCreateApplicationRequest = Format(createApplicationRequestReads, Json.writes[CreateApplicationRequest])
+  
   implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
   implicit val formatExtendedApplicationResponse = Json.format[ExtendedApplicationResponse]

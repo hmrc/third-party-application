@@ -79,9 +79,13 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-    withJsonBody[CreateApplicationRequest] { application =>
-      applicationService.create(application).map {
-        result => Created(toJson(result))
+    withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
+      {
+        for {
+          applicationResponse <- applicationService.create(createApplicationRequest)
+          subs = createApplicationRequest.subscriptions
+          f <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+        } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>
           Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
