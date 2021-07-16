@@ -32,12 +32,13 @@ import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
+import play.api.test.NoMaterializer
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
-  implicit lazy val materializer: Materializer = app.materializer
+  implicit lazy val materializer: Materializer = NoMaterializer
 
   private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes = Set("scope")

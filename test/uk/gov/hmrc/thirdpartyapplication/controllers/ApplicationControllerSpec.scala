@@ -60,6 +60,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
+import play.api.test.NoMaterializer
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -67,7 +68,7 @@ class ApplicationControllerSpec extends ControllerSpec
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = app.materializer
+  implicit lazy val materializer: Materializer = NoMaterializer
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")

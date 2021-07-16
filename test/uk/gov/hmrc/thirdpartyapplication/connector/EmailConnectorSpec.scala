@@ -28,7 +28,6 @@ class EmailConnectorSpec extends ConnectorSpec {
   implicit val hc: HeaderCarrier = HeaderCarrier()
   private val hubTestTitle = "Unit Test Hub Title"
   private val hubUrl = "http://localhost:9685"
-  private val hubLink = s"$hubUrl/developer/registration"
   private val environmentName = "sandbox"
 
   trait Setup {

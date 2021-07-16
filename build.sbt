@@ -1,3 +1,4 @@
+import bloop.integrations.sbt.BloopDefaults
 import play.core.PlayVersion
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
@@ -39,7 +40,7 @@ lazy val test = Seq(
   "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
 )
 
-lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtGitVersioning, SbtDistributablesPlugin, SbtArtifactory)
+lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = (project in file("."))
@@ -59,6 +60,7 @@ lazy val microservice = (project in file("."))
     routesImport += "uk.gov.hmrc.thirdpartyapplication.controllers.binders._"
   )
   .settings(playPublishingSettings: _*)
+  .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     Test / fork := false,
@@ -66,6 +68,7 @@ lazy val microservice = (project in file("."))
     Test / parallelExecution := false
   )
   .configs(IntegrationTest)
+  .settings(inConfig(IntegrationTest)(BloopDefaults.configSettings))
   .settings(
     Defaults.itSettings,
     IntegrationTest / fork := false,

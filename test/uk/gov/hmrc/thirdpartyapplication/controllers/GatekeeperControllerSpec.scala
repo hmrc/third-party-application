@@ -45,13 +45,14 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
+import play.api.test.NoMaterializer
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
   import play.api.test.Helpers._
 
   val authTokenHeader = "authorization" -> "authorizationToken"
-  implicit lazy val materializer: Materializer = app.materializer
+  implicit lazy val materializer: Materializer = NoMaterializer
   implicit lazy val request = FakeRequest()
 
   private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))

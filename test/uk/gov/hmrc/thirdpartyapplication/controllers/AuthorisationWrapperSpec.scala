@@ -37,12 +37,13 @@ import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
+import play.api.test.NoMaterializer
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
   import play.api.test.Helpers._
 
-  implicit lazy val materializer: Materializer = fakeApplication().materializer
+  implicit lazy val materializer: Materializer = NoMaterializer
   val mockAuthConfig = mock[AuthConfig]
 
   when(mockAuthConfig.enabled).thenReturn(true)
