@@ -48,7 +48,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "correctly parse API Subscriptions filter" in {
-      val request = FakeRequest("GET", s"/applications?apiSubscription=ANY")
+      val request = FakeRequest("GET", "/applications?apiSubscription=ANY")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
@@ -56,7 +56,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "correctly parse Application Status filter" in {
-      val request = FakeRequest("GET", s"/applications?status=PENDING_GATEKEEPER_CHECK")
+      val request = FakeRequest("GET", "/applications?status=PENDING_GATEKEEPER_CHECK")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
@@ -64,7 +64,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "correctly parse Terms of Use filter" in {
-      val request = FakeRequest("GET", s"/applications?termsOfUse=NOT_ACCEPTED")
+      val request = FakeRequest("GET", "/applications?termsOfUse=NOT_ACCEPTED")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
@@ -72,7 +72,7 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "correctly parse Access Type filter" in {
-      val request = FakeRequest("GET", s"/applications?accessType=PRIVILEGED")
+      val request = FakeRequest("GET", "/applications?accessType=PRIVILEGED")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
@@ -189,35 +189,35 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "populate sort as NameAscending when sort is NAME_ASC" in {
-      val request = FakeRequest("GET", s"/applications?sort=NAME_ASC")
+      val request = FakeRequest("GET", "/applications?sort=NAME_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe NameAscending
     }
 
     "populate sort as NameDescending when sort is NAME_DESC" in {
-      val request = FakeRequest("GET", s"/applications?sort=NAME_DESC")
+      val request = FakeRequest("GET", "/applications?sort=NAME_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe NameDescending
     }
 
     "populate sort as SubmittedAscending when sort is SUBMITTED_DESC" in {
-      val request = FakeRequest("GET", s"/applications?sort=SUBMITTED_ASC")
+      val request = FakeRequest("GET", "/applications?sort=SUBMITTED_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedAscending
     }
 
     "populate sort as SubmittedDescending when sort is SUBMITTED_DESC" in {
-      val request = FakeRequest("GET", s"/applications?sort=SUBMITTED_DESC")
+      val request = FakeRequest("GET", "/applications?sort=SUBMITTED_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedDescending
     }
 
     "populate sort as SubmittedAscending when sort is not specified" in {
-      val request = FakeRequest("GET", s"/applications")
+      val request = FakeRequest("GET", "/applications")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedAscending

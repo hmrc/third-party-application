@@ -197,7 +197,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       When("We attempt to validate the credentials")
       val requestBody = validationRequest(credentials.clientId, applicationToken.clientSecrets.head.secret.get)
-      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+      val validationResponse = postData("/application/credentials/validate", requestBody)
 
       Then("We get a successful response")
       validationResponse.code shouldBe OK
@@ -227,7 +227,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       When("We attempt to validate the credentials")
       val requestBody = validationRequest(credentials.clientId, "bar")
-      val validationResponse = postData(s"/application/credentials/validate", requestBody)
+      val validationResponse = postData("/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
       validationResponse.code shouldBe UNAUTHORIZED
@@ -530,7 +530,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val nameToCheck = "my invalid app name HMRC"
 
       val requestBody = Json.obj("applicationName" -> nameToCheck).toString
-      val result = postData(s"/application/name/validate", requestBody)
+      val result = postData("/application/name/validate", requestBody)
 
       Then("The response should be OK")
       result.code shouldBe OK

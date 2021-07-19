@@ -35,7 +35,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
-  def searchCollaborators(context:String, version:String, partialEmailMatch: Option[String]):Future[List[String]] = {
+  def searchCollaborators(context: String, version: String, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 

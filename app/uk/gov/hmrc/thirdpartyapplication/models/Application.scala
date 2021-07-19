@@ -41,15 +41,16 @@ case class CreateApplicationRequest(override val name: String,
                                     override val access: Access = Standard(List.empty, None, None, Set.empty),
                                     override val description: Option[String] = None,
                                     environment: Environment,
-                                    collaborators: Set[Collaborator]) extends ApplicationRequest {
+                                    collaborators: Set[Collaborator],
+                                    subscriptions: List[ApiIdentifier] = List.empty) extends ApplicationRequest {
 
   def normaliseCollaborators: CreateApplicationRequest = {
     val normalised = collaborators.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
     copy(collaborators = normalised)
   }
 
-  require(name.nonEmpty, s"name is required")
-  require(collaborators.exists(_.role == Role.ADMINISTRATOR), s"at least one ADMINISTRATOR collaborator is required")
+  require(name.nonEmpty, "name is required")
+  require(collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
   require(collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
@@ -60,7 +61,7 @@ case class CreateApplicationRequest(override val name: String,
 case class UpdateApplicationRequest(override val name: String,
                                     override val access: Access = Standard(),
                                     override val description: Option[String] = None) extends ApplicationRequest {
-  require(name.nonEmpty, s"name is required")
+  require(name.nonEmpty, "name is required")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
     case _ =>

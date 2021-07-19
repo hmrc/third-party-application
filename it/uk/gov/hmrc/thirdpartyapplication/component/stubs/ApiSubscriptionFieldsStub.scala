@@ -25,7 +25,7 @@ object ApiSubscriptionFieldsStub extends Stub {
   override val stub = MockHost(19650)
 
   def willDeleteTheSubscriptionFields() = {
-    stub.mock.register(get(urlPathMatching(s"/field/application/*"))
+    stub.mock.register(get(urlPathMatching("/field/application/*"))
       .willReturn(aResponse().withStatus(NO_CONTENT)))
   }
 }

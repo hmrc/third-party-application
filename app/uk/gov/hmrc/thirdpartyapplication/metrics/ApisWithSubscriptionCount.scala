@@ -30,7 +30,7 @@ import scala.util.{Failure, Success}
 @Singleton
 class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    Logger.info(s"Pomegranate - Starting - ApisWithSubscriptionCount.metrics() about to calculate subscriptionCount map")
+    Logger.info("Pomegranate - Starting - ApisWithSubscriptionCount.metrics() about to calculate subscriptionCount map")
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
     val result = numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
@@ -41,7 +41,7 @@ class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: Subscripti
         case Failure(e) =>
           Logger.info(s"Pomegranate - Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}" )
     })
-    Logger.info(s"Pomegranate - Finish - ApisWithSubscriptionCount.metrics()")
+    Logger.info("Pomegranate - Finish - ApisWithSubscriptionCount.metrics()")
     result
   }
 
