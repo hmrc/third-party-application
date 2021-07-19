@@ -84,7 +84,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
           subs = createApplicationRequest.subscriptions
-          f <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+          _ <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
         } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>
