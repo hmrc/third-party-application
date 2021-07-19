@@ -111,13 +111,13 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
-
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
+      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
@@ -130,6 +130,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
+      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
@@ -140,6 +141,21 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
+      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
+    }
+
+    "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
+      val testApi = ApiIdentifier("test", "1.0")
+      val apis = List(testApi)
+      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
+      when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
+
+      val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithOneSubscription)))
+
+      status(result) shouldBe CREATED
+      verify(underTest.applicationService).create(eqTo(applicationRequestWithOneSubscription))(*)
+      verify(mockSubscriptionService, times(1)).createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)
     }
 
     "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
