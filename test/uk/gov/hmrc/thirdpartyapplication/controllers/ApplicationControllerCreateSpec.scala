@@ -148,6 +148,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val testApi = ApiIdentifier("test", "1.0")
       val apis = List(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
+
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
 
@@ -156,6 +157,25 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(applicationRequestWithOneSubscription))(*)
       verify(mockSubscriptionService, times(1)).createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)
+    }
+
+    "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
+      val testApi = ApiIdentifier("test", "1.0")
+      val anotherTestApi = ApiIdentifier("anotherTest", "1.0")
+      val apis = List(testApi, anotherTestApi)
+      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(subscriptions = apis)
+
+      when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
+
+      apis.map( api =>
+        when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))
+      )
+
+      val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithTwoSubscriptions)))
+
+      status(result) shouldBe CREATED
+      verify(underTest.applicationService).create(eqTo(applicationRequestWithTwoSubscriptions))(*)
+      verify(mockSubscriptionService, times(2)).createSubscriptionForApplicationMinusChecks(*[ApplicationId], *[ApiIdentifier])(*)
     }
 
     "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
