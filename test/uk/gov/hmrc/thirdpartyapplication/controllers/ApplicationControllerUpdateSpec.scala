@@ -169,7 +169,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
       val updateApplicationRequestJson: String =
-        s"""{
+        """{
           "id" : "My ID",
           "name" : "My Application",
           "collaborators": [{"emailAddress": "admin@example.com","role": "ADMINISTRATOR"}],

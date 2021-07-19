@@ -57,7 +57,7 @@ trait ScheduledJobState { e: ScheduledJob =>
   case class RunningOfJobFailed(jobName: String, wrappedCause: Throwable) extends RuntimeException {
     def asResult = {
       Result(s"The execution of scheduled job $jobName failed with error '${wrappedCause.getMessage}'. " +
-        s"The next execution of the job will do retry.")
+        "The next execution of the job will do retry.")
     }
   }
 }
