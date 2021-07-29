@@ -46,6 +46,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -53,7 +54,7 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModule with BeforeAndAfterAll with ApplicationStateUtil {
 
   val idsByEmail = mutable.Map[String, UserId]()
   def idOf(email: String) = {
@@ -395,7 +396,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "recordApplicationUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
-      val subscriptions: List[ApiIdentifier] = List(ApiIdentifier("myContext", "myVersion"))
+      val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordApplicationUsage.thenReturnWhen(applicationId)(applicationData)
       mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
 
@@ -408,7 +409,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "recordServerTokenUsage" should {
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
-      val subscriptions: List[ApiIdentifier] = List(ApiIdentifier("myContext", "myVersion"))
+      val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
       mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
 
@@ -964,6 +965,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fetch all applications for a given collaborator user id" in new Setup {
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier(), "api2".asIdentifier()))
       val userId = UserId.random
       val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
@@ -971,13 +973,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
-      await(underTest.fetchAllForCollaborator(userId)).size shouldBe 3
+      val result = await(underTest.fetchAllForCollaborator(userId))
+      result.size shouldBe 3
+      result.head.subscriptions.size shouldBe 2
     }
 
   }
 
   "fetchAllBySubscription" should {
-
     "return applications for a given subscription to an API context" in new Setup {
       val apiContext = "some-context"
 
@@ -998,7 +1001,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "return applications for a given subscription to an API identifier" in new Setup {
-      val apiIdentifier = ApiIdentifier("some-context", "some-version")
+      val apiIdentifier = "some-context".asIdentifier("some-version")
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnWhen(apiIdentifier)(applicationData)
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiIdentifier))
@@ -1008,7 +1011,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "return no matching applications for a given subscription to an API identifier" in new Setup {
-      val apiIdentifier = ApiIdentifier("some-context", "some-version")
+      val apiIdentifier = "some-context".asIdentifier("some-version")
 
       ApplicationRepoMock.FetchAllForApiIdentifier.thenReturnEmptyWhen(apiIdentifier)
 
@@ -1376,8 +1379,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val deleteRequestedBy = "email@example.com"
       val gatekeeperUserId = "big.boss.gatekeeper"
       val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
-      val api1 = ApiIdentifier("hello", "1.0")
-      val api2 = ApiIdentifier("goodbye", "1.0")
+      val api1 = "hello".asIdentifier("1.0")
+      val api2 = "goodbye".asIdentifier("1.0")
 
       type T = ApplicationData => Future[AuditResult]
       val mockAuditResult = mock[Future[AuditResult]]

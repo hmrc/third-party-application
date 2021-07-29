@@ -285,24 +285,36 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAllForCollaborator(userId: UserId): Future[List[ApplicationResponse]] = {
-    applicationRepository.fetchAllForUserId(userId).map {
-      _.map(application => ApplicationResponse(data = application))
+  // TODO - introduce me
+  // private def asResponse(apps: List[ApplicationData]): List[ApplicationResponse] = {
+  //   apps.map(ApplicationResponse(data = _))
+  // }
+
+  private def asExtendedResponses(apps: List[ApplicationData]): Future[List[ExtendedApplicationResponse]] = {
+    def asExtendedResponse(app: ApplicationData): Future[ExtendedApplicationResponse] = {
+      subscriptionRepository.getSubscriptions(app.id).map(subscriptions => ExtendedApplicationResponse(app, subscriptions))
     }
+
+    Future.sequence(apps.map(asExtendedResponse))
   }
 
+  def fetchAllForCollaborator(userId: UserId): Future[List[ExtendedApplicationResponse]] = {
+    applicationRepository.fetchAllForUserId(userId).flatMap(asExtendedResponses)
+  }
+
+  // TODO: Remove as should no longer be used due to email address.
   def fetchAllForCollaborator(emailAddress: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddress(emailAddress).map {
       _.map(application => ApplicationResponse(data = application))
     }
   }
 
-    def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ApplicationResponse]] = {
-    applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment).map {
-      _.map(application => ApplicationResponse(data = application))
-    }
+  def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
+    applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
+    .flatMap(asExtendedResponses)
   }
 
+  // TODO: Remove as should no longer be used due to email address.
   def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
       _.map(application => ApplicationResponse(data = application))

@@ -100,6 +100,8 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
     )
   }
 
+bloopAggregateSourceDependencies in Global := true
+
 // Coverage configuration
 coverageMinimum := 89
 coverageFailOnMinimum := true

@@ -121,7 +121,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
-
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
 
@@ -195,8 +194,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
-
       givenUserIsAuthenticated(underTest)
+
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*))
         .thenReturn(failed(ApplicationAlreadyExists("appName")))
 
@@ -207,7 +206,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
-
       val body = """{ "json": "invalid" }"""
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
@@ -216,7 +214,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 422 (unprocessable entity) when duplicate email is provided" in new Setup {
-
       val id = UserId.random
 
       val body: String =
@@ -241,7 +238,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
-
       val createApplicationRequestJson: String =
         s"""{
           "name" : "My Application",
@@ -265,7 +261,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 422 (unprocessable entity) when incomplete json is provided" in new Setup {
-
       val body = """{ "name": "myapp" }"""
 
       val result = underTest.create()(request.withBody(Json.parse(body)))
