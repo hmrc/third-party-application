@@ -4,8 +4,9 @@ import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
-import uk.gov.hmrc.PublishingSettings._
-import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin._
+import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
+import uk.gov.hmrc._
+import PublishingSettings._
 
 lazy val appName = "third-party-application"
 
@@ -16,28 +17,28 @@ val reactiveMongoVer = "0.18.8"
 lazy val playJsonVersion = "2.8.1"
 
 lazy val compile = Seq(
-  "uk.gov.hmrc" %% "bootstrap-backend-play-26" % "4.0.0",
-  "uk.gov.hmrc" %% "play-scheduling" % "7.4.0-play-26",
-  "uk.gov.hmrc" %% "play-json-union-formatter" % "1.11.0",
-  "com.typesafe.play" %% "play-json" % playJsonVersion,
-  "com.typesafe.play" %% "play-json-joda" % playJsonVersion,
-  "uk.gov.hmrc" %% "play-hmrc-api" % "4.1.0-play-26",
-  "uk.gov.hmrc" %% "metrix" % "4.7.0-play-26",
-  "org.reactivemongo" %% "reactivemongo-akkastream" % reactiveMongoVer,
-  "commons-net" % "commons-net" % "3.6",
-  "org.typelevel" %% "cats-core" % "2.0.0",
-  "com.github.t3hnar" %% "scala-bcrypt" % "4.1"
+  "uk.gov.hmrc"         %% "bootstrap-backend-play-26"  % "5.7.0",
+  "uk.gov.hmrc"         %% "play-scheduling"            % "7.4.0-play-26",
+  "uk.gov.hmrc"         %% "play-json-union-formatter"  % "1.11.0",
+  "com.typesafe.play"   %% "play-json"                  % playJsonVersion,
+  "com.typesafe.play"   %% "play-json-joda"             % playJsonVersion,
+  "uk.gov.hmrc"         %% "play-hmrc-api"              % "4.1.0-play-26",
+  "uk.gov.hmrc"         %% "metrix"                     % "4.7.0-play-26",
+  "org.reactivemongo"   %% "reactivemongo-akkastream"   % reactiveMongoVer,
+  "commons-net"         %  "commons-net"                % "3.6",
+  "org.typelevel"       %% "cats-core"                  % "2.0.0",
+  "com.github.t3hnar"   %% "scala-bcrypt"               % "4.1"
 )
 val scope = "test,it"
 
 lazy val test = Seq(
-  "uk.gov.hmrc" %% "reactivemongo-test" % "4.21.0-play-26" % scope,
-  "org.pegdown" % "pegdown" % "1.6.0" % scope,
-  "org.scalaj" %% "scalaj-http" % "2.3.0" % scope,
-  "com.github.tomakehurst" % "wiremock" % "1.58" % scope,
-  "org.scalatestplus.play" %% "scalatestplus-play" % "3.1.3" % scope,
-  "org.mockito" %% "mockito-scala-scalatest" % "1.14.0" % scope,
-  "com.typesafe.play" %% "play-test" % PlayVersion.current % scope
+  "uk.gov.hmrc"             %% "reactivemongo-test"       % "4.21.0-play-26" % scope,
+  "org.pegdown"             %  "pegdown"                  % "1.6.0" % scope,
+  "org.scalaj"              %% "scalaj-http"              % "2.3.0" % scope,
+  "com.github.tomakehurst"  %  "wiremock-jre8-standalone" % "2.27.2" % scope,
+  "org.scalatestplus.play"  %% "scalatestplus-play"       % "3.1.3" % scope,
+  "org.mockito"             %% "mockito-scala-scalatest"  % "1.14.0" % scope,
+  "com.typesafe.play"       %% "play-test"                % PlayVersion.current % scope
 )
 
 lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
