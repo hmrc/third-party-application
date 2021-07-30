@@ -61,14 +61,16 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 class ApplicationControllerSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with ApiIdentifierSyntaxModule with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
+
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
@@ -142,6 +144,17 @@ class ApplicationControllerSpec extends ControllerSpec
       testBlock
     }
   }
+
+  trait ExtendedResponses {
+    self : Setup =>
+
+    val apiIdentifier1 = "api1".asIdentifier
+    val apiIdentifier2 = "api2".asIdentifier
+    val standardApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Standard(), subscriptions = List(apiIdentifier1, apiIdentifier2))
+    val privilegedApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Privileged())
+    val ropcApplicationResponse: ExtendedApplicationResponse = aNewExtendedApplicationResponse(access = Ropc())
+  }
+
 
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
@@ -929,11 +942,8 @@ class ApplicationControllerSpec extends ControllerSpec
       status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
     
-    "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup {
+    "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.asText}&environment=$environment")
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
 
       when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
@@ -941,11 +951,8 @@ class ApplicationControllerSpec extends ControllerSpec
       status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
     }
      
-    "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup {
+    "fail with a BadRequest when applications are requested for the collaborator by userId and environment but the userId is badly formed" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=XXX&environment=$environment")
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
 
       when(underTest.applicationService.fetchAllForUserIdAndEnvironment(userId, environment))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
@@ -957,11 +964,7 @@ class ApplicationControllerSpec extends ControllerSpec
   "fetchAllForCollaborator" should {
     val userId = UserId.random
 
-    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-
+    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup with ExtendedResponses {
       when(underTest.applicationService.fetchAllForCollaborator(userId))
         .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
 
@@ -1635,6 +1638,9 @@ class ApplicationControllerSpec extends ControllerSpec
       access
     )
   }
+
+  private def aNewExtendedApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION, subscriptions: List[ApiIdentifier] = List.empty) = 
+    extendedApplicationResponseFromApplicationResponse(aNewApplicationResponse(access, environment)).copy(subscriptions = subscriptions)
 
   private def extendedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
     new ExtendedApplicationResponse(
