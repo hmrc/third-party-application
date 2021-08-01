@@ -214,8 +214,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("state.name" -> state, "state.updatedOn" -> Json.obj(f"$$lte" -> BSONDateTime(updatedBefore.getMillis)))
   }
 
-  def fetchByClientId(clientId: String): Future[Option[ApplicationData]] = {
-    find("tokens.production.clientId" -> clientId).map(_.headOption)
+  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationData]] = {
+    find("tokens.production.clientId" -> clientId.value).map(_.headOption)
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationData]] = {

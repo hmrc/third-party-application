@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
@@ -40,7 +41,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
           collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR, UserId.random))
         ),
         applicationName,
-        EnvironmentToken("", serverToken, List.empty))
+        EnvironmentToken(ClientId(""), serverToken, List.empty))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

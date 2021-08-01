@@ -25,12 +25,13 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 @Singleton
 class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
 
-  def revokeApplicationAuthorities(clientId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/authority/$clientId") map (_ => HasSucceeded)
+  def revokeApplicationAuthorities(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/authority/${clientId.value}") map (_ => HasSucceeded)
   }
 }
 

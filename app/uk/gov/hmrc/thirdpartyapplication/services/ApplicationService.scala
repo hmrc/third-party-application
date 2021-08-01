@@ -257,7 +257,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     updated.exists(_.role == Role.ADMINISTRATOR)
   }
 
-  def fetchByClientId(clientId: String): Future[Option[ApplicationResponse]] = {
+  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByClientId(clientId) map {
       _.map(application => ApplicationResponse(data = application))
     }

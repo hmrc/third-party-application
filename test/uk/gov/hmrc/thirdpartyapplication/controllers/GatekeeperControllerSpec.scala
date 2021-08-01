@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
@@ -109,7 +110,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
       ApplicationId.random,
-      "clientId",
+      ClientId("clientId"),
       "gatewayId",
       "My Application",
       environment.toString,
@@ -500,6 +501,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def anAppResponse(appId: ApplicationId) = {
-    new ApplicationResponse(appId, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
   }
 }

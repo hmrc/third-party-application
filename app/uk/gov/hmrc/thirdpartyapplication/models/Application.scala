@@ -88,7 +88,7 @@ case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
 
 case class ApplicationResponse(id: ApplicationId,
-                               clientId: String,
+                               clientId: ClientId,
                                gatewayId: String,
                                name: String,
                                deployedTo: String,
@@ -148,7 +148,7 @@ object ApplicationResponse {
 }
 
 case class ExtendedApplicationResponse(id: ApplicationId,
-                                       clientId: String,
+                                       clientId: ClientId,
                                        gatewayId: String,
                                        name: String,
                                        deployedTo: String,
@@ -269,18 +269,18 @@ case class ClientSecret(name: String,
                         hashedSecret: String)
 
 trait Token {
-  def clientId: String
+  def clientId: ClientId
   def accessToken: String
   def clientSecrets: List[ClientSecret]
 }
 
-case class EnvironmentToken(clientId: String,
+case class EnvironmentToken(clientId: ClientId,
                             accessToken: String,
                             clientSecrets: List[ClientSecret] = List(),
                             lastAccessTokenUsage: Option[DateTime] = None) extends Token
 
 case class ApplicationTokenResponse(
-   clientId: String,
+   clientId: ClientId,
    accessToken: String,
    clientSecrets: List[ClientSecretResponse]
 )

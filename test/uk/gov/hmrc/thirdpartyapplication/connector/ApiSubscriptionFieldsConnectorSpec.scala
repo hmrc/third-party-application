@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import java.util.UUID
-
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, UpstreamErrorResponse}
 import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  val clientId = UUID.randomUUID().toString
+  val clientId = ClientId.random
 
   trait Setup {
     val http: HttpClient = app.injector.instanceOf[HttpClient]
@@ -41,7 +40,7 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
     def apiSubscriptionFieldsWillReturn(status: Int) =
       stubFor(
-        delete(urlEqualTo(s"/field/application/$clientId"))
+        delete(urlEqualTo(s"/field/application/${clientId.value}"))
         .willReturn(
           aResponse()
           .withStatus(status)

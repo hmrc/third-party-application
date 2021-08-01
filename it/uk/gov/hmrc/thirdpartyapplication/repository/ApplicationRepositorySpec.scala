@@ -36,8 +36,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Random.{alphanumeric, nextString}
+import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class ApplicationRepositorySpec
   extends AsyncHmrcSpec
@@ -58,8 +59,7 @@ class ApplicationRepositorySpec
   private val subscriptionRepository = new SubscriptionRepository(reactiveMongoComponent)
 
   private def generateClientId = {
-    val lengthOfRandomClientId = 10
-    alphanumeric.take(lengthOfRandomClientId).mkString
+    ClientId.random
   }
 
   private def generateAccessToken = {
@@ -121,7 +121,7 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
       await(
         applicationRepository.save(
-          anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE))))
+          anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE))))
 
       val updatedRateLimit = RateLimitTier.GOLD
 
@@ -134,7 +134,7 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
       await(
         applicationRepository.save(
-          anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(rateLimitTier = None)))
+          anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(rateLimitTier = None)))
 
       val updatedRateLimit = RateLimitTier.GOLD
 
@@ -163,7 +163,7 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
 
       val application =
-        anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
+        anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
           .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
@@ -179,7 +179,7 @@ class ApplicationRepositorySpec
       val testStartTime = DateTime.now()
       val applicationId = ApplicationId.random
       val application =
-        anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
+        anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
           .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
       application.tokens.production.lastAccessTokenUsage shouldBe None
       await(applicationRepository.save(application))
@@ -195,7 +195,7 @@ class ApplicationRepositorySpec
     "create a lastAccess property for client secret if it does not already exist" in {
       val testStartTime = DateTime.now()
       val applicationId = ApplicationId.random
-      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com"))
+      val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
       val generatedClientSecretId = application.tokens.production.clientSecrets.head.id
 
       await(applicationRepository.save(application))
@@ -212,10 +212,10 @@ class ApplicationRepositorySpec
       val applicationTokens =
         ApplicationTokens(
           EnvironmentToken(
-            "aaa",
+            ClientId("aaa"),
             generateAccessToken,
             List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret"))))
-      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
+      val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
       val generatedClientSecretId = application.tokens.production.clientSecrets.head.id
 
       await(applicationRepository.save(application))
@@ -234,12 +234,12 @@ class ApplicationRepositorySpec
       val applicationTokens =
         ApplicationTokens(
           EnvironmentToken(
-            "aaa",
+            ClientId("aaa"),
             generateAccessToken,
             List(
               secretToUpdate,
               ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret"))))
-      val application = anApplicationData(applicationId, "aaa", productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
+      val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
 
@@ -258,8 +258,8 @@ class ApplicationRepositorySpec
 
     "retrieve the application for a given client id when it has a matching client id" in {
 
-      val application1 = anApplicationData(ApplicationId.random, "aaa", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(ApplicationId.random, "zzz", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(ApplicationId.random, ClientId("aaa"), productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(ApplicationId.random, ClientId("zzz"), productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -276,8 +276,8 @@ class ApplicationRepositorySpec
 
     "retrieve the application when it is matched for access token" in {
 
-      val application1 = anApplicationData(ApplicationId.random, "aaa", productionState("requestorEmail@example.com"))
-      val application2 = anApplicationData(ApplicationId.random, "zzz", productionState("requestorEmail@example.com"))
+      val application1 = anApplicationData(ApplicationId.random, ClientId("aaa"), productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(ApplicationId.random, ClientId("zzz"), productionState("requestorEmail@example.com"))
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -765,7 +765,7 @@ class ApplicationRepositorySpec
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
-      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(clientId.toString))
+      val applicationSearch = new ApplicationSearch(filters = List(ApplicationTextSearch), textToSearch = Some(clientId.value))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -1424,7 +1424,7 @@ class ApplicationRepositorySpec
   }
 
   def anApplicationData(id: ApplicationId,
-                        prodClientId: String = "aaa",
+                        prodClientId: ClientId = ClientId("aaa"),
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
@@ -1436,7 +1436,7 @@ class ApplicationRepositorySpec
 
   def aNamedApplicationData(id: ApplicationId,
                             name: String,
-                            prodClientId: String = "aaa",
+                            prodClientId: ClientId = ClientId("aaa"),
                             state: ApplicationState = testingState(),
                             access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),

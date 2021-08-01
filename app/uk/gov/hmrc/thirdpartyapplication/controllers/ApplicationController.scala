@@ -268,7 +268,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
           .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND,
             CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
       case ("clientId" :: _, _) =>
-        fetchByClientId(request.queryString("clientId").head)
+        val clientId = ClientId(request.queryString("clientId").head)
+        fetchByClientId(clientId)
           .map(addHeaders(_.header.status == OK,
             CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
       case ("environment" :: "userId" :: _, _) =>
@@ -311,7 +312,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       "No application was found for server token"
     )
 
-  private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier): Future[Result] =
+  private def fetchByClientId(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Result] =
     fetchAndUpdateApplication(
       () => applicationService.fetchByClientId(clientId),
       appId => applicationService.recordApplicationUsage(appId),

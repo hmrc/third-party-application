@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersion, partialEmailMatch: Option[String])
 
-case class ValidationRequest(clientId: String, clientSecret: String)
+case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 

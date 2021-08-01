@@ -328,7 +328,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   }
 
   def anApplicationData(id: ApplicationId,
-                        clientId: String = "aaa",
+                        clientId: ClientId = ClientId("aaa"),
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
                         user: List[String] = List("user@example.com"),
@@ -339,7 +339,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
   def aNamedApplicationData(id: ApplicationId,
                             name: String,
-                            clientId: String = "aaa",
+                            clientId: ClientId = ClientId("aaa"),
                             state: ApplicationState = testingState(),
                             access: Access = Standard(List.empty, None, None),
                             user: List[String] = List("user@example.com"),
@@ -363,8 +363,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   }
 
   private def generateClientId = {
-    val testClientIdLength = 10
-    alphanumeric.take(testClientIdLength).mkString
+    ClientId.random
   }
 
   private def generateAccessToken = {

@@ -37,6 +37,7 @@ import scala.concurrent.Future._
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -93,8 +94,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
   "uplift verification expiry job execution" should {
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1 = anApplicationData(ApplicationId.random, "aaa")
-      val app2 = anApplicationData(ApplicationId.random, "aaa")
+      val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -129,8 +130,8 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1 = anApplicationData(ApplicationId.random, "aaa")
-      val app2 = anApplicationData(ApplicationId.random, "aaa")
+      val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -148,7 +149,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
   }
 
-  def anApplicationData(id: ApplicationId, prodClientId: String, state: ApplicationState = testingState()): ApplicationData = {
+  def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): ApplicationData = {
     ApplicationData(
       id,
       s"myApp-${id.value}",

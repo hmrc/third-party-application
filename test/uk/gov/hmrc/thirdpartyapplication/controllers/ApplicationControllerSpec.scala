@@ -157,7 +157,7 @@ class ApplicationControllerSpec extends ControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR,UserId.random),
@@ -555,7 +555,7 @@ class ApplicationControllerSpec extends ControllerSpec
   "add client secret" should {
     val applicationId = ApplicationId.random
     val applicationTokensResponse =
-      ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
+      ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
     val secretRequest = ClientSecretRequest("actor@example.com")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
@@ -623,7 +623,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val clientSecretId = ju.UUID.randomUUID().toString
     val actorEmailAddress = "actor@example.com"
     val secretRequest = DeleteClientSecretRequest(actorEmailAddress)
-    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
+    val tokenResponse = ApplicationTokenResponse(ClientId("aaa"), "bbb", List.empty)
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
@@ -662,8 +662,8 @@ class ApplicationControllerSpec extends ControllerSpec
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "validate credentials" should {
-    val validation = ValidationRequest("clientId", "clientSecret")
-    val payload = s"""{"clientId":"${validation.clientId}", "clientSecret":"${validation.clientSecret}"}"""
+    val validation = ValidationRequest(ClientId("clientId"), "clientSecret")
+    val payload = s"""{"clientId":"${validation.clientId.value}", "clientSecret":"${validation.clientSecret}"}"""
 
     "succeed with a 200 (ok) if the credentials are valid for an application" in new Setup {
       when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
@@ -762,7 +762,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "query dispatcher" should {
-    val clientId = "A123XC"
+    val clientId = ClientId("A123XC")
     val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
     trait LastAccessedSetup extends Setup {
@@ -785,7 +785,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
       validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
@@ -834,7 +834,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
       validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
@@ -884,7 +884,7 @@ class ApplicationControllerSpec extends ControllerSpec
         when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
 
         val result =
-          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*))
+          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
 
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
@@ -1621,7 +1621,7 @@ class ApplicationControllerSpec extends ControllerSpec
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
       ApplicationId.random,
-      "clientId",
+      ClientId("clientId"),
       "gatewayId",
       "My Application",
       environment.toString,

@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSe
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -62,8 +63,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val anotherAdminUser = "admin@example.com"
   private val firstSecret = aSecret("secret1")
   private val secondSecret = aSecret("secret2")
-  private val environmentToken = EnvironmentToken("aaa", "bbb", List(firstSecret, secondSecret), None)
-  private val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List(ClientSecretResponse(firstSecret), ClientSecretResponse(secondSecret)))
+  private val environmentToken = EnvironmentToken(ClientId("aaa"), "bbb", List(firstSecret, secondSecret), None)
+  private val tokenResponse = ApplicationTokenResponse(ClientId("aaa"), "bbb", List(ClientSecretResponse(firstSecret), ClientSecretResponse(secondSecret)))
 
   "fetch credentials" should {
 
@@ -94,7 +95,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   "validate credentials" should {
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      val clientId = "some-client-id"
+      val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNoneWhen(clientId)
 
       val result = await(underTest.validateCredentials(ValidationRequest(clientId, "aSecret")).value)

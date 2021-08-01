@@ -66,17 +66,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByClientId {
-      def thenReturnWhen(clientId: String)(applicationData: ApplicationData) =
-        when(aMock.fetchByClientId(clientId)).thenReturn(successful(Some(applicationData)))
+      def thenReturnWhen(clientId: ClientId)(applicationData: ApplicationData) =
+        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
 
       def thenReturnNone() =
-        when(aMock.fetchByClientId(*)).thenReturn(successful(None))
+        when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
 
-      def thenReturnNoneWhen(clientId: String) =
-        when(aMock.fetchByClientId(clientId)).thenReturn(successful(None))
+      def thenReturnNoneWhen(clientId: ClientId) =
+        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.fetchByClientId(*)).thenReturn(failed(failWith))
+          when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
     }
 
     object Save {

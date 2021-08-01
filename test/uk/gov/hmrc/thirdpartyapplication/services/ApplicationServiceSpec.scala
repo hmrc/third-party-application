@@ -66,7 +66,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   val devEmail = "dev@example.com"
 
   val serverTokenLastAccess = DateTime.now
-  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+  private val productionToken = EnvironmentToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -524,7 +524,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val testUserEmail = "test@example.com"
       val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
       val tokens = ApplicationTokens(
-        EnvironmentToken("prodId", "prodToken")
+        EnvironmentToken(ClientId("prodId"), "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -903,7 +903,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   "fetchByClientId" should {
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      val clientId = "some-client-id"
+      val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNone()
 
       val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(clientId))
@@ -938,7 +938,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken("aaa", serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = EnvironmentToken(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
@@ -1380,8 +1380,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val deleteRequestedBy = "email@example.com"
       val gatekeeperUserId = "big.boss.gatekeeper"
       val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
-      val api1 = "hello".asIdentifier("1.0")
-      val api2 = "goodbye".asIdentifier("1.0")
+      val api1 = "hello".asIdentifier
+      val api2 = "goodbye".asIdentifier
 
       type T = ApplicationData => Future[AuditResult]
       val mockAuditResult = mock[Future[AuditResult]]
@@ -1394,7 +1394,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
       when(mockStateHistoryRepository.deleteByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
 
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
     }

@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
@@ -45,7 +46,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
         Set.empty,
         None,
         "a",
-        ApplicationTokens(EnvironmentToken("cid", "at")),
+        ApplicationTokens(EnvironmentToken(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(List.empty, None, None),
         DateTimeUtils.now,
@@ -76,7 +77,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random))),
           wso2ApplicationName = "wso2ApplicationName",
-          environmentToken = EnvironmentToken("clientId", "accessToken")
+          environmentToken = EnvironmentToken(ClientId("clientId"), "accessToken")
       )
     }
 

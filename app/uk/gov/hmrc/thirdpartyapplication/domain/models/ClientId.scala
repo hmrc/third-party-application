@@ -14,20 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import java.security.SecureRandom
+import scala.util.Random
+import play.api.libs.json.Json
 
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+case class ClientId(value: String) extends AnyVal
 
-@Singleton
-class TokenService {
-  def createEnvironmentToken(): EnvironmentToken = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
-    new SecureRandom().nextBytes(randomBytes)
-    val accessToken = randomBytes.map("%02x".format(_)).mkString
-    EnvironmentToken(ClientId.random, accessToken)
-  }
+object ClientId {
+  def random: ClientId = ClientId(Random.alphanumeric.take(28).mkString)
+
+  implicit val JsonFormat = Json.valueFormat[ClientId]
 }

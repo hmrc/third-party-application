@@ -32,6 +32,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -120,7 +121,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val id = ApplicationId.random
     val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
     val tokens = ApplicationTokens(
-      EnvironmentToken("prodId", "prodToken")
+      EnvironmentToken(ClientId("prodId"), "prodToken")
     )
     val previousApp = ApplicationData(
       id = id,

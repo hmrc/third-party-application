@@ -39,6 +39,7 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
@@ -202,6 +203,6 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   private def application(access: Access) =
     ApplicationResponse(
-      ApplicationId.random, "clientId", "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
 
 }

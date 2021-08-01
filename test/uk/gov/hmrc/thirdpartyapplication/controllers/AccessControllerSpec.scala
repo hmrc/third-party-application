@@ -34,6 +34,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
@@ -195,7 +196,7 @@ class AccessControllerSpec extends ControllerSpec {
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
       ApplicationResponse(
         applicationId,
-        "clientId",
+        ClientId("clientId"),
         "gatewayId",
         "name",
         "PRODUCTION",
@@ -210,12 +211,12 @@ class AccessControllerSpec extends ControllerSpec {
   trait PrivilegedAndRopcFixture extends Fixture {
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, "clientId", "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
-          applicationResponse.copy(clientId = "privilegedClientId", name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
+          applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
         ),
-      OptionT.pure[Future](applicationResponse.copy(clientId = "ropcClientId", name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
+      OptionT.pure[Future](applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
       )
       testBlock
       testBlock

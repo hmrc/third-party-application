@@ -180,10 +180,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   feature("Validate Credentials") {
-    def validationRequest(clientId: String, clientSecret: String) =
+    def validationRequest(clientId: ClientId, clientSecret: String) =
       s"""
          | {
-         |   "clientId": "$clientId",
+         |   "clientId": "${clientId.value}",
          |   "clientSecret": "$clientSecret"
          | }
          |""".stripMargin
@@ -214,7 +214,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createApplication(awsApiGatewayApplicationName)
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest("foo", "bar")
+      val requestBody = validationRequest(ClientId("foo"), "bar")
       val validationResponse = postData(s"/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")

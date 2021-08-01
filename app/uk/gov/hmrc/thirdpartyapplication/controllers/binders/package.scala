@@ -139,4 +139,36 @@ package object binders {
       textBinder.unbind(key, version.value)
     }
   }
+
+
+
+  implicit def clientIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ClientId] = new PathBindable[ClientId] {
+
+    override def bind(key: String, value: String): Either[String, ClientId] = {
+      textBinder.bind(key, value).map(ClientId(_))
+    }
+
+    override def unbind(key: String, clientId: ClientId): String = {
+      clientId.value
+    }
+  }
+
+  implicit def clientIdQueryStringBindable(implicit textBinder: QueryStringBindable[String]) = new QueryStringBindable[ClientId] {
+
+    override def bind(key: String, params: Map[String, Seq[String]]): Option[Either[String, ClientId]] = {
+      for {
+        text <- textBinder.bind(key, params)
+      } yield {
+        text match {
+          case Right(clientId) => Right(ClientId(clientId))
+          case _              => Left("Unable to bind an clientId")
+        }
+      }
+    }
+
+    override def unbind(key: String, clientId: ClientId): String = {
+      textBinder.unbind(key, clientId.value)
+    }
+  }
+
 }

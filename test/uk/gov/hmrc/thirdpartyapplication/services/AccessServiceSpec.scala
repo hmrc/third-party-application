@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -181,7 +182,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        EnvironmentToken(ClientId("a"), "c")
       ),
       ApplicationState(),
       Privileged(None, scopes),
@@ -197,7 +198,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        EnvironmentToken(ClientId("a"), "c")
       ),
       ApplicationState(),
       Ropc(scopes),
@@ -213,7 +214,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        EnvironmentToken(ClientId("a"), "c")
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),

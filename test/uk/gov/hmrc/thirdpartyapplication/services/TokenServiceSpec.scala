@@ -29,7 +29,7 @@ class TokenServiceSpec extends AsyncHmrcSpec {
     "create a valid environment token" in new Setup {
       val result: EnvironmentToken = underTest.createEnvironmentToken()
 
-      result.clientId.length shouldBe 28
+      result.clientId.value.length shouldBe 28
       result.accessToken.length shouldBe 32
       result.clientSecrets shouldBe empty
     }
