@@ -36,6 +36,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SI
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -46,7 +48,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
-import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,7 +55,7 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModule with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   val idsByEmail = mutable.Map[String, UserId]()
   def idOf(email: String) = {
@@ -138,7 +139,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
+      when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
 
   }
 
@@ -965,7 +966,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     }
 
     "fetch all applications for a given collaborator user id" in new Setup {
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier(), "api2".asIdentifier()))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier, "api2".asIdentifier))
       val userId = UserId.random
       val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
@@ -982,7 +983,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
   "fetchAllBySubscription" should {
     "return applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context"
+      val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
@@ -992,7 +993,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context"
+      val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))

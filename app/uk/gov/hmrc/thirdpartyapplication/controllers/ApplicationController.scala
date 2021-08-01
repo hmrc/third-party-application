@@ -41,6 +41,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -284,9 +285,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case ("emailAddress" :: _, _) =>
         fetchAllForCollaborator(request.queryString("emailAddress").head)
       case ("subscribesTo" :: "version" :: _, _) =>
-        fetchAllBySubscriptionVersion(ApiIdentifier(request.queryString("subscribesTo").head, request.queryString("version").head))
+        val context = ApiContext(request.queryString("subscribesTo").head)
+        val version = ApiVersion(request.queryString("version").head)
+        fetchAllBySubscriptionVersion(ApiIdentifier(context, version))
       case ("subscribesTo" :: _, _) =>
-        fetchAllBySubscription(request.queryString("subscribesTo").head)
+        val context = ApiContext(request.queryString("subscribesTo").head)
+        fetchAllBySubscription(context)
       case ("noSubscriptions" :: _, _) =>
         fetchAllWithNoSubscriptions()
       case _ => fetchAll()
@@ -349,7 +353,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAll().map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllBySubscription(apiContext: String) = {
+  private def fetchAllBySubscription(apiContext: ApiContext) = {
     applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
   }
 
@@ -371,7 +375,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       .map(subs => Ok(toJson(subs))) recover recovery
   }
 
-  def isSubscribed(applicationId: ApplicationId, context: String, version: String) = Action.async {
+  def isSubscribed(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = Action.async {
     val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(applicationId, api) map {
       case true => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
@@ -387,7 +391,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
     }
 
-  def removeSubscriptionForApplication(applicationId: ApplicationId, context: String, version: String) = {
+  def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
     }

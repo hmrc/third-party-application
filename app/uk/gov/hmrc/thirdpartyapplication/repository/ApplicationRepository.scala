@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -257,19 +258,19 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
-    def specificAPISubscription(apiContext: String, apiVersion: String) = {
-      if (apiVersion.isEmpty) {
+    def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
+      apiVersion.fold(
         matches("subscribedApis.apiIdentifier.context" -> apiContext)
-      } else {
-        matches("subscribedApis.apiIdentifier" -> Json.obj("context" -> apiContext, "version" -> apiVersion))
-      }
+      )( value =>
+        matches("subscribedApis.apiIdentifier" -> Json.obj("context" -> apiContext, "version" -> value))
+      )
     }
 
     applicationSearchFilter match {
       // API Subscriptions
       case NoAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$size" -> 0))
       case OneOrMoreAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$gt" -> Json.obj(f"$$size" -> 0)))
-      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.getOrElse(""), applicationSearch.apiVersion.getOrElse(""))
+      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
       case Created => applicationStatusMatch(State.TESTING)
@@ -347,7 +348,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
           "applications" -> paginatedFilteredAndSortedPipeline))))
   }
 
-  def fetchAllForContext(apiContext: String): Future[List[ApplicationData]] =
+  def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =

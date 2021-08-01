@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import scala.concurrent.ExecutionContext
 

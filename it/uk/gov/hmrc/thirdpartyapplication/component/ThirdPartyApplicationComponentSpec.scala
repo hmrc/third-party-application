@@ -28,6 +28,8 @@ import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
@@ -73,8 +75,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val cookie = Random.alphanumeric.take(testCookieLength).mkString
   val serviceName = "service"
   val apiName = "apiName"
-  val context = "myapi"
-  val version = "1.0"
+  val context = "myapi".asContext
+  val version = "1.0".asVersion
   val standardAccess = Standard(
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
@@ -554,7 +556,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     Json.parse(createdResponse.body).as[ApplicationResponse]
   }
 
-  private def subscriptionExists(applicationId: ApplicationId, apiContext: String, apiVersion: String) = {
+  private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersion) = {
     subscriptionRepository.add(applicationId, new ApiIdentifier(apiContext, apiVersion))
   }
 

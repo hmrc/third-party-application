@@ -30,9 +30,9 @@ DELETE        /application/:id/collaborator/:email                   uk.gov.hmrc
 POST          /application/:id/collaborator/delete                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteCollaborator(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId)
 
 GET           /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllSubscriptions(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId)
-GET           /application/:id/subscription/:context/:version        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.isSubscribed(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId, context: String, version: String)
+GET           /application/:id/subscription/:context/:version        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.isSubscribed(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId, context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
 POST          /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.createSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId)
-DELETE        /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.removeSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId, context, version)
+DELETE        /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.removeSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId, context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
 
 POST          /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecret(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId)
 POST          /application/:id/client-secret/:clientSecretId         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecret(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId, clientSecretId: String)
@@ -55,7 +55,7 @@ GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc
 
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.thirdpartyapplication.models.ApplicationId)
 
-GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: String, version: String)
+GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
 GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: uk.gov.hmrc.thirdpartyapplication.models.UserId)
 GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: uk.gov.hmrc.thirdpartyapplication.models.UserId)
 

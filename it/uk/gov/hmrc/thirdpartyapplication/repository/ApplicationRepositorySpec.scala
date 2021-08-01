@@ -29,6 +29,7 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
@@ -540,7 +541,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
       await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application3.id)))
 
-      val result = await(applicationRepository.fetchAllForContext("context"))
+      val result = await(applicationRepository.fetchAllForContext("context".asContext))
 
       result shouldBe List(application1, application2)
     }
@@ -558,7 +559,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
       await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application2.id, application3.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier("context".asIdentifier("version-2")))
 
       result shouldBe List(application2)
     }
@@ -573,7 +574,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-1", application1.id)))
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id, application3.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("context", "version-2")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier("context".asIdentifier("version-2")))
 
       result shouldBe List(application2, application3)
     }
@@ -587,7 +588,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData("context", "version-2", application2.id)))
       await(subscriptionRepository.insert(aSubscriptionData("other", "version-2", application1.id, application2.id)))
 
-      val result = await(applicationRepository.fetchAllForApiIdentifier(ApiIdentifier("other", "version-1")))
+      val result = await(applicationRepository.fetchAllForApiIdentifier("other".asIdentifier("version-1")))
 
       result shouldBe List.empty
     }
@@ -822,7 +823,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use agreed" in {
       val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithTermsOfUseAgreed =
@@ -846,7 +847,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
       val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithNoCheckInformation =
@@ -871,7 +872,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
       val applicationId = ApplicationId.random()
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val emptyCheckInformation = CheckInformation(termsOfUseAgreements = List.empty)
@@ -906,7 +907,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData(expectedAPIContext, "version-1", expectedApplication.id)))
       await(subscriptionRepository.insert(aSubscriptionData(otherAPIContext, "version-1", otherApplication.id)))
 
-      val applicationSearch = new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(expectedAPIContext), apiVersion = Some(""))
+      val applicationSearch = new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(expectedAPIContext.asContext), apiVersion = None)
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -931,7 +932,7 @@ class ApplicationRepositorySpec
       await(subscriptionRepository.insert(aSubscriptionData(apiContext, otherAPIVersion, otherApplication.id)))
 
       val applicationSearch =
-        new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(apiContext), apiVersion = Some(expectedAPIVersion))
+        new ApplicationSearch(filters = List(SpecificAPISubscription), apiContext = Some(apiContext.asContext), apiVersion = Some(expectedAPIVersion.asVersion))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
 
@@ -1418,7 +1419,7 @@ class ApplicationRepositorySpec
   )
 
   def aSubscriptionData(context: String, version: String, applicationIds: ApplicationId*) = {
-    SubscriptionData(ApiIdentifier(context, version), Set(applicationIds: _*))
+    SubscriptionData(context.asIdentifier(version), Set(applicationIds: _*))
   }
 
   def anApplicationData(id: ApplicationId,

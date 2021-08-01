@@ -67,14 +67,16 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
-    version = "2.0")
+    version = "2.0"
+  )
 
   val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
-    version = "2.0")
+    version = "2.0"
+  )
 
   abstract class Setup(enabled: Boolean = true) {
     val http: HttpClient = app.injector.instanceOf[HttpClient]

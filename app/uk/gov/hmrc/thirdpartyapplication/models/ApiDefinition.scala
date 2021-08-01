@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
 object ApiStatus extends Enumeration {
   type APIStatus = Value
   val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value

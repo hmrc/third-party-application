@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 case class InvalidUpliftVerificationCode(code: String) extends RuntimeException(s"Invalid verification code '$code'")
 
@@ -34,7 +35,7 @@ class InconsistentDataState(message: String) extends RuntimeException(message)
 case class ApplicationAlreadyExists(applicationName: String) extends RuntimeException
 
 case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
-  extends RuntimeException(s"Application: '$name' is already Subscribed to API: ${api.context}: ${api.version}")
+  extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
 
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 

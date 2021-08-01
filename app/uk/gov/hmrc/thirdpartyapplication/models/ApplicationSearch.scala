@@ -16,6 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.json.Json
@@ -25,8 +28,8 @@ case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
                              filters: List[ApplicationSearchFilter] = List.empty,
                              textToSearch: Option[String] = None,
-                             apiContext: Option[String] = None,
-                             apiVersion: Option[String] = None,
+                             apiContext: Option[ApiContext] = None,
+                             apiVersion: Option[ApiVersion] = None,
                              sort: ApplicationSort = SubmittedAscending)
 
 object ApplicationSearch {
@@ -53,8 +56,8 @@ object ApplicationSearch {
       .toList
 
     def searchText = queryString.getOrElse("search", List.empty).headOption
-    def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption)
-    def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1))
+    def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
+    def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
     def sort = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)

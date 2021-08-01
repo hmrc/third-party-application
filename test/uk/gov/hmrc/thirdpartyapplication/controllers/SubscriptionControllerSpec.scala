@@ -22,13 +22,14 @@ import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{Request, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 
@@ -49,34 +50,34 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
   }
 
   "getSubscribers" should {
+      val apiIdentifier = "hello/world".asIdentifier
+
+      def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.version.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
-      private val apiIdentifier = ApiIdentifier("hello", "1.0")
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
-      val result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
+      val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
       status(result) shouldBe OK
       contentAsJson(result).as[SubscribersResponse] shouldBe SubscribersResponse(subscribers)
     }
 
     "return the subscribers from the repository for a multi-segment API" in new Setup {
-      private val apiIdentifier = ApiIdentifier("hello/world", "1.0")
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
-      val result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
+      val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
       status(result) shouldBe OK
       contentAsJson(result).as[SubscribersResponse] shouldBe SubscribersResponse(subscribers)
     }
 
     "return 500 if something goes wrong" in new Setup {
-      private val apiIdentifier = ApiIdentifier("hello", "1.0")
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(failed(new RuntimeException("something went wrong")))
 
-      val result = callEndpointWith(FakeRequest(GET, s"/apis/${apiIdentifier.context}/versions/${apiIdentifier.version}/subscribers"))
+      val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
       (contentAsJson(result) \ "code").as[String] shouldBe "UNKNOWN_ERROR"
@@ -88,7 +89,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     val userId = UserId.random
 
     "return the subscriptions from the repository" in new Setup {
-      val expectedSubscriptions = Set(ApiIdentifier("hello-world", "1.0"))
+      val expectedSubscriptions = Set("hello/world".asIdentifier)
       when(mockSubscriptionRepository.getSubscriptionsForDeveloper(userId)).thenReturn(successful(expectedSubscriptions))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))

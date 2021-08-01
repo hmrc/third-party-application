@@ -21,11 +21,14 @@ import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
 
+
+// TODO - context and version probably should be strings in the events??
 @Singleton
 class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) {
 
@@ -72,22 +75,22 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       })
   }
 
-  def sendApiSubscribedEvent(appData: ApplicationData, context: String, version: String)
+  def sendApiSubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)
                                   (implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(appId, eventType = "ApiSubscribedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiSubscribedEvent(EventId.random, appId, actor = actor, context = context, version = version))
+        actor => sendEvent(ApiSubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
       })
   }
 
 
-  def sendApiUnsubscribedEvent(appData: ApplicationData, context: String, version: String)
+  def sendApiUnsubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)
                             (implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(appId, eventType = "ApiUnsubscribedEvent",
       maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
-        actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appId, actor = actor, context = context, version = version))
+        actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
       })
   }
 

@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
@@ -144,7 +145,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier("test", "1.0")
+      val testApi = ApiIdentifier.random
       val apis = List(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
 
@@ -159,8 +160,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier("test", "1.0")
-      val anotherTestApi = ApiIdentifier("anotherTest", "1.0")
+      val testApi = ApiIdentifier.random
+      val anotherTestApi = ApiIdentifier.random
       val apis = List(testApi, anotherTestApi)
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(subscriptions = apis)
 

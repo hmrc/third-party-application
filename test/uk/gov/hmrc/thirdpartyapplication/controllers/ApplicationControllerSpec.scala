@@ -37,14 +37,13 @@ import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
 import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidIpAllowlistException
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
@@ -61,10 +60,9 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 class ApplicationControllerSpec extends ControllerSpec
-  with ApplicationStateUtil with ApiIdentifierSyntaxModule with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -193,7 +191,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", new DateTime(), "1.0")
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", new DateTime(), "1.0".asVersion)
     val checkInformation = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
     val id = ApplicationId.random()
@@ -1002,7 +1000,7 @@ class ApplicationControllerSpec extends ControllerSpec
         val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
         val response: List[ApplicationResponse] = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(response))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1012,7 +1010,7 @@ class ApplicationControllerSpec extends ControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(List.empty))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(List.empty))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1022,7 +1020,7 @@ class ApplicationControllerSpec extends ControllerSpec
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(failed(new RuntimeException("Expected test failure")))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1033,7 +1031,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "given a version" should {
       val version = "1.0"
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo&version=$version")
-      val apiIdentifier = ApiIdentifier(subscribesTo, version)
+      val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
         val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
@@ -1074,8 +1072,8 @@ class ApplicationControllerSpec extends ControllerSpec
   "isSubscribed" should {
 
     val applicationId: ApplicationId = ApplicationId.random()
-    val context: String = "context"
-    val version: String = "1.0"
+    val context = "context".asContext
+    val version = "1.0".asVersion
     val api = ApiIdentifier(context, version)
 
     "succeed with a 200 (ok) when the application is subscribed to a given API version" in new Setup {
@@ -1254,7 +1252,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -1264,7 +1262,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       status(result) shouldBe NO_CONTENT
     }
@@ -1278,14 +1276,14 @@ class ApplicationControllerSpec extends ControllerSpec
           when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
-          status(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)) shouldBe NO_CONTENT
+          status(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)) shouldBe NO_CONTENT
         })
       }
 
     "fail with a 401 (unauthorized) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-          assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)))
+          assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)))
         })
       }
 
@@ -1294,7 +1292,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -1609,7 +1607,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   private def anAPI() = {
-    new ApiIdentifier("some-context", "1.0")
+    "some-context".asIdentifier("1.0")
   }
 
   private def aSubcriptionData() = {

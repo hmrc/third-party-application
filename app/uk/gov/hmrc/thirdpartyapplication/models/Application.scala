@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTIN
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRequest {
   val name: String
@@ -74,7 +75,7 @@ object ContactDetails {
   implicit val formatContactDetails = Json.format[ContactDetails]
 }
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
+case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: ApiVersion)
 
 case class CheckInformation(contactDetails: Option[ContactDetails] = None,
                             confirmedName: Boolean = false,
@@ -258,8 +259,6 @@ case class ApplicationWithUpliftRequest(id: ApplicationId,
                                         state: State)
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
-
-case class ApiIdentifier(context: String, version: String)
 
 case class Collaborator(emailAddress: String, role: Role, userId: UserId)
 

@@ -20,6 +20,7 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
@@ -35,7 +36,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
-  def searchCollaborators(context: String, version: String, partialEmailMatch: Option[String]): Future[List[String]] = {
+  def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmailMatch: Option[String]): Future[List[String]] = {
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 
@@ -73,8 +74,8 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   private def auditSubscription(action: AuditAction, applicationId: ApplicationId, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     auditService.audit(action, Map(
       "applicationId" -> applicationId.value.toString,
-      "apiVersion" -> api.version,
-      "apiContext" -> api.context
+      "apiVersion" -> api.version.value,
+      "apiContext" -> api.context.value
     ))
   }
 

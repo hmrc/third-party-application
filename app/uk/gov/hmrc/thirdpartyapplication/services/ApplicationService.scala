@@ -55,6 +55,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -327,7 +328,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAllBySubscription(apiContext: String): Future[List[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
       _.map(application => ApplicationResponse(data = application))
     }
