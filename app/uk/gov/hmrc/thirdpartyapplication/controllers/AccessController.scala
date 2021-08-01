@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
 class AccessController @Inject()(val authConnector: AuthConnector,

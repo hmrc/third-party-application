@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {

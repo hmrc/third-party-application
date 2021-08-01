@@ -318,7 +318,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
-      ApplicationId.random(),
+      ApplicationId.random,
       "clientId",
       "gatewayId",
       "My Application",

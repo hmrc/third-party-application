@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.UserId
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -140,7 +141,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     
     implicit val hc: HeaderCarrier = HeaderCarrier()
 

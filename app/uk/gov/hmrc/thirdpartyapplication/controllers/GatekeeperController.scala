@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, Gatekeepe
 
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import scala.concurrent.ExecutionContext
 

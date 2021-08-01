@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ActorType.ActorType
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 object ActorType extends Enumeration {
   type ActorType = Value

@@ -46,6 +46,7 @@ import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -107,7 +108,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
-      ApplicationId.random(),
+      ApplicationId.random,
       "clientId",
       "gatewayId",
       "My Application",
@@ -136,7 +137,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "createSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val body = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
@@ -222,7 +223,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "Fetch app by id" should {
-    val appId = ApplicationId.random()
+    val appId = ApplicationId.random
 
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
@@ -258,7 +259,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "fetchAppStateHistoryById" should {
-    val appId = ApplicationId.random()
+    val appId = ApplicationId.random
 
     "return app with history" in new Setup {
       val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
@@ -275,7 +276,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "approveUplift" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
@@ -336,7 +337,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "reject Uplift" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
     val testReq = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
@@ -395,7 +396,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "resendVerification" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
@@ -452,7 +453,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "blockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random()
+    val applicationId: ApplicationId = ApplicationId.random
 
     "block the application" in new Setup {
 
@@ -468,7 +469,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "unblockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random()
+    val applicationId: ApplicationId = ApplicationId.random
 
     "unblock the application" in new Setup {
 
@@ -487,7 +488,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random(),
+  private def anAppResult(id: ApplicationId = ApplicationId.random,
                           submittedOn: DateTime = DateTimeUtils.now,
                           state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)

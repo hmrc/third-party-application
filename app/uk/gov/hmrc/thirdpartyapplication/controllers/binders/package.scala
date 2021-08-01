@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.mvc.PathBindable
-import uk.gov.hmrc.thirdpartyapplication.models.{UserId, ApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import play.api.mvc.QueryStringBindable
 import java.{util => ju}

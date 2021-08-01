@@ -39,14 +39,12 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.COLLABORATOR
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.GATEKEEPER
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_GATEKEEPER_APPROVAL
-import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.models.State.TESTING
+import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository

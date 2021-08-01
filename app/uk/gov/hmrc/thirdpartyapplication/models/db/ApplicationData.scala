@@ -21,6 +21,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.time.DateTimeUtils
 
 case class ApplicationData(id: ApplicationId,

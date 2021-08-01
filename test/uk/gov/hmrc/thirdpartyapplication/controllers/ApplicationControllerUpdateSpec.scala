@@ -47,6 +47,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -145,7 +146,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
   "Update" should {
     val standardApplicationRequest = anUpdateApplicationRequest(standardAccess)
     val privilegedApplicationRequest = anUpdateApplicationRequest(privilegedAccess)
-    val id = ApplicationId.random()
+    val id = ApplicationId.random
 
     "fail with a 404 (not found) when a valid Privileged application and gatekeeper is not logged in" in new Setup {
 
@@ -197,7 +198,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
-      ApplicationId.random(),
+      ApplicationId.random,
       "clientId",
       "gatewayId",
       "My Application",

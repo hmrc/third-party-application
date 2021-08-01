@@ -33,6 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
@@ -44,7 +45,7 @@ class AccessControllerSpec extends ControllerSpec {
   private val scopes = Set("scope")
   private val scopeRequest = ScopeRequest(scopes)
   private val overridesRequest = OverridesRequest(overrides)
-  private val applicationId = ApplicationId.random()
+  private val applicationId = ApplicationId.random
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 

@@ -36,7 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
 import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait AuthorisationWrapper {
   self: BaseController =>

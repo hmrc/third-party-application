@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSe
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -68,7 +69,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "return none when no application exists in the repository for the given application id" in new Setup {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
       val result = await(underTest.fetchCredentials(applicationId))
@@ -78,7 +79,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "return tokens when application exists in the repository for the given application id" in new Setup {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       val applicationData = anApplicationData(applicationId)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -102,7 +103,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "return none when credentials don't match with an application" in new Setup {
-      val applicationData = anApplicationData(ApplicationId.random())
+      val applicationData = anApplicationData(ApplicationId.random)
       val clientId = applicationData.tokens.production.clientId
 
       ApplicationRepoMock.FetchByClientId.thenReturnWhen(clientId)(applicationData)
@@ -115,7 +116,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "return application details when credentials match" in new Setup {
-      val applicationData = anApplicationData(ApplicationId.random())
+      val applicationData = anApplicationData(ApplicationId.random)
       val updatedApplicationData = applicationData.copy(lastAccess = Some(DateTime.now))
       val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
       val clientId = applicationData.tokens.production.clientId
@@ -133,7 +134,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "return application details and write log if updating usage date fails" in new Setup {
-      val applicationData = anApplicationData(ApplicationId.random())
+      val applicationData = anApplicationData(ApplicationId.random)
       val expectedApplicationResponse = ApplicationResponse(data = applicationData)
       val clientId = applicationData.tokens.production.clientId
       val secret = UUID.randomUUID().toString
@@ -156,7 +157,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "addClientSecret" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(
       applicationId,
       collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
@@ -241,7 +242,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "deleteClientSecret" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(
       applicationId,
       collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))

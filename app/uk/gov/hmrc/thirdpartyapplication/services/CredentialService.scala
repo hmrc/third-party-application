@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal

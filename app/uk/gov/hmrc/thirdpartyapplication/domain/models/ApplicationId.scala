@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.{util => ju}
 import play.api.libs.json.Json
@@ -22,7 +22,7 @@ import play.api.libs.json.Json
 case class ApplicationId(value: ju.UUID) extends AnyVal
 
 object ApplicationId {
-  def random(): ApplicationId = ApplicationId(ju.UUID.randomUUID())
+  def random: ApplicationId = ApplicationId(ju.UUID.randomUUID())
 
-  implicit val applicationIdFormat = Json.valueFormat[ApplicationId]
+  implicit val JsonFormat = Json.valueFormat[ApplicationId]
 }

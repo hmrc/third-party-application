@@ -82,7 +82,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "isSubscribed" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val api = ApiIdentifier.random
 
     "return true when the application is subscribed to a given API version" in new Setup {
@@ -103,7 +103,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "fetchAllSubscriptionsForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
@@ -128,7 +128,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "createSubscriptionForApplicationMinusChecks" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
     val api = ApiIdentifier.random
 
@@ -153,7 +153,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "removeSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val api = ApiIdentifier.random
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {

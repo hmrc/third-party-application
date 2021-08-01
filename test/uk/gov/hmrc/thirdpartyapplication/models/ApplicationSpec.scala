@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
@@ -38,7 +39,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
   "Application with Uplift request" should {
     val app =
       ApplicationData(
-        ApplicationId.random(),
+        ApplicationId.random,
         "MyApp",
         "myapp",
         Set.empty,

@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, Audit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
