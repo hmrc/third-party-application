@@ -19,8 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersion, partialEmailMatch: Option[String])

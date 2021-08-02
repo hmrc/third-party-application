@@ -23,9 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
-
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
   "RateLimitTier" should {

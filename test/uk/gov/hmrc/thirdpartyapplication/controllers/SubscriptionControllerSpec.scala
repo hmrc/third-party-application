@@ -27,8 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite

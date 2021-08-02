@@ -37,9 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSe
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
-
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule with EmailConnectorMockModule {

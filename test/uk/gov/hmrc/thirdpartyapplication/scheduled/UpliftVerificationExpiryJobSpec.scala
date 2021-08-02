@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 import scala.concurrent.Future._
 import scala.concurrent.duration.FiniteDuration

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.{util => ju}
 import scala.util.control.NonFatal

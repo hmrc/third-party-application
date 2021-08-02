@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 

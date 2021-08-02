@@ -48,6 +48,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 

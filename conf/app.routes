@@ -56,7 +56,7 @@ GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 GET           /apis/*context/versions/:version/subscribers           uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscribers(context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
-GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: uk.gov.hmrc.thirdpartyapplication.models.UserId)
-GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: uk.gov.hmrc.thirdpartyapplication.models.UserId)
+GET           /developer/:developerId/subscriptions                  uk.gov.hmrc.thirdpartyapplication.controllers.SubscriptionController.getSubscriptionsForDeveloper(developerId: uk.gov.hmrc.thirdpartyapplication.domain.models.UserId)
+GET           /developer/:userId/applications                        uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllForCollaborator(userId: uk.gov.hmrc.thirdpartyapplication.domain.models.UserId)
 
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()

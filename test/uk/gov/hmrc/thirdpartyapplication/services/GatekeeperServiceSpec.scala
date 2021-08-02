@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.RejectUpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, _}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
@@ -39,8 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, Audit
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 

@@ -31,7 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future

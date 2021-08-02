@@ -29,9 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
-
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApplicationRepoMock {
     def aMock: ApplicationRepository
