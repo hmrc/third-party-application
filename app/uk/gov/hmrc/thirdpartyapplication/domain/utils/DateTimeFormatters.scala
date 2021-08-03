@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
-
+package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
 trait DateTimeFormatters {
   import org.joda.time.DateTime

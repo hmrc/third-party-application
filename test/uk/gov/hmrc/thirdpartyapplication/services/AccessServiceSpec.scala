@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 

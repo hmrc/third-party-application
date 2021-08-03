@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import org.joda.time.DateTime
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._

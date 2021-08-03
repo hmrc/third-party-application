@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-object AccessType extends Enumeration {
-  type AccessType = Value
-  val STANDARD, PRIVILEGED, ROPC = Value
+import play.api.libs.json.Json
+
+case class IpAllowlist(required: Boolean = false, allowlist: Set[String] = Set.empty)
+
+object IpAllowlist {
+  implicit val formatIpAllowlist = Json.format[IpAllowlist]
 }

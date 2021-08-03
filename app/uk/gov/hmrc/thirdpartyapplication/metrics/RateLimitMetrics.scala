@@ -20,7 +20,7 @@ import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.{ExecutionContext, Future}

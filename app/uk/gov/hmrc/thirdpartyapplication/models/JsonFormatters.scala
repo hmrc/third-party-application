@@ -22,21 +22,17 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.DateTimeFormatters
 
 import scala.language.implicitConversions
 
 trait JsonFormatters extends DateTimeFormatters {
-  implicit val formatRole = EnumJson.enumFormat(Role)
-  implicit val formatEnvironment = EnumJson.enumFormat(Environment)
-  implicit val formatAccessType = EnumJson.enumFormat(AccessType)
-  implicit val formatRateLimitTier = EnumJson.enumFormat(RateLimitTier)
 
   private implicit val formatGrantWithoutConsent = Json.format[GrantWithoutConsent]
   private implicit val formatPersistLogin = Format[PersistLogin](
@@ -55,8 +51,8 @@ trait JsonFormatters extends DateTimeFormatters {
     .format
 
   implicit val formatTotp = Json.format[Totp]
-  implicit val formatTotpIds = Json.format[TotpIds]
-  implicit val formatTotpSecrets = Json.format[TotpSecrets]
+  implicit val formatTotpIds = Json.format[TotpId]
+  implicit val formatTotpSecrets = Json.format[TotpSecret]
 
   private implicit val formatStandard = Json.format[Standard]
   private implicit val formatPrivileged = Json.format[Privileged]
@@ -95,7 +91,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
   implicit val formatSubscriptionData = Json.format[SubscriptionData]
-  implicit val formatIpAllowlist = Json.format[IpAllowlist]
+
 
   implicit val formatApplicationData = Json.format[ApplicationData]
 
@@ -141,7 +137,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatDeleteCollaboratorRequest = Json.format[DeleteCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
-    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]
+    JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]
     )(unlift(CreateApplicationResponse.unapply))
 }
 
@@ -166,10 +162,6 @@ object MongoFormat {
   implicit val checkInformationFormat = {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
-
-  implicit val formatAccessType = JsonFormatters.formatAccessType
-  implicit val formatRole = JsonFormatters.formatRole
-  implicit val formatRateLimitTier = JsonFormatters.formatRateLimitTier
   implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatCollaborator = Json.format[Collaborator]

@@ -22,17 +22,15 @@ import com.google.common.base.Charsets
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
 import play.api.libs.json._
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 trait ApplicationRequest {
   val name: String
@@ -203,7 +201,7 @@ case class PaginationTotal(total: Int)
 
 case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
 
-case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
+case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
 
 case class ApplicationLabel(id: String, name: String)
 case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
@@ -219,7 +217,7 @@ case class Standard(redirectUris: List[String] = List.empty,
   override val accessType = STANDARD
 }
 
-case class Privileged(totpIds: Option[TotpIds] = None, scopes: Set[String] = Set.empty) extends Access {
+case class Privileged(totpIds: Option[TotpId] = None, scopes: Set[String] = Set.empty) extends Access {
   override val accessType = PRIVILEGED
 }
 
@@ -322,16 +320,6 @@ object ClientSecretResponse {
       clientSecret.lastAccess)
 }
 
-object Role extends Enumeration {
-  type Role = Value
-  val DEVELOPER, ADMINISTRATOR = Value
-}
-
-object Environment extends Enumeration {
-  type Environment = Value
-  val PRODUCTION, SANDBOX = Value
-}
-
 
 case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
                             verificationCode: Option[String] = None, updatedOn: DateTime = DateTimeUtils.now) {
@@ -373,7 +361,7 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
 
 class ApplicationResponseCreator {
 
-  def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
+  def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecret]) = {
     CreateApplicationResponse(ApplicationResponse(applicationData), totpSecrets)
   }
 }
@@ -388,11 +376,6 @@ object ApplicationWithUpliftRequest {
 
 }
 
-object RateLimitTier extends Enumeration {
-  type RateLimitTier = Value
-
-  val RHODIUM, PLATINUM, GOLD, SILVER, BRONZE = Value
-}
 
 sealed trait ApplicationStateChange
 

@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-case class Totp(secret: String, id: String)
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-case class TotpId(production: String)
-case class TotpSecret(production: String)
+object Role extends Enumeration {
+  type Role = Value
+  val DEVELOPER, ADMINISTRATOR = Value
+
+  implicit val formatRole = EnumJson.enumFormat(Role)
+}

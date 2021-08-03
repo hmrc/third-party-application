@@ -40,6 +40,8 @@ object EnumJson {
     def writes(v: E#Value): JsValue = JsString(v.toString)
   }
 
+  import scala.language.implicitConversions
+  
   implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
     Format(enumReads(enum), enumWrites)
   }

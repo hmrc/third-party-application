@@ -29,9 +29,9 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.Environment._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
@@ -105,7 +105,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecrets("pTOTP")
+    val totp = TotpSecret("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -125,7 +125,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
+      (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
       verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))

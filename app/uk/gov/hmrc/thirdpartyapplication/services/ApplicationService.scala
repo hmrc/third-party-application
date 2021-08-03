@@ -33,13 +33,13 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
@@ -418,7 +418,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
     }
 
-    def createAppData(ids: Option[TotpIds]): ApplicationData = {
+    def createAppData(ids: Option[TotpId]): ApplicationData = {
       def newPrivilegedAccess = {
         application.access.asInstanceOf[Privileged].copy(totpIds = ids)
       }
@@ -460,12 +460,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def extractTotpId(totp: Option[Totp]): Option[TotpIds] = {
-    totp.map { t => TotpIds(t.id) }
+  private def extractTotpId(totp: Option[Totp]): Option[TotpId] = {
+    totp.map { t => TotpId(t.id) }
   }
 
-  private def extractTotpSecret(totp: Option[Totp]): Option[TotpSecrets] = {
-    totp.map { t => TotpSecrets(t.secret) }
+  private def extractTotpSecret(totp: Option[Totp]): Option[TotpSecret] = {
+    totp.map { t => TotpSecret(t.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

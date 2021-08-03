@@ -14,6 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-case class IpAllowlist(required: Boolean = false, allowlist: Set[String] = Set.empty)
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
+
+object RateLimitTier extends Enumeration {
+  type RateLimitTier = Value
+
+  val RHODIUM, PLATINUM, GOLD, SILVER, BRONZE = Value
+
+  implicit val format = EnumJson.enumFormat(RateLimitTier)
+}
