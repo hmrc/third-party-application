@@ -23,7 +23,7 @@ import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global

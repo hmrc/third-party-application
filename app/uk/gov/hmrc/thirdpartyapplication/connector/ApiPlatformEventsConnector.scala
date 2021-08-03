@@ -27,66 +27,69 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
-                                          (implicit val ec: ExecutionContext) extends ResponseUtils {
+package platformevents {
+  
+  case class ApiPlatformEventsConfig(baseUrl: String, enabled: Boolean)
 
-  val serviceBaseUrl: String = s"${config.baseUrl}"
-  private val applicationEventsUri = "/application-events"
-  private val teamMemberAddedUri = "/teamMemberAdded"
-  private val teamMemberRemovedUri = "/teamMemberRemoved"
-  private val clientSecretAddedUri = "/clientSecretAdded"
-  private val clientSecretRemovedUri = "/clientSecretRemoved"
-  private val redirectUrisUpdatedUri = "/redirectUrisUpdated"
-  private val apiSubscribedUri = "/apiSubscribed"
-  private val apiUnsubscribedUri = "/apiUnsubscribed"
+  class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
+                                            (implicit val ec: ExecutionContext) extends ResponseUtils {
 
-  def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)
-                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
+    val serviceBaseUrl: String = s"${config.baseUrl}"
+    private val applicationEventsUri = "/application-events"
+    private val teamMemberAddedUri = "/teamMemberAdded"
+    private val teamMemberRemovedUri = "/teamMemberRemoved"
+    private val clientSecretAddedUri = "/clientSecretAdded"
+    private val clientSecretRemovedUri = "/clientSecretRemoved"
+    private val redirectUrisUpdatedUri = "/redirectUrisUpdated"
+    private val apiSubscribedUri = "/apiSubscribed"
+    private val apiUnsubscribedUri = "/apiUnsubscribed"
 
-  def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)
-                              (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberAddedUri)(hc)
+    def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)
+                                    (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
 
-  def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)
-                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberRemovedUri)(hc)
+    def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)
+                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberAddedUri)(hc)
 
-  def sendClientSecretAddedEvent(event: ClientSecretAddedEvent)
-                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretAddedUri)(hc)
+    def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)
+                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberRemovedUri)(hc)
 
-  def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)
-                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
+    def sendClientSecretAddedEvent(event: ClientSecretAddedEvent)
+                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretAddedUri)(hc)
 
-  def sendApiSubscribedEvent(event: ApiSubscribedEvent)
-                            (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
+    def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)
+                                    (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
 
-  def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)
-                              (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
+    def sendApiSubscribedEvent(event: ApiSubscribedEvent)
+                              (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
 
-  private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+    def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)
+                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
-    implicit val headersWithoutAuthorization: HeaderCarrier = hc
-      .copy(authorization = None)
+    private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
 
-    if (config.enabled) {
-      http.POST[ApplicationEvent, ErrorOr[Unit]](
-        addEventURI(uri),
-        event
-      ).map {
-        case Right(_) =>
-          Logger.info(s"calling platform event service for application ${event.applicationId}")
-          true
-        case Left(e) =>
-          Logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
-          false
+      implicit val headersWithoutAuthorization: HeaderCarrier = hc
+        .copy(authorization = None)
+
+      if (config.enabled) {
+        http.POST[ApplicationEvent, ErrorOr[Unit]](
+          addEventURI(uri),
+          event
+        ).map {
+          case Right(_) =>
+            Logger.info(s"calling platform event service for application ${event.applicationId}")
+            true
+          case Left(e) =>
+            Logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
+            false
+        }
+      } else {
+        Logger.info("call to platform events disabled")
+        Future.successful(true)
       }
-    } else {
-      Logger.info("call to platform events disabled")
-      Future.successful(true)
+    }
+
+    private def addEventURI(path: String): String = {
+      serviceBaseUrl + applicationEventsUri + path
     }
   }
-
-  private def addEventURI(path: String): String = {
-    serviceBaseUrl + applicationEventsUri + path
-  }
 }
-
-case class ApiPlatformEventsConfig(baseUrl: String, enabled: Boolean)

@@ -29,18 +29,21 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.util.control.NonFatal
 
-@Singleton
-class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConfig)(implicit val ec: ExecutionContext)   {
+package totp {
 
-  def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
-    val url = s"${config.baseUrl}/time-based-one-time-password/secret"
+  case class TotpConfig(baseUrl: String)
 
-    httpClient.POSTEmpty[Totp](url)
-    .recover {
-      case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $url: (${e.statusCode}, ${e.message})")
-      case NonFatal(e) => throw new RuntimeException(s"Error response from $url: ${e.getMessage}")
+  @Singleton
+  class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConfig)(implicit val ec: ExecutionContext)   {
+
+    def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
+      val url = s"${config.baseUrl}/time-based-one-time-password/secret"
+
+      httpClient.POSTEmpty[Totp](url)
+      .recover {
+        case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $url: (${e.statusCode}, ${e.message})")
+        case NonFatal(e) => throw new RuntimeException(s"Error response from $url: ${e.getMessage}")
+      }
     }
   }
 }
-
-case class TotpConfig(baseUrl: String)

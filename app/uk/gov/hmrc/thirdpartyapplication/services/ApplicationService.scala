@@ -28,10 +28,10 @@ import uk.gov.hmrc.lock.LockKeeper
 import uk.gov.hmrc.lock.LockMongoRepository
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.subscriptionfields.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.email.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.tpda.ThirdPartyDelegatedAuthorityConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.totp.TotpConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
@@ -444,13 +444,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => successful(Unit)
       }
 
-      applicationTotp <- generateApplicationTotp(application.access.accessType)
-      appData = createAppData(extractTotpId(applicationTotp))
+      totp <- generateApplicationTotp(application.access.accessType)
+      appData = createAppData(extractTotpId(totp))
       _ <- createInApiGateway(appData)
       _ <- applicationRepository.save(appData)
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
+    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>
@@ -459,26 +459,19 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
-
-    def generateTotp() = {
-      for {
-        productionTotp <- totpConnector.generateTotp()
-      } yield Some(ApplicationTotps(productionTotp))
-    }
-
+  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
-      case PRIVILEGED => generateTotp()
+      case PRIVILEGED => totpConnector.generateTotp().map(Some(_))
       case _ => Future(None)
     }
   }
 
-  private def extractTotpId(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
-    applicationTotps.map { t => TotpIds(t.production.id) }
+  private def extractTotpId(totp: Option[Totp]): Option[TotpIds] = {
+    totp.map { t => TotpIds(t.id) }
   }
 
-  private def extractTotpSecret(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
-    applicationTotps.map { t => TotpSecrets(t.production.secret) }
+  private def extractTotpSecret(totp: Option[Totp]): Option[TotpSecrets] = {
+    totp.map { t => TotpSecrets(t.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

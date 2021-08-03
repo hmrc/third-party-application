@@ -29,17 +29,20 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class ApiSubscriptionFieldsConnector @Inject()(httpClient: HttpClient, config: ApiSubscriptionFieldsConfig)(implicit val ec: ExecutionContext) extends ResponseUtils {
+package subscriptionfields {
 
-  def deleteSubscriptions(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    httpClient.DELETE[ErrorOr[Unit]](s"${config.baseUrl}/field/application/${clientId.value}")
-    .map {
-      case Right(_) => HasSucceeded
-      case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded
-      case Left(err) => throw err
+  case class ApiSubscriptionFieldsConfig(baseUrl: String)
+
+  @Singleton
+  class ApiSubscriptionFieldsConnector @Inject()(httpClient: HttpClient, config: ApiSubscriptionFieldsConfig)(implicit val ec: ExecutionContext) extends ResponseUtils {
+
+    def deleteSubscriptions(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      httpClient.DELETE[ErrorOr[Unit]](s"${config.baseUrl}/field/application/${clientId.value}")
+      .map {
+        case Right(_) => HasSucceeded
+        case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded
+        case Left(err) => throw err
+      }
     }
   }
 }
-
-case class ApiSubscriptionFieldsConfig(baseUrl: String)

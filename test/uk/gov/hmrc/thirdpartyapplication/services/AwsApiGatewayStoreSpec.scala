@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import akka.actor.ActorSystem
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.awsapigateway._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}

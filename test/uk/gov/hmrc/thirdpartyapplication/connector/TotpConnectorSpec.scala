@@ -24,6 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 import play.api.http.Status._
 import com.github.tomakehurst.wiremock.client.WireMock._
+import uk.gov.hmrc.thirdpartyapplication.connector.totp._
 
 class TotpConnectorSpec extends ConnectorSpec {
 

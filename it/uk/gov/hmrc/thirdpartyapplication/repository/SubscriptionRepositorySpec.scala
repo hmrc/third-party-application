@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.util.Random.{alphanumeric, nextString}
+import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
 class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification

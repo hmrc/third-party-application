@@ -28,7 +28,9 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector.email._
+import uk.gov.hmrc.thirdpartyapplication.connector.totp._
+import uk.gov.hmrc.thirdpartyapplication.connector.tpda._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment

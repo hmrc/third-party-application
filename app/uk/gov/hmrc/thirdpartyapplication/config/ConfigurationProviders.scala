@@ -29,6 +29,13 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.connector.platformevents.ApiPlatformEventsConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.awsapigateway.AwsApiGatewayConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.subscriptionfields.ApiSubscriptionFieldsConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.auth.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.email.EmailConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.tpda.ThirdPartyDelegatedAuthorityConfig
+import uk.gov.hmrc.thirdpartyapplication.connector.totp.TotpConfig
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -43,7 +50,7 @@ class ConfigurationModule extends Module {
       bind[AuthConfig].toProvider[AuthConfigProvider],
       bind[EmailConfig].toProvider[EmailConfigProvider],
       bind[TotpConfig].toProvider[TotpConfigProvider],
-      bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
+      bind[awsapigateway.AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
       bind[ApiPlatformEventsConfig].toProvider[ApiPlatformEventsConfigProvider],
       bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],

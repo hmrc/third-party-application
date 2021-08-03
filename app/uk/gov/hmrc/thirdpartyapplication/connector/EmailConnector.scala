@@ -32,147 +32,150 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-case class SendEmailRequest(to: Set[String],
-                            templateId: String,
-                            parameters: Map[String, String],
-                            force: Boolean = false,
-                            auditData: Map[String, String] = Map.empty,
-                            eventUrl: Option[String] = None)
+package email {
+  
+  case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
 
-object SendEmailRequest {
-  implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
-}
+  private[email] case class SendEmailRequest(to: Set[String],
+                              templateId: String,
+                              parameters: Map[String, String],
+                              force: Boolean = false,
+                              auditData: Map[String, String] = Map.empty,
+                              eventUrl: Option[String] = None)
 
-@Singleton
-class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(implicit val ec: ExecutionContext) {
-  val serviceUrl = config.baseUrl
-  val devHubBaseUrl = config.devHubBaseUrl
-  val devHubTitle = config.devHubTitle
-  val environmentName = config.environmentName
-
-  val addedCollaboratorConfirmation = "apiAddedDeveloperAsCollaboratorConfirmation"
-  val addedCollaboratorNotification = "apiAddedDeveloperAsCollaboratorNotification"
-  val removedCollaboratorConfirmation = "apiRemovedCollaboratorConfirmation"
-  val removedCollaboratorNotification = "apiRemovedCollaboratorNotification"
-  val applicationApprovedGatekeeperConfirmation = "apiApplicationApprovedGatekeeperConfirmation"
-  val applicationApprovedAdminConfirmation = "apiApplicationApprovedAdminConfirmation"
-  val applicationApprovedNotification = "apiApplicationApprovedNotification"
-  val applicationRejectedNotification = "apiApplicationRejectedNotification"
-  val applicationDeletedNotification = "apiApplicationDeletedNotification"
-  val addedClientSecretNotification = "apiAddedClientSecretNotification"
-  val removedClientSecretNotification = "apiRemovedClientSecretNotification"
-
-  def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val article = if(role == "admin") "an" else "a"
-
-    post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
-      Map(
-        "article"           -> article,
-        "role"              -> role,
-        "applicationName"   -> application,
-        "developerHubTitle" -> devHubTitle)))
-      .map(_ => HasSucceeded)
+  private[email] object SendEmailRequest {
+    implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
   }
 
-  def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])
-                                       (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, addedCollaboratorNotification,
-      Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
-      .map(_ => HasSucceeded)
-  }
+  @Singleton
+  class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(implicit val ec: ExecutionContext) {
+    val serviceUrl = config.baseUrl
+    val devHubBaseUrl = config.devHubBaseUrl
+    val devHubTitle = config.devHubTitle
+    val environmentName = config.environmentName
 
-  def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, removedCollaboratorConfirmation,
-      Map("applicationName" -> application, "developerHubTitle" -> devHubTitle)))
-      .map(_ => HasSucceeded)
-  }
+    val addedCollaboratorConfirmation = "apiAddedDeveloperAsCollaboratorConfirmation"
+    val addedCollaboratorNotification = "apiAddedDeveloperAsCollaboratorNotification"
+    val removedCollaboratorConfirmation = "apiRemovedCollaboratorConfirmation"
+    val removedCollaboratorNotification = "apiRemovedCollaboratorNotification"
+    val applicationApprovedGatekeeperConfirmation = "apiApplicationApprovedGatekeeperConfirmation"
+    val applicationApprovedAdminConfirmation = "apiApplicationApprovedAdminConfirmation"
+    val applicationApprovedNotification = "apiApplicationApprovedNotification"
+    val applicationRejectedNotification = "apiApplicationRejectedNotification"
+    val applicationDeletedNotification = "apiApplicationDeletedNotification"
+    val addedClientSecretNotification = "apiAddedClientSecretNotification"
+    val removedClientSecretNotification = "apiRemovedClientSecretNotification"
 
-  def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, removedCollaboratorNotification,
-      Map("email" -> email, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
-  }
+    def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      val article = if(role == "admin") "an" else "a"
 
-  def sendApplicationApprovedGatekeeperConfirmation(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation,
-      Map("email" -> email, "applicationName" -> application)))
-  }
+      post(SendEmailRequest(recipients, addedCollaboratorConfirmation,
+        Map(
+          "article"           -> article,
+          "role"              -> role,
+          "applicationName"   -> application,
+          "developerHubTitle" -> devHubTitle)))
+        .map(_ => HasSucceeded)
+    }
 
-  def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationApprovedAdminConfirmation,
-      Map("applicationName" -> application,
-        "developerHubLink" -> s"$devHubBaseUrl/developer/application-verification?code=$code")))
-  }
+    def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])
+                                        (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, addedCollaboratorNotification,
+        Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+        .map(_ => HasSucceeded)
+    }
 
-  def sendApplicationApprovedNotification(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationApprovedNotification,
-      Map("applicationName" -> application)))
-  }
+    def sendRemovedCollaboratorConfirmation(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, removedCollaboratorConfirmation,
+        Map("applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+        .map(_ => HasSucceeded)
+    }
 
-  def sendApplicationRejectedNotification(application: String, recipients: Set[String], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationRejectedNotification,
-      Map("applicationName" -> application,
-        "guidelinesUrl" -> s"$devHubBaseUrl/api-documentation/docs/using-the-hub/name-guidelines",
-        "supportUrl" -> s"$devHubBaseUrl/developer/support",
-        "reason" -> reason)))
-  }
+    def sendRemovedCollaboratorNotification(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, removedCollaboratorNotification,
+        Map("email" -> email, "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+    }
 
-  def sendApplicationDeletedNotification(application: String, requesterEmail: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationDeletedNotification,
-      Map("applicationName" -> application, "requestor" -> requesterEmail)))
-  }
+    def sendApplicationApprovedGatekeeperConfirmation(email: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, applicationApprovedGatekeeperConfirmation,
+        Map("email" -> email, "applicationName" -> application)))
+    }
 
-  def sendAddedClientSecretNotification(actorEmailAddress: String,
-                                        clientSecretName: String,
-                                        applicationName: String,
-                                        recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
-  }
+    def sendApplicationApprovedAdminConfirmation(application: String, code: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, applicationApprovedAdminConfirmation,
+        Map("applicationName" -> application,
+          "developerHubLink" -> s"$devHubBaseUrl/developer/application-verification?code=$code")))
+    }
 
-  def sendRemovedClientSecretNotification(actorEmailAddress: String,
+    def sendApplicationApprovedNotification(application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, applicationApprovedNotification,
+        Map("applicationName" -> application)))
+    }
+
+    def sendApplicationRejectedNotification(application: String, recipients: Set[String], reason: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, applicationRejectedNotification,
+        Map("applicationName" -> application,
+          "guidelinesUrl" -> s"$devHubBaseUrl/api-documentation/docs/using-the-hub/name-guidelines",
+          "supportUrl" -> s"$devHubBaseUrl/developer/support",
+          "reason" -> reason)))
+    }
+
+    def sendApplicationDeletedNotification(application: String, requesterEmail: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, applicationDeletedNotification,
+        Map("applicationName" -> application, "requestor" -> requesterEmail)))
+    }
+
+    def sendAddedClientSecretNotification(actorEmailAddress: String,
                                           clientSecretName: String,
                                           applicationName: String,
                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
-  }
-
-  private def sendClientSecretNotification(templateId: String,
-                                           actorEmailAddress: String,
-                                           clientSecretName: String,
-                                           applicationName: String,
-                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, templateId,
-      Map(
-        "actorEmailAddress" -> actorEmailAddress,
-        "clientSecretEnding" -> clientSecretName.takeRight(4), // scalastyle:off magic.number
-        "applicationName" -> applicationName,
-        "environmentName" -> environmentName,
-        "developerHubTitle" -> devHubTitle
-      )))
-  }
-
-  private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val url = s"$serviceUrl/hmrc/email"
-
-    def extractError(response: HttpResponse): RuntimeException = {
-      Try(response.json \ "message") match {
-        case Success(jsValue) => new RuntimeException(jsValue.as[String])
-        case Failure(_) => new RuntimeException(
-          s"Unable send email. Unexpected error for url=$url status=${response.status} response=${response.body}")
-      }
+      sendClientSecretNotification(addedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
     }
-  
-    import uk.gov.hmrc.http.HttpReads.Implicits._
 
-    httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
-      .map { response =>
-        Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
-        response.status match {
-          case status if status >= 200 && status <= 299 => HasSucceeded
-          case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
-          case _ => throw extractError(response)
+    def sendRemovedClientSecretNotification(actorEmailAddress: String,
+                                            clientSecretName: String,
+                                            applicationName: String,
+                                            recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      sendClientSecretNotification(removedClientSecretNotification, actorEmailAddress, clientSecretName, applicationName, recipients)
+    }
+
+    private def sendClientSecretNotification(templateId: String,
+                                            actorEmailAddress: String,
+                                            clientSecretName: String,
+                                            applicationName: String,
+                                            recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      post(SendEmailRequest(recipients, templateId,
+        Map(
+          "actorEmailAddress" -> actorEmailAddress,
+          "clientSecretEnding" -> clientSecretName.takeRight(4), // scalastyle:off magic.number
+          "applicationName" -> applicationName,
+          "environmentName" -> environmentName,
+          "developerHubTitle" -> devHubTitle
+        )))
+    }
+
+    private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+      val url = s"$serviceUrl/hmrc/email"
+
+      def extractError(response: HttpResponse): RuntimeException = {
+        Try(response.json \ "message") match {
+          case Success(jsValue) => new RuntimeException(jsValue.as[String])
+          case Failure(_) => new RuntimeException(
+            s"Unable send email. Unexpected error for url=$url status=${response.status} response=${response.body}")
         }
       }
+    
+      import uk.gov.hmrc.http.HttpReads.Implicits._
+
+      httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
+        .map { response =>
+          Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
+          response.status match {
+            case status if status >= 200 && status <= 299 => HasSucceeded
+            case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
+            case _ => throw extractError(response)
+          }
+        }
+    }
   }
 }
-
-case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)

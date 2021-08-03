@@ -24,48 +24,51 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
-class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
+package subscriptionfields {
 
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
-  val clientId = ClientId.random
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
-  trait Setup {
-    val http: HttpClient = app.injector.instanceOf[HttpClient]
+    val clientId = ClientId.random
 
-    val config: ApiSubscriptionFieldsConfig = ApiSubscriptionFieldsConfig(wireMockUrl)
+    trait Setup {
+      val http: HttpClient = app.injector.instanceOf[HttpClient]
 
-    val underTest = new ApiSubscriptionFieldsConnector(http, config)
+      val config: ApiSubscriptionFieldsConfig = ApiSubscriptionFieldsConfig(wireMockUrl)
+
+      val underTest = new ApiSubscriptionFieldsConnector(http, config)
 
 
-    def apiSubscriptionFieldsWillReturn(status: Int) =
-      stubFor(
-        delete(urlEqualTo(s"/field/application/${clientId.value}"))
-        .willReturn(
-          aResponse()
-          .withStatus(status)
-        )
-      ) 
-  }
-
-  "ApiSubscriptionFieldsConnector" should {
-    "succeed when the remote call returns successfully" in new Setup {
-      apiSubscriptionFieldsWillReturn(OK)
-
-      await(underTest.deleteSubscriptions(clientId))
+      def apiSubscriptionFieldsWillReturn(status: Int) =
+        stubFor(
+          delete(urlEqualTo(s"/field/application/${clientId.value}"))
+          .willReturn(
+            aResponse()
+            .withStatus(status)
+          )
+        ) 
     }
 
-    "succeed when the remote call returns not found" in new Setup {
-      apiSubscriptionFieldsWillReturn(NOT_FOUND)
+    "ApiSubscriptionFieldsConnector" should {
+      "succeed when the remote call returns successfully" in new Setup {
+        apiSubscriptionFieldsWillReturn(OK)
 
-      await(underTest.deleteSubscriptions(clientId))
-    }
-
-    "fail when the remote call returns Internal Server Error" in new Setup {
-      apiSubscriptionFieldsWillReturn(INTERNAL_SERVER_ERROR)
-
-      intercept[UpstreamErrorResponse] {
         await(underTest.deleteSubscriptions(clientId))
+      }
+
+      "succeed when the remote call returns not found" in new Setup {
+        apiSubscriptionFieldsWillReturn(NOT_FOUND)
+
+        await(underTest.deleteSubscriptions(clientId))
+      }
+
+      "fail when the remote call returns Internal Server Error" in new Setup {
+        apiSubscriptionFieldsWillReturn(INTERNAL_SERVER_ERROR)
+
+        intercept[UpstreamErrorResponse] {
+          await(underTest.deleteSubscriptions(clientId))
+        }
       }
     }
   }

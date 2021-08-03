@@ -20,7 +20,7 @@ import java.util.UUID
 
 import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.awsapigateway._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData

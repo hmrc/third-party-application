@@ -21,7 +21,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
-import uk.gov.hmrc.thirdpartyapplication.connector.UpdateApplicationUsagePlanRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
@@ -140,7 +139,6 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
   implicit val formatDeleteClientSecretsRequest = Json.format[DeleteClientSecretsRequest]
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretRequest]
-  implicit val formatUpdateUsagePlanRequest = Json.format[UpdateApplicationUsagePlanRequest]
   implicit val formatFixCollaboratorRequest = Json.format[FixCollaboratorRequest]
   implicit val formatDeleteCollaboratorRequest = Json.format[DeleteCollaboratorRequest]
 
