@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, Unblocked, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._

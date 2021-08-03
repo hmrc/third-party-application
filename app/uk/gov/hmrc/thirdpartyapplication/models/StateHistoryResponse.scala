@@ -16,6 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.joda.time.DateTime
+import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
+case class StateHistoryResponse(applicationId: ApplicationId,
+                                state: State,
+                                actor: Actor,
+                                notes: Option[String],
+                                changedAt: DateTime)
+
+object StateHistoryResponse {
+  def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
+
+  import uk.gov.hmrc.thirdpartyapplication.domain.utils.DateTimeFormatters._
+  implicit val format = Json.format[StateHistoryResponse]
+}

@@ -23,14 +23,12 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.models.OverrideType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.DateTimeFormatters
-
-import scala.language.implicitConversions
 
 trait JsonFormatters extends DateTimeFormatters {
 
@@ -50,10 +48,6 @@ trait JsonFormatters extends DateTimeFormatters {
     .and[SuppressIvForIndividuals](SUPPRESS_IV_FOR_INDIVIDUALS.toString)
     .format
 
-  implicit val formatTotp = Json.format[Totp]
-  implicit val formatTotpIds = Json.format[TotpId]
-  implicit val formatTotpSecrets = Json.format[TotpSecret]
-
   private implicit val formatStandard = Json.format[Standard]
   private implicit val formatPrivileged = Json.format[Privileged]
   private implicit val formatRopc = Json.format[Ropc]
@@ -64,35 +58,13 @@ trait JsonFormatters extends DateTimeFormatters {
     .and[Ropc](ROPC.toString)
     .format
 
-  implicit val formatTermsOfUseAgreement = Json.format[TermsOfUseAgreement]
-
-  val checkInformationReads: Reads[CheckInformation] = (
-    (JsPath \ "contactDetails").readNullable[ContactDetails] and
-      (JsPath \ "confirmedName").read[Boolean] and
-      ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
-      (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
-      (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
-      (JsPath \ "applicationDetails").readNullable[String] and
-      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-    )(CheckInformation.apply _)
-
-  implicit val checkInformationFormat = {
-    Format(checkInformationReads, Json.writes[CheckInformation])
-  }
-
-  // implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
-
   implicit val formatApplicationState = Json.format[ApplicationState]
-  implicit val formatApiIdentifier = Json.format[ApiIdentifier]
   implicit val formatCollaborator = Json.format[Collaborator]
   implicit val formatClientSecret = Json.format[ClientSecret]
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
-  implicit val formatSubscriptionData = Json.format[SubscriptionData]
 
-
+  import CheckInformation._
   implicit val formatApplicationData = Json.format[ApplicationData]
 
   val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
@@ -145,6 +117,7 @@ trait JsonFormatters extends DateTimeFormatters {
 object MongoFormat {
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
+  // Here to override default date time formatting in companion object
   implicit val formatTermsOfUseAgreement = Json.format[TermsOfUseAgreement]
 
   val checkInformationReads: Reads[CheckInformation] = (
@@ -162,15 +135,15 @@ object MongoFormat {
   implicit val checkInformationFormat = {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
+
   implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatCollaborator = Json.format[Collaborator]
   implicit val formatClientSecret = Json.format[ClientSecret]
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
-  implicit val formatApiIdentifier = Json.format[ApiIdentifier]
-  implicit val formatSubscriptionData = Json.format[SubscriptionData]
 
+  // Non-standard format compared to companion object
   val ipAllowlistReads: Reads[IpAllowlist] = (
     ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
     ((JsPath \ "allowlist").read[Set[String]]or Reads.pure(Set.empty[String]))
@@ -196,16 +169,13 @@ object MongoFormat {
     ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
-  implicit val formatApplicationData = {
-    OFormat(applicationDataReads, Json.writes[ApplicationData])
-  }
+  implicit val formatApplicationData = OFormat(applicationDataReads, Json.writes[ApplicationData])
 
   implicit val formatPaginationTotla = Json.format[PaginationTotal]
   implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
   implicit val formatApplicationLabel= Json.format[ApplicationLabel]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
-
 }
 
 object ApplicationEventFormats {

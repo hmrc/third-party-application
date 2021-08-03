@@ -21,15 +21,17 @@ import java.security.MessageDigest
 import com.google.common.base.Charsets
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import play.api.libs.json._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRequest {
@@ -69,23 +71,8 @@ case class UpdateApplicationRequest(override val name: String,
   }
 }
 
-case class ContactDetails(fullname: String, email: String, telephoneNumber: String)
 
-object ContactDetails {
-  implicit val formatContactDetails = Json.format[ContactDetails]
-}
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: ApiVersion)
-
-case class CheckInformation(contactDetails: Option[ContactDetails] = None,
-                            confirmedName: Boolean = false,
-                            apiSubscriptionsConfirmed: Boolean = false,
-                            apiSubscriptionConfigurationsConfirmed: Boolean = false,
-                            providedPrivacyPolicyURL: Boolean = false,
-                            providedTermsAndConditionsURL: Boolean = false,
-                            applicationDetails: Option[String] = None,
-                            teamConfirmed: Boolean = false,
-                            termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
 
 case class ApplicationResponse(id: ApplicationId,
                                clientId: ClientId,
@@ -249,9 +236,6 @@ case class SuppressIvForIndividuals(scopes: Set[String]) extends OverrideFlag {
   val overrideType = OverrideType.SUPPRESS_IV_FOR_INDIVIDUALS
 }
 
-object OverrideType extends Enumeration {
-  val PERSIST_LOGIN_AFTER_GRANT, GRANT_WITHOUT_TAXPAYER_CONSENT, SUPPRESS_IV_FOR_AGENTS, SUPPRESS_IV_FOR_ORGANISATIONS, SUPPRESS_IV_FOR_INDIVIDUALS = Value
-}
 
 case class ApplicationWithUpliftRequest(id: ApplicationId,
                                         name: String,

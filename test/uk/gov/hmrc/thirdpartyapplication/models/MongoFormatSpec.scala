@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
 
 class MongoFormatSpec extends WordSpec with Matchers {
 

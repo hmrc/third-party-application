@@ -20,8 +20,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.http.UpstreamErrorResponse
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.Totp
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Totp
 
 import javax.inject.Inject
 import javax.inject.Singleton

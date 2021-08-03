@@ -14,9 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-case class Totp(secret: String, id: String)
+import play.api.libs.json.Json
 
-case class TotpId(production: String)
-case class TotpSecret(production: String)
+case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
+
+object SubscriptionData {
+  implicit val format = Json.format[SubscriptionData]
+}

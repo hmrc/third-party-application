@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import uk.gov.hmrc.thirdpartyapplication.models.{SubscriptionData}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}

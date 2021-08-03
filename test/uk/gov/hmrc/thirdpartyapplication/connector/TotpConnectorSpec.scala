@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.connector
 
 import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.thirdpartyapplication.models.Totp
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,7 +44,6 @@ class TotpConnectorSpec extends ConnectorSpec {
     val totpSecret = "aTotp"
 
     "return the Totp when it is successfully created" in new Setup {
-      import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.formatTotp
 
       stubFor(
         post(urlEqualTo("/time-based-one-time-password/secret"))

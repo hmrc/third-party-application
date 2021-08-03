@@ -25,7 +25,6 @@ import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatSubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
@@ -36,7 +35,7 @@ import reactivemongo.api.ReadConcern
 @Singleton
 class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
-    MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats
+    SubscriptionData.format, ReactiveMongoFormats.objectIdFormats
   ) {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {

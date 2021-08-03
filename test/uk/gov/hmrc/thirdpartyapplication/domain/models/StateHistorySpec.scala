@@ -14,12 +14,11 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class StateHistorySpec extends HmrcSpec {
 

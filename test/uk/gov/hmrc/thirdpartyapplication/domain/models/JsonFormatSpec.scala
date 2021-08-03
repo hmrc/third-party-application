@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import org.scalatest.{Matchers, WordSpec}
 import play.api.libs.json.{Json, Reads}
 
 class JsonFormatSpec extends WordSpec with Matchers {
 
-  implicit val jsonFormat: Reads[CheckInformation] = JsonFormatters.checkInformationFormat
+  implicit val jsonFormat: Reads[CheckInformation] = CheckInformation.format
 
   "CheckInformation parsing from REST API Json" should {
     "parse fully populated json" in {
