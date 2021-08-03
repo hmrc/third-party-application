@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, 
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
@@ -273,8 +273,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
         access = Privileged(totpIds = Some(TotpIds("prodTotpId")))
       )
-      val expectedTotp = ApplicationTotps(prodTOTP)
-      createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret))
+      createdApp.totp shouldBe Some(TotpSecrets(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)

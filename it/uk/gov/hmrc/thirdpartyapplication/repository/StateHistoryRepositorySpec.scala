@@ -23,7 +23,8 @@ import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType}
-import uk.gov.hmrc.thirdpartyapplication.models.{State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 

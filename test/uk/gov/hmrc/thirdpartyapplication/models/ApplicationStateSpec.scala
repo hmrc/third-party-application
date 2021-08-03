@@ -20,6 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTimeUtils
 import org.scalatest.BeforeAndAfterEach
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 
 class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach {
 

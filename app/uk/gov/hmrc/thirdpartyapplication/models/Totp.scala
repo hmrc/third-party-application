@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-
 case class Totp(secret: String, id: String)
-case class ApplicationTotps(production: Totp)
 case class TotpIds(production: String)
 case class TotpSecrets(production: String)

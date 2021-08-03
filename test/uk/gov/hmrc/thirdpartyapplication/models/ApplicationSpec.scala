@@ -18,12 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
   "RateLimitTier" should {

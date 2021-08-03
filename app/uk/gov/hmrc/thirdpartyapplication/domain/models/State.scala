@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-case class AuthRole(scope: String, name: String)
+object State extends Enumeration {
+  type State = Value
+  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
 
-object AuthRole {
-  implicit val format = Json.format[AuthRole]
-  val APIGatekeeper = AuthRole("api", "gatekeeper")
+  implicit val format = EnumJson.enumFormat(State)
 }

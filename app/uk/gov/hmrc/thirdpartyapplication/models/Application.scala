@@ -26,12 +26,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, ST
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.utils
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 trait ApplicationRequest {
   val name: String
@@ -331,12 +332,6 @@ object Environment extends Enumeration {
   val PRODUCTION, SANDBOX = Value
 }
 
-object State extends Enumeration {
-  type State = Value
-  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
-
-  implicit val format = utils.EnumJson.enumFormat(State)
-}
 
 case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
                             verificationCode: Option[String] = None, updatedOn: DateTime = DateTimeUtils.now) {

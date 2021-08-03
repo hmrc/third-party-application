@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._

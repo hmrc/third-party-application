@@ -86,7 +86,7 @@ trait JsonFormatters extends DateTimeFormatters {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
 
-  implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
+  // implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
 
   implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatApiIdentifier = Json.format[ApiIdentifier]

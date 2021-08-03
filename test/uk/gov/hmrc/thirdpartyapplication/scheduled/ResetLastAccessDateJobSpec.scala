@@ -25,10 +25,10 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, Collaborator, EnvironmentToken, Role, Standard, State}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, Collaborator, EnvironmentToken, Role, Standard}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UserId}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId

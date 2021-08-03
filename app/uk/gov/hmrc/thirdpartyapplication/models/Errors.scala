@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
 case class InvalidUpliftVerificationCode(code: String) extends RuntimeException(s"Invalid verification code '$code'")
 
@@ -38,7 +38,5 @@ case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
   extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
 
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
-
-case class OverrideNotFoundException(anOverride: String) extends RuntimeException(s"Override '$anOverride' not found")
 
 case class InvalidIpAllowlistException(message: String) extends RuntimeException(message)

@@ -18,14 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-object ApiStatus extends Enumeration {
-  type APIStatus = Value
-  val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
-}
+// object ApiStatus extends Enumeration {
+//   type APIStatus = Value
+//   val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
+// }
 
-object APIAccessType extends Enumeration {
-  type APIAccessType = Value
-  val PRIVATE, PUBLIC = Value
-}
+// object APIAccessType extends Enumeration {
+//   type APIAccessType = Value
+//   val PRIVATE, PUBLIC = Value
+// }
 
 case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
