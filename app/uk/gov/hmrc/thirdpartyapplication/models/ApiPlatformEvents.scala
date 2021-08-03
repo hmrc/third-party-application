@@ -20,7 +20,8 @@ import java.util.UUID
 import java.util.UUID.randomUUID
 
 import org.joda.time.DateTime
-
+import uk.gov.hmrc.thirdpartyapplication.domain.utils
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
 
 case class EventId(value: UUID) extends AnyVal
 object EventId {
@@ -36,7 +37,7 @@ object EventType extends Enumeration {
   val REDIRECT_URIS_UPDATED = Value
   val API_SUBSCRIBED = Value
   val API_UNSUBSCRIBED = Value
-  implicit val applicationEventTypeFormat = EnumJson.enumFormat(EventType)
+  implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 
 trait ApplicationEvent {

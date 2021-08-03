@@ -22,8 +22,9 @@ import org.joda.time.{DateTime, Duration}
 import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.SCHEDULED_JOB
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.time.DateTimeUtils

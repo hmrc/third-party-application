@@ -34,14 +34,12 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.COLLABORATOR
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.GATEKEEPER
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository

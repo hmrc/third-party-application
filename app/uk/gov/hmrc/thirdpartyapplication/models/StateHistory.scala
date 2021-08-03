@@ -18,20 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.joda.time.DateTime
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.ActorType
 import uk.gov.hmrc.thirdpartyapplication.models.State.State
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-object ActorType extends Enumeration {
-  type ActorType = Value
-  val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB = Value
-
-  implicit val format = EnumJson.enumFormat(ActorType)
-}
-
-case class Actor(id: String, actorType: ActorType)
 
 case class StateHistory(applicationId: ApplicationId,
                         state: State,
@@ -43,7 +34,6 @@ case class StateHistory(applicationId: ApplicationId,
 object StateHistory {
   implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
 
-  implicit val format1 = EnumJson.enumFormat(State)
   implicit val format2 = Json.format[Actor]
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val format = Json.format[StateHistory]
@@ -59,7 +49,5 @@ object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)
 
   import uk.gov.hmrc.thirdpartyapplication.models.DateTimeFormatters._
-  implicit val formatState = EnumJson.enumFormat(State)
-  implicit val formatActor = Json.format[Actor]
   implicit val format = Json.format[StateHistoryResponse]
 }

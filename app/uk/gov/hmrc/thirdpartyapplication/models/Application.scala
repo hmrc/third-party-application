@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.utils
 
 trait ApplicationRequest {
   val name: String
@@ -333,6 +334,8 @@ object Environment extends Enumeration {
 object State extends Enumeration {
   type State = Value
   val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
+
+  implicit val format = utils.EnumJson.enumFormat(State)
 }
 
 case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,

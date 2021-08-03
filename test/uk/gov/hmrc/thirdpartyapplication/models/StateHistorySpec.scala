@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class StateHistorySpec extends HmrcSpec {
 

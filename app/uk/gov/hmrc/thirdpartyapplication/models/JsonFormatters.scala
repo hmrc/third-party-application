@@ -28,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 import scala.language.implicitConversions
 
@@ -35,7 +36,6 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatRole = EnumJson.enumFormat(Role)
   implicit val formatEnvironment = EnumJson.enumFormat(Environment)
   implicit val formatAccessType = EnumJson.enumFormat(AccessType)
-  implicit val formatState = EnumJson.enumFormat(State)
   implicit val formatRateLimitTier = EnumJson.enumFormat(RateLimitTier)
 
   private implicit val formatGrantWithoutConsent = Json.format[GrantWithoutConsent]
@@ -86,7 +86,6 @@ trait JsonFormatters extends DateTimeFormatters {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
 
-  implicit val formatAPIStatus = APIStatusJson.apiStatusFormat(ApiStatus)
   implicit val formatAPIAccessType = EnumJson.enumFormat(APIAccessType)
 
   implicit val formatApplicationState = Json.format[ApplicationState]
@@ -170,7 +169,6 @@ object MongoFormat {
 
   implicit val formatAccessType = JsonFormatters.formatAccessType
   implicit val formatRole = JsonFormatters.formatRole
-  implicit val formatState = JsonFormatters.formatState
   implicit val formatRateLimitTier = JsonFormatters.formatRateLimitTier
   implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
@@ -218,65 +216,9 @@ object MongoFormat {
 
 }
 
-object EnumJson {
-
-  def enumReads[E <: Enumeration](enum: E): Reads[E#Value] = new Reads[E#Value] {
-    def reads(json: JsValue): JsResult[E#Value] = json match {
-      case JsString(s) =>
-        try {
-          JsSuccess(enum.withName(s))
-        } catch {
-          case _: NoSuchElementException =>
-            throw new InvalidEnumException(enum.getClass.getSimpleName, s)
-        }
-      case _ => JsError("String value expected")
-    }
-  }
-
-  implicit def enumWrites[E <: Enumeration]: Writes[E#Value] = new Writes[E#Value] {
-    def writes(v: E#Value): JsValue = JsString(v.toString)
-  }
-
-  implicit def enumFormat[E <: Enumeration](enum: E): Format[E#Value] = {
-    Format(enumReads(enum), enumWrites)
-  }
-
-}
-
-class InvalidEnumException(className: String, input:String)
-  extends RuntimeException(s"Enumeration expected of type: '$className', but it does not contain '$input'")
-
-object APIStatusJson {
-
-  def apiStatusReads[APIStatus](apiStatus: APIStatus): Reads[ApiStatus.Value] = new Reads[ApiStatus.Value] {
-    def reads(json: JsValue): JsResult[ApiStatus.Value] = json match {
-      case JsString("PROTOTYPED") => JsSuccess(ApiStatus.BETA)
-      case JsString("PUBLISHED") => JsSuccess(ApiStatus.STABLE)
-      case JsString(s) =>
-        try {
-          JsSuccess(ApiStatus.withName(s))
-        } catch {
-          case _: NoSuchElementException =>
-            JsError(s"Enumeration expected of type: ApiStatus, but it does not contain '$s'")
-        }
-      case _ => JsError("String value expected")
-    }
-  }
-
-  implicit def apiStatusWrites: Writes[ApiStatus.Value] = new Writes[ApiStatus.Value] {
-    def writes(v: ApiStatus.Value): JsValue = JsString(v.toString)
-  }
-
-  implicit def apiStatusFormat[APIStatus](apiStatus: APIStatus): Format[ApiStatus.Value] = {
-    Format(apiStatusReads(apiStatus), apiStatusWrites)
-  }
-
-}
-
 object ApplicationEventFormats {
   import DateTimeFormatters._
   implicit val eventIdFormat: Format[EventId] = Json.valueFormat[EventId]
-  implicit val actorFormats: OFormat[Actor] = Json.format[Actor]
   implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent] = Json.format[TeamMemberAddedEvent]
   implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent] = Json.format[TeamMemberRemovedEvent]
   implicit val clientSecretAddedEventFormats: OFormat[ClientSecretAddedEvent] = Json.format[ClientSecretAddedEvent]
