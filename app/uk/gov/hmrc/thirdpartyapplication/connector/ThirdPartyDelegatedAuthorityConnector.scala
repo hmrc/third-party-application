@@ -27,15 +27,13 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
-package tpda {
-
-  case class ThirdPartyDelegatedAuthorityConfig(baseUrl: String)
-
-  @Singleton
-  class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConfig)(implicit val ec: ExecutionContext)  {
-
-    def revokeApplicationAuthorities(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-      httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/authority/${clientId.value}") map (_ => HasSucceeded)
-    }
+object ThirdPartyDelegatedAuthorityConnector {
+  case class Config(baseUrl: String)
 }
+
+@Singleton
+class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConnector.Config)(implicit val ec: ExecutionContext)  {
+  def revokeApplicationAuthorities(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/authority/${clientId.value}") map (_ => HasSucceeded)
+  }
 }

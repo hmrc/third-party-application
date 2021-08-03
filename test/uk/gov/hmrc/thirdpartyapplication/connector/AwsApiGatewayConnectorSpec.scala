@@ -30,101 +30,99 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import play.api.libs.json._
 
-package awsapigateway {
+class AwsApiGatewayConnectorSpec extends ConnectorSpec {
+  import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}
 
-  class AwsApiGatewayConnectorSpec extends ConnectorSpec {
+  private val applicationName = "api-platform-app"
+  private val requestedUsagePlan: RateLimitTier.Value = SILVER
+  private val apiKeyValue: String = UUID.randomUUID().toString
 
-    private val applicationName = "api-platform-app"
-    private val requestedUsagePlan: RateLimitTier.Value = SILVER
-    private val apiKeyValue: String = UUID.randomUUID().toString
+  implicit val requestIdWrites: Writes[RequestId] = 
+    (JsPath \ "RequestId").write[String].contramap( (r: RequestId) => r.value )
 
-    implicit val requestIdWrites: Writes[RequestId] = 
-      (JsPath \ "RequestId").write[String].contramap( (r: RequestId) => r.value )
+  trait Setup {
+    SharedMetricRegistries.clear()
+    implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
 
-    trait Setup {
-      SharedMetricRegistries.clear()
-      implicit val hc: HeaderCarrier = HeaderCarrier(authorization = Some(Authorization("foo")))
+    val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
+    val expectedRequest: UpdateApplicationUsagePlanRequest = UpdateApplicationUsagePlanRequest(applicationName, apiKeyValue)
 
-      val expectedUpdateURL: String = s"/v1/usage-plans/$requestedUsagePlan/api-keys"
-      val expectedRequest: UpdateApplicationUsagePlanRequest = UpdateApplicationUsagePlanRequest(applicationName, apiKeyValue)
+    val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
 
-      val expectedDeleteURL: String = s"/v1/api-keys/$applicationName"
+    val http: HttpClient = app.injector.instanceOf[HttpClient]
+    val awsApiKey: String = UUID.randomUUID().toString
+    val config: AwsApiGatewayConnector.Config = AwsApiGatewayConnector.Config(wireMockUrl, awsApiKey)
 
-      val http: HttpClient = app.injector.instanceOf[HttpClient]
-      val awsApiKey: String = UUID.randomUUID().toString
-      val config: AwsApiGatewayConfig = AwsApiGatewayConfig(wireMockUrl, awsApiKey)
+    val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(http, config)
+  }
 
-      val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(http, config)
+  "createOrUpdateApplication" should {
+    "send the right body and headers when creating or updating an application" in new Setup {
+      stubFor(
+        post(urlPathEqualTo(expectedUpdateURL))
+        .withHeader(CONTENT_TYPE, equalTo(JSON))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .willReturn(
+          aResponse()
+            .withStatus(ACCEPTED)
+            .withJsonBody(RequestId(UUID.randomUUID().toString))
+        )
+      )
+
+      await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+
+      wireMockServer.verify(
+        postRequestedFor(urlEqualTo(expectedUpdateURL))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .withoutHeader(AUTHORIZATION)
+      )
     }
 
-    "createOrUpdateApplication" should {
-      "send the right body and headers when creating or updating an application" in new Setup {
-        stubFor(
-          post(urlPathEqualTo(expectedUpdateURL))
-          .withHeader(CONTENT_TYPE, equalTo(JSON))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .willReturn(
-            aResponse()
-              .withStatus(ACCEPTED)
-              .withJsonBody(RequestId(UUID.randomUUID().toString))
-          )
+    "return Upstream5xxResponse when application creation or update fails" in new Setup {
+      stubFor(post(urlPathEqualTo(expectedUpdateURL))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)))
+
+      intercept[UpstreamErrorResponse] {
+        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
+
+    }
+  }
+
+  "deleteApplication" should {
+    "send the x-api-key header when deleting an application" in new Setup {
+      stubFor(
+        delete(urlPathEqualTo(expectedDeleteURL))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .willReturn(
+          aResponse()
+            .withStatus(OK)
+            .withJsonBody(RequestId(UUID.randomUUID().toString))
         )
+      )
 
-        await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc)) shouldBe HasSucceeded
+      await(underTest.deleteApplication(applicationName)(hc))
 
-        wireMockServer.verify(
-          postRequestedFor(urlEqualTo(expectedUpdateURL))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .withoutHeader(AUTHORIZATION)
-        )
-      }
-
-      "return Upstream5xxResponse when application creation or update fails" in new Setup {
-        stubFor(post(urlPathEqualTo(expectedUpdateURL))
-          .willReturn(
-            aResponse()
-              .withStatus(INTERNAL_SERVER_ERROR)))
-
-        intercept[UpstreamErrorResponse] {
-          await(underTest.createOrUpdateApplication(applicationName, apiKeyValue, SILVER)(hc))
-        }.statusCode shouldBe INTERNAL_SERVER_ERROR
-
-      }
+      wireMockServer.verify(
+        deleteRequestedFor(urlEqualTo(expectedDeleteURL))
+        .withHeader("x-api-key", equalTo(awsApiKey))
+        .withoutHeader(AUTHORIZATION)
+      )
     }
 
-    "deleteApplication" should {
-      "send the x-api-key header when deleting an application" in new Setup {
-        stubFor(
-          delete(urlPathEqualTo(expectedDeleteURL))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .willReturn(
-            aResponse()
-              .withStatus(OK)
-              .withJsonBody(RequestId(UUID.randomUUID().toString))
-          )
+    "return Upstream5xxResponse when application deletion fails" in new Setup {
+      stubFor(delete(urlPathEqualTo(expectedDeleteURL))
+        .willReturn(
+          aResponse()
+            .withStatus(INTERNAL_SERVER_ERROR)
         )
+      )
 
+      intercept[UpstreamErrorResponse] {
         await(underTest.deleteApplication(applicationName)(hc))
-
-        wireMockServer.verify(
-          deleteRequestedFor(urlEqualTo(expectedDeleteURL))
-          .withHeader("x-api-key", equalTo(awsApiKey))
-          .withoutHeader(AUTHORIZATION)
-        )
-      }
-
-      "return Upstream5xxResponse when application deletion fails" in new Setup {
-        stubFor(delete(urlPathEqualTo(expectedDeleteURL))
-          .willReturn(
-            aResponse()
-              .withStatus(INTERNAL_SERVER_ERROR)
-          )
-        )
-
-        intercept[UpstreamErrorResponse] {
-          await(underTest.deleteApplication(applicationName)(hc))
-        }.statusCode shouldBe INTERNAL_SERVER_ERROR
-      }
+      }.statusCode shouldBe INTERNAL_SERVER_ERROR
     }
   }
 }

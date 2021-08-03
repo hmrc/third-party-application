@@ -23,7 +23,7 @@ import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -44,7 +44,7 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
     val mockApplicationService = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
     val mockAuthConnector = mock[AuthConnector]
-    val mockAuthConfig = mock[AuthConfig]
+    val mockAuthConfig = mock[AuthConnector.Config]
 
     val underTest = new CollaboratorController(
       mockApplicationService,

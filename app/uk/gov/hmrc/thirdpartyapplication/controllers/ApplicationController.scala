@@ -26,7 +26,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector.auth._
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.PRIVILEGED
@@ -54,7 +54,7 @@ import scala.util.Try
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,
-                                      val authConfig: AuthConfig,
+                                      val authConfig: AuthConnector.Config,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,

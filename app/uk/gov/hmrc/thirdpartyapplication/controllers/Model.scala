@@ -21,7 +21,6 @@ import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersion, partialEmailMatch: Option[String])
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
 

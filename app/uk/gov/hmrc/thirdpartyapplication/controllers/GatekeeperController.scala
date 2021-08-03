@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, InvalidStateTransition, Unblocked}
@@ -38,7 +38,7 @@ class GatekeeperController @Inject()(
                                       val applicationService: ApplicationService,
                                       gatekeeperService: GatekeeperService,
                                       subscriptionService: SubscriptionService,
-                                      val authConfig: AuthConfig,
+                                      val authConfig: AuthConnector.Config,
                                       cc: ControllerComponents)(
                                       implicit val ec: ExecutionContext)  
                                       extends BackendController(cc) with JsonUtils with AuthorisationWrapper {

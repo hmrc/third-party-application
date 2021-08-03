@@ -25,6 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.ExecutionContext
+import play.api.libs.json.Json
+
+private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
+
+private[controllers] object SubscribersResponse {
+  implicit val writer = Json.writes[SubscribersResponse]
+}
 
 @Singleton
 class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepository, cc: ControllerComponents)
@@ -41,4 +48,3 @@ class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepos
   }
 }
 
-case class SubscribersResponse(subscribers: Set[ApplicationId])

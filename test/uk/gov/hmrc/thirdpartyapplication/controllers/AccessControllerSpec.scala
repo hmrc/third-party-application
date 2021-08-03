@@ -22,7 +22,7 @@ import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
@@ -53,7 +53,7 @@ class AccessControllerSpec extends ControllerSpec {
   val mockApplicationService = mock[ApplicationService]
   val mockAuthConnector = mock[AuthConnector]
   val mockAccessService = mock[AccessService]
-  val mockAuthConfig = mock[AuthConfig]
+  val mockAuthConfig = mock[AuthConnector.Config]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {

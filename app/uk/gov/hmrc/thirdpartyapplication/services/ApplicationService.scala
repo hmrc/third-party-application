@@ -28,10 +28,7 @@ import uk.gov.hmrc.lock.LockKeeper
 import uk.gov.hmrc.lock.LockMongoRepository
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.subscriptionfields.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.email.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.tpda.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.totp.TotpConnector
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest

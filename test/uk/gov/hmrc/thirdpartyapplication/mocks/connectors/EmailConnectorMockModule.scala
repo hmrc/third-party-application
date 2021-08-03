@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks.connectors
 
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.connector.email.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful

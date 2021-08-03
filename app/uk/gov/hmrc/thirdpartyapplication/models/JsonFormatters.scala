@@ -32,7 +32,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
 import scala.language.implicitConversions
 
 trait JsonFormatters extends DateTimeFormatters {
-  implicit val formatSubscribersResponse = Json.format[SubscribersResponse]
   implicit val formatRole = EnumJson.enumFormat(Role)
   implicit val formatEnvironment = EnumJson.enumFormat(Environment)
   implicit val formatAccessType = EnumJson.enumFormat(AccessType)
@@ -141,8 +140,6 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretRequest]
   implicit val formatFixCollaboratorRequest = Json.format[FixCollaboratorRequest]
   implicit val formatDeleteCollaboratorRequest = Json.format[DeleteCollaboratorRequest]
-
-  implicit val readsSearchCollaboratorsRequest = Json.reads[SearchCollaboratorsRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecrets]]

@@ -25,7 +25,7 @@ import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
@@ -73,7 +73,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers = HeaderCarrier()
 
-    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
+    val mockAuthConfig = mock[AuthConnector.Config](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(true)
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")

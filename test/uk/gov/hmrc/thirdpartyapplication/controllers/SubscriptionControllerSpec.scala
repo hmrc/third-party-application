@@ -31,6 +31,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
+import play.api.libs.json.Json
 
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite {
 
@@ -54,16 +55,21 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
       def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.version.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
+      implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
+
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 
       val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
       status(result) shouldBe OK
+
       contentAsJson(result).as[SubscribersResponse] shouldBe SubscribersResponse(subscribers)
     }
 
     "return the subscribers from the repository for a multi-segment API" in new Setup {
+      implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
+
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
       when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
 

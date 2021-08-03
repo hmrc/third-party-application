@@ -32,59 +32,58 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-package awsapigateway {
+object AwsApiGatewayConnector {
+  case class Config(baseUrl: String, awsApiKey: String)
 
-  case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-  
-  private[awsapigateway] case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
-  
-  private[awsapigateway] object UpdateApplicationUsagePlanRequest {
-    implicit val jsonFormat = play.api.libs.json.Json.format[UpdateApplicationUsagePlanRequest]
-  }
-  
-  private[awsapigateway] case class RequestId(value: String) extends AnyVal
-  
-  private[awsapigateway] object RequestId {
-    implicit val requestIdReads: Reads[RequestId] = (JsPath \ "RequestId").read[String].map(RequestId(_))
+  private[connector] case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
+
+  private[connector] object UpdateApplicationUsagePlanRequest {
+    implicit val writes = play.api.libs.json.Json.writes[UpdateApplicationUsagePlanRequest]
   }
 
+  private[connector] case class RequestId(value: String) extends AnyVal
 
-  @Singleton
-  class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConfig)
-  (implicit val ec: ExecutionContext) {
-    
-    val serviceBaseUrl: String = s"${config.baseUrl}/v1/application"
-    val awsApiKey: String = config.awsApiKey
-    val apiKeyHeaderName = "x-api-key"
+  private[connector] object RequestId {
+    implicit val reads: Reads[RequestId] = (JsPath \ "RequestId").read[String].map(RequestId(_))
+  }
+}
 
-    private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
-    private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
+@Singleton
+class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConnector.Config)
+(implicit val ec: ExecutionContext) {
+  import AwsApiGatewayConnector._
+  
+  val serviceBaseUrl: String = s"${config.baseUrl}/v1/application"
+  val awsApiKey: String = config.awsApiKey
+  val apiKeyHeaderName = "x-api-key"
+
+  private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
+  private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
 
 
-    def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
-      implicit val headersWithoutAuthorization: HeaderCarrier = hc
-        .copy(authorization = None)
-        .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
+  def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+      .copy(authorization = None)
+      .withExtraHeaders(apiKeyHeaderName -> awsApiKey, CONTENT_TYPE -> JSON)
 
-        
-      http.POST[UpdateApplicationUsagePlanRequest, RequestId](
-        updateUsagePlanURL(usagePlan),
-        UpdateApplicationUsagePlanRequest(applicationName, serverToken))
-      .map { requestId =>
-        Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
-        HasSucceeded
-      }
+      
+    http.POST[UpdateApplicationUsagePlanRequest, RequestId](
+      updateUsagePlanURL(usagePlan),
+      UpdateApplicationUsagePlanRequest(applicationName, serverToken))
+    .map { requestId =>
+      Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
+      HasSucceeded
     }
+  }
 
-    def deleteApplication(applicationName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
-      implicit val headersWithoutAuthorization: HeaderCarrier = hc
-        .copy(authorization = None)
-        .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
+  def deleteApplication(applicationName: String)(hc: HeaderCarrier): Future[HasSucceeded] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc
+      .copy(authorization = None)
+      .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
-      http.DELETE[RequestId](deleteAPIKeyURL(applicationName)).map(requestId => {
-        Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
-        HasSucceeded
-      })
-    }
+    http.DELETE[RequestId](deleteAPIKeyURL(applicationName)).map(requestId => {
+      Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
+      HasSucceeded
+    })
   }
 }

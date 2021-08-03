@@ -24,7 +24,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.HeaderCarrier
 import play.api.http.Status._
 import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.thirdpartyapplication.connector.totp._
 
 class TotpConnectorSpec extends ConnectorSpec {
 
@@ -36,7 +35,7 @@ class TotpConnectorSpec extends ConnectorSpec {
 
     val applicationName: String = "third-party-application"
     val httpClient = app.injector.instanceOf[HttpClient]
-    val config = TotpConfig(baseUrl)
+    val config = TotpConnector.Config(baseUrl)
     val underTest = new TotpConnector(httpClient, config)
   }
 

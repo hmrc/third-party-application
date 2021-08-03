@@ -27,7 +27,7 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import uk.gov.hmrc.thirdpartyapplication.connector.auth.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -45,7 +45,7 @@ trait AuthorisationWrapper {
 
   val authConnector: AuthConnector
   val applicationService: ApplicationService
-  val authConfig: AuthConfig
+  val authConfig: AuthConnector.Config
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction
 
