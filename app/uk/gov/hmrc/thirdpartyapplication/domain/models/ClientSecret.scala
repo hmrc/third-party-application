@@ -17,13 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import org.joda.time.DateTime
+import uk.gov.hmrc.time.DateTimeUtils
+import java.{util => ju}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: ApiVersion)
+case class ClientSecret(
+  name: String,
+  createdOn: DateTime = DateTimeUtils.now,
+  lastAccess: Option[DateTime] = None,
+  id: String = ju.UUID.randomUUID().toString,
+  hashedSecret: String
+)
 
-object TermsOfUseAgreement {
+object ClientSecret {
   import play.api.libs.json.Json
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-
-  implicit val format = Json.format[TermsOfUseAgreement]
+  implicit val format = Json.format[ClientSecret]
 }

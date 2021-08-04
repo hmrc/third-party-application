@@ -22,7 +22,7 @@ import com.github.t3hnar.bcrypt._
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
 import play.api.Logger
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
 

@@ -25,13 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, R
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRequest {
@@ -244,13 +244,7 @@ case class ApplicationWithUpliftRequest(id: ApplicationId,
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
-case class Collaborator(emailAddress: String, role: Role, userId: UserId)
 
-case class ClientSecret(name: String,
-                        createdOn: DateTime = DateTimeUtils.now,
-                        lastAccess: Option[DateTime] = None,
-                        id: String = ju.UUID.randomUUID().toString,
-                        hashedSecret: String)
 
 trait Token {
   def clientId: ClientId

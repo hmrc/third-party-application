@@ -59,7 +59,6 @@ trait JsonFormatters extends DateTimeFormatters {
     .format
 
   implicit val formatApplicationState = Json.format[ApplicationState]
-  implicit val formatCollaborator = Json.format[Collaborator]
   implicit val formatClientSecret = Json.format[ClientSecret]
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
@@ -115,7 +114,7 @@ trait JsonFormatters extends DateTimeFormatters {
 
 
 object MongoFormat {
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
   // Here to override default date time formatting in companion object
   implicit val formatTermsOfUseAgreement = Json.format[TermsOfUseAgreement]
@@ -138,8 +137,7 @@ object MongoFormat {
 
   implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
-  implicit val formatCollaborator = Json.format[Collaborator]
-  implicit val formatClientSecret = Json.format[ClientSecret]
+
   implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
@@ -174,7 +172,7 @@ object MongoFormat {
   implicit val formatPaginationTotla = Json.format[PaginationTotal]
   implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
-  implicit val formatApplicationLabel= Json.format[ApplicationLabel]
+  implicit val formatApplicationLabel = Json.format[ApplicationLabel]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
 }
 

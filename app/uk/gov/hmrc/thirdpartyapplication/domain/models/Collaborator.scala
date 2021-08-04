@@ -16,14 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.joda.time.DateTime
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+case class Collaborator(emailAddress: String, role: Role.Role, userId: UserId)
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: ApiVersion)
-
-object TermsOfUseAgreement {
+object Collaborator {
   import play.api.libs.json.Json
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-
-  implicit val format = Json.format[TermsOfUseAgreement]
+  implicit val format = Json.format[Collaborator]
 }

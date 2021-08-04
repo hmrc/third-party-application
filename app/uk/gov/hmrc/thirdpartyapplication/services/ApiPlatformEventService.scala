@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, Collaborator, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
 import scala.concurrent.{ExecutionContext, Future}
