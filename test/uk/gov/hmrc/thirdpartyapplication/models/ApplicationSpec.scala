@@ -43,7 +43,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
         Set.empty,
         None,
         "a",
-        ApplicationTokens(EnvironmentToken(ClientId("cid"), "at")),
+        ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(List.empty, None, None),
         DateTimeUtils.now,
@@ -74,7 +74,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random))),
           wso2ApplicationName = "wso2ApplicationName",
-          environmentToken = EnvironmentToken(ClientId("clientId"), "accessToken")
+          environmentToken = Token(ClientId("clientId"), "accessToken")
       )
     }
 

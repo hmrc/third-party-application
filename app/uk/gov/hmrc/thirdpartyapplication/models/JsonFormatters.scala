@@ -58,12 +58,14 @@ trait JsonFormatters extends DateTimeFormatters {
     .and[Ropc](ROPC.toString)
     .format
 
+  implicit val formatTermsOfUserAgreement = Json.format[TermsOfUseAgreement]
+  implicit val formatCheckInformation = Json.format[CheckInformation]
+
   implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatClientSecret = Json.format[ClientSecret]
-  implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
+  implicit val formatEnvironmentToken = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
-  import CheckInformation._
   implicit val formatApplicationData = Json.format[ApplicationData]
 
   val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
@@ -138,7 +140,7 @@ implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
 
-  implicit val formatEnvironmentToken = Json.format[EnvironmentToken]
+  implicit val formatEnvironmentToken = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   // Non-standard format compared to companion object

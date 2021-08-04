@@ -23,7 +23,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{EnvironmentToken, HasSucceeded, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.{Token, HasSucceeded, PaginatedApplicationData}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
@@ -279,7 +279,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         val updatedApplication =
           application
             .copy(tokens =
-              ApplicationTokens(EnvironmentToken(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
+              ApplicationTokens(Token(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
 
         when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))
       }

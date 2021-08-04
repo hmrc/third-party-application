@@ -24,10 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 @Singleton
 class TokenService {
-  def createEnvironmentToken(): EnvironmentToken = {
+  def createEnvironmentToken(): Token = {
     val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
     new SecureRandom().nextBytes(randomBytes)
     val accessToken = randomBytes.map("%02x".format(_)).mkString
-    EnvironmentToken(ClientId.random, accessToken)
+    Token(ClientId.random, accessToken)
   }
 }

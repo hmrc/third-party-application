@@ -246,16 +246,16 @@ case class ApplicationWithHistory(application: ApplicationResponse, history: Lis
 
 
 
-trait Token {
-  def clientId: ClientId
-  def accessToken: String
-  def clientSecrets: List[ClientSecret]
-}
+// trait Token {
+//   def clientId: ClientId
+//   def accessToken: String
+//   def clientSecrets: List[ClientSecret]
+// }
 
-case class EnvironmentToken(clientId: ClientId,
+case class Token(clientId: ClientId,
                             accessToken: String,
                             clientSecrets: List[ClientSecret] = List(),
-                            lastAccessTokenUsage: Option[DateTime] = None) extends Token
+                            lastAccessTokenUsage: Option[DateTime] = None) //extends Token
 
 case class ApplicationTokenResponse(
    clientId: ClientId,

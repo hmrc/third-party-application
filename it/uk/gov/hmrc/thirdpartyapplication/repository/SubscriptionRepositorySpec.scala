@@ -353,7 +353,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       collaborators,
       Some("description"),
       "myapplication",
-      ApplicationTokens(EnvironmentToken(clientId, generateAccessToken)),
+      ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
       DateTimeUtils.now,

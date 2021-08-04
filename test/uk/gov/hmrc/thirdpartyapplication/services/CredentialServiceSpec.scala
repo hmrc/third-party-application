@@ -61,7 +61,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val anotherAdminUser = "admin@example.com"
   private val firstSecret = aSecret("secret1")
   private val secondSecret = aSecret("secret2")
-  private val environmentToken = EnvironmentToken(ClientId("aaa"), "bbb", List(firstSecret, secondSecret), None)
+  private val environmentToken = Token(ClientId("aaa"), "bbb", List(firstSecret, secondSecret), None)
   private val tokenResponse = ApplicationTokenResponse(ClientId("aaa"), "bbb", List(ClientSecretResponse(firstSecret), ClientSecretResponse(secondSecret)))
 
   "fetch credentials" should {
@@ -175,7 +175,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
 
       val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedEnvironmentToken: Token = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
       val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
       val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
 
@@ -209,7 +209,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ClientSecretServiceMock.GenerateClientSecret.thenReturnWithSpecificSecret(newClientSecret.id, newSecretValue)
 
       val updatedClientSecrets: List[ClientSecret] = applicationData.tokens.production.clientSecrets :+ newClientSecret
-      val updatedEnvironmentToken: EnvironmentToken = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
+      val updatedEnvironmentToken: Token = applicationData.tokens.production.copy(clientSecrets = updatedClientSecrets)
       val updatedApplicationTokens = applicationData.tokens.copy(production = updatedEnvironmentToken)
       val applicationWithNewClientSecret = applicationData.copy(tokens = updatedApplicationTokens)
       ApplicationRepoMock.AddClientSecret.thenReturn(applicationId)(applicationWithNewClientSecret)

@@ -59,6 +59,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
+import play.api.Logger
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -190,7 +191,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", new DateTime(), "1.0".asVersion)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", DateTimeUtils.now, "1.0".asVersion)
     val checkInformation = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
     val id = ApplicationId.random
@@ -203,11 +204,11 @@ class ApplicationControllerSpec extends ControllerSpec
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "successfully update approval information for application" in new Setup {
+    "successfully update approval information for application XYZ" in new Setup {
       givenUserIsAuthenticated(underTest)
 
-      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
+      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse(appId = id)))
+      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse(appId = id)))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)
       val result = underTest.updateCheck(id)(request.withBody(jsonBody))
@@ -1617,9 +1618,9 @@ class ApplicationControllerSpec extends ControllerSpec
     """{ "context" : "some-context", "version" : "1.0" }"""
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION, appId: ApplicationId = ApplicationId.random) = {
     new ApplicationResponse(
-      ApplicationId.random,
+      appId,
       ClientId("clientId"),
       "gatewayId",
       "My Application",

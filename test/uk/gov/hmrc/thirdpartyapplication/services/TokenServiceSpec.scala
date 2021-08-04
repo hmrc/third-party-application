@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.thirdpartyapplication.models.EnvironmentToken
+import uk.gov.hmrc.thirdpartyapplication.models.Token
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class TokenServiceSpec extends AsyncHmrcSpec {
@@ -27,7 +27,7 @@ class TokenServiceSpec extends AsyncHmrcSpec {
 
   "createEnvironmentToken" should {
     "create a valid environment token" in new Setup {
-      val result: EnvironmentToken = underTest.createEnvironmentToken()
+      val result: Token = underTest.createEnvironmentToken()
 
       result.clientId.value.length shouldBe 28
       result.accessToken.length shouldBe 32
@@ -35,8 +35,8 @@ class TokenServiceSpec extends AsyncHmrcSpec {
     }
 
     "generate different values each time it is called" in new Setup {
-      val firstResult: EnvironmentToken = underTest.createEnvironmentToken()
-      val secondResult: EnvironmentToken = underTest.createEnvironmentToken()
+      val firstResult: Token = underTest.createEnvironmentToken()
+      val secondResult: Token = underTest.createEnvironmentToken()
 
       firstResult.clientId should not equal secondResult.clientId
       firstResult.accessToken should not equal secondResult.accessToken

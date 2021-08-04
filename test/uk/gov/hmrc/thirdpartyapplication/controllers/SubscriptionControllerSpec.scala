@@ -36,7 +36,6 @@ import play.api.libs.json.Json
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite {
 
   import play.api.test.Helpers._
-  import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
   val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
 

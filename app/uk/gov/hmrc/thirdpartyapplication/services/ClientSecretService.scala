@@ -30,6 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import org.joda.time.DateTimeZone
 
 @Singleton
 class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) {
@@ -91,7 +92,7 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
   }
 
   def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean =
-    (first, second) => first.lastAccess.getOrElse(new DateTime(0)).isAfter(second.lastAccess.getOrElse(new DateTime(0)))
+    (first, second) => first.lastAccess.getOrElse(new DateTime(0, DateTimeZone.UTC)).isAfter(second.lastAccess.getOrElse(new DateTime(0, DateTimeZone.UTC)))
 
   def requiresRehash(hashedSecret: String): Boolean = workFactorOfHash(hashedSecret) != config.hashFunctionWorkFactor
 

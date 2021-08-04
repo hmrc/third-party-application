@@ -65,7 +65,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   val devEmail = "dev@example.com"
 
   val serverTokenLastAccess = DateTime.now
-  private val productionToken = EnvironmentToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -522,7 +522,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val testUserEmail = "test@example.com"
       val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
       val tokens = ApplicationTokens(
-        EnvironmentToken(ClientId("prodId"), "prodToken")
+        Token(ClientId("prodId"), "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -936,7 +936,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 

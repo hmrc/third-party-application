@@ -45,7 +45,7 @@ case class ApplicationData(id: ApplicationId,
 
 object ApplicationData {
 
-  def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: EnvironmentToken): ApplicationData = {
+  def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
 
     val applicationState = (application.environment, application.access.accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
@@ -70,4 +70,4 @@ object ApplicationData {
   }
 }
 
-case class ApplicationTokens(production: EnvironmentToken)
+case class ApplicationTokens(production: Token)

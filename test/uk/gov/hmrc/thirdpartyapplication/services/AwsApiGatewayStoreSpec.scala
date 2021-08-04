@@ -51,7 +51,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       Some("description"),
       applicationName,
       ApplicationTokens(
-        EnvironmentToken(ClientId.random, serverToken)),
+        Token(ClientId.random, serverToken)),
       testingState(),
       createdOn = DateTimeUtils.now,
       lastAccess = Some(DateTimeUtils.now))

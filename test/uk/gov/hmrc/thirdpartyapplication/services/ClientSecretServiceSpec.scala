@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils

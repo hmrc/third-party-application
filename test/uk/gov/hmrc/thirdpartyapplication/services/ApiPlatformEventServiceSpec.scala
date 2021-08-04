@@ -43,7 +43,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val applicationState: ApplicationState = ApplicationState(name = State.TESTING, requestedByEmailAddress = None, verificationCode = None)
   val applicationData: ApplicationData = ApplicationData(id = ApplicationId.random, name = "name", normalisedName = "normalisedName", collaborators = Set.empty,
     description = None, wso2ApplicationName = "wso2Name",
-    tokens = ApplicationTokens(EnvironmentToken(ClientId("clientId"), "accessToken", List.empty)),
+    tokens = ApplicationTokens(Token(ClientId("clientId"), "accessToken", List.empty)),
     state = applicationState,
     createdOn = DateTime.now(),
     lastAccess = None,

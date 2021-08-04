@@ -25,10 +25,10 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, Collaborator, EnvironmentToken, Standard}
+import uk.gov.hmrc.thirdpartyapplication.models.{Token, ApplicationState, Standard}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UserId, Role}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, UserId, Role, Collaborator}
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -137,7 +137,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        EnvironmentToken(ClientId.random, "ccc")
+        Token(ClientId.random, "ccc")
       ),
       ApplicationState(State.PRODUCTION),
       Standard(List.empty, None, None),

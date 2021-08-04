@@ -211,7 +211,7 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
       val applicationTokens =
         ApplicationTokens(
-          EnvironmentToken(
+          Token(
             ClientId("aaa"),
             generateAccessToken,
             List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret"))))
@@ -233,7 +233,7 @@ class ApplicationRepositorySpec
         ClientSecret(name = "SecretToUpdate", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret")
       val applicationTokens =
         ApplicationTokens(
-          EnvironmentToken(
+          Token(
             ClientId("aaa"),
             generateAccessToken,
             List(
@@ -1450,7 +1450,7 @@ class ApplicationRepositorySpec
       users,
       Some("description"),
       "myapplication",
-      ApplicationTokens(EnvironmentToken(prodClientId, generateAccessToken, clientSecrets)),
+      ApplicationTokens(Token(prodClientId, generateAccessToken, clientSecrets)),
       state,
       access,
       HmrcTime.now,

@@ -41,7 +41,7 @@ import scala.concurrent.Future.successful
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   trait Setup extends AuditServiceMockModule {
 
