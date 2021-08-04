@@ -29,7 +29,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{AccessType, PRIVILEGED, ROPC, STANDARD}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.concurrent.{ExecutionContext, Future}

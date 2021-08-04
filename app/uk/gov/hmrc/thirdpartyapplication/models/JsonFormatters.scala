@@ -22,8 +22,6 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
@@ -31,32 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.DateTimeFormatters
 
 trait JsonFormatters extends DateTimeFormatters {
-
-  private implicit val formatGrantWithoutConsent = Json.format[GrantWithoutConsent]
-  private implicit val formatPersistLogin = Format[PersistLogin](
-    Reads { _ => JsSuccess(PersistLogin()) },
-    Writes { _ => Json.obj() })
-  private implicit val formatSuppressIvForAgents = Json.format[SuppressIvForAgents]
-  private implicit val formatSuppressIvForOrganisations = Json.format[SuppressIvForOrganisations]
-  private implicit val formatSuppressIvForIndividuals = Json.format[SuppressIvForIndividuals]
-
-  implicit val formatOverride = Union.from[OverrideFlag]("overrideType")
-    .and[GrantWithoutConsent](GRANT_WITHOUT_TAXPAYER_CONSENT.toString)
-    .and[PersistLogin](PERSIST_LOGIN_AFTER_GRANT.toString)
-    .and[SuppressIvForAgents](SUPPRESS_IV_FOR_AGENTS.toString)
-    .and[SuppressIvForOrganisations](SUPPRESS_IV_FOR_ORGANISATIONS.toString)
-    .and[SuppressIvForIndividuals](SUPPRESS_IV_FOR_INDIVIDUALS.toString)
-    .format
-
-  private implicit val formatStandard = Json.format[Standard]
-  private implicit val formatPrivileged = Json.format[Privileged]
-  private implicit val formatRopc = Json.format[Ropc]
-
-  implicit val formatAccess = Union.from[Access]("accessType")
-    .and[Standard](STANDARD.toString)
-    .and[Privileged](PRIVILEGED.toString)
-    .and[Ropc](ROPC.toString)
-    .format
 
   implicit val formatTermsOfUserAgreement = Json.format[TermsOfUseAgreement]
   implicit val formatCheckInformation = Json.format[CheckInformation]
@@ -120,6 +92,7 @@ implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
   // Here to override default date time formatting in companion object
   implicit val formatTermsOfUseAgreement = Json.format[TermsOfUseAgreement]
+  implicit val formatEnvironmentToken = Json.format[Token]
 
   val checkInformationReads: Reads[CheckInformation] = (
     (JsPath \ "contactDetails").readNullable[ContactDetails] and
@@ -136,11 +109,8 @@ implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val checkInformationFormat = {
     Format(checkInformationReads, Json.writes[CheckInformation])
   }
-
-  implicit val formatAccess = JsonFormatters.formatAccess
   implicit val formatApplicationState = Json.format[ApplicationState]
 
-  implicit val formatEnvironmentToken = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   // Non-standard format compared to companion object

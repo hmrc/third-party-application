@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 
-import uk.gov.hmrc.thirdpartyapplication.models.OverrideFlag
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
