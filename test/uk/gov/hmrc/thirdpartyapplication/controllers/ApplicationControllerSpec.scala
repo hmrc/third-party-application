@@ -59,7 +59,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
-import play.api.Logger
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {

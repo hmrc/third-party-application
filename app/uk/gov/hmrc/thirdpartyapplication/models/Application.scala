@@ -21,18 +21,15 @@ import java.security.MessageDigest
 import com.google.common.base.Charsets
 import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OverrideType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Collaborator
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRequest {
   val name: String
@@ -244,18 +241,6 @@ case class ApplicationWithUpliftRequest(id: ApplicationId,
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
-
-
-// trait Token {
-//   def clientId: ClientId
-//   def accessToken: String
-//   def clientSecrets: List[ClientSecret]
-// }
-
-case class Token(clientId: ClientId,
-                            accessToken: String,
-                            clientSecrets: List[ClientSecret] = List(),
-                            lastAccessTokenUsage: Option[DateTime] = None) //extends Token
 
 case class ApplicationTokenResponse(
    clientId: ClientId,

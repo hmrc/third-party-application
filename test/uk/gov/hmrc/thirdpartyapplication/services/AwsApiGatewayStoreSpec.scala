@@ -29,8 +29,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -51,7 +50,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       Some("description"),
       applicationName,
       ApplicationTokens(
-        Token(ClientId.random, serverToken)),
+      Token(ClientId.random, serverToken)),
       testingState(),
       createdOn = DateTimeUtils.now,
       lastAccess = Some(DateTimeUtils.now))
