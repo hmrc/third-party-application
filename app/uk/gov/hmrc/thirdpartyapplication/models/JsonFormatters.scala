@@ -90,7 +90,6 @@ trait JsonFormatters extends DateTimeFormatters {
 
 object MongoFormat {
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-  implicit val formatApplicationState = Json.format[ApplicationState]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   // Non-standard format compared to companion object

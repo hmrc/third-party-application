@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import scala.util.Random
-import play.api.libs.json.Json
 
 case class ClientId(value: String) extends AnyVal
 
 object ClientId {
+  import play.api.libs.json.Json
+  
   def random: ClientId = ClientId(Random.alphanumeric.take(28).mkString)
 
   implicit val JsonFormat = Json.valueFormat[ClientId]

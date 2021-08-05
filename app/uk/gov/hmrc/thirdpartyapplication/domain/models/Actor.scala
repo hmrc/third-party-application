@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
-import play.api.libs.json.{OFormat, Json}
 
 object ActorType extends Enumeration {
   type ActorType = Value
@@ -29,5 +28,7 @@ object ActorType extends Enumeration {
 case class Actor(id: String, actorType: ActorType.ActorType)
 
 object Actor {
+  import play.api.libs.json.{OFormat, Json}
+  
   implicit val format: OFormat[Actor] = Json.format[Actor]
 }

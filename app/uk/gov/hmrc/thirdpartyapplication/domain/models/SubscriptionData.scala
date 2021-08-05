@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import play.api.libs.json.Json
-
 case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
 
 object SubscriptionData {
+  import play.api.libs.json.Json
+
   implicit val format = Json.format[SubscriptionData]
 }

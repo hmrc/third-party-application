@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
 case class ClientSecret(
   name: String,
@@ -27,10 +26,11 @@ case class ClientSecret(
   lastAccess: Option[DateTime] = None,
   id: String = ju.UUID.randomUUID().toString,
   hashedSecret: String
-)
-
+  )
+  
 object ClientSecret {
   import play.api.libs.json.Json
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
+  
   implicit val format = Json.format[ClientSecret]
 }

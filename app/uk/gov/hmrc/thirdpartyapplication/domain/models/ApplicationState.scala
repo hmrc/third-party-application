@@ -60,5 +60,11 @@ case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Opti
     }
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = DateTimeUtils.now)
   }
+}
 
+object ApplicationState {
+  import play.api.libs.json.Json
+  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
+ 
+  implicit val formatApplicationState = Json.format[ApplicationState]
 }

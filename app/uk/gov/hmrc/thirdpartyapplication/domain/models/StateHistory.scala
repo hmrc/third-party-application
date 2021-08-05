@@ -19,17 +19,18 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 import State.State
 import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import play.api.libs.json.Json
 
 case class StateHistory(applicationId: ApplicationId,
-                        state: State,
-                        actor: Actor,
-                        previousState: Option[State] = None,
-                        notes: Option[String] = None,
-                        changedAt: DateTime = DateTimeUtils.now)
+state: State,
+actor: Actor,
+previousState: Option[State] = None,
+notes: Option[String] = None,
+changedAt: DateTime = DateTimeUtils.now)
 
 object StateHistory {
+  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+  import play.api.libs.json.Json
+  
   implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
 
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats

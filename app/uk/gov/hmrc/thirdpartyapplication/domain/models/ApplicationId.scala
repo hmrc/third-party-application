@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.{util => ju}
-import play.api.libs.json.Json
 
 case class ApplicationId(value: ju.UUID) extends AnyVal
 
 object ApplicationId {
+  import play.api.libs.json.Json
+  
   def random: ApplicationId = ApplicationId(ju.UUID.randomUUID())
 
   implicit val JsonFormat = Json.valueFormat[ApplicationId]
