@@ -16,19 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.security.MessageDigest
 
-import com.google.common.base.Charsets
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, State, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.time.DateTimeUtils
-import java.{util => ju}
+import play.api.libs.json.Json
+import play.api.libs.ws.ahc.AhcWSClient
 
 trait ApplicationRequest {
   val name: String
@@ -84,7 +80,7 @@ case class ApplicationResponse(id: ApplicationId,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
                                access: Access = Standard(List.empty, None, None),
-                               state: ApplicationState = ApplicationState(name = TESTING),
+                               state: ApplicationState = ApplicationState(name = State.TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
@@ -182,13 +178,25 @@ case class PaginatedApplicationResponse(applications: List[ApplicationResponse],
 
 case class PaginationTotal(total: Int)
 
+object PaginationTotal {
+  implicit val format = Json.format[PaginationTotal]
+}
+
 case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
 
 case class ApplicationLabel(id: String, name: String)
+
+object ApplicationLabel {
+  implicit val format = Json.format[ApplicationLabel]
+}
+
 case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
 
+object ApplicationWithSubscriptionCount {
+implicit val format = Json.format[ApplicationWithSubscriptionCount]
+}
 
 
 case class ApplicationWithUpliftRequest(id: ApplicationId,
@@ -240,45 +248,6 @@ object ClientSecretResponse {
       clientSecret.lastAccess)
 }
 
-
-case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
-                            verificationCode: Option[String] = None, updatedOn: DateTime = DateTimeUtils.now) {
-
-  final def requireState(requirement: State, transitionTo: State): Unit = {
-    if (name != requirement) {
-      throw new InvalidStateTransition(expectedFrom = requirement, invalidFrom = name, to = transitionTo)
-    }
-  }
-
-  def toProduction = {
-    requireState(requirement = State.PENDING_REQUESTER_VERIFICATION, transitionTo = PRODUCTION)
-    copy(name = PRODUCTION, updatedOn = DateTimeUtils.now)
-  }
-
-  def toTesting = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = DateTimeUtils.now)
-
-  def toPendingGatekeeperApproval(requestedByEmailAddress: String) = {
-    requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
-
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL,
-      updatedOn = DateTimeUtils.now,
-      requestedByEmailAddress = Some(requestedByEmailAddress))
-  }
-
-  def toPendingRequesterVerification = {
-    requireState(requirement = State.PENDING_GATEKEEPER_APPROVAL, transitionTo = State.PENDING_REQUESTER_VERIFICATION)
-
-    def verificationCode(input: String = ju.UUID.randomUUID().toString): String = {
-      def urlSafe(encoded: String) = encoded.replace("=", "").replace("/", "_").replace("+", "-")
-
-      val digest = MessageDigest.getInstance("SHA-256")
-      urlSafe(new String(Base64.encodeBase64(digest.digest(input.getBytes(Charsets.UTF_8))), Charsets.UTF_8))
-    }
-    copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = DateTimeUtils.now)
-  }
-
-}
-
 class ApplicationResponseCreator {
 
   def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecret]) = {
@@ -296,25 +265,3 @@ object ApplicationWithUpliftRequest {
 
 }
 
-
-sealed trait ApplicationStateChange
-
-case object UpliftRequested extends ApplicationStateChange
-
-case object UpliftApproved extends ApplicationStateChange
-
-case object UpliftRejected extends ApplicationStateChange
-
-case object UpliftVerified extends ApplicationStateChange
-
-case object VerificationResent extends ApplicationStateChange
-
-case object Deleted extends ApplicationStateChange
-
-trait Blocked extends ApplicationStateChange
-
-case object Blocked extends Blocked
-
-trait Unblocked extends ApplicationStateChange
-
-case object Unblocked extends Unblocked

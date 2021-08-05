@@ -30,6 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.utils.DateTimeFormatters
 
 trait JsonFormatters extends DateTimeFormatters {
 
+  // NOTE - these override the defaults in order to push dates in non-mongo format
   implicit val formatTermsOfUserAgreement = Json.format[TermsOfUseAgreement]
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
@@ -88,29 +89,8 @@ trait JsonFormatters extends DateTimeFormatters {
 
 
 object MongoFormat {
-implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-
-  // Here to override default date time formatting in companion object
-  implicit val formatTermsOfUseAgreement = Json.format[TermsOfUseAgreement]
-  implicit val formatEnvironmentToken = Json.format[Token]
-
-  val checkInformationReads: Reads[CheckInformation] = (
-    (JsPath \ "contactDetails").readNullable[ContactDetails] and
-      (JsPath \ "confirmedName").read[Boolean] and
-      ((JsPath \ "apiSubscriptionsConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "apiSubscriptionConfigurationsConfirmed").read[Boolean] or Reads.pure(false)) and
-      (JsPath \ "providedPrivacyPolicyURL").read[Boolean] and
-      (JsPath \ "providedTermsAndConditionsURL").read[Boolean] and
-      (JsPath \ "applicationDetails").readNullable[String] and
-      ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
-      ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-    )(CheckInformation.apply _)
-
-  implicit val checkInformationFormat = {
-    Format(checkInformationReads, Json.writes[CheckInformation])
-  }
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val formatApplicationState = Json.format[ApplicationState]
-
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   // Non-standard format compared to companion object
@@ -141,10 +121,8 @@ implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
   implicit val formatApplicationData = OFormat(applicationDataReads, Json.writes[ApplicationData])
 
-  implicit val formatPaginationTotla = Json.format[PaginationTotal]
   implicit val formatPaginatedApplicationData = Json.format[PaginatedApplicationData]
 
-  implicit val formatApplicationLabel = Json.format[ApplicationLabel]
   implicit val formatApplicationWithSubscriptionCount = Json.format[ApplicationWithSubscriptionCount]
 }
 
