@@ -18,7 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import org.joda.time.DateTime
 
+<<<<<<< Updated upstream
 case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: ApiVersion)
+=======
+case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
+>>>>>>> Stashed changes
 
 object TermsOfUseAgreement {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats

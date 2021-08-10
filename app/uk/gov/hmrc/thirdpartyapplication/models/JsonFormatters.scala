@@ -39,7 +39,7 @@ trait JsonFormatters extends DateTimeFormatters {
   implicit val formatEnvironmentToken = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
-  implicit val formatApplicationData = Json.format[ApplicationData]
+  // implicit val formatApplicationData = Json.format[ApplicationData]
 
   val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
     (JsPath \ "name").read[String] and

@@ -23,8 +23,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import play.api.libs.json.Json
-import play.api.libs.ws.ahc.AhcWSClient
+import uk.gov.hmrc.time.DateTimeUtils
+import java.{util => ju}
 
 trait ApplicationRequest {
   val name: String
