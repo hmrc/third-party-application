@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.time.DateTimeUtils
-import java.{util => ju}
+import play.api.libs.json.Json
 
 trait ApplicationRequest {
   val name: String
@@ -62,9 +62,6 @@ case class UpdateApplicationRequest(override val name: String,
     case _ =>
   }
 }
-
-
-
 
 case class ApplicationResponse(id: ApplicationId,
                                clientId: ClientId,
@@ -176,27 +173,9 @@ object ExtendedApplicationResponse {
 
 case class PaginatedApplicationResponse(applications: List[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
 
-case class PaginationTotal(total: Int)
-
-object PaginationTotal {
-  implicit val format = Json.format[PaginationTotal]
-}
-
-case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
 
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
 
-case class ApplicationLabel(id: String, name: String)
-
-object ApplicationLabel {
-  implicit val format = Json.format[ApplicationLabel]
-}
-
-case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
-
-object ApplicationWithSubscriptionCount {
-implicit val format = Json.format[ApplicationWithSubscriptionCount]
-}
 
 
 case class ApplicationWithUpliftRequest(id: ApplicationId,

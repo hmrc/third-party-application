@@ -30,12 +30,11 @@ import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
-import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -45,10 +44,10 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
   extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
-    MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats)
+    ApplicationData.format, ReactiveMongoFormats.objectIdFormats)
     with MetricsHelper {
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  import MongoJsonFormatterOverrides._
 
   private val subscriptionsLookup: JsObject = Json.obj(
     f"$$lookup" -> Json.obj(

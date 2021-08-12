@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import org.joda.time.DateTime
+import play.api.libs.json.Json
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
+case class PaginationTotal(total: Int)
 
-object TermsOfUseAgreement {
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-  import play.api.libs.json.Json
-  
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+object PaginationTotal {
+  implicit val reads = Json.reads[PaginationTotal]
+}
 
-  implicit val format = Json.format[TermsOfUseAgreement]
+case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
+
+object PaginatedApplicationData {
+  implicit val reads = Json.reads[PaginatedApplicationData]
 }

@@ -14,17 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import org.joda.time.DateTime
+import play.api.libs.json.Json
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
+case class ApplicationLabel(id: String, name: String)
 
-object TermsOfUseAgreement {
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-  import play.api.libs.json.Json
-  
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+object ApplicationLabel {
+  implicit val reads = Json.reads[ApplicationLabel]
+}
 
-  implicit val format = Json.format[TermsOfUseAgreement]
+case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
+
+object ApplicationWithSubscriptionCount {
+  implicit val reads = Json.reads[ApplicationWithSubscriptionCount]
 }

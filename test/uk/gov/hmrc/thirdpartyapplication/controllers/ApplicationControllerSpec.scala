@@ -190,7 +190,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", DateTimeUtils.now, "1.0".asVersion)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", DateTimeUtils.now, "1.0".asVersion.value)
     val checkInformation = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
     val id = ApplicationId.random

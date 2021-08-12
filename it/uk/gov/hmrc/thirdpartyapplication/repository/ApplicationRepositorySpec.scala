@@ -824,7 +824,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use agreed" in {
       val applicationId = ApplicationId.random
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithTermsOfUseAgreed =
@@ -848,7 +848,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use not agreed where checkInformation value does not exist in database" in {
       val applicationId = ApplicationId.random
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val applicationWithNoCheckInformation =
@@ -873,7 +873,7 @@ class ApplicationRepositorySpec
     "return applications with terms of use not agreed where termsOfUseAgreements array is empty in database" in {
       val applicationId = ApplicationId.random
       val applicationName = "Test Application"
-      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1".asVersion)
+      val termsOfUseAgreement = TermsOfUseAgreement("a@b.com", HmrcTime.now, "v1")
       val checkInformation = CheckInformation(termsOfUseAgreements = List(termsOfUseAgreement))
 
       val emptyCheckInformation = CheckInformation(termsOfUseAgreements = List.empty)

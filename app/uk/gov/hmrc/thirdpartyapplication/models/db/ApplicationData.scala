@@ -23,6 +23,16 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTIN
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import play.api.libs.json.Json
+
+
+case class ApplicationTokens(production: Token)
+
+object ApplicationTokens {
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val format = Json.format[ApplicationTokens]
+}
 
 case class ApplicationData(id: ApplicationId,
                            name: String,
@@ -68,6 +78,30 @@ object ApplicationData {
       Some(createdOn),
       environment = application.environment.toString)
   }
-}
 
-case class ApplicationTokens(production: Token)
+  import play.api.libs.functional.syntax._
+  import play.api.libs.json._
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  val applicationDataReads: Reads[ApplicationData] = (
+    (JsPath \ "id").read[ApplicationId] and
+    (JsPath \ "name").read[String] and
+    (JsPath \ "normalisedName").read[String] and
+    (JsPath \ "collaborators").read[Set[Collaborator]] and
+    (JsPath \ "description").readNullable[String] and
+    (JsPath \ "wso2ApplicationName").read[String] and
+    (JsPath \ "tokens").read[ApplicationTokens] and
+    (JsPath \ "state").read[ApplicationState] and
+    (JsPath \ "access").read[Access] and
+    (JsPath \ "createdOn").read[DateTime] and
+    (JsPath \ "lastAccess").readNullable[DateTime] and
+    (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+    (JsPath \ "environment").read[String] and
+    (JsPath \ "checkInformation").readNullable[CheckInformation] and
+    ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
+  )(ApplicationData.apply _)
+
+  implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])
+
+}

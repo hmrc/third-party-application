@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
-trait DateTimeFormatters {
+trait UtcMillisDateTimeFormatters {
   import org.joda.time.{DateTimeZone, DateTime}
   import play.api.libs.json._
   import play.api.libs.json.JodaWrites._
@@ -33,4 +33,4 @@ trait DateTimeFormatters {
   implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 
-object DateTimeFormatters extends DateTimeFormatters
+object UtcMillisDateTimeFormatters extends UtcMillisDateTimeFormatters

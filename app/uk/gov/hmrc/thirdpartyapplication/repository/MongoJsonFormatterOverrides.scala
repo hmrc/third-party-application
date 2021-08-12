@@ -14,17 +14,20 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.repository
 
-import org.joda.time.DateTime
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import play.api.libs.json._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
+import play.api.libs.functional.syntax._
 
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
-
-object TermsOfUseAgreement {
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-  import play.api.libs.json.Json
-  
+object MongoJsonFormatterOverrides {
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  implicit val format = Json.format[TermsOfUseAgreement]
+  // Non-standard format compared to companion object
+  val ipAllowlistReads: Reads[IpAllowlist] = (
+    ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
+    ((JsPath \ "allowlist").read[Set[String]]or Reads.pure(Set.empty[String]))
+  )(IpAllowlist.apply _)
+  implicit val formatIpAllowlist = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 }
