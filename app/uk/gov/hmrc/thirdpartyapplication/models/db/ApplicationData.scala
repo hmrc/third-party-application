@@ -53,6 +53,8 @@ object ApplicationData {
     }
     val createdOn = DateTimeUtils.now
 
+    val checkInfo = if(application.subscriptions.nonEmpty) Some(CheckInformation(apiSubscriptionsConfirmed = true)) else None
+
     ApplicationData(
       ApplicationId.random,
       application.name,
@@ -65,7 +67,8 @@ object ApplicationData {
       application.access,
       createdOn,
       Some(createdOn),
-      environment = application.environment.toString)
+      environment = application.environment.toString,
+      checkInformation = checkInfo)
   }
 }
 
