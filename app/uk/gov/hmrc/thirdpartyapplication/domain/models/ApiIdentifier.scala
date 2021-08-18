@@ -53,7 +53,7 @@ object ApiIdentifier {
 
 }
 
-object ApiIdentifierSyntax {
+trait ApiIdentifierSyntax {
   implicit class ApiContextSyntax(value: String) {
     def asContext: ApiContext = ApiContext(value)
   }
@@ -72,3 +72,5 @@ object ApiIdentifierSyntax {
     def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(context, ApiVersion(version))
   }
 }
+
+object ApiIdentifierSyntax extends ApiIdentifierSyntax

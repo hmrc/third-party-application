@@ -18,16 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
-import uk.gov.hmrc.thirdpartyapplication.models.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import org.scalatest.OptionValues
 
-class ApplicationDataSpec extends HmrcSpec with ApiIdentifierSyntaxModule with OptionValues {
+class ApplicationDataSpec extends HmrcSpec with OptionValues {
+  import ApiIdentifierSyntax._
   
   "ApplicationData" should {
     "do not set the check information when app is created without subs" in {
-      val token = EnvironmentToken("", "st")
+      val token = Token(ClientId.random, "st")
 
       val request = CreateApplicationRequest(
         name = "bob",
@@ -40,7 +41,7 @@ class ApplicationDataSpec extends HmrcSpec with ApiIdentifierSyntaxModule with O
     }
 
     "set the check information for subscriptions when app is created with subs" in {
-      val token = EnvironmentToken("", "st")
+      val token = Token(ClientId.random, "st")
 
       val request = CreateApplicationRequest(
         name = "bob",
