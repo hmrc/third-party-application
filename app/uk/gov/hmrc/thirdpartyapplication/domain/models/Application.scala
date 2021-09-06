@@ -56,7 +56,7 @@ case class InsecureClientDataResponse(
   lastAccess: Option[DateTime],
   rateLimitTier: Option[RateLimitTier],
   ipAllowlist: IpAllowlist = IpAllowlist(), 
-  lastAccessTokenUsage: Option[DateTime],
+  lastAccessTokenUsage: Option[DateTime]
 )
 
 case class FlexibleApplicationResponse(
