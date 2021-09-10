@@ -23,10 +23,11 @@ import org.scalatest.BeforeAndAfterAll
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -40,7 +41,7 @@ import scala.concurrent.Future.successful
 class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
-  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")))
+  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   trait Setup extends AuditServiceMockModule {
 
@@ -65,8 +66,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
     when(mockApplicationRepository.save(*)).thenAnswer((a: ApplicationData) => successful(a))
     when(mockSubscriptionRepository.add(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
     when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, * , *)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventsService.sendApiSubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventsService.sendApiUnsubscribedEvent(*, *[ApiContext], *[ApiVersion])(*)).thenReturn(successful(true))
   }
 
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4),  hashedSecret = secret.bcrypt(4))
@@ -80,8 +81,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "isSubscribed" should {
-    val applicationId = ApplicationId.random()
-    val api = ApiIdentifier("context", "1.0")
+    val applicationId = ApplicationId.random
+    val api = ApiIdentifier.random
 
     "return true when the application is subscribed to a given API version" in new Setup {
       when(mockSubscriptionRepository.isSubscribed(applicationId, api)).thenReturn(successful(true))
@@ -101,7 +102,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
   }
 
   "fetchAllSubscriptionsForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
@@ -117,18 +118,18 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       val applicationData = anApplicationData(applicationId)
 
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(Some(applicationData)))
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(anAPI("context", "1.0"))))
+      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List("context".asIdentifier)))
 
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
-      result shouldBe Set(anAPI("context", "1.0"))
+      result shouldBe Set("context".asIdentifier)
     }
   }
 
   "createSubscriptionForApplicationMinusChecks" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val applicationData = anApplicationData(applicationId, rateLimitTier = Some(GOLD))
-    val api = anAPI()
+    val api = ApiIdentifier.random
 
     "create a subscription in Mongo for the given application when an application exists in the repository" in new Setup {
 
@@ -145,14 +146,14 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Subscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be (Some(api.version))
-      capturedParameters.get("apiContext") should be (Some(api.context))
+      capturedParameters.get("apiVersion") should be (Some(api.version.value))
+      capturedParameters.get("apiContext") should be (Some(api.context.value))
     }
   }
 
   "removeSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
-    val api = anAPI()
+    val applicationId = ApplicationId.random
+    val api = ApiIdentifier.random
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       when(mockApplicationRepository.fetch(applicationId)).thenReturn(successful(None))
@@ -176,19 +177,19 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
       val capturedParameters = AuditServiceMock.Audit.verifyData(Unsubscribed)
       capturedParameters.get("applicationId") should be (Some(applicationId.value.toString))
-      capturedParameters.get("apiVersion") should be (Some(api.version))
-      capturedParameters.get("apiContext") should be (Some(api.context))
+      capturedParameters.get("apiVersion") should be (Some(api.version.value))
+      capturedParameters.get("apiContext") should be (Some(api.context.value))
     }
   }
 
   "searchCollaborators" should {
     "return emails" in new Setup {
-      val context = "api1"
-      val version = "1.0"
+      val context = ApiContext.random
+      val version = ApiVersion.random
       val emails = List("user@example.com", "dev@example.com")
       val partialEmailMatch = "partialEmail"
 
-      when(mockSubscriptionRepository.searchCollaborators(context, version, Some(partialEmailMatch))).thenReturn(successful(emails))
+      when(mockSubscriptionRepository.searchCollaborators(eqTo(context), eqTo(version), eqTo(Some(partialEmailMatch)))).thenReturn(successful(emails))
 
       val result = await(underTest.searchCollaborators(context, version, Some(partialEmailMatch)))
       result shouldBe emails
@@ -215,9 +216,4 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       rateLimitTier = rateLimitTier
     )
   }
-
-  private def anAPI(context: String = "some-context", version: String = "1.0") = {
-    new ApiIdentifier(context, version)
-  }
-
 }

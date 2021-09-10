@@ -17,11 +17,10 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.scalatest.{Matchers, WordSpec}
-import play.api.libs.json.{Json, Reads}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
+import play.api.libs.json.Json
 
 class MongoFormatSpec extends WordSpec with Matchers {
-
-  implicit val mongoFormat: Reads[CheckInformation] = MongoFormat.checkInformationReads
 
   "CheckInformation parsing from the database" should {
     "parse fully populated json" in {

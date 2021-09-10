@@ -25,8 +25,8 @@ import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.{formatApiIdentifier, formatSubscriptionData}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -35,10 +35,10 @@ import reactivemongo.api.ReadConcern
 @Singleton
 class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
-    MongoFormat.formatSubscriptionData, ReactiveMongoFormats.objectIdFormats
+    SubscriptionData.format, ReactiveMongoFormats.objectIdFormats
   ) {
 
-  def searchCollaborators(context: String, version: String, partialEmail: Option[String]): Future[List[String]] = {
+  def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
 
     val pipeline = List(
@@ -98,8 +98,8 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     val selector = Some(Json.obj("$and" -> Json.arr(
         Json.obj("applications" -> applicationId.value.toString),
-        Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-        Json.obj("apiIdentifier.version" -> apiIdentifier.version))
+        Json.obj("apiIdentifier.context" -> apiIdentifier.context.value),
+        Json.obj("apiIdentifier.version" -> apiIdentifier.version.value))
       ))
 
     collection.count(selector, None, 0, None, ReadConcern.Available)
@@ -145,7 +145,8 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   private def makeSelector(apiIdentifier: ApiIdentifier) = {
     Json.obj("$and" -> Json.arr(
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version)))
+      Json.obj("apiIdentifier.version" -> apiIdentifier.version))
+    )
   }
 
   def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {

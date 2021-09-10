@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, SubscriptionData}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
@@ -34,7 +35,7 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
   "metrics refresh" should {
     def subscriptionDetails(subscription: (String, String, Int)): SubscriptionData =
-      SubscriptionData(new ApiIdentifier(subscription._1, subscription._2), Seq.fill(subscription._3)(ApplicationId.random()).toSet)
+      SubscriptionData(subscription._1.asIdentifier(subscription._2), Seq.fill(subscription._3)(ApplicationId.random).toSet)
 
     def expectedAPIName(subscription: (String, String, Int)): String =
       s"apisWithSubscriptionCountV1.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
@@ -50,6 +51,7 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
       private val result = await(metricUnderTest.metrics)
 
+      println(result)
       result(expectedAPIName(api1v1)) shouldBe api1v1._3
       result(expectedAPIName(api1v2)) shouldBe api1v2._3
       result(expectedAPIName(api2)) shouldBe api2._3

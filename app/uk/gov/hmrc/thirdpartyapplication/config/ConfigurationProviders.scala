@@ -29,6 +29,12 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
+import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 
@@ -38,14 +44,14 @@ class ConfigurationModule extends Module {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
-      bind[ApiSubscriptionFieldsConfig].toProvider[ApiSubscriptionFieldsConfigProvider],
+      bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
-      bind[AuthConfig].toProvider[AuthConfigProvider],
-      bind[EmailConfig].toProvider[EmailConfigProvider],
-      bind[TotpConfig].toProvider[TotpConfigProvider],
-      bind[AwsApiGatewayConfig].toProvider[AwsApiGatewayConfigProvider],
-      bind[ApiPlatformEventsConfig].toProvider[ApiPlatformEventsConfigProvider],
-      bind[ThirdPartyDelegatedAuthorityConfig].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
+      bind[AuthConnector.Config].toProvider[AuthConfigProvider],
+      bind[EmailConnector.Config].toProvider[EmailConfigProvider],
+      bind[TotpConnector.Config].toProvider[TotpConfigProvider],
+      bind[AwsApiGatewayConnector.Config].toProvider[AwsApiGatewayConfigProvider],
+      bind[ApiPlatformEventsConnector.Config].toProvider[ApiPlatformEventsConfigProvider],
+      bind[ThirdPartyDelegatedAuthorityConnector.Config].toProvider[ThirdPartyDelegatedAuthorityConfigProvider],
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
@@ -94,11 +100,11 @@ class MetricsJobConfigProvider @Inject()(val configuration: Configuration)
 
 @Singleton
 class ApiSubscriptionFieldsConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration) with Provider[ApiSubscriptionFieldsConfig] {
+  extends ServicesConfig(configuration) with Provider[ApiSubscriptionFieldsConnector.Config] {
 
   override def get() = {
     val url = baseUrl("api-subscription-fields")
-    ApiSubscriptionFieldsConfig(url)
+    ApiSubscriptionFieldsConnector.Config(url)
   }
 }
 
@@ -115,7 +121,7 @@ class ApiStorageConfigProvider @Inject()(val configuration: Configuration)
 @Singleton
 class AuthConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[AuthConfig] {
+  with Provider[AuthConnector.Config] {
 
   override def get() = {
     val url = baseUrl("auth")
@@ -126,55 +132,55 @@ class AuthConfigProvider @Inject()(val configuration: Configuration)
     val canDeleteApplications: Boolean = ConfigHelper.getConfig("canDeleteApplications", configuration.getOptional[Boolean])
     val authorisationKey = getString("authorisationKey")
 
-    AuthConfig(url, userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
+    AuthConnector.Config(url, userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
   }
 }
 
 @Singleton
 class EmailConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[EmailConfig] {
+  with Provider[EmailConnector.Config] {
 
   override def get() = {
     val url = baseUrl("email")
     val devHubBaseUrl = ConfigHelper.getConfig("devHubBaseUrl", configuration.getOptional[String](_))
     val devHubTitle: String = "Developer Hub"
     val environmentName: String = configuration.getOptional[String]("environmentName").getOrElse("unknown")
-    EmailConfig(url, devHubBaseUrl, devHubTitle, environmentName)
+    EmailConnector.Config(url, devHubBaseUrl, devHubTitle, environmentName)
   }
 }
 
 @Singleton
 class TotpConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[TotpConfig] {
+  with Provider[TotpConnector.Config] {
 
   override def get() = {
     val url = baseUrl("totp")
-    TotpConfig(url)
+    TotpConnector.Config(url)
   }
 }
 
 @Singleton
 class AwsApiGatewayConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[AwsApiGatewayConfig] {
+  with Provider[AwsApiGatewayConnector.Config] {
 
   override def get() = {
     val url = baseUrl("aws-gateway")
     val awsApiKey = getString("awsApiKey")
-    AwsApiGatewayConfig(url, awsApiKey)
+    AwsApiGatewayConnector.Config(url, awsApiKey)
   }
 }
 
 @Singleton
 class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[ThirdPartyDelegatedAuthorityConfig] {
+  with Provider[ThirdPartyDelegatedAuthorityConnector.Config] {
 
   override def get() = {
     val url = baseUrl("third-party-delegated-authority")
-    ThirdPartyDelegatedAuthorityConfig(url)
+    ThirdPartyDelegatedAuthorityConnector.Config(url)
   }
 }
 
@@ -228,12 +234,12 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val configuration:
 @Singleton
 class ApiPlatformEventsConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[ApiPlatformEventsConfig] {
+  with Provider[ApiPlatformEventsConnector.Config] {
 
-    override def get(): ApiPlatformEventsConfig = {
+    override def get(): ApiPlatformEventsConnector.Config = {
     val url = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
-    ApiPlatformEventsConfig(url, enabled)
+    ApiPlatformEventsConnector.Config(url, enabled)
   }
 }
 

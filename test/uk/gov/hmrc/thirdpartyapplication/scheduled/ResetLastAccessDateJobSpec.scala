@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.util.UUID
-
 import akka.actor.ActorSystem
 import akka.stream.{ActorMaterializer, Materializer}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -27,13 +25,13 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationState, Collaborator, EnvironmentToken, Role, Standard, State}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -129,7 +127,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random(), lastAccessDate: DateTime): ApplicationData = {
+  def anApplicationData(id: ApplicationId = ApplicationId.random, lastAccessDate: DateTime): ApplicationData = {
     ApplicationData(
       id,
       s"myApp-${id.value}",
@@ -138,7 +136,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
       Some("description"),
       "myapplication",
       ApplicationTokens(
-        EnvironmentToken(UUID.randomUUID().toString, "ccc")
+        Token(ClientId.random, "ccc")
       ),
       ApplicationState(State.PRODUCTION),
       Standard(List.empty, None, None),

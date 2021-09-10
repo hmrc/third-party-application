@@ -22,12 +22,14 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.models.{Actor, ActorType, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with Eventually {
@@ -51,7 +53,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Save a state history" in {
 
-      val stateHistory = StateHistory(ApplicationId.random(), State.TESTING, actor)
+      val stateHistory = StateHistory(ApplicationId.random, State.TESTING, actor)
 
       val result = await(repository.insert(stateHistory))
 
@@ -65,9 +67,9 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       val stateHistory = StateHistory(applicationId, State.TESTING, actor)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random(), State.TESTING, actor)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 
@@ -81,11 +83,11 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = DateTimeUtils.now.minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor)
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor)
-      val pendingHistory3 = StateHistory(ApplicationId.random(), State.PENDING_GATEKEEPER_APPROVAL, actor)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -102,11 +104,11 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = DateTimeUtils.now.minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor)
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor)
-      val pendingHistory3 = StateHistory(ApplicationId.random(), State.PENDING_GATEKEEPER_APPROVAL, actor)
+      val pendingHistory3 = StateHistory(ApplicationId.random, State.PENDING_GATEKEEPER_APPROVAL, actor)
 
       await(repository.insert(pendingHistory1))
       await(repository.insert(approvedHistory))
@@ -123,9 +125,9 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Delete the state histories of the application" in {
 
-      val applicationId = ApplicationId.random()
+      val applicationId = ApplicationId.random
       val stateHistory = StateHistory(applicationId, State.TESTING, actor)
-      val anotherAppStateHistory = StateHistory(ApplicationId.random(), State.TESTING, actor)
+      val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor)
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
 

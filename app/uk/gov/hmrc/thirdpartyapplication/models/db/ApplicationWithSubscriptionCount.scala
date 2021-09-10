@@ -14,6 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-case class IpAllowlist(required: Boolean = false, allowlist: Set[String] = Set.empty)
+import play.api.libs.json.Json
+
+case class ApplicationLabel(id: String, name: String)
+
+object ApplicationLabel {
+  implicit val reads = Json.reads[ApplicationLabel]
+}
+
+case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
+
+object ApplicationWithSubscriptionCount {
+  implicit val reads = Json.reads[ApplicationWithSubscriptionCount]
+}

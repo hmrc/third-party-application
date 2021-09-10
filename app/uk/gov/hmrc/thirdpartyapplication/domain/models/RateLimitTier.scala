@@ -14,15 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import java.{util => ju}
-import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-case class ApplicationId(value: ju.UUID) extends AnyVal
+object RateLimitTier extends Enumeration {
+  type RateLimitTier = Value
 
-object ApplicationId {
-  def random(): ApplicationId = ApplicationId(ju.UUID.randomUUID())
+  val RHODIUM, PLATINUM, GOLD, SILVER, BRONZE = Value
 
-  implicit val applicationIdFormat = Json.valueFormat[ApplicationId]
+  implicit val format = EnumJson.enumFormat(RateLimitTier)
 }

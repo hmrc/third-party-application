@@ -26,11 +26,9 @@ import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC}
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
@@ -38,20 +36,22 @@ import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
-  val mockAuthConfig = mock[AuthConfig]
+  val mockAuthConfig = mock[AuthConnector.Config]
 
   when(mockAuthConfig.enabled).thenReturn(true)
 
 
   class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
     val applicationService: ApplicationService = ???
-    val authConfig: AuthConfig = ???
+    val authConfig: AuthConnector.Config = ???
     val authConnector: AuthConnector = ???
     implicit def ec = executionContext
   }
@@ -62,7 +62,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
       override val authConnector: AuthConnector = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]
-      override val authConfig: AuthConfig = mockAuthConfig
+      override val authConfig: AuthConnector.Config = mockAuthConfig
     }
     val request = FakeRequest()
 
@@ -201,6 +201,6 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   private def application(access: Access) =
     ApplicationResponse(
-      ApplicationId.random, "clientId", "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
 
 }

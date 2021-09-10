@@ -23,16 +23,20 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 
-@Singleton
-class AuthConnector @Inject()(val http: HttpClient, authConfig: AuthConfig)(implicit val ec: ExecutionContext) extends PlayAuthConnector  {
-  lazy val serviceUrl: String = authConfig.baseUrl
-
+object AuthConnector {
+  case class Config(
+    baseUrl: String,
+    userRole: String,
+    superUserRole: String,
+    adminRole: String,
+    enabled: Boolean,
+    canDeleteApplications: Boolean,
+    authorisationKey: String
+  )
 }
 
-case class AuthConfig(baseUrl: String,
-                      userRole: String,
-                      superUserRole: String,
-                      adminRole: String,
-                      enabled: Boolean,
-                      canDeleteApplications: Boolean,
-                      authorisationKey: String)
+@Singleton
+class AuthConnector @Inject()(val http: HttpClient, authConfig: AuthConnector.Config)(implicit val ec: ExecutionContext) extends PlayAuthConnector  {
+  lazy val serviceUrl: String = authConfig.baseUrl
+}
+

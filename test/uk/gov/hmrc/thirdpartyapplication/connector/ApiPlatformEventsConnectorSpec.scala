@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
 
@@ -67,19 +68,21 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
-    version = "2.0")
+    version = "2.0"
+  )
 
   val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
-    version = "2.0")
+    version = "2.0"
+  )
 
   abstract class Setup(enabled: Boolean = true) {
     val http: HttpClient = app.injector.instanceOf[HttpClient]
 
-    val config: ApiPlatformEventsConfig = ApiPlatformEventsConfig(wireMockUrl, enabled)
+    val config: ApiPlatformEventsConnector.Config = ApiPlatformEventsConnector.Config(wireMockUrl, enabled)
 
     val underTest = new ApiPlatformEventsConnector(http, config)
 
@@ -260,5 +263,4 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
       }
     }
   }
-
 }

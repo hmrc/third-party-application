@@ -24,13 +24,15 @@ import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.{AUTHORIZATION, CONTENT_TYPE}
 import play.api.http.Status.{ACCEPTED, INTERNAL_SERVER_ERROR, OK}
 import uk.gov.hmrc.http.{Authorization, HeaderCarrier, HttpClient}
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.http.UpstreamErrorResponse
 import play.api.libs.json._
 
 class AwsApiGatewayConnectorSpec extends ConnectorSpec {
+  import AwsApiGatewayConnector.{RequestId, UpdateApplicationUsagePlanRequest}
 
   private val applicationName = "api-platform-app"
   private val requestedUsagePlan: RateLimitTier.Value = SILVER
@@ -50,7 +52,7 @@ class AwsApiGatewayConnectorSpec extends ConnectorSpec {
 
     val http: HttpClient = app.injector.instanceOf[HttpClient]
     val awsApiKey: String = UUID.randomUUID().toString
-    val config: AwsApiGatewayConfig = AwsApiGatewayConfig(wireMockUrl, awsApiKey)
+    val config: AwsApiGatewayConnector.Config = AwsApiGatewayConnector.Config(wireMockUrl, awsApiKey)
 
     val underTest: AwsApiGatewayConnector = new AwsApiGatewayConnector(http, config)
   }

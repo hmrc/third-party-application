@@ -32,19 +32,27 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 
-case class SendEmailRequest(to: Set[String],
-                            templateId: String,
-                            parameters: Map[String, String],
-                            force: Boolean = false,
-                            auditData: Map[String, String] = Map.empty,
-                            eventUrl: Option[String] = None)
+object EmailConnector {
+  case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
+  private[connector] case class SendEmailRequest(
+    to: Set[String],
+    templateId: String,
+    parameters: Map[String, String],
+    force: Boolean = false,
+    auditData: Map[String, String] = Map.empty,
+    eventUrl: Option[String] = None
+  )
 
-object SendEmailRequest {
-  implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
+  private[connector] object SendEmailRequest {
+    implicit val sendEmailRequestFmt = Json.format[SendEmailRequest]
+  }
 }
 
+
 @Singleton
-class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(implicit val ec: ExecutionContext) {
+class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Config)(implicit val ec: ExecutionContext) {
+  import EmailConnector._
+  
   val serviceUrl = config.baseUrl
   val devHubBaseUrl = config.devHubBaseUrl
   val devHubTitle = config.devHubTitle
@@ -75,7 +83,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   }
 
   def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])
-                                       (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+                                      (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, addedCollaboratorNotification,
       Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
       .map(_ => HasSucceeded)
@@ -136,10 +144,10 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
   }
 
   private def sendClientSecretNotification(templateId: String,
-                                           actorEmailAddress: String,
-                                           clientSecretName: String,
-                                           applicationName: String,
-                                           recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+                                          actorEmailAddress: String,
+                                          clientSecretName: String,
+                                          applicationName: String,
+                                          recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     post(SendEmailRequest(recipients, templateId,
       Map(
         "actorEmailAddress" -> actorEmailAddress,
@@ -174,5 +182,3 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConfig)(impl
       }
   }
 }
-
-case class EmailConfig(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)

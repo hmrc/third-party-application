@@ -14,19 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.joda.time.DateTime
-import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-case class UserResponse(email: String,
-                        firstName: String,
-                        lastName: String,
-                        registrationTime: DateTime,
-                        lastModified: DateTime,
-                        validated: Boolean)
+object ActorType extends Enumeration {
+  type ActorType = Value
+  val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB = Value
 
-object UserResponse {
-  import DateTimeFormatters._
-  implicit val format = Json.format[UserResponse]
+  implicit val format = EnumJson.enumFormat(ActorType)
+}
+
+case class Actor(id: String, actorType: ActorType.ActorType)
+
+object Actor {
+  import play.api.libs.json.{OFormat, Json}
+  
+  implicit val format: OFormat[Actor] = Json.format[Actor]
 }

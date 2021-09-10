@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import akka.actor.ActorSystem
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier._
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
@@ -29,6 +29,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -42,14 +43,14 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val applicationName = "myapplication"
     val serverToken: String = nextString(2)
     val app = ApplicationData(
-      ApplicationId.random(),
+      ApplicationId.random,
       "MyApp",
       "myapp",
       Set.empty,
       Some("description"),
       applicationName,
       ApplicationTokens(
-        EnvironmentToken(nextString(2), serverToken)),
+      Token(ClientId.random, serverToken)),
       testingState(),
       createdOn = DateTimeUtils.now,
       lastAccess = Some(DateTimeUtils.now))

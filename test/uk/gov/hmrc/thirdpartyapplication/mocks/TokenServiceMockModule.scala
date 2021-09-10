@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.EnvironmentToken
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 import uk.gov.hmrc.thirdpartyapplication.services.TokenService
 
 trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -33,7 +33,7 @@ trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object CreateEnvironmentToken {
-      def thenReturn(environmentToken: EnvironmentToken) = {
+      def thenReturn(environmentToken: Token) = {
         when(aMock.createEnvironmentToken()).thenReturn(environmentToken)
       }
 

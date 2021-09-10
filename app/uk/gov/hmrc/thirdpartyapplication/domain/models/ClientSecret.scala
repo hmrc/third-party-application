@@ -14,27 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import org.joda.time.DateTime
+import uk.gov.hmrc.time.DateTimeUtils
 import java.{util => ju}
-import scala.util.control.NonFatal
 
-case class UserId(value: ju.UUID) extends AnyVal {
-  def asText = value.toString()
-}
-
-object UserId {
+case class ClientSecret(
+  name: String,
+  createdOn: DateTime = DateTimeUtils.now,
+  lastAccess: Option[DateTime] = None,
+  id: String = ju.UUID.randomUUID().toString,
+  hashedSecret: String
+  )
+  
+object ClientSecret {
   import play.api.libs.json.Json
-  implicit val userIdFormat = Json.valueFormat[UserId]
-
-  def random: UserId = UserId(ju.UUID.randomUUID())
-
-  def fromString(raw: String): Option[UserId] = {
-    try {
-      Some(UserId(ju.UUID.fromString(raw)))
-    }
-    catch {
-      case NonFatal(e) => None
-    }
-  }
+  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
+  
+  implicit val format = Json.format[ClientSecret]
 }

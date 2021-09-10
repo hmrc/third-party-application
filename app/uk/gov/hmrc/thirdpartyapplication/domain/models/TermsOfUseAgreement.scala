@@ -14,10 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import org.joda.time.DateTime
 
-case class Totp(secret: String, id: String)
-case class ApplicationTotps(production: Totp)
-case class TotpIds(production: String)
-case class TotpSecrets(production: String)
+case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
+
+object TermsOfUseAgreement {
+  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+  import play.api.libs.json.Json
+  
+  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  implicit val format = Json.format[TermsOfUseAgreement]
+}

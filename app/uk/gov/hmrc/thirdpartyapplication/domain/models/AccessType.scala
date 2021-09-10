@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
+
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object AccessType extends Enumeration {
   type AccessType = Value
   val STANDARD, PRIVILEGED, ROPC = Value
+
+  implicit val formatAccessType = EnumJson.enumFormat(AccessType)
 }

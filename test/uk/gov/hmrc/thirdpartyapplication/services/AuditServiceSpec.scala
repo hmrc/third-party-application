@@ -21,8 +21,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditConnector
 import uk.gov.hmrc.play.audit.model.DataEvent
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
@@ -31,6 +30,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -116,10 +116,10 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   "AuditHelper calculateAppChanges" should {
 
-    val id = ApplicationId.random()
+    val id = ApplicationId.random
     val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
     val tokens = ApplicationTokens(
-      EnvironmentToken("prodId", "prodToken")
+      Token(ClientId("prodId"), "prodToken")
     )
     val previousApp = ApplicationData(
       id = id,

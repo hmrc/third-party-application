@@ -30,24 +30,24 @@ import reactivemongo.bson.{BSONDateTime, BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.AccessType
-import uk.gov.hmrc.thirdpartyapplication.models.MongoFormat._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
   extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
-    MongoFormat.formatApplicationData, ReactiveMongoFormats.objectIdFormats)
+    ApplicationData.format, ReactiveMongoFormats.objectIdFormats)
     with MetricsHelper {
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  import MongoJsonFormatterOverrides._
 
   private val subscriptionsLookup: JsObject = Json.obj(
     f"$$lookup" -> Json.obj(
@@ -213,8 +213,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("state.name" -> state, "state.updatedOn" -> Json.obj(f"$$lte" -> BSONDateTime(updatedBefore.getMillis)))
   }
 
-  def fetchByClientId(clientId: String): Future[Option[ApplicationData]] = {
-    find("tokens.production.clientId" -> clientId).map(_.headOption)
+  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationData]] = {
+    find("tokens.production.clientId" -> clientId.value).map(_.headOption)
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationData]] = {
@@ -257,19 +257,19 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
-    def specificAPISubscription(apiContext: String, apiVersion: String) = {
-      if (apiVersion.isEmpty) {
+    def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
+      apiVersion.fold(
         matches("subscribedApis.apiIdentifier.context" -> apiContext)
-      } else {
-        matches("subscribedApis.apiIdentifier" -> Json.obj("context" -> apiContext, "version" -> apiVersion))
-      }
+      )( value =>
+        matches("subscribedApis.apiIdentifier" -> Json.obj("context" -> apiContext, "version" -> value))
+      )
     }
 
     applicationSearchFilter match {
       // API Subscriptions
       case NoAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$size" -> 0))
       case OneOrMoreAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$gt" -> Json.obj(f"$$size" -> 0)))
-      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.getOrElse(""), applicationSearch.apiVersion.getOrElse(""))
+      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
       case Created => applicationStatusMatch(State.TESTING)
@@ -347,7 +347,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
           "applications" -> paginatedFilteredAndSortedPipeline))))
   }
 
-  def fetchAllForContext(apiContext: String): Future[List[ApplicationData]] =
+  def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =

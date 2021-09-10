@@ -20,15 +20,14 @@ import java.security.SecureRandom
 
 import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.models._
-
-import scala.util.Random
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 @Singleton
 class TokenService {
-  def createEnvironmentToken(): EnvironmentToken = {
+  def createEnvironmentToken(): Token = {
     val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
     new SecureRandom().nextBytes(randomBytes)
     val accessToken = randomBytes.map("%02x".format(_)).mkString
-    EnvironmentToken((Random.alphanumeric take 28).mkString, accessToken)
+    Token(ClientId.random, accessToken)
   }
 }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
-import uk.gov.hmrc.thirdpartyapplication.models.{State, ApplicationState}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationStateUtil {
 

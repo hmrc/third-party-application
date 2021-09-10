@@ -23,7 +23,8 @@ import play.api.test.{Helpers, FakeRequest}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -43,7 +44,7 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
     val mockApplicationService = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
     val mockAuthConnector = mock[AuthConnector]
-    val mockAuthConfig = mock[AuthConfig]
+    val mockAuthConfig = mock[AuthConnector.Config]
 
     val underTest = new CollaboratorController(
       mockApplicationService,
@@ -56,8 +57,8 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
   "searchCollaborators" should {
 
     "succeed with a 200 (ok) when collaborators are found for an Api context and version" in new Setup {
-      private val context="api1"
-      private val version="1.0"
+      private val context="api1".asContext
+      private val version="1.0".asVersion
       private val partialemail = "partialemail"
       implicit val writes = Json.writes[SearchCollaboratorsRequest]
       implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")

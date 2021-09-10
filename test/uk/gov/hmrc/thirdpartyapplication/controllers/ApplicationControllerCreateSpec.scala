@@ -25,16 +25,15 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.Environment._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
@@ -78,7 +77,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
+    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -106,7 +105,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecrets("pTOTP")
+    val totp = TotpSecret("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
     val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
@@ -126,7 +125,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
-      (contentAsJson(result) \ "totp").as[TotpSecrets] shouldBe totp
+      (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
       verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
@@ -144,7 +143,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier("test", "1.0")
+      val testApi = ApiIdentifier.random
       val apis = List(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
 
@@ -159,8 +158,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier("test", "1.0")
-      val anotherTestApi = ApiIdentifier("anotherTest", "1.0")
+      val testApi = ApiIdentifier.random
+      val anotherTestApi = ApiIdentifier.random
       val apis = List(testApi, anotherTestApi)
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(subscriptions = apis)
 
@@ -317,8 +316,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
-      ApplicationId.random(),
-      "clientId",
+      ApplicationId.random,
+      ClientId("clientId"),
       "gatewayId",
       "My Application",
       environment.toString,

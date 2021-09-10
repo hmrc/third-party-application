@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
-
-trait DateTimeFormatters {
-  import org.joda.time.DateTime
+trait UtcMillisDateTimeFormatters {
+  import org.joda.time.{DateTimeZone, DateTime}
   import play.api.libs.json._
   import play.api.libs.json.JodaWrites._
 
@@ -26,7 +25,7 @@ trait DateTimeFormatters {
 
   implicit val dateTimeReader: Reads[DateTime] = new Reads[DateTime] {
     def reads(json: JsValue): JsResult[DateTime] = json match {
-      case JsNumber(n) => JsSuccess(new DateTime(n.toLong))
+      case JsNumber(n) => JsSuccess(new DateTime(n.toLong, DateTimeZone.UTC))
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
     }
   }
@@ -34,4 +33,4 @@ trait DateTimeFormatters {
   implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 
-object DateTimeFormatters extends DateTimeFormatters
+object UtcMillisDateTimeFormatters extends UtcMillisDateTimeFormatters

@@ -14,16 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.models
+package uk.gov.hmrc.thirdpartyapplication.models.db
 
-object ApiStatus extends Enumeration {
-  type APIStatus = Value
-  val ALPHA, BETA, STABLE, DEPRECATED, RETIRED = Value
+import play.api.libs.json.Json
+
+case class PaginationTotal(total: Int)
+
+object PaginationTotal {
+  implicit val reads = Json.reads[PaginationTotal]
 }
 
-object APIAccessType extends Enumeration {
-  type APIAccessType = Value
-  val PRIVATE, PUBLIC = Value
-}
+case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
 
-case class SubscriptionData(apiIdentifier: ApiIdentifier, applications: Set[ApplicationId])
+object PaginatedApplicationData {
+  implicit val reads = Json.reads[PaginatedApplicationData]
+}

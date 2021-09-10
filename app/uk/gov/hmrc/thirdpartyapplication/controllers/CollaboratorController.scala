@@ -24,14 +24,23 @@ import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 
 import scala.concurrent.ExecutionContext
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import play.api.libs.json.Json
+  
+private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersion, partialEmailMatch: Option[String])
+
+private[controllers] object SearchCollaboratorsRequest {
+  implicit val readsSearchCollaboratorsRequest = Json.reads[SearchCollaboratorsRequest]
+}
 
 @Singleton
 class CollaboratorController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,
-                                      val authConfig: AuthConfig,
+                                      val authConfig: AuthConnector.Config,
                                       subscriptionService: SubscriptionService,
                                       cc: ControllerComponents)(implicit val ec: ExecutionContext)
     extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
@@ -44,7 +53,6 @@ class CollaboratorController @Inject()(val applicationService: ApplicationServic
   }
 
   def searchCollaborators() = Action.async(parse.json) { implicit request =>
-    import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters.readsSearchCollaboratorsRequest
     withJsonBody[SearchCollaboratorsRequest] { searchRequest =>
       subscriptionService.searchCollaborators(searchRequest.apiContext, searchRequest.apiVersion, searchRequest.partialEmailMatch).map(toJson(_)).map(Ok(_))
     }

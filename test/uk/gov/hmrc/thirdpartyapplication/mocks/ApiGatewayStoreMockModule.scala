@@ -19,7 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
 
 import scala.concurrent.Future.{failed, successful}

@@ -33,18 +33,16 @@ import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidIpAllowlistException
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.SILVER
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
@@ -61,10 +59,9 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import play.api.test.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 class ApplicationControllerSpec extends ControllerSpec
-  with ApplicationStateUtil with ApiIdentifierSyntaxModule with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -87,7 +84,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
 
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
+    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -159,7 +156,7 @@ class ApplicationControllerSpec extends ControllerSpec
   val authTokenHeader: (String, String) = "authorization" -> "authorizationToken"
 
   val credentialServiceResponseToken: ApplicationTokenResponse =
-    ApplicationTokenResponse("111", "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
+    ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR,UserId.random),
@@ -193,10 +190,10 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", new DateTime(), "1.0")
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", DateTimeUtils.now, "1.0".asVersion.value)
     val checkInformation = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
-    val id = ApplicationId.random()
+    val id = ApplicationId.random
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
@@ -206,11 +203,11 @@ class ApplicationControllerSpec extends ControllerSpec
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "successfully update approval information for application" in new Setup {
+    "successfully update approval information for application XYZ" in new Setup {
       givenUserIsAuthenticated(underTest)
 
-      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse()))
+      when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse(appId = id)))
+      when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse(appId = id)))
 
       val jsonBody: JsValue = Json.toJson(checkInformation)
       val result = underTest.updateCheck(id)(request.withBody(jsonBody))
@@ -220,7 +217,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "fetch application" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
@@ -253,7 +250,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "fetch credentials" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) when the application exists for the given id" in new Setup {
       when(mockCredentialService.fetchCredentials(applicationId)).thenReturn(successful(Some(credentialServiceResponseToken)))
@@ -283,7 +280,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "add collaborators with UserId" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val admin = "admin@example.com"
     val email = "test@example.com"
     val role = DEVELOPER
@@ -307,7 +304,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "add collaborators" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val email = "test@example.com"
     val role = DEVELOPER
     val userId = UserId.random
@@ -393,7 +390,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "remove collaborator by email" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val admin = "admin@example.com"
     val collaborator = "dev@example.com"
     val adminsToEmailSet = Set.empty[String]
@@ -473,7 +470,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "remove collaborator" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val admin = "admin@example.com"
     val collaborator = "dev@example.com"
     val adminsToEmailSet = Set.empty[String]
@@ -555,9 +552,9 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "add client secret" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val applicationTokensResponse =
-      ApplicationTokenResponse("clientId", "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
+      ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
     val secretRequest = ClientSecretRequest("actor@example.com")
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
@@ -621,11 +618,11 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "deleteClientSecret" should {
 
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val clientSecretId = ju.UUID.randomUUID().toString
     val actorEmailAddress = "actor@example.com"
     val secretRequest = DeleteClientSecretRequest(actorEmailAddress)
-    val tokenResponse = ApplicationTokenResponse("aaa", "bbb", List.empty)
+    val tokenResponse = ApplicationTokenResponse(ClientId("aaa"), "bbb", List.empty)
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
@@ -664,8 +661,8 @@ class ApplicationControllerSpec extends ControllerSpec
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "validate credentials" should {
-    val validation = ValidationRequest("clientId", "clientSecret")
-    val payload = s"""{"clientId":"${validation.clientId}", "clientSecret":"${validation.clientSecret}"}"""
+    val validation = ValidationRequest(ClientId("clientId"), "clientSecret")
+    val payload = s"""{"clientId":"${validation.clientId.value}", "clientSecret":"${validation.clientSecret}"}"""
 
     "succeed with a 200 (ok) if the credentials are valid for an application" in new Setup {
       when(mockCredentialService.validateCredentials(validation)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
@@ -699,7 +696,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "Allow a valid app" in new Setup {
 
       val applicationName = "my valid app name"
-      val appId = ApplicationId.random()
+      val appId = ApplicationId.random
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION", "selfApplicationId" : "${appId.value.toString}" }"""
 
       when(mockApplicationService.validateApplicationName(*, *))
@@ -764,13 +761,13 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "query dispatcher" should {
-    val clientId = "A123XC"
+    val clientId = ClientId("A123XC")
     val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
     trait LastAccessedSetup extends Setup {
       val updatedLastAccessTime: DateTime = DateTime.now()
       val lastAccessTime: DateTime = updatedLastAccessTime.minusDays(10) //scalastyle:ignore magic.number
-      val applicationId: ApplicationId = ApplicationId.random()
+      val applicationId: ApplicationId = ApplicationId.random
 
       val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
       val updatedApplicationResponse: ExtendedApplicationResponse = extendedApplicationResponseFromApplicationResponse(applicationResponse).copy(lastAccess = Some(updatedLastAccessTime))
@@ -787,7 +784,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "retrieve by client id" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(Future(Some(aNewApplicationResponse())))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
       validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
     }
@@ -836,7 +833,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "fail with a 500 (internal server error) when a clientId is supplied" in new Setup {
       when(underTest.applicationService.fetchByClientId(clientId)).thenReturn(failed(new RuntimeException("Expected test exception")))
 
-      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId"))
+      private val result = underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}"))
 
       validateResult(result, INTERNAL_SERVER_ERROR, None, None)
     }
@@ -886,7 +883,7 @@ class ApplicationControllerSpec extends ControllerSpec
         when(underTest.applicationService.recordServerTokenUsage(applicationId)).thenReturn(Future(updatedApplicationResponse))
 
         val result =
-          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=$clientId").withHeaders(headers: _*))
+          underTest.queryDispatcher()(FakeRequest("GET", s"?clientId=${clientId.value}").withHeaders(headers: _*))
 
         validateResult(result, OK, Some(s"max-age=$applicationTtlInSecs"), None)
         (contentAsJson(result) \ "lastAccess").as[Long] shouldBe expectedLastAccessTime
@@ -1002,7 +999,7 @@ class ApplicationControllerSpec extends ControllerSpec
         val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
         val response: List[ApplicationResponse] = List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)
 
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(response))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(response))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1012,7 +1009,7 @@ class ApplicationControllerSpec extends ControllerSpec
       }
 
       "succeed with a 200 (ok) when no applications are found" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(successful(List.empty))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(successful(List.empty))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1022,7 +1019,7 @@ class ApplicationControllerSpec extends ControllerSpec
       }
 
       "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-        when(underTest.applicationService.fetchAllBySubscription(subscribesTo)).thenReturn(failed(new RuntimeException("Expected test failure")))
+        when(underTest.applicationService.fetchAllBySubscription(subscribesTo.asContext)).thenReturn(failed(new RuntimeException("Expected test failure")))
 
         val result = underTest.queryDispatcher()(queryRequest)
 
@@ -1033,7 +1030,7 @@ class ApplicationControllerSpec extends ControllerSpec
     "given a version" should {
       val version = "1.0"
       val queryRequest = FakeRequest("GET", s"?subscribesTo=$subscribesTo&version=$version")
-      val apiIdentifier = ApiIdentifier(subscribesTo, version)
+      val apiIdentifier = subscribesTo.asIdentifier(version)
 
       "succeed with a 200 (ok) when applications are found" in new Setup {
         val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
@@ -1073,9 +1070,9 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "isSubscribed" should {
 
-    val applicationId: ApplicationId = ApplicationId.random()
-    val context: String = "context"
-    val version: String = "1.0"
+    val applicationId: ApplicationId = ApplicationId.random
+    val context = "context".asContext
+    val version = "1.0".asVersion
     val api = ApiIdentifier(context, version)
 
     "succeed with a 200 (ok) when the application is subscribed to a given API version" in new Setup {
@@ -1112,7 +1109,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "fetchAllSubscriptions by ID" should {
 
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(mockSubscriptionService.fetchAllSubscriptionsForApplication(eqTo(applicationId)))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -1184,7 +1181,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "createSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val body = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
@@ -1249,12 +1246,12 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "removeSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
@@ -1264,7 +1261,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       status(result) shouldBe NO_CONTENT
     }
@@ -1278,14 +1275,14 @@ class ApplicationControllerSpec extends ControllerSpec
           when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
             .thenReturn(successful(HasSucceeded))
 
-          status(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)) shouldBe NO_CONTENT
+          status(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)) shouldBe NO_CONTENT
         })
       }
 
     "fail with a 401 (unauthorized) when trying to remove a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-          assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)))
+          assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)))
         })
       }
 
@@ -1294,7 +1291,7 @@ class ApplicationControllerSpec extends ControllerSpec
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
-      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context", "1.0")(request)
+      val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
@@ -1324,7 +1321,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "requestUplift" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val requestedByEmailAddress = "big.boss@example.com"
     val requestedName = "Application Name"
     val upliftRequest = UpliftRequest(requestedName, requestedByEmailAddress)
@@ -1383,7 +1380,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "update rate limit tier" should {
 
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
     val validUpdateRateLimitTierJson = Json.parse("""{ "rateLimitTier" : "silver" }""")
 
@@ -1448,7 +1445,7 @@ class ApplicationControllerSpec extends ControllerSpec
 
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
+      val applicationId: ApplicationId = ApplicationId.random
       val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
       when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
 
@@ -1458,7 +1455,7 @@ class ApplicationControllerSpec extends ControllerSpec
     }
 
     "fail when the JSON message is invalid" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
+      val applicationId: ApplicationId = ApplicationId.random
       val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "foo" : ["192.168.100.0/22", "192.168.104.1/32"] }""")
       when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
 
@@ -1468,7 +1465,7 @@ class ApplicationControllerSpec extends ControllerSpec
     }
 
     "fail when the IP allowlist is invalid" in new Setup {
-      val applicationId: ApplicationId = ApplicationId.random()
+      val applicationId: ApplicationId = ApplicationId.random
       val validUpdateIpAllowlistJson: JsValue = Json.parse("""{ "required": false, "allowlist" : ["392.168.100.0/22"] }""")
       val errorMessage = "invalid IP allowlist"
       when(underTest.applicationService.updateIpAllowlist(eqTo(applicationId), *))
@@ -1577,7 +1574,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "strideUserDeleteApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
     val deleteRequest = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
@@ -1609,21 +1606,21 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   private def anAPI() = {
-    new ApiIdentifier("some-context", "1.0")
+    "some-context".asIdentifier("1.0")
   }
 
   private def aSubcriptionData() = {
-    SubscriptionData(anAPI(), Set(ApplicationId.random(), ApplicationId.random()))
+    SubscriptionData(anAPI(), Set(ApplicationId.random, ApplicationId.random))
   }
 
   private def anAPIJson() = {
     """{ "context" : "some-context", "version" : "1.0" }"""
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION, appId: ApplicationId = ApplicationId.random) = {
     new ApplicationResponse(
-      ApplicationId.random(),
-      "clientId",
+      appId,
+      ClientId("clientId"),
       "gatewayId",
       "My Application",
       environment.toString,

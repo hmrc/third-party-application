@@ -17,13 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, TESTING}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
-
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
 
   "RateLimitTier" should {
@@ -38,13 +37,13 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
   "Application with Uplift request" should {
     val app =
       ApplicationData(
-        ApplicationId.random(),
+        ApplicationId.random,
         "MyApp",
         "myapp",
         Set.empty,
         None,
         "a",
-        ApplicationTokens(EnvironmentToken("cid", "at")),
+        ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(List.empty, None, None),
         DateTimeUtils.now,
@@ -75,7 +74,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random))),
           wso2ApplicationName = "wso2ApplicationName",
-          environmentToken = EnvironmentToken("clientId", "accessToken")
+          environmentToken = Token(ClientId("clientId"), "accessToken")
       )
     }
 

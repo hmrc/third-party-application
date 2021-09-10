@@ -25,18 +25,34 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-@Singleton
-class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConfig)
-                                      (implicit val ec: ExecutionContext) {
+object AwsApiGatewayConnector {
+  case class Config(baseUrl: String, awsApiKey: String)
 
+  private[connector] case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
+
+  private[connector] object UpdateApplicationUsagePlanRequest {
+    implicit val writes = play.api.libs.json.Json.writes[UpdateApplicationUsagePlanRequest]
+  }
+
+  private[connector] case class RequestId(value: String) extends AnyVal
+
+  private[connector] object RequestId {
+    implicit val reads: Reads[RequestId] = (JsPath \ "RequestId").read[String].map(RequestId(_))
+  }
+}
+
+@Singleton
+class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayConnector.Config)
+(implicit val ec: ExecutionContext) {
+  import AwsApiGatewayConnector._
+  
   val serviceBaseUrl: String = s"${config.baseUrl}/v1/application"
   val awsApiKey: String = config.awsApiKey
   val apiKeyHeaderName = "x-api-key"
@@ -44,7 +60,6 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"${config.baseUrl}/v1/usage-plans/$rateLimitTier/api-keys"
   private def deleteAPIKeyURL(applicationName: String): String = s"${config.baseUrl}/v1/api-keys/$applicationName"
 
-  private implicit val requestIdReads: Reads[RequestId] = (JsPath \ "RequestId").read[String].map(RequestId)
 
   def createOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier)(hc: HeaderCarrier): Future[HasSucceeded] = {
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
@@ -72,7 +87,3 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
     })
   }
 }
-
-case class AwsApiGatewayConfig(baseUrl: String, awsApiKey: String)
-case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
-case class RequestId(value: String) extends AnyVal

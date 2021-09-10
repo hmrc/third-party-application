@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import EmailConnector.SendEmailRequest
 
 class EmailConnectorSpec extends ConnectorSpec {
 
@@ -32,7 +33,7 @@ class EmailConnectorSpec extends ConnectorSpec {
 
   trait Setup {
     val http: HttpClient = app.injector.instanceOf[HttpClient]
-    val config = EmailConfig(wireMockUrl, hubUrl, hubTestTitle, environmentName)
+    val config = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
     val connector = new EmailConnector(http, config)
     
     def emailWillReturn(request: SendEmailRequest) = {

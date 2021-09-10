@@ -21,15 +21,15 @@ import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiIdentifier, EnvironmentToken, HasSucceeded, IpAllowlist, PaginatedApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApplicationRepoMock {
@@ -65,17 +65,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByClientId {
-      def thenReturnWhen(clientId: String)(applicationData: ApplicationData) =
-        when(aMock.fetchByClientId(clientId)).thenReturn(successful(Some(applicationData)))
+      def thenReturnWhen(clientId: ClientId)(applicationData: ApplicationData) =
+        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
 
       def thenReturnNone() =
-        when(aMock.fetchByClientId(*)).thenReturn(successful(None))
+        when(aMock.fetchByClientId(*[ClientId])).thenReturn(successful(None))
 
-      def thenReturnNoneWhen(clientId: String) =
-        when(aMock.fetchByClientId(clientId)).thenReturn(successful(None))
+      def thenReturnNoneWhen(clientId: ClientId) =
+        when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.fetchByClientId(*)).thenReturn(failed(failWith))
+          when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
     }
 
     object Save {
@@ -164,10 +164,10 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchAllForContent {
-      def thenReturnEmptyWhen(apiContext: String) =
+      def thenReturnEmptyWhen(apiContext: ApiContext) =
       when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(List.empty))
 
-      def thenReturnWhen(apiContext: String)(apps: ApplicationData*) =
+      def thenReturnWhen(apiContext: ApiContext)(apps: ApplicationData*) =
       when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
 
     }
@@ -279,7 +279,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         val updatedApplication =
           application
             .copy(tokens =
-              ApplicationTokens(EnvironmentToken(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
+              ApplicationTokens(Token(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
 
         when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))
       }

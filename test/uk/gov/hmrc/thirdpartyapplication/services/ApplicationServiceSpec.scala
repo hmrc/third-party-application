@@ -28,15 +28,17 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.{EmailConnector, ThirdPartyDelegatedAuthorityConnector, TotpConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.{COLLABORATOR, GATEKEEPER}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{RateLimitTier, SILVER}
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -45,8 +47,6 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
-import uk.gov.hmrc.thirdpartyapplication.testutils.ApiIdentifierSyntaxModule
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -54,7 +54,7 @@ import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModule with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   val idsByEmail = mutable.Map[String, UserId]()
   def idOf(email: String) = {
@@ -65,7 +65,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
   val devEmail = "dev@example.com"
 
   val serverTokenLastAccess = DateTime.now
-  private val productionToken = EnvironmentToken("aaa", "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -74,7 +74,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId: ApplicationId = ApplicationId.random()
+    val applicationId: ApplicationId = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
     lazy val locked = false
@@ -138,7 +138,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(subscriptions))
+      when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
 
   }
 
@@ -271,10 +271,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
-        access = Privileged(totpIds = Some(TotpIds("prodTotpId")))
+        access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
-      val expectedTotp = ApplicationTotps(prodTOTP)
-      createdApp.totp shouldBe Some(TotpSecrets(expectedTotp.production.secret))
+      createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -319,7 +318,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Privileged())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random()))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
 
       intercept[ApplicationAlreadyExists] {
@@ -335,7 +334,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
       val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
 
-      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random()))
+      ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
 
       intercept[ApplicationAlreadyExists] {
@@ -523,7 +522,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
       val testUserEmail = "test@example.com"
       val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
       val tokens = ApplicationTokens(
-        EnvironmentToken("prodId", "prodToken")
+        Token(ClientId("prodId"), "prodToken")
       )
 
       val existingApplication = ApplicationData(
@@ -902,7 +901,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
   "fetchByClientId" should {
 
     "return none when no application exists in the repository for the given client id" in new Setup {
-      val clientId = "some-client-id"
+      val clientId = ClientId("some-client-id")
       ApplicationRepoMock.FetchByClientId.thenReturnNone()
 
       val result: Option[ApplicationResponse] = await(underTest.fetchByClientId(clientId))
@@ -937,7 +936,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = EnvironmentToken("aaa", serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionToken = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
@@ -965,7 +964,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     }
 
     "fetch all applications for a given collaborator user id" in new Setup {
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier(), "api2".asIdentifier()))
+      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier, "api2".asIdentifier))
       val userId = UserId.random
       val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
@@ -982,7 +981,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
   "fetchAllBySubscription" should {
     "return applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context"
+      val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnWhen(apiContext)(applicationData)
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
@@ -992,7 +991,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     }
 
     "return no matching applications for a given subscription to an API context" in new Setup {
-      val apiContext = "some-context"
+      val apiContext = "some-context".asContext
 
       ApplicationRepoMock.FetchAllForContent.thenReturnEmptyWhen(apiContext)
       val result: List[ApplicationResponse] = await(underTest.fetchAllBySubscription(apiContext))
@@ -1181,7 +1180,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
     }
 
     "block a duplicate app name" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random()))
+      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random))
 
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(List.empty[String])
@@ -1300,7 +1299,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
       AuditServiceMock.Audit.thenReturnSuccess()
 
       val application: ApplicationData = anApplicationData(applicationId, testingState())
-      val anotherApplication: ApplicationData = anApplicationData(ApplicationId.random(), productionState("admin@example.com"))
+      val anotherApplication: ApplicationData = anApplicationData(ApplicationId.random, productionState("admin@example.com"))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,anotherApplication)
@@ -1350,7 +1349,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     "fail when the IP address is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("392.168.100.0/22"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("392.168.100.0/22"))))
       }
 
       error.getMessage shouldBe "Value [392] not in range [0,255]"
@@ -1358,7 +1357,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     "fail when the mask is out of range" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("192.168.100.0/55"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("192.168.100.0/55"))))
       }
 
       error.getMessage shouldBe "Value [55] not in range [0,32]"
@@ -1366,7 +1365,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
     "fail when the format is invalid" in new Setup {
       val error: InvalidIpAllowlistException = intercept[InvalidIpAllowlistException] {
-        await(underTest.updateIpAllowlist(ApplicationId.random(), IpAllowlist(required = true, Set("192.100.0/22"))))
+        await(underTest.updateIpAllowlist(ApplicationId.random, IpAllowlist(required = true, Set("192.100.0/22"))))
       }
 
       error.getMessage shouldBe "Could not parse [192.100.0/22]"
@@ -1379,8 +1378,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
       val deleteRequestedBy = "email@example.com"
       val gatekeeperUserId = "big.boss.gatekeeper"
       val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
-      val api1 = "hello".asIdentifier("1.0")
-      val api2 = "goodbye".asIdentifier("1.0")
+      val api1 = "hello".asIdentifier
+      val api2 = "goodbye".asIdentifier
 
       type T = ApplicationData => Future[AuditResult]
       val mockAuditResult = mock[Future[AuditResult]]
@@ -1393,7 +1392,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
       when(mockStateHistoryRepository.deleteByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
 
-      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*)(*)).thenReturn(successful(HasSucceeded))
+      when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
 
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
     }
@@ -1506,9 +1505,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with ApiIdentifierSyntaxModul
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Privileged())
-      val ropcApplicationData: ApplicationData = anApplicationData(ApplicationId.random(), access = Ropc())
+      val standardApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Standard())
+      val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Privileged())
+      val ropcApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,

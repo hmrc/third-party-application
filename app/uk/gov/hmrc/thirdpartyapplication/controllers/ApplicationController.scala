@@ -26,12 +26,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConfig
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.PRIVILEGED
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.ROPC
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -41,6 +39,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.utils._
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -54,7 +54,7 @@ import scala.util.Try
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,
-                                      val authConfig: AuthConfig,
+                                      val authConfig: AuthConnector.Config,
                                       credentialService: CredentialService,
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
@@ -267,7 +267,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
           .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND,
             CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
       case ("clientId" :: _, _) =>
-        fetchByClientId(request.queryString("clientId").head)
+        val clientId = ClientId(request.queryString("clientId").head)
+        fetchByClientId(clientId)
           .map(addHeaders(_.header.status == OK,
             CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
       case ("environment" :: "userId" :: _, _) =>
@@ -284,9 +285,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       case ("emailAddress" :: _, _) =>
         fetchAllForCollaborator(request.queryString("emailAddress").head)
       case ("subscribesTo" :: "version" :: _, _) =>
-        fetchAllBySubscriptionVersion(ApiIdentifier(request.queryString("subscribesTo").head, request.queryString("version").head))
+        val context = ApiContext(request.queryString("subscribesTo").head)
+        val version = ApiVersion(request.queryString("version").head)
+        fetchAllBySubscriptionVersion(ApiIdentifier(context, version))
       case ("subscribesTo" :: _, _) =>
-        fetchAllBySubscription(request.queryString("subscribesTo").head)
+        val context = ApiContext(request.queryString("subscribesTo").head)
+        fetchAllBySubscription(context)
       case ("noSubscriptions" :: _, _) =>
         fetchAllWithNoSubscriptions()
       case _ => fetchAll()
@@ -307,7 +311,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       "No application was found for server token"
     )
 
-  private def fetchByClientId(clientId: String)(implicit hc: HeaderCarrier): Future[Result] =
+  private def fetchByClientId(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Result] =
     fetchAndUpdateApplication(
       () => applicationService.fetchByClientId(clientId),
       appId => applicationService.recordApplicationUsage(appId),
@@ -349,7 +353,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAll().map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllBySubscription(apiContext: String) = {
+  private def fetchAllBySubscription(apiContext: ApiContext) = {
     applicationService.fetchAllBySubscription(apiContext).map(apps => Ok(toJson(apps))) recover recovery
   }
 
@@ -371,7 +375,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       .map(subs => Ok(toJson(subs))) recover recovery
   }
 
-  def isSubscribed(applicationId: ApplicationId, context: String, version: String) = Action.async {
+  def isSubscribed(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = Action.async {
     val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(applicationId, api) map {
       case true => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
@@ -387,7 +391,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         }
     }
 
-  def removeSubscriptionForApplication(applicationId: ApplicationId, context: String, version: String) = {
+  def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
     }

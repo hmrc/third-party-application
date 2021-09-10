@@ -22,11 +22,12 @@ import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.controllers.{DeleteApplicationRequest, RejectUpliftRequest}
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.models.StateHistory.dateTimeOrdering
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{Blocked, Unblocked, _}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 

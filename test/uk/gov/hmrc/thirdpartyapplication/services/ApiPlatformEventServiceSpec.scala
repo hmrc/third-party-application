@@ -24,12 +24,14 @@ import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.TableDrivenPropertyChecks
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.ActorType
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.ActorType
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -39,9 +41,9 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val mockConnector: ApiPlatformEventsConnector = mock[ApiPlatformEventsConnector]
 
   val applicationState: ApplicationState = ApplicationState(name = State.TESTING, requestedByEmailAddress = None, verificationCode = None)
-  val applicationData: ApplicationData = ApplicationData(id = ApplicationId.random(), name = "name", normalisedName = "normalisedName", collaborators = Set.empty,
+  val applicationData: ApplicationData = ApplicationData(id = ApplicationId.random, name = "name", normalisedName = "normalisedName", collaborators = Set.empty,
     description = None, wso2ApplicationName = "wso2Name",
-    tokens = ApplicationTokens(EnvironmentToken("clientId", "accessToken", List.empty)),
+    tokens = ApplicationTokens(Token(ClientId("clientId"), "accessToken", List.empty)),
     state = applicationState,
     createdOn = DateTime.now(),
     lastAccess = None,
@@ -52,8 +54,8 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   val adminEmail: String = "admin@admin.com"
   val teamMemberEmail: String = "bob@bob.com"
   val teamMemberRole: String = "ADMIN"
-  val context: String = "api/path/path2"
-  val version: String = "2.0"
+  val context: ApiContext = "api/path/path2".asContext
+  val version: ApiVersion = "2.0".asVersion
   val appDataWithCollaboratorAdded: ApplicationData = applicationData.copy(collaborators = Set(Collaborator(adminEmail, Role.ADMINISTRATOR, UserId.random)))
 
 
@@ -406,8 +408,8 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
       else when(mockConnector.sendApiUnsubscribedEvent(any[ApiUnsubscribedEvent])(any[HeaderCarrier])).thenReturn(Future.successful(connectorResult))
 
       val f: (ApplicationData, Map[String, String]) => Future[Boolean] = (appData: ApplicationData, data: Map[String, String]) => {
-        val context = data.getOrElse("context", "")
-        val version = data.getOrElse("version", "")
+        val context = data.get("context").map(ApiContext(_)).get
+        val version = data.get("version").map(ApiVersion(_)).get
         if (subscribed) objInTest.sendApiSubscribedEvent(appData, context, version)
         else objInTest.sendApiUnsubscribedEvent(appData, context, version)
       }
@@ -452,8 +454,8 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         "clientSecretId" -> clientSecretId,
         "oldRedirectUris" -> oldRedirectUris,
         "newRedirectUris" -> newRedirectUris,
-        "context" -> context,
-        "version" -> version)
+        "context" -> context.value,
+        "version" -> version.value)
 
       val result: Boolean = await(f.apply(appDataWithCollaboratorAdded, data))
       result shouldBe expectedResult
@@ -499,15 +501,15 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
         apiSubscribedEvent.eventType shouldBe EventType.API_SUBSCRIBED
-        apiSubscribedEvent.context shouldBe context
-        apiSubscribedEvent.version shouldBe version
+        apiSubscribedEvent.context shouldBe context.value
+        apiSubscribedEvent.version shouldBe version.value
       case apiUnSubscribedEvent: ApiUnsubscribedEvent =>
         val actor = apiUnSubscribedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
         apiUnSubscribedEvent.eventType shouldBe EventType.API_UNSUBSCRIBED
-        apiUnSubscribedEvent.context shouldBe context
-        apiUnSubscribedEvent.version shouldBe version
+        apiUnSubscribedEvent.context shouldBe context.value
+        apiUnSubscribedEvent.version shouldBe version.value
 
     }
   }

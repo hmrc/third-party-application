@@ -28,7 +28,8 @@ import scalaj.http.{Http, HttpResponse}
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
@@ -73,8 +74,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   val cookie = Random.alphanumeric.take(testCookieLength).mkString
   val serviceName = "service"
   val apiName = "apiName"
-  val context = "myapi"
-  val version = "1.0"
+  val context = "myapi".asContext
+  val version = "1.0".asVersion
   val standardAccess = Standard(
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
@@ -178,10 +179,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   feature("Validate Credentials") {
-    def validationRequest(clientId: String, clientSecret: String) =
+    def validationRequest(clientId: ClientId, clientSecret: String) =
       s"""
          | {
-         |   "clientId": "$clientId",
+         |   "clientId": "${clientId.value}",
          |   "clientSecret": "$clientSecret"
          | }
          |""".stripMargin
@@ -212,7 +213,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createApplication(awsApiGatewayApplicationName)
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest("foo", "bar")
+      val requestBody = validationRequest(ClientId("foo"), "bar")
       val validationResponse = postData(s"/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
@@ -252,12 +253,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       createdResponse.code shouldBe CREATED
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      val totpIds = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpIds]
-      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecrets]
+      val totpIds = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
+      val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecret]
 
       totpIds match {
-        case TotpIds("prod-id") => totpSecrets shouldBe TotpSecrets("prod-secret")
-        case TotpIds("sandbox-id") => totpSecrets shouldBe TotpSecrets("sandbox-secret")
+        case TotpId("prod-id") => totpSecrets shouldBe TotpSecret("prod-secret")
+        case TotpId("sandbox-id") => totpSecrets shouldBe TotpSecret("sandbox-secret")
         case _ => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
       }
     }
@@ -554,7 +555,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     Json.parse(createdResponse.body).as[ApplicationResponse]
   }
 
-  private def subscriptionExists(applicationId: ApplicationId, apiContext: String, apiVersion: String) = {
+  private def subscriptionExists(applicationId: ApplicationId, apiContext: ApiContext, apiVersion: ApiVersion) = {
     subscriptionRepository.add(applicationId, new ApiIdentifier(apiContext, apiVersion))
   }
 

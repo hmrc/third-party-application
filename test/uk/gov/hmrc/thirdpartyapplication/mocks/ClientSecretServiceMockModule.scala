@@ -20,11 +20,11 @@ import java.util.UUID
 
 import com.github.t3hnar.bcrypt._
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.ClientSecret
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.services.ClientSecretService
 
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

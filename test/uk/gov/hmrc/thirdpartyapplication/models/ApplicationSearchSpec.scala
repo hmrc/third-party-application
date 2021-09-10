@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import org.joda.time.{DateTime, DateTimeZone}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 
 
 class ApplicationSearchSpec extends HmrcSpec {
@@ -94,7 +95,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse date only into LastUseBeforeDate filter" in {
       val dateAsISOString = "2020-02-22"
-      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0)
+      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0, DateTimeZone.UTC)
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
@@ -120,7 +121,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse date only into LastUseAfterDate filter" in {
       val dateAsISOString = "2020-02-22"
-      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0)
+      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0, DateTimeZone.UTC)
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 
@@ -172,7 +173,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.apiContext shouldBe Some(api)
+      searchObject.apiContext shouldBe Some(api.asContext)
       searchObject.filters should contain (SpecificAPISubscription)
     }
 
@@ -184,8 +185,8 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters should contain (SpecificAPISubscription)
-      searchObject.apiContext shouldBe Some(api)
-      searchObject.apiVersion shouldBe Some(apiVersion)
+      searchObject.apiContext shouldBe Some(api.asContext)
+      searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
     }
 
     "populate sort as NameAscending when sort is NAME_ASC" in {

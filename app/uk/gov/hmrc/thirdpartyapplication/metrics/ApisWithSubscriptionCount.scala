@@ -20,7 +20,7 @@ import com.google.inject.Singleton
 import javax.inject.Inject
 import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
-import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
@@ -47,7 +47,7 @@ class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: Subscripti
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
 
-    def apiName(apiIdentifier: ApiIdentifier): String = s"${sanitiseGrafanaNodeName(apiIdentifier.context)}.${sanitiseGrafanaNodeName(apiIdentifier.version)}"
+    def apiName(apiIdentifier: ApiIdentifier): String = s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
 
     subscriptionRepository.findAll()
       .map(subscriptions => subscriptions.map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size).toMap)

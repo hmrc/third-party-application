@@ -25,15 +25,16 @@ import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector.{AuthConfig, AuthConnector}
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers._
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.models.Environment._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
@@ -46,6 +47,8 @@ import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
 import play.api.test.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -70,7 +73,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers = HeaderCarrier()
 
-    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
+    val mockAuthConfig = mock[AuthConnector.Config](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(true)
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -107,8 +110,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
     new ApplicationResponse(
-      ApplicationId.random(),
-      "clientId",
+      ApplicationId.random,
+      ClientId("clientId"),
       "gatewayId",
       "My Application",
       environment.toString,
@@ -136,7 +139,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "createSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val body = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
@@ -222,7 +225,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "Fetch app by id" should {
-    val appId = ApplicationId.random()
+    val appId = ApplicationId.random
 
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
@@ -258,7 +261,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "fetchAppStateHistoryById" should {
-    val appId = ApplicationId.random()
+    val appId = ApplicationId.random
 
     "return app with history" in new Setup {
       val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
@@ -275,7 +278,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "approveUplift" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
@@ -336,7 +339,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "reject Uplift" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
     val testReq = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
@@ -395,7 +398,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "resendVerification" should {
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     val gatekeeperUserId = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
@@ -452,7 +455,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "blockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random()
+    val applicationId: ApplicationId = ApplicationId.random
 
     "block the application" in new Setup {
 
@@ -468,7 +471,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "unblockApplication" should {
-    val applicationId: ApplicationId = ApplicationId.random()
+    val applicationId: ApplicationId = ApplicationId.random
 
     "unblock the application" in new Setup {
 
@@ -487,7 +490,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random(),
+  private def anAppResult(id: ApplicationId = ApplicationId.random,
                           submittedOn: DateTime = DateTimeUtils.now,
                           state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
@@ -499,6 +502,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def anAppResponse(appId: ApplicationId) = {
-    new ApplicationResponse(appId, "clientId", "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
   }
 }

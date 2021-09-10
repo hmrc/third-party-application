@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnecto
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -36,23 +37,23 @@ trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with Argumen
 
     object DeleteSubscriptions {
       def thenReturnHasSucceeded() = {
-        when(aMock.deleteSubscriptions(*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.deleteSubscriptions(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def thenReturnHasSucceededWhen(clientId: String) = {
+      def thenReturnHasSucceededWhen(clientId: ClientId) = {
         when(aMock.deleteSubscriptions(eqTo(clientId))(*)).thenReturn(successful(HasSucceeded))
       }
 
       def thenFail(failsWith: Throwable) = {
-        when(aMock.deleteSubscriptions(*)(*)).thenReturn(failed(failsWith))
+        when(aMock.deleteSubscriptions(*[ClientId])(*)).thenReturn(failed(failsWith))
       }
 
-      def verifyCalledWith(clientId: String) = {
+      def verifyCalledWith(clientId: ClientId) = {
         ApiSubscriptionFieldsConnectorMock.verify.deleteSubscriptions(eqTo(clientId))(*)
       }
 
       def verifyCalled() = {
-        ApiSubscriptionFieldsConnectorMock.verify.deleteSubscriptions(*)(*)
+        ApiSubscriptionFieldsConnectorMock.verify.deleteSubscriptions(*[ClientId])(*)
       }
 
     }

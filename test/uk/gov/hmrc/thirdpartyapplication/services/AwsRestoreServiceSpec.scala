@@ -20,14 +20,15 @@ import java.util.UUID
 
 import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.BRONZE
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.BRONZE
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
@@ -40,7 +41,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
           collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR, UserId.random))
         ),
         applicationName,
-        EnvironmentToken("", serverToken, List.empty))
+        Token(ClientId(""), serverToken, List.empty))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

@@ -28,25 +28,18 @@ import uk.gov.hmrc.lock.LockKeeper
 import uk.gov.hmrc.lock.LockMongoRepository
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
+import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.COLLABORATOR
-import uk.gov.hmrc.thirdpartyapplication.models.ActorType.GATEKEEPER
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_GATEKEEPER_APPROVAL
-import uk.gov.hmrc.thirdpartyapplication.models.State.PENDING_REQUESTER_VERIFICATION
-import uk.gov.hmrc.thirdpartyapplication.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.models.State.TESTING
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
@@ -258,7 +251,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     updated.exists(_.role == Role.ADMINISTRATOR)
   }
 
-  def fetchByClientId(clientId: String): Future[Option[ApplicationResponse]] = {
+  def fetchByClientId(clientId: ClientId): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByClientId(clientId) map {
       _.map(application => ApplicationResponse(data = application))
     }
@@ -327,7 +320,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def fetchAllBySubscription(apiContext: String): Future[List[ApplicationResponse]] = {
+  def fetchAllBySubscription(apiContext: ApiContext): Future[List[ApplicationResponse]] = {
     applicationRepository.fetchAllForContext(apiContext) map {
       _.map(application => ApplicationResponse(data = application))
     }
@@ -425,7 +418,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
     }
 
-    def createAppData(ids: Option[TotpIds]): ApplicationData = {
+    def createAppData(ids: Option[TotpId]): ApplicationData = {
       def newPrivilegedAccess = {
         application.access.asInstanceOf[Privileged].copy(totpIds = ids)
       }
@@ -445,13 +438,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => successful(Unit)
       }
 
-      applicationTotp <- generateApplicationTotp(application.access.accessType)
-      appData = createAppData(extractTotpId(applicationTotp))
+      totp <- generateApplicationTotp(application.access.accessType)
+      appData = createAppData(extractTotpId(totp))
       _ <- createInApiGateway(appData)
       _ <- applicationRepository.save(appData)
       _ <- createStateHistory(appData)
       _ = auditAppCreated(appData)
-    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(applicationTotp))
+    } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(totp))
 
     f andThen {
       case Failure(_) =>
@@ -460,26 +453,19 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[ApplicationTotps]] = {
-
-    def generateTotp() = {
-      for {
-        productionTotp <- totpConnector.generateTotp()
-      } yield Some(ApplicationTotps(productionTotp))
-    }
-
+  private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
-      case PRIVILEGED => generateTotp()
+      case PRIVILEGED => totpConnector.generateTotp().map(Some(_))
       case _ => Future(None)
     }
   }
 
-  private def extractTotpId(applicationTotps: Option[ApplicationTotps]): Option[TotpIds] = {
-    applicationTotps.map { t => TotpIds(t.production.id) }
+  private def extractTotpId(totp: Option[Totp]): Option[TotpId] = {
+    totp.map { t => TotpId(t.id) }
   }
 
-  private def extractTotpSecret(applicationTotps: Option[ApplicationTotps]): Option[TotpSecrets] = {
-    applicationTotps.map { t => TotpSecrets(t.production.secret) }
+  private def extractTotpSecret(totp: Option[Totp]): Option[TotpSecret] = {
+    totp.map { t => TotpSecret(t.secret) }
   }
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {

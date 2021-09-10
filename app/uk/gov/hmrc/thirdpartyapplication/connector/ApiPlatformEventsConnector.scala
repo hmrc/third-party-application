@@ -27,7 +27,11 @@ import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConfig)
+object ApiPlatformEventsConnector {
+  case class Config(baseUrl: String, enabled: Boolean)
+}
+
+class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConnector.Config)
                                           (implicit val ec: ExecutionContext) extends ResponseUtils {
 
   val serviceBaseUrl: String = s"${config.baseUrl}"
@@ -88,5 +92,3 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
     serviceBaseUrl + applicationEventsUri + path
   }
 }
-
-case class ApiPlatformEventsConfig(baseUrl: String, enabled: Boolean)

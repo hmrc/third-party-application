@@ -16,20 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import java.security.MessageDigest
 
-import com.google.common.base.Charsets
-import org.apache.commons.codec.binary.Base64
 import org.joda.time.DateTime
-import play.api.libs.json._
-import uk.gov.hmrc.thirdpartyapplication.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
-import uk.gov.hmrc.thirdpartyapplication.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.models.RateLimitTier.{BRONZE, RateLimitTier}
-import uk.gov.hmrc.thirdpartyapplication.models.Role.Role
-import uk.gov.hmrc.thirdpartyapplication.models.State.{PRODUCTION, State, TESTING}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.time.DateTimeUtils
-import java.{util => ju}
 
 trait ApplicationRequest {
   val name: String
@@ -68,26 +61,8 @@ case class UpdateApplicationRequest(override val name: String,
   }
 }
 
-case class ContactDetails(fullname: String, email: String, telephoneNumber: String)
-
-object ContactDetails {
-  implicit val formatContactDetails = Json.format[ContactDetails]
-}
-
-case class TermsOfUseAgreement(emailAddress: String, timeStamp: DateTime, version: String)
-
-case class CheckInformation(contactDetails: Option[ContactDetails] = None,
-                            confirmedName: Boolean = false,
-                            apiSubscriptionsConfirmed: Boolean = false,
-                            apiSubscriptionConfigurationsConfirmed: Boolean = false,
-                            providedPrivacyPolicyURL: Boolean = false,
-                            providedTermsAndConditionsURL: Boolean = false,
-                            applicationDetails: Option[String] = None,
-                            teamConfirmed: Boolean = false,
-                            termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty)
-
 case class ApplicationResponse(id: ApplicationId,
-                               clientId: String,
+                               clientId: ClientId,
                                gatewayId: String,
                                name: String,
                                deployedTo: String,
@@ -100,7 +75,7 @@ case class ApplicationResponse(id: ApplicationId,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
                                access: Access = Standard(List.empty, None, None),
-                               state: ApplicationState = ApplicationState(name = TESTING),
+                               state: ApplicationState = ApplicationState(name = State.TESTING),
                                rateLimitTier: RateLimitTier = BRONZE,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
@@ -147,7 +122,7 @@ object ApplicationResponse {
 }
 
 case class ExtendedApplicationResponse(id: ApplicationId,
-                                       clientId: String,
+                                       clientId: ClientId,
                                        gatewayId: String,
                                        name: String,
                                        deployedTo: String,
@@ -196,61 +171,10 @@ object ExtendedApplicationResponse {
 
 case class PaginatedApplicationResponse(applications: List[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
 
-case class PaginationTotal(total: Int)
 
-case class PaginatedApplicationData(applications: List[ApplicationData], totals: List[PaginationTotal], matching: List[PaginationTotal])
+case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
 
-case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecrets] = None)
 
-case class ApplicationLabel(id: String, name: String)
-case class ApplicationWithSubscriptionCount(_id: ApplicationLabel, count: Int)
-
-sealed trait Access {
-  val accessType: AccessType.Value
-}
-
-case class Standard(redirectUris: List[String] = List.empty,
-                    termsAndConditionsUrl: Option[String] = None,
-                    privacyPolicyUrl: Option[String] = None,
-                    overrides: Set[OverrideFlag] = Set.empty) extends Access {
-  override val accessType = STANDARD
-}
-
-case class Privileged(totpIds: Option[TotpIds] = None, scopes: Set[String] = Set.empty) extends Access {
-  override val accessType = PRIVILEGED
-}
-
-case class Ropc(scopes: Set[String] = Set.empty) extends Access {
-  override val accessType = ROPC
-}
-
-sealed trait OverrideFlag {
-  val overrideType: OverrideType.Value
-}
-
-case class PersistLogin() extends OverrideFlag {
-  val overrideType = OverrideType.PERSIST_LOGIN_AFTER_GRANT
-}
-
-case class SuppressIvForAgents(scopes: Set[String]) extends OverrideFlag {
-  val overrideType = OverrideType.SUPPRESS_IV_FOR_AGENTS
-}
-
-case class SuppressIvForOrganisations(scopes: Set[String]) extends OverrideFlag {
-  val overrideType = OverrideType.SUPPRESS_IV_FOR_ORGANISATIONS
-}
-
-case class GrantWithoutConsent(scopes: Set[String]) extends OverrideFlag {
-  val overrideType = OverrideType.GRANT_WITHOUT_TAXPAYER_CONSENT
-}
-
-case class SuppressIvForIndividuals(scopes: Set[String]) extends OverrideFlag {
-  val overrideType = OverrideType.SUPPRESS_IV_FOR_INDIVIDUALS
-}
-
-object OverrideType extends Enumeration {
-  val PERSIST_LOGIN_AFTER_GRANT, GRANT_WITHOUT_TAXPAYER_CONSENT, SUPPRESS_IV_FOR_AGENTS, SUPPRESS_IV_FOR_ORGANISATIONS, SUPPRESS_IV_FOR_INDIVIDUALS = Value
-}
 
 case class ApplicationWithUpliftRequest(id: ApplicationId,
                                         name: String,
@@ -259,29 +183,9 @@ case class ApplicationWithUpliftRequest(id: ApplicationId,
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
-case class ApiIdentifier(context: String, version: String)
-
-case class Collaborator(emailAddress: String, role: Role, userId: UserId)
-
-case class ClientSecret(name: String,
-                        createdOn: DateTime = DateTimeUtils.now,
-                        lastAccess: Option[DateTime] = None,
-                        id: String = ju.UUID.randomUUID().toString,
-                        hashedSecret: String)
-
-trait Token {
-  def clientId: String
-  def accessToken: String
-  def clientSecrets: List[ClientSecret]
-}
-
-case class EnvironmentToken(clientId: String,
-                            accessToken: String,
-                            clientSecrets: List[ClientSecret] = List(),
-                            lastAccessTokenUsage: Option[DateTime] = None) extends Token
 
 case class ApplicationTokenResponse(
-   clientId: String,
+   clientId: ClientId,
    accessToken: String,
    clientSecrets: List[ClientSecretResponse]
 )
@@ -321,62 +225,9 @@ object ClientSecretResponse {
       clientSecret.lastAccess)
 }
 
-object Role extends Enumeration {
-  type Role = Value
-  val DEVELOPER, ADMINISTRATOR = Value
-}
-
-object Environment extends Enumeration {
-  type Environment = Value
-  val PRODUCTION, SANDBOX = Value
-}
-
-object State extends Enumeration {
-  type State = Value
-  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
-}
-
-case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
-                            verificationCode: Option[String] = None, updatedOn: DateTime = DateTimeUtils.now) {
-
-  final def requireState(requirement: State, transitionTo: State): Unit = {
-    if (name != requirement) {
-      throw new InvalidStateTransition(expectedFrom = requirement, invalidFrom = name, to = transitionTo)
-    }
-  }
-
-  def toProduction = {
-    requireState(requirement = State.PENDING_REQUESTER_VERIFICATION, transitionTo = PRODUCTION)
-    copy(name = PRODUCTION, updatedOn = DateTimeUtils.now)
-  }
-
-  def toTesting = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = DateTimeUtils.now)
-
-  def toPendingGatekeeperApproval(requestedByEmailAddress: String) = {
-    requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
-
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL,
-      updatedOn = DateTimeUtils.now,
-      requestedByEmailAddress = Some(requestedByEmailAddress))
-  }
-
-  def toPendingRequesterVerification = {
-    requireState(requirement = State.PENDING_GATEKEEPER_APPROVAL, transitionTo = State.PENDING_REQUESTER_VERIFICATION)
-
-    def verificationCode(input: String = ju.UUID.randomUUID().toString): String = {
-      def urlSafe(encoded: String) = encoded.replace("=", "").replace("/", "_").replace("+", "-")
-
-      val digest = MessageDigest.getInstance("SHA-256")
-      urlSafe(new String(Base64.encodeBase64(digest.digest(input.getBytes(Charsets.UTF_8))), Charsets.UTF_8))
-    }
-    copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = DateTimeUtils.now)
-  }
-
-}
-
 class ApplicationResponseCreator {
 
-  def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecrets]) = {
+  def createApplicationResponse(applicationData: ApplicationData, totpSecrets: Option[TotpSecret]) = {
     CreateApplicationResponse(ApplicationResponse(applicationData), totpSecrets)
   }
 }
@@ -391,30 +242,3 @@ object ApplicationWithUpliftRequest {
 
 }
 
-object RateLimitTier extends Enumeration {
-  type RateLimitTier = Value
-
-  val RHODIUM, PLATINUM, GOLD, SILVER, BRONZE = Value
-}
-
-sealed trait ApplicationStateChange
-
-case object UpliftRequested extends ApplicationStateChange
-
-case object UpliftApproved extends ApplicationStateChange
-
-case object UpliftRejected extends ApplicationStateChange
-
-case object UpliftVerified extends ApplicationStateChange
-
-case object VerificationResent extends ApplicationStateChange
-
-case object Deleted extends ApplicationStateChange
-
-trait Blocked extends ApplicationStateChange
-
-case object Blocked extends Blocked
-
-trait Unblocked extends ApplicationStateChange
-
-case object Unblocked extends Unblocked

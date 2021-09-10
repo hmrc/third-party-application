@@ -14,13 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.testutils
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.models.ApiIdentifier
+import java.{util => ju}
 
-trait ApiIdentifierSyntaxModule {
-  implicit class ApiIdentifierSyntax(val context: String) {
-    def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(context, version)
-    def asIdentifier(): ApiIdentifier = asIdentifier("1.0")
-  }
+case class ApplicationId(value: ju.UUID) extends AnyVal
+
+object ApplicationId {
+  import play.api.libs.json.Json
+  
+  def random: ApplicationId = ApplicationId(ju.UUID.randomUUID())
+
+  implicit val JsonFormat = Json.valueFormat[ApplicationId]
 }

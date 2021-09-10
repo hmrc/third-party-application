@@ -18,14 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
-import uk.gov.hmrc.thirdpartyapplication.models.{Collaborator, IpAllowlist, OverrideFlag}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 
-case class SearchCollaboratorsRequest(apiContext: String, apiVersion: String, partialEmailMatch: Option[String])
-
-case class ValidationRequest(clientId: String, clientSecret: String)
+case class ValidationRequest(clientId: ClientId, clientSecret: String)
 
 case class ApplicationNameValidationRequest(applicationName: String, selfApplicationId: Option[ApplicationId])
 

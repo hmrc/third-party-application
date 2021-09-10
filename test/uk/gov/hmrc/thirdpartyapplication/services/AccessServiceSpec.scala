@@ -18,16 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers.{OverridesRequest, OverridesResponse, ScopeRequest, ScopeResponse}
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{OverrideAdded, OverrideRemoved, ScopeAdded, ScopeRemoved}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.UserId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AccessServiceSpec extends AsyncHmrcSpec {
 
@@ -140,7 +140,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
-    val applicationId = ApplicationId.random()
+    val applicationId = ApplicationId.random
     
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -180,7 +180,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        Token(ClientId("a"), "c")
       ),
       ApplicationState(),
       Privileged(None, scopes),
@@ -196,7 +196,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        Token(ClientId("a"), "c")
       ),
       ApplicationState(),
       Ropc(scopes),
@@ -212,7 +212,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       None,
       "wso2ApplicationName",
       ApplicationTokens(
-        EnvironmentToken("a", "c")
+        Token(ClientId("a"), "c")
       ),
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
