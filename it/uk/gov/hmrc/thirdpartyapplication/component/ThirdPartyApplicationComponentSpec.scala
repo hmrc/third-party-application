@@ -320,7 +320,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     scenario("Update an application") {
 
       Given("A third party application")
-      val originalOverrides: Set[OverrideFlag] = Set(PersistLogin(), GrantWithoutConsent(Set("scope")),
+      val originalOverrides: Set[OverrideFlag] = Set(PersistLogin, GrantWithoutConsent(Set("scope")),
         SuppressIvForAgents(Set("scope")), SuppressIvForOrganisations(Set("scope")), SuppressIvForIndividuals(Set("Scope")))
       val application = createApplication(access = standardAccess.copy(overrides = originalOverrides))
 

@@ -41,7 +41,7 @@ class AccessControllerSpec extends ControllerSpec {
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  private val overrides = Set[OverrideFlag](PersistLogin(), GrantWithoutConsent(Set("scope1", "scope2")))
+  private val overrides = Set[OverrideFlag](PersistLogin, GrantWithoutConsent(Set("scope1", "scope2")))
   private val scopes = Set("scope")
   private val scopeRequest = ScopeRequest(scopes)
   private val overridesRequest = OverridesRequest(overrides)

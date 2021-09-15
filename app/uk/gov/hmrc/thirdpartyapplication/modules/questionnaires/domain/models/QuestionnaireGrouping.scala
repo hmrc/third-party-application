@@ -14,19 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models
 
-import java.security.SecureRandom
-
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-@Singleton
-class TokenService {
-  def createEnvironmentToken(): Token = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
-    new SecureRandom().nextBytes(randomBytes)
-    val accessToken = randomBytes.map("%02x".format(_)).mkString
-    Token(ClientId.random, accessToken)
-  }
-}
+case class QuestionnaireGrouping(
+  heading: String,
+  links: List[QuestionnaireId]
+)

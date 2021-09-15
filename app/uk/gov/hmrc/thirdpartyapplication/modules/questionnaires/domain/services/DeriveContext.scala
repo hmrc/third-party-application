@@ -14,19 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
-import java.security.SecureRandom
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Application
 
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+object DeriveContext {
+  val VAT_OR_ITSA = "VAT_OR_ITSA"
+  val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE"
 
-@Singleton
-class TokenService {
-  def createEnvironmentToken(): Token = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
-    new SecureRandom().nextBytes(randomBytes)
-    val accessToken = randomBytes.map("%02x".format(_)).mkString
-    Token(ClientId.random, accessToken)
+  def deriveContext(application: Application): AskQuestion.Context = {
+    Map(
+      VAT_OR_ITSA -> "False",
+      IN_HOUSE_SOFTWARE -> "Yes"
+    )
   }
 }
