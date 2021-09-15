@@ -18,8 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.service
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.AnswersToQuestionnaireDAO
-import modules.questionnaires.repositories._
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId

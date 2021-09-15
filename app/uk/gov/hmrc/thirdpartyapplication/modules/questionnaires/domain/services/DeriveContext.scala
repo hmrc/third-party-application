@@ -22,6 +22,7 @@ object DeriveContext {
   val VAT_OR_ITSA = "VAT_OR_ITSA"
   val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE"
 
+  // TODO
   def deriveContext(application: Application): AskQuestion.Context = {
     Map(
       VAT_OR_ITSA -> "False",

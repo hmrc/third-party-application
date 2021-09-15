@@ -27,7 +27,7 @@ object AskQuestion {
 
   type Error = String
 
-  def shouldAsk(context: Context)(next: QuestionItem, answers: Answers): Boolean = {
+  private def shouldAsk(context: Context)(next: QuestionItem, answers: Answers): Boolean = {
     next.askWhen match {
       case AlwaysAsk => true
       case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
@@ -60,6 +60,7 @@ object AskQuestion {
           }
       }
     }
+
     findFirst(questionnaire.questions)
   }
 
@@ -71,7 +72,6 @@ object AskQuestion {
           .filter(answer => q.choices.contains(QuestionChoice(answer)))
           .headOption
           .map(SingleChoiceAnswer(_))
-
           , "The answer is not valid for this question"
         )
       case q: MultiChoiceQuestion =>

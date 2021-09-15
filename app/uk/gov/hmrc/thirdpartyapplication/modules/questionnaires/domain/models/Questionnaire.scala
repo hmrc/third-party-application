@@ -23,7 +23,7 @@ case object AlwaysAsk extends AskWhen
 
 object AskWhenAnswer {
   def apply(question: SingleChoiceQuestion, expectedValue: String): AskWhen = {
-    require(question.choices.find(qc => qc.text == expectedValue).isDefined)
+    require(question.choices.find(qc => qc.value == expectedValue).isDefined)
     AskWhenAnswer(question.id, SingleChoiceAnswer(expectedValue))
   }
 }

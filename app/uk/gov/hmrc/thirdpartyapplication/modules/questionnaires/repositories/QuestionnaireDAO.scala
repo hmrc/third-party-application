@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package modules.questionnaires.repositories
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories
 
 import scala.collection.mutable
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
@@ -29,8 +29,8 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
   private val store: mutable.Map[QuestionnaireId, Questionnaire] = mutable.Map()
 
-  
   import QuestionnaireDAO.Questionnaires._
+  
   allIndividualQuestionnaires.map(q => store.put(q.id, q))
   
   // N.B. Using futures even though not necessary as it mixes better AND means any move to an actual Mongo collection is proof against lots of change
@@ -43,7 +43,6 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
 }
 
 object QuestionnaireDAO {
-  
   object Questionnaires {
     object DevelopmentPractices {
       val question1 = YesNoQuestion(

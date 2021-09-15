@@ -69,4 +69,4 @@ case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement)
   lazy val choices = ListSet(QuestionChoice("Yes"), QuestionChoice("No"))
 }
 
-case class QuestionChoice(text: String) extends AnyVal
+case class QuestionChoice(value: String) extends AnyVal
