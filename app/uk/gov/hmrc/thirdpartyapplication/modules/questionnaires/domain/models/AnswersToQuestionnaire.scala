@@ -19,6 +19,15 @@
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTime
 import java.util.UUID
+import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
+case class ReferenceId(value: String) extends AnyVal
+
+object ReferenceId {
+  implicit val format = play.api.libs.json.Json.valueFormat[ReferenceId]
+  
+  def random: ReferenceId = ReferenceId(UUID.randomUUID().toString())
+}
 
 sealed trait Answer
 case class SingleChoiceAnswer(value: String) extends Answer
@@ -33,8 +42,6 @@ case class AnswersToQuestionnaire(
   answers: Map[QuestionId, Answer]
 )
 
-case class ReferenceId(value: String) extends AnyVal
-
-object ReferenceId {
-  def random: ReferenceId = ReferenceId(UUID.randomUUID().toString())
+object AnswersToQuestionnaire {
+  implicit val dateTimeFormat = ReactiveMongoFormats.dateTimeFormats
 }

@@ -18,36 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models
 
 import scala.collection.immutable.ListSet
 
-case class Statement(fragments: List[StatementFragment])
-
-object Statement {
-  def apply(fragments: StatementFragment*) = new Statement(fragments.toList)
-}
-
-sealed trait StatementFragment
-sealed trait NonBulletStatementFragment extends StatementFragment
-sealed trait SimpleStatementFragment extends NonBulletStatementFragment
-case class StatementText(text: String) extends SimpleStatementFragment
-case class StatementLink(text: String, url: String) extends SimpleStatementFragment
-
-case class StatementBullets(bullets: List[NonBulletStatementFragment]) extends StatementFragment
-
-object StatementBullets {
-  def apply(bullets: NonBulletStatementFragment*) = new StatementBullets(bullets.toList)
-}
-
-case class CompoundFragment(fragments: List[SimpleStatementFragment]) extends NonBulletStatementFragment
-
-object CompoundFragment {
-  def apply(fragments: SimpleStatementFragment*) = new CompoundFragment(fragments.toList)
-}
-
 case class Wording(value: String) extends AnyVal
 
 case class QuestionId(value: String) extends AnyVal
 
 object QuestionId {
   def random = QuestionId(java.util.UUID.randomUUID.toString)
+
+  implicit val jsonFormatQuestionId = play.api.libs.json.Json.valueFormat[QuestionId]
 }
 
 sealed trait Question {
