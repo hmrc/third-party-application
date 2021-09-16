@@ -23,12 +23,17 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.ReferenceId
 
 class QuestionnaireServiceSpec extends AsyncHmrcSpec {
   trait Setup {
     val answersDAO = new AnswersToQuestionnaireDAO()
     val underTest = new QuestionnaireService(new QuestionnaireDAO(), answersDAO)
     val applicationId = ApplicationId.random
+
+    def raise(id: QuestionnaireId): ReferenceId = {
+      await(underTest.raiseQuestionnaire(applicationId, id)).right.get 
+    }
   }
 
   "QuesionnaireService" when {
@@ -62,6 +67,19 @@ class QuestionnaireServiceSpec extends AsyncHmrcSpec {
         stored1.value.questionnaireId shouldBe stored2.value.questionnaireId
         stored1.value.referenceId should not be stored2.value.questionnaireId
         stored1.value.startedOn.getMillis should be < stored2.value.startedOn.getMillis
+      }
+    }
+
+    "fetch" should {
+      
+      "find and return a valid answer to questionnaire" in new Setup {
+        val r1 = raise(QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id)
+       
+        await(underTest.fetch(r1)) shouldBe 'right
+      }
+  
+      "find and return failure due to missing reference id" in new Setup {
+        await(underTest.fetch(ReferenceId.random)) shouldBe 'left
       }
     }
   }

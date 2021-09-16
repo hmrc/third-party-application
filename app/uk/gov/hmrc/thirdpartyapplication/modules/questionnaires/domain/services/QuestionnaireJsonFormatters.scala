@@ -113,6 +113,4 @@ object QuestionnaireJsonFormatters {
 
   implicit val jsonFormatquestionnaireId = Json.valueFormat[QuestionnaireId]
   implicit val jsonFormatquestionnaire = Json.format[Questionnaire]
-
-  implicit val jsonFormatRefenceId = Json.valueFormat[ReferenceId]
 }
