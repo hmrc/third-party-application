@@ -10,7 +10,7 @@ trait AnswersJsonFormatters {
   implicit val jsonFormatMultipleChoiceAnswer = Json.format[MultipleChoiceAnswer]
   implicit val jsonFormatTextAnswer = Json.format[TextAnswer]
 
-  implicit val jsonFormatAnswerType: Format[Answer] = Union.from[Answer]("answer")
+  implicit val jsonFormatAnswerType: OFormat[Answer] = Union.from[Answer]("answer")
     .and[SingleChoiceAnswer]("singleChoiceAnswer")
     .and[MultipleChoiceAnswer]("multipleChoiceAnswer")
     .and[TextAnswer]("textAnswer")

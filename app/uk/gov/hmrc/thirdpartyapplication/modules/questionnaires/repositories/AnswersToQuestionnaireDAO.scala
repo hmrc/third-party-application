@@ -24,6 +24,7 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
 import javax.inject.{Inject, Singleton}
+import scala.collection.immutable.ListMap
 
 @Singleton
 class AnswersToQuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
@@ -59,7 +60,7 @@ class AnswersToQuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
     val referenceId = ReferenceId.random
 
     for {
-      saved <- save(AnswersToQuestionnaire(referenceId, questionnaireId, applicationId, DateTimeUtils.now, Map.empty))
+      saved <- save(AnswersToQuestionnaire(referenceId, questionnaireId, applicationId, DateTimeUtils.now, ListMap.empty))
     } yield referenceId
   }
 }
