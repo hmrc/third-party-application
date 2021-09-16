@@ -25,7 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import play.api.libs.json.Json
-
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
+import com.typesafe.config.ConfigFactory
+import play.api.Logger
 
 case class ApplicationTokens(production: Token)
 
@@ -45,6 +47,7 @@ case class ApplicationData(id: ApplicationId,
                            access: Access = Standard(List.empty, None, None),
                            createdOn: DateTime,
                            lastAccess: Option[DateTime],
+                           grantLength: Int = grantLengthConfig,
                            rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
@@ -54,6 +57,10 @@ case class ApplicationData(id: ApplicationId,
 }
 
 object ApplicationData {
+
+  val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
+  Logger.info(s"Grant Length from config is $grantLengthConfig")
+
 
   def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
 
@@ -98,6 +105,7 @@ object ApplicationData {
     (JsPath \ "access").read[Access] and
     (JsPath \ "createdOn").read[DateTime] and
     (JsPath \ "lastAccess").readNullable[DateTime] and
+    ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig) ) and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and

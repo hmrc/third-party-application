@@ -40,6 +40,19 @@ class ApplicationDataSpec extends HmrcSpec with OptionValues {
       ApplicationData.create(request, "bob", token).checkInformation shouldBe None
     }
 
+    "set the check information for subscriptions when app is created" in {
+      val token = Token(ClientId.random, "st")
+
+      val request = CreateApplicationRequest(
+        name = "bob",
+        environment = Environment.PRODUCTION,
+        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+        subscriptions = List("context".asIdentifier)
+      )
+
+      ApplicationData.create(request, "bob", token).grantLength shouldBe 547
+    }
+
     "set the check information for subscriptions when app is created with subs" in {
       val token = Token(ClientId.random, "st")
 

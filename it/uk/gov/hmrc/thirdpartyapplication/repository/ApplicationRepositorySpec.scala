@@ -48,6 +48,8 @@ class ApplicationRepositorySpec
     with IndexVerification
     with MetricsHelper {
 
+  val DEFAULT_GRANT_LENGTH = 547
+  val newGrantLength = 1000
   implicit var s : ActorSystem = ActorSystem("test")
   implicit var m : Materializer = ActorMaterializer()
 
@@ -130,6 +132,17 @@ class ApplicationRepositorySpec
       updatedApplication.rateLimitTier shouldBe Some(updatedRateLimit)
     }
 
+    "set the grant Length field on an Application document" in {
+      val applicationId = ApplicationId.random
+      await(
+        applicationRepository.save(
+          anApplicationData(applicationId, ClientId("aaa"))))
+
+      val newRetrieved = await(applicationRepository.fetch(applicationId)).get
+
+      newRetrieved.grantLength shouldBe DEFAULT_GRANT_LENGTH
+    }
+
     "set the rateLimitTier field on an Application document where none previously existed" in {
       val applicationId = ApplicationId.random
       await(
@@ -171,6 +184,21 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
 
       retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
+    }
+
+    "update the grantLength property" in {
+
+      val applicationId = ApplicationId.random
+
+      val application =
+        anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"), grantLength = newGrantLength )
+          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
+
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
+
+      retrieved.grantLength shouldBe newGrantLength
     }
   }
 
@@ -285,6 +313,20 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.fetchByServerToken(application2.tokens.production.accessToken))
 
       retrieved shouldBe Some(application2)
+    }
+
+    "retrieve the grant length for an application for a given client id when it has a matching client id" in {
+
+      val application1 = anApplicationData(ApplicationId.random, ClientId("aaa"), productionState("requestorEmail@example.com"))
+      val application2 = anApplicationData(ApplicationId.random, ClientId("zzz"), productionState("requestorEmail@example.com"))
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+
+      val retrieved = await(applicationRepository.fetchByClientId(application2.tokens.production.clientId))
+
+      retrieved.map(_.grantLength) shouldBe Some(DEFAULT_GRANT_LENGTH)
+
     }
   }
 
@@ -1427,11 +1469,12 @@ class ApplicationRepositorySpec
                         prodClientId: ClientId = ClientId("aaa"),
                         state: ApplicationState = testingState(),
                         access: Access = Standard(List.empty, None, None),
+                        grantLength: Int = DEFAULT_GRANT_LENGTH,
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                         checkInformation: Option[CheckInformation] = None,
                         clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
 
-    aNamedApplicationData(id, s"myApp-${id.value}", prodClientId, state, access, users, checkInformation, clientSecrets)
+    aNamedApplicationData(id, s"myApp-${id.value}", prodClientId, state, access, users, checkInformation, clientSecrets, grantLength)
   }
 
   def aNamedApplicationData(id: ApplicationId,
@@ -1441,7 +1484,8 @@ class ApplicationRepositorySpec
                             access: Access = Standard(List.empty, None, None),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                             checkInformation: Option[CheckInformation] = None,
-                            clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
+                            clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret")),
+                            grantLength: Int = DEFAULT_GRANT_LENGTH): ApplicationData = {
 
     ApplicationData(
       id,
@@ -1455,6 +1499,7 @@ class ApplicationRepositorySpec
       access,
       HmrcTime.now,
       Some(HmrcTime.now),
+      grantLength = grantLength,
       checkInformation = checkInformation)
   }
 
