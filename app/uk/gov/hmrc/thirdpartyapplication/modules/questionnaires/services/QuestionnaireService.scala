@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.service
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._

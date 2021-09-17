@@ -19,7 +19,6 @@
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTime
 import java.util.UUID
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import scala.collection.immutable.ListMap
 
 case class ReferenceId(value: String) extends AnyVal

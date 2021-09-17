@@ -1,0 +1,2 @@
+GET         /:id          uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController.fetch(id: ReferenceId)
+POST        /             uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController.raise()
