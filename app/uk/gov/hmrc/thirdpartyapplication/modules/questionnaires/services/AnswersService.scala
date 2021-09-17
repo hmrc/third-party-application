@@ -25,13 +25,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 
 @Singleton
-class QuestionnaireService @Inject()(
+class AnswersService @Inject()(
   questionnaireDAO: QuestionnaireDAO,
   answersDAO: AnswersToQuestionnaireDAO
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   
-  type QuestionnaireAndAnswers = String // TODO
-
   import cats.instances.future.catsStdInstancesForFuture
 
   /*

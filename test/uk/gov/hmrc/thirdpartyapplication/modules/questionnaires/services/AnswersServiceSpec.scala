@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.QuestionnaireService
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.AnswersService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -25,10 +25,10 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.ReferenceId
 
-class QuestionnaireServiceSpec extends AsyncHmrcSpec {
+class AnswersServiceSpec extends AsyncHmrcSpec {
   trait Setup {
     val answersDAO = new AnswersToQuestionnaireDAO()
-    val underTest = new QuestionnaireService(new QuestionnaireDAO(), answersDAO)
+    val underTest = new AnswersService(new QuestionnaireDAO(), answersDAO)
     val applicationId = ApplicationId.random
 
     def raise(id: QuestionnaireId): ReferenceId = {
