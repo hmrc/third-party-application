@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 
 import cats.implicits._
+import cats.data.NonEmptyList
 
 object AskQuestion {
   type Context = Map[String, String]
@@ -27,7 +28,7 @@ object AskQuestion {
 
   type Error = String
 
-  private def shouldAsk(context: Context)(next: QuestionItem, answers: Answers): Boolean = {
+  protected def shouldAsk(context: Context)(next: QuestionItem, answers: Answers): Boolean = {
     next.askWhen match {
       case AlwaysAsk => true
       case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
@@ -64,24 +65,29 @@ object AskQuestion {
     findFirst(questionnaire.questions)
   }
 
-  def processAnswer(question: Question, answers: List[String]): Either[Error, Answer] = {
+  def processAnswer(question: Question, answers: NonEmptyList[String]): Either[Error, Answer] = {
     question match {
       case q: SingleChoiceQuestion => 
         Either.fromOption(
           answers
+          .head
+          .some
           .filter(answer => q.choices.contains(QuestionChoice(answer)))
-          .headOption
           .map(SingleChoiceAnswer(_))
           , "The answer is not valid for this question"
         )
       case q: MultiChoiceQuestion =>
-        val (valid, invalid) = answers.partition(answer => q.choices.contains(QuestionChoice(answer)))
-        (valid, invalid) match {
-          case (Nil, Nil)           => "No answers provided".asLeft
-          case (_, h::tail)         => "Some answers are not valid for this question".asLeft
-          case (validAnswers, Nil)  => MultipleChoiceAnswer(validAnswers.toSet).asRight
+        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(QuestionChoice(answer)))
+        invalid match {
+          case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
+          case _     => "Some answers are not valid for this question".asLeft
         }
-      case q: TextQuestion => TextAnswer(answers.head).asRight
+      case q: TextQuestion => 
+        if(answers.head.nonEmpty) {
+          TextAnswer(answers.head).asRight
+        } else {
+          "A text answer cannot be blank".asLeft
+        }
     }
   }
 }

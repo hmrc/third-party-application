@@ -23,16 +23,13 @@ trait AnswersToQuestionnaireJsonFormatters extends QuestionnaireJsonFormatters w
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
   import play.api.libs.json._
   
-  def toRaw(in: ListMap[QuestionId, Answer]): ListMap[String, Answer] = {
-    in.flatMap { case (k,v) => ListMap(k.value -> v) }
-  }
-  def fromRaw(in: ListMap[String, Answer]): ListMap[QuestionId, Answer] = {
-    in.flatMap { case (k,v) => ListMap(QuestionId(k) -> v) }
-  }
-  
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-  implicit val listMapWrites: Writes[ListMap[QuestionId, Answer]] = listMapWrites[Answer].contramap[ListMap[QuestionId, Answer]](toRaw)
-  implicit val listMapReads: Reads[ListMap[QuestionId, Answer]] = listMapReads[Answer].map(fromRaw)
+
+  implicit val asString: (QuestionId) => String = (q) => q.value
+  implicit val asQuestionId: (String) => QuestionId = (s) => QuestionId(s)
+  
+  implicit val listMapWrites: Writes[ListMap[QuestionId, Answer]] = listMapWrites[QuestionId, Answer]
+  implicit val listMapReads: Reads[ListMap[QuestionId, Answer]] = listMapReads[QuestionId, Answer]
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val format = Json.format[AnswersToQuestionnaire]
 }

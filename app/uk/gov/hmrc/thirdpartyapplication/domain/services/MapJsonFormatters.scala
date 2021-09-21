@@ -18,38 +18,51 @@ package uk.gov.hmrc.thirdpartyapplication.domain.services
 
 import play.api.libs.json._
 import scala.collection.immutable.ListMap
-import play.api.libs.json.Json.fromJson
 
 trait MapJsonFormatters {
-  implicit def listMapReads[V](implicit formatV: Reads[V]): Reads[ListMap[String, V]] = new Reads[ListMap[String, V]] {
+  implicit def listMapReads[K, V](implicit asKey: (String) => K, readsV: Reads[V]): Reads[ListMap[K, V]] = new Reads[ListMap[K, V]] {
+    type Errors = Seq[(JsPath, Seq[JsonValidationError])]
+    
+    def process(in: Map[String, JsValue]): JsResult[V] = {
+      if(in.size != 1) {
+        JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.map.with.one.entry"))))
+      }
+      else {
+        val key = in.keySet.head
+        val value = in(key)
+
+        readsV.reads(value)
+      }
+    }
+
+    def locate(e: Errors, key: String) = e.map { case (path, validationError) => (JsPath \ key) ++ path -> validationError }
+
     def reads(json: JsValue) = json match {
-      case JsObject(m) =>
-        type Errors = Seq[(JsPath, Seq[JsonValidationError])]
-
-        def locate(e: Errors, key: String) = e.map { case (path, validationError) => (JsPath \ key) ++ path -> validationError }
-
-        m.foldLeft(Right(ListMap.empty): Either[Errors, ListMap[String, V]]) {
-          case (acc, (key, value)) => (acc, fromJson[V](value)(formatV)) match {
-            case (Right(vs), JsSuccess(v, _)) => Right(vs + (key -> v))
-            case (Right(_), JsError(e)) => Left(locate(e, key))
+      case JsArray(jsValues) =>
+        jsValues.foldLeft[Either[Errors, ListMap[K,V]]](Right(ListMap.empty)) {
+          case (acc, JsObject(fs)) => (acc, process(fs.toMap)) match {
+            case (Right(vs), JsSuccess(v, _)) => Right(vs + (asKey(fs.keySet.head) -> v))
+            case (Right(_), JsError(e)) => Left(locate(e, fs.keySet.head))
             case (Left(e), _: JsSuccess[_]) => Left(e)
-            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, key))
+            case (Left(e1), JsError(e2)) => Left(e1 ++ locate(e2, fs.keySet.head))
           }
-        }.fold(JsError.apply, res => JsSuccess(res))
+          
+          case (acc, _) => Left(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
+        }
+        .fold(JsError.apply, res => JsSuccess(res))
 
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
     }
   }
 
-  implicit def listMapWrites[V](implicit formatV: Writes[V]): Writes[ListMap[String, V]] =
-    new Writes[ListMap[String,V]] {
-
-      def writes(o: ListMap[String,V]): JsValue = {
-        JsObject(o.map {
-            case (k,v) => (k, formatV.writes(v) )
+  implicit def listMapWrites[K,V](implicit asString: (K) => String, formatV: Writes[V]): Writes[ListMap[K, V]] =
+    new Writes[ListMap[K,V]] {
+      def writes(o: ListMap[K,V]): JsValue = {
+        JsArray(o.map {
+            case (k,v) => JsObject(Seq((asString(k), formatV.writes(v))) )
         }.toSeq)
       }
     }
 }
 
-object CommonJsonFormatters extends MapJsonFormatters
+object MapJsonFormatters extends MapJsonFormatters

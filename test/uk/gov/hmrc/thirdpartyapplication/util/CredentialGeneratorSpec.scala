@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import org.scalatest.{Matchers, OptionValues, WordSpec}
-import org.scalatestplus.play.WsScalaTestClient
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
-import org.scalatest.EitherValues
 
-abstract class HmrcSpec extends WordSpec with Matchers with OptionValues with EitherValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
+import org.scalatest.{Matchers, WordSpec}
+class CredentialGeneratorSpec extends WordSpec with Matchers {
 
-abstract class AsyncHmrcSpec
-  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
+  "CredentialGenerator" should {
+    "Generate creds" in {
+      val cred = (new CredentialGenerator).generate()
+
+      cred.length shouldBe 10
+    }
+  }
 }

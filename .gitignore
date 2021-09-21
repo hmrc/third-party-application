@@ -27,3 +27,6 @@ yarn-error.log
 .bloop
 project/metals.sbt
 .vscode
+
+!.scalafix.conf
+!.scalafmt.conf

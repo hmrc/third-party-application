@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.AnswersService
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
