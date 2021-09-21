@@ -125,6 +125,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def updateApplicationIpAllowlist(applicationId: ApplicationId, ipAllowlist: IpAllowlist): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipAllowlist" -> ipAllowlist)))
 
+  def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("grantLength" -> grantLength)))
+
   def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 

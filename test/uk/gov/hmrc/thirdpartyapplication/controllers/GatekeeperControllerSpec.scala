@@ -109,6 +109,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+    val grantLengthInDays = 547
+
     new ApplicationResponse(
       ApplicationId.random,
       ClientId("clientId"),
@@ -119,6 +121,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       collaborators,
       DateTimeUtils.now,
       Some(DateTimeUtils.now),
+      grantLengthInDays,
       None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
@@ -502,6 +505,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def anAppResponse(appId: ApplicationId) = {
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+    val grantLengthInDays = 547
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays)
   }
 }

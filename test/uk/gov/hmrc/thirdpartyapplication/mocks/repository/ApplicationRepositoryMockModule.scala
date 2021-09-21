@@ -222,6 +222,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.updateApplicationIpAllowlist(eqTo(applicationId), eqTo(newIpAllowlist))).thenReturn(successful(updatedApplicationData))
     }
 
+    object UpdateGrantLength {
+      def verifyCalledWith(applicationId: ApplicationId, newGrantLength: Int) =
+        ApplicationRepoMock.verify.updateApplicationGrantLength(eqTo(applicationId),eqTo(newGrantLength))
+
+      def thenReturnWhen(applicationId: ApplicationId, newGrantLength: Int)(updatedApplicationData: ApplicationData) =
+        when(aMock.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))).thenReturn(successful(updatedApplicationData))
+    }
+
     object SearchApplications {
       def thenReturn(data: PaginatedApplicationData) =
         when(aMock.searchApplications(*)).thenReturn(successful(data))

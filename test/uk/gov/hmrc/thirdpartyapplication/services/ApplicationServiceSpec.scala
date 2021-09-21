@@ -509,6 +509,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         collaborators = data.collaborators,
         createdOn = data.createdOn,
         lastAccess = data.lastAccess,
+        grantLength = data.grantLength,
         lastAccessTokenUsage = productionToken.lastAccessTokenUsage,
         redirectUris = List.empty,
         termsAndConditionsUrl = None,
@@ -1372,6 +1373,19 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
+  "update Grant Length" should {
+    "update the Grant Length in the application in Mongo" in new Setup {
+      val newGrantLengthDays= 1000
+      val updatedApplicationData: ApplicationData = anApplicationData(applicationId, grantLength = newGrantLengthDays)
+      ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(applicationId, newGrantLengthDays)(updatedApplicationData)
+
+      val result: ApplicationData = await(underTest.updateGrantLength(applicationId, newGrantLengthDays))
+
+      result shouldBe updatedApplicationData
+      ApplicationRepoMock.UpdateGrantLength.verifyCalledWith(applicationId, newGrantLengthDays)
+    }
+  }
+
   "deleting an application" should {
 
     trait DeleteApplicationSetup extends Setup {
@@ -1585,6 +1599,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   }
 
   private val requestedByEmail = "john.smith@example.com"
+  private val grantLength = 547
 
   private def anApplicationData(applicationId: ApplicationId,
                                 state: ApplicationState = productionState(requestedByEmail),
@@ -1592,7 +1607,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,
-                                ipAllowlist: IpAllowlist = IpAllowlist()) = {
+                                ipAllowlist: IpAllowlist = IpAllowlist(),
+                                grantLength: Int = grantLength) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1605,6 +1621,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       access,
       HmrcTime.now,
       Some(HmrcTime.now),
+      grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
       ipAllowlist = ipAllowlist)

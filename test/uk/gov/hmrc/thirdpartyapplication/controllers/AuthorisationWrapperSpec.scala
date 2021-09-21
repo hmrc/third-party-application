@@ -199,8 +199,10 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   private def postRequestWithAccess(access: Access) = FakeRequest("POST", "/").withBody(Json.obj("access" -> access).as[JsValue])
 
-  private def application(access: Access) =
+  private def application(access: Access) = {
+    val grantLengthInDays = 547
     ApplicationResponse(
-      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays, access = access)
+  }
 
 }
