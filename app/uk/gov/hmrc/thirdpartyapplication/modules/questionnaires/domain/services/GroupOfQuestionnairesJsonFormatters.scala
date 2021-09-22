@@ -14,9 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
-case class QuestionnaireGrouping(
-  heading: String,
-  links: List[QuestionnaireId]
-)
+import play.api.libs.json.Json
+
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.GroupOfQuestionnaires
+
+trait GroupOfQuestionnairesJsonFormatters extends QuestionnaireJsonFormatters {
+  implicit val groupOfQuestionnairesJsonFormat = Json.format[GroupOfQuestionnaires]
+}
+
+object GroupOfQuestionnairesJsonFormatters extends GroupOfQuestionnairesJsonFormatters

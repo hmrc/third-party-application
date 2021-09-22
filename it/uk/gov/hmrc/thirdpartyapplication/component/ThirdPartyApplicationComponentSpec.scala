@@ -34,7 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
 import scala.concurrent.Await.result
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
 class DummyCredentialGenerator extends CredentialGenerator {

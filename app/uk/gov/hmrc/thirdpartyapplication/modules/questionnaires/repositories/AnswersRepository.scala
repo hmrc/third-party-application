@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.An
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireJsonFormatters
 
 @Singleton
-private[repositories] class AnswersRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
+class AnswersRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
 extends ReactiveRepository[AnswersToQuestionnaire, BSONObjectID]("answersToQuestionnaires", mongo.mongoConnector.db,
     AnswersToQuestionnaireJsonFormatters.format, ReactiveMongoFormats.objectIdFormats) {
 

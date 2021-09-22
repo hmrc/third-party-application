@@ -22,10 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.Answers
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import play.api.mvc.ControllerComponents
-import scala.concurrent.Future
-import cats.implicits._
 import scala.concurrent.ExecutionContext
-import play.api.mvc.Result
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 

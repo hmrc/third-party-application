@@ -23,27 +23,31 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.ReferenceId
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.AnswersToQuestionnaire
+import org.joda.time.DateTime
+import scala.collection.immutable.ListMap
 
 class AnswersServiceSpec extends AsyncHmrcSpec {
-  trait Setup {
-    val answersDAO = new AnswersToQuestionnaireDAO()
-    val underTest = new AnswersService(new QuestionnaireDAO(), answersDAO)
+  trait Setup extends AnswersToQuestionnaireDAOMockModule{
+    val underTest = new AnswersService(new QuestionnaireDAO(), AnswersToQuestionnaireDAOMock.aMock)
     val applicationId = ApplicationId.random
+    val fakeReferenceId = ReferenceId.random
+    val questionnaireId = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id
 
     def raise(id: QuestionnaireId): ReferenceId = {
       await(underTest.raiseQuestionnaire(applicationId, id)).right.get 
     }
   }
 
-  "QuesionnaireService" when {
+  "AnswersService" when {
     "raiseQuestionnaire" should {
       "store new answers when given a valid questionnaire" in new Setup {
-        val result = await(underTest.raiseQuestionnaire(applicationId, QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id)) 
+        AnswersToQuestionnaireDAOMock.Create.thenReturn(fakeReferenceId)
+
+        val result = await(underTest.raiseQuestionnaire(applicationId, questionnaireId)) 
         result shouldBe 'right
 
-        val stored = result.toOption.flatMap(x => await(answersDAO.fetch(x)))
-        stored.value.applicationId shouldBe applicationId
-        stored.value.questionnaireId shouldBe QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id
+        AnswersToQuestionnaireDAOMock.Create.verifyCalled
       }
 
       "fail when given an invalid questionnaire" in new Setup {
@@ -52,33 +56,38 @@ class AnswersServiceSpec extends AsyncHmrcSpec {
       }
 
       "store a second set of new answers when given a valid questionnaire/app for a second time" in new Setup {
-        val result = await(underTest.raiseQuestionnaire(applicationId, QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id)) 
+        AnswersToQuestionnaireDAOMock.Create.thenReturn(fakeReferenceId)
+        val fakeReferenceId2 = ReferenceId.random
+        AnswersToQuestionnaireDAOMock.Create.thenReturn(fakeReferenceId2)
+
+        val result = await(underTest.raiseQuestionnaire(applicationId, questionnaireId)) 
         result shouldBe 'right
 
-        Thread.sleep(50)
-
-        val result2 = await(underTest.raiseQuestionnaire(applicationId, QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id)) 
+        val result2 = await(underTest.raiseQuestionnaire(applicationId, questionnaireId)) 
         result2 shouldBe 'right
 
-        val stored1 = result.toOption.flatMap(x => await(answersDAO.fetch(x)))
-        val stored2 = result2.toOption.flatMap(x => await(answersDAO.fetch(x)))
-        stored1.value.applicationId shouldBe stored2.value.applicationId
-        stored1.value.questionnaireId shouldBe stored2.value.questionnaireId
-        stored1.value.referenceId should not be stored2.value.questionnaireId
-        stored1.value.startedOn.getMillis should be < stored2.value.startedOn.getMillis
+        AnswersToQuestionnaireDAOMock.Create.verifyCalledTwice()
       }
     }
 
     "fetch" should {
       
       "find and return a valid answer to questionnaire" in new Setup {
-        val r1 = raise(QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire.id)
-       
-        await(underTest.fetch(r1)) shouldBe 'right
+        val answers = AnswersToQuestionnaire(fakeReferenceId, questionnaireId, applicationId, DateTime.now(), ListMap.empty)
+        AnswersToQuestionnaireDAOMock.Fetch.thenReturn(fakeReferenceId)(Some(answers))
+
+        val result = await(underTest.fetch(fakeReferenceId))
+        result shouldBe 'right
+        val (q, a) = result.right.get
+        
+        q shouldBe QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+        a shouldBe answers
       }
   
-      "find and return failure due to missing reference id" in new Setup {
-        await(underTest.fetch(ReferenceId.random)) shouldBe 'left
+      "find and return failure due to missing reference id in answers collection" in new Setup {
+        AnswersToQuestionnaireDAOMock.Fetch.thenReturn(fakeReferenceId)(None)
+
+        await(underTest.fetch(fakeReferenceId)) shouldBe 'left
       }
     }
   }

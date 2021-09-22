@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers
 
 import play.api.mvc.PathBindable
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import play.api.mvc.QueryStringBindable
-import java.{util => ju}
-import scala.util.Try
 
 package object binders {
   implicit def referenceIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[ReferenceId] = new PathBindable[ReferenceId] {

@@ -39,7 +39,7 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
 
   def fetchAll(): Future[List[Questionnaire]] = store.values.toList.pure[Future]
 
-  def fetchActiveQuestionnaireGroupings() : Future[List[QuestionnaireGrouping]] = activeQuestionnaireGroupings.pure[Future]
+  def fetchActiveGroupsOfQuestionnaires() : Future[List[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
 }
 
 object QuestionnaireDAO {
@@ -472,7 +472,7 @@ object QuestionnaireDAO {
 
     val activeQuestionnaireGroupings = 
       List(
-        QuestionnaireGrouping(
+        GroupOfQuestionnaires(
           heading = "Your processes",
           links = List(
             DevelopmentPractices.questionnaire.id,
@@ -480,7 +480,7 @@ object QuestionnaireDAO {
             HandlingPersonalData.questionnaire.id
           )            
         ),
-        QuestionnaireGrouping(
+        GroupOfQuestionnaires(
           heading = "Your application",
           links = List(
             GrantingAuthorityToHMRC.questionnaire.id,
@@ -488,13 +488,13 @@ object QuestionnaireDAO {
             FraudPreventionHeaders.questionnaire.id
           )
         ),
-        QuestionnaireGrouping(
+        GroupOfQuestionnaires(
           heading = "Your marketing",
           links = List(
             MarketingYourSoftware.questionnaire.id
           )
         ),
-        QuestionnaireGrouping(
+        GroupOfQuestionnaires(
           heading = "Your details",
           links = List(
             BusinessDetails.questionnaire.id
