@@ -27,7 +27,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 object AnswersController {
-  import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireJsonFormatters._
+  import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireFrontendJsonFormatters._
 
   case class FetchResponse(questionnaire: Questionnaire, answers: AnswersToQuestionnaire)
   implicit val writesFetchReponse = Json.writes[FetchResponse]
@@ -54,7 +54,7 @@ extends BackendController(cc) {
 
   def fetch(referenceId: ReferenceId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
-
+    
     val success = (tuple: ( Questionnaire, AnswersToQuestionnaire)) => Ok(Json.toJson(FetchResponse(tuple._1, tuple._2)))
 
     service.fetch(referenceId).map(_.fold(failed, success))

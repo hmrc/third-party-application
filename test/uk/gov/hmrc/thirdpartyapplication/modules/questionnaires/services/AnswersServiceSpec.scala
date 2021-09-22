@@ -17,14 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.AnswersToQuestionnaireDAOMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.ReferenceId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.AnswersToQuestionnaire
-import org.joda.time.DateTime
+import org.joda.time._
+import uk.gov.hmrc.time.DateTimeUtils
 import scala.collection.immutable.ListMap
 
 class AnswersServiceSpec extends AsyncHmrcSpec {
@@ -73,7 +74,7 @@ class AnswersServiceSpec extends AsyncHmrcSpec {
     "fetch" should {
       
       "find and return a valid answer to questionnaire" in new Setup {
-        val answers = AnswersToQuestionnaire(fakeReferenceId, questionnaireId, applicationId, DateTime.now(), ListMap.empty)
+        val answers = AnswersToQuestionnaire(fakeReferenceId, questionnaireId, applicationId, DateTimeUtils.now, ListMap.empty)
         AnswersToQuestionnaireDAOMock.Fetch.thenReturn(fakeReferenceId)(Some(answers))
 
         val result = await(underTest.fetch(fakeReferenceId))

@@ -29,6 +29,20 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.
 @Singleton
 class AnswersRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
 extends ReactiveRepository[AnswersToQuestionnaire, BSONObjectID]("answersToQuestionnaires", mongo.mongoConnector.db,
-    AnswersToQuestionnaireJsonFormatters.format, ReactiveMongoFormats.objectIdFormats) {
-
+AnswersToQuestionnaireJsonFormatters.format, ReactiveMongoFormats.objectIdFormats) {
+  
+  import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+  override def indexes = List(
+    createSingleFieldAscendingIndex(
+      indexFieldKey = "referenceId",
+      isBackground = true,
+      indexName = Some("referenceIdIndex")
+    ),
+    createAscendingIndex(
+      indexName = Some("applicationAndQuestionnaireIndex"),
+      isUnique = false,
+      isBackground = true,
+      indexFieldsKey = List("applicationId", "questionnaireId"): _*,
+    )
+  )
 }
