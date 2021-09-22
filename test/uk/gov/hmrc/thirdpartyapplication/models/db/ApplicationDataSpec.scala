@@ -52,6 +52,20 @@ class ApplicationDataSpec extends HmrcSpec with OptionValues {
 
       ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
     }
+
+    "check information for grant length when app is created" in {
+      val token = Token(ClientId.random, "st")
+
+      val request = CreateApplicationRequest(
+        name = "bob",
+        environment = Environment.PRODUCTION,
+        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+        subscriptions = List("context".asIdentifier)
+      )
+
+      val grantLengthInDays = 547
+      ApplicationData.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+    }
   }
 
 }

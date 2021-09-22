@@ -53,6 +53,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
   implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
   implicit val formatUpdateIpAllowlistRequest = Json.format[UpdateIpAllowlistRequest]
+  implicit val formatGrantLengthRequest = Json.format[UpdateGrantLengthRequest]
   implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
   implicit val formatClientSecretResponse = Json.format[ClientSecretResponse]
   implicit val formatApplicationTokensResponse = Json.format[ApplicationTokenResponse]

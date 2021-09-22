@@ -192,6 +192,7 @@ class AccessControllerSpec extends ControllerSpec {
 
 
   trait StandardFixture extends Fixture {
+    val grantLengthInDays = 547
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
       ApplicationResponse(
         applicationId,
@@ -203,14 +204,16 @@ class AccessControllerSpec extends ControllerSpec {
         Set.empty,
         DateTimeUtils.now,
         Some(DateTimeUtils.now),
+        grantLengthInDays,
         access = Standard())
     ))
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
+    val grantLengthInDays = 547
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now))
+        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))

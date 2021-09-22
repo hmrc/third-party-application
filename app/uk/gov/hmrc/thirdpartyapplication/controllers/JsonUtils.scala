@@ -22,7 +22,7 @@ import play.api.mvc.{AnyContent, Request, Result, Results}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.models.{InvalidIpAllowlistException, ScopeNotFoundException}
+import uk.gov.hmrc.thirdpartyapplication.models.{InvalidGrantLengthException, InvalidIpAllowlistException, ScopeNotFoundException}
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
@@ -55,6 +55,7 @@ trait JsonUtils extends Results {
     case e: NotFoundException => handleNotFound(e.getMessage)
     case e: ScopeNotFoundException => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
     case e: InvalidIpAllowlistException => BadRequest(JsErrorResponse(INVALID_IP_ALLOWLIST, e.getMessage))
+    case e: InvalidGrantLengthException => BadRequest(JsErrorResponse(INVALID_GRANT_LENGTH, e.getMessage))
     case e: Throwable =>
       Logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)

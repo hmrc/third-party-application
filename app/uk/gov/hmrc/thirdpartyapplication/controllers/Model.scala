@@ -18,9 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
@@ -54,6 +54,17 @@ case class OverridesRequest(overrides: Set[OverrideFlag])
 case class OverridesResponse(overrides: Set[OverrideFlag])
 
 case class UpdateRateLimitTierRequest(rateLimitTier: String)
+
+case class UpdateGrantLengthRequest(grantLengthInDays: Int )
+object UpdateGrantLengthRequest {
+  def toGrantLength(updateGrantLengthRequest: UpdateGrantLengthRequest): Int = {
+    if(updateGrantLengthRequest.grantLengthInDays <= 0) {
+      throw InvalidGrantLengthException("Grant Length in Days cannot be less than or equal to zero")
+    }
+    updateGrantLengthRequest.grantLengthInDays
+  }
+}
+
 
 case class UpdateIpAllowlistRequest(required: Boolean, allowlist: Set[String])
 object UpdateIpAllowlistRequest {
@@ -92,6 +103,7 @@ object ErrorCode extends Enumeration {
   val SUBSCRIPTION_NOT_FOUND = Value("SUBSCRIPTION_NOT_FOUND")
   val FORBIDDEN = Value("FORBIDDEN")
   val INVALID_IP_ALLOWLIST = Value("INVALID_IP_ALLOWLIST")
+  val INVALID_GRANT_LENGTH = Value("INVALID_GRANT_LENGTH_IN_DAYS")
   val BAD_QUERY_PARAMETER = Value("BAD_QUERY_PARAMETER")
 }
 

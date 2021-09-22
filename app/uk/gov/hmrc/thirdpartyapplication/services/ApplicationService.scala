@@ -166,6 +166,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApp
   }
 
+  def updateGrantLength(applicationId: ApplicationId, newGrantLength: Int): Future[ApplicationData] = {
+    Logger.info(s"Trying to update the Grant Length  $newGrantLength for application ${applicationId.value}")
+
+    for {
+      updatedApp <- applicationRepository.updateApplicationGrantLength(applicationId, newGrantLength)
+    } yield updatedApp
+  }
+
   def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     Logger.info(s"Deleting application ${applicationId.value}")

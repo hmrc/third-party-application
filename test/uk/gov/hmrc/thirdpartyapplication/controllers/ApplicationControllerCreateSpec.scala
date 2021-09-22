@@ -315,6 +315,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+    val grantLengthInDays = 547
     new ApplicationResponse(
       ApplicationId.random,
       ClientId("clientId"),
@@ -325,6 +326,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       collaborators,
       DateTimeUtils.now,
       Some(DateTimeUtils.now),
+      grantLengthInDays,
       None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,

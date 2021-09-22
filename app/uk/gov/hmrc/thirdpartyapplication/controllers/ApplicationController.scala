@@ -29,6 +29,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -117,6 +119,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def updateIpAllowlist(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpdateIpAllowlistRequest] { updateIpAllowlistRequest =>
       applicationService.updateIpAllowlist(applicationId, toIpAllowlist(updateIpAllowlistRequest)) map { _ =>
+        NoContent
+      } recover recovery
+    }
+  }
+
+  def updateGrantLength(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[UpdateGrantLengthRequest] { updatedGrantLengthRequest =>
+      applicationService.updateGrantLength(applicationId, toGrantLength(updatedGrantLengthRequest)) map { _ =>
         NoContent
       } recover recovery
     }
