@@ -44,7 +44,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
-import play.api.test.NoMaterializer
+import akka.stream.testkit.NoMaterializer
 
 class ApplicationControllerCreateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {

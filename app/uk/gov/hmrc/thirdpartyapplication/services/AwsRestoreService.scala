@@ -17,27 +17,27 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector,
-                                  applicationRepository: ApplicationRepository) {
+                                  applicationRepository: ApplicationRepository) extends ApplicationLogger {
 
   implicit val executionContext: ExecutionContext = ExecutionContext.global
 
   val DefaultRateLimitTier: RateLimitTier = BRONZE
 
   def restoreData()(implicit hc: HeaderCarrier): Future[Unit] = {
-    Logger.info("Republishing all Applications to AWS API Gateway")
+    logger.info("Republishing all Applications to AWS API Gateway")
 
     applicationRepository.processAll(application => {
-      Logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
+      logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
       awsApiGatewayConnector.createOrUpdateApplication(
         application.wso2ApplicationName, application.tokens.production.accessToken, application.rateLimitTier.getOrElse(DefaultRateLimitTier))(hc)
     })

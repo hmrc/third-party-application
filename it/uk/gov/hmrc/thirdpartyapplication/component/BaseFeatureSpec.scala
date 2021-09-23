@@ -21,16 +21,21 @@ import com.github.tomakehurst.wiremock.client.WireMock
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import uk.gov.hmrc.thirdpartyapplication.component.stubs._
 import org.scalatest._
-import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+import play.api.test.RunningServer
+import uk.gov.hmrc.thirdpartyapplication.MyTestServerFactory
+import org.scalatest.featurespec.AnyFeatureSpec
 
-abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Matchers
+import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Matchers
   with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {
 
-  override lazy val port = 19111
-  val serviceUrl = s"http://localhost:$port"
+  override lazy val runningServer: RunningServer = MyTestServerFactory.start(app)
+
+  lazy val serviceUrl = s"http://localhost:$port"
   val timeout = 10 seconds
 
   val apiSubscriptionFieldsStub = ApiSubscriptionFieldsStub
@@ -59,9 +64,11 @@ abstract class BaseFeatureSpec extends FeatureSpec with GivenWhenThen with Match
 }
 
 case class MockHost(port: Int) {
-  val server = new WireMockServer(WireMockConfiguration
-    .wireMockConfig()
-    .port(port))
+  val server = new WireMockServer(
+    WireMockConfiguration
+      .wireMockConfig()
+      .port(port)
+  )
 
   val mock = new WireMock("localhost", port)
 }

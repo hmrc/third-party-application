@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
-import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
 import uk.gov.hmrc.http.HeaderCarrier
@@ -48,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -75,7 +75,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    nameValidationConfig: ApplicationNameValidationConfig,
-                                   tokenService: TokenService)(implicit val ec: ExecutionContext) {
+                                   tokenService: TokenService)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -83,10 +83,10 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       createApp(application)
     } flatMap {
       case Some(x) =>
-        Logger.info(s"Application ${application.name} has been created successfully")
+        logger.info(s"Application ${application.name} has been created successfully")
         Future(x)
       case None =>
-        Logger.warn(s"Application creation is locked. Retry scheduled for ${application.name}")
+        logger.warn(s"Application creation is locked. Retry scheduled for ${application.name}")
         akka.pattern.after(Duration(3, TimeUnit.SECONDS), using = system.scheduler) {
           create(application)
         }
@@ -148,7 +148,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def updateRateLimitTier(applicationId: ApplicationId, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    Logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
+    logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
 
     for {
       app <- fetchApp(applicationId)
@@ -167,7 +167,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def updateGrantLength(applicationId: ApplicationId, newGrantLength: Int): Future[ApplicationData] = {
-    Logger.info(s"Trying to update the Grant Length  $newGrantLength for application ${applicationId.value}")
+    logger.info(s"Trying to update the Grant Length  $newGrantLength for application ${applicationId.value}")
 
     for {
       updatedApp <- applicationRepository.updateApplicationGrantLength(applicationId, newGrantLength)
@@ -176,7 +176,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
                        (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    Logger.info(s"Deleting application ${applicationId.value}")
+    logger.info(s"Deleting application ${applicationId.value}")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
       def deleteSubscription(subscription: ApiIdentifier) = {
@@ -232,14 +232,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     def audit(collaborator: Option[Collaborator]) = collaborator match {
       case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
-      case None => Logger.warn(s"Failed to audit collaborator removal for: $collaborator")
+      case None => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 
     def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
 
     def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
       case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      case None => Logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
+      case None => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
     }
 
     for {
@@ -385,7 +385,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         requestedByEmailAddress, COLLABORATOR,
         (a: ApplicationData) => applicationRepository.save(a)
       )
-      _ = Logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
+      _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
         s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
       _ = auditService.audit(ApplicationUpliftRequested,
         AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
@@ -414,7 +414,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
-    Logger.info(s"Creating application ${application.name}")
+    logger.info(s"Creating application ${application.name}")
 
     val wso2ApplicationName = credentialGenerator.generate()
 
@@ -457,7 +457,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     f andThen {
       case Failure(_) =>
         apiGatewayStore.deleteApplication(wso2ApplicationName)
-          .map(_ => Logger.info(s"deleted application: [$wso2ApplicationName]"))
+          .map(_ => logger.info(s"deleted application: [$wso2ApplicationName]"))
     }
   }
 
@@ -492,7 +492,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     ))
 
   private def updateApp(applicationId: ApplicationId)(application: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    Logger.info(s"Updating application ${application.name}")
+    logger.info(s"Updating application ${application.name}")
 
     def updatedAccess(existing: ApplicationData): Access =
       existing.access match {
@@ -544,7 +544,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   def verifyUplift(verificationCode: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def verifyProduction(app: ApplicationData) = {
-      Logger.info(s"Application uplift for '${app.name}' has been verified already. No update was executed.")
+      logger.info(s"Application uplift for '${app.name}' has been verified already. No update was executed.")
       successful(UpliftVerified)
     }
 
@@ -563,7 +563,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ <- applicationRepository.save(app.copy(state = app.state.toProduction))
       _ <- insertStateHistory(app, State.PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
         app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-      _ = Logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
+      _ = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
       _ = audit(app)
     } yield UpliftVerified
 
@@ -628,7 +628,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   val recoverAll: Future[_] => Future[_] = {
     _ recover {
-      case e: Throwable => Logger.error(e.getMessage); (): Unit
+      case e: Throwable => logger.error(e.getMessage); (): Unit
     }
   }
 

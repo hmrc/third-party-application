@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.Logger
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -50,7 +50,7 @@ object EmailConnector {
 
 
 @Singleton
-class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Config)(implicit val ec: ExecutionContext) {
+class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Config)(implicit val ec: ExecutionContext) extends ApplicationLogger {
   import EmailConnector._
   
   val serviceUrl = config.baseUrl
@@ -173,7 +173,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
 
     httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
       .map { response =>
-        Logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
+        logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
         response.status match {
           case status if status >= 200 && status <= 299 => HasSucceeded
           case NOT_FOUND => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")

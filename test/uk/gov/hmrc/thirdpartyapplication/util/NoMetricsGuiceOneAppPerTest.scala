@@ -14,19 +14,23 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import java.security.SecureRandom
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import org.scalatest.TestSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+trait NoMetricsGuiceOneAppPerTest extends GuiceOneAppPerTest {
+  self : TestSuite =>
+  
+  final override def fakeApplication(): Application =
+      builder().build
 
-@Singleton
-class TokenService {
-  def createEnvironmentToken(): Token = {
-    val randomBytes: Array[Byte] = new Array[Byte](16) // scalastyle:off magic.number
-    new SecureRandom().nextBytes(randomBytes)
-    val accessToken = randomBytes.map("%02x".format(_)).mkString
-    Token(ClientId.random, accessToken)
+  def builder(): GuiceApplicationBuilder = {
+        GuiceApplicationBuilder()
+        .configure("metrics.jvm" -> false)
+        .disable(classOf[SchedulerModule])
   }
 }

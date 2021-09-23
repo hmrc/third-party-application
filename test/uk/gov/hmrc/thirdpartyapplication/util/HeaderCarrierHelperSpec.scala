@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 
-class HeaderCarrierHelperSpec extends WordSpec with Matchers {
+class HeaderCarrierHelperSpec extends AnyWordSpec with Matchers {
 
   val userEmail = "bob@bob.com"
   val userName = "bobbyBobBob"

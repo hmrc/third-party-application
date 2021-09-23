@@ -23,7 +23,6 @@ import play.api.http.Status.CREATED
 import play.api.libs.json.Json
 
 object TOTPStub extends Stub {
-
   override val stub = MockHost(19988)
 
   private val productionState = "productionState"
@@ -71,7 +70,5 @@ object TOTPStub extends Stub {
             .withBody(sandboxTotpJson)
         )
     )
-
   }
-
 }

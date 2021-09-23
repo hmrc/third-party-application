@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
 import play.api.libs.json.Json
 
-class MongoFormatSpec extends WordSpec with Matchers {
+class MongoFormatSpec extends AnyWordSpec with Matchers {
 
   "CheckInformation parsing from the database" should {
     "parse fully populated json" in {

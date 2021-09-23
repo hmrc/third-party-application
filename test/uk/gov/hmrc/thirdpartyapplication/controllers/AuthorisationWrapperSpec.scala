@@ -35,9 +35,9 @@ import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import akka.stream.testkit.NoMaterializer
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 

@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import akka.stream.Materializer
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTime
-import play.api.Logger
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
@@ -38,6 +37,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+
 
 import cats.implicits._
 
@@ -46,9 +47,9 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import cats.data.OptionT
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+import akka.stream.testkit.NoMaterializer
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
 
@@ -66,7 +67,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
     Collaborator("dev@example.com", DEVELOPER, UserId.random))
 
-  trait Setup {
+  trait Setup extends ApplicationLogger {
     val mockGatekeeperService = mock[GatekeeperService]
     val mockAuthConnector = mock[AuthConnector]
     val mockApplicationService = mock[ApplicationService]
@@ -304,7 +305,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-      withSuppressedLoggingFrom(Logger, "application doesn't exist") { suppressedLogs =>
+      withSuppressedLoggingFrom(logger, "application doesn't exist") { suppressedLogs =>
         givenUserIsAuthenticated(underTest)
 
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
@@ -328,7 +329,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      withSuppressedLoggingFrom(Logger, "expected test failure") { suppressedLogs =>
+      withSuppressedLoggingFrom(logger, "expected test failure") { suppressedLogs =>
         givenUserIsAuthenticated(underTest)
 
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
@@ -387,7 +388,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      withSuppressedLoggingFrom(Logger, "Expected test failure") { suppressedLogs =>
+      withSuppressedLoggingFrom(logger, "Expected test failure") { suppressedLogs =>
         givenUserIsAuthenticated(underTest)
 
         when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))

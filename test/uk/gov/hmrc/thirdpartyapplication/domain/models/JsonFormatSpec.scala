@@ -16,10 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.scalatest.{Matchers, WordSpec}
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, Reads}
 
-class JsonFormatSpec extends WordSpec with Matchers {
+
+class JsonFormatSpec extends AnyWordSpec with Matchers {
 
   implicit val jsonFormat: Reads[CheckInformation] = CheckInformation.format
 
