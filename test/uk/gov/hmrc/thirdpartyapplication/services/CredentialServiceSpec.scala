@@ -21,7 +21,6 @@ import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
-import play.api.LoggerLike
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
@@ -34,6 +33,7 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
+import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -42,7 +42,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule with EmailConnectorMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier()
-    val mockLogger: LoggerLike = mock[LoggerLike]
+    val mockLogger: Logger = mock[Logger]
     val clientSecretLimit = 5
     val credentialConfig: CredentialConfig = CredentialConfig(clientSecretLimit)
     val mockApiPlatformEventService: ApiPlatformEventService = mock[ApiPlatformEventService]
@@ -51,8 +51,8 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     val underTest: CredentialService =
     new CredentialService(ApplicationRepoMock.aMock, AuditServiceMock.aMock, ClientSecretServiceMock.aMock, credentialConfig, mockApiPlatformEventService, EmailConnectorMock.aMock) {
-        override val logger: LoggerLike = mockLogger
-      }
+      override val logger = mockLogger
+    }
   }
 
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))

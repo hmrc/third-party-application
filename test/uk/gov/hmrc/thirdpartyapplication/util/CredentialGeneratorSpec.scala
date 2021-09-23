@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-
-import org.scalatest.{Matchers, WordSpec}
-class CredentialGeneratorSpec extends WordSpec with Matchers {
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+class CredentialGeneratorSpec extends AnyWordSpec with Matchers {
 
   "CredentialGenerator" should {
     "Generate creds" in {

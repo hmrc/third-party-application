@@ -37,9 +37,9 @@ class AnswersControllerSpec
     }
   }
 
-  feature("Fetch answers to questionnaires by reference id") {
+  Feature("Fetch answers to questionnaires by reference id") {
 
-    scenario("Fetch all groups") {
+    Scenario("Fetch all groups") {
     }
   }
 }

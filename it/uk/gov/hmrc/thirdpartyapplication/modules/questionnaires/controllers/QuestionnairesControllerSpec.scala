@@ -25,9 +25,9 @@ class QuestionnairesControllerSpec
       .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
       .build()
 
-  feature("Fetch all active groups of questionnaires") {
+  Feature("Fetch all active groups of questionnaires") {
 
-    scenario("Fetch all groups") {
+    Scenario("Fetch all groups") {
 
       When("We fetch all groups")
       val fetchResponse = Http(s"$serviceUrl/questionnaires").asString

@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -36,12 +35,12 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import akka.stream.testkit.NoMaterializer
 
 class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
 
-  implicit val s : ActorSystem = ActorSystem("test")
-  implicit val m : Materializer = ActorMaterializer()
+  implicit val m : Materializer = NoMaterializer
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest

@@ -45,8 +45,8 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import akka.stream.testkit.NoMaterializer
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -196,6 +196,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
   }
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+    val grantLengthInDays = 547
     new ApplicationResponse(
       ApplicationId.random,
       ClientId("clientId"),
@@ -206,6 +207,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       collaborators,
       DateTimeUtils.now,
       Some(DateTimeUtils.now),
+      grantLengthInDays,
       None,
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,

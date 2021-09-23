@@ -36,7 +36,7 @@ class EmailConnectorSpec extends ConnectorSpec {
     val config = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
     val connector = new EmailConnector(http, config)
     
-    def emailWillReturn(request: SendEmailRequest) = {
+    final def emailWillReturn(request: SendEmailRequest) = {
       stubFor(
         post(urlPathEqualTo("/hmrc/email"))
         .withJsonRequestBody(request)

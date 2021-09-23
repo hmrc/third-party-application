@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2021 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,21 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.component.stubs
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import com.github.tomakehurst.wiremock.client.WireMock._
-import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
-import play.api.http.Status.OK
+import play.api.Logger
 
-object EmailStub extends Stub {
-  override val stub: MockHost = MockHost(18300)
-
-  def willPostEmailNotification() = {
-    stub.mock.register(post(urlEqualTo("/hmrc/email"))
-      .willReturn(
-        aResponse()
-          .withStatus(OK)
-      )
-    )
-  }
+trait ApplicationLogger {
+  val logger = Logger("application")
 }

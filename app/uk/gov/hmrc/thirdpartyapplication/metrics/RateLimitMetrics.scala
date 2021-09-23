@@ -18,20 +18,20 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import com.google.inject.Singleton
 import javax.inject.Inject
-import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RateLimitMetrics @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
+class RateLimitMetrics @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] =
     numberOfApplicationsByRateLimit.map(
       applicationCounts =>
         applicationCounts.map(rateLimit => {
-          Logger.info(s"[METRIC] Number of Applications for Rate Limit ${rateLimit._1}: ${rateLimit._2}")
+          logger.info(s"[METRIC] Number of Applications for Rate Limit ${rateLimit._1}: ${rateLimit._2}")
           applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
         }))
 

@@ -24,7 +24,6 @@ import play.api.http.Status.OK
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 
 object AwsApiGatewayStub extends Stub {
-
   override val stub: MockHost = MockHost(19607)
 
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"/v1/usage-plans/$rateLimitTier/api-keys"

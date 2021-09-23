@@ -23,7 +23,6 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.auth.core.Enrolment
 
 object AuthStub extends Stub {
-
   override val stub = MockHost(18500)
 
   val json = Json.obj(
@@ -32,9 +31,15 @@ object AuthStub extends Stub {
   )
 
   def willValidateLoggedInUserHasGatekeeperRole() =
-    stub.mock.register(post(urlPathEqualTo("/auth/authorise"))
+    stub.mock.register(
+      post(
+        urlPathEqualTo("/auth/authorise")
+      )
       .withRequestBody(equalTo(json.toString))
-      .willReturn(aResponse().withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
-        .withStatus(OK)))
-
+      .willReturn(
+        aResponse()
+        .withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
+        .withStatus(OK)
+      )
+    )
 }

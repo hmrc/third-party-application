@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.Logger
 import play.api.http.ContentTypes.JSON
 import play.api.http.HeaderNames.CONTENT_TYPE
 import play.api.libs.json.JsPath
@@ -26,13 +25,14 @@ import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import javax.inject.Inject
 import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 
-object AwsApiGatewayConnector {
+object AwsApiGatewayConnector extends ApplicationLogger {
   case class Config(baseUrl: String, awsApiKey: String)
 
   private[connector] case class UpdateApplicationUsagePlanRequest(apiKeyName: String, apiKeyValue: String)
@@ -71,7 +71,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       updateUsagePlanURL(usagePlan),
       UpdateApplicationUsagePlanRequest(applicationName, serverToken))
     .map { requestId =>
-      Logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
+      logger.info(s"Successfully created or updated application '$applicationName' in AWS API Gateway with request ID ${requestId.value}")
       HasSucceeded
     }
   }
@@ -82,7 +82,7 @@ class AwsApiGatewayConnector @Inject()(http: HttpClient, config: AwsApiGatewayCo
       .withExtraHeaders(apiKeyHeaderName -> awsApiKey)
 
     http.DELETE[RequestId](deleteAPIKeyURL(applicationName)).map(requestId => {
-      Logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
+      logger.info(s"Successfully deleted application '$applicationName' from AWS API Gateway with request ID ${requestId.value}")
       HasSucceeded
     })
   }

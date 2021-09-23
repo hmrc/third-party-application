@@ -22,9 +22,7 @@ sealed trait OverrideFlag {
   lazy val overrideType: OverrideType.Value = OverrideType.typeOf(this)
 }
 
-case object PersistLogin extends OverrideFlag {
-  implicit val formatPersistLogin = Json.format[PersistLogin.type]
-}
+case object PersistLogin extends OverrideFlag
 
 case class SuppressIvForAgents(scopes: Set[String]) extends OverrideFlag
 object SuppressIvForAgents {
@@ -49,6 +47,11 @@ object SuppressIvForIndividuals {
 object OverrideFlag {
   import uk.gov.hmrc.play.json.Union
   import OverrideType._
+
+  private implicit val readsPersistLogin: Reads[PersistLogin.type] = Reads { _ => JsSuccess(PersistLogin) }
+  private implicit val writesPersistLogin: OWrites[PersistLogin.type] = new OWrites[PersistLogin.type] {
+    def writes(pl: PersistLogin.type) = Json.obj()
+  }
 
   implicit val formatOverride = Union.from[OverrideFlag]("overrideType")
   .and[GrantWithoutConsent](GRANT_WITHOUT_TAXPAYER_CONSENT.toString)

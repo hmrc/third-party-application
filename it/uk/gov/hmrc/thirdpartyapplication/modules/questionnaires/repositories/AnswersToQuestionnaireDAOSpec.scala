@@ -24,9 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import akka.stream.Materializer
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import akka.stream.testkit.NoMaterializer
 
 class AnswersToQuestionnaireDAOSpec
   extends AsyncHmrcSpec
@@ -35,7 +36,7 @@ class AnswersToQuestionnaireDAOSpec
     {
 
   implicit var m : Materializer = NoMaterializer
-
+NoMaterializer
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }

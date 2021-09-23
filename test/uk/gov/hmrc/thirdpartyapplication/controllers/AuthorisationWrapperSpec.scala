@@ -35,9 +35,9 @@ import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import akka.stream.testkit.NoMaterializer
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
@@ -199,8 +199,10 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   private def postRequestWithAccess(access: Access) = FakeRequest("POST", "/").withBody(Json.obj("access" -> access).as[JsValue])
 
-  private def application(access: Access) =
+  private def application(access: Access) = {
+    val grantLengthInDays = 547
     ApplicationResponse(
-      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), access = access)
+      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays, access = access)
+  }
 
 }

@@ -18,30 +18,30 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import com.google.inject.Singleton
 import javax.inject.Inject
-import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper {
+class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper with ApplicationLogger {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    Logger.info("Pomegranate - Starting - ApisWithSubscriptionCount.metrics() about to calculate subscriptionCount map")
+    logger.info("Starting - ApisWithSubscriptionCount.metrics() about to calculate subscriptionCount map")
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
     val result = numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
     result.onComplete({
         case Success(v) =>
-          Logger.info(s"Pomegranate - Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}" )
+          logger.info(s"Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}" )
 
         case Failure(e) =>
-          Logger.info(s"Pomegranate - Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}" )
+          logger.info(s"Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}" )
     })
-    Logger.info("Pomegranate - Finish - ApisWithSubscriptionCount.metrics()")
+    logger.info("Finish - ApisWithSubscriptionCount.metrics()")
     result
   }
 

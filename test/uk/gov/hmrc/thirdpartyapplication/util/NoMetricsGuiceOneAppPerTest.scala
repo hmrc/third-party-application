@@ -16,16 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
-import org.scalatest.EitherValues
-import org.scalatest.OptionValues
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
-import org.scalatestplus.play.WsScalaTestClient
-import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import org.scalatest.TestSuite
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
-abstract class HmrcSpec extends AnyWordSpec with Matchers with OptionValues with EitherValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
+trait NoMetricsGuiceOneAppPerTest extends GuiceOneAppPerTest {
+  self : TestSuite =>
+  
+  final override def fakeApplication(): Application =
+      builder().build
 
-abstract class AsyncHmrcSpec
-  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
+  def builder(): GuiceApplicationBuilder = {
+        GuiceApplicationBuilder()
+        .configure("metrics.jvm" -> false)
+        .disable(classOf[SchedulerModule])
+  }
 }

@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
-import scala.concurrent.Await.result
+import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 
 class DummyCredentialGenerator extends CredentialGenerator {
@@ -88,21 +88,24 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-    result(applicationRepository.removeAll(), timeout)
 
     DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
   }
 
   override protected def afterEach(): Unit = {
+    val ec = scala.concurrent.ExecutionContext.Implicits.global
+
     DateTimeUtils.setCurrentMillisSystem()
-    result(subscriptionRepository.removeAll(), timeout)
-    result(applicationRepository.removeAll(), timeout)
+    result(subscriptionRepository.removeAll()(ec), timeout)
+    result(applicationRepository.removeAll()(ec), timeout)
     super.afterEach()
   }
 
-  feature("Fetch all applications") {
+  Feature("Fetch all applications") {
 
-    scenario("Fetch all applications") {
+    Scenario("Fetch all applications") {
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application1: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
@@ -117,9 +120,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Fetch an application") {
+  Feature("Fetch an application") {
 
-    scenario("Fetch application from an application ID") {
+    Scenario("Fetch application from an application ID") {
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication()
@@ -133,7 +138,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       result shouldBe application
     }
 
-    scenario("Fetch application from a collaborator email address") {
+    Scenario("Fetch application from a collaborator email address") {
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A collaborator has access to two third party applications")
       val application1: ApplicationResponse = createApplication(applicationName1)
@@ -148,7 +155,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       result should contain theSameElementsAs Seq(application1, application2)
     }
 
-    scenario("Fetch application credentials") {
+    Scenario("Fetch application credentials") {
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       val appName = "appName"
 
       Given("A third party application")
@@ -177,7 +187,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Validate Credentials") {
+  Feature("Validate Credentials") {
     def validationRequest(clientId: ClientId, clientSecret: String) =
       s"""
          | {
@@ -186,7 +196,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
          | }
          |""".stripMargin
 
-    scenario("Return details of application when valid") {
+    Scenario("Return details of application when valid") {
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
       val clientSecretCreationResponse = postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
@@ -207,7 +220,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       returnedApplication shouldBe application
     }
 
-    scenario("Return UNAUTHORIZED if clientId is incorrect") {
+    Scenario("Return UNAUTHORIZED if clientId is incorrect") {
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       Given("A third party application")
       createApplication(awsApiGatewayApplicationName)
 
@@ -219,7 +235,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       validationResponse.code shouldBe UNAUTHORIZED
     }
 
-    scenario("Return UNAUTHORIZED if clientSecret is incorrect for valid clientId") {
+    Scenario("Return UNAUTHORIZED if clientSecret is incorrect for valid clientId") {
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
@@ -234,10 +253,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Privileged Applications") {
+  Feature("Privileged Applications") {
 
     val privilegedApplicationsScenario = "Create Privileged application"
-    scenario(privilegedApplicationsScenario) {
+    Scenario(privilegedApplicationsScenario) {
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       awsApiGatewayStub.willCreateOrUpdateApplication(awsApiGatewayApplicationName, "", RateLimitTier.BRONZE)
       val appName = "privileged-app-name"
 
@@ -263,9 +285,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Add/Remove collaborators to an application") {
+  Feature("Add/Remove collaborators to an application") {
 
-    scenario("Add collaborator for an application") {
+    Scenario("Add collaborator for an application") {
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -294,9 +318,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiPlatformEventsStub.verifyTeamMemberAddedEventSent()
     }
 
-    scenario("Remove collaborator to an application") {
+    Scenario("Remove collaborator to an application") {
       emailStub.willPostEmailNotification()
       apiPlatformEventsStub.willReceiveTeamMemberRemovedEvent()
+
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -314,9 +341,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Update an application") {
+  Feature("Update an application") {
 
-    scenario("Update an application") {
+    Scenario("Update an application") {
+
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val originalOverrides: Set[OverrideFlag] = Set(PersistLogin, GrantWithoutConsent(Set("scope")),
@@ -349,7 +379,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       fetchedAccess.overrides shouldBe originalOverrides
     }
 
-    scenario("Add two client secrets then remove the last one") {
+    Scenario("Add two client secrets then remove the last one") {
+
+      Given("No applications exist")
+      emptyApplicationRepository()
+
       Given("A third party application")
       val application = createApplication()
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
@@ -389,11 +423,14 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
     }
 
-    scenario("Delete an application") {
+    Scenario("Delete an application") {
       apiSubscriptionFieldsStub.willDeleteTheSubscriptionFields()
       thirdPartyDelegatedAuthorityStub.willRevokeApplicationAuthorities()
       awsApiGatewayStub.willDeleteApplication(awsApiGatewayApplicationName)
       emailStub.willPostEmailNotification()
+
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole()
@@ -412,10 +449,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       fetchResponse.code shouldBe NOT_FOUND
     }
 
-    scenario("Change rate limit tier for an application") {
+    Scenario("Change rate limit tier for an application") {
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole()
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       And("A third party application with BRONZE rate limit tier exists")
       val application = createApplication()
@@ -429,9 +469,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Subscription") {
+  Feature("Subscription") {
 
-    scenario("Fetch API Subscriptions") {
+    Scenario("Fetch API Subscriptions") {
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -447,7 +490,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       actualApiSubscription shouldBe Set(ApiIdentifier(context, version)) 
     }
 
-    scenario("Fetch All API Subscriptions") {
+    Scenario("Fetch All API Subscriptions") {
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication("App with subscription")
@@ -471,7 +517,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       subscribedApps.head shouldBe application.id
     }
 
-    scenario("Subscribe to an api") {
+    Scenario("Subscribe to an api") {
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -487,7 +536,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       apiPlatformEventsStub.verifyApiSubscribedEventSent()
     }
 
-    scenario("Unsubscribe to an api") {
+    Scenario("Unsubscribe to an api") {
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -504,9 +556,12 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Uplift") {
+  Feature("Uplift") {
 
-    scenario("Request uplift for an application") {
+    Scenario("Request uplift for an application") {
+      
+      Given("No applications exist")
+      emptyApplicationRepository()
 
       Given("A third party application")
       val application = createApplication()
@@ -523,8 +578,8 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     }
   }
 
-  feature("Application name validation") {
-    scenario("for the invalid name 'HMRC'") {
+  Feature("Application name validation") {
+    Scenario("for the invalid name 'HMRC'") {
       When("I request if a name is invalid")
 
       val nameToCheck = "my invalid app name HMRC"
@@ -545,6 +600,10 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     val fetchedResponse = Http(s"$serviceUrl/application/${id.value.toString}").asString
     fetchedResponse.code shouldBe OK
     Json.parse(fetchedResponse.body).as[ApplicationResponse]
+  }
+
+  private def emptyApplicationRepository() = {
+    ready(applicationRepository.removeAll(), timeout)
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {

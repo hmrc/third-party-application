@@ -30,8 +30,8 @@ import play.api.test.FakeRequest
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import uk.gov.hmrc.time.DateTimeUtils
-import play.api.test.NoMaterializer
 import AnswersController._
+import akka.stream.testkit.NoMaterializer
 
 class AnswersControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireFrontendJsonFormatters._

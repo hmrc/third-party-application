@@ -6,7 +6,6 @@ import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 import uk.gov.hmrc._
-import PublishingSettings._
 
 lazy val appName = "third-party-application"
 
@@ -35,7 +34,6 @@ lazy val microservice = (project in file("."))
       "uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._"
     )
   )
-  .settings(playPublishingSettings: _*)
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
@@ -53,16 +51,9 @@ lazy val microservice = (project in file("."))
     IntegrationTest / testGrouping := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution := false)
-  .settings(scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification"))
-
-lazy val playPublishingSettings: Seq[sbt.Setting[_]] = Seq(
-
-  credentials += SbtCredentials,
-
-  publishArtifact in(Compile, packageDoc) := false,
-  publishArtifact in(Compile, packageSrc) := false
-) ++
-  publishAllArtefacts
+  .settings(
+    scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification")
+  )
 
 def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   tests map { test =>

@@ -18,10 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.{Inject, Singleton}
 import org.joda.time.Duration
-import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.metrix.MetricOrchestrator
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
                            metricOrchestrator: MetricOrchestrator,
                            jobConfig: MetricsJobConfig)
-                          (implicit val ec: ExecutionContext) extends ScheduledMongoJob {
+                          (implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
 
   override def name: String = "MetricsJob"
   override def interval: FiniteDuration = jobConfig.interval
@@ -38,7 +38,7 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
   override val isEnabled: Boolean = jobConfig.enabled
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    Logger.info(s"Running Metrics Collection Process")
+    logger.info(s"Running Metrics Collection Process")
     metricOrchestrator
       .attemptToUpdateAndRefreshMetrics()
       .map(result => {
@@ -47,7 +47,7 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
       })
       .recoverWith {
         case e: RuntimeException => {
-          Logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
+          logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
           Future.failed(RunningOfJobFailed(name, e))
         }
       }
