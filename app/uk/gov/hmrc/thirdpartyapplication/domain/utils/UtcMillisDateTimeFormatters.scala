@@ -29,7 +29,6 @@ trait UtcMillisDateTimeFormatters {
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
     }
   }
-
   implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 

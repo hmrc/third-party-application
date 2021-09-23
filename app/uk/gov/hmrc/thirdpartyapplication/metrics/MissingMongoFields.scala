@@ -17,14 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import javax.inject.{Singleton, Inject}
-import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
+class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val counts: Future[(Int, Int)] = for {
       missingRateLimit <- applicationRepository.documentsWithFieldMissing("rateLimitTier")
@@ -32,8 +32,8 @@ class MissingMongoFields @Inject()(val applicationRepository: ApplicationReposit
     } yield (missingRateLimit, missingLastAccessDate)
 
     counts.map(a => {
-      Logger.info(s"[METRIC]: Applications Missing Rate Limit Field: ${a._1}")
-      Logger.info(s"[METRIC]: Applications Missing Last Access Date Field: ${a._2}")
+      logger.info(s"[METRIC]: Applications Missing Rate Limit Field: ${a._1}")
+      logger.info(s"[METRIC]: Applications Missing Last Access Date Field: ${a._2}")
 
       Map("applicationsMissingRateLimitField" -> a._1, "applicationsMissingLastAccessDateField" -> a._2)
     })

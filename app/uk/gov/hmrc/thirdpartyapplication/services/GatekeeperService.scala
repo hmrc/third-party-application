@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -30,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -40,7 +40,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  applicationService: ApplicationService)(implicit val ec: ExecutionContext) {
+                                  applicationService: ApplicationService)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
@@ -97,7 +97,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       newApp <- applicationRepository.save(approve(app))
       _ <- insertStateHistory(app, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL),
         gatekeeperUserId, GATEKEEPER, applicationRepository.save)
-      _ = Logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
+      _ = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
         s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
       _ = auditGatekeeperAction(gatekeeperUserId, app, ApplicationUpliftApproved)
       _ = recoverAll(sendEmails(newApp))
@@ -119,7 +119,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       newApp <- applicationRepository.save(reject(app))
       _ <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL),
         request.gatekeeperUserId, GATEKEEPER, applicationRepository.save, Some(request.reason))
-      _ = Logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
+      _ = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
         s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
         s" gatekeeperUserId:${request.gatekeeperUserId}")
       _ = auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationUpliftRejected, Map("reason" -> request.reason))
@@ -210,7 +210,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   val recoverAll: Future[_] => Future[_] = {
     _ recover {
-      case e: Throwable => Logger.error(e.getMessage); unit
+      case e: Throwable => logger.error(e.getMessage); unit
     }
   }
 }

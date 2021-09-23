@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import com.google.inject.Singleton
 import javax.inject.Inject
 import org.joda.time.{DateTime, Duration}
-import play.api.Logger
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
@@ -29,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -37,7 +37,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationExpiryJobLockKeeper,
                                             applicationRepository: ApplicationRepository,
                                             stateHistoryRepository: StateHistoryRepository,
-                                            jobConfig: UpliftVerificationExpiryJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob {
+                                            jobConfig: UpliftVerificationExpiryJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
 
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity
 
@@ -47,7 +47,7 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
   override val isEnabled: Boolean = jobConfig.enabled
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
-    Logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
+    logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
       updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting))
@@ -58,10 +58,10 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val expiredTime: DateTime = DateTimeUtils.now.minusDays(upliftVerificationValidity.toDays.toInt)
-    Logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
+    logger.info(s"Move back applications to TESTING having status 'PENDING_REQUESTER_VERIFICATION' with timestamp earlier than $expiredTime")
     val result: Future[RunningOfJobSuccessful.type] = for {
       expiredApps <- applicationRepository.fetchAllByStatusDetails(state = State.PENDING_REQUESTER_VERIFICATION, updatedBefore = expiredTime)
-      _ = Logger.info(s"Found ${expiredApps.size} applications")
+      _ = logger.info(s"Found ${expiredApps.size} applications")
       _ <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
     } yield RunningOfJobSuccessful
     result.recoverWith {

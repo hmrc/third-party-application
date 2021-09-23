@@ -17,20 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 
 
 // TODO - context and version probably should be strings in the events??
 @Singleton
-class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) {
+class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
@@ -97,7 +97,7 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
   private def handleResult(applicationId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None =>
-      Logger.error(s"send $eventType for applicationId:${applicationId} not possible")
+      logger.error(s"send $eventType for applicationId:${applicationId} not possible")
       Future.successful(false)
   }
 

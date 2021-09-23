@@ -29,9 +29,9 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful, apply => _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 import play.api.libs.json.Json
+import akka.stream.testkit.NoMaterializer
 
 class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite {
 

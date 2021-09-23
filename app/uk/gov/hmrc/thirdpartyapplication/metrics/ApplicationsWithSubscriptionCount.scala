@@ -18,28 +18,28 @@ package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import com.google.inject.Singleton
 import javax.inject.Inject
-import play.api.Logger
 import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource {
+class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    Logger.info("Pomegranate - Starting - ApplicationsWithSubscriptionCount.metrics()")
+    logger.info("Pomegranate - Starting - ApplicationsWithSubscriptionCount.metrics()")
     // TODO Need to handle Application with zero subscriptions
     val result = applicationRepository.getApplicationWithSubscriptionCount()
     result
       .onComplete({
         case Success(v) =>
-          Logger.info(s"Pomegranate - Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
+          logger.info(s"Pomegranate - Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
 
         case Failure(e) =>
-          Logger.info(s"Pomegranate - Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
+          logger.info(s"Pomegranate - Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
       })
-    Logger.info("Pomegranate - Finish - ApplicationsWithSubscriptionCount.metrics()")
+    logger.info("Pomegranate - Finish - ApplicationsWithSubscriptionCount.metrics()")
     result
   }
 

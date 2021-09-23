@@ -113,6 +113,4 @@ object ApiPlatformEventsStub extends Stub {
       )
     )
   }
-
-
 }

@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.Logger
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.HttpClient
 import uk.gov.hmrc.http.HttpReads.Implicits._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats.formatApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
@@ -32,7 +32,7 @@ object ApiPlatformEventsConnector {
 }
 
 class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConnector.Config)
-                                          (implicit val ec: ExecutionContext) extends ResponseUtils {
+                                          (implicit val ec: ExecutionContext) extends ResponseUtils with ApplicationLogger {
 
   val serviceBaseUrl: String = s"${config.baseUrl}"
   private val applicationEventsUri = "/application-events"
@@ -76,14 +76,14 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
         event
       ).map {
         case Right(_) =>
-          Logger.info(s"calling platform event service for application ${event.applicationId}")
+          logger.info(s"calling platform event service for application ${event.applicationId}")
           true
         case Left(e) =>
-          Logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
+          logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
           false
       }
     } else {
-      Logger.info("call to platform events disabled")
+      logger.info("call to platform events disabled")
       Future.successful(true)
     }
   }

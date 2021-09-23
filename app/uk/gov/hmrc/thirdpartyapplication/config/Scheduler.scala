@@ -18,17 +18,18 @@ package uk.gov.hmrc.thirdpartyapplication.config
 
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
-import play.api.{Application, Logger, LoggerLike}
-import uk.gov.hmrc.play.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
+import play.api.{Application, LoggerLike}
+import uk.gov.hmrc.thirdpartyapplication.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import play.api.inject.ApplicationLifecycle
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.ExecutionContext
 
-class SchedulerModule extends AbstractModule {
+class SchedulerModule extends AbstractModule with ApplicationLogger {
   override def configure(): Unit = {
     bind(classOf[Scheduler]).asEagerSingleton()
-    bind(classOf[LoggerLike]).toInstance(Logger)
+    bind(classOf[LoggerLike]).toInstance(logger)
   }
 }
 

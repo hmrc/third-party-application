@@ -21,10 +21,10 @@ import java.util.UUID
 import com.github.t3hnar.bcrypt._
 import javax.inject.{Inject, Singleton}
 import org.joda.time.DateTime
-import play.api.Logger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTimeZone
 
 @Singleton
-class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) {
+class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) extends ApplicationLogger {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
@@ -52,7 +52,7 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
     val hashedValue = secret.bcrypt(config.hashFunctionWorkFactor)
     val endTime = DateTimeUtils.now
 
-    Logger.info(
+    logger.info(
       s"[ClientSecretService] Hashing Secret with Work Factor of [${config.hashFunctionWorkFactor}] took [${endTime.getMillis - startTime.getMillis}ms]")
 
     hashedValue

@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import cats.data.OptionT
 import cats.implicits._
-import play.api.Logger
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
@@ -43,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -62,7 +62,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
                                       cc: ControllerComponents)
-                                     (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+                                     (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper with ApplicationLogger {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -415,7 +415,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
     def audit(app: ApplicationData): Future[AuditResult] = {
-      Logger.info(s"Delete application ${app.id.value} - ${app.name}")
+      logger.info(s"Delete application ${app.id.value} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 

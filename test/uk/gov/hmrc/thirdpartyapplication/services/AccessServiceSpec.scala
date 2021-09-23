@@ -165,7 +165,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
   trait OverridesFixture extends Fixture {
     val override1 = GrantWithoutConsent(Set("scope1", "scope2"))
-    val override2 = PersistLogin()
+    val override2 = PersistLogin
     val override3 = SuppressIvForAgents(Set("scope1", "scope2"))
     val override4 = SuppressIvForOrganisations(Set("scope1", "scope2"))
     val overrides = Set[OverrideFlag](override1, override2, override3, override4)

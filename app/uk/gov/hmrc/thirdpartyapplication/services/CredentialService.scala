@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import cats.data.OptionT
 import cats.implicits._
 import javax.inject.{Inject, Singleton}
-import play.api.{Logger, LoggerLike}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -29,6 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
@@ -39,10 +39,9 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
                                   clientSecretService: ClientSecretService,
                                   config: CredentialConfig,
                                   apiPlatformEventService: ApiPlatformEventService,
-                                  emailConnector: EmailConnector)(implicit val ec: ExecutionContext) {
+                                  emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   val clientSecretLimit = config.clientSecretLimit
-  val logger: LoggerLike = Logger
 
   def fetch(applicationId: ApplicationId): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetch(applicationId) map (_.map(

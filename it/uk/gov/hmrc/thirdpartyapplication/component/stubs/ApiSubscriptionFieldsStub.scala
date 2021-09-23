@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.component.{MockHost, Stub}
 import play.api.http.Status.NO_CONTENT
 
 object ApiSubscriptionFieldsStub extends Stub {
-
   override val stub = MockHost(19650)
 
   def willDeleteTheSubscriptionFields() = {

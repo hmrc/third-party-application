@@ -16,19 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.Logger
 import play.api.libs.json.{JsError, JsSuccess, JsValue, Reads}
 import play.api.mvc.{AnyContent, Request, Result, Results}
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidGrantLengthException, InvalidIpAllowlistException, ScopeNotFoundException}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}
 
 // TODO : Sort these helper methods with plans to remove them - APIS-4766
-trait JsonUtils extends Results {
+trait JsonUtils extends Results with ApplicationLogger {
   self: BackendController =>
    override def withJsonBody[T]
    (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
@@ -57,7 +57,7 @@ trait JsonUtils extends Results {
     case e: InvalidIpAllowlistException => BadRequest(JsErrorResponse(INVALID_IP_ALLOWLIST, e.getMessage))
     case e: InvalidGrantLengthException => BadRequest(JsErrorResponse(INVALID_GRANT_LENGTH, e.getMessage))
     case e: Throwable =>
-      Logger.error(s"Error occurred: ${e.getMessage}", e)
+      logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)
   }
 
@@ -66,7 +66,7 @@ trait JsonUtils extends Results {
   }
 
   private[controllers] def handleException(e: Throwable) = {
-    Logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
+    logger.error(s"An unexpected error occurred: ${e.getMessage}", e)
     InternalServerError(JsErrorResponse(UNKNOWN_ERROR, "An unexpected error occurred"))
   }
 

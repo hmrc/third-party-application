@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
 import play.api.libs.json.Json
-import play.api.test.NoMaterializer
+import akka.stream.testkit.NoMaterializer
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 

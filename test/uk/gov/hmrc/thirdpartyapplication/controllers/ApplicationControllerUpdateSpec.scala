@@ -45,8 +45,8 @@ import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import akka.stream.testkit.NoMaterializer
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
