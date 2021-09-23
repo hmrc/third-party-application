@@ -29,7 +29,7 @@ import play.api.libs.json.Json
 class AnswersToQuestionnaireDAO @Inject()(repo: AnswersRepository)(implicit ec: ExecutionContext) {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireJsonFormatters._
 
-  def byReferenceId(referenceId: ReferenceId): (String, Json.JsValueWrapper) = ("referenceId", referenceId.value)
+  private def byReferenceId(referenceId: ReferenceId): (String, Json.JsValueWrapper) = ("referenceId", referenceId.value)
 
   def fetch(id: ReferenceId): Future[Option[AnswersToQuestionnaire]] = 
     repo

@@ -23,7 +23,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.ListSet
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.DeriveContext
 
 @Singleton
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
@@ -36,8 +36,6 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
   // N.B. Using futures even though not necessary as it mixes better AND means any move to an actual Mongo collection is proof against lots of change
 
   def fetch(id: QuestionnaireId): Future[Option[Questionnaire]] = store.get(id).pure[Future]
-
-  def fetchAll(): Future[List[Questionnaire]] = store.values.toList.pure[Future]
 
   def fetchActiveGroupsOfQuestionnaires() : Future[List[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
 }

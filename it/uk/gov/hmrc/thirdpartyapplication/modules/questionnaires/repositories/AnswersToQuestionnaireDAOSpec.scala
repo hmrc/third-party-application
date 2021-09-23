@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
@@ -27,8 +27,6 @@ import akka.stream.Materializer
 import play.api.test.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.time.DateTimeUtils
-import scala.collection.immutable.ListMap
 
 class AnswersToQuestionnaireDAOSpec
   extends AsyncHmrcSpec
@@ -45,12 +43,16 @@ class AnswersToQuestionnaireDAOSpec
   private val answersRepo = new AnswersRepository(reactiveMongoComponent)
 
   private val dao = new AnswersToQuestionnaireDAO(answersRepo)
+  val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
 
   trait Setup {
-    
-    val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
     val referenceId = ReferenceId.random
     val applicationId = ApplicationId.random
+
+    def checkResult(in: AnswersToQuestionnaire) = {
+      in.applicationId shouldBe applicationId
+      in.questionnaireId shouldBe questionnaire.id
+    }
   }
 
   override def beforeEach() {
@@ -66,16 +68,31 @@ class AnswersToQuestionnaireDAOSpec
     }
   }
 
-  "save" should {
+  "create overwrite and fetch" should {
+    val aQuestion: YesNoQuestion = questionnaire.questions.head.question.asInstanceOf[YesNoQuestion]
+    val firstQuestionId = aQuestion.id
+    val firstQuestionAnswer = SingleChoiceAnswer("Yes")
 
-    "???" in new Setup {
-      val result = dao.create(applicationId, questionnaire.id)
+    "return the latest" in new Setup {
+      val createResult = dao.create(applicationId, questionnaire.id)
 
-      val fetchResult = await(result.flatMap(refId => dao.fetch(refId))).value
+      val fetchResult1: AnswersToQuestionnaire = await(createResult.flatMap(refId => dao.fetch(refId))).value
 
-      fetchResult.applicationId shouldBe applicationId
-      fetchResult.questionnaireId shouldBe questionnaire.id
-      fetchResult.answers shouldBe 'empty
+      val answerAQuestion = fetchResult1.copy(answers = fetchResult1.answers + (firstQuestionId -> firstQuestionAnswer))
+
+      val saveResult = dao.save(answerAQuestion)
+
+      val fetchResult2: AnswersToQuestionnaire = await(saveResult.flatMap(atq => dao.fetch(atq.referenceId))).value
+
+      checkResult(fetchResult1)
+      checkResult(fetchResult2)
+      
+      fetchResult1.answers shouldBe 'empty
+      val startedOn1 = fetchResult1.startedOn
+      
+      fetchResult2.answers.size shouldBe 1
+      val startedOn2 = fetchResult2.startedOn
+      startedOn1.getMillis shouldBe startedOn2.getMillis
     }
   }
 }

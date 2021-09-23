@@ -14,13 +14,14 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Application
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
 
 object DeriveContext {
   val VAT_OR_ITSA = "VAT_OR_ITSA"
-  val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE"
+  val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
 
   // TODO
   def deriveContext(application: Application): AskQuestion.Context = {
