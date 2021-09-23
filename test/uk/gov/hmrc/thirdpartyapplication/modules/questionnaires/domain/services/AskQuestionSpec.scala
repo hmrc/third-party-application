@@ -21,6 +21,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion._
 import cats.data.NonEmptyList
 import scala.collection.immutable.ListSet
+import scala.collection.immutable.ListMap
 
 class AskQuestionSpec extends HmrcSpec {
   def yesNoQuestion(counter: Int): SingleChoiceQuestion = {
@@ -36,7 +37,7 @@ class AskQuestionSpec extends HmrcSpec {
       QuestionId.random,
       Wording(s"Wording$counter"),
       Statement(List()),
-      ListSet(choices.map(c => QuestionChoice(c)): _*)
+      ListSet(choices.map(c => PossibleAnswer(c)): _*)
     )
   }
 
@@ -49,7 +50,7 @@ class AskQuestionSpec extends HmrcSpec {
   }
   
   val blankContext : Context = Map.empty
-  val noAnswers : Answers = Map.empty
+  val noAnswers: ActualAnswers = ListMap.empty
   
   "AskQuestion" when {
     "call getNextQuestion" should {
@@ -70,12 +71,12 @@ class AskQuestionSpec extends HmrcSpec {
         }
         
         "return the second question when the first is answered" in {
-          val firstAnswered = noAnswers + (question1.id -> mock[Answer])
+          val firstAnswered = noAnswers + (question1.id -> mock[ActualAnswer])
           getNextQuestion(blankContext)(q, firstAnswered).value shouldBe question2
         }
 
         "return none when all are answered" in {
-          val allAnswered = noAnswers + (question1.id -> mock[Answer]) + (question2.id -> mock[Answer])
+          val allAnswered = noAnswers + (question1.id -> mock[ActualAnswer]) + (question2.id -> mock[ActualAnswer])
           getNextQuestion(blankContext)(q, allAnswered) shouldBe None
         }
       }
@@ -143,46 +144,46 @@ class AskQuestionSpec extends HmrcSpec {
       }
     }
 
-    "call processAnswer for single choice questions" should {
+    "call validateAnswersToQuestion for single choice questions" should {
       val question = yesNoQuestion(1)
 
       "return 'right(answer) when the first answer is valid" in {
-        processAnswer(question, NonEmptyList.of("Yes")).right.value shouldBe SingleChoiceAnswer("Yes")
+        validateAnswersToQuestion(question, NonEmptyList.of("Yes")).right.value shouldBe SingleChoiceAnswer("Yes")
       }
       "return 'right(answer) when the first answer is valid regardless of subsequent answers" in {
-        processAnswer(question, NonEmptyList.of("Yes", "blah")).right.value shouldBe SingleChoiceAnswer("Yes")
+        validateAnswersToQuestion(question, NonEmptyList.of("Yes", "blah")).right.value shouldBe SingleChoiceAnswer("Yes")
       }
       
       "return 'left when the first answer is invalid" in {
-        processAnswer(question, NonEmptyList.of("Yodel")) shouldBe 'left
+        validateAnswersToQuestion(question, NonEmptyList.of("Yodel")) shouldBe 'left
       }
 
       "return 'left when the first answer is invalid even when subsequent answers are correct" in {
-        processAnswer(question, NonEmptyList.of("Yodel", "Yes")) shouldBe 'left
+        validateAnswersToQuestion(question, NonEmptyList.of("Yodel", "Yes")) shouldBe 'left
       }
     }
 
-    "call processAnswer for multiple choice questions" should {
+    "call validateAnswersToQuestion for multiple choice questions" should {
       val question = multichoiceQuestion(1, "one","two", "three")
 
       "return 'right(answers) when all answers are valid" in {
-        processAnswer(question, NonEmptyList.of("two", "three")).right.value shouldBe MultipleChoiceAnswer(Set("two", "three"))
+        validateAnswersToQuestion(question, NonEmptyList.of("two", "three")).right.value shouldBe MultipleChoiceAnswer(Set("two", "three"))
       }
 
       "return 'left when not all answers are valid" in {
-        processAnswer(question, NonEmptyList.of("two", "three", "yodel")) shouldBe 'left
+        validateAnswersToQuestion(question, NonEmptyList.of("two", "three", "yodel")) shouldBe 'left
       }
     }
 
-    "call processAnswer for text question" should {
+    "call validateAnswersToQuestion for text question" should {
       val question = textQuestion(1)
 
       "return 'right when an answer is given" in {
-        processAnswer(question, NonEmptyList.of("answered")).right.value shouldBe TextAnswer("answered")
+        validateAnswersToQuestion(question, NonEmptyList.of("answered")).right.value shouldBe TextAnswer("answered")
       }
       
       "return 'left when the answer is blank" in {
-        processAnswer(question, NonEmptyList.of("")) shouldBe 'left
+        validateAnswersToQuestion(question, NonEmptyList.of("")) shouldBe 'left
       }
     }
   }

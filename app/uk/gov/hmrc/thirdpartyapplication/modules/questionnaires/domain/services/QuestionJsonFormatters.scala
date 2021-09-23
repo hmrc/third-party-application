@@ -25,7 +25,7 @@ trait QuestionJsonFormatters extends StatementJsonFormatters {
   implicit val jsonFormatLabel = Json.valueFormat[Label]
 
 
-  implicit val jsonFormatQuestionChoice = Json.valueFormat[QuestionChoice]
+  implicit val jsonFormatPossibleAnswer = Json.valueFormat[PossibleAnswer]
   implicit val jsonFormatTextQuestion = Json.format[TextQuestion]
   implicit val jsonFormatYesNoQuestion = Json.format[YesNoQuestion]
   implicit val jsonFormatChooseOneOfQuestion = Json.format[ChooseOneOfQuestion]

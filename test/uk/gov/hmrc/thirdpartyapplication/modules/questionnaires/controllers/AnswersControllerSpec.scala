@@ -32,6 +32,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.time.DateTimeUtils
 import AnswersController._
 import akka.stream.testkit.NoMaterializer
+import cats.data.NonEmptyList
 
 class AnswersControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireFrontendJsonFormatters._
@@ -98,6 +99,19 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
       val result = underTest.raise()(FakeRequest(POST, "/").withBody(jsonBody))
 
       status(result) shouldBe BAD_REQUEST
+    }
+  }
+
+  "recordAnswer" should {
+    "return an OK response" in new Setup {
+      // TODO some setup for test
+      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
+      implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
+      
+      val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val result = underTest.recordAnswer(referenceId, questionnaire.questions.head.question.id)(FakeRequest(PUT, "/").withBody(jsonBody))
+
+      status(result) shouldBe OK
     }
   }
 }

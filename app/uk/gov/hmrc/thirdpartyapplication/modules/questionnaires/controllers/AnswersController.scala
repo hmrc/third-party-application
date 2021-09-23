@@ -25,8 +25,10 @@ import play.api.mvc.ControllerComponents
 import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import cats.data.NonEmptyList
 
 object AnswersController {
+  import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireFrontendJsonFormatters._
 
   case class FetchResponse(questionnaire: Questionnaire, answers: AnswersToQuestionnaire)
@@ -40,6 +42,12 @@ object AnswersController {
   
   case class RaiseResponse(referenceId: ReferenceId)
   implicit val writesRaiseResponse = Json.writes[RaiseResponse]
+
+  case class RecordAnswersRequest(answer: NonEmptyList[String])
+  implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
+
+  case class RecordAnswersResponse(referenceId: ReferenceId)
+  implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
 }
 
 @Singleton
@@ -67,6 +75,16 @@ extends BackendController(cc) {
 
     withJsonBody[RaiseRequest] { raiseRequest =>
       service.raiseQuestionnaire(raiseRequest.applicationId, raiseRequest.questionnaireId).map(_.fold(failed, success))
+    }
+  }
+
+  def recordAnswer(referenceId: ReferenceId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
+    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
+
+    val success = (referenceId: ReferenceId) => Ok(Json.toJson(RecordAnswersResponse(referenceId)))
+
+    withJsonBody[RecordAnswersRequest] { answersRequest =>
+      service.saveAnswer(referenceId, questionId, answersRequest.answer).map(_.fold(failed, success))
     }
   }
 }

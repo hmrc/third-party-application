@@ -23,6 +23,8 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
+import cats.data.NonEmptyList
 
 @Singleton
 class AnswersService @Inject()(
@@ -51,6 +53,20 @@ class AnswersService @Inject()(
         answers <- fromOptionF(answersDAO.fetch(referenceId), "No such referenceId")
         questionnaire <- fromOptionF(questionnaireDAO.fetch(answers.questionnaireId), "No such questionnaire")
       } yield ((questionnaire, answers))
+    )
+    .value
+  }
+
+  def saveAnswer(referenceId: ReferenceId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ReferenceId]] = {
+    (
+      for {
+        answersToQ    <- fromOptionF(answersDAO.fetch(referenceId), "No such referenceId")
+        questionnaire <- fromOptionF(questionnaireDAO.fetch(answersToQ.questionnaireId), "No such questionnaire")
+        questionItem  <- fromOption(questionnaire.questions.find(_.question.id == questionId), "No such question")
+        answer        <- fromEither(AskQuestion.validateAnswersToQuestion(questionItem.question, rawAnswers))
+        newAtQ         = answersToQ.copy(answers = answersToQ.answers + (questionId -> answer))
+        _             <- liftF(answersDAO.save(newAtQ))
+      } yield referenceId
     )
     .value
   }

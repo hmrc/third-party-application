@@ -24,11 +24,11 @@ import cats.data.NonEmptyList
 object AskQuestion {
   type Context = Map[String, String]
   
-  type Answers = Map[QuestionId, Answer]
+  type ActualAnswers = Map[QuestionId, ActualAnswer]
 
   type Error = String
 
-  protected def shouldAsk(context: Context)(next: QuestionItem, answers: Answers): Boolean = {
+  protected def shouldAsk(context: Context)(next: QuestionItem, answers: ActualAnswers): Boolean = {
     next.askWhen match {
       case AlwaysAsk => true
       case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
@@ -36,7 +36,7 @@ object AskQuestion {
     }
   }
 
-  def getNextQuestion(context: Context)(questionnaire: Questionnaire, answers: Answers): Option[Question] = {
+  def getNextQuestion(context: Context)(questionnaire: Questionnaire, answers: ActualAnswers): Option[Question] = {
     def checkNext(fi: QuestionItem): Option[Question] = {
       if(shouldAsk(context)(fi, answers)) {
         if(answers.contains(fi.question.id)) {
@@ -65,19 +65,19 @@ object AskQuestion {
     findFirst(questionnaire.questions)
   }
 
-  def processAnswer(question: Question, answers: NonEmptyList[String]): Either[Error, Answer] = {
+  def validateAnswersToQuestion(question: Question, answers: NonEmptyList[String]): Either[Error, ActualAnswer] = {
     question match {
       case q: SingleChoiceQuestion => 
         Either.fromOption(
           answers
           .head
           .some
-          .filter(answer => q.choices.contains(QuestionChoice(answer)))
+          .filter(answer => q.choices.contains(PossibleAnswer(answer)))
           .map(SingleChoiceAnswer(_))
           , "The answer is not valid for this question"
         )
       case q: MultiChoiceQuestion =>
-        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(QuestionChoice(answer)))
+        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
         invalid match {
           case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
           case _     => "Some answers are not valid for this question".asLeft

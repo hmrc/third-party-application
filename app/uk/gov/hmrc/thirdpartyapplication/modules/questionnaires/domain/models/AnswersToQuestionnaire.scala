@@ -29,15 +29,15 @@ object ReferenceId {
   def random: ReferenceId = ReferenceId(UUID.randomUUID().toString())
 }
 
-sealed trait Answer
-case class SingleChoiceAnswer(value: String) extends Answer
-case class MultipleChoiceAnswer(values: Set[String]) extends Answer
-case class TextAnswer(value: String) extends Answer
+sealed trait ActualAnswer
+case class SingleChoiceAnswer(value: String) extends ActualAnswer
+case class MultipleChoiceAnswer(values: Set[String]) extends ActualAnswer
+case class TextAnswer(value: String) extends ActualAnswer
 
 case class AnswersToQuestionnaire(
   referenceId: ReferenceId, 
   questionnaireId: QuestionnaireId, 
   applicationId: ApplicationId, 
   startedOn: DateTime,
-  answers: ListMap[QuestionId, Answer]
+  answers: ListMap[QuestionId, ActualAnswer]
 )

@@ -165,9 +165,9 @@ object QuestionnaireDAO {
           )
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No"),
-          QuestionChoice("We only have one customer")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No"),
+          PossibleAnswer("We only have one customer")
         )
       )
 
@@ -182,9 +182,9 @@ object QuestionnaireDAO {
           )
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No"),
-          QuestionChoice("We only have one user")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No"),
+          PossibleAnswer("We only have one user")
         )
       )
 
@@ -226,9 +226,9 @@ object QuestionnaireDAO {
           StatementText("Select all that apply.")
         ),
         ListSet(
-          QuestionChoice("In the UK"),
-          QuestionChoice("In the European Economic Area (EEA)"),
-          QuestionChoice("Outside the European Economic Area (EEA)")
+          PossibleAnswer("In the UK"),
+          PossibleAnswer("In the European Economic Area (EEA)"),
+          PossibleAnswer("Outside the European Economic Area (EEA)")
         )
       )
 
@@ -288,8 +288,8 @@ object QuestionnaireDAO {
           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No, customers install and manage their software")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No, customers install and manage their software")
         )
       )
 
@@ -387,9 +387,9 @@ object QuestionnaireDAO {
           )
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No"),
-          QuestionChoice("There are no adverts in my software")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No"),
+          PossibleAnswer("There are no adverts in my software")
         )
       )
     
@@ -400,9 +400,9 @@ object QuestionnaireDAO {
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No, I call it something else"),
-          QuestionChoice("I do not advertise my software")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No, I call it something else"),
+          PossibleAnswer("I do not advertise my software")
         )
       )
 
@@ -417,9 +417,9 @@ object QuestionnaireDAO {
           )
         ),
         ListSet(
-          QuestionChoice("Yes"),
-          QuestionChoice("No"),
-          QuestionChoice("I do not share customer data")
+          PossibleAnswer("Yes"),
+          PossibleAnswer("No"),
+          PossibleAnswer("I do not share customer data")
         )
       )
       

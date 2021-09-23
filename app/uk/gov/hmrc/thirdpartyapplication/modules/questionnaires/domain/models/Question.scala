@@ -37,14 +37,14 @@ sealed trait Question {
 case class TextQuestion(id: QuestionId, wording: Wording, statement: Statement) extends Question
 
 sealed trait ChoiceQuestion extends Question {
-  def choices: ListSet[QuestionChoice]
+  def choices: ListSet[PossibleAnswer]
 }
 
 sealed trait SingleChoiceQuestion extends ChoiceQuestion
-case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[QuestionChoice]) extends ChoiceQuestion
-case class ChooseOneOfQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[QuestionChoice]) extends SingleChoiceQuestion
+case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer]) extends ChoiceQuestion
+case class ChooseOneOfQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer]) extends SingleChoiceQuestion
 case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement) extends SingleChoiceQuestion {
-  lazy val choices = ListSet(QuestionChoice("Yes"), QuestionChoice("No"))
+  lazy val choices = ListSet(PossibleAnswer("Yes"), PossibleAnswer("No"))
 }
 
-case class QuestionChoice(value: String) extends AnyVal
+case class PossibleAnswer(value: String) extends AnyVal

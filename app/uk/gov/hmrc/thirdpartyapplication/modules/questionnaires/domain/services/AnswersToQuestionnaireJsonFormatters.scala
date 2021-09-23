@@ -27,8 +27,8 @@ trait AnswersToQuestionnaireJsonFormatters extends QuestionnaireJsonFormatters w
   implicit val asString: (QuestionId) => String = (q) => q.value
   implicit val asQuestionId: (String) => QuestionId = (s) => QuestionId(s)
   
-  implicit val listMapWrites: Writes[ListMap[QuestionId, Answer]] = listMapWrites[QuestionId, Answer]
-  implicit val listMapReads: Reads[ListMap[QuestionId, Answer]] = listMapReads[QuestionId, Answer]
+  implicit val listMapWrites: Writes[ListMap[QuestionId, ActualAnswer]] = listMapWrites[QuestionId, ActualAnswer]
+  implicit val listMapReads: Reads[ListMap[QuestionId, ActualAnswer]] = listMapReads[QuestionId, ActualAnswer]
 }
 
 object AnswersToQuestionnaireJsonFormatters extends AnswersToQuestionnaireJsonFormatters {
