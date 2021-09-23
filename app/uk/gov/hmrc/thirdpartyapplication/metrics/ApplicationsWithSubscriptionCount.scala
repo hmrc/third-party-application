@@ -28,18 +28,18 @@ import scala.util.{Failure, Success}
 @Singleton
 class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    logger.info("Pomegranate - Starting - ApplicationsWithSubscriptionCount.metrics()")
+    logger.info("Starting - ApplicationsWithSubscriptionCount.metrics()")
     // TODO Need to handle Application with zero subscriptions
     val result = applicationRepository.getApplicationWithSubscriptionCount()
     result
       .onComplete({
         case Success(v) =>
-          logger.info(s"Pomegranate - Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
+          logger.info(s"Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
 
         case Failure(e) =>
-          logger.info(s"Pomegranate - Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
+          logger.info(s"Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
       })
-    logger.info("Pomegranate - Finish - ApplicationsWithSubscriptionCount.metrics()")
+    logger.info("Finish - ApplicationsWithSubscriptionCount.metrics()")
     result
   }
 

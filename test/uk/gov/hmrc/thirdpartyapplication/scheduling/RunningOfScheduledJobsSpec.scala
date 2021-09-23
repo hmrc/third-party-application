@@ -48,7 +48,6 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       private val testApp = fakeApplication()
 
       new RunningOfScheduledJobs {
-        println("POMEGRANATE : Set up")
         override lazy val ec: ExecutionContext = ExecutionContext.Implicits.global
         override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
         override lazy val scheduledJobs: Seq[ScheduledJob] = Seq(testScheduledJob)
@@ -56,7 +55,6 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
         override lazy val scheduler: Scheduler = new StubbedScheduler {
           override def scheduleWithFixedDelay(initialDelay: FiniteDuration, interval: FiniteDuration)(runnable: Runnable)
                                (implicit executor: ExecutionContext): Cancellable = {
-          println("POMEGRANATE")
             Captured.initialDelay = initialDelay
             Captured.interval     = interval
             hasBeenScheduled.countDown()
