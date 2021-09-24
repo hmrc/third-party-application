@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.AnswersServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsServiceMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
@@ -38,8 +38,8 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireFrontendJsonFormatters._
   implicit val mat = NoMaterializer
   
-  trait Setup extends AnswersServiceMockModule {
-    val underTest = new AnswersController(AnswersServiceMock.aMock, Helpers.stubControllerComponents())
+  trait Setup extends SubmissionsServiceMockModule {
+    val underTest = new AnswersController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
 
     val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
     val questionId = questionnaire.questions.head.question.id
@@ -52,7 +52,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
     implicit val readsFetchResponse = Json.reads[FetchResponse]
   
     "return an ok response when found" in new Setup {
-      AnswersServiceMock.Fetch.thenReturn(questionnaire, answers)
+      SubmissionsServiceMock.Fetch.thenReturn(questionnaire, answers)
 
       val result = underTest.fetch(referenceId)(FakeRequest())
 
@@ -66,7 +66,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
     }
       
     "return a bad request when not found" in new Setup {
-      AnswersServiceMock.Fetch.thenFails("Test Error")
+      SubmissionsServiceMock.Fetch.thenFails("Test Error")
 
       val result = underTest.fetch(referenceId)(FakeRequest())
 
@@ -79,7 +79,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
     implicit val readsRaiseResponse = Json.reads[RaiseResponse]
     
     "return an ok response" in new Setup {
-      AnswersServiceMock.RaiseQuestionnaire.thenReturn(referenceId)
+      SubmissionsServiceMock.RaiseQuestionnaire.thenReturn(referenceId)
       
       val jsonBody = Json.toJson(RaiseRequest(applicationId, questionnaire.id))
       val result = underTest.raise().apply(FakeRequest(POST, "/").withBody(jsonBody))
@@ -93,7 +93,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
     }
 
     "return a bad request response" in new Setup {
-      AnswersServiceMock.RaiseQuestionnaire.thenFails("Test Error")
+      SubmissionsServiceMock.RaiseQuestionnaire.thenFails("Test Error")
       
       val jsonBody = Json.toJson(RaiseRequest(applicationId, questionnaire.id))
       val result = underTest.raise()(FakeRequest(POST, "/").withBody(jsonBody))
@@ -107,7 +107,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
       import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
       
-      AnswersServiceMock.RecordAnswer.thenReturn(referenceId)
+      SubmissionsServiceMock.RecordAnswer.thenReturn(referenceId)
 
       val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
       val result = underTest.recordAnswer(referenceId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
@@ -119,7 +119,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
       import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
       
-      AnswersServiceMock.RecordAnswer.thenFails("bang")
+      SubmissionsServiceMock.RecordAnswer.thenFails("bang")
 
       val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
       val result = underTest.recordAnswer(referenceId, questionnaire.questions.head.question.id)(FakeRequest(PUT, "/").withBody(jsonBody))

@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.
 import cats.data.NonEmptyList
 
 @Singleton
-class AnswersService @Inject()(
+class SubmissionsService @Inject()(
   questionnaireDAO: QuestionnaireDAO,
   answersDAO: AnswersToQuestionnaireDAO
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
@@ -47,6 +47,10 @@ class AnswersService @Inject()(
     .value
   }
 
+  def fetchLatest(applicationId: ApplicationId): Future[Either[String, Map[QuestionnaireId, ReferenceId]]] = {
+    ???
+  }
+  
   def fetch(referenceId: ReferenceId): Future[Either[String, (Questionnaire, AnswersToQuestionnaire)]] = {
     (
       for {

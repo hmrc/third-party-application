@@ -27,7 +27,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 import scala.collection.immutable.ListMap
 import cats.data.NonEmptyList
 
-class AnswersServiceSpec extends AsyncHmrcSpec {
+class SubmissionsServiceSpec extends AsyncHmrcSpec {
   trait Setup 
     extends AnswersToQuestionnaireDAOMockModule {
 
@@ -38,7 +38,7 @@ class AnswersServiceSpec extends AsyncHmrcSpec {
     val referenceId = ReferenceId.random
     val applicationId = ApplicationId.random
 
-    val underTest = new AnswersService(new QuestionnaireDAO(), AnswersToQuestionnaireDAOMock.aMock)
+    val underTest = new SubmissionsService(new QuestionnaireDAO(), AnswersToQuestionnaireDAOMock.aMock)
 
     def raise(id: QuestionnaireId): ReferenceId = {
       await(underTest.raiseQuestionnaire(applicationId, id)).right.get 

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers
 
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.AnswersService
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -52,7 +52,7 @@ object AnswersController {
 
 @Singleton
 class AnswersController @Inject()(
-  service: AnswersService,
+  service: SubmissionsService,
   cc: ControllerComponents
 )(
   implicit val ec: ExecutionContext

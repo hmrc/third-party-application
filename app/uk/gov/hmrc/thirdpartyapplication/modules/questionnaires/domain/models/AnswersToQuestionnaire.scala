@@ -21,6 +21,7 @@ import org.joda.time.DateTime
 import java.util.UUID
 import scala.collection.immutable.ListMap
 
+@Deprecated
 case class ReferenceId(value: String) extends AnyVal
 
 object ReferenceId {
@@ -40,4 +41,17 @@ case class AnswersToQuestionnaire(
   applicationId: ApplicationId, 
   startedOn: DateTime,
   answers: ListMap[QuestionId, ActualAnswer]
+)
+
+case class SubmissionId(value: String) extends AnyVal
+object SubmissionId {
+  implicit val format = play.api.libs.json.Json.valueFormat[SubmissionId]
+  
+  def random: SubmissionId = SubmissionId(UUID.randomUUID().toString())
+}
+
+case class Submission(
+  submissionId: SubmissionId,
+  applicationId: ApplicationId,
+  startedOn: DateTime
 )
