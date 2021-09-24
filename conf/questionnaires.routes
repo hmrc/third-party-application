@@ -1,6 +1,10 @@
-GET         /                             uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.QuestionnairesController.activeQuestionnaires()
+#GET         /:qid                               uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.QuestionnairesController.fetch(qid: QuestionnaireId)
 
-POST        /                             uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController.raise()
+POST        /application/:aid/submission        uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.SubmissionsController.create(aid: ApplicationId)
+#GET         /application/:aid/submission        uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.SubmissionsController.fetchLatest(aid: ApplicationId)
 
-GET         /answers/:rid                 uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController.fetch(rid: ReferenceId)
-POST        /answers/:rid/question/:qid   uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.AnswersController.recordAnswer(rid: ReferenceId, qid: QuestionId)
+
+#
+#GET         /answers/:rid                 uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.SubmissionsController.fetch(rid: ReferenceId)
+#POST        /answers/:rid/question/:qid   uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.SubmissionsController.recordAnswer(rid: ReferenceId, qid: QuestionId)
+#GET         /                             uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.QuestionnairesController.activeQuestionnaires()

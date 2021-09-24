@@ -23,26 +23,26 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import reactivemongo.bson.BSONObjectID
 import akka.stream.Materializer
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.AnswersToQuestionnaire
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswersToQuestionnaireJsonFormatters
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.SubmissionsJsonFormatters
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Submission
 
 @Singleton
-class AnswersRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
-extends ReactiveRepository[AnswersToQuestionnaire, BSONObjectID]("answersToQuestionnaires", mongo.mongoConnector.db,
-AnswersToQuestionnaireJsonFormatters.format, ReactiveMongoFormats.objectIdFormats) {
+class SubmissionsRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
+extends ReactiveRepository[Submission, BSONObjectID]("submissions", mongo.mongoConnector.db,
+SubmissionsJsonFormatters.submissionFormat, ReactiveMongoFormats.objectIdFormats) {
   
   import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
   override def indexes = List(
     createSingleFieldAscendingIndex(
-      indexFieldKey = "referenceId",
+      indexFieldKey = "submissionId",
       isBackground = true,
-      indexName = Some("referenceIdIndex")
+      indexName = Some("submissionIdIndex")
     ),
-    createAscendingIndex(
-      indexName = Some("applicationAndQuestionnaireIndex"),
+    createSingleFieldAscendingIndex(
+      indexFieldKey = "applicationId",
       isUnique = false,
       isBackground = true,
-      indexFieldsKey = List("applicationId", "questionnaireId"): _*,
+      indexName = Some("applicationIdIndex")
     )
   )
 }

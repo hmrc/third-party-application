@@ -36,10 +36,7 @@ case class MultipleChoiceAnswer(values: Set[String]) extends ActualAnswer
 case class TextAnswer(value: String) extends ActualAnswer
 
 case class AnswersToQuestionnaire(
-  referenceId: ReferenceId, 
   questionnaireId: QuestionnaireId, 
-  applicationId: ApplicationId, 
-  startedOn: DateTime,
   answers: ListMap[QuestionId, ActualAnswer]
 )
 
@@ -53,5 +50,7 @@ object SubmissionId {
 case class Submission(
   submissionId: SubmissionId,
   applicationId: ApplicationId,
-  startedOn: DateTime
+  startedOn: DateTime,
+  groupings: List[GroupOfQuestionnaires],
+  answersToQuestionnaires: List[AnswersToQuestionnaire]
 )

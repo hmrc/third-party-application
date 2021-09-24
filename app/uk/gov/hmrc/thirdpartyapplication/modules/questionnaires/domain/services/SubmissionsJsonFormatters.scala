@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import play.api.libs.json._
 import org.joda.time.DateTimeZone
 
-trait AnswersToQuestionnaireJsonFormatters extends QuestionnaireJsonFormatters with MapJsonFormatters {
+trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters with MapJsonFormatters {
   
   implicit val asString: (QuestionId) => String = (q) => q.value
   implicit val asQuestionId: (String) => QuestionId = (s) => QuestionId(s)
@@ -31,14 +31,16 @@ trait AnswersToQuestionnaireJsonFormatters extends QuestionnaireJsonFormatters w
   implicit val listMapReads: Reads[ListMap[QuestionId, ActualAnswer]] = listMapReads[QuestionId, ActualAnswer]
 }
 
-object AnswersToQuestionnaireJsonFormatters extends AnswersToQuestionnaireJsonFormatters {
+object SubmissionsJsonFormatters extends SubmissionsJsonFormatters {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-  implicit val format = Json.format[AnswersToQuestionnaire]
+  implicit val answerFormat = Json.format[AnswersToQuestionnaire]
+  implicit val submissionFormat = Json.format[Submission]
 }
 
-object AnswersToQuestionnaireFrontendJsonFormatters extends AnswersToQuestionnaireJsonFormatters {
+object SubmissionsFrontendJsonFormatters extends SubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
-  implicit val format = Json.format[AnswersToQuestionnaire]
+  implicit val answerFormat = Json.format[AnswersToQuestionnaire]
+  implicit val submissionFormat = Json.format[Submission]
 }
