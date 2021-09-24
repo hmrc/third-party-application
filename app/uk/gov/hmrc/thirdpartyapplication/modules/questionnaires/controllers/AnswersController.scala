@@ -81,10 +81,10 @@ extends BackendController(cc) {
   def recordAnswer(referenceId: ReferenceId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (referenceId: ReferenceId) => Ok(Json.toJson(RecordAnswersResponse(referenceId)))
+    val success = (atq: AnswersToQuestionnaire) => Ok(Json.toJson(RecordAnswersResponse(atq.referenceId)))
 
     withJsonBody[RecordAnswersRequest] { answersRequest =>
-      service.saveAnswer(referenceId, questionId, answersRequest.answer).map(_.fold(failed, success))
+      service.recordAnswer(referenceId, questionId, answersRequest.answer).map(_.fold(failed, success))
     }
   }
 }

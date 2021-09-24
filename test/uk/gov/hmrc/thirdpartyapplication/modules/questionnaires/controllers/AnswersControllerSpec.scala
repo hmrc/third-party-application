@@ -42,6 +42,7 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
     val underTest = new AnswersController(AnswersServiceMock.aMock, Helpers.stubControllerComponents())
 
     val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+    val questionId = questionnaire.questions.head.question.id
     val referenceId = ReferenceId.random
     val applicationId = ApplicationId.random
     val answers = AnswersToQuestionnaire(referenceId, questionnaire.id, applicationId, DateTimeUtils.now, ListMap.empty)
@@ -89,7 +90,6 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
           x.referenceId shouldBe referenceId
         case _ => fail("Not parsed as a response")        
       }
-
     }
 
     "return a bad request response" in new Setup {
@@ -104,14 +104,27 @@ class AnswersControllerSpec extends AsyncHmrcSpec {
 
   "recordAnswer" should {
     "return an OK response" in new Setup {
-      // TODO some setup for test
       import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
       
+      AnswersServiceMock.RecordAnswer.thenReturn(referenceId)
+
+      val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val result = underTest.recordAnswer(referenceId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+
+      status(result) shouldBe OK
+    }
+
+    "return an bad request response when something goes wrong" in new Setup {
+      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
+      implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
+      
+      AnswersServiceMock.RecordAnswer.thenFails("bang")
+
       val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
       val result = underTest.recordAnswer(referenceId, questionnaire.questions.head.question.id)(FakeRequest(PUT, "/").withBody(jsonBody))
 
-      status(result) shouldBe OK
+      status(result) shouldBe BAD_REQUEST
     }
   }
 }

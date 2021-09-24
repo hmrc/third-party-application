@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.Answers
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import cats.data.NonEmptyList
 
 trait AnswersServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseAnswersServiceMock {
@@ -41,6 +42,14 @@ trait AnswersServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def thenFails(error: String) =
         when(aMock.raiseQuestionnaire(*[ApplicationId], *[QuestionnaireId])).thenReturn(successful(Left(error)))
+    }
+
+    object RecordAnswer {
+      def thenReturn(referenceId: ReferenceId) =
+        when(aMock.recordAnswer(eqTo[ReferenceId](referenceId), *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Right(mock[AnswersToQuestionnaire])))
+
+      def thenFails(error: String) = 
+        when(aMock.recordAnswer(*[ReferenceId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Left(error)))
     }
   }
 

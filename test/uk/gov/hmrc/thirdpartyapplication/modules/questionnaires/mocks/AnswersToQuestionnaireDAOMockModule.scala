@@ -32,12 +32,10 @@ trait AnswersToQuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatc
         when(aMock.fetch(eqTo[ReferenceId](referenceId))).thenReturn(successful(answers))
     }
 
-    object FindLatest {
-      ??? // TODO
-    }
-
     object Save {
-      ??? // TODO
+      def thenReturn() = {
+        when(aMock.save(*)).thenAnswer( (in: AnswersToQuestionnaire) => successful(in))
+      }
     }
 
     object Create {

@@ -57,7 +57,7 @@ class AnswersService @Inject()(
     .value
   }
 
-  def saveAnswer(referenceId: ReferenceId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ReferenceId]] = {
+  def recordAnswer(referenceId: ReferenceId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, AnswersToQuestionnaire]] = {
     (
       for {
         answersToQ    <- fromOptionF(answersDAO.fetch(referenceId), "No such referenceId")
@@ -66,7 +66,7 @@ class AnswersService @Inject()(
         answer        <- fromEither(AskQuestion.validateAnswersToQuestion(questionItem.question, rawAnswers))
         newAtQ         = answersToQ.copy(answers = answersToQ.answers + (questionId -> answer))
         _             <- liftF(answersDAO.save(newAtQ))
-      } yield referenceId
+      } yield newAtQ
     )
     .value
   }
@@ -74,5 +74,5 @@ class AnswersService @Inject()(
   /*
   * When you delete an application
   */
-  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = ???
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = ???  // TODO
 }
