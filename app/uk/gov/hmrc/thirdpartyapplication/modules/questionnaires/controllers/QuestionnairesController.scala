@@ -22,18 +22,33 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
 import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+
+object QuestionnairesController {
+  case class ErrorMessage(message: String)
+  implicit val writesErrorMessage = Json.writes[ErrorMessage]
+}
 
 @Singleton
 class QuestionnairesController @Inject()(
-  cc: ControllerComponents,
-  dao: QuestionnaireDAO
+  dao: QuestionnaireDAO,
+  cc: ControllerComponents
 )(
   implicit val ec: ExecutionContext
 ) 
 extends BackendController(cc) {
+  import QuestionnairesController._
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.GroupOfQuestionnairesJsonFormatters._
 
   def activeQuestionnaires = Action.async {
     dao.fetchActiveGroupsOfQuestionnaires.map(xs => Ok(Json.toJson(xs)))
+  }
+
+  def fetch(questionnaireId: QuestionnaireId) = Action.async { _ =>
+    val failed = BadRequest(Json.toJson(ErrorMessage("No such questionnaire")))
+
+    val success = (questionnaire: Questionnaire) => Ok(Json.toJson(questionnaire))
+
+    dao.fetch(questionnaireId).map(_.fold(failed)(success))
   }
 }

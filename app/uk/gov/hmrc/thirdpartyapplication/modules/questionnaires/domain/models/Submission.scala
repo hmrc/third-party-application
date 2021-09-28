@@ -21,20 +21,12 @@ import org.joda.time.DateTime
 import java.util.UUID
 import scala.collection.immutable.ListMap
 
-@Deprecated
-case class ReferenceId(value: String) extends AnyVal
-
-object ReferenceId {
-  implicit val format = play.api.libs.json.Json.valueFormat[ReferenceId]
-  
-  def random: ReferenceId = ReferenceId(UUID.randomUUID().toString())
-}
-
 sealed trait ActualAnswer
 case class SingleChoiceAnswer(value: String) extends ActualAnswer
 case class MultipleChoiceAnswer(values: Set[String]) extends ActualAnswer
 case class TextAnswer(value: String) extends ActualAnswer
 
+@Deprecated
 case class AnswersToQuestionnaire(
   questionnaireId: QuestionnaireId, 
   answers: ListMap[QuestionId, ActualAnswer]
@@ -47,10 +39,20 @@ object SubmissionId {
   def random: SubmissionId = SubmissionId(UUID.randomUUID().toString())
 }
 
+import Submission.AnswerMapOfMaps
+
 case class Submission(
-  submissionId: SubmissionId,
+  id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
-  groupings: List[GroupOfQuestionnaires],
-  answersToQuestionnaires: List[AnswersToQuestionnaire]
-)
+  groupings: List[GroupOfQuestionnaireIds],
+  questionnaireAnswers: AnswerMapOfMaps
+) {
+  def allQuestionnaireIds: List[QuestionnaireId] = groupings.flatMap(_.links)
+
+  def hasQuestionnaire(qid: QuestionnaireId): Boolean = allQuestionnaireIds.contains(qid)
+}
+
+object Submission {
+  type AnswerMapOfMaps = Map[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]
+}

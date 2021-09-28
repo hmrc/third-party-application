@@ -20,7 +20,7 @@ import org.joda.time.DateTime
 import RateLimitTier.RateLimitTier
 
 
-case class ClientData(
+case class ClientDataXX(
   accessToken: String,
   clientSecrets: List[ClientSecret],                  // Non Empty
   lastAccessTokenUsage: Option[DateTime] = None,
@@ -30,14 +30,14 @@ case class ClientData(
   ipAllowlist: IpAllowlist
 )
 
-case class Application(
+case class ApplicationXX(
   id: ApplicationId,
   name: String,
   normalisedName: String,
   collaborators: Set[Collaborator],                   // Non empty
   description: Option[String] = None,
   wso2ApplicationName: String,
-  clientData: Map[ClientId, ClientData],              // Non empty
+  clientData: Map[ClientId, ClientDataXX],              // Non empty
   state: ApplicationState,
   access: Access = Standard(List.empty, None, None),
   environment: String = Environment.PRODUCTION.toString,

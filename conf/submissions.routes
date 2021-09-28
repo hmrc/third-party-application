@@ -1,0 +1,6 @@
+POST        /application/:aid                         SubmissionsController.createFor(aid: ApplicationId)
+GET         /application/:aid                         SubmissionsController.fetchLatest(aid: ApplicationId)
+
+POST        /:sid/questionnaire/:qid/question/:qnId   SubmissionsController.recordAnswers(sid: SubmissionId, qid: QuestionnaireId, qnId: QuestionId)
+
+#GET         /answers/:rid                             SubmissionsController.fetch(rid: ReferenceId)

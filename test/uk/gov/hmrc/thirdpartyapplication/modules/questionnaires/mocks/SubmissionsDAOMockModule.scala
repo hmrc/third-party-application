@@ -51,6 +51,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
           verify(aMock, atLeast(1)).save(*[Submission])
       }
 
+      object Fetch {
+        def thenReturn(submission: Submission) =
+          when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(submission)))
+      }
+
       object FetchLatest {
         def thenReturn(submission: Submission) =
           when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(Some(submission)))
@@ -58,12 +63,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
           when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(None))
       }
 
-      // object Save {
-      //   def thenReturn() = {
-      //     when(aMock.save(*)).thenAnswer( (in: Submissions) => successful(in))
-      //   }
-      // }
-
+      object Update {
+        def thenReturn() =
+          when(aMock.update(*[Submission])).thenAnswer( (s: Submission) => (successful(s)) )
+          
+        def verifyCalled() = 
+          verify(aMock, atLeast(1)).update(*[Submission])
+      }
     }
 
     object SubmissionsDAOMock extends BaseSubmissionsDAOMock {

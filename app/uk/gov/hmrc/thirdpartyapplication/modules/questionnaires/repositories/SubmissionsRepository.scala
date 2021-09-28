@@ -34,7 +34,8 @@ SubmissionsJsonFormatters.submissionFormat, ReactiveMongoFormats.objectIdFormats
   import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
   override def indexes = List(
     createSingleFieldAscendingIndex(
-      indexFieldKey = "submissionId",
+      indexFieldKey = "id",
+      isUnique = true,
       isBackground = true,
       indexName = Some("submissionIdIndex")
     ),

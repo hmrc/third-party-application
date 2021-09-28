@@ -18,10 +18,16 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
 import play.api.libs.json.Json
 
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.GroupOfQuestionnaires
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 
 trait GroupOfQuestionnairesJsonFormatters extends QuestionnaireJsonFormatters {
   implicit val groupOfQuestionnairesJsonFormat = Json.format[GroupOfQuestionnaires]
 }
 
 object GroupOfQuestionnairesJsonFormatters extends GroupOfQuestionnairesJsonFormatters
+
+trait GroupOfQuestionnaireIdsJsonFormatters extends QuestionnaireJsonFormatters {
+  implicit val groupOfQuestionnaireIdsJsonFormat = Json.format[GroupOfQuestionnaireIds]
+}
+
+object GroupOfQuestionnaireIdsJsonFormatters extends GroupOfQuestionnaireIdsJsonFormatters

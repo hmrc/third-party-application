@@ -24,14 +24,14 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
-import scala.collection.immutable.ListMap
+import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswerQuestion
 
 @Singleton
 class SubmissionsService @Inject()(
   questionnaireDAO: QuestionnaireDAO,
   submissionsDAO: SubmissionsDAO
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
-  
   import cats.instances.future.catsStdInstancesForFuture
 
   /*
@@ -40,11 +40,13 @@ class SubmissionsService @Inject()(
   def create(applicationId: ApplicationId): Future[Either[String, Submission]] = {
     (
       for {
-        groups <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
-        questionnaireIds = groups.flatMap(_.links)
-        submissionId = SubmissionId.random
-        answers: List[AnswersToQuestionnaire] = questionnaireIds.map(qid => AnswersToQuestionnaire(qid, ListMap.empty))
-        submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, answers)
+        groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
+        allQuestionnaires     =  groups.flatMap(_.links)
+        groupsOfIds           =  groups.map(_.toIds)
+        allQuestionnaireIds   =  groupsOfIds.flatMap(_.links)
+        submissionId          =  SubmissionId.random
+        answers               = AnswerQuestion.createMapFor(allQuestionnaires)
+        submission = Submission(submissionId, applicationId, DateTimeUtils.now, groupsOfIds, answers)
         _ <- liftF(submissionsDAO.save(submission))
       } yield submission
     )
@@ -55,29 +57,21 @@ class SubmissionsService @Inject()(
     submissionsDAO.fetchLatest(id)
   }
   
-  // def createAnswersToQuestionnaire(submissionId: SubmissionId, questionnaire: Questionnaire) = {
+  def fetch(id: SubmissionId): Future[Option[Submission]] = {
+    submissionsDAO.fetch(id)
+  }
 
-  // }
-
-  // def fetchLatest(applicationId: ApplicationId): Future[Either[String, Map[QuestionnaireId, ReferenceId]]] = {
-  //   ???
-  // }
-
-  // def recordAnswer(referenceId: ReferenceId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, AnswersToQuestionnaire]] = {
-  //   ???
-
-    // (
-    //   for {
-    //     answersToQ    <- fromOptionF(answersDAO.fetch(referenceId), "No such referenceId")
-    //     questionnaire <- fromOptionF(questionnaireDAO.fetch(answersToQ.questionnaireId), "No such questionnaire")
-    //     questionItem  <- fromOption(questionnaire.questions.find(_.question.id == questionId), "No such question")
-    //     answer        <- fromEither(AskQuestion.validateAnswersToQuestion(questionItem.question, rawAnswers))
-    //     newAtQ         = answersToQ.copy(answers = answersToQ.answers + (questionId -> answer))
-    //     _             <- liftF(answersDAO.save(newAtQ))
-    //   } yield newAtQ
-    // )
-    // .value
-  // }
+  def recordAnswers(submissionId: SubmissionId, questionnaireId: QuestionnaireId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, Submission]] = {
+    (
+      for {
+        submission           <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        questionnaire        <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
+        updatedSubmission    <- fromEither(AnswerQuestion.answer(submission, questionnaire, questionId, rawAnswers))
+        _                    <- liftF(submissionsDAO.update(updatedSubmission))
+      } yield updatedSubmission
+    )
+    .value
+  }
 
   /*
   * When you delete an application

@@ -18,5 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models
 
 case class GroupOfQuestionnaires(
   heading: String,
+  links: List[Questionnaire]
+) {
+  def toIds(): GroupOfQuestionnaireIds = {
+    GroupOfQuestionnaireIds(heading, links.map(_.id))
+  }
+}
+
+case class GroupOfQuestionnaireIds(
+  heading: String,
   links: List[QuestionnaireId]
 )

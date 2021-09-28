@@ -473,29 +473,29 @@ object QuestionnaireDAO {
         GroupOfQuestionnaires(
           heading = "Your processes",
           links = List(
-            DevelopmentPractices.questionnaire.id,
-            ServiceManagementPractices.questionnaire.id,
-            HandlingPersonalData.questionnaire.id
+            DevelopmentPractices.questionnaire,
+            ServiceManagementPractices.questionnaire,
+            HandlingPersonalData.questionnaire
           )            
         ),
         GroupOfQuestionnaires(
           heading = "Your application",
           links = List(
-            GrantingAuthorityToHMRC.questionnaire.id,
-            ApplicationSecurity.questionnaire.id,
-            FraudPreventionHeaders.questionnaire.id
+            GrantingAuthorityToHMRC.questionnaire,
+            ApplicationSecurity.questionnaire,
+            FraudPreventionHeaders.questionnaire
           )
         ),
         GroupOfQuestionnaires(
           heading = "Your marketing",
           links = List(
-            MarketingYourSoftware.questionnaire.id
+            MarketingYourSoftware.questionnaire
           )
         ),
         GroupOfQuestionnaires(
           heading = "Your details",
           links = List(
-            BusinessDetails.questionnaire.id
+            BusinessDetails.questionnaire
           )
         )
       )

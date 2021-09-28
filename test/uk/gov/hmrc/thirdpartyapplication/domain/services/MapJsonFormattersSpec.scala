@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.ReferenceId
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SubmissionId
 import play.api.libs.json.Json
 import scala.collection.immutable.ListMap
 import play.api.libs.json.JsSuccess
@@ -37,7 +37,7 @@ class MapJsonFormattersSpec extends HmrcSpec {
   import MapJsonFormatters._
   import MapJsonFormattersSpec._
 
-  implicit val format = Json.valueFormat[ReferenceId]
+  implicit val format = Json.valueFormat[SubmissionId]
   
   val testValue: ListMap[Key, Value] = ListMap(
     Key("one") -> Value("a", 1),

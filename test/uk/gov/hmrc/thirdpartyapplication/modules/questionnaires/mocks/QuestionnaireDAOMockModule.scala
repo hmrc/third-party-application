@@ -22,14 +22,20 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Qu
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
 
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionId
 
 trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseQuestionnaireDAOMock {
     def aMock: QuestionnaireDAO
 
     object Fetch {
-      def thenReturn(questionnaireId: QuestionnaireId)(questionnaire: Option[Questionnaire]) =
-        when(aMock.fetch(questionnaireId)).thenReturn(successful(questionnaire))
+      def thenReturn(questionnaire: Option[Questionnaire]) =
+        when(aMock.fetch(*[QuestionnaireId])).thenReturn(successful(questionnaire))
+    }
+
+    object ActiveQuestionnaireGroupings {
+      def thenUseStandardOnes() = 
+        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings))
     }
   }
 

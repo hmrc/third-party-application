@@ -16,15 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Application
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 object DeriveContext {
   val VAT_OR_ITSA = "VAT_OR_ITSA"
   val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
 
   // TODO
-  def deriveContext(application: Application): AskQuestion.Context = {
+  def deriveContext(application: ApplicationData): AskQuestion.Context = {
     Map(
       VAT_OR_ITSA -> "False",
       IN_HOUSE_SOFTWARE -> "Yes"

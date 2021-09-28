@@ -21,6 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
+import play.api.libs.json.Json._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.libs.json.JsObject
 import reactivemongo.api.ReadPreference
@@ -32,28 +33,35 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
   
   private val DESCENDING = -1
 
-  // private def bySubmissionId(id: SubmissionId): (String, Json.JsValueWrapper) = ("submissionId", id.value)
+  private def bySubmissionId(id: SubmissionId): (String, Json.JsValueWrapper) = ("id", id.value)
 
   def save(submission: Submission): Future[Submission] = {
     repo.insert(submission)
-    .map(_ => submission)
+    .map(_ => submission)   // TODO - possible failure to save
+  }
+
+  def update(submission: Submission): Future[Submission] = {
+    repo.findAndUpdate(
+      Json.obj( "id" -> submission.id.value),
+      Json.toJson(submission).as[JsObject],
+      true
+    )
+    .map(_.result[Submission].get)   // TODO - possible failure to save
   }
 
   def fetchLatest(id: ApplicationId): Future[Option[Submission]] = {
     repo
     .collection
-    .find[JsObject](selector = Json.obj("applicationId" -> id))
+    .find[JsObject,JsObject](selector = Json.obj("applicationId" -> id.value), None)
     .sort(Json.obj("startedOn" -> DESCENDING))
     .cursor[Submission](ReadPreference.primary)
     .collect[List](1, Cursor.FailOnError[List[Submission]]())
     .map(_.headOption)
   }
 
-  // def create(applicationId: ApplicationId, questionnaireId: QuestionnaireId): Future[ReferenceId] = {
-  //   val submissionId = SubmissionId.random
-
-  //   for {
-  //     saved <- save(AnswersToQuestionnaire(referenceId, questionnaireId, applicationId, DateTimeUtils.now, ListMap.empty))
-  //   } yield referenceId
-  // }
+  def fetch(id: SubmissionId): Future[Option[Submission]] = {
+    repo
+    .find( bySubmissionId(id) )
+    .map(_.headOption)
+  }
 }

@@ -47,7 +47,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     val applicationId = ApplicationId.random
     val answers = AnswersToQuestionnaire(questionnaire.id, ListMap.empty)
     val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-    val submission = Submission(submissionsId, applicationId, DateTimeUtils.now, groups, List(answers))
+    val submission = Submission(submissionsId, applicationId, DateTimeUtils.now, groups.map(_.toIds), Map.empty)
   }
   
   "create new submission" should {
@@ -57,7 +57,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       SubmissionsServiceMock.Create.thenReturn(submission)
       
-      val result = underTest.create(applicationId).apply(FakeRequest(POST, "/"))
+      val result = underTest.createFor(applicationId).apply(FakeRequest(POST, "/"))
 
       status(result) shouldBe OK
 
@@ -72,7 +72,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     "return a bad request response" in new Setup {
       SubmissionsServiceMock.Create.thenFails("Test Error")
       
-     val result = underTest.create(applicationId).apply(FakeRequest(POST, "/"))
+     val result = underTest.createFor(applicationId).apply(FakeRequest(POST, "/"))
 
       status(result) shouldBe BAD_REQUEST
     }
@@ -102,29 +102,29 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
   }
 
-  // "recordAnswer" should {
-  //   "return an OK response" in new Setup {
-  //     import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
-  //     implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
+  "recordAnswers" should {
+    "return an OK response" in new Setup {
+      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
+      implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
-  //     SubmissionsServiceMock.RecordAnswer.thenReturn(referenceId)
+      SubmissionsServiceMock.RecordAnswers.thenReturn(submission)
 
-  //     val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
-  //     val result = underTest.recordAnswer(referenceId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val result = underTest.recordAnswers(submissionsId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
-  //     status(result) shouldBe OK
-  //   }
+      status(result) shouldBe OK
+    }
 
-  //   "return an bad request response when something goes wrong" in new Setup {
-  //     import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
-  //     implicit val writes = Json.writes[AnswersController.RecordAnswersRequest]
+    "return an bad request response when something goes wrong" in new Setup {
+      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
+      implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
-  //     SubmissionsServiceMock.RecordAnswer.thenFails("bang")
+      SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
-  //     val jsonBody = Json.toJson(AnswersController.RecordAnswersRequest(NonEmptyList.of("Yes")))
-  //     val result = underTest.recordAnswer(referenceId, questionnaire.questions.head.question.id)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val result = underTest.recordAnswers(submissionsId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
-  //     status(result) shouldBe BAD_REQUEST
-  //   }
-  // }
+      status(result) shouldBe BAD_REQUEST
+    }
+  }
 }

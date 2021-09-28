@@ -18,9 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 
-import cats.implicits._
-import cats.data.NonEmptyList
-
 object AskQuestion {
   type Context = Map[String, String]
   
@@ -65,29 +62,4 @@ object AskQuestion {
     findFirst(questionnaire.questions)
   }
 
-  def validateAnswersToQuestion(question: Question, answers: NonEmptyList[String]): Either[Error, ActualAnswer] = {
-    question match {
-      case q: SingleChoiceQuestion => 
-        Either.fromOption(
-          answers
-          .head
-          .some
-          .filter(answer => q.choices.contains(PossibleAnswer(answer)))
-          .map(SingleChoiceAnswer(_))
-          , "The answer is not valid for this question"
-        )
-      case q: MultiChoiceQuestion =>
-        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
-        invalid match {
-          case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
-          case _     => "Some answers are not valid for this question".asLeft
-        }
-      case q: TextQuestion => 
-        if(answers.head.nonEmpty) {
-          TextAnswer(answers.head).asRight
-        } else {
-          "A text answer cannot be blank".asLeft
-        }
-    }
-  }
 }

@@ -46,4 +46,7 @@ case class Questionnaire(
   id: QuestionnaireId,
   label: Label,
   questions: List[QuestionItem]
-)
+) {
+  def hasQuestion(qid: QuestionId): Boolean = question(qid).isDefined
+  def question(qid: QuestionId): Option[Question] = questions.find(_.question.id == qid).map(_.question)
+}

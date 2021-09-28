@@ -18,37 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion._
-import cats.data.NonEmptyList
-import scala.collection.immutable.ListSet
 import scala.collection.immutable.ListMap
 
-class AskQuestionSpec extends HmrcSpec {
-  def yesNoQuestion(counter: Int): SingleChoiceQuestion = {
-    YesNoQuestion(
-      QuestionId.random,
-      Wording(s"Wording$counter"),
-      Statement(List())
-    )
-  }
-  
-  def multichoiceQuestion(counter: Int, choices: String*): MultiChoiceQuestion = {
-    MultiChoiceQuestion(
-      QuestionId.random,
-      Wording(s"Wording$counter"),
-      Statement(List()),
-      ListSet(choices.map(c => PossibleAnswer(c)): _*)
-    )
-  }
+class AskQuestionSpec extends HmrcSpec with QuestionBuilder{
 
-  def textQuestion(counter: Int): TextQuestion = {
-    TextQuestion(
-      QuestionId.random,
-      Wording(s"Wording$counter"),
-      Statement(List())
-    )
-  }
-  
   val blankContext : Context = Map.empty
   val noAnswers: ActualAnswers = ListMap.empty
   
@@ -144,47 +119,5 @@ class AskQuestionSpec extends HmrcSpec {
       }
     }
 
-    "call validateAnswersToQuestion for single choice questions" should {
-      val question = yesNoQuestion(1)
-
-      "return 'right(answer) when the first answer is valid" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("Yes")).right.value shouldBe SingleChoiceAnswer("Yes")
-      }
-      "return 'right(answer) when the first answer is valid regardless of subsequent answers" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("Yes", "blah")).right.value shouldBe SingleChoiceAnswer("Yes")
-      }
-      
-      "return 'left when the first answer is invalid" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("Yodel")) shouldBe 'left
-      }
-
-      "return 'left when the first answer is invalid even when subsequent answers are correct" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("Yodel", "Yes")) shouldBe 'left
-      }
-    }
-
-    "call validateAnswersToQuestion for multiple choice questions" should {
-      val question = multichoiceQuestion(1, "one","two", "three")
-
-      "return 'right(answers) when all answers are valid" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("two", "three")).right.value shouldBe MultipleChoiceAnswer(Set("two", "three"))
-      }
-
-      "return 'left when not all answers are valid" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("two", "three", "yodel")) shouldBe 'left
-      }
-    }
-
-    "call validateAnswersToQuestion for text question" should {
-      val question = textQuestion(1)
-
-      "return 'right when an answer is given" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("answered")).right.value shouldBe TextAnswer("answered")
-      }
-      
-      "return 'left when the answer is blank" in {
-        validateAnswersToQuestion(question, NonEmptyList.of("")) shouldBe 'left
-      }
-    }
   }
 }

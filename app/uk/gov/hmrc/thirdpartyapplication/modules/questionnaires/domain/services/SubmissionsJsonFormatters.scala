@@ -22,13 +22,19 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import play.api.libs.json._
 import org.joda.time.DateTimeZone
 
-trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters with MapJsonFormatters {
+trait SubmissionsJsonFormatters extends GroupOfQuestionnaireIdsJsonFormatters with MapJsonFormatters {
   
-  implicit val asString: (QuestionId) => String = (q) => q.value
+  implicit val asStringQuestion: (QuestionId) => String = (q) => q.value
   implicit val asQuestionId: (String) => QuestionId = (s) => QuestionId(s)
-  
+
+  implicit val asStringQuestionnaire: (QuestionnaireId) => String = (q) => q.value
+  implicit val asQuestionnaireId: (String) => QuestionnaireId = (s) => QuestionnaireId(s)
+   
   implicit val listMapWrites: Writes[ListMap[QuestionId, ActualAnswer]] = listMapWrites[QuestionId, ActualAnswer]
   implicit val listMapReads: Reads[ListMap[QuestionId, ActualAnswer]] = listMapReads[QuestionId, ActualAnswer]
+
+  implicit val outerMapWrites: Writes[Map[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]] = mapWrites[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]
+  implicit val outerMapReads: Reads[Map[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]] = mapReads[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]
 }
 
 object SubmissionsJsonFormatters extends SubmissionsJsonFormatters {

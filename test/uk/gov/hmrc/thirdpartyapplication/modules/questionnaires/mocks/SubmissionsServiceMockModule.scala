@@ -40,21 +40,13 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
         when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(submission))
     }
 
-    // object RaiseQuestionnaire {
-    //   def thenReturn(referenceId: ReferenceId) =
-    //     when(aMock.raiseQuestionnaire(*[ApplicationId], *[QuestionnaireId])).thenReturn(successful(Right(referenceId)))
+    object RecordAnswers {
+      def thenReturn(submission: Submission) =
+        when(aMock.recordAnswers(*[SubmissionId], *[QuestionnaireId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Right(submission)))
 
-    //   def thenFails(error: String) =
-    //     when(aMock.raiseQuestionnaire(*[ApplicationId], *[QuestionnaireId])).thenReturn(successful(Left(error)))
-    // }
-
-    // object RecordAnswer {
-    //   def thenReturn(referenceId: ReferenceId) =
-    //     when(aMock.recordAnswer(eqTo[ReferenceId](referenceId), *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Right(mock[AnswersToQuestionnaire])))
-
-    //   def thenFails(error: String) = 
-    //     when(aMock.recordAnswer(*[ReferenceId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Left(error)))
-    // }
+      def thenFails(error: String) = 
+        when(aMock.recordAnswers(*[SubmissionId], *[QuestionnaireId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Left(error)))
+    }
   }
 
   object SubmissionsServiceMock extends BaseSubmissionsServiceMock {

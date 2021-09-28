@@ -41,14 +41,11 @@ object SubmissionsController {
   case class FetchSubmissionResponse(submission: Submission)
   implicit val writesFetchSubmissionResponse = Json.writes[FetchSubmissionResponse]
 
-  // case class RaiseRequest(applicationId: ApplicationId, questionnaireId: QuestionnaireId)
-  // implicit val readsRaiseRequest = Json.reads[RaiseRequest]
-  
-  // case class RecordAnswersRequest(answer: NonEmptyList[String])
-  // implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
+  case class RecordAnswersRequest(answers: NonEmptyList[String])
+  implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 
-  // case class RecordAnswersResponse(referenceId: ReferenceId)
-  // implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
+  case class RecordAnswersResponse(submission: Submission)
+  implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
 }
 
 @Singleton
@@ -61,7 +58,7 @@ class SubmissionsController @Inject()(
 extends BackendController(cc) {
   import SubmissionsController._
 
-  def create(applicationId: ApplicationId) = Action.async { _ =>
+  def createFor(applicationId: ApplicationId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (submission: Submission) => Ok(Json.toJson(CreateNewSubmissionResponse(submission)))
@@ -77,13 +74,13 @@ extends BackendController(cc) {
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
   }
 
-  // def recordAnswer(referenceId: ReferenceId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
-  //   val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
+  def recordAnswers(submissionId: SubmissionId, questionnaireId: QuestionnaireId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
+    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-  //   val success = (atq: AnswersToQuestionnaire) => Ok(Json.toJson(RecordAnswersResponse(atq.referenceId)))
+    val success = (s: Submission) => Ok(Json.toJson(RecordAnswersResponse(s)))
 
-  //   withJsonBody[RecordAnswersRequest] { answersRequest =>
-  //     service.recordAnswer(referenceId, questionId, answersRequest.answer).map(_.fold(failed, success))
-  //   }
-  // }
+    withJsonBody[RecordAnswersRequest] { answersRequest =>
+      service.recordAnswers(submissionId, questionnaireId, questionId, answersRequest.answers).map(_.fold(failed, success))
+    }
+  }
 }
