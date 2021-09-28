@@ -47,6 +47,11 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       def thenFails(error: String) = 
         when(aMock.recordAnswers(*[SubmissionId], *[QuestionnaireId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Left(error)))
     }
+
+    object DeleteAll {
+      def thenReturn() =
+        when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(()))
+    }
   }
 
   object SubmissionsServiceMock extends BaseSubmissionsServiceMock {

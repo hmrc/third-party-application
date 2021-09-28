@@ -22,7 +22,6 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Qu
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
 
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionId
 
 trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseQuestionnaireDAOMock {

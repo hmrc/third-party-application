@@ -47,12 +47,14 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsServiceMockModule
 
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
 
 class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -70,7 +72,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
-    with ApplicationRepositoryMockModule with TokenServiceMockModule {
+    with ApplicationRepositoryMockModule
+    with TokenServiceMockModule 
+    with SubmissionsServiceMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -88,7 +92,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService = mock[GatekeeperService]
     val mockApiPlatformEventService = mock[ApiPlatformEventService]
-
     val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -119,7 +122,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
       mockNameValidationConfig,
-      TokenServiceMock.aMock)
+      TokenServiceMock.aMock,
+      SubmissionsServiceMock.aMock)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockStateHistoryRepository.insert(*)).thenAnswer((s:StateHistory) =>successful(s))
@@ -135,7 +139,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       .thenReturn(successful(true))
     when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
       .thenReturn(successful(true))
-
+    SubmissionsServiceMock.DeleteAll.thenReturn()
+    
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
       when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
