@@ -20,9 +20,8 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
 import cats.implicits._
-import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.{DateTimeUtils}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
@@ -54,27 +53,23 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec 
+  extends AsyncHmrcSpec 
+  with BeforeAndAfterAll
+  with ApplicationStateUtil 
+  with ApplicationTestData 
+  {
 
-  val idsByEmail = mutable.Map[String, UserId]()
-  def idOf(email: String) = {
-    idsByEmail.getOrElseUpdate(email, UserId.random)
-  } 
-
-  val loggedInUser = "loggedin@example.com"
-  val devEmail = "dev@example.com"
-
-  val serverTokenLastAccess = DateTime.now
-  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
     with ApplicationRepositoryMockModule
     with TokenServiceMockModule 
-    with SubmissionsServiceMockModule {
+    with SubmissionsServiceMockModule
+    {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -146,8 +141,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
 
   }
-
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   trait LockedSetup extends Setup {
 
@@ -1601,34 +1594,5 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Set(
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))))
-  }
-
-  private val requestedByEmail = "john.smith@example.com"
-  private val grantLength = 547
-
-  private def anApplicationData(applicationId: ApplicationId,
-                                state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
-                                access: Access = Standard(),
-                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION,
-                                ipAllowlist: IpAllowlist = IpAllowlist(),
-                                grantLength: Int = grantLength) = {
-    ApplicationData(
-      applicationId,
-      "MyApp",
-      "myapp",
-      collaborators,
-      Some("description"),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      state,
-      access,
-      HmrcTime.now,
-      Some(HmrcTime.now),
-      grantLength,
-      rateLimitTier = rateLimitTier,
-      environment = environment.toString,
-      ipAllowlist = ipAllowlist)
   }
 }

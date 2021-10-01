@@ -34,10 +34,11 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
   private val DESCENDING = -1
 
   private def bySubmissionId(id: SubmissionId): (String, Json.JsValueWrapper) = ("id", id.value)
+  private def byApplicationId(id: ApplicationId): (String, Json.JsValueWrapper) = ("applictionId", id.value)
 
   def save(submission: Submission): Future[Submission] = {
     repo.insert(submission)
-    .map(_ => submission)   // TODO - possible failure to save
+    .map(_ => submission)
   }
 
   def update(submission: Submission): Future[Submission] = {
@@ -46,7 +47,7 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
       Json.toJson(submission).as[JsObject],
       true
     )
-    .map(_.result[Submission].get)   // TODO - possible failure to save
+    .map(_.result[Submission].get)
   }
 
   def fetchLatest(id: ApplicationId): Future[Option[Submission]] = {
@@ -64,4 +65,8 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
     .find( bySubmissionId(id) )
     .map(_.headOption)
   }
+
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
+    repo.remove(byApplicationId(applicationId))
+    .map(_ => ())
 }

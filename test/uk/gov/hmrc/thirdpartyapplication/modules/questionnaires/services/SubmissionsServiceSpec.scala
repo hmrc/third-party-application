@@ -23,14 +23,21 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import cats.data.NonEmptyList
 import org.scalatest.Inside
-import uk.gov.hmrc.thirdpartyapplication.util.TestData
+import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
-    extends SubmissionsDAOMockModule with TestData {
+    extends SubmissionsDAOMockModule 
+    with ApplicationRepositoryMockModule
+    with SubscriptionRepositoryMockModule
+    with ApplicationTestData
+    with TestData {
 
-    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock)
+    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
   }
 
   "SubmissionsService" when {
@@ -64,6 +71,19 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
 
       "fail when given an invalid questionnaire" in new Setup {
+      }
+    }
+
+    "getNextQuestion" should {
+      "provide the next question when all data is present" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+
+        ApplicationRepoMock.Fetch.thenReturn(anApplicationData(applicationId, testingState()))
+        SubscriptionRepoMock.Fetch.thenReturn()
+
+        val result = await(underTest.getNextQuestion(submissionId, questionnaireId))
+        
+        result.right.value.value shouldBe question
       }
     }
   }

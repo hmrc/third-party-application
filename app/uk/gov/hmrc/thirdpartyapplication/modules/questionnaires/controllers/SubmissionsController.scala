@@ -46,6 +46,9 @@ object SubmissionsController {
 
   case class RecordAnswersResponse(submission: Submission)
   implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
+
+  case class NextQuestionResponse(question: Option[Question])
+  implicit val writesNextQuestionResponse = Json.writes[NextQuestionResponse]
 }
 
 @Singleton
@@ -82,5 +85,13 @@ extends BackendController(cc) {
     withJsonBody[RecordAnswersRequest] { answersRequest =>
       service.recordAnswers(submissionId, questionnaireId, questionId, answersRequest.answers).map(_.fold(failed, success))
     }
+  }
+
+  def getNextQuestion(submissionId: SubmissionId, questionnaireId: QuestionnaireId) = Action.async {
+    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
+
+    val success = (q: Option[Question]) => Ok(Json.toJson(NextQuestionResponse(q)))
+
+    service.getNextQuestion(submissionId, questionnaireId).map(_.fold(failed, success))
   }
 }

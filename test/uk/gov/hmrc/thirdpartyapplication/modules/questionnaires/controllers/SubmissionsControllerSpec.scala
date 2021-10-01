@@ -19,35 +19,31 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsServiceMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.Helpers
-import scala.collection.immutable.ListMap
 import play.api.test.Helpers._
 import play.api.test.FakeRequest
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
-import uk.gov.hmrc.time.DateTimeUtils
 import akka.stream.testkit.NoMaterializer
 import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.SubmissionsController
 import play.api.libs.json.JsError
+import uk.gov.hmrc.thirdpartyapplication.util.TestData
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.SubmissionsFrontendJsonFormatters._
   implicit val mat = NoMaterializer
   
-  trait Setup extends SubmissionsServiceMockModule {
+  trait Setup extends SubmissionsServiceMockModule with TestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
     
-    val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
-    val questionId = questionnaire.questions.head.question.id
-    val submissionsId = SubmissionId.random
-    val applicationId = ApplicationId.random
-    val answers = AnswersToQuestionnaire(questionnaire.id, ListMap.empty)
-    val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-    val submission = Submission(submissionsId, applicationId, DateTimeUtils.now, groups.map(_.toIds), Map.empty)
+    // val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+    // val questionId = questionnaire.questions.head.question.id
+    // val submissionsId = SubmissionId.random
+    // val applicationId = ApplicationId.random
+    // val answers = AnswersToQuestionnaire(questionnaire.id, ListMap.empty)
+    // val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
+    // val submission = Submission(submissionsId, applicationId, DateTimeUtils.now, groups.map(_.toIds), Map.empty)
   }
   
   "create new submission" should {
@@ -110,7 +106,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.RecordAnswers.thenReturn(submission)
 
       val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
-      val result = underTest.recordAnswers(submissionsId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val result = underTest.recordAnswers(submissionId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe OK
     }
@@ -122,9 +118,45 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
       val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
-      val result = underTest.recordAnswers(submissionsId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val result = underTest.recordAnswers(submissionId, questionnaire.id, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe BAD_REQUEST
     }
+  }
+
+  "getNextQuestion" should {
+    implicit val readsResponse = Json.reads[SubmissionsController.NextQuestionResponse]
+
+     "return ok response for submission when found" in new Setup {
+      SubmissionsServiceMock.GetNextQuestion.thenReturn(question)
+
+      val result = underTest.getNextQuestion(submission.id, questionnaire.id)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).validate[SubmissionsController.NextQuestionResponse] match {
+        case JsSuccess(s, _) => s.question.value shouldBe question
+        case JsError(e) => fail(s"Not parsed as a response $e")
+      }
+    }
+
+    "return ok response when no next question found" in new Setup {
+      SubmissionsServiceMock.GetNextQuestion.thenReturnNone()
+
+      val result = underTest.getNextQuestion(submission.id, questionnaire.id)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).validate[SubmissionsController.NextQuestionResponse] match {
+        case JsSuccess(s, _) => s.question shouldBe None
+        case JsError(e) => fail(s"Not parsed as a response $e")
+      }
+    } 
+    
+    "return bad request response when failed" in new Setup {
+      SubmissionsServiceMock.GetNextQuestion.thenFail("bang")
+
+      val result = underTest.getNextQuestion(submission.id, questionnaire.id)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe BAD_REQUEST
+    }     
   }
 }

@@ -26,11 +26,16 @@ import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswerQuestion
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 @Singleton
 class SubmissionsService @Inject()(
   questionnaireDAO: QuestionnaireDAO,
-  submissionsDAO: SubmissionsDAO
+  submissionsDAO: SubmissionsDAO,
+  applicationRepository: ApplicationRepository,
+  subscriptionRepository: SubscriptionRepository
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -45,9 +50,9 @@ class SubmissionsService @Inject()(
         groupsOfIds           =  groups.map(_.toIds)
         allQuestionnaireIds   =  groupsOfIds.flatMap(_.links)
         submissionId          =  SubmissionId.random
-        answers               = AnswerQuestion.createMapFor(allQuestionnaires)
-        submission = Submission(submissionId, applicationId, DateTimeUtils.now, groupsOfIds, answers)
-        _ <- liftF(submissionsDAO.save(submission))
+        answers               =  AnswerQuestion.createMapFor(allQuestionnaires)
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groupsOfIds, answers)
+        _                     <- liftF(submissionsDAO.save(submission))
       } yield submission
     )
     .value
@@ -61,20 +66,39 @@ class SubmissionsService @Inject()(
     submissionsDAO.fetch(id)
   }
 
+  def getNextQuestion(submissionId: SubmissionId, questionnaireId: QuestionnaireId): Future[Either[String, Option[Question]]] = {
+    (
+      for {
+        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+        questionnaire       <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
+        application         <- fromOptionF(applicationRepository.fetch(submission.applicationId), "No such application")
+        subscriptions       <- liftF(subscriptionRepository.getSubscriptions(submission.applicationId))
+        context             =  DeriveContext.deriveFor(application, subscriptions)
+        answers             =  submission.questionnaireAnswers(questionnaireId)
+        question            =  AskQuestion.getNextQuestion(context)(questionnaire, answers)
+      } yield question
+    )
+    .value
+  }
+
   def recordAnswers(submissionId: SubmissionId, questionnaireId: QuestionnaireId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, Submission]] = {
     (
       for {
-        submission           <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        questionnaire        <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
-        updatedSubmission    <- fromEither(AnswerQuestion.answer(submission, questionnaire, questionId, rawAnswers))
-        _                    <- liftF(submissionsDAO.update(updatedSubmission))
+        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+        questionnaire       <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
+        updatedSubmission   <- fromEither(AnswerQuestion.answer(submission, questionnaire, questionId, rawAnswers))
+        _                   <- liftF(submissionsDAO.update(updatedSubmission))
       } yield updatedSubmission
     )
     .value
   }
 
+
   /*
   * When you delete an application
   */
-  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = ???  // TODO
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
+    submissionsDAO.deleteAllAnswersForApplication(applicationId)
 }

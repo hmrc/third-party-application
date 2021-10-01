@@ -18,16 +18,30 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
 
 object DeriveContext {
-  val VAT_OR_ITSA = "VAT_OR_ITSA"
-  val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
 
+  object Keys {
+    val VAT_OR_ITSA = "VAT_OR_ITSA"
+    val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
+  }
+
+  def yesNoFromBoolean(b: Boolean) = if(b) "Yes" else "No"
+
+  def deriveFraudPrevention(subscriptions: List[ApiIdentifier]): String =  {
+    val appContexts = subscriptions.map(_.context.value).toSet
+    yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
+  }
   // TODO
-  def deriveContext(application: ApplicationData): AskQuestion.Context = {
+  def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): AskQuestion.Context = {
+    import Keys._
+    
     Map(
-      VAT_OR_ITSA -> "False",
+      VAT_OR_ITSA -> deriveFraudPrevention(subscriptions),
       IN_HOUSE_SOFTWARE -> "Yes"
     )
   }
+
 }

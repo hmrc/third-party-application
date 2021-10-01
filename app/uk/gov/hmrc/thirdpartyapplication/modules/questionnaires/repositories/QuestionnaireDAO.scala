@@ -212,7 +212,7 @@ object QuestionnaireDAO {
           QuestionItem(question2),
           QuestionItem(question3),
           QuestionItem(question4),
-          QuestionItem(question5, AskWhenContext(DeriveContext.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question5, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question6)
         )
       )
@@ -272,7 +272,7 @@ object QuestionnaireDAO {
         id = QuestionnaireId("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
         label = Label("Granting authority to HMRC"),
         questions = List(
-          QuestionItem(question1, AskWhenContext(DeriveContext.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question1, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question2),
           QuestionItem(question3),
           QuestionItem(question4)
@@ -361,8 +361,8 @@ object QuestionnaireDAO {
         id = QuestionnaireId("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
         label = Label("Fraud prevention headers"),
         questions = List(
-          QuestionItem(question1, AskWhenContext(DeriveContext.VAT_OR_ITSA, "True")),
-          QuestionItem(question2, AskWhenContext(DeriveContext.VAT_OR_ITSA, "True"))
+          QuestionItem(question1, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes")),
+          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes"))
         )
       )
     }
@@ -429,9 +429,9 @@ object QuestionnaireDAO {
         label = Label("Marketing your software"),
         questions = List(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(DeriveContext.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question3, AskWhenContext(DeriveContext.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question4, AskWhenContext(DeriveContext.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question4, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
