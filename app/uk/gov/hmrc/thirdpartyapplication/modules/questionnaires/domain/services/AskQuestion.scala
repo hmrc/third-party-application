@@ -25,7 +25,7 @@ object AskQuestion {
 
   type Error = String
 
-  protected def shouldAsk(context: Context)(next: QuestionItem, answers: ActualAnswers): Boolean = {
+  protected def shouldAsk(next: QuestionItem, context: Context, answers: ActualAnswers): Boolean = {
     next.askWhen match {
       case AlwaysAsk => true
       case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
@@ -33,9 +33,9 @@ object AskQuestion {
     }
   }
 
-  def getNextQuestion(context: Context)(questionnaire: Questionnaire, answers: ActualAnswers): Option[Question] = {
+  def getNextQuestion(questionnaire: Questionnaire, context: Context, answers: ActualAnswers): Option[Question] = {
     def checkNext(fi: QuestionItem): Option[Question] = {
-      if(shouldAsk(context)(fi, answers)) {
+      if(shouldAsk(fi, context, answers)) {
         if(answers.contains(fi.question.id)) {
           None
         }

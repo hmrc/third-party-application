@@ -42,17 +42,17 @@ class AskQuestionSpec extends HmrcSpec with QuestionBuilder{
         )
         
         "return the first question when nothing is answered" in {
-          getNextQuestion(blankContext)(q, noAnswers).value shouldBe question1
+          getNextQuestion(q, blankContext, noAnswers).value shouldBe question1
         }
         
         "return the second question when the first is answered" in {
           val firstAnswered = noAnswers + (question1.id -> mock[ActualAnswer])
-          getNextQuestion(blankContext)(q, firstAnswered).value shouldBe question2
+          getNextQuestion(q, blankContext, firstAnswered).value shouldBe question2
         }
 
         "return none when all are answered" in {
           val allAnswered = noAnswers + (question1.id -> mock[ActualAnswer]) + (question2.id -> mock[ActualAnswer])
-          getNextQuestion(blankContext)(q, allAnswered) shouldBe None
+          getNextQuestion(q, blankContext, allAnswered) shouldBe None
         }
       }
 
@@ -76,19 +76,19 @@ class AskQuestionSpec extends HmrcSpec with QuestionBuilder{
         "return the first question when context has matching key and value" in {
           val context = Map(matchingKey -> matchingValue)
 
-          getNextQuestion(context)(q, noAnswers).value shouldBe question1
+          getNextQuestion(q, context, noAnswers).value shouldBe question1
         }
 
         "return the second question when context has matching key but not the matching value" in {
           val context = Map(matchingKey -> noMatchingValue)
 
-          getNextQuestion(context)(q, noAnswers).value shouldBe question2
+          getNextQuestion(q, context, noAnswers).value shouldBe question2
         }
 
         "return the second question when context has mismatching key" in {
           val context = Map(mismatchKey -> noMatchingValue)
 
-          getNextQuestion(context)(q, noAnswers).value shouldBe question2
+          getNextQuestion(q, context, noAnswers).value shouldBe question2
         }
       }
 
@@ -109,12 +109,12 @@ class AskQuestionSpec extends HmrcSpec with QuestionBuilder{
 
         "return the second question when answers contains matching answer for question 1" in {
           val answeredFirstMatching = noAnswers + (question1.id -> matchingAnswer)
-          getNextQuestion(blankContext)(q, answeredFirstMatching).value shouldBe question2
+          getNextQuestion(q, blankContext, answeredFirstMatching).value shouldBe question2
         }
 
         "return none when answers contains a non matching answer for question 1" in {
           val answeredFirstMatching = noAnswers + (question1.id -> noMatchingAnswer)
-          getNextQuestion(blankContext)(q, answeredFirstMatching) shouldBe None
+          getNextQuestion(q, blankContext, answeredFirstMatching) shouldBe None
         }
       }
     }

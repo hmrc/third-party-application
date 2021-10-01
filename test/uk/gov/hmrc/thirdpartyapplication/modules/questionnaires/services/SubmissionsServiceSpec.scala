@@ -56,6 +56,19 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
     }
 
+    "fetchValidSubmissionHavingQuestionnaire" should {
+      "return a submission when valid" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        
+        await(underTest.fetchValidSubmissionHavingQuestionnaire(submissionId, questionnaireId).value) shouldBe Right(submission)
+      }      
+
+      "return a left when invalid" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        
+        await(underTest.fetchValidSubmissionHavingQuestionnaire(submissionId, QuestionnaireId.random).value) shouldBe 'Left
+      }
+    }
     "recordAnswers" should {
       "records new answers when given a valid questionnaire" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)

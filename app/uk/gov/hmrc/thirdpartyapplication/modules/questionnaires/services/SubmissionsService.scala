@@ -70,7 +70,7 @@ class SubmissionsService @Inject()(
   def fetchValidSubmissionHavingQuestionnaire(submissionId: SubmissionId, questionnaireId: QuestionnaireId): EitherT[Future, String, Submission] = {
     for {
         submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+        _                   <-  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
     } yield submission
   }
 
@@ -83,7 +83,7 @@ class SubmissionsService @Inject()(
         subscriptions       <- liftF(subscriptionRepository.getSubscriptions(submission.applicationId))
         context             =  DeriveContext.deriveFor(application, subscriptions)
         answers             =  submission.questionnaireAnswers(questionnaireId)
-        question            =  AskQuestion.getNextQuestion(context)(questionnaire, answers)
+        question            =  AskQuestion.getNextQuestion(questionnaire, context, answers)
       } yield question
     )
     .value
@@ -92,8 +92,7 @@ class SubmissionsService @Inject()(
   def recordAnswers(submissionId: SubmissionId, questionnaireId: QuestionnaireId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, Submission]] = {
     (
       for {
-        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+        submission          <- fetchValidSubmissionHavingQuestionnaire(submissionId, questionnaireId)
         questionnaire       <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
         updatedSubmission   <- fromEither(AnswerQuestion.answer(submission, questionnaire, questionId, rawAnswers))
         _                   <- liftF(submissionsDAO.update(updatedSubmission))
