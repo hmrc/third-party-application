@@ -17,32 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import com.github.t3hnar.bcrypt._
-import cats.implicits._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils}
-import org.scalatest.BeforeAndAfterAll
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.lock.LockRepository
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, GATEKEEPER}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CredentialGenerator}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+
 
 import scala.collection.mutable.Map
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationTestData extends ApplicationStateUtil {
 
@@ -56,7 +39,7 @@ trait ApplicationTestData extends ApplicationStateUtil {
   val loggedInUser = "loggedin@example.com"
   val devEmail = "dev@example.com"
 
-  val serverTokenLastAccess = DateTime.now
+  val serverTokenLastAccess = HmrcTime.now
   val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   
@@ -65,7 +48,7 @@ trait ApplicationTestData extends ApplicationStateUtil {
 
   def anApplicationData(applicationId: ApplicationId,
                                 state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
+                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Role.ADMINISTRATOR, idOf(loggedInUser))),
                                 access: Access = Standard(),
                                 rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
                                 environment: Environment = Environment.PRODUCTION,

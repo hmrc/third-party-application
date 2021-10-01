@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import cats.data.EitherT
 
 @Singleton
 class SubmissionsService @Inject()(
@@ -66,11 +67,17 @@ class SubmissionsService @Inject()(
     submissionsDAO.fetch(id)
   }
 
+  def fetchValidSubmissionHavingQuestionnaire(submissionId: SubmissionId, questionnaireId: QuestionnaireId): EitherT[Future, String, Submission] = {
+    for {
+        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+    } yield submission
+  }
+
   def getNextQuestion(submissionId: SubmissionId, questionnaireId: QuestionnaireId): Future[Either[String, Option[Question]]] = {
     (
       for {
-        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        _                   =  cond(submission.hasQuestionnaire(questionnaireId), (), "Questionnaire not in this submission")
+        submission          <- fetchValidSubmissionHavingQuestionnaire(submissionId, questionnaireId)
         questionnaire       <- fromOptionF(questionnaireDAO.fetch(questionnaireId), "No such questionnaire")
         application         <- fromOptionF(applicationRepository.fetch(submission.applicationId), "No such application")
         subscriptions       <- liftF(subscriptionRepository.getSubscriptions(submission.applicationId))

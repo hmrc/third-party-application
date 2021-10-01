@@ -26,8 +26,6 @@ import org.scalatest.Inside
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
