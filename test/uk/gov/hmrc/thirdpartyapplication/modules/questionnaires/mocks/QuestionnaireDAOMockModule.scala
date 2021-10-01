@@ -35,6 +35,8 @@ trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar
     object ActiveQuestionnaireGroupings {
       def thenUseStandardOnes() = 
         when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings))
+      def thenUseChangedOnes() = 
+        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings.drop(1)))
     }
   }
 

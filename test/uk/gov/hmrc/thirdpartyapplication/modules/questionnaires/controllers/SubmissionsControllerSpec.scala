@@ -36,14 +36,6 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   
   trait Setup extends SubmissionsServiceMockModule with TestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
-    
-    // val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
-    // val questionId = questionnaire.questions.head.question.id
-    // val submissionsId = SubmissionId.random
-    // val applicationId = ApplicationId.random
-    // val answers = AnswersToQuestionnaire(questionnaire.id, ListMap.empty)
-    // val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-    // val submission = Submission(submissionsId, applicationId, DateTimeUtils.now, groups.map(_.toIds), Map.empty)
   }
   
   "create new submission" should {
@@ -53,7 +45,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       SubmissionsServiceMock.Create.thenReturn(submission)
       
-      val result = underTest.createFor(applicationId).apply(FakeRequest(POST, "/"))
+      val result = underTest.createSubmissionFor(applicationId).apply(FakeRequest(POST, "/"))
 
       status(result) shouldBe OK
 
@@ -68,7 +60,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     "return a bad request response" in new Setup {
       SubmissionsServiceMock.Create.thenFails("Test Error")
       
-     val result = underTest.createFor(applicationId).apply(FakeRequest(POST, "/"))
+     val result = underTest.createSubmissionFor(applicationId).apply(FakeRequest(POST, "/"))
 
       status(result) shouldBe BAD_REQUEST
     }
@@ -149,8 +141,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
         case JsSuccess(s, _) => s.question shouldBe None
         case JsError(e) => fail(s"Not parsed as a response $e")
       }
-    } 
-    
+    }
+
     "return bad request response when failed" in new Setup {
       SubmissionsServiceMock.GetNextQuestion.thenFail("bang")
 

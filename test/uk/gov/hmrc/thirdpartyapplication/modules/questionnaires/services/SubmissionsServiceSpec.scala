@@ -26,6 +26,7 @@ import org.scalatest.Inside
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionnaireDAOMockModule
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -50,8 +51,28 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
           applicationId shouldBe applicationId
           questionnaireAnswers.size shouldBe allQuestionnaires.size
           questionnaireAnswers.keySet shouldBe allQuestionnaires.map(_.id).toSet
+        }
 
-          groupings shouldBe groupIds
+      }
+      "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Save.thenReturn()
+        override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
+
+        QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
+        val result1 = await(underTest.create(applicationId))
+
+        QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
+
+        inside(result1.right.value) { case Submission(_, applicationId, _, groupings, questionnaireAnswers) =>
+          applicationId shouldBe applicationId
+          questionnaireAnswers.size shouldBe allQuestionnaires.size
+          questionnaireAnswers.keySet shouldBe allQuestionnaires.map(_.id).toSet
+        }
+
+        val result2 = await(underTest.create(applicationId))
+        inside(result2.right.value) { case Submission(_, applicationId, _, groupings, questionnaireAnswers) =>
+          questionnaireAnswers.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
         }
       }
     }

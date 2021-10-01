@@ -1,4 +1,4 @@
-POST        /application/:aid                         SubmissionsController.createFor(aid: ApplicationId)
+POST        /application/:aid                         SubmissionsController.createSubmissionFor(aid: ApplicationId)
 GET         /application/:aid                         SubmissionsController.fetchLatest(aid: ApplicationId)
 
 GET         /:sid/questionnaire/:qid                  SubmissionsController.getNextQuestion(sid: SubmissionId, qid: QuestionnaireId)

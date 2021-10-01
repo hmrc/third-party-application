@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait TestData {
@@ -39,13 +38,12 @@ trait TestData {
     val applicationId = ApplicationId.random
 
     val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-    val groupIds = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings.map(_.toIds)
     val allQuestionnaires = groups.flatMap(_.links)
     val answers = AnswerQuestion.createMapFor(allQuestionnaires)
-    val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groupIds, AnswerQuestion.createMapFor(allQuestionnaires))
+    val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, AnswerQuestion.createMapFor(allQuestionnaires))
     
     val altSubmissionId = SubmissionId.random
     require(altSubmissionId != submissionId)
-    val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groupIds, AnswerQuestion.createMapFor(allQuestionnaires))
+    val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, AnswerQuestion.createMapFor(allQuestionnaires))
 
 }

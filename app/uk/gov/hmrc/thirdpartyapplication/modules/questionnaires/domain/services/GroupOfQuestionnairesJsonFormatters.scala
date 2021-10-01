@@ -25,9 +25,3 @@ trait GroupOfQuestionnairesJsonFormatters extends QuestionnaireJsonFormatters {
 }
 
 object GroupOfQuestionnairesJsonFormatters extends GroupOfQuestionnairesJsonFormatters
-
-trait GroupOfQuestionnaireIdsJsonFormatters extends QuestionnaireJsonFormatters {
-  implicit val groupOfQuestionnaireIdsJsonFormat = Json.format[GroupOfQuestionnaireIds]
-}
-
-object GroupOfQuestionnaireIdsJsonFormatters extends GroupOfQuestionnaireIdsJsonFormatters

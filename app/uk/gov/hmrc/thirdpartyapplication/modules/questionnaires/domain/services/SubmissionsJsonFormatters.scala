@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import play.api.libs.json._
 import org.joda.time.DateTimeZone
 
-trait SubmissionsJsonFormatters extends GroupOfQuestionnaireIdsJsonFormatters with MapJsonFormatters {
+trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters with MapJsonFormatters {
   
   implicit val asStringQuestion: (QuestionId) => String = (q) => q.value
   implicit val asQuestionId: (String) => QuestionId = (s) => QuestionId(s)

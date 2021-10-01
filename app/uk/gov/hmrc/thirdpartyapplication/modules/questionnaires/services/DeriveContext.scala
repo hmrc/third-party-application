@@ -34,7 +34,7 @@ object DeriveContext {
     val appContexts = subscriptions.map(_.context.value).toSet
     yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
   }
-  // TODO
+
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): AskQuestion.Context = {
     import Keys._
     

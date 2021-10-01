@@ -61,7 +61,7 @@ class SubmissionsController @Inject()(
 extends BackendController(cc) {
   import SubmissionsController._
 
-  def createFor(applicationId: ApplicationId) = Action.async { _ =>
+  def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (submission: Submission) => Ok(Json.toJson(CreateNewSubmissionResponse(submission)))

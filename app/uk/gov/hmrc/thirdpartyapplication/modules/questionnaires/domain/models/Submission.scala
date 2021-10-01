@@ -45,10 +45,10 @@ case class Submission(
   id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
-  groupings: List[GroupOfQuestionnaireIds],
+  groups: List[GroupOfQuestionnaires],
   questionnaireAnswers: AnswerMapOfMaps
 ) {
-  def allQuestionnaireIds: List[QuestionnaireId] = groupings.flatMap(_.links)
+  def allQuestionnaireIds: List[QuestionnaireId] = groups.flatMap(_.links.map(_.id))
 
   def hasQuestionnaire(qid: QuestionnaireId): Boolean = allQuestionnaireIds.contains(qid)
 }

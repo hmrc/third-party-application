@@ -38,7 +38,7 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
         check.id shouldBe submission.id
         check.applicationId shouldBe submission.applicationId
         check.startedOn shouldBe submission.startedOn
-        check.groupings shouldBe submission.groupings
+        check.groups shouldBe submission.groups
         check.questionnaireAnswers.keySet shouldBe submission.questionnaireAnswers.keySet
         check.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("Yes")
       }
