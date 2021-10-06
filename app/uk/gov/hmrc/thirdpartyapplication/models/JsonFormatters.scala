@@ -43,7 +43,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
     (JsPath \ "description").readNullable[String] and
     (JsPath \ "environment").read[Environment] and
     (JsPath \ "collaborators").read[Set[Collaborator]] and
-    ((JsPath \ "subscriptions").read[List[ApiIdentifier]] or Reads.pure(List.empty[ApiIdentifier]))
+    (JsPath \ "upliftData").readNullable[UpliftData]
   )(CreateApplicationRequest.apply _)
   implicit val formatCreateApplicationRequest = Format(createApplicationRequestReads, Json.writes[CreateApplicationRequest])
   

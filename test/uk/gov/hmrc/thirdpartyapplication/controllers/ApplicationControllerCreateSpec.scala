@@ -46,6 +46,9 @@ import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
+
+
 class ApplicationControllerCreateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
 
@@ -62,7 +65,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess = Ropc()
 
-  trait Setup {
+  trait Setup extends UpliftDataSamples {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
@@ -145,7 +148,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
       val apis = List(testApi)
-      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
+      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
@@ -161,7 +164,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val testApi = ApiIdentifier.random
       val anotherTestApi = ApiIdentifier.random
       val apis = List(testApi, anotherTestApi)
-      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(subscriptions = apis)
+      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
 
@@ -335,6 +338,15 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     )
   }
 
-  private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest("My Application", access, Some("Description"),
-    Environment.PRODUCTION, Set(Collaborator("admin@example.com", ADMINISTRATOR, UserId.random), Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)))
+  private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest(
+    "My Application",
+    access,
+    Some("Description"),
+    Environment.PRODUCTION,
+    Set(
+      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+    ),
+    None
+  )
 }

@@ -28,8 +28,6 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
 import com.typesafe.config.ConfigFactory
 
-
-
 case class ApplicationTokens(production: Token)
 
 object ApplicationTokens {
@@ -53,7 +51,10 @@ case class ApplicationData(id: ApplicationId,
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
                            blocked: Boolean = false,
-                           ipAllowlist: IpAllowlist = IpAllowlist()) {
+                           ipAllowlist: IpAllowlist = IpAllowlist(),
+                           responsibleIndividual: Option[ResponsibleIndividual] = None,
+                           sellResellOrDistribute: Option[SellResellOrDistribute] = None
+                           ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 
@@ -68,9 +69,10 @@ object ApplicationData {
       case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
       case _ => ApplicationState(TESTING)
     }
+    
     val createdOn = DateTimeUtils.now
 
-    val checkInfo = if(application.subscriptions.nonEmpty) Some(CheckInformation(apiSubscriptionsConfirmed = true)) else None
+    val checkInfo = if(application.upliftData.nonEmpty) Some(CheckInformation(apiSubscriptionsConfirmed = true)) else None
 
     ApplicationData(
       ApplicationId.random,
@@ -109,7 +111,9 @@ object ApplicationData {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
+    (JsPath \ "reponsibleIndividual").readNullable[ResponsibleIndividual] and
+    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute]
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

@@ -67,6 +67,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   val serverTokenLastAccess = DateTime.now
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
+  def asUpdateRequest(applicationRequest: ApplicationRequest): UpdateApplicationRequest = {
+    UpdateApplicationRequest(
+      name = applicationRequest.name,
+      access = applicationRequest.access,
+      description = applicationRequest.description
+    )
+  }
+
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
@@ -427,7 +435,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, applicationRequest))
+      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -436,7 +444,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, applicationRequest))
+      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -444,7 +452,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
-      intercept[NotFoundException](await(underTest.update(applicationId, applicationRequest)))
+      intercept[NotFoundException](await(underTest.update(applicationId, asUpdateRequest(applicationRequest))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -454,7 +462,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val privilegedApplicationRequest: CreateApplicationRequest = applicationRequest.copy(access = Privileged())
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationRequest)))
+      intercept[ForbiddenException](await(underTest.update(applicationId, asUpdateRequest(privilegedApplicationRequest))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -1551,8 +1559,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   }
 
   private def aNewApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
-    CreateApplicationRequest("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))))
+    CreateApplicationRequest(
+      "MyApp", 
+      access, 
+      Some("description"), 
+      environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
+      None
+    )
   }
 
   private def anApplicationDataWithCollaboratorWithUserId(applicationId: ApplicationId,
@@ -1579,7 +1593,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   private def aNewApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
     CreateApplicationRequest("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))))
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
   }
 
   private def anExistingApplicationRequest() = {
@@ -1595,7 +1609,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       environment = Environment.PRODUCTION,
       Set(
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail))))
+        Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
+      None
+    )
   }
 
   private val requestedByEmail = "john.smith@example.com"

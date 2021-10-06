@@ -18,12 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import org.scalatest.OptionValues
 
-class ApplicationDataSpec extends HmrcSpec with OptionValues {
+class ApplicationDataSpec extends HmrcSpec with UpliftDataSamples {
   import ApiIdentifierSyntax._
   
   "ApplicationData" should {
@@ -34,7 +34,7 @@ class ApplicationDataSpec extends HmrcSpec with OptionValues {
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        subscriptions = List.empty
+        upliftData = None
       )
 
       ApplicationData.create(request, "bob", token).checkInformation shouldBe None
@@ -47,7 +47,7 @@ class ApplicationDataSpec extends HmrcSpec with OptionValues {
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        subscriptions = List("context".asIdentifier)
+        upliftData = makeUpliftData("context".asIdentifier)
       )
 
       ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
@@ -60,7 +60,7 @@ class ApplicationDataSpec extends HmrcSpec with OptionValues {
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        subscriptions = List("context".asIdentifier)
+        upliftData = makeUpliftData("context".asIdentifier)
       )
 
       val grantLengthInDays = 547

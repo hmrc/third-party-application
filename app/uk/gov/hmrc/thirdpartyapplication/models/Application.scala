@@ -30,12 +30,24 @@ trait ApplicationRequest {
   val access: Access
 }
 
+case class UpliftData(
+  responsibleIndividual: ResponsibleIndividual,
+  sellResellOrDistribute: SellResellOrDistribute,
+  subscriptions: List[ApiIdentifier]
+)
+
+object UpliftData {
+  import play.api.libs.json.{Format, Json}
+
+  implicit val format: Format[UpliftData] = Json.format[UpliftData]
+}
+
 case class CreateApplicationRequest(override val name: String,
                                     override val access: Access = Standard(List.empty, None, None, Set.empty),
                                     override val description: Option[String] = None,
                                     environment: Environment,
                                     collaborators: Set[Collaborator],
-                                    subscriptions: List[ApiIdentifier] = List.empty) extends ApplicationRequest {
+                                    upliftData: Option[UpliftData]) extends ApplicationRequest {
 
   def normaliseCollaborators: CreateApplicationRequest = {
     val normalised = collaborators.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
@@ -81,7 +93,10 @@ case class ApplicationResponse(id: ApplicationId,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                trusted: Boolean = false,
-                               ipAllowlist: IpAllowlist = IpAllowlist())
+                               ipAllowlist: IpAllowlist = IpAllowlist()/*,
+                               responsibleIndividual: Option[ResponsibleIndividual] = None,
+                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/
+                               )
 
 object ApplicationResponse {
 
@@ -119,7 +134,10 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist= data.ipAllowlist)
+      ipAllowlist= data.ipAllowlist /*,
+      responsibleIndividual = data.responsibleIndividual,
+      sellResellOrDistribute = data.sellResellOrDistribute */
+    )
   }
 }
 

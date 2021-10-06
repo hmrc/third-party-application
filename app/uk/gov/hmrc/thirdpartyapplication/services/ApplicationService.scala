@@ -77,7 +77,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    nameValidationConfig: ApplicationNameValidationConfig,
                                    tokenService: TokenService)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
-  def create[T <: ApplicationRequest](application: T)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
+  def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
     lockKeeper.tryLock {
       createApp(application)
@@ -93,7 +93,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def update[T <: ApplicationRequest](applicationId: ApplicationId, application: T)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
+  def update(applicationId: ApplicationId, application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationResponse] = {
     updateApp(applicationId)(application) map (app => ApplicationResponse(data = app))
   }
 
@@ -412,7 +412,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield ()
   }
 
-  private def createApp(req: ApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
+  private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
     logger.info(s"Creating application ${application.name}")
 
@@ -491,7 +491,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       "newApplicationDescription" -> app.description.getOrElse("")
     ))
 
-  private def updateApp(applicationId: ApplicationId)(application: ApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def updateApp(applicationId: ApplicationId)(application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     logger.info(s"Updating application ${application.name}")
 
     def updatedAccess(existing: ApplicationData): Access =
