@@ -33,7 +33,7 @@ trait ApplicationRequest {
 case class UpliftData(
   responsibleIndividual: ResponsibleIndividual,
   sellResellOrDistribute: SellResellOrDistribute,
-  subscriptions: List[ApiIdentifier]
+  subscriptions: Set[ApiIdentifier]
 )
 
 object UpliftData {

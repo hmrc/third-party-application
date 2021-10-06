@@ -35,6 +35,11 @@ object ApplicationTokens {
   implicit val format = Json.format[ApplicationTokens]
 }
 
+case class StoredUpliftData(responsibleIndividual: ResponsibleIndividual, sellResellOrDistribute: SellResellOrDistribute)
+
+object StoredUpliftData {
+  implicit val format = Json.format[StoredUpliftData]
+}
 case class ApplicationData(id: ApplicationId,
                            name: String,
                            normalisedName: String,
@@ -52,8 +57,7 @@ case class ApplicationData(id: ApplicationId,
                            checkInformation: Option[CheckInformation] = None,
                            blocked: Boolean = false,
                            ipAllowlist: IpAllowlist = IpAllowlist(),
-                           responsibleIndividual: Option[ResponsibleIndividual] = None,
-                           sellResellOrDistribute: Option[SellResellOrDistribute] = None
+                           upliftData: Option[StoredUpliftData] = None
                            ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
@@ -87,7 +91,9 @@ object ApplicationData {
       createdOn,
       Some(createdOn),
       environment = application.environment.toString,
-      checkInformation = checkInfo)
+      checkInformation = checkInfo,
+      upliftData = application.upliftData.map(ud => StoredUpliftData(ud.responsibleIndividual, ud.sellResellOrDistribute))
+    )
   }
 
   import play.api.libs.functional.syntax._
@@ -112,8 +118,7 @@ object ApplicationData {
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
     ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-    (JsPath \ "reponsibleIndividual").readNullable[ResponsibleIndividual] and
-    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute]
+    (JsPath \ "upliftData").readNullable[StoredUpliftData]
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

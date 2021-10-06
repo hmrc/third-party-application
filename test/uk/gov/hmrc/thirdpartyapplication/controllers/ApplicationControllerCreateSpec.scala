@@ -147,7 +147,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
-      val apis = List(testApi)
+      val apis = Set(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
@@ -163,7 +163,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
       val anotherTestApi = ApiIdentifier.random
-      val apis = List(testApi, anotherTestApi)
+      val apis = Set(testApi, anotherTestApi)
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
