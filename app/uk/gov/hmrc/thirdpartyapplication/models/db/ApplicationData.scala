@@ -76,7 +76,16 @@ object ApplicationData {
     
     val createdOn = DateTimeUtils.now
 
-    val checkInfo = if(application.upliftData.nonEmpty) Some(CheckInformation(apiSubscriptionsConfirmed = true)) else None
+    val checkInfo = application match {
+      case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
+      case v2: CreateApplicationRequestV2 => None
+      case _ => None
+    }
+
+    val storeUpdateData = application match {
+      case v1: CreateApplicationRequestV1 => None
+      case v2: CreateApplicationRequestV2 => Some(v2.upliftData)
+    }
 
     ApplicationData(
       ApplicationId.random,
@@ -92,7 +101,7 @@ object ApplicationData {
       Some(createdOn),
       environment = application.environment.toString,
       checkInformation = checkInfo,
-      upliftData = application.upliftData.map(ud => StoredUpliftData(ud.responsibleIndividual, ud.sellResellOrDistribute))
+      upliftData = storeUpdateData.map(ud => StoredUpliftData(ud.responsibleIndividual, ud.sellResellOrDistribute))
     )
   }
 

@@ -86,7 +86,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         println(s"XXX: $createApplicationRequest")
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
-          subs = createApplicationRequest.upliftData.fold(Set.empty[ApiIdentifier])(x => x.subscriptions)
+          subs = createApplicationRequest.anySubscriptions
           _ <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
         } yield Created(toJson(applicationResponse))
       } recover {

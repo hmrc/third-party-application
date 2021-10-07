@@ -20,7 +20,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
@@ -37,16 +36,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // implicit val formatApplicationData = Json.format[ApplicationData]
 
-  val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
-    (JsPath \ "name").read[String] and
-    (JsPath \ "access").read[Access] and
-    (JsPath \ "description").readNullable[String] and
-    (JsPath \ "environment").read[Environment] and
-    (JsPath \ "collaborators").read[Set[Collaborator]] and
-    (JsPath \ "upliftData").readNullable[UpliftData]
-  )(CreateApplicationRequest.apply _)
-  implicit val formatCreateApplicationRequest = Format(createApplicationRequestReads, Json.writes[CreateApplicationRequest])
-  
   implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
   implicit val formatExtendedApplicationResponse = Json.format[ExtendedApplicationResponse]

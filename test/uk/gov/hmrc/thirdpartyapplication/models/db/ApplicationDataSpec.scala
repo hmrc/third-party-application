@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
@@ -27,45 +26,68 @@ class ApplicationDataSpec extends HmrcSpec with UpliftDataSamples {
   import ApiIdentifierSyntax._
   
   "ApplicationData" should {
-    "do not set the check information when app is created without subs" in {
-      val token = Token(ClientId.random, "st")
+    "for version 1 requests" should {
+      "do not set the check information when app is created without subs" in {
+        val token = Token(ClientId.random, "st")
 
-      val request = CreateApplicationRequest(
-        name = "bob",
-        environment = Environment.PRODUCTION,
-        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        upliftData = None
-      )
+        val request = CreateApplicationRequestV1(
+          name = "bob",
+          environment = Environment.PRODUCTION,
+          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          subscriptions = None
+        )
 
-      ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+      }
+
+      "set the check information for subscriptions when app is created with subs" in {
+        val token = Token(ClientId.random, "st")
+
+        val request = CreateApplicationRequestV1(
+          name = "bob",
+          environment = Environment.PRODUCTION,
+          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          subscriptions = Some(Set("context".asIdentifier))
+        )
+
+        ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
+      }
+
+      "ensure correct grant length when app is created" in {
+        val token = Token(ClientId.random, "st")
+
+        val request = CreateApplicationRequestV1(
+          name = "bob",
+          environment = Environment.PRODUCTION,
+          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          subscriptions = None
+        )
+
+        val grantLengthInDays = 547
+        ApplicationData.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+      }
     }
 
-    "set the check information for subscriptions when app is created with subs" in {
+    "for version 2 requests" should {
       val token = Token(ClientId.random, "st")
-
-      val request = CreateApplicationRequest(
+      val request = CreateApplicationRequestV2(
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        upliftData = makeUpliftData("context".asIdentifier)
+        upliftData = makeUpliftData(ApiIdentifier.random)
       )
+      
+      "not set the check information at all" in {
+        ApplicationData.create(request, "bob", token).checkInformation shouldBe None
+      }
 
-      ApplicationData.create(request, "bob", token).checkInformation.value.apiSubscriptionsConfirmed shouldBe true
-    }
+      "ensure correct grant length when app is created" in {
+        ApplicationData.create(request, "bob", token).grantLength shouldBe 547
+      }
 
-    "check information for grant length when app is created" in {
-      val token = Token(ClientId.random, "st")
-
-      val request = CreateApplicationRequest(
-        name = "bob",
-        environment = Environment.PRODUCTION,
-        collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        upliftData = makeUpliftData("context".asIdentifier)
-      )
-
-      val grantLengthInDays = 547
-      ApplicationData.create(request, "bob", token).grantLength shouldBe grantLengthInDays
+      "ensure uplift data is set" in {
+        ApplicationData.create(request, "bob", token).upliftData.value shouldBe StoredUpliftData(aResponsibleIndividual, sellResellOrDistribute)
+      }
     }
   }
-
 }

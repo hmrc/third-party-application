@@ -413,7 +413,11 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
-    val application = req.asInstanceOf[CreateApplicationRequest].normaliseCollaborators
+    val application = req match {
+      case v1 : CreateApplicationRequestV1 => v1.normaliseCollaborators
+      case v2 : CreateApplicationRequestV2 => v2.normaliseCollaborators
+    }
+
     logger.info(s"Creating application ${application.name}")
 
     val wso2ApplicationName = credentialGenerator.generate()
@@ -432,10 +436,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
 
       val updatedApplication = ids match {
-        case Some(_) if application.access.accessType == PRIVILEGED => application.copy(access = newPrivilegedAccess)
+        case Some(_) if application.access.accessType == PRIVILEGED => 
+          application match {
+            case v1 : CreateApplicationRequestV1 => v1.copy(access = newPrivilegedAccess)
+            case v2 : CreateApplicationRequestV2 => v2.copy(access = newPrivilegedAccess)
+          }
         case _ => application
       }
-
+      
       ApplicationData.create(updatedApplication, wso2ApplicationName, tokenService.createEnvironmentToken())
     }
 

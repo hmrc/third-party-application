@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -50,10 +49,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
 
 
 class ApplicationControllerCreateSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with TableDrivenPropertyChecks 
+  with UpliftDataSamples {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
+
+  implicit val v1writes = Json.writes[CreateApplicationRequestV1]
+  implicit val v2writes = Json.writes[CreateApplicationRequestV2]
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
@@ -65,7 +68,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess = Ropc()
 
-  trait Setup extends UpliftDataSamples {
+  trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
@@ -103,9 +106,9 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest = aCreateApplicationRequest(standardAccess)
-    val privilegedApplicationRequest = aCreateApplicationRequest(privilegedAccess)
-    val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
+    val standardApplicationRequest =   aCreateApplicationRequestV2(standardAccess)
+    val privilegedApplicationRequest = aCreateApplicationRequestV2(privilegedAccess)
+    val ropcApplicationRequest = aCreateApplicationRequestV2(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
     val totp = TotpSecret("pTOTP")
@@ -114,35 +117,36 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
-
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
       (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      // when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
@@ -338,7 +342,19 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     )
   }
 
-  private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest(
+  // private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
+  //   "My Application",
+  //   access,
+  //   Some("Description"),
+  //   Environment.PRODUCTION,
+  //   Set(
+  //     Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+  //     Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+  //   ),
+  //   None
+  // )
+  
+  private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
     "My Application",
     access,
     Some("Description"),
@@ -347,6 +363,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
-    None
+    makeUpliftData(ApiIdentifier.random)
   )
 }

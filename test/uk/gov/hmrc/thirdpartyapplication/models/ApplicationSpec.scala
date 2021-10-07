@@ -21,9 +21,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.time.DateTimeUtils
-class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
+
+class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftDataSamples {
 
   "RateLimitTier" should {
 
@@ -68,12 +69,12 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil {
   "Application from CreateApplicationRequest" should {
     def createRequest(access: Access, environment: Environment) = {
       ApplicationData.create(
-        application = CreateApplicationRequest(
+        application = CreateApplicationRequestV2(
           name = "an application",
           access = access,
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-          upliftData = None
+          upliftData = makeUpliftData(ApiIdentifier.random)
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken")

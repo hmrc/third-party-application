@@ -26,6 +26,6 @@ trait UpliftDataSamples {
   val sellResellOrDistribute = SellResellOrDistribute("Yes")
   val doNotSellResellOrDistribute = SellResellOrDistribute("No")
 
-  def makeUpliftData(subscriptions: Set[ApiIdentifier]): Option[UpliftData] = Some(UpliftData(aResponsibleIndividual, sellResellOrDistribute, subscriptions))
-  def makeUpliftData(subscriptions: ApiIdentifier*): Option[UpliftData] = makeUpliftData(subscriptions.toSet)
+  def makeUpliftData(subscriptions: Set[ApiIdentifier]): UpliftData = UpliftData(aResponsibleIndividual, sellResellOrDistribute, subscriptions)
+  def makeUpliftData(subscriptions: ApiIdentifier*): UpliftData = makeUpliftData(subscriptions.toSet)
 }
