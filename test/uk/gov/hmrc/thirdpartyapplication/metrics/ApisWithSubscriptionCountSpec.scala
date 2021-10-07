@@ -51,7 +51,6 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
       private val result = await(metricUnderTest.metrics)
 
-      println(result)
       result(expectedAPIName(api1v1)) shouldBe api1v1._3
       result(expectedAPIName(api1v2)) shouldBe api1v2._3
       result(expectedAPIName(api2)) shouldBe api2._3

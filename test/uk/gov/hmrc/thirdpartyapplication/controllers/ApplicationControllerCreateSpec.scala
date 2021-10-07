@@ -341,18 +341,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       access
     )
   }
-
-  // private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
-  //   "My Application",
-  //   access,
-  //   Some("Description"),
-  //   Environment.PRODUCTION,
-  //   Set(
-  //     Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-  //     Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
-  //   ),
-  //   None
-  // )
   
   private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
     "My Application",

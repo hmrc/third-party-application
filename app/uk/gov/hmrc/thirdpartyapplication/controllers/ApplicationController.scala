@@ -83,7 +83,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
-        println(s"XXX: $createApplicationRequest")
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
           subs = createApplicationRequest.anySubscriptions

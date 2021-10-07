@@ -132,7 +132,7 @@ case class ApplicationResponse(id: ApplicationId,
                                createdOn: DateTime,
                                lastAccess: Option[DateTime],
                                grantLength: Int,
-                               lastAccessTokenUsage: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
+                               lastAccessTokenUsage: Option[DateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
                                redirectUris: List[String] = List.empty,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
@@ -144,7 +144,7 @@ case class ApplicationResponse(id: ApplicationId,
                                trusted: Boolean = false,
                                ipAllowlist: IpAllowlist = IpAllowlist()/*,
                                responsibleIndividual: Option[ResponsibleIndividual] = None,
-                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/
+                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/ // TODO once tech decision is made
                                )
 
 object ApplicationResponse {
