@@ -1623,7 +1623,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
   }
   
-  private def aNewV2ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+  private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
     CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftData(ApiIdentifier.random))
   }
