@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
-  trait Setup extends ApplicationRepositoryMockModule with UpliftDataSamples {
+  trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
       ApplicationData.create(
         CreateApplicationRequestV1(

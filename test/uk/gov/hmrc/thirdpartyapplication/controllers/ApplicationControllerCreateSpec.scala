@@ -45,12 +45,12 @@ import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 
 
 class ApplicationControllerCreateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks 
-  with UpliftDataSamples {
+  with UpliftRequestSamples {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -107,6 +107,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
   "Create" should {
     val standardApplicationRequest =   aCreateApplicationRequestV2(standardAccess)
+    val standardApplicationRequestV1 =   aCreateApplicationRequestV1(standardAccess)
     val privilegedApplicationRequest = aCreateApplicationRequestV2(privilegedAccess)
     val ropcApplicationRequest = aCreateApplicationRequestV2(ropcAccess)
 
@@ -123,6 +124,17 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
+    }
+
+    
+    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
+      when(underTest.applicationService.create(eqTo(standardApplicationRequestV1))(*)).thenReturn(successful(standardApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      
+      val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
+
+      status(result) shouldBe CREATED
+      verify(underTest.applicationService).create(eqTo(standardApplicationRequestV1))(*)
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
@@ -152,7 +164,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
       val apis = Set(testApi)
-      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
+      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
@@ -168,7 +180,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val testApi = ApiIdentifier.random
       val anotherTestApi = ApiIdentifier.random
       val apis = Set(testApi, anotherTestApi)
-      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftData = makeUpliftData(apis))
+      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
 
@@ -342,6 +354,18 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     )
   }
   
+  private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV2(
+    "My Application",
+    access,
+    Some("Description"),
+    Environment.PRODUCTION,
+    Set(
+      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+    ),
+    Set(ApiIdentifier.random)
+  )
+
   private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
     "My Application",
     access,
@@ -351,6 +375,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
-    makeUpliftData(ApiIdentifier.random)
+    makeUpliftRequest(ApiIdentifier.random)
   )
 }

@@ -82,9 +82,9 @@ object ApplicationData {
       case _ => None
     }
 
-    val storeUpdateData = application match {
+    val storedUpliftData: Option[StoredUpliftData] = application match {
       case v1: CreateApplicationRequestV1 => None
-      case v2: CreateApplicationRequestV2 => Some(v2.upliftData)
+      case v2: CreateApplicationRequestV2 => Some(StoredUpliftData(v2.upliftRequest.responsibleIndividual, v2.upliftRequest.sellResellOrDistribute))
     }
 
     ApplicationData(
@@ -101,7 +101,7 @@ object ApplicationData {
       Some(createdOn),
       environment = application.environment.toString,
       checkInformation = checkInfo,
-      upliftData = storeUpdateData.map(ud => StoredUpliftData(ud.responsibleIndividual, ud.sellResellOrDistribute))
+      upliftData = storedUpliftData
     )
   }
 

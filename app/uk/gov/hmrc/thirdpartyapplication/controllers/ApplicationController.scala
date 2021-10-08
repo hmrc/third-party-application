@@ -241,7 +241,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
 
   def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpliftRequest] { upliftRequest =>
+    withJsonBody[UpliftApplicationRequest] { upliftRequest =>
       applicationService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
     } recover {

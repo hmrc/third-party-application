@@ -47,14 +47,14 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with UpliftDataSamples {
+class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with UpliftRequestSamples {
 
   val idsByEmail = mutable.Map[String, UserId]()
   def idOf(email: String) = {
@@ -1625,7 +1625,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   
   private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
     CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftData(ApiIdentifier.random))
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random))
   }
 
   private def anExistingApplicationRequest() = {
@@ -1642,7 +1642,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       Set(
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
-      makeUpliftData(ApiIdentifier.random)
+      makeUpliftRequest(ApiIdentifier.random)
     )
   }
 

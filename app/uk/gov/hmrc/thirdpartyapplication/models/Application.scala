@@ -72,16 +72,16 @@ object CreateApplicationRequestV1 {
   implicit val reads = Json.reads[CreateApplicationRequestV1]
 }
 
-case class UpliftData(
+case class UpliftRequest(
   responsibleIndividual: ResponsibleIndividual,
   sellResellOrDistribute: SellResellOrDistribute,
   subscriptions: Set[ApiIdentifier]
 )
 
-object UpliftData {
+object UpliftRequest {
   import play.api.libs.json.{Format, Json}
 
-  implicit val format: Format[UpliftData] = Json.format[UpliftData]
+  implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
 }
 
 case class CreateApplicationRequestV2(
@@ -90,12 +90,12 @@ case class CreateApplicationRequestV2(
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
-  upliftData: UpliftData
+  upliftRequest: UpliftRequest
 ) extends CreateApplicationRequest {
                                       
   validate(this)
 
-  lazy val anySubscriptions: Set[ApiIdentifier] = upliftData.subscriptions
+  lazy val anySubscriptions: Set[ApiIdentifier] = upliftRequest.subscriptions
 
   def normaliseCollaborators: CreateApplicationRequestV2 = copy(collaborators = lowerCaseEmails(collaborators))
 }

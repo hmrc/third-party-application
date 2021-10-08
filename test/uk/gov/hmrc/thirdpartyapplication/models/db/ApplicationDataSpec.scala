@@ -17,12 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftDataSamples
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 
-class ApplicationDataSpec extends HmrcSpec with UpliftDataSamples {
+class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
   import ApiIdentifierSyntax._
   
   "ApplicationData" should {
@@ -74,7 +74,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftDataSamples {
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        upliftData = makeUpliftData(ApiIdentifier.random)
+        upliftRequest = makeUpliftRequest(ApiIdentifier.random)
       )
       
       "not set the check information at all" in {

@@ -1324,7 +1324,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val applicationId = ApplicationId.random
     val requestedByEmailAddress = "big.boss@example.com"
     val requestedName = "Application Name"
-    val upliftRequest = UpliftRequest(requestedName, requestedByEmailAddress)
+    val upliftRequest = UpliftApplicationRequest(requestedName, requestedByEmailAddress)
 
     "return updated application if successful" in new Setup {
       aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
