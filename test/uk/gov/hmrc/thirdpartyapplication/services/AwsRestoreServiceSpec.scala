@@ -27,18 +27,19 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
 
-  trait Setup extends ApplicationRepositoryMockModule {
+  trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
       ApplicationData.create(
-        CreateApplicationRequest(
+        CreateApplicationRequestV1(
           name = applicationName,
           environment = Environment.PRODUCTION,
-          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR, UserId.random))
+          collaborators = Set(Collaborator("foo@bar.com", Role.ADMINISTRATOR, UserId.random)),
+          subscriptions = None
         ),
         applicationName,
         Token(ClientId(""), serverToken, List.empty))

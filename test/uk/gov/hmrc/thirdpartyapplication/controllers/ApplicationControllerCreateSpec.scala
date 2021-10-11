@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -46,11 +45,18 @@ import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
+
+
 class ApplicationControllerCreateSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with TableDrivenPropertyChecks 
+  with UpliftRequestSamples {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
+
+  implicit val v1writes = Json.writes[CreateApplicationRequestV1]
+  implicit val v2writes = Json.writes[CreateApplicationRequestV2]
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
@@ -100,9 +106,10 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest = aCreateApplicationRequest(standardAccess)
-    val privilegedApplicationRequest = aCreateApplicationRequest(privilegedAccess)
-    val ropcApplicationRequest = aCreateApplicationRequest(ropcAccess)
+    val standardApplicationRequest =  aCreateApplicationRequestV2(standardAccess)
+    val standardApplicationRequestV1 =  aCreateApplicationRequestV1(standardAccess)
+    val privilegedApplicationRequest = aCreateApplicationRequestV2(privilegedAccess)
+    val ropcApplicationRequest = aCreateApplicationRequestV2(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
     val totp = TotpSecret("pTOTP")
@@ -111,41 +118,52 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
-
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
+    }
+
+    
+    "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
+      when(underTest.applicationService.create(eqTo(standardApplicationRequestV1))(*)).thenReturn(successful(standardApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      
+      val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
+
+      status(result) shouldBe CREATED
+      verify(underTest.applicationService).create(eqTo(standardApplicationRequestV1))(*)
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
       (contentAsJson(result) \ "totp").as[TotpSecret] shouldBe totp
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(privilegedApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(ropcApplicationRequest))(*)
-      verifyZeroInteractions(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*))
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
-      val apis = List(testApi)
-      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(subscriptions = apis)
+      val apis = Set(testApi)
+      val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
@@ -160,8 +178,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
       val testApi = ApiIdentifier.random
       val anotherTestApi = ApiIdentifier.random
-      val apis = List(testApi, anotherTestApi)
-      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(subscriptions = apis)
+      val apis = Set(testApi, anotherTestApi)
+      val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
 
@@ -334,7 +352,28 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       access
     )
   }
+  
+  private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
+    "My Application",
+    access,
+    Some("Description"),
+    Environment.PRODUCTION,
+    Set(
+      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+    ),
+    Some(Set(ApiIdentifier.random))
+  )
 
-  private def aCreateApplicationRequest(access: Access) = CreateApplicationRequest("My Application", access, Some("Description"),
-    Environment.PRODUCTION, Set(Collaborator("admin@example.com", ADMINISTRATOR, UserId.random), Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)))
+  private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
+    "My Application",
+    access,
+    Some("Description"),
+    Environment.PRODUCTION,
+    Set(
+      Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+      Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
+    ),
+    makeUpliftRequest(ApiIdentifier.random)
+  )
 }

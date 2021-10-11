@@ -47,14 +47,14 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-
+import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with UpliftRequestSamples {
 
   val idsByEmail = mutable.Map[String, UserId]()
   def idOf(email: String) = {
@@ -66,6 +66,14 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   val serverTokenLastAccess = DateTime.now
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+
+  def asUpdateRequest(applicationRequest: ApplicationRequest): UpdateApplicationRequest = {
+    UpdateApplicationRequest(
+      name = applicationRequest.name,
+      access = applicationRequest.access,
+      description = applicationRequest.description
+    )
+  }
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -181,7 +189,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequestWithCollaboratorWithUserId(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequestWithCollaboratorWithUserId(access = Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -204,11 +212,36 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
   "Create" should {
 
+    "create via uplift v2 a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
+      TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
+      ApplicationRepoMock.Save.thenAnswer(successful)
+
+      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
+
+      val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
+
+      val expectedUpliftData = StoredUpliftData(aResponsibleIndividual, sellResellOrDistribute)
+      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(upliftData = Some(expectedUpliftData))
+      createdApp.totp shouldBe None
+      ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
+      ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
+      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      AuditServiceMock.Audit.verifyCalledWith(
+        AppCreated,
+        Map(
+          "applicationId" -> createdApp.application.id.value.toString,
+          "newApplicationName" -> applicationRequest.name,
+          "newApplicationDescription" -> applicationRequest.description.get
+        ),
+        hc
+      )
+    }
+
     "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -232,7 +265,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Standard(), environment = Environment.SANDBOX)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
@@ -258,7 +291,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Privileged())
       
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
@@ -293,7 +326,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(access = Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
@@ -316,7 +349,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail with ApplicationAlreadyExists for privileged application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Privileged())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Privileged())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -332,7 +365,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(Ropc())
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(Ropc())
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
@@ -349,7 +382,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     //See https://wso2.org/jira/browse/CAPIMGT-1
     "not create the application when there is already an application being published" in new LockedSetup {
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest()
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
       intercept[TimeoutException] {
         await(underTest.create(applicationRequest))
@@ -362,7 +395,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
 
     "delete application when failed to create app in the API gateway" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest(environment = Environment.SANDBOX)
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(environment = Environment.SANDBOX)
 
       private val exception = new scala.RuntimeException("failed to generate tokens")
       ApiGatewayStoreMock.CreateApplication.thenFail(exception)
@@ -377,7 +410,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
 
     "delete application when failed to create state history" in new Setup {
-      val applicationRequest: CreateApplicationRequest = aNewApplicationRequest()
+      val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
@@ -427,7 +460,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, applicationRequest))
+      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -436,7 +469,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, applicationRequest))
+      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -444,7 +477,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
-      intercept[NotFoundException](await(underTest.update(applicationId, applicationRequest)))
+      intercept[NotFoundException](await(underTest.update(applicationId, asUpdateRequest(applicationRequest))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -454,7 +487,7 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       val privilegedApplicationRequest: CreateApplicationRequest = applicationRequest.copy(access = Privileged())
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationRequest)))
+      intercept[ForbiddenException](await(underTest.update(applicationId, asUpdateRequest(privilegedApplicationRequest))))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -1550,17 +1583,25 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     }
   }
 
-  private def aNewApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
-    CreateApplicationRequest("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))))
+  private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
+    CreateApplicationRequestV1(
+      "MyApp", 
+      access, 
+      Some("description"), 
+      environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
+      None
+    )
   }
 
-  private def anApplicationDataWithCollaboratorWithUserId(applicationId: ApplicationId,
-                                state: ApplicationState,
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
-                                access: Access = Standard(),
-                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment) = {
+  private def anApplicationDataWithCollaboratorWithUserId(
+      applicationId: ApplicationId,
+      state: ApplicationState,
+      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
+      access: Access = Standard(),
+      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
+      environment: Environment) = {
+        
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1577,13 +1618,18 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       environment = environment.toString)
   }
 
-  private def aNewApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequest("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))))
+  private def aNewV1ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
+    CreateApplicationRequestV1("MyApp", access, Some("description"), environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
+  }
+  
+  private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
+    CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random))
   }
 
   private def anExistingApplicationRequest() = {
-    CreateApplicationRequest(
+    CreateApplicationRequestV2(
       "My Application",
       access = Standard(
         redirectUris = List("http://example.com/redirect"),
@@ -1595,7 +1641,9 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       environment = Environment.PRODUCTION,
       Set(
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail))))
+        Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
+      makeUpliftRequest(ApiIdentifier.random)
+    )
   }
 
   private val requestedByEmail = "john.smith@example.com"

@@ -28,8 +28,6 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
 import com.typesafe.config.ConfigFactory
 
-
-
 case class ApplicationTokens(production: Token)
 
 object ApplicationTokens {
@@ -37,6 +35,11 @@ object ApplicationTokens {
   implicit val format = Json.format[ApplicationTokens]
 }
 
+case class StoredUpliftData(responsibleIndividual: ResponsibleIndividual, sellResellOrDistribute: SellResellOrDistribute)
+
+object StoredUpliftData {
+  implicit val format = Json.format[StoredUpliftData]
+}
 case class ApplicationData(id: ApplicationId,
                            name: String,
                            normalisedName: String,
@@ -53,7 +56,9 @@ case class ApplicationData(id: ApplicationId,
                            environment: String = Environment.PRODUCTION.toString,
                            checkInformation: Option[CheckInformation] = None,
                            blocked: Boolean = false,
-                           ipAllowlist: IpAllowlist = IpAllowlist()) {
+                           ipAllowlist: IpAllowlist = IpAllowlist(),
+                           upliftData: Option[StoredUpliftData] = None
+                           ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 
@@ -68,9 +73,19 @@ object ApplicationData {
       case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
       case _ => ApplicationState(TESTING)
     }
+    
     val createdOn = DateTimeUtils.now
 
-    val checkInfo = if(application.subscriptions.nonEmpty) Some(CheckInformation(apiSubscriptionsConfirmed = true)) else None
+    val checkInfo = application match {
+      case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
+      case v2: CreateApplicationRequestV2 => None
+      case _ => None
+    }
+
+    val storedUpliftData: Option[StoredUpliftData] = application match {
+      case v1: CreateApplicationRequestV1 => None
+      case v2: CreateApplicationRequestV2 => Some(StoredUpliftData(v2.upliftRequest.responsibleIndividual, v2.upliftRequest.sellResellOrDistribute))
+    }
 
     ApplicationData(
       ApplicationId.random,
@@ -85,7 +100,9 @@ object ApplicationData {
       createdOn,
       Some(createdOn),
       environment = application.environment.toString,
-      checkInformation = checkInfo)
+      checkInformation = checkInfo,
+      upliftData = storedUpliftData
+    )
   }
 
   import play.api.libs.functional.syntax._
@@ -109,7 +126,8 @@ object ApplicationData {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
+    (JsPath \ "upliftData").readNullable[StoredUpliftData]
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

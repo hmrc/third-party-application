@@ -85,7 +85,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       {
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
-          subs = createApplicationRequest.subscriptions
+          subs = createApplicationRequest.anySubscriptions
           _ <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
         } yield Created(toJson(applicationResponse))
       } recover {
@@ -241,7 +241,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
 
   def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpliftRequest] { upliftRequest =>
+    withJsonBody[UpliftApplicationRequest] { upliftRequest =>
       applicationService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
     } recover {

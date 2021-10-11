@@ -33,7 +33,7 @@ case class DeleteClientSecretRequest(actorEmailAddress: String)
 
 case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
 
-case class UpliftRequest(applicationName: String, requestedByEmailAddress: String)
+case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
 
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 
