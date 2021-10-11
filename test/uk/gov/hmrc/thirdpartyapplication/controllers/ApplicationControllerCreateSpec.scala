@@ -353,7 +353,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     )
   }
   
-  private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV2(
+  private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
     "My Application",
     access,
     Some("Description"),
@@ -362,7 +362,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
-    Set(ApiIdentifier.random)
+    Some(Set(ApiIdentifier.random))
   )
 
   private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
