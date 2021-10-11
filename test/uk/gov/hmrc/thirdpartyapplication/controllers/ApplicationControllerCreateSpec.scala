@@ -106,8 +106,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest =   aCreateApplicationRequestV2(standardAccess)
-    val standardApplicationRequestV1 =   aCreateApplicationRequestV1(standardAccess)
+    val standardApplicationRequest =  aCreateApplicationRequestV2(standardAccess)
+    val standardApplicationRequestV1 =  aCreateApplicationRequestV1(standardAccess)
     val privilegedApplicationRequest = aCreateApplicationRequestV2(privilegedAccess)
     val ropcApplicationRequest = aCreateApplicationRequestV2(ropcAccess)
 
@@ -153,7 +153,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
-      // when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
