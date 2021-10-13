@@ -20,7 +20,6 @@ import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 
@@ -37,16 +36,6 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // implicit val formatApplicationData = Json.format[ApplicationData]
 
-  val createApplicationRequestReads: Reads[CreateApplicationRequest] = (
-    (JsPath \ "name").read[String] and
-    (JsPath \ "access").read[Access] and
-    (JsPath \ "description").readNullable[String] and
-    (JsPath \ "environment").read[Environment] and
-    (JsPath \ "collaborators").read[Set[Collaborator]] and
-    ((JsPath \ "subscriptions").read[List[ApiIdentifier]] or Reads.pure(List.empty[ApiIdentifier]))
-  )(CreateApplicationRequest.apply _)
-  implicit val formatCreateApplicationRequest = Format(createApplicationRequestReads, Json.writes[CreateApplicationRequest])
-  
   implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
   implicit val formatApplicationResponse = Json.format[ApplicationResponse]
   implicit val formatExtendedApplicationResponse = Json.format[ExtendedApplicationResponse]
@@ -62,7 +51,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatValidationRequest = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
   implicit val formatClientSecretRequest = Json.format[ClientSecretRequest]
-  implicit val formatUpliftRequest = Json.format[UpliftRequest]
+  implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
   implicit val formatApproveUpliftRequest = Json.format[ApproveUpliftRequest]
   implicit val formatRejectUpliftRequest = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest = Json.format[ResendVerificationRequest]

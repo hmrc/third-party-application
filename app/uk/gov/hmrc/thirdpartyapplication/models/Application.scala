@@ -25,30 +25,91 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 trait ApplicationRequest {
-  val name: String
-  val description: Option[String] = None
-  val access: Access
+  def name: String
+  def description: Option[String]
+  def access: Access
 }
 
-case class CreateApplicationRequest(override val name: String,
-                                    override val access: Access = Standard(List.empty, None, None, Set.empty),
-                                    override val description: Option[String] = None,
-                                    environment: Environment,
-                                    collaborators: Set[Collaborator],
-                                    subscriptions: List[ApiIdentifier] = List.empty) extends ApplicationRequest {
+trait CreateApplicationRequest extends ApplicationRequest {
+  def collaborators: Set[Collaborator]
+  def environment: Environment
+  def anySubscriptions: Set[ApiIdentifier]
 
-  def normaliseCollaborators: CreateApplicationRequest = {
-    val normalised = collaborators.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
-    copy(collaborators = normalised)
+  protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
+    in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
   }
 
-  require(name.nonEmpty, "name is required")
-  require(collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
-  require(collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
-  access match {
-    case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-    case _ =>
+  def validate(in: CreateApplicationRequest): Unit = {
+    require(in.name.nonEmpty, "name is required")
+    require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
+    require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
+    in.access match {
+      case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
+      case _ =>
+    }
   }
+}
+
+case class CreateApplicationRequestV1(
+  name: String,
+  access: Access = Standard(List.empty, None, None, Set.empty),
+  description: Option[String] = None,
+  environment: Environment,
+  collaborators: Set[Collaborator],
+  subscriptions: Option[Set[ApiIdentifier]]
+) extends CreateApplicationRequest {
+  
+  validate(this)
+
+  def normaliseCollaborators: CreateApplicationRequestV1 = copy(collaborators = lowerCaseEmails(collaborators))
+
+  def anySubscriptions: Set[ApiIdentifier] = subscriptions.getOrElse(Set.empty)
+}
+
+object CreateApplicationRequestV1 {
+  import play.api.libs.json.Json
+
+  implicit val reads = Json.reads[CreateApplicationRequestV1]
+}
+
+case class UpliftRequest(
+  responsibleIndividual: ResponsibleIndividual,
+  sellResellOrDistribute: SellResellOrDistribute,
+  subscriptions: Set[ApiIdentifier]
+)
+
+object UpliftRequest {
+  import play.api.libs.json.{Format, Json}
+
+  implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
+}
+
+case class CreateApplicationRequestV2(
+  name: String,
+  access: Access = Standard(List.empty, None, None, Set.empty),
+  description: Option[String] = None,
+  environment: Environment,
+  collaborators: Set[Collaborator],
+  upliftRequest: UpliftRequest
+) extends CreateApplicationRequest {
+                                      
+  validate(this)
+
+  lazy val anySubscriptions: Set[ApiIdentifier] = upliftRequest.subscriptions
+
+  def normaliseCollaborators: CreateApplicationRequestV2 = copy(collaborators = lowerCaseEmails(collaborators))
+}
+
+object CreateApplicationRequestV2 {
+  import play.api.libs.json.Json
+
+  implicit val reads = Json.reads[CreateApplicationRequestV2]
+}
+
+object CreateApplicationRequest {
+  import play.api.libs.functional.syntax._
+  
+  implicit val reads = CreateApplicationRequestV2.reads.map(_.asInstanceOf[CreateApplicationRequest]) or CreateApplicationRequestV1.reads.map(_.asInstanceOf[CreateApplicationRequest])
 }
 
 case class UpdateApplicationRequest(override val name: String,
@@ -71,7 +132,7 @@ case class ApplicationResponse(id: ApplicationId,
                                createdOn: DateTime,
                                lastAccess: Option[DateTime],
                                grantLength: Int,
-                               lastAccessTokenUsage: Option[DateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
+                               lastAccessTokenUsage: Option[DateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
                                redirectUris: List[String] = List.empty,
                                termsAndConditionsUrl: Option[String] = None,
                                privacyPolicyUrl: Option[String] = None,
@@ -81,7 +142,10 @@ case class ApplicationResponse(id: ApplicationId,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                trusted: Boolean = false,
-                               ipAllowlist: IpAllowlist = IpAllowlist())
+                               ipAllowlist: IpAllowlist = IpAllowlist()/*,
+                               responsibleIndividual: Option[ResponsibleIndividual] = None,
+                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/ // TODO once tech decision is made
+                               )
 
 object ApplicationResponse {
 
@@ -119,7 +183,10 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist= data.ipAllowlist)
+      ipAllowlist= data.ipAllowlist /*,
+      responsibleIndividual = data.responsibleIndividual,
+      sellResellOrDistribute = data.sellResellOrDistribute */
+    )
   }
 }
 
