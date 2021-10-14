@@ -38,9 +38,12 @@ object DeriveContext {
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
     import Keys._
     
+    val resell = application.upliftData.fold("No")(ud => ud.sellResellOrDistribute.answer)
+    val inHouse = if(resell == "Yes") "No" else "Yes"
+
     Map(
       VAT_OR_ITSA -> deriveFraudPrevention(subscriptions),
-      IN_HOUSE_SOFTWARE -> "Yes"
+      IN_HOUSE_SOFTWARE -> inHouse
     )
   }
 
