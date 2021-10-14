@@ -19,40 +19,42 @@
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTime
 import java.util.UUID
-import scala.collection.immutable.ListMap
 
 sealed trait ActualAnswer
 case class SingleChoiceAnswer(value: String) extends ActualAnswer
 case class MultipleChoiceAnswer(values: Set[String]) extends ActualAnswer
 case class TextAnswer(value: String) extends ActualAnswer
 
-@Deprecated
-case class AnswersToQuestionnaire(
-  questionnaireId: QuestionnaireId, 
-  answers: ListMap[QuestionId, ActualAnswer]
-)
-
 case class SubmissionId(value: String) extends AnyVal
+
 object SubmissionId {
   implicit val format = play.api.libs.json.Json.valueFormat[SubmissionId]
   
   def random: SubmissionId = SubmissionId(UUID.randomUUID().toString())
 }
 
-import Submission.AnswerMapOfMaps
-
 case class Submission(
   id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
   groups: List[GroupOfQuestionnaires],
-  questionnaireAnswers: AnswerMapOfMaps
+  answersToQuestions: Map[QuestionId, ActualAnswer]
 ) {
-  def allQuestionnaireIds: List[QuestionnaireId] = groups.flatMap(_.links.map(_.id))
+  def allQuestionnaires: List[Questionnaire] = groups.flatMap(g => g.links)
 
-  def hasQuestionnaire(qid: QuestionnaireId): Boolean = allQuestionnaireIds.contains(qid)
+  def allQuestions: List[Question] = allQuestionnaires.flatMap(l => l.questions.map(_.question))
+
+  def findQuestion(questionId: QuestionId): Option[Question] = allQuestions.find(q => q.id == questionId)
+
+  def findQuestionnaireContaining(questionId: QuestionId): Option[Questionnaire] = 
+    allQuestionnaires.find(qn => 
+      qn.questions.exists(qi => 
+        qi.question.id == questionId
+      )
+    )
 }
 
-object Submission {
-  type AnswerMapOfMaps = Map[QuestionnaireId, ListMap[QuestionId, ActualAnswer]]
-}
+case class ExtendedSubmission(
+  submission: Submission,
+  nextQuestions: Map[QuestionnaireId, QuestionId]
+)

@@ -17,28 +17,19 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Submission.AnswerMapOfMaps
 import cats.data.NonEmptyList
 import cats.implicits._
-import scala.collection.immutable.ListMap
 
 object AnswerQuestion {
   
-  def createMapFor(qs: List[Questionnaire]): AnswerMapOfMaps = qs.map(q => (q.id, ListMap.empty[QuestionId, ActualAnswer])).toMap
+  private def fromOption[A](opt: Option[A], msg: String): Either[String,A] = opt.fold[Either[String,A]](Left(msg))(v => Right(v))
 
-  def fromOption[A](opt: Option[A], msg: String): Either[String,A] = opt.fold[Either[String,A]](Left(msg))(v => Right(v))
-
-  def answer(submission: Submission, questionnaire: Questionnaire, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Either[String, Submission] = {
-    val oQuestion = questionnaire.question(questionId)
-    val answerMap = submission.questionnaireAnswers.get(questionnaire.id)
-
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Either[String, Submission] = {
     for {
-      question                      <- fromOption(oQuestion, "Not valid for questionnaire")
-      _                             <- fromOption(answerMap, "Not valid for this submission")
+      question                      <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers              <- validateAnswersToQuestion(question, rawAnswers)
-      updatedListMap                 = submission.questionnaireAnswers(questionnaire.id).updated(questionId, validatedAnswers)
-      updatedQuestionnaireAnswers    = submission.questionnaireAnswers + (questionnaire.id -> updatedListMap)
-      updatedSubmission              = submission.copy(questionnaireAnswers = updatedQuestionnaireAnswers)
+      updatedAnswers                 = submission.answersToQuestions + (questionId -> validatedAnswers)
+      updatedSubmission              = submission.copy(answersToQuestions = updatedAnswers)
     } yield updatedSubmission
   }
 

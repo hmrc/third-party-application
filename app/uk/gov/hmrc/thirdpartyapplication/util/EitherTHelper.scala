@@ -29,4 +29,5 @@ trait EitherTHelper[E] {
   def fromOption[A](in: Option[A], error: E): EitherT[Future,E,A]          = EitherT.fromOption(in, error)
   def fromEither[A](in: Either[E,A]): EitherT[Future,E,A]                  = EitherT.fromEither(in)
   def cond[A](in: => Boolean, right: => A, left: => E)                     = EitherT.cond[Future](in, right,left)
+  def pure[A](in: A)                                                       = EitherT.pure[Future, String](in)
 }

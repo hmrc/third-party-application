@@ -23,7 +23,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.ListSet
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.DeriveContext
 
 @Singleton
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {

@@ -27,13 +27,13 @@ import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionnaireDAOMockModule
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.QuestionnairesController
-import uk.gov.hmrc.thirdpartyapplication.util.TestData
+import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.GroupOfQuestionnairesJsonFormatters._
   implicit val mat = NoMaterializer
   
-  trait Setup extends QuestionnaireDAOMockModule with TestData {
+  trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {
     val underTest = new QuestionnairesController(QuestionnaireDAOMock.aMock, Helpers.stubControllerComponents())
   }
   

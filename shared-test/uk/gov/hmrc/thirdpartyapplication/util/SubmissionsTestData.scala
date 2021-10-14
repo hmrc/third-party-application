@@ -17,13 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AnswerQuestion
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.DeriveContext
 
-trait TestData {
+trait SubmissionsTestData {
     val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
     val questionnaireId = questionnaire.id
     val question = questionnaire.questions.head.question
@@ -39,11 +39,19 @@ trait TestData {
 
     val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
     val allQuestionnaires = groups.flatMap(_.links)
-    val answers = AnswerQuestion.createMapFor(allQuestionnaires)
-    val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, AnswerQuestion.createMapFor(allQuestionnaires))
+    val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, Map.empty)
     
     val altSubmissionId = SubmissionId.random
     require(altSubmissionId != submissionId)
-    val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, AnswerQuestion.createMapFor(allQuestionnaires))
+    val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty)
 
+    def allFirstQuestions(questionnaires: List[Questionnaire]): Map[QuestionnaireId, QuestionId] =
+      questionnaires.map { qn =>
+          (qn.id, qn.questions.head.question.id)
+      }
+      .toMap
+    
+    val simpleContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "No")
+
+    val extendedSubmission = ExtendedSubmission(submission, allFirstQuestions(submission.allQuestionnaires))
 }

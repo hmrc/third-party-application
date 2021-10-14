@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoConnector
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.util.TestData
+import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SubmissionId
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SingleChoiceAnswer
 import scala.concurrent.ExecutionContext
@@ -23,7 +23,7 @@ class SubmissionsDAOSpec
     with BeforeAndAfterEach with BeforeAndAfterAll
     with IndexVerification
     with MetricsHelper
-    with TestData {
+    with SubmissionsTestData {
 
   implicit var s : ActorSystem = ActorSystem("test")
   implicit var m : Materializer = Materializer(s)
@@ -84,9 +84,9 @@ class SubmissionsDAOSpec
   "update" should {
     "replace the existing record" in {
       await(dao.save(submission))
-      val oldAnswers = submission.questionnaireAnswers(questionnaireId)
+      val oldAnswers = submission.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
-      val updatedSubmission = submission.copy(questionnaireAnswers = submission.questionnaireAnswers.updated(questionnaireId, newAnswers))
+      val updatedSubmission = submission.copy(answersToQuestions = newAnswers)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }

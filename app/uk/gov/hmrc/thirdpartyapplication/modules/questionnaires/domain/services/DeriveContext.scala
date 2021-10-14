@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
+package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Context
 
 object DeriveContext {
 
@@ -35,7 +35,7 @@ object DeriveContext {
     yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
   }
 
-  def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): AskQuestion.Context = {
+  def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
     import Keys._
     
     Map(

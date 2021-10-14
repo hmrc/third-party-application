@@ -20,7 +20,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext
 import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.DeriveContext
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax {

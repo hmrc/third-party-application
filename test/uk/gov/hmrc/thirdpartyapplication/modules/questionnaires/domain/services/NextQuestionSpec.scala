@@ -19,15 +19,15 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionBuilder
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.AskQuestion._
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.NextQuestion._
 import scala.collection.immutable.ListMap
 
-class AskQuestionSpec extends HmrcSpec with QuestionBuilder{
+class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
 
   val blankContext : Context = Map.empty
   val noAnswers: ActualAnswers = ListMap.empty
   
-  "AskQuestion" when {
+  "NextQuestion" when {
     "call getNextQuestion" should {
       "if no conditional questions are present" should {
         val question1 = yesNoQuestion(1)

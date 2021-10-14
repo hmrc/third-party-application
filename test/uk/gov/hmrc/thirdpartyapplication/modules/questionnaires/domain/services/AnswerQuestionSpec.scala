@@ -21,17 +21,17 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.TestData
+import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 
 class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
   
-  trait Setup extends TestData
+  trait Setup extends SubmissionsTestData
 
   "AnswerQuestion" when {
     "answer is called" should {
       "return updated submission" in new Setup {
-        val after = AnswerQuestion.answer(submission, questionnaire, questionId, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"))
 
         val check = after.right.value
 
@@ -39,55 +39,54 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
         check.applicationId shouldBe submission.applicationId
         check.startedOn shouldBe submission.startedOn
         check.groups shouldBe submission.groups
-        check.questionnaireAnswers.keySet shouldBe submission.questionnaireAnswers.keySet
-        check.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
       }
 
       "return updated submission after overwriting answer" in new Setup {
-        val s1 = AnswerQuestion.answer(submission, questionnaire, questionId, NonEmptyList.of("Yes"))
-        val s2 = AnswerQuestion.answer(s1.right.value, questionnaire, questionId, NonEmptyList.of("No"))
+        val s1 = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"))
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
 
         val check = s2.right.value
 
-        check.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("No")
+        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
       }
 
       "return updated submission does not loose other answers in same questionnaire" in new Setup {
-        val s1 = AnswerQuestion.answer(submission, questionnaire, question2Id, NonEmptyList.of("Yes"))
+        val s1 = AnswerQuestion.recordAnswer(submission, question2Id, NonEmptyList.of("Yes"))
         
-        val s2 = AnswerQuestion.answer(s1.right.value, questionnaire, questionId, NonEmptyList.of("No"))
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
 
         val check = s2.right.value
 
-        check.questionnaireAnswers(questionnaireId).get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
-        check.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("No")
+        check.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
+        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
       }
 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
-        val s1 = AnswerQuestion.answer(submission, questionnaireAlt, questionAltId, NonEmptyList.of("Yes"))
+        val s1 = AnswerQuestion.recordAnswer(submission, questionAltId, NonEmptyList.of("Yes"))
         
-        val s2 = AnswerQuestion.answer(s1.right.value, questionnaire, questionId, NonEmptyList.of("No"))
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
 
         val check = s2.right.value
 
-        check.questionnaireAnswers(questionnaireAltId).get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
-        check.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("No")
+        check.answersToQuestions.get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
+        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
       }
 
       "return left when question is not part of the questionnaire" in new Setup {
-        val after = AnswerQuestion.answer(submission, questionnaire, QuestionId.random, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"))
 
         after.left.value
       }
 
       "return left when questionnaire is not in submission" in new Setup {
-        val after = AnswerQuestion.answer(submission, questionnaire, QuestionId.random, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"))
 
         after.left.value
       }
 
       "return left when answer is not valid" in new Setup {
-        val after = AnswerQuestion.answer(submission, questionnaire, QuestionId.random, NonEmptyList.of("Bob"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Bob"))
 
         after.left.value
       }

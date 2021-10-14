@@ -35,20 +35,19 @@ object SubmissionsController {
   case class ErrorMessage(message: String)
   implicit val writesErrorMessage = Json.writes[ErrorMessage]
 
-  case class CreateNewSubmissionResponse(submission: Submission)
+  implicit val writesExtendedSubmission = Json.writes[ExtendedSubmission]
+
+  case class CreateNewSubmissionResponse(extendedSubmission: ExtendedSubmission)
   implicit val writesCreateNewSubmissionResponse = Json.writes[CreateNewSubmissionResponse]
 
-  case class FetchSubmissionResponse(submission: Submission)
+  case class FetchSubmissionResponse(submission: ExtendedSubmission)
   implicit val writesFetchSubmissionResponse = Json.writes[FetchSubmissionResponse]
 
   case class RecordAnswersRequest(answers: NonEmptyList[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 
-  case class RecordAnswersResponse(submission: Submission)
+  case class RecordAnswersResponse(submission: ExtendedSubmission)
   implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
-
-  case class NextQuestionResponse(question: Option[Question])
-  implicit val writesNextQuestionResponse = Json.writes[NextQuestionResponse]
 }
 
 @Singleton
@@ -64,7 +63,7 @@ extends BackendController(cc) {
   def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (submission: Submission) => Ok(Json.toJson(CreateNewSubmissionResponse(submission)))
+    val success = (submission: ExtendedSubmission) => Ok(Json.toJson(CreateNewSubmissionResponse(submission)))
 
     service.create(applicationId).map(_.fold(failed, success))
   }
@@ -72,26 +71,18 @@ extends BackendController(cc) {
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
     
-    val success = (s: Submission) => Ok(Json.toJson(FetchSubmissionResponse(s)))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(FetchSubmissionResponse(s)))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionnaireId: QuestionnaireId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
+  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (s: Submission) => Ok(Json.toJson(RecordAnswersResponse(s)))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(RecordAnswersResponse(s)))
 
     withJsonBody[RecordAnswersRequest] { answersRequest =>
-      service.recordAnswers(submissionId, questionnaireId, questionId, answersRequest.answers).map(_.fold(failed, success))
+      service.recordAnswers(submissionId, questionId, answersRequest.answers).map(_.fold(failed, success))
     }
-  }
-
-  def getNextQuestion(submissionId: SubmissionId, questionnaireId: QuestionnaireId) = Action.async {
-    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
-
-    val success = (q: Option[Question]) => Ok(Json.toJson(NextQuestionResponse(q)))
-
-    service.getNextQuestion(submissionId, questionnaireId).map(_.fold(failed, success))
   }
 }

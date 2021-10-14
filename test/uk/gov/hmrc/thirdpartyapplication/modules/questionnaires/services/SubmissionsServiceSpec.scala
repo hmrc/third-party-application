@@ -18,25 +18,23 @@ package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsDAOMockModule
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories._
 import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import cats.data.NonEmptyList
 import org.scalatest.Inside
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionnaireDAOMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks._
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
+import cats.data.NonEmptyList
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
     extends SubmissionsDAOMockModule 
     with ApplicationRepositoryMockModule
-    with SubscriptionRepositoryMockModule
+    with ContextServiceMockModule
     with ApplicationTestData
-    with TestData {
+    with SubmissionsTestData {
 
-    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
+    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
   }
 
   "SubmissionsService" when {
@@ -44,78 +42,64 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       "store a submission for the application" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Save.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
         val result = await(underTest.create(applicationId))
 
-        inside(result.right.value) { case Submission(_, applicationId, _, groupings, questionnaireAnswers) =>
-          applicationId shouldBe applicationId
-          questionnaireAnswers.size shouldBe allQuestionnaires.size
-          questionnaireAnswers.keySet shouldBe allQuestionnaires.map(_.id).toSet
-        }
+        inside(result.right.value) { 
+          case ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+            applicationId shouldBe applicationId
+            answersToQuestions.size shouldBe 0
+          }
 
       }
+      
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Save.thenReturn()
-        override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+        
+        override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
         val result1 = await(underTest.create(applicationId))
+        
+        inside(result1.right.value) {
+          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+            applicationId shouldBe applicationId
+            sub.allQuestionnaires.size shouldBe allQuestionnaires.size
+          }
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
-        inside(result1.right.value) { case Submission(_, applicationId, _, groupings, questionnaireAnswers) =>
-          applicationId shouldBe applicationId
-          questionnaireAnswers.size shouldBe allQuestionnaires.size
-          questionnaireAnswers.keySet shouldBe allQuestionnaires.map(_.id).toSet
-        }
-
         val result2 = await(underTest.create(applicationId))
-        inside(result2.right.value) { case Submission(_, applicationId, _, groupings, questionnaireAnswers) =>
-          questionnaireAnswers.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
-        }
+        inside(result2.right.value) { 
+          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+            sub.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
+          }
       }
     }
 
-    "fetchValidSubmissionHavingQuestionnaire" should {
-      "return a submission when valid" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
-        
-        await(underTest.fetchValidSubmissionHavingQuestionnaire(submissionId, questionnaireId).value) shouldBe Right(submission)
-      }      
-
-      "return a left when invalid" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
-        
-        await(underTest.fetchValidSubmissionHavingQuestionnaire(submissionId, QuestionnaireId.random).value) shouldBe 'Left
-      }
-    }
     "recordAnswers" should {
-      "records new answers when given a valid questionnaire" in new Setup {
+      "records new answers when given a valid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, questionnaireId, questionId, NonEmptyList.of("Yes"))) 
+        val result = await(underTest.recordAnswers(submissionId, questionId, NonEmptyList.of("Yes"))) 
         
         val out = result.right.value
-        out.questionnaireAnswers(questionnaireId).get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
-      "fail when given an invalid questionnaire" in new Setup {
-      }
-    }
-
-    "getNextQuestion" should {
-      "provide the next question when all data is present" in new Setup {
+      "fail when given an invalid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Update.thenReturn()
 
-        ApplicationRepoMock.Fetch.thenReturn(anApplicationData(applicationId, testingState()))
-        SubscriptionRepoMock.Fetch.thenReturn()
+        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, NonEmptyList.of("Yes"))) 
 
-        val result = await(underTest.getNextQuestion(submissionId, questionnaireId))
-        
-        result.right.value.value shouldBe question
+        result shouldBe 'left
       }
     }
   }

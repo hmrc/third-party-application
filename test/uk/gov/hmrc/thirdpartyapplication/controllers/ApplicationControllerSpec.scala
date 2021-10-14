@@ -59,6 +59,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -83,6 +84,7 @@ class ApplicationControllerSpec extends ControllerSpec
     val mockApplicationService: ApplicationService = mock[ApplicationService]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
+    val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -103,6 +105,7 @@ class ApplicationControllerSpec extends ControllerSpec
       mockSubscriptionService,
       config,
       mockGatekeeperService,
+      mockSubmissionService,
       Helpers.stubControllerComponents())
   }
 
