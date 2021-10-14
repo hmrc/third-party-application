@@ -30,13 +30,13 @@
   * limitations under the License.
   */
 
-  package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks
+  package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 
   import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
   import scala.concurrent.Future.successful
-  import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.SubmissionsDAO
-  import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+  import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.SubmissionsDAO
+  import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
   trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {

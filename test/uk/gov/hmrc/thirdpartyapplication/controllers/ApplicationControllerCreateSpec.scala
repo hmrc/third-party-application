@@ -46,7 +46,7 @@ import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 

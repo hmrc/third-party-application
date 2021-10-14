@@ -1,4 +1,4 @@
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.mongo.MongoSpecSupport
@@ -12,8 +12,8 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoConnector
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SingleChoiceAnswer
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SubmissionId
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SingleChoiceAnswer
 import scala.concurrent.ExecutionContext
 import reactivemongo.core.errors.DatabaseException
 

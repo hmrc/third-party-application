@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import org.scalatest.Inside
@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
 
 class ContextServiceSpec 
     extends AsyncHmrcSpec 

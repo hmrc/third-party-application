@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax

@@ -14,9 +14,9 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import scala.collection.immutable.ListSet
 
 trait QuestionBuilder {

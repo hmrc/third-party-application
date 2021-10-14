@@ -58,7 +58,7 @@ import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,

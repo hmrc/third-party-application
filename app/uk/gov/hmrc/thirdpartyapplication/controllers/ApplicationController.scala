@@ -52,7 +52,7 @@ import scala.concurrent.Future.successful
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import cats.data.EitherT
 
 @Singleton

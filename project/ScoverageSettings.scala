@@ -6,7 +6,7 @@ object ScoverageSettings {
       "<empty",
       """.*\.domain\.models\..*""" ,
       """uk\.gov\.hmrc\.thirdpartyapplication\.controllers\.binders""",
-      """uk\.gov\.hmrc\.thirdpartyapplication\.modules\.questionnaires\.controllers\.binders""",
+      """uk\.gov\.hmrc\.thirdpartyapplication\.modules\.submissions\.controllers\.binders""",
       """uk\.gov\.hmrc\.BuildInfo""" ,
       """.*\.Routes""" ,
       """.*\.RoutesPrefix""" ,

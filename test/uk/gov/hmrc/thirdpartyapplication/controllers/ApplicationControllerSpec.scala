@@ -59,7 +59,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 
 class ApplicationControllerSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {

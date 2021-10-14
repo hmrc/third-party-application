@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
 
 trait SubmissionsTestData {
     val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire

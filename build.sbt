@@ -29,10 +29,10 @@ lazy val microservice = (project in file("."))
     majorVersion := 0,
     routesImport ++= Seq(
       "uk.gov.hmrc.thirdpartyapplication.controllers.binders._",
-      "uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers._",
-      "uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.controllers.binders._",
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers._",
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.binders._",
       "uk.gov.hmrc.thirdpartyapplication.domain.models._",
-      "uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._"
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._"
     )
   )
   .settings(inConfig(Test)(BloopDefaults.configSettings))

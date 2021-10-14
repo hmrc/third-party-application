@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.Questionnaire
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.QuestionnaireId
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Questionnaire
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.QuestionnaireId
 
 import scala.concurrent.Future.successful
 

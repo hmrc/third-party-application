@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import cats.data.NonEmptyList
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionBuilder
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 

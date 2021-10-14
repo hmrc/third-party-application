@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models.SubmissionId
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SubmissionId
 import play.api.libs.json.Json
 import scala.collection.immutable.ListMap
 import play.api.libs.json.JsSuccess

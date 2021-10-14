@@ -14,16 +14,16 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.SubmissionsDAOMockModule
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsDAOMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import org.scalatest.Inside
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import cats.data.NonEmptyList
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {

@@ -14,12 +14,12 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.mocks.QuestionBuilder
-import uk.gov.hmrc.thirdpartyapplication.modules.questionnaires.domain.services.NextQuestion._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion._
 import scala.collection.immutable.ListMap
 
 class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
