@@ -36,17 +36,8 @@ object SubmissionsController {
 
   implicit val writesExtendedSubmission = Json.writes[ExtendedSubmission]
 
-  case class CreateNewSubmissionResponse(extendedSubmission: ExtendedSubmission)
-  implicit val writesCreateNewSubmissionResponse = Json.writes[CreateNewSubmissionResponse]
-
-  case class FetchSubmissionResponse(submission: ExtendedSubmission)
-  implicit val writesFetchSubmissionResponse = Json.writes[FetchSubmissionResponse]
-
   case class RecordAnswersRequest(answers: NonEmptyList[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
-
-  case class RecordAnswersResponse(submission: ExtendedSubmission)
-  implicit val writesRecordAnswersResponse = Json.writes[RecordAnswersResponse]
 }
 
 @Singleton
@@ -62,7 +53,7 @@ extends BackendController(cc) {
   def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (submission: ExtendedSubmission) => Ok(Json.toJson(CreateNewSubmissionResponse(submission)))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.create(applicationId).map(_.fold(failed, success))
   }
@@ -70,7 +61,7 @@ extends BackendController(cc) {
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
     
-    val success = (s: ExtendedSubmission) => Ok(Json.toJson(FetchSubmissionResponse(s)))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
   }
@@ -78,7 +69,7 @@ extends BackendController(cc) {
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (s: ExtendedSubmission) => Ok(Json.toJson(RecordAnswersResponse(s)))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     withJsonBody[RecordAnswersRequest] { answersRequest =>
       service.recordAnswers(submissionId, questionId, answersRequest.answers).map(_.fold(failed, success))
