@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 
+import cats.data.NonEmptyList
+
 case class GroupOfQuestionnaires(
   heading: String,
-  links: List[Questionnaire]
+  links: NonEmptyList[Questionnaire]
 )

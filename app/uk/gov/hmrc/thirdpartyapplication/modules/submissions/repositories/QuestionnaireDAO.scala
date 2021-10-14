@@ -24,6 +24,7 @@ import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import scala.collection.immutable.ListSet
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
+import cats.data.NonEmptyList
 
 @Singleton
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
@@ -37,7 +38,7 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
 
   def fetch(id: QuestionnaireId): Future[Option[Questionnaire]] = store.get(id).pure[Future]
 
-  def fetchActiveGroupsOfQuestionnaires() : Future[List[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
+  def fetchActiveGroupsOfQuestionnaires() : Future[NonEmptyList[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
 }
 
 object QuestionnaireDAO {
@@ -82,7 +83,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("796336a5-f7b4-4dad-8003-a818e342cbb4"),
         label = Label("Development practices"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1), 
           QuestionItem(question2), 
           QuestionItem(question3)
@@ -115,7 +116,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("ba30fb9b-db99-4d18-8ed8-8e5d94842bcc"),
         label = Label("Service management practices"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2)
         )
@@ -207,7 +208,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("19a26563-6d6a-488a-a81b-66436ccd17b7"),
         label = Label("Handling personal data"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2),
           QuestionItem(question3),
@@ -271,7 +272,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
         label = Label("Granting authority to HMRC"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question2),
           QuestionItem(question3),
@@ -324,7 +325,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("6c6b18cc-239f-443b-b63d-89393014ea64"),
         label = Label("Application security"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2, AskWhenAnswer(question1, "Yes")),
           QuestionItem(question3, AskWhenAnswer(question1, "Yes"))
@@ -360,7 +361,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
         label = Label("Fraud prevention headers"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes")),
           QuestionItem(question2, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes"))
         )
@@ -427,7 +428,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
         label = Label("Marketing your software"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
@@ -451,7 +452,7 @@ object QuestionnaireDAO {
       val questionnaire = Questionnaire(
         id = QuestionnaireId("ac69b129-524a-4d10-89a5-7bfa46ed95c7"),
         label = Label("Business details"),
-        questions = List(
+        questions = NonEmptyList.of(
           QuestionItem(question1)
         )
       )
@@ -469,10 +470,10 @@ object QuestionnaireDAO {
     )
 
     val activeQuestionnaireGroupings = 
-      List(
+      NonEmptyList.of(
         GroupOfQuestionnaires(
           heading = "Your processes",
-          links = List(
+          links = NonEmptyList.of(
             DevelopmentPractices.questionnaire,
             ServiceManagementPractices.questionnaire,
             HandlingPersonalData.questionnaire
@@ -480,7 +481,7 @@ object QuestionnaireDAO {
         ),
         GroupOfQuestionnaires(
           heading = "Your application",
-          links = List(
+          links = NonEmptyList.of(
             GrantingAuthorityToHMRC.questionnaire,
             ApplicationSecurity.questionnaire,
             FraudPreventionHeaders.questionnaire
@@ -488,13 +489,13 @@ object QuestionnaireDAO {
         ),
         GroupOfQuestionnaires(
           heading = "Your marketing",
-          links = List(
+          links = NonEmptyList.of(
             MarketingYourSoftware.questionnaire
           )
         ),
         GroupOfQuestionnaires(
           heading = "Your details",
-          links = List(
+          links = NonEmptyList.of(
             BusinessDetails.questionnaire
           )
         )

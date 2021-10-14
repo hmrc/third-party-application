@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
+import cats.data.NonEmptyList
 
 trait SubmissionsTestData {
     val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
@@ -45,10 +46,11 @@ trait SubmissionsTestData {
     require(altSubmissionId != submissionId)
     val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty)
 
-    def allFirstQuestions(questionnaires: List[Questionnaire]): Map[QuestionnaireId, QuestionId] =
+    def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
       questionnaires.map { qn =>
           (qn.id, qn.questions.head.question.id)
       }
+      .toList
       .toMap
     
     val simpleContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "No")

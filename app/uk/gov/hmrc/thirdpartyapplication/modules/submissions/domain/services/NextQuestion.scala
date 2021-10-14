@@ -69,7 +69,7 @@ object NextQuestion {
       }
     }
 
-    findFirst(questionnaire.questions)
+    findFirst(questionnaire.questions.toList)
   }
 
 }

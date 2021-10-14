@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
- package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTime
 import java.util.UUID
+import cats.data.NonEmptyList
 
 sealed trait ActualAnswer
 case class SingleChoiceAnswer(value: String) extends ActualAnswer
@@ -37,12 +38,12 @@ case class Submission(
   id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
-  groups: List[GroupOfQuestionnaires],
+  groups: NonEmptyList[GroupOfQuestionnaires],
   answersToQuestions: Map[QuestionId, ActualAnswer]
 ) {
-  def allQuestionnaires: List[Questionnaire] = groups.flatMap(g => g.links)
+  def allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
-  def allQuestions: List[Question] = allQuestionnaires.flatMap(l => l.questions.map(_.question))
+  def allQuestions: NonEmptyList[Question] = allQuestionnaires.flatMap(l => l.questions.map(_.question))
 
   def findQuestion(questionId: QuestionId): Option[Question] = allQuestions.find(q => q.id == questionId)
 

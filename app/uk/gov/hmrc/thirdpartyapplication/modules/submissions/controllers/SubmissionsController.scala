@@ -26,7 +26,6 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import cats.data.NonEmptyList
-import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
 import play.api.mvc.Results
 
 object SubmissionsController {

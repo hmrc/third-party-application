@@ -21,6 +21,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion._
 import scala.collection.immutable.ListMap
+import cats.data.NonEmptyList
 
 class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
 
@@ -35,7 +36,7 @@ class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
         val q = Questionnaire(
           id = QuestionnaireId.random,
           label = Label("questionnaire"),
-          questions = List(
+          questions = NonEmptyList.of(
             QuestionItem(question1), 
             QuestionItem(question2) 
           )
@@ -67,7 +68,7 @@ class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
         val q = Questionnaire(
           id = QuestionnaireId.random,
           label = Label("questionnaire"),
-          questions = List(
+          questions = NonEmptyList.of(
             QuestionItem(question1, AskWhenContext(matchingKey, matchingValue)), 
             QuestionItem(question2) 
           )
@@ -101,7 +102,7 @@ class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
         val q = Questionnaire(
           id = QuestionnaireId.random,
           label = Label("questionnaire"),
-          questions = List(
+          questions = NonEmptyList.of(
             QuestionItem(question1), 
             QuestionItem(question2, AskWhenAnswer(question1, matchingAnswer.value))
           )

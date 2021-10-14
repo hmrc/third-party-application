@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
-trait QuestionnaireJsonFormatters extends QuestionJsonFormatters with AskWhenJsonFormatters {
+import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters
+
+trait QuestionnaireJsonFormatters extends QuestionJsonFormatters with AskWhenJsonFormatters with NonEmptyListFormatters {
   import play.api.libs.json._
   import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 
