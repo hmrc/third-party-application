@@ -42,9 +42,9 @@ trait AuthorisationWrapper {
 
   implicit def ec: ExecutionContext
 
-  val authConnector: AuthConnector
-  val applicationService: ApplicationService
-  val authConfig: AuthConnector.Config
+  def authConnector: AuthConnector
+  def applicationService: ApplicationService
+  def authConfig: AuthConnector.Config
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction
 

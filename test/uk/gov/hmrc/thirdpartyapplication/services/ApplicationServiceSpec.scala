@@ -20,9 +20,8 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 
 import akka.actor.ActorSystem
 import cats.implicits._
-import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils}
+import org.joda.time.{DateTimeUtils}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
@@ -47,25 +46,22 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with UpliftRequestSamples {
-
-  val idsByEmail = mutable.Map[String, UserId]()
-  def idOf(email: String) = {
-    idsByEmail.getOrElseUpdate(email, UserId.random)
-  } 
-
-  val loggedInUser = "loggedin@example.com"
-  val devEmail = "dev@example.com"
-
-  val serverTokenLastAccess = DateTime.now
-  private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+class ApplicationServiceSpec 
+  extends AsyncHmrcSpec 
+  with BeforeAndAfterAll
+  with ApplicationStateUtil 
+  with ApplicationTestData
+  with UpliftRequestSamples 
+  {
 
   def asUpdateRequest(applicationRequest: ApplicationRequest): UpdateApplicationRequest = {
     UpdateApplicationRequest(
@@ -78,7 +74,10 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
-    with ApplicationRepositoryMockModule with TokenServiceMockModule {
+    with ApplicationRepositoryMockModule
+    with TokenServiceMockModule 
+    with SubmissionsServiceMockModule
+    {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -96,7 +95,6 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService = mock[GatekeeperService]
     val mockApiPlatformEventService = mock[ApiPlatformEventService]
-
     val applicationResponseCreator = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -127,7 +125,8 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
       mockNameValidationConfig,
-      TokenServiceMock.aMock)
+      TokenServiceMock.aMock,
+      SubmissionsServiceMock.aMock)
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
     when(mockStateHistoryRepository.insert(*)).thenAnswer((s:StateHistory) =>successful(s))
@@ -143,14 +142,13 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
       .thenReturn(successful(true))
     when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
       .thenReturn(successful(true))
-
+    SubmissionsServiceMock.DeleteAll.thenReturn()
+    
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
       when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
 
   }
-
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   trait LockedSetup extends Setup {
 
@@ -1644,34 +1642,5 @@ class ApplicationServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with A
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
       makeUpliftRequest(ApiIdentifier.random)
     )
-  }
-
-  private val requestedByEmail = "john.smith@example.com"
-  private val grantLength = 547
-
-  private def anApplicationData(applicationId: ApplicationId,
-                                state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
-                                access: Access = Standard(),
-                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION,
-                                ipAllowlist: IpAllowlist = IpAllowlist(),
-                                grantLength: Int = grantLength) = {
-    ApplicationData(
-      applicationId,
-      "MyApp",
-      "myapp",
-      collaborators,
-      Some("description"),
-      "aaaaaaaaaa",
-      ApplicationTokens(productionToken),
-      state,
-      access,
-      HmrcTime.now,
-      Some(HmrcTime.now),
-      grantLength,
-      rateLimitTier = rateLimitTier,
-      environment = environment.toString,
-      ipAllowlist = ipAllowlist)
   }
 }

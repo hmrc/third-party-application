@@ -19,6 +19,7 @@ lazy val microservice = (project in file("."))
   .settings(scalaSettings: _*)
   .settings(publishingSettings: _*)
   .settings(defaultSettings(): _*)
+  .settings(ScoverageSettings())
   .settings(
     name := appName,
     scalaVersion := "2.12.12",
@@ -26,7 +27,13 @@ lazy val microservice = (project in file("."))
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
     majorVersion := 0,
-    routesImport += "uk.gov.hmrc.thirdpartyapplication.controllers.binders._"
+    routesImport ++= Seq(
+      "uk.gov.hmrc.thirdpartyapplication.controllers.binders._",
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers._",
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.binders._",
+      "uk.gov.hmrc.thirdpartyapplication.domain.models._",
+      "uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._"
+    )
   )
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
@@ -61,8 +68,3 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
   }
 
 bloopAggregateSourceDependencies in Global := true
-
-// Coverage configuration
-coverageMinimum := 89
-coverageFailOnMinimum := true
-coverageExcludedPackages := "<empty>;com.kenshoo.play.metrics.*;.*definition.*;prod.*;testOnlyDoNotUseInAppConf.*;app.*;uk.gov.hmrc.BuildInfo;uk.gov.hmrc.thirdpartyapplication.controllers.binders"

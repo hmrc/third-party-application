@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduling
 
 import akka.actor.{Cancellable, Scheduler}
 import org.scalatest.concurrent.Eventually
-import org.scalatest.time.{Seconds, Minute, Span}
 import play.api.Application
 import play.api.inject.ApplicationLifecycle
 
@@ -29,6 +28,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerTest
 import java.util.concurrent.{TimeUnit, CountDownLatch}
+import org.scalatest.time.{Span, Minute}
 
 class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with NoMetricsGuiceOneAppPerTest {
 

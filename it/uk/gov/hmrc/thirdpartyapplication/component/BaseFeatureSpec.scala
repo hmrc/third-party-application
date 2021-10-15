@@ -25,11 +25,16 @@ import org.scalatest.matchers.should.Matchers
 
 import scala.concurrent.duration._
 import scala.language.postfixOps
+
 import play.api.test.RunningServer
 import uk.gov.hmrc.thirdpartyapplication.MyTestServerFactory
 import org.scalatest.featurespec.AnyFeatureSpec
 
 import org.scalatestplus.play.guice.GuiceOneServerPerSuite
+import scala.concurrent.Future
+import scala.concurrent.Await
+import scala.concurrent.ExecutionContext
+
 abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Matchers
   with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {
 
@@ -38,6 +43,8 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Ma
   lazy val serviceUrl = s"http://localhost:$port"
   val timeout = 10 seconds
 
+  def await[T](f: Future[T]): T = Await.result(f, timeout)
+  
   val apiSubscriptionFieldsStub = ApiSubscriptionFieldsStub
   val thirdPartyDelegatedAuthorityStub = ThirdPartyDelegatedAuthorityStub
   val authStub = AuthStub
@@ -49,6 +56,9 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Ma
     Seq(apiSubscriptionFieldsStub, authStub, totpStub,
       thirdPartyDelegatedAuthorityStub, awsApiGatewayStub, emailStub, apiPlatformEventsStub)
   }
+
+  implicit lazy val mat = app.materializer
+  implicit lazy val ec = app.injector.instanceOf[ExecutionContext]
 
   override protected def beforeAll(): Unit = {
     mocks.foreach(m => if (!m.stub.server.isRunning) m.stub.server.start())

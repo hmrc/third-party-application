@@ -49,10 +49,10 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   when(mockAuthConfig.enabled).thenReturn(true)
 
 
-  class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
-    val applicationService: ApplicationService = ???
-    val authConfig: AuthConnector.Config = ???
-    val authConnector: AuthConnector = ???
+  abstract class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
+    def applicationService: ApplicationService
+    def authConfig: AuthConnector.Config
+    def authConnector: AuthConnector
     implicit def ec = executionContext
   }
 

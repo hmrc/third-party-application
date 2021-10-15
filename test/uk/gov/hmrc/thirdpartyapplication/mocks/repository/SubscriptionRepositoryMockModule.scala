@@ -16,6 +16,32 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-trait SubscriptionRepositoryMockModule {
-  // TODO - copy ApplicationRepositoryMockModule...
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
+import org.mockito.MockitoSugar
+import org.mockito.ArgumentMatchersSugar
+import org.mockito.verification.VerificationMode
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import scala.concurrent.Future.successful
+
+trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+  protected trait BaseSubscriptionRepoMock {
+    def aMock: SubscriptionRepository
+
+    def verify = MockitoSugar.verify(aMock)
+
+    def verify(mode: VerificationMode) = MockitoSugar.verify(aMock,mode)
+
+    def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
+
+    object Fetch {
+      def thenReturn(subs: ApiIdentifier*) =
+        when(aMock.getSubscriptions(*[ApplicationId])).thenReturn(successful(subs.toList))
+    }
+  }
+  
+  object SubscriptionRepoMock extends BaseSubscriptionRepoMock {
+
+    val aMock = mock[SubscriptionRepository]
+  }
 }

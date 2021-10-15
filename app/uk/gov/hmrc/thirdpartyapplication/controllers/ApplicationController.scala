@@ -52,6 +52,8 @@ import scala.concurrent.Future.successful
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import cats.data.EitherT
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -61,6 +63,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       subscriptionService: SubscriptionService,
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
+                                      submissionsService: SubmissionsService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper with ApplicationLogger {
 
@@ -81,12 +84,24 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
+    def onV2(createApplicationRequest: CreateApplicationRequest)(fn: => Future[HasSucceeded]) = 
+      createApplicationRequest match {
+        case _ : CreateApplicationRequestV1 => successful(HasSucceeded)
+        case _ : CreateApplicationRequestV2 => fn
+      }
+
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
-          subs = createApplicationRequest.anySubscriptions
-          _ <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+          appliationId         = applicationResponse.application.id
+          subs                 = createApplicationRequest.anySubscriptions
+          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+          _                   <- onV2(createApplicationRequest) {
+                                    EitherT(submissionsService.create(appliationId))
+                                    .getOrElseF(Future.failed(new RuntimeException("Unexpected submsissions error")))
+                                    .map(_ => HasSucceeded)
+                                  }
         } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>

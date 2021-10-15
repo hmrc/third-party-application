@@ -52,7 +52,7 @@ object OverrideFlag {
   private implicit val writesPersistLogin: OWrites[PersistLogin.type] = new OWrites[PersistLogin.type] {
     def writes(pl: PersistLogin.type) = Json.obj()
   }
-  
+
   implicit val formatOverride = Union.from[OverrideFlag]("overrideType")
   .and[GrantWithoutConsent](GRANT_WITHOUT_TAXPAYER_CONSENT.toString)
   .and[PersistLogin.type](PERSIST_LOGIN_AFTER_GRANT.toString)

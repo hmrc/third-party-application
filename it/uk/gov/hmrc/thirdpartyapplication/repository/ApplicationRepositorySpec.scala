@@ -18,8 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
 
-import akka.actor.ActorSystem
-import akka.stream.{ActorMaterializer, Materializer}
+import akka.stream.Materializer
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -39,6 +38,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import akka.actor.ActorSystem
 
 class ApplicationRepositorySpec
   extends AsyncHmrcSpec
@@ -51,9 +51,8 @@ class ApplicationRepositorySpec
   val defaultGrantLength = 547
   val newGrantLength = 1000
 
-
   implicit var s : ActorSystem = ActorSystem("test")
-  implicit var m : Materializer = ActorMaterializer()
+  implicit var m : Materializer = Materializer(s)
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -81,6 +80,7 @@ class ApplicationRepositorySpec
   override protected def afterAll() {
     List(applicationRepository, subscriptionRepository).foreach { db =>
       await(db.drop)
+      await(s.terminate)
     }
   }
 

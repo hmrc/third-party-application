@@ -34,7 +34,6 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Subs
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
 import scala.concurrent.Await.{ready, result}
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random
 
 class DummyCredentialGenerator extends CredentialGenerator {
@@ -94,9 +93,11 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   override protected def afterEach(): Unit = {
+    val ec = scala.concurrent.ExecutionContext.Implicits.global
+
     DateTimeUtils.setCurrentMillisSystem()
-    result(subscriptionRepository.removeAll(), timeout)
-    result(applicationRepository.removeAll(), timeout)
+    result(subscriptionRepository.removeAll()(ec), timeout)
+    result(applicationRepository.removeAll()(ec), timeout)
     super.afterEach()
   }
 

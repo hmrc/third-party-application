@@ -58,6 +58,7 @@ import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -75,7 +76,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    nameValidationConfig: ApplicationNameValidationConfig,
-                                   tokenService: TokenService)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+                                   tokenService: TokenService,
+                                   submissionsService: SubmissionsService)
+                                   (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -189,6 +192,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
         _ <- traverse(subscriptions)(deleteSubscription)
         _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
+        _ <- submissionsService.deleteAllAnswersForApplication(app.id)
       } yield HasSucceeded
     }
 
