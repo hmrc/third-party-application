@@ -20,13 +20,12 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion._
-import scala.collection.immutable.ListMap
 import cats.data.NonEmptyList
 
 class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
 
   val blankContext : Context = Map.empty
-  val noAnswers: ActualAnswers = ListMap.empty
+  val noAnswers: ActualAnswers = Map.empty
   
   "NextQuestion" when {
     "call getNextQuestion" should {
