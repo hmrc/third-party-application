@@ -58,6 +58,14 @@ extends BackendController(cc) {
     service.create(applicationId).map(_.fold(failed, success))
   }
 
+  def fetchSubmission(id: SubmissionId) = Action.async { _ =>
+    lazy val failed = NotFound(Results.EmptyContent())
+
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
+   
+    service.fetch(id).map(_.fold(failed)(success))
+  }
+
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
     

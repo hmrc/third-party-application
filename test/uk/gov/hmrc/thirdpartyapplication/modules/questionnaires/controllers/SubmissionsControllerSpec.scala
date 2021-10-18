@@ -90,6 +90,29 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
   }
 
+  "fetchSubmission" should {
+
+    "return ok response with submission when found" in new Setup {
+      SubmissionsServiceMock.Fetch.thenReturn(Some(extendedSubmission))
+
+      val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).validate[ExtendedSubmission] match {
+        case JsSuccess(extendedSubmission, _) => succeed
+        case JsError(e) => fail(s"Not parsed as a response $e")
+      }
+    }
+
+    "return not found when not found" in new Setup {
+      SubmissionsServiceMock.Fetch.thenReturn(None)
+
+      val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+
   "recordAnswers" should {
     "return an OK response" in new Setup {
       import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._

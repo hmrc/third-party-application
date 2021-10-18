@@ -54,6 +54,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
       object Fetch {
         def thenReturn(submission: Submission) =
           when(aMock.fetch(*[SubmissionId])).thenReturn(successful(Some(submission)))
+        def thenReturnNothing() =
+          when(aMock.fetch(*[SubmissionId])).thenReturn(successful(None))
       }
 
       object FetchLatest {

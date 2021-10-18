@@ -80,6 +80,47 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
     }
 
+    "fetchLatest" should {
+      "fetch latest submission for an application id" in new Setup {
+        SubmissionsDAOMock.FetchLatest.thenReturn(submission)
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetchLatest(applicationId))
+
+        result.value.submission shouldBe submission
+      }
+
+      "fail when given an invalid application id" in new Setup {
+        SubmissionsDAOMock.FetchLatest.thenReturnNothing()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetchLatest(applicationId))
+
+        result shouldBe None
+      }
+    }
+
+  
+    "fetch" should {
+      "fetch latest submission for id" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetch(submissionId))
+
+        result.value.submission shouldBe submission
+      }
+
+      "fail when given an invalid application id" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturnNothing()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetch(submissionId))
+
+        result shouldBe None
+      }
+    }
+    
     "recordAnswers" should {
       "records new answers when given a valid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)

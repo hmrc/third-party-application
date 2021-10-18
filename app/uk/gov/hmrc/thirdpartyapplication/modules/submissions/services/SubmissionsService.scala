@@ -69,18 +69,18 @@ class SubmissionsService @Inject()(
     .value
   }
   
-  // def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
-  //    (
-  //     for {
-  //       submission            <- fromOptionF(submissionsDAO.fetch(id), "No such submission found")
-  //       context               <- contextService.deriveContext(submission.applicationId)
-  //       nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
-  //       extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
-  //     } yield extendedSubmission
-  //   )
-  //   .toOption
-  //   .value
-  // }
+  def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
+     (
+      for {
+        submission            <- fromOptionF(submissionsDAO.fetch(id), "No such submission found")
+        context               <- contextService.deriveContext(submission.applicationId)
+        nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
+        extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
+      } yield extendedSubmission
+    )
+    .toOption
+    .value
+  }
 
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ExtendedSubmission]] = {
     (
