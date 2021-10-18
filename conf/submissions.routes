@@ -1,4 +1,5 @@
 POST        /application/:aid                         SubmissionsController.createSubmissionFor(aid: ApplicationId)
 GET         /application/:aid                         SubmissionsController.fetchLatest(aid: ApplicationId)
 
+GET         /:sid                                     SubmissionsController.fetchSubmission(sid: SubmissionId)
 POST        /:sid/question/:qid                       SubmissionsController.recordAnswers(sid: SubmissionId, qid: QuestionId)
