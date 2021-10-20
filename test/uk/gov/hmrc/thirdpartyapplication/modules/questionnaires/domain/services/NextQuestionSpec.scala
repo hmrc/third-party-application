@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submissions.AnswersToQuestions
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion._
 import cats.data.NonEmptyList
@@ -25,7 +26,7 @@ import cats.data.NonEmptyList
 class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
 
   val blankContext : Context = Map.empty
-  val noAnswers: ActualAnswers = Map.empty
+  val noAnswers: AnswersToQuestions = Map.empty
   
   "NextQuestion" when {
     "call getNextQuestion" should {

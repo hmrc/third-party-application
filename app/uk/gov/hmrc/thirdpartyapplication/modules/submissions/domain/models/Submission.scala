@@ -34,12 +34,25 @@ object SubmissionId {
   def random: SubmissionId = SubmissionId(UUID.randomUUID().toString())
 }
 
+sealed trait QuestionnaireState
+case object NotStarted extends QuestionnaireState
+case object InProgress extends QuestionnaireState
+case object NotApplicable extends QuestionnaireState
+case object Completed extends QuestionnaireState
+
+case class QuestionnaireProgress(state: QuestionnaireState, nextQuestion: Option[QuestionId])
+
+object Submissions {
+  type AnswersToQuestions = Map[QuestionId, ActualAnswer]
+}
+
 case class Submission(
   id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
-  answersToQuestions: Map[QuestionId, ActualAnswer]
+  answersToQuestions: Submissions.AnswersToQuestions,
+  questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress]
 ) {
   def allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
@@ -53,9 +66,5 @@ case class Submission(
         qi.question.id == questionId
       )
     )
-}
 
-case class ExtendedSubmission(
-  submission: Submission,
-  nextQuestions: Map[QuestionnaireId, QuestionId]
-)
+}

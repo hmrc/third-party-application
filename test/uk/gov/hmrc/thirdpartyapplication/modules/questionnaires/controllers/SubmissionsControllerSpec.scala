@@ -29,14 +29,14 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController
 import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submission
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
   implicit val mat = NoMaterializer
  
  
-  implicit val readsExtendedSubmission = Json.reads[ExtendedSubmission]
+  implicit val readsExtendedSubmission = Json.reads[Submission]
   
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
@@ -45,15 +45,15 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "create new submission" should {
     "return an ok response" in new Setup {
 
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(submission)
       
       val result = underTest.createSubmissionFor(applicationId).apply(FakeRequest(POST, "/"))
 
       status(result) shouldBe OK
 
-      contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission,_) =>
-          extendedSubmission.submission shouldBe submission
+      contentAsJson(result).validate[Submission] match {
+        case JsSuccess(submission,_) =>
+          submission shouldBe submission
         case JsError(f) => fail(s"Not parsed as a response $f")        
       }
     }
@@ -70,13 +70,13 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchLatest" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(Some(extendedSubmission))
+      SubmissionsServiceMock.FetchLatest.thenReturn(Some(submission))
 
       val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
 
       status(result) shouldBe OK
-      contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
+      contentAsJson(result).validate[Submission] match {
+        case JsSuccess(submission, _) => succeed
         case JsError(e) => fail(s"Not parsed as a response $e")
       }
     }
@@ -93,13 +93,13 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchSubmission" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.Fetch.thenReturn(Some(extendedSubmission))
+      SubmissionsServiceMock.Fetch.thenReturn(Some(submission))
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
 
       status(result) shouldBe OK
-      contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) => succeed
+      contentAsJson(result).validate[Submission] match {
+        case JsSuccess(submission, _) => succeed
         case JsError(e) => fail(s"Not parsed as a response $e")
       }
     }
@@ -118,7 +118,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
-      SubmissionsServiceMock.RecordAnswers.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.RecordAnswers.thenReturn(submission)
 
       val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
       val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))

@@ -17,36 +17,24 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submissions.AnswersToQuestions
 
 object NextQuestion {
   
-  type ActualAnswers = Map[QuestionId, ActualAnswer]
-
   type Error = String
 
-  protected def shouldAsk(next: QuestionItem, context: Context, answers: ActualAnswers): Boolean = {
+  protected def shouldAsk(next: QuestionItem, context: Context, answersToQuestions: AnswersToQuestions): Boolean = {
     next.askWhen match {
       case AlwaysAsk => true
       case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
-      case AskWhenAnswer(questionId, expectedAnswer) => answers.get(questionId).map(_ == expectedAnswer).getOrElse(false)
+      case AskWhenAnswer(questionId, expectedAnswer) => answersToQuestions.get(questionId).map(_ == expectedAnswer).getOrElse(false)
     }
   }
   
-  def deriveNextQuestions(savedSubmission: Submission, context: Context): Map[QuestionnaireId, QuestionId] = {
-    val questionnaires = savedSubmission.allQuestionnaires
-    val answersToQuestions = savedSubmission.answersToQuestions
-
-    questionnaires.map(qn => (qn.id -> NextQuestion.getNextQuestion(qn, context, answersToQuestions).map(_.id)))
-      .collect {
-        case (q1,Some(q2)) => (q1, q2)
-      }
-      .toMap
-  }
-
-  def getNextQuestion(questionnaire: Questionnaire, context: Context, answers: ActualAnswers): Option[Question] = {
+  def getNextQuestion(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): Option[Question] = {
     def checkNext(fi: QuestionItem): Option[Question] = {
-      if(shouldAsk(fi, context, answers)) {
-        if(answers.contains(fi.question.id)) {
+      if(shouldAsk(fi, context, answersToQuestions)) {
+        if(answersToQuestions.contains(fi.question.id)) {
           None
         }
         else {
@@ -71,5 +59,4 @@ object NextQuestion {
 
     findFirst(questionnaire.questions.toList)
   }
-
 }

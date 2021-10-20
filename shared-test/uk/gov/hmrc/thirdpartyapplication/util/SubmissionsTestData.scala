@@ -25,35 +25,40 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.Der
 import cats.data.NonEmptyList
 
 trait SubmissionsTestData {
-    val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
-    val questionnaireId = questionnaire.id
-    val question = questionnaire.questions.head.question
-    val questionId = question.id
-    val question2Id = questionnaire.questions.tail.head.question.id
-    val questionnaireAlt = QuestionnaireDAO.Questionnaires.BusinessDetails.questionnaire
-    val questionnaireAltId = questionnaireAlt.id
-    val questionAltId = questionnaireAlt.questions.head.question.id
+  val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+  val questionnaireId = questionnaire.id
+  val question = questionnaire.questions.head.question
+  val questionId = question.id
+  val question2Id = questionnaire.questions.tail.head.question.id
+  val questionnaireAlt = QuestionnaireDAO.Questionnaires.BusinessDetails.questionnaire
+  val questionnaireAltId = questionnaireAlt.id
+  val questionAltId = questionnaireAlt.questions.head.question.id
 
 
-    val submissionId = SubmissionId.random
-    val applicationId = ApplicationId.random
+  val submissionId = SubmissionId.random
+  val applicationId = ApplicationId.random
 
-    val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-    val allQuestionnaires = groups.flatMap(_.links)
-    val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, Map.empty)
-    
-    val altSubmissionId = SubmissionId.random
-    require(altSubmissionId != submissionId)
-    val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty)
+  val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
+  val allQuestionnaires = groups.flatMap(_.links)
 
-    def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
-      questionnaires.map { qn =>
-          (qn.id, qn.questions.head.question.id)
-      }
-      .toList
-      .toMap
-    
-    val simpleContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "No")
+  def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
 
-    val extendedSubmission = ExtendedSubmission(submission, allFirstQuestions(submission.allQuestionnaires))
+  val initialProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(NotStarted, Some(firstQuestion(q)))).toMap
+
+  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, Map.empty, initialProgress)
+  
+  val altSubmissionId = SubmissionId.random
+  require(altSubmissionId != submissionId)
+  val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty, initialProgress)
+
+  def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
+    questionnaires.map { qn =>
+        (qn.id, qn.questions.head.question.id)
+    }
+    .toList
+    .toMap
+  
+  val simpleContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "No")
+  val soldContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "No", DeriveContext.Keys.VAT_OR_ITSA -> "No")
+  val vatContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "Yes")
 }

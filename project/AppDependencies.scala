@@ -4,7 +4,7 @@ object AppDependencies {
   def apply(): Seq[ModuleID] = compileDeps ++ testDeps
 
   private lazy val compileDeps = Seq(
-    "uk.gov.hmrc"                 %% "bootstrap-backend-play-28"          % "5.14.0",
+    "uk.gov.hmrc"                 %% "bootstrap-backend-play-28"          % "5.16.0",
     "uk.gov.hmrc"                 %% "play-json-union-formatter"          % "1.15.0-play-28",
     "com.typesafe.play"           %% "play-json"                          % "2.9.2",
     "com.typesafe.play"           %% "play-json-joda"                     % "2.9.2",
@@ -17,7 +17,7 @@ object AppDependencies {
   )
 
   private lazy val testDeps = Seq(
-    "uk.gov.hmrc"                 %% "bootstrap-test-play-28"             % "5.14.0",
+    "uk.gov.hmrc"                 %% "bootstrap-test-play-28"             % "5.16.0",
     "uk.gov.hmrc"                 %% "reactivemongo-test"                 % "5.0.0-play-28",
     "org.scalaj"                  %% "scalaj-http"                        % "2.3.0",
     "com.github.tomakehurst"      %  "wiremock-jre8-standalone"           % "2.27.2",

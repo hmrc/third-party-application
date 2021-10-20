@@ -39,59 +39,53 @@ class SubmissionsService @Inject()(
   /*
   * a questionnaire needs answering for the application
   */
-  def create(applicationId: ApplicationId): Future[Either[String, ExtendedSubmission]] = {
+  def create(applicationId: ApplicationId): Future[Either[String, Submission]] = {
     (
       for {
+        context               <- contextService.deriveContext(applicationId)
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  SubmissionId.random
-        answers               =  Map.empty[QuestionId,ActualAnswer]
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, answers)
+        emptyAnswers          =  Map.empty[QuestionId,ActualAnswer]
+        // TODO extract to method
+        progress              =  AnswerQuestion.deriveProgressOfQuestionnaires(allQuestionnaires, context, emptyAnswers)
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, emptyAnswers, progress)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
-        context               <- contextService.deriveContext(applicationId)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(savedSubmission, context)
-        extendedSubmission    =  ExtendedSubmission(savedSubmission, nextQuestions)
-      } yield extendedSubmission
+      } yield savedSubmission
     )
     .value
   }
 
-  def fetchLatest(id: ApplicationId): Future[Option[ExtendedSubmission]] = {
+  def fetchLatest(id: ApplicationId): Future[Option[Submission]] = {
     (
       for {
         submission            <- fromOptionF(submissionsDAO.fetchLatest(id), "No submission found for application")
-        context               <- contextService.deriveContext(id)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
-        extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
-      } yield extendedSubmission
+        // Either simplify or add more to this for comp
+      } yield submission
     )
     .toOption
     .value
   }
   
-  def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
+  def fetch(id: SubmissionId): Future[Option[Submission]] = {
      (
       for {
         submission            <- fromOptionF(submissionsDAO.fetch(id), "No such submission found")
-        context               <- contextService.deriveContext(submission.applicationId)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
-        extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
-      } yield extendedSubmission
+        // Either simplify or add more to this for comp
+      } yield submission
     )
     .toOption
     .value
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, Submission]] = {
     (
       for {
-        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        answeredSubmission  <- fromEither(AnswerQuestion.recordAnswer(submission, questionId, rawAnswers))
+        initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        context             <- contextService.deriveContext(initialSubmission.applicationId)
+        answeredSubmission  <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
         savedSubmission     <- liftF(submissionsDAO.update(answeredSubmission))
-        context             <- contextService.deriveContext(submission.applicationId)
-        nextQuestions       =  NextQuestion.deriveNextQuestions(savedSubmission, context)
-        extendedSubmission  =  ExtendedSubmission(savedSubmission, nextQuestions)
-      } yield extendedSubmission
+      } yield savedSubmission
     )
     .value
   }

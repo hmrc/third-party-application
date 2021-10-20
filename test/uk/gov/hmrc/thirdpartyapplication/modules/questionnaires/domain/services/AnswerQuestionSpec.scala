@@ -22,16 +22,18 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import org.scalatest.Inside
 
 
-class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
+class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
   
   trait Setup extends SubmissionsTestData
+  val blankContext : Context = Map.empty
 
   "AnswerQuestion" when {
     "answer is called" should {
       "return updated submission" in new Setup {
-        val after = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"), blankContext)
 
         val check = after.right.value
 
@@ -43,8 +45,8 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
       }
 
       "return updated submission after overwriting answer" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"))
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
+        val s1 = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"), blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
 
         val check = s2.right.value
 
@@ -52,9 +54,9 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
       }
 
       "return updated submission does not loose other answers in same questionnaire" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(submission, question2Id, NonEmptyList.of("Yes"))
+        val s1 = AnswerQuestion.recordAnswer(submission, question2Id, NonEmptyList.of("Yes"), blankContext)
         
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
 
         val check = s2.right.value
 
@@ -63,9 +65,9 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
       }
 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(submission, questionAltId, NonEmptyList.of("Yes"))
+        val s1 = AnswerQuestion.recordAnswer(submission, questionAltId, NonEmptyList.of("Yes"), blankContext)
         
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"))
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
 
         val check = s2.right.value
 
@@ -74,21 +76,66 @@ class AnswerQuestionSpec extends HmrcSpec with QuestionBuilder {
       }
 
       "return left when question is not part of the questionnaire" in new Setup {
-        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"), blankContext)
 
         after.left.value
       }
 
       "return left when questionnaire is not in submission" in new Setup {
-        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Yes"), blankContext)
 
         after.left.value
       }
 
       "return left when answer is not valid" in new Setup {
-        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Bob"))
+        val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, NonEmptyList.of("Bob"), blankContext)
 
         after.left.value
+      }
+    }
+
+    "deriveProgressOfQuestionnaire" should {
+      import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
+      val emptyAnswers = Map.empty[QuestionId, ActualAnswer]
+
+      "return not started and first question for simple questionnaire regardless of answers" in new Setup {
+        val context = simpleContext
+        val answers = emptyAnswers
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(DevelopmentPractices.questionnaire, context, answers)
+
+        res shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id))
+      }
+
+      "return completed and no question for questionnaire that has all the questions answered" in new Setup {
+        val context = simpleContext
+        val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
+
+        res shouldBe QuestionnaireProgress(Completed, None)
+      }
+      
+      "return not started and second question for questionnaire that skips first question due to context regardless of answers" in new Setup {
+        val context = simpleContext
+        val answers = emptyAnswers
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(GrantingAuthorityToHMRC.questionnaire, context, answers)
+
+        res shouldBe QuestionnaireProgress(NotStarted, Some(GrantingAuthorityToHMRC.question2.id))
+      }
+
+      "return not applicable and no question for questionnaire that skips all questions due to context if appropriate context" in new Setup {
+        val context = simpleContext
+        val answers = emptyAnswers
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(FraudPreventionHeaders.questionnaire, context, answers)
+
+        res shouldBe QuestionnaireProgress(NotApplicable, None)
+      }
+
+      "return not started and first question for questionnaire that skips all questions due to context if appropriate context" in new Setup {
+        val context = vatContext
+        val answers = emptyAnswers
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(FraudPreventionHeaders.questionnaire, context, answers)
+
+        res shouldBe QuestionnaireProgress(NotStarted, Some(FraudPreventionHeaders.question1.id))
       }
     }
 

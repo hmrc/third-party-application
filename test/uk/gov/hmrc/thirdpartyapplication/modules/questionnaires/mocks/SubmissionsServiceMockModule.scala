@@ -29,7 +29,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     def aMock: SubmissionsService
 
     object Create {
-      def thenReturn(submission: ExtendedSubmission) = 
+      def thenReturn(submission: Submission) = 
         when(aMock.create(*[ApplicationId])).thenReturn(successful(Right(submission)))
 
       def thenFails(error: String) =
@@ -37,17 +37,17 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object FetchLatest {
-      def thenReturn(submission: Option[ExtendedSubmission]) =
+      def thenReturn(submission: Option[Submission]) =
         when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(submission))
     }
 
     object Fetch {
-      def thenReturn(submission: Option[ExtendedSubmission]) =
+      def thenReturn(submission: Option[Submission]) =
         when(aMock.fetch(*[SubmissionId])).thenReturn(successful(submission))
     }
 
     object RecordAnswers {
-      def thenReturn(submission: ExtendedSubmission) =
+      def thenReturn(submission: Submission) =
         when(aMock.recordAnswers(*[SubmissionId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Right(submission)))
 
       def thenFails(error: String) = 

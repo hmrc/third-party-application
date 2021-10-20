@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import cats.data.NonEmptyList
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
@@ -40,18 +41,19 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   "SubmissionsService" when {
     "create new submission" should {
       "store a submission for the application" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
         val result = await(underTest.create(applicationId))
 
         inside(result.right.value) { 
-          case ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+          case s @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
             applicationId shouldBe applicationId
             answersToQuestions.size shouldBe 0
+            progress.size shouldBe s.allQuestionnaires.size
+            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id))
+            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, None)
           }
-
       }
       
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
@@ -65,7 +67,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result1 = await(underTest.create(applicationId))
         
         inside(result1.right.value) {
-          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+          case sub @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
             applicationId shouldBe applicationId
             sub.allQuestionnaires.size shouldBe allQuestionnaires.size
           }
@@ -74,7 +76,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result2 = await(underTest.create(applicationId))
         inside(result2.right.value) { 
-          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+          case sub @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
             sub.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
           }
       }
@@ -87,7 +89,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetchLatest(applicationId))
 
-        result.value.submission shouldBe submission
+        result.value shouldBe submission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -108,7 +110,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetch(submissionId))
 
-        result.value.submission shouldBe submission
+        result.value shouldBe submission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -130,13 +132,14 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, questionId, NonEmptyList.of("Yes"))) 
         
         val out = result.right.value
-        out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
       "fail when given an invalid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.recordAnswers(submissionId, QuestionId.random, NonEmptyList.of("Yes"))) 
 

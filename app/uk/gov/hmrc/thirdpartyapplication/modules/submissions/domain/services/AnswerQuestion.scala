@@ -21,23 +21,47 @@ import cats.data.NonEmptyList
 import cats.implicits._
 
 object AnswerQuestion {
-  
+  import Submissions.AnswersToQuestions
+
   private def fromOption[A](opt: Option[A], msg: String): Either[String,A] = opt.fold[Either[String,A]](Left(msg))(v => Right(v))
 
-  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Either[String, Submission] = {
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, Submission] = {
     for {
       question                      <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers              <- validateAnswersToQuestion(question, rawAnswers)
-      updatedAnswers                 = submission.answersToQuestions + (questionId -> validatedAnswers)
-      updatedSubmission              = submission.copy(answersToQuestions = updatedAnswers)
+      updatedAnswersToQuestions      = submission.answersToQuestions + (questionId -> validatedAnswers)
+      updatedQuestionnaireProgress   = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
+      updatedSubmission              = submission.copy(answersToQuestions = updatedAnswersToQuestions, questionnaireProgress = updatedQuestionnaireProgress)
     } yield updatedSubmission
   }
 
-  def validateAnswersToQuestion(question: Question, answers: NonEmptyList[String]): Either[String, ActualAnswer] = {
+  // If NO next question
+  //   If no answers for questionnaire then NotApplicable else Completed
+  // If Next Question
+  //   If no answers for questionnaire then NotStarted else InProgress
+  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {
+    val nextQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions)
+    val hasAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
+    
+    val state = (nextQuestion, hasAnswersForQuestionnaire) match {
+      case (None, true)       => Completed
+      case (None, false)      => NotApplicable
+      case (_, true)          => InProgress
+      case (_, false)         => NotStarted
+    }
+
+    QuestionnaireProgress(state, nextQuestion.map(_.id))
+  }
+    
+  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
+    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
+  }
+
+  def validateAnswersToQuestion(question: Question, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
     question match {
       case q: SingleChoiceQuestion => 
         Either.fromOption(
-          answers
+          rawAnswers
           .head
           .some
           .filter(answer => q.choices.contains(PossibleAnswer(answer)))
@@ -45,14 +69,14 @@ object AnswerQuestion {
           , "The answer is not valid for this question"
         )
       case q: MultiChoiceQuestion =>
-        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
+        val (valid, invalid) = rawAnswers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
         invalid match {
           case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
           case _     => "Some answers are not valid for this question".asLeft
         }
       case q: TextQuestion => 
-        if(answers.head.nonEmpty) {
-          TextAnswer(answers.head).asRight
+        if(rawAnswers.head.nonEmpty) {
+          TextAnswer(rawAnswers.head).asRight
         } else {
           "A text answer cannot be blank".asLeft
         }
