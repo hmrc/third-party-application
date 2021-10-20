@@ -25,7 +25,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.NonEmptyList
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.AnswerQuestion
 
 @Singleton
@@ -47,7 +46,6 @@ class SubmissionsService @Inject()(
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  SubmissionId.random
         emptyAnswers          =  Map.empty[QuestionId,ActualAnswer]
-        // TODO extract to method
         progress              =  AnswerQuestion.deriveProgressOfQuestionnaires(allQuestionnaires, context, emptyAnswers)
         submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, emptyAnswers, progress)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
@@ -57,25 +55,11 @@ class SubmissionsService @Inject()(
   }
 
   def fetchLatest(id: ApplicationId): Future[Option[Submission]] = {
-    (
-      for {
-        submission            <- fromOptionF(submissionsDAO.fetchLatest(id), "No submission found for application")
-        // Either simplify or add more to this for comp
-      } yield submission
-    )
-    .toOption
-    .value
+    submissionsDAO.fetchLatest(id)
   }
   
   def fetch(id: SubmissionId): Future[Option[Submission]] = {
-     (
-      for {
-        submission            <- fromOptionF(submissionsDAO.fetch(id), "No such submission found")
-        // Either simplify or add more to this for comp
-      } yield submission
-    )
-    .toOption
-    .value
+     submissionsDAO.fetch(id)
   }
 
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, Submission]] = {
