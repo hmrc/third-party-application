@@ -46,14 +46,18 @@ class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
           getNextQuestion(q, blankContext, noAnswers).value shouldBe question1
         }
         
-        "return the second question when the first is answered" in {
+        "return the first question when the first is answered" in {
           val firstAnswered = noAnswers + (question1.id -> mock[ActualAnswer])
-          getNextQuestion(q, blankContext, firstAnswered).value shouldBe question2
+          getNextQuestion(q, blankContext, firstAnswered).value shouldBe question1
         }
 
-        "return none when all are answered" in {
+        "return question 1 when all are answered" in {
           val allAnswered = noAnswers + (question1.id -> mock[ActualAnswer]) + (question2.id -> mock[ActualAnswer])
-          getNextQuestion(q, blankContext, allAnswered) shouldBe None
+          getNextQuestion(q, blankContext, allAnswered).value shouldBe question1
+        }
+
+        "return question 2 when current question is 1" in {
+           getNextQuestion(q, blankContext, noAnswers, Some(question1.id)).value shouldBe question2
         }
       }
 
@@ -108,14 +112,19 @@ class NextQuestionSpec extends HmrcSpec with QuestionBuilder{
           )
         )
 
-        "return the second question when answers contains matching answer for question 1" in {
+        "return the first question when answers contains matching answer for question 1" in {
           val answeredFirstMatching = noAnswers + (question1.id -> matchingAnswer)
-          getNextQuestion(q, blankContext, answeredFirstMatching).value shouldBe question2
+          getNextQuestion(q, blankContext, answeredFirstMatching).value shouldBe question1
         }
 
-        "return none when answers contains a non matching answer for question 1" in {
+        "return the first question when answers contains a non matching answer for question 1" in {
           val answeredFirstMatching = noAnswers + (question1.id -> noMatchingAnswer)
-          getNextQuestion(q, blankContext, answeredFirstMatching) shouldBe None
+          getNextQuestion(q, blankContext, answeredFirstMatching).value shouldBe question1
+        }
+
+        "return None when answers contains a non matching answer for question 1 and current question is question 1" in {
+          val answeredFirstMatching = noAnswers + (question1.id -> noMatchingAnswer)
+          getNextQuestion(q, blankContext, answeredFirstMatching, Some(question1.id)) shouldBe None
         }
       }
     }

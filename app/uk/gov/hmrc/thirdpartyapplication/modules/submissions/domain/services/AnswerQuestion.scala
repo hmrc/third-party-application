@@ -30,20 +30,21 @@ object AnswerQuestion {
       question                      <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers              <- validateAnswersToQuestion(question, rawAnswers)
       updatedAnswersToQuestions      = submission.answersToQuestions + (questionId -> validatedAnswers)
-      updatedQuestionnaireProgress   = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
+      updatedQuestionnaireProgress   = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions, Some(questionId))
       updatedSubmission              = submission.copy(answersToQuestions = updatedAnswersToQuestions, questionnaireProgress = updatedQuestionnaireProgress)
     } yield updatedSubmission
   }
 
-  // If NO next question
+  // If NO next unanswered question
   //   If no answers for questionnaire then NotApplicable else Completed
-  // If Next Question
+  // If next unanswered question
   //   If no answers for questionnaire then NotStarted else InProgress
-  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {
-    val nextQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions)
+  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): QuestionnaireProgress = {
+    val nextUnansweredQuestion = NextQuestion.getNextUnansweredQuestion(questionnaire, context, answersToQuestions)
+    val nextQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions, questionId)
     val hasAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
     
-    val state = (nextQuestion, hasAnswersForQuestionnaire) match {
+    val state = (nextUnansweredQuestion, hasAnswersForQuestionnaire) match {
       case (None, true)       => Completed
       case (None, false)      => NotApplicable
       case (_, true)          => InProgress
@@ -53,8 +54,8 @@ object AnswerQuestion {
     QuestionnaireProgress(state, nextQuestion.map(_.id))
   }
     
-  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
-    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
+  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): Map[QuestionnaireId, QuestionnaireProgress] = {
+    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions, questionId))).toMap
   }
 
   def validateAnswersToQuestion(question: Question, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {

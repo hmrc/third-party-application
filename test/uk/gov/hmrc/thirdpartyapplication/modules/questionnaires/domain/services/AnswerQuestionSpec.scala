@@ -106,12 +106,12 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
         res shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id))
       }
 
-      "return completed and no question for questionnaire that has all the questions answered" in new Setup {
+      "return completed and question 1 for questionnaire that has all the questions answered" in new Setup {
         val context = simpleContext
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(Completed, None)
+        res shouldBe QuestionnaireProgress(Completed, Some(ServiceManagementPractices.question1.id))
       }
       
       "return not started and second question for questionnaire that skips first question due to context regardless of answers" in new Setup {

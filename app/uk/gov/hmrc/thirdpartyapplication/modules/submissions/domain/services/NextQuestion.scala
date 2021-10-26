@@ -31,7 +31,7 @@ object NextQuestion {
     }
   }
   
-  def getNextQuestion(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): Option[Question] = {
+  def getNextUnansweredQuestion(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): Option[Question] = {
     def checkNext(fi: QuestionItem): Option[Question] = {
       if(shouldAsk(fi, context, answersToQuestions)) {
         if(answersToQuestions.contains(fi.question.id)) {
@@ -58,5 +58,43 @@ object NextQuestion {
     }
 
     findFirst(questionnaire.questions.toList)
+  }
+
+  def getNextQuestion(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions, qid: Option[QuestionId] = None): Option[Question] = {
+    def checkNext(fi: QuestionItem): Option[Question] = {
+      if(shouldAsk(fi, context, answersToQuestions)) {
+        Some(fi.question)
+      }
+      else {
+        None
+      }
+    }
+
+    def findNextQuestion(fis: List[QuestionItem]): Option[Question] = {
+      fis match {
+        case Nil => None
+        case head :: tail =>
+          checkNext(head) match {
+            case Some(q) => Some(q)
+            case None => findNextQuestion(tail)
+          }
+      }
+    }
+
+    def findQuestion(fis: List[QuestionItem], qid: QuestionId): Option[Question] = {
+      fis match {
+        case Nil => None
+        case head :: tail =>
+          if (head.question.id == qid)
+            findNextQuestion(tail)
+          else
+            findQuestion(tail, qid)
+      }
+    }
+
+    if (qid.isDefined && questionnaire.hasQuestion(qid.get))
+      findQuestion(questionnaire.questions.toList, qid.get)
+    else
+      findNextQuestion(questionnaire.questions.toList)
   }
 }
