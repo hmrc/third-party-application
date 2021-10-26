@@ -40,7 +40,7 @@ case object InProgress extends QuestionnaireState
 case object NotApplicable extends QuestionnaireState
 case object Completed extends QuestionnaireState
 
-case class QuestionnaireProgress(state: QuestionnaireState, nextQuestion: Option[QuestionId])
+case class QuestionnaireProgress(state: QuestionnaireState, firstQuestion: Option[QuestionId], nextQuestion: Option[QuestionId])
 
 object Submissions {
   type AnswersToQuestions = Map[QuestionId, ActualAnswer]

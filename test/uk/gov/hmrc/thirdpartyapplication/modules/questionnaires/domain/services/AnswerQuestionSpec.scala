@@ -98,20 +98,36 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
       import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
       val emptyAnswers = Map.empty[QuestionId, ActualAnswer]
 
-      "return not started and first question for simple questionnaire regardless of answers" in new Setup {
+      "return not started, first question and next question for simple questionnaire regardless of answers" in new Setup {
         val context = simpleContext
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(DevelopmentPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id))
+        res shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id), Some(DevelopmentPractices.question1.id))
       }
 
-      "return completed and question 1 for questionnaire that has all the questions answered" in new Setup {
+      "return completed, first question and question 1 for questionnaire that has all the questions answered" in new Setup {
         val context = simpleContext
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(Completed, Some(ServiceManagementPractices.question1.id))
+        res shouldBe QuestionnaireProgress(Completed, Some(ServiceManagementPractices.question1.id), Some(ServiceManagementPractices.question1.id))
+      }
+
+      "return in progress, first question and question 2 for questionnaire when current question is question 1" in new Setup {
+        val context = simpleContext
+        val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"))
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers, Some(ServiceManagementPractices.question1.id))
+
+        res shouldBe QuestionnaireProgress(InProgress, Some(ServiceManagementPractices.question1.id), Some(ServiceManagementPractices.question2.id))
+      }
+
+      "return in progress, first question and question 3 for questionnaire when current question is question 2" in new Setup {
+        val context = simpleContext
+        val answers = Map(HandlingPersonalData.question2.id -> SingleChoiceAnswer("Yes"))
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(HandlingPersonalData.questionnaire, context, answers, Some(HandlingPersonalData.question2.id))
+
+        res shouldBe QuestionnaireProgress(InProgress, Some(HandlingPersonalData.question1.id), Some(HandlingPersonalData.question3.id))
       }
       
       "return not started and second question for questionnaire that skips first question due to context regardless of answers" in new Setup {
@@ -119,7 +135,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(GrantingAuthorityToHMRC.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(NotStarted, Some(GrantingAuthorityToHMRC.question2.id))
+        res shouldBe QuestionnaireProgress(NotStarted, Some(GrantingAuthorityToHMRC.question2.id), Some(GrantingAuthorityToHMRC.question2.id))
       }
 
       "return not applicable and no question for questionnaire that skips all questions due to context if appropriate context" in new Setup {
@@ -127,7 +143,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(FraudPreventionHeaders.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(NotApplicable, None)
+        res shouldBe QuestionnaireProgress(NotApplicable, None, None)
       }
 
       "return not started and first question for questionnaire that skips all questions due to context if appropriate context" in new Setup {
@@ -135,7 +151,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder {
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(FraudPreventionHeaders.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(NotStarted, Some(FraudPreventionHeaders.question1.id))
+        res shouldBe QuestionnaireProgress(NotStarted, Some(FraudPreventionHeaders.question1.id), Some(FraudPreventionHeaders.question1.id))
       }
     }
 

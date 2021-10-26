@@ -41,6 +41,7 @@ object AnswerQuestion {
   //   If no answers for questionnaire then NotStarted else InProgress
   def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): QuestionnaireProgress = {
     val nextUnansweredQuestion = NextQuestion.getNextUnansweredQuestion(questionnaire, context, answersToQuestions)
+    val firstQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions, None)
     val nextQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions, questionId)
     val hasAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
     
@@ -51,7 +52,7 @@ object AnswerQuestion {
       case (_, false)         => NotStarted
     }
 
-    QuestionnaireProgress(state, nextQuestion.map(_.id))
+    QuestionnaireProgress(state, firstQuestion.map(_.id), nextQuestion.map(_.id))
   }
     
   def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): Map[QuestionnaireId, QuestionnaireProgress] = {
