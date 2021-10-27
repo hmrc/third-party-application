@@ -25,13 +25,22 @@ object AnswerQuestion {
 
   private def fromOption[A](opt: Option[A], msg: String): Either[String,A] = opt.fold[Either[String,A]](Left(msg))(v => Right(v))
 
+  def questionsToAsk(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): List[QuestionId] = {
+    questionnaire.questions.collect {
+      case (qi) if AskWhen.shouldAsk(context, answersToQuestions)(qi.askWhen) => qi.question.id
+    }
+  }
+
   def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, Submission] = {
     for {
-      question                      <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
-      validatedAnswers              <- validateAnswersToQuestion(question, rawAnswers)
-      updatedAnswersToQuestions      = submission.answersToQuestions + (questionId -> validatedAnswers)
-      updatedQuestionnaireProgress   = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions, Some(questionId))
-      updatedSubmission              = submission.copy(answersToQuestions = updatedAnswersToQuestions, questionnaireProgress = updatedQuestionnaireProgress)
+      question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
+      validatedAnswers                <- validateAnswersToQuestion(question, rawAnswers)
+      updatedAnswersToQuestions        = submission.answersToQuestions + (questionId -> validatedAnswers)
+      // we assume no recursion needed for the next 3 steps - otherwise the ask when question structure must have been implemented in a complex recursive mess
+      updatedQuestionnaireProgress     = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
+      questionsThatShouldBeAsked       = updatedQuestionnaireProgress.flatMap(_._2.questionsToAsk).toList
+      finalAnswersToQuestions          = updatedAnswersToQuestions.filter { case (qid, _) => questionsThatShouldBeAsked.contains(qid) }
+      updatedSubmission                = submission.copy(answersToQuestions = finalAnswersToQuestions, questionnaireProgress = updatedQuestionnaireProgress)
     } yield updatedSubmission
   }
 
@@ -39,24 +48,21 @@ object AnswerQuestion {
   //   If no answers for questionnaire then NotApplicable else Completed
   // If next unanswered question
   //   If no answers for questionnaire then NotStarted else InProgress
-  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): QuestionnaireProgress = {
-    val nextUnansweredQuestion = NextQuestion.getNextUnansweredQuestion(questionnaire, context, answersToQuestions)
-    val firstQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions, None)
-    val nextQuestion = NextQuestion.getNextQuestion(questionnaire, context, answersToQuestions, questionId)
-    val hasAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
-    
-    val state = (nextUnansweredQuestion, hasAnswersForQuestionnaire) match {
+  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {
+    val questionsToAsk = AnswerQuestion.questionsToAsk(questionnaire, context, answersToQuestions)
+    val questionsNeedingToBeAnswered = questionsToAsk.filterNot(answersToQuestions.contains)
+    val hasAnyAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
+    val state = (questionsNeedingToBeAnswered.headOption, hasAnyAnswersForQuestionnaire) match {
       case (None, true)       => Completed
       case (None, false)      => NotApplicable
       case (_, true)          => InProgress
       case (_, false)         => NotStarted
     }
-
-    QuestionnaireProgress(state, firstQuestion.map(_.id), nextQuestion.map(_.id))
+    QuestionnaireProgress(state, questionsToAsk)
   }
     
-  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions, questionId: Option[QuestionId] = None): Map[QuestionnaireId, QuestionnaireProgress] = {
-    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions, questionId))).toMap
+  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
+    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
   }
 
   def validateAnswersToQuestion(question: Question, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {

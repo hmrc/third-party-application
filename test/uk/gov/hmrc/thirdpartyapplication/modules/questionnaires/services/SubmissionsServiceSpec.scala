@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -33,28 +34,29 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     with ApplicationRepositoryMockModule
     with ContextServiceMockModule
     with ApplicationTestData
-    with SubmissionsTestData {
+    with SubmissionsTestData
+    with AsIdsHelpers {
 
     val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
   }
 
   "SubmissionsService" when {
     "create new submission" should {
-      // "store a submission for the application" in new Setup {
-      //   SubmissionsDAOMock.Save.thenReturn()
-      //   ContextServiceMock.DeriveContext.willReturn(simpleContext)
+      "store a submission for the application" in new Setup {
+        SubmissionsDAOMock.Save.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
-      //   val result = await(underTest.create(applicationId))
+        val result = await(underTest.create(applicationId))
 
-      //   inside(result.right.value) { 
-      //     case s @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
-      //       applicationId shouldBe applicationId
-      //       answersToQuestions.size shouldBe 0
-      //       progress.size shouldBe s.allQuestionnaires.size
-      //       progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, Some(DevelopmentPractices.question1.id))
-      //       progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, None)
-      //     }
-      // }
+        inside(result.right.value) { 
+          case s @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
+            applicationId shouldBe applicationId
+            answersToQuestions.size shouldBe 0
+            progress.size shouldBe s.allQuestionnaires.size
+            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
+            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, List.empty[QuestionId])
+          }
+      }
       
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
         SubmissionsDAOMock.Fetch.thenReturn(submission)

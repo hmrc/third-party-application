@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.AnswerQuestion
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion
 
 @Singleton
 class SubmissionsService @Inject()(
