@@ -49,10 +49,10 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.create(applicationId))
 
         inside(result.right.value) { 
-          case s @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
             answersToQuestions.size shouldBe 0
-            progress.size shouldBe s.allQuestionnaires.size
+            progress.size shouldBe s.submission.allQuestionnaires.size
             progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
             progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, List.empty[QuestionId])
           }
@@ -69,17 +69,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result1 = await(underTest.create(applicationId))
         
         inside(result1.right.value) {
-          case sub @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
-            sub.allQuestionnaires.size shouldBe allQuestionnaires.size
+            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size
           }
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
         val result2 = await(underTest.create(applicationId))
         inside(result2.right.value) { 
-          case sub @ Submission(_, applicationId, _, groupings, answersToQuestions, progress) =>
-            sub.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
+            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
           }
       }
     }
@@ -91,7 +91,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetchLatest(applicationId))
 
-        result.value shouldBe submission
+        result.value.submission shouldBe submission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -112,7 +112,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetch(submissionId))
 
-        result.value shouldBe submission
+        result.value.submission shouldBe submission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -134,7 +134,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, questionId, NonEmptyList.of("Yes"))) 
         
         val out = result.right.value
-        out.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

@@ -45,11 +45,13 @@ trait SubmissionsTestData {
 
   val initialProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(NotStarted, List(firstQuestion(q)))).toMap
 
-  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, Map.empty, initialProgress)
+  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, Map.empty)
+
+  val extendedSubmission = ExtendedSubmission(submission, initialProgress)
   
   val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
-  val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty, initialProgress)
+  val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, Map.empty)
 
   def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
     questionnaires.map { qn =>

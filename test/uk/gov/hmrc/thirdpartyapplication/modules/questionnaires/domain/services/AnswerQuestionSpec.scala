@@ -48,44 +48,48 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       "return updated submission" in new Setup {
         val after = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"), blankContext)
 
-        val check = after.right.value
-
-        check.id shouldBe submission.id
-        check.applicationId shouldBe submission.applicationId
-        check.startedOn shouldBe submission.startedOn
-        check.groups shouldBe submission.groups
-        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        inside(after.right.value) {
+          case ExtendedSubmission(submission, _) =>
+            submission.id shouldBe submission.id
+            submission.applicationId shouldBe submission.applicationId
+            submission.startedOn shouldBe submission.startedOn
+            submission.groups shouldBe submission.groups
+            submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        }
       }
 
       "return updated submission after overwriting answer" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(submission, questionId, NonEmptyList.of("Yes"), blankContext)
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NonEmptyList.of("No"), blankContext)
 
-        val check = s2.right.value
-
-        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        inside(s2.right.value) {
+          case ExtendedSubmission(submission, _) =>
+            submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        }
       }
 
       "return updated submission does not loose other answers in same questionnaire" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(submission, question2Id, NonEmptyList.of("Yes"), blankContext)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NonEmptyList.of("No"), blankContext)
 
-        val check = s2.right.value
-
-        check.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
-        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        inside(s2.right.value) {
+          case ExtendedSubmission(submission, _) =>
+            submission.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
+            submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        }
       }
 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(submission, questionAltId, NonEmptyList.of("Yes"), blankContext)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value, questionId, NonEmptyList.of("No"), blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NonEmptyList.of("No"), blankContext)
 
-        val check = s2.right.value
-
-        check.answersToQuestions.get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
-        check.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        inside(s2.right.value) {
+          case ExtendedSubmission(submission, _) =>
+            submission.answersToQuestions.get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
+            submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
+        }
       }
 
       "return left when question is not part of the questionnaire" in new Setup {

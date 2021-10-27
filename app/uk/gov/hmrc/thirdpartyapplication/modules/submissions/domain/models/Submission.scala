@@ -51,8 +51,7 @@ case class Submission(
   applicationId: ApplicationId,
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
-  answersToQuestions: Submissions.AnswersToQuestions,
-  questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress]
+  answersToQuestions: Submissions.AnswersToQuestions
 ) {
   def allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
@@ -67,3 +66,8 @@ case class Submission(
       )
     )
 }
+
+case class ExtendedSubmission(
+  submission: Submission,
+  questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress]
+)

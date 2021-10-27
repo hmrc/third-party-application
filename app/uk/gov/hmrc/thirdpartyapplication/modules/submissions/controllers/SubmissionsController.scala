@@ -52,7 +52,7 @@ extends BackendController(cc) {
   def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (s: Submission) => Ok(Json.toJson(s))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.create(applicationId).map(_.fold(failed, success))
   }
@@ -60,7 +60,7 @@ extends BackendController(cc) {
   def fetchSubmission(id: SubmissionId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
 
-    val success = (s: Submission) => Ok(Json.toJson(s))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
    
     service.fetch(id).map(_.fold(failed)(success))
   }
@@ -68,7 +68,7 @@ extends BackendController(cc) {
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
     
-    val success = (s: Submission) => Ok(Json.toJson(s))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
   }
@@ -76,7 +76,7 @@ extends BackendController(cc) {
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (s: Submission) => Ok(Json.toJson(s))
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     withJsonBody[RecordAnswersRequest] { answersRequest =>
       service.recordAnswers(submissionId, questionId, answersRequest.answers).map(_.fold(failed, success))

@@ -123,7 +123,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
-      SubmissionsServiceMock.Create.thenReturn(submission)
+      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
@@ -146,7 +146,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
-      SubmissionsServiceMock.Create.thenReturn(submission)
+      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
@@ -159,7 +159,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       givenUserIsAuthenticated(underTest)
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
-      SubmissionsServiceMock.Create.thenReturn(submission)
+      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
@@ -174,7 +174,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
-      SubmissionsServiceMock.Create.thenReturn(submission)
+      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithOneSubscription)))
 
@@ -190,7 +190,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
-      SubmissionsServiceMock.Create.thenReturn(submission)
+      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
 
       apis.map( api =>
         when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))

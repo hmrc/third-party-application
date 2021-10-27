@@ -31,7 +31,7 @@ object AnswerQuestion {
     }
   }
 
-  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, Submission] = {
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, ExtendedSubmission] = {
     for {
       question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers                <- validateAnswersToQuestion(question, rawAnswers)
@@ -40,8 +40,9 @@ object AnswerQuestion {
       updatedQuestionnaireProgress     = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
       questionsThatShouldBeAsked       = updatedQuestionnaireProgress.flatMap(_._2.questionsToAsk).toList
       finalAnswersToQuestions          = updatedAnswersToQuestions.filter { case (qid, _) => questionsThatShouldBeAsked.contains(qid) }
-      updatedSubmission                = submission.copy(answersToQuestions = finalAnswersToQuestions, questionnaireProgress = updatedQuestionnaireProgress)
-    } yield updatedSubmission
+      updatedSubmission                = submission.copy(answersToQuestions = finalAnswersToQuestions)
+      extendedSubmission               = ExtendedSubmission(updatedSubmission, updatedQuestionnaireProgress)
+    } yield extendedSubmission
   }
 
   // If NO next unanswered question
