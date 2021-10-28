@@ -45,20 +45,16 @@ object AnswerQuestion {
     } yield extendedSubmission
   }
 
-  // If NO next unanswered question
-  //   If no answers for questionnaire then NotApplicable else Completed
-  // If next unanswered question
-  //   If no answers for questionnaire then NotStarted else InProgress
   def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {
     val questionsToAsk = AnswerQuestion.questionsToAsk(questionnaire, context, answersToQuestions)
-    val questionsNeedingToBeAnswered = questionsToAsk.filterNot(answersToQuestions.contains)
-    val hasAnyAnswersForQuestionnaire: Boolean = questionnaire.questions.map(_.question.id).exists(id => answersToQuestions.contains(id))
-    val state = (questionsNeedingToBeAnswered.headOption, hasAnyAnswersForQuestionnaire) match {
+    val (answeredQuestions, unansweredQuestions) = questionsToAsk.partition(answersToQuestions.contains)
+    val state = (unansweredQuestions.headOption, answeredQuestions.nonEmpty) match {
       case (None, true)       => Completed
       case (None, false)      => NotApplicable
       case (_, true)          => InProgress
       case (_, false)         => NotStarted
     }
+
     QuestionnaireProgress(state, questionsToAsk)
   }
     
