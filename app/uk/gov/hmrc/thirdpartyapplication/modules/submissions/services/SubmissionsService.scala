@@ -41,7 +41,7 @@ class SubmissionsService @Inject()(
   def extendSubmission(submission: Submission): EitherT[Future, String, ExtendedSubmission] = {
     for {
       context       <- contextService.deriveContext(submission.applicationId)
-      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, emptyAnswers)
+      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, submission.answersToQuestions)
       extSubmission =  ExtendedSubmission(submission, progress)
     }
     yield extSubmission
