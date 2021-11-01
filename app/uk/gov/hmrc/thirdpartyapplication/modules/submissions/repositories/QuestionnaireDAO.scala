@@ -134,7 +134,7 @@ object QuestionnaireDAO {
             StatementText("that you are responsible for protecting their data"),
             CompoundFragment(
               StatementText("your "),
-              StatementLink("lawful basis (opens in new tab) ", "http://www.google.com"),
+              StatementLink("lawful basis (opens in new tab) ", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/lawful-basis-for-processing"),
               StatementText("for processing personal data")
             )
           )
@@ -147,7 +147,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must encrypt access tokens and personally identifiable data when it is stored and in transit. Read the "),
-            StatementLink("GDPR guidelines on encryption (opens in new tab)", "http://www.google.com"),
+            StatementLink("GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
             StatementText(".")
           )
         )
@@ -159,9 +159,9 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Read the National Cyber Security Centre's guidance on "),
-            StatementLink("keeping user data separate (opens in new tab)", "http://www.google.com"),
+            StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
             StatementText("and best practice for "),
-            StatementLink("a username and password security (opens in new tab)", "http://www.google.com"),
+            StatementLink("a username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
             StatementText(".")
           )
         ),
@@ -178,7 +178,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
-            StatementLink("National Cyber Security Centre's guidance", "http://www.google.com"),
+            StatementLink("National Cyber Security Centre's guidance", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
@@ -190,18 +190,18 @@ object QuestionnaireDAO {
       )
 
       val question5 = YesNoQuestion(
-        QuestionId("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
-        Wording("Do you store your customers' Government Gateway credentials?"),
+        QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
+        Wording("Can your customers access their data?"),
         Statement(
-          StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
+          StatementText("You must allow customers to change, export or delete their data if they want to.")
         )
       )
 
       val question6 = YesNoQuestion(
-        QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
-        Wording("Are your customers able to access their own data?"),
+        QuestionId("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
+        Wording("Do you store your customers' Government Gateway credentials?"),
         Statement(
-          StatementText("You must give customers access to their data if they request it.")
+          StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         )
       )
 
@@ -214,7 +214,7 @@ object QuestionnaireDAO {
           QuestionItem(question3),
           QuestionItem(question4),
           QuestionItem(question5, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question6)
+          QuestionItem(question6, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
