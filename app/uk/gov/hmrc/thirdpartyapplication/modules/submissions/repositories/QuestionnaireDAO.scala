@@ -50,7 +50,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must develop software following our"),
-            StatementLink("development practices (opens in a new tab)", "http://www.google.com"),
+            StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
             StatementText(".")
           )
         )
@@ -62,7 +62,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("We will check for evidence that you comply with our"),
-            StatementLink("error handling specification (opens in new tab)", "http://www.google.com"),
+            StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
             StatementText(".")
           )
         )
@@ -99,7 +99,7 @@ object QuestionnaireDAO {
           StatementText("Any issues concerning the security of customer data must be reported immediately to HMRC."),
           CompoundFragment(
             StatementText("You must also "),
-            StatementLink("notify the ICO about personal data breaches (opens in a new tab)", "http://www.google.com"),
+            StatementLink("notify the ICO about personal data breaches (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"),
             StatementText("within 72 hours of becoming aware of it.")
           )
         )
@@ -241,7 +241,7 @@ object QuestionnaireDAO {
             StatementText("We show this name to users when they authorise your software to interact with HMRC"),
             CompoundFragment(
               StatementText("It must comply with our "),
-              StatementLink("naming guidelines(opens in a new tab)", "http://www.google.com")
+              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines")
             )
           )
         )
@@ -301,7 +301,7 @@ object QuestionnaireDAO {
           List(
             CompoundFragment(
               StatementText("Use either penetration test tools or an independant third party supplier. For penetration methodologies read the "),
-              StatementLink("Open Web Application Security Project (OWASP) guide (opens in a new tab)", "http://www.google.com"),
+              StatementLink("Open Web Application Security Project (OWASP) guide (opens in a new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
               StatementText(".")
             )
           )
@@ -315,7 +315,7 @@ object QuestionnaireDAO {
           List(
             CompoundFragment(
               StatementText("Asses your compliance using the "),
-              StatementLink("ICO information security checklist (opens in a new tab)", "http://www.google.com"),
+              StatementLink("ICO information security checklist (opens in a new tab)", "https://ico.org.uk/for-organisations/sme-web-hub/checklists/data-protection-self-assessment"),
               StatementText(".")
             )
           )
@@ -340,7 +340,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must implement headers in line with our "),
-            StatementLink("fraud prevention specification (opens in a new tab)", "http://www.google.com"),
+            StatementLink("fraud prevention specification (opens in a new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
             StatementText(".")
           )
         )
@@ -352,7 +352,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Check your headers meet the specification using the "),
-            StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "http://www.google.com"),
+            StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
             StatementText(".")
           )        
         )
