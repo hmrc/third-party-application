@@ -383,8 +383,8 @@ object QuestionnaireDAO {
         Statement(
           StatementText("Advertising that appears in your software must follow:"),
           StatementBullets(
-            StatementLink("Advertising Standards Authority Codes (opens in a new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html"),
-            StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising")
+            StatementLink("Advertising Standards Authority Codes (opens in a new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html "),
+            StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
           )
         ),
         ListSet(
@@ -413,7 +413,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must not share customers' personal data without their consent. Read the "),
-            StatementLink("Direct Marketing Guidance (opens in a new tab) ", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing"),
+            StatementLink("Direct Marketing Guidance (opens in a new tab) ", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
             StatementText("from the Information Commissioner's Office.")
           )
         ),
