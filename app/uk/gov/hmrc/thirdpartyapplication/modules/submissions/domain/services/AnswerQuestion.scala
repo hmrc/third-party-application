@@ -21,23 +21,52 @@ import cats.data.NonEmptyList
 import cats.implicits._
 
 object AnswerQuestion {
-  
+  import Submissions.AnswersToQuestions
+
   private def fromOption[A](opt: Option[A], msg: String): Either[String,A] = opt.fold[Either[String,A]](Left(msg))(v => Right(v))
 
-  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Either[String, Submission] = {
-    for {
-      question                      <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
-      validatedAnswers              <- validateAnswersToQuestion(question, rawAnswers)
-      updatedAnswers                 = submission.answersToQuestions + (questionId -> validatedAnswers)
-      updatedSubmission              = submission.copy(answersToQuestions = updatedAnswers)
-    } yield updatedSubmission
+  def questionsToAsk(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): List[QuestionId] = {
+    questionnaire.questions.collect {
+      case (qi) if AskWhen.shouldAsk(context, answersToQuestions)(qi.askWhen) => qi.question.id
+    }
   }
 
-  def validateAnswersToQuestion(question: Question, answers: NonEmptyList[String]): Either[String, ActualAnswer] = {
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, ExtendedSubmission] = {
+    for {
+      question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
+      validatedAnswers                <- validateAnswersToQuestion(question, rawAnswers)
+      updatedAnswersToQuestions        = submission.answersToQuestions + (questionId -> validatedAnswers)
+      // we assume no recursion needed for the next 3 steps - otherwise the ask when question structure must have been implemented in a complex recursive mess
+      updatedQuestionnaireProgress     = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
+      questionsThatShouldBeAsked       = updatedQuestionnaireProgress.flatMap(_._2.questionsToAsk).toList
+      finalAnswersToQuestions          = updatedAnswersToQuestions.filter { case (qid, _) => questionsThatShouldBeAsked.contains(qid) }
+      updatedSubmission                = submission.copy(answersToQuestions = finalAnswersToQuestions)
+      extendedSubmission               = ExtendedSubmission(updatedSubmission, updatedQuestionnaireProgress)
+    } yield extendedSubmission
+  }
+
+  def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {
+    val questionsToAsk = AnswerQuestion.questionsToAsk(questionnaire, context, answersToQuestions)
+    val (answeredQuestions, unansweredQuestions) = questionsToAsk.partition(answersToQuestions.contains)
+    val state = (unansweredQuestions.headOption, answeredQuestions.nonEmpty) match {
+      case (None, true)       => Completed
+      case (None, false)      => NotApplicable
+      case (_, true)          => InProgress
+      case (_, false)         => NotStarted
+    }
+
+    QuestionnaireProgress(state, questionsToAsk)
+  }
+    
+  def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
+    questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
+  }
+
+  def validateAnswersToQuestion(question: Question, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
     question match {
       case q: SingleChoiceQuestion => 
         Either.fromOption(
-          answers
+          rawAnswers
           .head
           .some
           .filter(answer => q.choices.contains(PossibleAnswer(answer)))
@@ -45,14 +74,14 @@ object AnswerQuestion {
           , "The answer is not valid for this question"
         )
       case q: MultiChoiceQuestion =>
-        val (valid, invalid) = answers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
+        val (valid, invalid) = rawAnswers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
         invalid match {
           case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
           case _     => "Some answers are not valid for this question".asLeft
         }
       case q: TextQuestion => 
-        if(answers.head.nonEmpty) {
-          TextAnswer(answers.head).asRight
+        if(rawAnswers.head.nonEmpty) {
+          TextAnswer(rawAnswers.head).asRight
         } else {
           "A text answer cannot be blank".asLeft
         }

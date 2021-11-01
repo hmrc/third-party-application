@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.NonEmptyList
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.NextQuestion
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.AnswerQuestion
+import cats.data.EitherT
 
 @Singleton
 class SubmissionsService @Inject()(
@@ -36,6 +36,29 @@ class SubmissionsService @Inject()(
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 
+  private val emptyAnswers = Map.empty[QuestionId,ActualAnswer]
+
+  def extendSubmission(submission: Submission): EitherT[Future, String, ExtendedSubmission] = {
+    for {
+      context       <- contextService.deriveContext(submission.applicationId)
+      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, submission.answersToQuestions)
+      extSubmission =  ExtendedSubmission(submission, progress)
+    }
+    yield extSubmission
+  }
+  
+  def fetchAndExtend(submissionFn: => Future[Option[Submission]]): Future[Option[ExtendedSubmission]] = {
+    (
+      for {
+        submission    <- fromOptionF(submissionFn, "ignored")
+        extSubmission <- extendSubmission(submission)
+      }
+      yield extSubmission
+    )
+    .toOption
+    .value 
+  }  
+  
   /*
   * a questionnaire needs answering for the application
   */
@@ -45,53 +68,30 @@ class SubmissionsService @Inject()(
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  SubmissionId.random
-        answers               =  Map.empty[QuestionId,ActualAnswer]
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, answers)
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, emptyAnswers)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
-        context               <- contextService.deriveContext(applicationId)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(savedSubmission, context)
-        extendedSubmission    =  ExtendedSubmission(savedSubmission, nextQuestions)
-      } yield extendedSubmission
+        extSubmission         <- extendSubmission(savedSubmission)
+      } yield extSubmission
     )
     .value
   }
 
-  def fetchLatest(id: ApplicationId): Future[Option[ExtendedSubmission]] = {
-    (
-      for {
-        submission            <- fromOptionF(submissionsDAO.fetchLatest(id), "No submission found for application")
-        context               <- contextService.deriveContext(id)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
-        extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
-      } yield extendedSubmission
-    )
-    .toOption
-    .value
+  def fetchLatest(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
+    fetchAndExtend(submissionsDAO.fetchLatest(applicationId))
   }
   
   def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
-     (
-      for {
-        submission            <- fromOptionF(submissionsDAO.fetch(id), "No such submission found")
-        context               <- contextService.deriveContext(submission.applicationId)
-        nextQuestions         =  NextQuestion.deriveNextQuestions(submission, context)
-        extendedSubmission    =  ExtendedSubmission(submission, nextQuestions)
-      } yield extendedSubmission
-    )
-    .toOption
-    .value
+    fetchAndExtend(submissionsDAO.fetch(id))
   }
 
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
-        submission          <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        answeredSubmission  <- fromEither(AnswerQuestion.recordAnswer(submission, questionId, rawAnswers))
-        savedSubmission     <- liftF(submissionsDAO.update(answeredSubmission))
-        context             <- contextService.deriveContext(submission.applicationId)
-        nextQuestions       =  NextQuestion.deriveNextQuestions(savedSubmission, context)
-        extendedSubmission  =  ExtendedSubmission(savedSubmission, nextQuestions)
-      } yield extendedSubmission
+        initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        context             <- contextService.deriveContext(initialSubmission.applicationId)
+        extSubmission       <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
+        savedSubmission     <- liftF(submissionsDAO.update(extSubmission.submission))
+      } yield extSubmission
     )
     .value
   }

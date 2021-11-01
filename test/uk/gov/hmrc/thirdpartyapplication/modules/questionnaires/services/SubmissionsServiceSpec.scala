@@ -24,7 +24,9 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -32,7 +34,8 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     with ApplicationRepositoryMockModule
     with ContextServiceMockModule
     with ApplicationTestData
-    with SubmissionsTestData {
+    with SubmissionsTestData
+    with AsIdsHelpers {
 
     val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
   }
@@ -40,18 +43,19 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   "SubmissionsService" when {
     "create new submission" should {
       "store a submission for the application" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
         val result = await(underTest.create(applicationId))
 
         inside(result.right.value) { 
-          case ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
             answersToQuestions.size shouldBe 0
+            progress.size shouldBe s.submission.allQuestionnaires.size
+            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
+            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, List.empty[QuestionId])
           }
-
       }
       
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
@@ -65,17 +69,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result1 = await(underTest.create(applicationId))
         
         inside(result1.right.value) {
-          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
-            sub.allQuestionnaires.size shouldBe allQuestionnaires.size
+            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size
           }
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
         val result2 = await(underTest.create(applicationId))
         inside(result2.right.value) { 
-          case ExtendedSubmission(sub @ Submission(_, applicationId, _, groupings, answersToQuestions), _) =>
-            sub.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
+            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
           }
       }
     }
@@ -137,6 +141,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       "fail when given an invalid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
         SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.recordAnswers(submissionId, QuestionId.random, NonEmptyList.of("Yes"))) 
 

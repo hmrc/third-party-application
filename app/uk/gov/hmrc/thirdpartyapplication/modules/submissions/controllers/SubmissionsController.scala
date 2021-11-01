@@ -34,8 +34,6 @@ object SubmissionsController {
   case class ErrorMessage(message: String)
   implicit val writesErrorMessage = Json.writes[ErrorMessage]
 
-  implicit val writesExtendedSubmission = Json.writes[ExtendedSubmission]
-
   case class RecordAnswersRequest(answers: NonEmptyList[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 }
@@ -48,6 +46,7 @@ class SubmissionsController @Inject()(
   implicit val ec: ExecutionContext
 ) 
 extends BackendController(cc) {
+  import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
   import SubmissionsController._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>

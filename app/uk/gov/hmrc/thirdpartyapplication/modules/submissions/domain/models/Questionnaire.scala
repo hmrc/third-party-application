@@ -18,6 +18,18 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 
 import cats.data.NonEmptyList
 
+object AskWhen {
+  import Submissions.AnswersToQuestions
+  
+  def shouldAsk(context: Context, answersToQuestions: AnswersToQuestions)(askWhen: AskWhen): Boolean = {
+    askWhen match {
+      case AlwaysAsk => true
+      case AskWhenContext(contextKey, expectedValue) => context.get(contextKey).map(_.equalsIgnoreCase(expectedValue)).getOrElse(false)
+      case AskWhenAnswer(questionId, expectedAnswer) => answersToQuestions.get(questionId).map(_ == expectedAnswer).getOrElse(false)
+    }
+  }
+}
+
 sealed trait AskWhen
 case class AskWhenContext(contextKey: String, expectedValue: String) extends AskWhen
 case class AskWhenAnswer(questionId: QuestionId, expectedValue: SingleChoiceAnswer) extends AskWhen

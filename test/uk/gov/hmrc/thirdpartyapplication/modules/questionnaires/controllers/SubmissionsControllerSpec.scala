@@ -29,6 +29,7 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController
 import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
@@ -36,7 +37,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   implicit val mat = NoMaterializer
  
  
-  implicit val readsExtendedSubmission = Json.reads[ExtendedSubmission]
+  implicit val readsExtendedSubmission = Json.reads[Submission]
   
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
@@ -52,8 +53,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
 
       contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission,_) =>
-          extendedSubmission.submission shouldBe submission
+        case JsSuccess(extendedSubmission, _) =>
+          submission shouldBe submission
         case JsError(f) => fail(s"Not parsed as a response $f")        
       }
     }
