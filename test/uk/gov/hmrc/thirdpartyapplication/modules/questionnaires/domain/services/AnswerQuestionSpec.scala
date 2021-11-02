@@ -139,11 +139,12 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         res shouldBe QuestionnaireProgress(Completed, ServiceManagementPractices.questionnaire.questions.asIds)
       }
 
-      "return not started for questionnaire that skips first question due to context regardless of answers" in new Setup {
+      "return not started for questionnaire that skips second question due to context regardless of answers" in new Setup {
         val context = simpleContext
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(GrantingAuthorityToHMRC.questionnaire, context, answers)
-        res shouldBe QuestionnaireProgress(NotStarted, GrantingAuthorityToHMRC.questionnaire.questions.tail.asIds)
+        val listOfQuestions = List(GrantingAuthorityToHMRC.question1.id, GrantingAuthorityToHMRC.question3.id, GrantingAuthorityToHMRC.question4.id)
+        res shouldBe QuestionnaireProgress(NotStarted, listOfQuestions)
       }
 
       "return not applicable and no question for questionnaire that skips all questions due to context if appropriate context" in new Setup {
