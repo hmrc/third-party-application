@@ -121,7 +121,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       
       SubmissionsServiceMock.RecordAnswers.thenReturn(extendedSubmission)
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(Some(NonEmptyList.of("Yes"))))
       val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe OK
@@ -133,7 +133,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(NonEmptyList.of("Yes")))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(Some(NonEmptyList.of("Yes"))))
       val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe BAD_REQUEST

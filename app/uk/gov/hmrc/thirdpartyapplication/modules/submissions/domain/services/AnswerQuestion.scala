@@ -31,7 +31,7 @@ object AnswerQuestion {
     }
   }
 
-  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: NonEmptyList[String], context: Context): Either[String, ExtendedSubmission] = {
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: Option[NonEmptyList[String]], context: Context): Either[String, ExtendedSubmission] = {
     for {
       question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers                <- validateAnswersToQuestion(question, rawAnswers)
@@ -62,7 +62,16 @@ object AnswerQuestion {
     questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
   }
 
-  def validateAnswersToQuestion(question: Question, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
+  def validateAnswersToQuestion(question: Question, rawAnswers: Option[NonEmptyList[String]]): Either[String, ActualAnswer] = {
+    (rawAnswers, question) match {
+      case (Some(raw), q: NonOptionalQuestion)     => validateAnswerWhenNonOptional(q, raw)
+      case (Some(raw), OptionalQuestion(inner, _)) => validateAnswerWhenNonOptional(inner, raw).map(a => OptionalAnswer[inner.AnswerType](Some(a.asInstanceOf[inner.AnswerType])))
+      case (None, OptionalQuestion(inner, _))      => Either.right(OptionalAnswer[inner.AnswerType](None))
+      case (None, _)                               => Either.left("Non-optional Question must have an answer")
+    }
+  }
+
+  def validateAnswerWhenNonOptional(question: NonOptionalQuestion, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
     question match {
       case q: SingleChoiceQuestion => 
         Either.fromOption(

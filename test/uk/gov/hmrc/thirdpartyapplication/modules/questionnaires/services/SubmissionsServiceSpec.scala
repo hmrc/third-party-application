@@ -131,10 +131,22 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, questionId, NonEmptyList.of("Yes"))) 
+        val result = await(underTest.recordAnswers(submissionId, questionId, Some(NonEmptyList.of("Yes")))) 
         
         val out = result.right.value
         out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        SubmissionsDAOMock.Update.verifyCalled()
+      }
+
+      "records new answers when given a valid optional question" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, None))
+        
+        val out = result.right.value
+        out.submission.answersToQuestions.get(questionId).value shouldBe OptionalAnswer(None)
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -143,7 +155,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, NonEmptyList.of("Yes"))) 
+        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, Some(NonEmptyList.of("Yes")))) 
+
+        result shouldBe 'left
+      }
+
+      "fail when given a optional answer to non optional question" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.recordAnswers(submissionId, questionId, None)) 
 
         result shouldBe 'left
       }

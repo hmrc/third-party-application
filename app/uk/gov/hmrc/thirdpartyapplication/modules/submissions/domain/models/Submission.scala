@@ -25,6 +25,7 @@ sealed trait ActualAnswer
 case class SingleChoiceAnswer(value: String) extends ActualAnswer
 case class MultipleChoiceAnswer(values: Set[String]) extends ActualAnswer
 case class TextAnswer(value: String) extends ActualAnswer
+case class OptionalAnswer[T <: ActualAnswer](answer: Option[T]) extends ActualAnswer
 
 case class SubmissionId(value: String) extends AnyVal
 

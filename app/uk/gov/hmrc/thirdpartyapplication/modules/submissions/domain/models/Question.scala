@@ -32,16 +32,37 @@ sealed trait Question {
   def id: QuestionId
   def wording: Wording
   def statement: Statement
+
+  type AnswerType <: ActualAnswer
 }
 
-case class TextQuestion(id: QuestionId, wording: Wording, statement: Statement) extends Question
+case class OptionalQuestion[T <: NonOptionalQuestion](inner: T, buttonText: String) extends Question {
+  type InnerAnswerType = T#AnswerType
+  type AnswerType = OptionalAnswer[InnerAnswerType]
 
-sealed trait ChoiceQuestion extends Question {
+  lazy val id = inner.id
+  lazy val wording = inner.wording
+  lazy val statement = inner.statement
+}
+
+trait NonOptionalQuestion extends Question 
+
+case class TextQuestion(id: QuestionId, wording: Wording, statement: Statement) extends NonOptionalQuestion {
+  type AnswerType = TextAnswer
+}
+
+sealed trait ChoiceQuestion extends NonOptionalQuestion {
   def choices: ListSet[PossibleAnswer]
 }
 
-sealed trait SingleChoiceQuestion extends ChoiceQuestion
-case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer]) extends ChoiceQuestion
+sealed trait SingleChoiceQuestion extends ChoiceQuestion {
+  type AnswerType = SingleChoiceAnswer
+}
+
+case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer]) extends ChoiceQuestion {
+  type AnswerType = MultipleChoiceAnswer
+}
+
 case class ChooseOneOfQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer]) extends SingleChoiceQuestion
 case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement) extends SingleChoiceQuestion {
   lazy val choices = ListSet(PossibleAnswer("Yes"), PossibleAnswer("No"))

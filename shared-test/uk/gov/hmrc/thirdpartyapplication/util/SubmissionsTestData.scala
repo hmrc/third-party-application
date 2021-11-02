@@ -33,7 +33,8 @@ trait SubmissionsTestData {
   val questionnaireAlt = QuestionnaireDAO.Questionnaires.OrganisationDetails.questionnaire
   val questionnaireAltId = questionnaireAlt.id
   val questionAltId = questionnaireAlt.questions.head.question.id
-
+  val optionalQuestion = QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question3
+  val optionalQuestionId = optionalQuestion.id
 
   val submissionId = SubmissionId.random
   val applicationId = ApplicationId.random

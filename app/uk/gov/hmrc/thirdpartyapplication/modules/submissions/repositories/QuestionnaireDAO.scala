@@ -221,7 +221,7 @@ object QuestionnaireDAO {
 
     object CustomersAuthorisingYourSoftware {
       val question1 = TextQuestion(
-        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
+        QuestionId("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
         Wording("Confirm the name of your software"),
         Statement(
           List(
@@ -237,7 +237,7 @@ object QuestionnaireDAO {
       )
 
       val question2 = MultiChoiceQuestion(
-        QuestionId("2e0becc5-1277-40ac-8910-eda9257884fd"),
+        QuestionId("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that store customer information?"),
         Statement(
           StatementText("Select all that apply.")
@@ -249,26 +249,33 @@ object QuestionnaireDAO {
         )
       )
 
-      val question3 = YesNoQuestion(
-        QuestionId("d208bdd6-e503-420f-a945-5f3595e399e6"),
-        Wording("Does your software have a privacy policy?"),
-        Statement(
-          List(
-            StatementText("We'll show this link to users when you request access to their data. This should tell your users how you store their personal information according to the GDPR guidelines."),
-            StatementText("You can change this at any time.")
-          )
+      val question3 = 
+        OptionalQuestion(
+          TextQuestion(
+            QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
+            Wording("Give us your privacy policy URL"),
+            Statement(
+              List(
+                StatementText("Include the policy which covers the software you are requesting production credentials for."),
+                StatementText("For example https://example.com/privacy-policy")
+              )
+            )
+          ),
+          "I don't have a privacy policy"
         )
-      )
       
-      val question4 = YesNoQuestion(
-        QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
-        Wording("Does your software have terms and conditions?"),
-        Statement(
-          List(
-            StatementText("We'll show this link to users when you request access to their data. We recommend you have this statement in your software."),
-            StatementText("You can change this at any time.")
+      val question4 = OptionalQuestion(
+        TextQuestion(
+          QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
+          Wording("Give us your terms and conditions URL"),
+          Statement(
+            List(
+              StatementText("Your terms and conditions should cover the software you are requesting production credentials for."),
+              StatementText("For example https://example.com/terms-conditions")
+            )
           )
-        )
+        ),
+        "I don't have terms and conditions"
       )
       
       val questionnaire = Questionnaire(

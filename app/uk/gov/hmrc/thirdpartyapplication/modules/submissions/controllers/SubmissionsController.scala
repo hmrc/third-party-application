@@ -34,7 +34,7 @@ object SubmissionsController {
   case class ErrorMessage(message: String)
   implicit val writesErrorMessage = Json.writes[ErrorMessage]
 
-  case class RecordAnswersRequest(answers: NonEmptyList[String])
+  case class RecordAnswersRequest(answers: Option[NonEmptyList[String]])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 }
 
