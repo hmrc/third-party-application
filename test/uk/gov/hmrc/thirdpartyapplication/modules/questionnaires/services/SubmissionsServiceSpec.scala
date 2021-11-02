@@ -146,7 +146,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, None))
         
         val out = result.right.value
-        out.submission.answersToQuestions.get(questionId).value shouldBe OptionalAnswer(None)
+        out.submission.answersToQuestions.get(optionalQuestionId).value shouldBe OptionalAnswer(None)
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
