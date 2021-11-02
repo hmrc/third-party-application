@@ -220,30 +220,32 @@ object QuestionnaireDAO {
     }
 
     object GrantingAuthorityToHMRC {
-      val question1 = MultiChoiceQuestion(
+      val question1 = TextQuestion(
+        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
+        Wording("Confirm the name of your software"),
+        Statement(
+          List(
+            StatementText("We show this name to users when they authorise your software to interact with HMRC."),
+            CompoundFragment(
+              StatementText("It must comply with our "),
+              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+              StatementText(".")            
+            ),
+            StatementText("Application name")
+          )
+        )
+      )
+
+      val question2 = MultiChoiceQuestion(
         QuestionId("2e0becc5-1277-40ac-8910-eda9257884fd"),
-        Wording("What is the location of the servers that store your customer data?"),
+        Wording("Where are your servers that store customer information?"),
         Statement(
           StatementText("Select all that apply.")
         ),
         ListSet(
           PossibleAnswer("In the UK"),
-          PossibleAnswer("In the European Economic Area (EEA)"),
-          PossibleAnswer("Outside the European Economic Area (EEA)")
-        )
-      )
-
-      val question2 = TextQuestion(
-        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
-        Wording("Confirm the name of your software"),
-        Statement(
-          List(
-            StatementText("We show this name to users when they authorise your software to interact with HMRC"),
-            CompoundFragment(
-              StatementText("It must comply with our "),
-              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines")
-            )
-          )
+          PossibleAnswer("In the European Economic Area"),
+          PossibleAnswer("Outside the European Economic Area")
         )
       )
 
@@ -271,10 +273,10 @@ object QuestionnaireDAO {
       
       val questionnaire = Questionnaire(
         id = QuestionnaireId("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
-        label = Label("Granting authority to HMRC"),
+        label = Label("Customers authorising your software"),
         questions = NonEmptyList.of(
-          QuestionItem(question1, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question2),
+          QuestionItem(question1),
+          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question3),
           QuestionItem(question4)
         )
@@ -396,7 +398,7 @@ object QuestionnaireDAO {
     
       val question3 = ChooseOneOfQuestion(
         QuestionId("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
-        Wording("Do adverts in your software as 'HMRC recognised'?"),
+        Wording("Do you advertise your software as 'HMRC recognised'?"),
         Statement(
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
