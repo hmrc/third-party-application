@@ -134,7 +134,7 @@ object QuestionnaireDAO {
             StatementText("that you are responsible for protecting their data"),
             CompoundFragment(
               StatementText("your "),
-              StatementLink("lawful basis (opens in new tab) ", "http://www.google.com"),
+              StatementLink("lawful basis (opens in new tab) ", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/lawful-basis-for-processing"),
               StatementText("for processing personal data")
             )
           )
@@ -147,7 +147,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must encrypt access tokens and personally identifiable data when it is stored and in transit. Read the "),
-            StatementLink("GDPR guidelines on encryption (opens in new tab)", "http://www.google.com"),
+            StatementLink("GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
             StatementText(".")
           )
         )
@@ -159,9 +159,9 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Read the National Cyber Security Centre's guidance on "),
-            StatementLink("keeping user data separate (opens in new tab)", "http://www.google.com"),
+            StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
             StatementText("and best practice for "),
-            StatementLink("a username and password security (opens in new tab)", "http://www.google.com"),
+            StatementLink("a username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
             StatementText(".")
           )
         ),
@@ -178,7 +178,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
-            StatementLink("National Cyber Security Centre's guidance", "http://www.google.com"),
+            StatementLink("National Cyber Security Centre's guidance", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
@@ -190,18 +190,18 @@ object QuestionnaireDAO {
       )
 
       val question5 = YesNoQuestion(
-        QuestionId("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
-        Wording("Do you store your customers' Government Gateway credentials?"),
+        QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
+        Wording("Can your customers access their data?"),
         Statement(
-          StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
+          StatementText("You must allow customers to change, export or delete their data if they want to.")
         )
       )
 
       val question6 = YesNoQuestion(
-        QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
-        Wording("Are your customers able to access their own data?"),
+        QuestionId("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
+        Wording("Do you store your customers' Government Gateway credentials?"),
         Statement(
-          StatementText("You must give customers access to their data if they request it.")
+          StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         )
       )
 
@@ -214,36 +214,38 @@ object QuestionnaireDAO {
           QuestionItem(question3),
           QuestionItem(question4),
           QuestionItem(question5, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question6)
+          QuestionItem(question6, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
 
     object GrantingAuthorityToHMRC {
-      val question1 = MultiChoiceQuestion(
+      val question1 = TextQuestion(
+        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
+        Wording("Confirm the name of your software"),
+        Statement(
+          List(
+            StatementText("We show this name to users when they authorise your software to interact with HMRC."),
+            CompoundFragment(
+              StatementText("It must comply with our "),
+              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+              StatementText(".")            
+            ),
+            StatementText("Application name")
+          )
+        )
+      )
+
+      val question2 = MultiChoiceQuestion(
         QuestionId("2e0becc5-1277-40ac-8910-eda9257884fd"),
-        Wording("What is the location of the servers that store your customer data?"),
+        Wording("Where are your servers that store customer information?"),
         Statement(
           StatementText("Select all that apply.")
         ),
         ListSet(
           PossibleAnswer("In the UK"),
-          PossibleAnswer("In the European Economic Area (EEA)"),
-          PossibleAnswer("Outside the European Economic Area (EEA)")
-        )
-      )
-
-      val question2 = TextQuestion(
-        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
-        Wording("Confirm the name of your software"),
-        Statement(
-          List(
-            StatementText("We show this name to users when they authorise your software to interact with HMRC"),
-            CompoundFragment(
-              StatementText("It must comply with our "),
-              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines")
-            )
-          )
+          PossibleAnswer("In the European Economic Area"),
+          PossibleAnswer("Outside the European Economic Area")
         )
       )
 
@@ -271,10 +273,10 @@ object QuestionnaireDAO {
       
       val questionnaire = Questionnaire(
         id = QuestionnaireId("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
-        label = Label("Granting authority to HMRC"),
+        label = Label("Customers authorising your software"),
         questions = NonEmptyList.of(
-          QuestionItem(question1, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question2),
+          QuestionItem(question1),
+          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question3),
           QuestionItem(question4)
         )
@@ -396,7 +398,7 @@ object QuestionnaireDAO {
     
       val question3 = ChooseOneOfQuestion(
         QuestionId("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
-        Wording("Do adverts in your software as 'HMRC recognised'?"),
+        Wording("Do you advertise your software as 'HMRC recognised'?"),
         Statement(
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
