@@ -142,8 +142,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       "return not started for questionnaire that skips second question due to context regardless of answers" in new Setup {
         val context = simpleContext
         val answers = emptyAnswers
-        val res = AnswerQuestion.deriveProgressOfQuestionnaire(GrantingAuthorityToHMRC.questionnaire, context, answers)
-        val listOfQuestions = List(GrantingAuthorityToHMRC.question1.id, GrantingAuthorityToHMRC.question3.id, GrantingAuthorityToHMRC.question4.id)
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(CustomersAuthorisingYourSoftware.questionnaire, context, answers)
+        val listOfQuestions = List(CustomersAuthorisingYourSoftware.question1.id, CustomersAuthorisingYourSoftware.question3.id, CustomersAuthorisingYourSoftware.question4.id)
         res shouldBe QuestionnaireProgress(NotStarted, listOfQuestions)
       }
 
@@ -158,25 +158,25 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       "return not started and all questions except second and third questions based on not having the inclusive answer of the first" in new Setup {
         val context = simpleContext
         val answers = emptyAnswers
-        val res = AnswerQuestion.deriveProgressOfQuestionnaire(ApplicationSecurity.questionnaire, context, answers)
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(NotStarted, List(ApplicationSecurity.question1.id))
+        res shouldBe QuestionnaireProgress(NotStarted, List(SoftwareSecurity.question1.id))
       }
 
       "return completed and all questions except second and third questions based on answer of the first excluding the others" in new Setup {
         val context = simpleContext
-        val answers = Map(ApplicationSecurity.question1.id -> SingleChoiceAnswer("No"))
-        val res = AnswerQuestion.deriveProgressOfQuestionnaire(ApplicationSecurity.questionnaire, context, answers)
+        val answers = Map(SoftwareSecurity.question1.id -> SingleChoiceAnswer("No"))
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(Completed, List(ApplicationSecurity.question1.id))
+        res shouldBe QuestionnaireProgress(Completed, List(SoftwareSecurity.question1.id))
       }
 
       "return in progress and all questions for questionnaire that skips second and third questions based on answer of the first including the others" in new Setup {
         val context = simpleContext
-        val answers = Map(ApplicationSecurity.question1.id -> SingleChoiceAnswer("Yes"))
-        val res = AnswerQuestion.deriveProgressOfQuestionnaire(ApplicationSecurity.questionnaire, context, answers)
+        val answers = Map(SoftwareSecurity.question1.id -> SingleChoiceAnswer("Yes"))
+        val res = AnswerQuestion.deriveProgressOfQuestionnaire(SoftwareSecurity.questionnaire, context, answers)
 
-        res shouldBe QuestionnaireProgress(InProgress, ApplicationSecurity.questionnaire.questions.asIds)
+        res shouldBe QuestionnaireProgress(InProgress, SoftwareSecurity.questionnaire.questions.asIds)
       }       
     }
 

@@ -79,7 +79,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result2 = await(underTest.create(applicationId))
         inside(result2.right.value) { 
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
-            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 3 // The number from the dropped group
+            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
           }
       }
     }
