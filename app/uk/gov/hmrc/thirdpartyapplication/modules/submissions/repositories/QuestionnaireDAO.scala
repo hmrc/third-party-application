@@ -219,7 +219,7 @@ object QuestionnaireDAO {
       )
     }
 
-    object GrantingAuthorityToHMRC {
+    object CustomersAuthorisingYourSoftware {
       val question1 = TextQuestion(
         QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
         Wording("Confirm the name of your software"),
@@ -283,7 +283,7 @@ object QuestionnaireDAO {
       )
     }
 
-    object ApplicationSecurity {
+    object SoftwareSecurity {
       val question1 = ChooseOneOfQuestion(
         QuestionId("227b404a-ae8a-4a76-9a4b-70bc568109ac"),
         Wording("Do you provide software as a service (SaaS)?"),
@@ -326,7 +326,7 @@ object QuestionnaireDAO {
 
       val questionnaire = Questionnaire(
         id = QuestionnaireId("6c6b18cc-239f-443b-b63d-89393014ea64"),
-        label = Label("Application security"),
+        label = Label("Software security"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2, AskWhenAnswer(question1, "Yes")),
@@ -439,7 +439,7 @@ object QuestionnaireDAO {
       )
     }
 
-    object BusinessDetails {
+    object OrganisationDetails {
       val question1 = YesNoQuestion(
         QuestionId("62a12d00-e64a-4386-8418-dfb82e8ef676"),
         Wording("Do your development practices follow our guidance?"),
@@ -453,7 +453,7 @@ object QuestionnaireDAO {
 
       val questionnaire = Questionnaire(
         id = QuestionnaireId("ac69b129-524a-4d10-89a5-7bfa46ed95c7"),
-        label = Label("Business details"),
+        label = Label("Organisation details"),
         questions = NonEmptyList.of(
           QuestionItem(question1)
         )
@@ -464,41 +464,36 @@ object QuestionnaireDAO {
       DevelopmentPractices.questionnaire,
       ServiceManagementPractices.questionnaire,
       HandlingPersonalData.questionnaire,
-      GrantingAuthorityToHMRC.questionnaire,
-      ApplicationSecurity.questionnaire,
+      CustomersAuthorisingYourSoftware.questionnaire,
+      SoftwareSecurity.questionnaire,
       FraudPreventionHeaders.questionnaire,
       MarketingYourSoftware.questionnaire,
-      BusinessDetails.questionnaire
+      OrganisationDetails.questionnaire
     )
 
     val activeQuestionnaireGroupings = 
       NonEmptyList.of(
         GroupOfQuestionnaires(
-          heading = "Your processes",
+          heading = "About your processes",
           links = NonEmptyList.of(
             DevelopmentPractices.questionnaire,
-            ServiceManagementPractices.questionnaire,
-            HandlingPersonalData.questionnaire
+            ServiceManagementPractices.questionnaire
           )            
         ),
         GroupOfQuestionnaires(
-          heading = "Your application",
+          heading = "About your software",
           links = NonEmptyList.of(
-            GrantingAuthorityToHMRC.questionnaire,
-            ApplicationSecurity.questionnaire,
+            HandlingPersonalData.questionnaire,
+            CustomersAuthorisingYourSoftware.questionnaire,
+            SoftwareSecurity.questionnaire,
             FraudPreventionHeaders.questionnaire
           )
         ),
         GroupOfQuestionnaires(
-          heading = "Your marketing",
+          heading = "About your organisation",
           links = NonEmptyList.of(
+            OrganisationDetails.questionnaire,
             MarketingYourSoftware.questionnaire
-          )
-        ),
-        GroupOfQuestionnaires(
-          heading = "Your details",
-          links = NonEmptyList.of(
-            BusinessDetails.questionnaire
           )
         )
       )
