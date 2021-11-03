@@ -107,12 +107,6 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
         after.left.value
       }
-
-      // "return left when answer is absent for a non-optional question" in new Setup {
-      //   val after = AnswerQuestion.recordAnswer(submission, QuestionId.random, None, blankContext)
-
-      //   after.left.value
-      // }
     }
 
     "deriveProgressOfQuestionnaire" should {
@@ -182,51 +176,6 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
         res shouldBe QuestionnaireProgress(InProgress, SoftwareSecurity.questionnaire.questions.asIds)
       }       
-    }
-
-    import AnswerQuestion.{validateAnswersToQuestion, validateAnswerWhenNonOptional}
-    
-    "call validateAnswerWhenNonOptional for single choice questions" should {
-      val question = yesNoQuestion(1)
-
-      "return 'right(answer) when the first answer is valid" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("Yes")).right.value shouldBe SingleChoiceAnswer("Yes")
-      }
-      "return 'right(answer) when the first answer is valid regardless of subsequent answers" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("Yes", "blah")).right.value shouldBe SingleChoiceAnswer("Yes")
-      }
-      
-      "return 'left when the first answer is invalid" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("Yodel")) shouldBe 'left
-      }
-
-      "return 'left when the first answer is invalid even when subsequent answers are correct" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("Yodel", "Yes")) shouldBe 'left
-      }
-    }
-
-    "call validateAnswerWhenNonOptional for multiple choice questions" should {
-      val question = multichoiceQuestion(1, "one","two", "three")
-
-      "return 'right(answers) when all answers are valid" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("two", "three")).right.value shouldBe MultipleChoiceAnswer(Set("two", "three"))
-      }
-
-      "return 'left when not all answers are valid" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("two", "three", "yodel")) shouldBe 'left
-      }
-    }
-
-    "call validateAnswerWhenNonOptional for text question" should {
-      val question = textQuestion(1)
-
-      "return 'right when an answer is given" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("answered")).right.value shouldBe TextAnswer("answered")
-      }
-      
-      "return 'left when the answer is blank" in {
-        validateAnswerWhenNonOptional(question, NonEmptyList.of("")) shouldBe 'left
-      }
     }
   }
 }

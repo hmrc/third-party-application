@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import cats.data.NonEmptyList
-import cats.implicits._
 
 object AnswerQuestion {
   import Submissions.AnswersToQuestions
@@ -34,7 +33,7 @@ object AnswerQuestion {
   def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: Option[NonEmptyList[String]], context: Context): Either[String, ExtendedSubmission] = {
     for {
       question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
-      validatedAnswers                <- validateAnswersToQuestion(question, rawAnswers)
+      validatedAnswers                <- ValidateAnswers.validate(question, rawAnswers)
       updatedAnswersToQuestions        = submission.answersToQuestions + (questionId -> validatedAnswers)
       // we assume no recursion needed for the next 3 steps - otherwise the ask when question structure must have been implemented in a complex recursive mess
       updatedQuestionnaireProgress     = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
@@ -61,40 +60,4 @@ object AnswerQuestion {
   def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
     questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
   }
-
-  def validateAnswersToQuestion(question: Question, rawAnswers: Option[NonEmptyList[String]]): Either[String, ActualAnswer] = {
-    (rawAnswers, question) match {
-      case (Some(raw), q: NonOptionalQuestion)     => validateAnswerWhenNonOptional(q, raw)
-      case (Some(raw), OptionalQuestion(inner, _)) => validateAnswerWhenNonOptional(inner, raw).map(a => OptionalAnswer[inner.AnswerType](Some(a.asInstanceOf[inner.AnswerType])))
-      case (None, OptionalQuestion(inner, _))      => Either.right(OptionalAnswer[inner.AnswerType](None))
-      case (None, _)                               => Either.left("Non-optional Question must have an answer")
-    }
-  }
-
-  def validateAnswerWhenNonOptional(question: NonOptionalQuestion, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
-    question match {
-      case q: SingleChoiceQuestion => 
-        Either.fromOption(
-          rawAnswers
-          .head
-          .some
-          .filter(answer => q.choices.contains(PossibleAnswer(answer)))
-          .map(SingleChoiceAnswer(_))
-          , "The answer is not valid for this question"
-        )
-      case q: MultiChoiceQuestion =>
-        val (valid, invalid) = rawAnswers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
-        invalid match {
-          case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
-          case _     => "Some answers are not valid for this question".asLeft
-        }
-      case q: TextQuestion => 
-        if(rawAnswers.head.nonEmpty) {
-          TextAnswer(rawAnswers.head).asRight
-        } else {
-          "A text answer cannot be blank".asLeft
-        }
-    }
-  }
-
 }

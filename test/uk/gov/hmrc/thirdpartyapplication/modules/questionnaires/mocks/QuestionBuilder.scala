@@ -20,7 +20,15 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import scala.collection.immutable.ListSet
 
 trait QuestionBuilder {
-    def yesNoQuestion(counter: Int): SingleChoiceQuestion = {
+  implicit class QuestionSyntax[Q <: NonOptionalQuestion](question: Q) {
+    def makeOptional: OptionalQuestion[Q] = OptionalQuestion(question, "Some Text")
+  }
+
+  def makeOptional[Q <: NonOptionalQuestion](inner: Q): OptionalQuestion[Q] = {
+    OptionalQuestion(inner, "Some text")
+  } 
+  
+  def yesNoQuestion(counter: Int): SingleChoiceQuestion = {
     YesNoQuestion(
       QuestionId.random,
       Wording(s"Wording$counter"),
