@@ -30,7 +30,7 @@ object AnswerQuestion {
     }
   }
 
-  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: Option[NonEmptyList[String]], context: Context): Either[String, ExtendedSubmission] = {
+  def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: List[String], context: Context): Either[String, ExtendedSubmission] = {
     for {
       question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
       validatedAnswers                <- ValidateAnswers.validate(question, rawAnswers)

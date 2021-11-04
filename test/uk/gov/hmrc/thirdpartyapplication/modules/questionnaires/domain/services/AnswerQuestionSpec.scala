@@ -44,8 +44,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
   trait Setup extends SubmissionsTestData
   val blankContext : Context = Map.empty
 
-  val YesAnswer = Some(NonEmptyList.of("Yes"))
-  val NoAnswer = Some(NonEmptyList.of("No"))
+  val YesAnswer = List("Yes")
+  val NoAnswer = List("No")
   
   "AnswerQuestion" when {
     "answer is called" should {
@@ -103,7 +103,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return left when answer is not valid" in new Setup {
-        val after = AnswerQuestion.recordAnswer(submission, QuestionnaireDAO.Questionnaires.DevelopmentPractices.question1.id, Some(NonEmptyList.of("Bob")), blankContext)
+        val after = AnswerQuestion.recordAnswer(submission, QuestionnaireDAO.Questionnaires.DevelopmentPractices.question1.id, List("Bob"), blankContext)
 
         after.left.value
       }
@@ -137,11 +137,11 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         res shouldBe QuestionnaireProgress(Completed, ServiceManagementPractices.questionnaire.questions.asIds)
       }
 
-      "return not started for questionnaire that skips second question due to context regardless of answers" in new Setup {
+      "return not started for questionnaire that skips third question due to context regardless of answers" in new Setup {
         val context = simpleContext
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(CustomersAuthorisingYourSoftware.questionnaire, context, answers)
-        val listOfQuestions = List(CustomersAuthorisingYourSoftware.question1.id, CustomersAuthorisingYourSoftware.question3.id, CustomersAuthorisingYourSoftware.question4.id)
+        val listOfQuestions = List(CustomersAuthorisingYourSoftware.question1.id, CustomersAuthorisingYourSoftware.question2.id, CustomersAuthorisingYourSoftware.question4.id, CustomersAuthorisingYourSoftware.question5.id)
         res shouldBe QuestionnaireProgress(NotStarted, listOfQuestions)
       }
 

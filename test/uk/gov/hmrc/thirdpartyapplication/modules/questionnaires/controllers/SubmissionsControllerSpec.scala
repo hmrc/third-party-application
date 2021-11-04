@@ -25,7 +25,6 @@ import play.api.test.FakeRequest
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import akka.stream.testkit.NoMaterializer
-import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController
 import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
@@ -116,24 +115,22 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "recordAnswers" should {
     "return an OK response" in new Setup {
-      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
       SubmissionsServiceMock.RecordAnswers.thenReturn(extendedSubmission)
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(Some(NonEmptyList.of("Yes"))))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
       val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe OK
     }
 
     "return an bad request response when something goes wrong" in new Setup {
-      import uk.gov.hmrc.thirdpartyapplication.domain.services.NonEmptyListFormatters._
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(Some(NonEmptyList.of("Yes"))))
+      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
       val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
 
       status(result) shouldBe BAD_REQUEST

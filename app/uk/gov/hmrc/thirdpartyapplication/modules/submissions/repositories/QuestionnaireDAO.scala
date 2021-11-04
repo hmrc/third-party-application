@@ -220,15 +220,34 @@ object QuestionnaireDAO {
     }
 
     object CustomersAuthorisingYourSoftware {
-      val question1 = TextQuestion(
+      val question1 = AcknowledgementOnly(
+        QuestionId("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
+        Wording("Customers authorising your software"),
+        Statement(
+          List(
+            StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
+            StatementText("Before you continue, you will need:"),
+            StatementBullets(
+              List(
+                StatementText("the name of your software"),
+                StatementText("the location of your servers which store customer data"),
+                StatementText("a link to your privacy policy"),
+                StatementText("a link to your terms and conditions")
+              )
+            )
+          )
+        )
+      )
+
+      val question2 = TextQuestion(
         QuestionId("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
         Wording("Confirm the name of your software"),
         Statement(
           List(
-            StatementText("We show this name to users when they authorise your software to interact with HMRC."),
+            StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
             CompoundFragment(
               StatementText("It must comply with our "),
-              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+              StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
               StatementText(".")            
             ),
             StatementText("Application name")
@@ -236,7 +255,7 @@ object QuestionnaireDAO {
         )
       )
 
-      val question2 = MultiChoiceQuestion(
+      val question3 = MultiChoiceQuestion(
         QuestionId("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that store customer information?"),
         Statement(
@@ -249,33 +268,28 @@ object QuestionnaireDAO {
         )
       )
 
-      val question3 = 
-        OptionalQuestion(
-          TextQuestion(
-            QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
-            Wording("Give us your privacy policy URL"),
-            Statement(
-              List(
-                StatementText("Include the policy which covers the software you are requesting production credentials for."),
-                StatementText("For example https://example.com/privacy-policy")
-              )
-            )
-          ),
-          "I don't have a privacy policy"
-        )
-      
-      val question4 = OptionalQuestion(
-        TextQuestion(
-          QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
-          Wording("Give us your terms and conditions URL"),
-          Statement(
-            List(
-              StatementText("Your terms and conditions should cover the software you are requesting production credentials for."),
-              StatementText("For example https://example.com/terms-conditions")
-            )
+      val question4 = TextQuestion(
+        QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
+        Wording("Give us your privacy policy URL"),
+        Statement(
+          List(
+            StatementText("Include the policy which covers the software you are requesting production credentials for."),
+            StatementText("For example https://example.com/privacy-policy")
           )
         ),
-        "I don't have terms and conditions"
+        Some("I don't have a privacy policy")
+      )
+      
+      val question5 = TextQuestion(
+        QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
+        Wording("Give us your terms and conditions URL"),
+        Statement(
+          List(
+            StatementText("Your terms and conditions should cover the software you are requesting production credentials for."),
+            StatementText("For example https://example.com/terms-conditions")
+          )
+        ),
+        Some("I don't have terms and conditions")
       )
       
       val questionnaire = Questionnaire(
@@ -283,9 +297,10 @@ object QuestionnaireDAO {
         label = Label("Customers authorising your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question3),
-          QuestionItem(question4)
+          QuestionItem(question2),
+          QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question4),
+          QuestionItem(question5)
         )
       )
     }

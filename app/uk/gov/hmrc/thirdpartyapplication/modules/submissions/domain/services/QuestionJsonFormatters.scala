@@ -30,24 +30,14 @@ trait QuestionJsonFormatters extends StatementJsonFormatters {
   implicit val jsonFormatYesNoQuestion = Json.format[YesNoQuestion]
   implicit val jsonFormatChooseOneOfQuestion = Json.format[ChooseOneOfQuestion]
   implicit val jsonFormatMultiChoiceQuestion = Json.format[MultiChoiceQuestion]
-  implicit val jsonFormatSingleChoiceQuestion = Json.format[SingleChoiceQuestion]
-  implicit val jsonFormatOptionalTextQuestion = Json.format[OptionalQuestion[TextQuestion]]
-  implicit val jsonFormatOptionalYesNoQuestion = Json.format[OptionalQuestion[YesNoQuestion]]
-  implicit val jsonFormatOptionalChooseOneOfQuestion = Json.format[OptionalQuestion[ChooseOneOfQuestion]]
-  implicit val jsonFormatOptionalMultiChoiceQuestion = Json.format[OptionalQuestion[MultiChoiceQuestion]]
-  implicit val jsonFormatOptionalSingleChoiceQuestion = Json.format[OptionalQuestion[SingleChoiceQuestion]]
+  implicit val jsonFormatAcknowledgementOnly = Json.format[AcknowledgementOnly]
 
   implicit val jsonFormatQuestion: Format[Question] = Union.from[Question]("questionType")
-    .and[ChooseOneOfQuestion]("choose")
     .and[MultiChoiceQuestion]("multi")
     .and[YesNoQuestion]("yesNo")
-    .and[SingleChoiceQuestion]("single")
+    .and[ChooseOneOfQuestion]("choose")
     .and[TextQuestion]("text")
-    .and[OptionalQuestion[TextQuestion]]("optionalText")
-    .and[OptionalQuestion[YesNoQuestion]]("optionalYesNo")
-    .and[OptionalQuestion[ChooseOneOfQuestion]]("optionalChooseOneOf")
-    .and[OptionalQuestion[MultiChoiceQuestion]]("optionalMultiChoice")
-    .and[OptionalQuestion[SingleChoiceQuestion]]("optionalSingleChoice")
+    .and[AcknowledgementOnly]("acknowledgement")
     .format
 }
 

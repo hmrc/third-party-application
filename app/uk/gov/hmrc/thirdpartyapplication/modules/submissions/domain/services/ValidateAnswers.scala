@@ -17,43 +17,38 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
-import cats.data.NonEmptyList
 import cats.implicits._
 
 object ValidateAnswers {
   
-  def validate(question: Question, rawAnswers: Option[NonEmptyList[String]]): Either[String, ActualAnswer] = {
-    (rawAnswers, question) match {
-      case (Some(raw), q: NonOptionalQuestion)     => validateNonOptional(q, raw)
-      case (Some(raw), OptionalQuestion(inner, _)) => validateNonOptional(inner, raw).map(a => OptionalAnswer[inner.AnswerType](Some(a.asInstanceOf[inner.AnswerType])))
-      case (None, OptionalQuestion(inner, _))      => Either.right(OptionalAnswer[inner.AnswerType](None))
-      case (None, _)                               => Either.left("Non-optional question must have an answer")
+  def validate(question: Question, rawAnswers: List[String]): Either[String, ActualAnswer] = {
+    (question, rawAnswers) match {
+      case (_ : AcknowledgementOnly, Nil)             => Either.right(AcknowledgedAnswer)
+      case (_ : AcknowledgementOnly, _)               => Either.left("Acknowledgement cannot accept answers")
+        
+      case (_, Nil) if(question.isOptional)           => Either.right(NoAnswer)
+      case (_, Nil)                                   => Either.left("Question requires an answer")
+      
+      case (q : MultiChoiceQuestion, answers)         => validateAgainstPossibleAnswers(q, answers.toSet)
+      case (_, a :: b :: Nil)                         => Either.left("Question only accepts one answer")
+
+      case (_ : TextQuestion, head :: Nil )           => Either.right(TextAnswer(head))
+      case (q : SingleChoiceQuestion, head :: Nil )   => validateAgainstPossibleAnswers(q, head)
+
     }
   }
 
-  def validateNonOptional(question: NonOptionalQuestion, rawAnswers: NonEmptyList[String]): Either[String, ActualAnswer] = {
-    question match {
-      case q: SingleChoiceQuestion => 
-        Either.fromOption(
-          rawAnswers
-          .head
-          .some
-          .filter(answer => q.choices.contains(PossibleAnswer(answer)))
-          .map(SingleChoiceAnswer(_))
-          , "The answer is not valid for this question"
-        )
-      case q: MultiChoiceQuestion =>
-        val (valid, invalid) = rawAnswers.toList.partition(answer => q.choices.contains(PossibleAnswer(answer)))
-        invalid match {
-          case Nil   => MultipleChoiceAnswer(valid.toSet).asRight
-          case _     => "Some answers are not valid for this question".asLeft
-        }
-      case q: TextQuestion => 
-        if(rawAnswers.head.nonEmpty) {
-          TextAnswer(rawAnswers.head).asRight
-        } else {
-          "A text answer cannot be blank".asLeft
-        }
-    }
+  def validateAgainstPossibleAnswers(question: MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {
+    if(rawAnswers subsetOf question.choices.map(_.value))
+      Either.right(MultipleChoiceAnswer(rawAnswers))
+    else
+      Either.left("Not all answers are valid")
+  }
+
+  def validateAgainstPossibleAnswers(question: SingleChoiceQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
+    if(question.choices.map(_.value).contains(rawAnswer))
+      Either.right(SingleChoiceAnswer(rawAnswer))
+    else
+      Either.left("Answer is not valid")
   }
 }

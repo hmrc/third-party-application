@@ -84,7 +84,7 @@ class SubmissionsService @Inject()(
     fetchAndExtend(submissionsDAO.fetch(id))
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: Option[NonEmptyList[String]]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
