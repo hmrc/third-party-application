@@ -220,15 +220,34 @@ object QuestionnaireDAO {
     }
 
     object CustomersAuthorisingYourSoftware {
-      val question1 = TextQuestion(
-        QuestionId("050783f3-df8c-44fc-9246-45977ad5b287"),
+      val question1 = AcknowledgementOnly(
+        QuestionId("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
+        Wording("Customers authorising your software"),
+        Statement(
+          List(
+            StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
+            StatementText("Before you continue, you will need:"),
+            StatementBullets(
+              List(
+                StatementText("the name of your software"),
+                StatementText("the location of your servers which store customer data"),
+                StatementText("a link to your privacy policy"),
+                StatementText("a link to your terms and conditions")
+              )
+            )
+          )
+        )
+      )
+
+      val question2 = TextQuestion(
+        QuestionId("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
         Wording("Confirm the name of your software"),
         Statement(
           List(
-            StatementText("We show this name to users when they authorise your software to interact with HMRC."),
+            StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
             CompoundFragment(
               StatementText("It must comply with our "),
-              StatementLink("naming guidelines(opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+              StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
               StatementText(".")            
             ),
             StatementText("Application name")
@@ -236,8 +255,8 @@ object QuestionnaireDAO {
         )
       )
 
-      val question2 = MultiChoiceQuestion(
-        QuestionId("2e0becc5-1277-40ac-8910-eda9257884fd"),
+      val question3 = MultiChoiceQuestion(
+        QuestionId("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that store customer information?"),
         Statement(
           StatementText("Select all that apply.")
@@ -249,26 +268,28 @@ object QuestionnaireDAO {
         )
       )
 
-      val question3 = YesNoQuestion(
-        QuestionId("d208bdd6-e503-420f-a945-5f3595e399e6"),
-        Wording("Does your software have a privacy policy?"),
+      val question4 = TextQuestion(
+        QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
+        Wording("Give us your privacy policy URL"),
         Statement(
           List(
-            StatementText("We'll show this link to users when you request access to their data. This should tell your users how you store their personal information according to the GDPR guidelines."),
-            StatementText("You can change this at any time.")
+            StatementText("Include the policy which covers the software you are requesting production credentials for."),
+            StatementText("For example https://example.com/privacy-policy")
           )
-        )
+        ),
+        Some("I don't have a privacy policy")
       )
       
-      val question4 = YesNoQuestion(
+      val question5 = TextQuestion(
         QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
-        Wording("Does your software have terms and conditions?"),
+        Wording("Give us your terms and conditions URL"),
         Statement(
           List(
-            StatementText("We'll show this link to users when you request access to their data. We recommend you have this statement in your software."),
-            StatementText("You can change this at any time.")
+            StatementText("Your terms and conditions should cover the software you are requesting production credentials for."),
+            StatementText("For example https://example.com/terms-conditions")
           )
-        )
+        ),
+        Some("I don't have terms and conditions")
       )
       
       val questionnaire = Questionnaire(
@@ -276,9 +297,10 @@ object QuestionnaireDAO {
         label = Label("Customers authorising your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question3),
-          QuestionItem(question4)
+          QuestionItem(question2),
+          QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question4),
+          QuestionItem(question5)
         )
       )
     }
@@ -440,22 +462,92 @@ object QuestionnaireDAO {
     }
 
     object OrganisationDetails {
-      val question1 = YesNoQuestion(
-        QuestionId("62a12d00-e64a-4386-8418-dfb82e8ef676"),
-        Wording("Do your development practices follow our guidance?"),
+      val question1 = TextQuestion(
+        QuestionId("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
+        Wording("Give us your organisation's website URL"),
         Statement(
-          CompoundFragment(
-            StatementText("You must develop software following our"),
-            StatementLink("development practices (opens in a new tab)", "http://www.google.com")
+          List(
+            StatementText("For example https://example.com")
           )
+        ),
+        Some("My organisation doesn't have a website")
+      )
+
+      val question2 = ChooseOneOfQuestion(
+        QuestionId("cbdf264f-be39-4638-92ff-6ecd2259c662"),
+        Wording("Identify your organisation"),
+        Statement(
+          List(
+            StatementText("Provide evidence that your organisation is officially registered in the UK."),
+            StatementText("Choose one option")
+          )
+        ),
+        ListSet(
+          PossibleAnswer("Unique Taxpayer Reference (UTR)"),
+          PossibleAnswer("VAT registration number"),
+          PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)"),
+          PossibleAnswer("PAYE reference"),
+          PossibleAnswer("My organisation is in the UK and doesn't have any if these"),
+          PossibleAnswer("My organisation is outside the UK and doesn't have any of these")
         )
       )
 
+      val question2a = TextQuestion(
+        QuestionId("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
+        Wording("What is your company registration number?"),
+        Statement(
+          List(
+            StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
+            StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
+          )
+        ),
+        Some("My organisation doesn't have a company registration")
+      )
+
+      val question2b = TextQuestion(
+        QuestionId("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
+        Wording("What is your Unique Taxpayer Reference (UTR)?"),
+        Statement(List.empty)
+      )
+      val question2c = TextQuestion(
+        QuestionId("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
+        Wording("What is your VAT registration number?"),
+        Statement(List.empty)
+      )
+      val question2d = TextQuestion(
+        QuestionId("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
+        Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
+        Statement(List.empty)
+      )
+      val question2e = TextQuestion(
+        QuestionId("a143760e-72f3-423b-a6b4-558db37a3453"),
+        Wording("What is your PAYE reference?"),
+        Statement(List.empty)
+      )
+      
+      val question3 = AcknowledgementOnly(
+        QuestionId("a12f314e-bc12-4e0d-87ba-1326acb31008"),
+        Wording("Provide evidence of your organisation's registration"),
+        Statement(
+          List(
+            StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
+            StatementText("You will be asked for a digital copy of the official registration document.")
+          )
+        )
+      )
+      
       val questionnaire = Questionnaire(
         id = QuestionnaireId("ac69b129-524a-4d10-89a5-7bfa46ed95c7"),
         label = Label("Organisation details"),
         questions = NonEmptyList.of(
-          QuestionItem(question1)
+          QuestionItem(question1),
+          QuestionItem(question2),
+          QuestionItem(question2a, AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any if these")),
+          QuestionItem(question2b, AskWhenAnswer(question2, "Unique Taxpayer Reference (UTR)")),
+          QuestionItem(question2c, AskWhenAnswer(question2, "VAT registration number")),
+          QuestionItem(question2d, AskWhenAnswer(question2, "Corporation Tax Unique Taxpayer Reference (UTR)")),
+          QuestionItem(question2e, AskWhenAnswer(question2, "PAYE reference")),
+          QuestionItem(question3,  AskWhenAnswer(question2, "My organisation is outside the UK and doesn't have any of these")),
         )
       )
     }

@@ -25,7 +25,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
-import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
@@ -131,10 +130,22 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, questionId, NonEmptyList.of("Yes"))) 
+        val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
         
         val out = result.right.value
         out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        SubmissionsDAOMock.Update.verifyCalled()
+      }
+
+      "records new answers when given a valid optional question" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
+        
+        val out = result.right.value
+        out.submission.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -143,7 +154,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, NonEmptyList.of("Yes"))) 
+        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, List("Yes")))
+
+        result shouldBe 'left
+      }
+
+      "fail when given a optional answer to non optional question" in new Setup {
+        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Update.thenReturn()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.recordAnswers(submissionId, questionId, List.empty)) 
 
         result shouldBe 'left
       }

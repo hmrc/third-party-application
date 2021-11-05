@@ -24,7 +24,6 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
-import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.AnswerQuestion
 import cats.data.EitherT
 
@@ -84,7 +83,7 @@ class SubmissionsService @Inject()(
     fetchAndExtend(submissionsDAO.fetch(id))
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: NonEmptyList[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")

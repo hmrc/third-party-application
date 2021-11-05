@@ -22,7 +22,6 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.Submission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import cats.data.NonEmptyList
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseSubmissionsServiceMock {
@@ -48,10 +47,10 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object RecordAnswers {
       def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.recordAnswers(*[SubmissionId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.recordAnswers(*[SubmissionId], *[QuestionId], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) = 
-        when(aMock.recordAnswers(*[SubmissionId], *[QuestionId], *[NonEmptyList[String]])).thenReturn(successful(Left(error)))
+        when(aMock.recordAnswers(*[SubmissionId], *[QuestionId], *[List[String]])).thenReturn(successful(Left(error)))
     }
 
     object DeleteAll {

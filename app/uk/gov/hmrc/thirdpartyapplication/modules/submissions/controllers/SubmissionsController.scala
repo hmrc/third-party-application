@@ -25,16 +25,14 @@ import play.api.mvc.ControllerComponents
 import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import cats.data.NonEmptyList
 import play.api.mvc.Results
 
 object SubmissionsController {
-  import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
 
   case class ErrorMessage(message: String)
   implicit val writesErrorMessage = Json.writes[ErrorMessage]
 
-  case class RecordAnswersRequest(answers: NonEmptyList[String])
+  case class RecordAnswersRequest(answers: List[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 }
 

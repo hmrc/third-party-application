@@ -30,14 +30,14 @@ trait QuestionJsonFormatters extends StatementJsonFormatters {
   implicit val jsonFormatYesNoQuestion = Json.format[YesNoQuestion]
   implicit val jsonFormatChooseOneOfQuestion = Json.format[ChooseOneOfQuestion]
   implicit val jsonFormatMultiChoiceQuestion = Json.format[MultiChoiceQuestion]
-  implicit val jsonFormatSingleChoiceQuestion = Json.format[SingleChoiceQuestion]
+  implicit val jsonFormatAcknowledgementOnly = Json.format[AcknowledgementOnly]
 
   implicit val jsonFormatQuestion: Format[Question] = Union.from[Question]("questionType")
-    .and[ChooseOneOfQuestion]("choose")
     .and[MultiChoiceQuestion]("multi")
     .and[YesNoQuestion]("yesNo")
-    .and[SingleChoiceQuestion]("single")
+    .and[ChooseOneOfQuestion]("choose")
     .and[TextQuestion]("text")
+    .and[AcknowledgementOnly]("acknowledgement")
     .format
 }
 
