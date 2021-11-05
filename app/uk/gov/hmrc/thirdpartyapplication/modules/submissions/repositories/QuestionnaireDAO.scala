@@ -547,7 +547,7 @@ object QuestionnaireDAO {
           QuestionItem(question2c, AskWhenAnswer(question2, "VAT registration number")),
           QuestionItem(question2d, AskWhenAnswer(question2, "Corporation Tax Unique Taxpayer Reference (UTR)")),
           QuestionItem(question2e, AskWhenAnswer(question2, "PAYE reference")),
-          QuestionItem(question3,  AskWhenAnswer(question2, "My organisation is outside the UK and doesn't have any of these")),
+          QuestionItem(question3,  AskWhenAnswer(question2, "My organisation is outside the UK and doesn't have any of these"))
         )
       )
     }
