@@ -531,7 +531,7 @@ object QuestionnaireDAO {
         Statement(
           List(
             StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
-            StatementText("You will be asked for a digit copy of the official registration document.")
+            StatementText("You will be asked for a digital copy of the official registration document.")
           )
         )
       )
