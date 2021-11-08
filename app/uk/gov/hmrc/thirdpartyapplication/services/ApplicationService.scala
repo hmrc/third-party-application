@@ -192,7 +192,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
         _ <- traverse(subscriptions)(deleteSubscription)
         _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
-        _ <- submissionsService.deleteAllAnswersForApplication(app.id)
       } yield HasSucceeded
     }
 
@@ -213,6 +212,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
       _ <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
       _ <- applicationRepository.delete(applicationId)
+      _ <- submissionsService.deleteAllAnswersForApplication(app.id)
       _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _ = auditFunction(app)
       _ = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))

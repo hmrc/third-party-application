@@ -1531,7 +1531,7 @@ class ApplicationControllerSpec extends ControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application = aNewApplicationResponse(environment = SANDBOX)
+    val application = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
     val applicationId = application.id
     val gatekeeperUserId = "big.boss.gatekeeper"
     val requestedByEmailAddress = "admin@example.com"
@@ -1546,6 +1546,58 @@ class ApplicationControllerSpec extends ControllerSpec
 
       status(result) shouldBe NO_CONTENT
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), * )(*)
+    }
+
+    "succeed when a principal application is in TESTING state is deleted" in new ProductionDeleteApplications {
+      val inTesting = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = PRODUCTION)
+      val inTestingId = application.id
+      
+      when(mockApplicationService.fetch(inTestingId)).thenReturn(OptionT.pure[Future](inTesting))
+      when(mockApplicationService.deleteApplication(*[ApplicationId], *, * ) (*)).thenReturn(successful(Deleted))
+
+      val result = underTest.deleteApplication(inTestingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockApplicationService).deleteApplication(eqTo(inTestingId), eqTo(None), * )(*)
+    }
+    
+    "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new ProductionDeleteApplications {
+      val inPending = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = PRODUCTION)
+      val inPendingId = application.id
+      
+      when(mockApplicationService.fetch(inPendingId)).thenReturn(OptionT.pure[Future](inPending))
+      when(mockApplicationService.deleteApplication(*[ApplicationId], *, * ) (*)).thenReturn(successful(Deleted))
+
+      val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), * )(*)
+    }
+    
+    "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new ProductionDeleteApplications {
+      val inPending = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = PRODUCTION)
+      val inPendingId = application.id
+      
+      when(mockApplicationService.fetch(inPendingId)).thenReturn(OptionT.pure[Future](inPending))
+      when(mockApplicationService.deleteApplication(*[ApplicationId], *, * ) (*)).thenReturn(successful(Deleted))
+
+      val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), * )(*)
+    }
+
+    "fail when a principal application is in PRODUCTION state is deleted" in new ProductionDeleteApplications {
+      val inProd = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = PRODUCTION)
+      val inProdId = application.id
+      
+      when(mockApplicationService.fetch(inProdId)).thenReturn(OptionT.pure[Future](inProd))
+      when(mockApplicationService.deleteApplication(*[ApplicationId], *, * ) (*)).thenReturn(successful(Deleted))
+
+      val result = underTest.deleteApplication(inProdId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
+
+      status(result) shouldBe BAD_REQUEST
+      verify(mockApplicationService, never).deleteApplication(*[ApplicationId], *, * )(*)
     }
 
     "fail with a 400 error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
@@ -1644,7 +1696,7 @@ class ApplicationControllerSpec extends ControllerSpec
     """{ "context" : "some-context", "version" : "1.0" }"""
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION, appId: ApplicationId = ApplicationId.random) = {
+  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION, appId: ApplicationId = ApplicationId.random, state: ApplicationState = ApplicationState(State.TESTING)) = {
     val grantLengthInDays = 547
     new ApplicationResponse(
       appId,
@@ -1661,7 +1713,8 @@ class ApplicationControllerSpec extends ControllerSpec
       standardAccess.redirectUris,
       standardAccess.termsAndConditionsUrl,
       standardAccess.privacyPolicyUrl,
-      access
+      access,
+      state
     )
   }
 
