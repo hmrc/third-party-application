@@ -54,6 +54,7 @@ import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import cats.data.EitherT
+import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -65,7 +66,11 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
                                       cc: ControllerComponents)
-                                     (implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper with ApplicationLogger {
+                                     (implicit val ec: ExecutionContext)
+    extends BackendController(cc)
+    with JsonUtils
+    with AuthorisationWrapper
+    with ApplicationLogger {
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -435,13 +440,19 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-        if (authConfig.canDeleteApplications || request.matchesAuthorisationKey) {
-          applicationService.fetch(id)
-            .flatMap(_ => OptionT.liftF(applicationService.deleteApplication(id, None, audit)))
-            .fold(handleNotFound("No application was found"))(_ => NoContent)
-        } else successful(BadRequest("Cannot delete this application"))
-    }
+      val exec = ec
+      val ET = new EitherTHelper[Result] { implicit val ec: ExecutionContext = exec}
+      lazy val badRequest = BadRequest("Cannot delete this application")
 
+      (
+        for {
+          app   <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
+          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || app.state.name != State.PRODUCTION, app, badRequest)
+          _     <- ET.liftF(applicationService.deleteApplication(id, None, audit))
+        } yield NoContent
+      )
+      .fold(identity, identity)
+    }
 
     def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
       // This is audited in the GK FE
