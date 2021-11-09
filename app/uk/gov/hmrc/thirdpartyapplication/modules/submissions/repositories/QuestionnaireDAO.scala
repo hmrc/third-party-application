@@ -487,7 +487,7 @@ object QuestionnaireDAO {
           PossibleAnswer("VAT registration number"),
           PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)"),
           PossibleAnswer("PAYE reference"),
-          PossibleAnswer("My organisation is in the UK and doesn't have any if these"),
+          PossibleAnswer("My organisation is in the UK and doesn't have any of these"),
           PossibleAnswer("My organisation is outside the UK and doesn't have any of these")
         )
       )
