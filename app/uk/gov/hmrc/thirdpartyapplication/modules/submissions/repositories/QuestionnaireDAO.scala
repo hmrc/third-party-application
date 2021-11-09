@@ -542,7 +542,7 @@ object QuestionnaireDAO {
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2),
-          QuestionItem(question2a, AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any if these")),
+          QuestionItem(question2a, AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any of these")),
           QuestionItem(question2b, AskWhenAnswer(question2, "Unique Taxpayer Reference (UTR)")),
           QuestionItem(question2c, AskWhenAnswer(question2, "VAT registration number")),
           QuestionItem(question2d, AskWhenAnswer(question2, "Corporation Tax Unique Taxpayer Reference (UTR)")),
