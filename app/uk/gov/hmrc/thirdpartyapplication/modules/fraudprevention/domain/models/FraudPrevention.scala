@@ -18,22 +18,22 @@ package uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models
 
 object FraudPrevention {
   def contexts = Set(
-    "vat-api",
-    "business-details-api",
-    "self-assessment-biss-api",
-    "self-assessment-bsas-api",
-    "cis-deductions-api",
-    "individual-calculations-api",
-    "individual-losses-api",
-    "individuals-charges-api",
-    "individuals-disclosures-api",
-    "individuals-expenses-api",
-    "individuals-income-received-api",
+    "organisations/vat",
+    "individuals/business/details",
+    "individuals/self-assessment/income-summary",
+    "individuals/self-assessment/adjustable-summary",
+    "individuals/deductions/cis",
+    "individual/calculations",
+    "individual/losses",
+    "individuals/charges",
+    "individuals/disclosures",
+    "individuals/expenses",
+    "individuals/income-received",
     "individuals-reliefs-api",
-    "individuals-state-benefits-api",
-    "obligations-api",
-    "other-deductions-api",
-    "self-assessment-api",
-    "self-assessment-accounts-api"
+    "individuals/state-benefits",
+    "obligations/details",
+    "individuals/deductions/other",
+    "self-assessment",
+    "accounts/self-assessment"
   )
 }
