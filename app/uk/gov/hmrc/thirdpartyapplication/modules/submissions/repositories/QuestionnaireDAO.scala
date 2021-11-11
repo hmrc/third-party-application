@@ -118,7 +118,7 @@ object QuestionnaireDAO {
         label = Label("Service management practices"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2)
+          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
