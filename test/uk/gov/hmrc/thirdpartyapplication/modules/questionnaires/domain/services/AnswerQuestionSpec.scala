@@ -122,7 +122,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return in progress, with answerable questions when a question is answered" in new Setup {
-        val context = simpleContext
+        val context = soldContext
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"))
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
@@ -130,7 +130,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
       
       "return completed, with answerable questions when all questions are answered" in new Setup {
-        val context = simpleContext
+        val context = soldContext
         val answers = Map(ServiceManagementPractices.question1.id -> SingleChoiceAnswer("Yes"), ServiceManagementPractices.question2.id -> SingleChoiceAnswer("Yes"))
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(ServiceManagementPractices.questionnaire, context, answers)
 
