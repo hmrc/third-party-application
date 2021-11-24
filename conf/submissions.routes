@@ -1,5 +1,5 @@
-POST        /application/:aid                         SubmissionsController.createSubmissionFor(aid: ApplicationId)
-GET         /application/:aid                         SubmissionsController.fetchLatest(aid: ApplicationId)
+POST        /application/:aid                         uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.createSubmissionFor(aid: ApplicationId)
+GET         /application/:aid                         uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.fetchLatest(aid: ApplicationId)
 
-GET         /:sid                                     SubmissionsController.fetchSubmission(sid: SubmissionId)
-POST        /:sid/question/:qid                       SubmissionsController.recordAnswers(sid: SubmissionId, qid: QuestionId)
+GET         /:sid                                     uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: SubmissionId)
+POST        /:sid/question/:qid                       uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: SubmissionId, qid: QuestionId)

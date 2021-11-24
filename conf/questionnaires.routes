@@ -1,2 +1,2 @@
-GET         /:qid                               QuestionnairesController.fetch(qid: QuestionnaireId)
+GET         /:qid                               uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.QuestionnairesController.fetch(qid: QuestionnaireId)
 
