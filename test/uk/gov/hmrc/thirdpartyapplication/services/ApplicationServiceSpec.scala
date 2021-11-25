@@ -1252,14 +1252,29 @@ class ApplicationServiceSpec
   }
 
   "updateToPendingGatekeeperApproval" should {
-    "update the application with new state" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+    val email = "test@example.com"
 
-      underTest.updateToPendingGatekeeperApproval(applicationData.id, )
+    "update the application with new state when an existing applicaiton id is specified" in new Setup {
+      val testApplication = applicationData.copy(state = ApplicationState())
+      ApplicationRepoMock.Fetch.thenReturn(testApplication)
+      ApplicationRepoMock.Save.thenReturn(testApplication)
 
-      ApplicationRepoMock.Save.verifyCalled()
+      await(underTest.updateToPendingGatekeeperApproval(testApplication.id, email))
 
+      val appData = ApplicationRepoMock.Save.verifyCalled()
+      appData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
     }
+
+    "NotFoundException thrown when an non-existing application id is specified" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNone()
+
+      val nonExistingApplicationId = ApplicationId.random
+
+      intercept[NotFoundException] {
+        await(underTest.updateToPendingGatekeeperApproval(nonExistingApplicationId, email))
+      }
+    }
+
   }
 
   "requestUplift" should {
