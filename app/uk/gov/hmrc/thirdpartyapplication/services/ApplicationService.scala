@@ -370,6 +370,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
+  def updateToPendingGatekeeperApproval(applicationId: ApplicationId, requestedByEmailAddress: String): Future[ApplicationData] = {
+    for {
+      application <- fetchApp(applicationId)
+      updatedApplicationState = application.state.toPendingGatekeeperApproval(requestedByEmailAddress)
+      updatedApplication = application.copy(state = updatedApplicationState)
+      persistedApplication <- applicationRepository.save(updatedApplication)
+    } yield persistedApplication
+  }
+
   def requestUplift(applicationId: ApplicationId, applicationName: String,
                     requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 

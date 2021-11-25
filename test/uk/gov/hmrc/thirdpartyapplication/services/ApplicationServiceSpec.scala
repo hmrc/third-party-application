@@ -794,7 +794,7 @@ class ApplicationServiceSpec
     }
   }
 
-"delete collaborator with userId" should {
+  "delete collaborator with userId" should {
     trait DeleteCollaboratorsSetup extends Setup {
       val admin = "admin@example.com"
       val admin2: String = "admin2@example.com"
@@ -1248,6 +1248,17 @@ class ApplicationServiceSpec
       val result = await(underTest.validateApplicationName("app name", Some(applicationId)))
 
       result shouldBe Valid
+    }
+  }
+
+  "updateToPendingGatekeeperApproval" should {
+    "update the application with new state" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+
+      underTest.updateToPendingGatekeeperApproval(applicationData.id, )
+
+      ApplicationRepoMock.Save.verifyCalled()
+
     }
   }
 

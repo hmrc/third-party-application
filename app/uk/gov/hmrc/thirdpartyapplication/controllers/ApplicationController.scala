@@ -56,6 +56,11 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.Submission
 import cats.data.EitherT
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 
+object ApplicationController {
+  case class RequestApprovalRequest(requestedByEmailAddress: String)
+  implicit val requestApprovalRequest = Json.reads[RequestApprovalRequest]
+}
+
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,
@@ -71,6 +76,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     with JsonUtils
     with AuthorisationWrapper
     with ApplicationLogger {
+
+  import ApplicationController._
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
@@ -259,6 +266,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       } recover recovery
   }
 
+  def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+    withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
+      applicationService
+        .updateToPendingGatekeeperApproval(applicationId, requestApprovalRequest.requestedByEmailAddress)
+        .map(app => Ok(Json.toJson(app)))
+        .recover(recovery)
+      }
+  }
 
   def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpliftApplicationRequest] { upliftRequest =>
