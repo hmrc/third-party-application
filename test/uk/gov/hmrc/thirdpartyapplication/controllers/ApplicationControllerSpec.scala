@@ -60,9 +60,10 @@ import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class ApplicationControllerSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks {
+  with ApplicationStateUtil with TableDrivenPropertyChecks with ApplicationTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -660,8 +661,6 @@ class ApplicationControllerSpec extends ControllerSpec
       })
     }
   }
-
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "validate credentials" should {
     val validation = ValidationRequest(ClientId("clientId"), "clientSecret")
@@ -1321,6 +1320,40 @@ class ApplicationControllerSpec extends ControllerSpec
       val result = underTest.verifyUplift(verificationCode)(request)
       status(result) shouldBe BAD_REQUEST
     }
+  }
+
+  "requestApproval" should {
+    val applicationId = ApplicationId.random
+    val emailAddress = "request@example.com"
+    val approvalRequest = RequestApprovalRequest(emailAddress)
+    
+    implicit val approvalRequestWrites = Json.writes[RequestApprovalRequest]
+
+    "return Ok reponse if request is valid" in new Setup {
+
+      val appData = anApplicationData(applicationId)
+      
+      when(underTest.applicationService.updateToPendingGatekeeperApproval(eqTo(applicationId), eqTo(emailAddress)))
+        .thenReturn(successful(appData))
+
+      val result = underTest.requestApproval(applicationId)(
+        request.withBody(Json.toJson(approvalRequest))
+      )
+
+      status(result) shouldBe OK
+    }
+
+    "return Error reponse if request is invalid" in new Setup {
+      when(underTest.applicationService.updateToPendingGatekeeperApproval(eqTo(applicationId), eqTo(emailAddress)))
+        .thenReturn(failed(new NotFoundException("")))
+
+      val result = underTest.requestApproval(applicationId)(
+        request.withBody(Json.toJson(approvalRequest))
+      )
+
+      status(result) shouldBe NOT_FOUND
+    }
+
   }
 
   "requestUplift" should {

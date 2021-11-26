@@ -58,6 +58,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
+
   implicit val requestApprovalRequest = Json.reads[RequestApprovalRequest]
 }
 
