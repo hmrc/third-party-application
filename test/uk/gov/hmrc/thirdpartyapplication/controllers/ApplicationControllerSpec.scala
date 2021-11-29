@@ -62,12 +62,14 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class ApplicationControllerSpec 
   extends ControllerSpec
   with ApplicationStateUtil 
   with ControllerTestData
-  with TableDrivenPropertyChecks {
+  with TableDrivenPropertyChecks
+  with ApplicationTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -632,8 +634,6 @@ class ApplicationControllerSpec
       })
     }
   }
-
-  private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   "validate credentials" should {
     val validation = ValidationRequest(ClientId("clientId"), "clientSecret")
@@ -1294,7 +1294,6 @@ class ApplicationControllerSpec
       status(result) shouldBe BAD_REQUEST
     }
   }
-
 
   "update rate limit tier" should {
 

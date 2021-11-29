@@ -55,6 +55,7 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
+
   implicit val requestApprovalRequest = Json.reads[RequestApprovalRequest]
 }
 
