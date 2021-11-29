@@ -77,7 +77,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    nameValidationConfig: ApplicationNameValidationConfig,
                                    tokenService: TokenService,
-                                   submissionsService: SubmissionsService)
+                                   submissionsService: SubmissionsService,
+                                   applicationNamingService: ApplicationNamingService)
                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -379,51 +380,51 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield persistedApplication
   }
 
-  def requestUplift(applicationId: ApplicationId, applicationName: String,
-                    requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  // def requestUplift(applicationId: ApplicationId, applicationName: String,
+  //                   requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
-    def uplift(existing: ApplicationData) = existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
+  //   def uplift(existing: ApplicationData) = existing.copy(
+  //     name = applicationName,
+  //     normalisedName = applicationName.toLowerCase,
+  //     state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
 
-    for {
-      app <- fetchApp(applicationId)
-      upliftedApp = uplift(app)
-      _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-      updatedApp <- applicationRepository.save(upliftedApp)
-      _ <- insertStateHistory(
-        app,
-        PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
-        requestedByEmailAddress, COLLABORATOR,
-        (a: ApplicationData) => applicationRepository.save(a)
-      )
-      _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
-        s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
-      _ = auditService.audit(ApplicationUpliftRequested,
-        AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
-    } yield UpliftRequested
-  }
+  //   for {
+  //     app <- fetchApp(applicationId)
+  //     upliftedApp = uplift(app)
+  //     _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
+  //     updatedApp <- applicationRepository.save(upliftedApp)
+  //     _ <- insertStateHistory(
+  //       app,
+  //       PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
+  //       requestedByEmailAddress, COLLABORATOR,
+  //       (a: ApplicationData) => applicationRepository.save(a)
+  //     )
+  //     _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
+  //       s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
+  //     _ = auditService.audit(ApplicationUpliftRequested,
+  //       AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
+  //   } yield UpliftRequested
+  // }
 
-  private def assertAppHasUniqueNameAndAudit(submittedAppName: String,
-                                             accessType: AccessType,
-                                             existingApp: Option[ApplicationData] = None)
-                                            (implicit hc: HeaderCarrier) = {
-    for {
-      duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _ = if (duplicate) {
-        accessType match {
-          case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
-            AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
-        }
-        throw ApplicationAlreadyExists(submittedAppName)
-      }
-    } yield ()
-  }
+  // private def assertAppHasUniqueNameAndAudit(submittedAppName: String,
+  //                                            accessType: AccessType,
+  //                                            existingApp: Option[ApplicationData] = None)
+  //                                           (implicit hc: HeaderCarrier) = {
+  //   for {
+  //     duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
+  //     _ = if (duplicate) {
+  //       accessType match {
+  //         case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
+  //           Map("applicationName" -> submittedAppName))
+  //         case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
+  //           Map("applicationName" -> submittedAppName))
+  //         case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
+  //           AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
+  //       }
+  //       throw ApplicationAlreadyExists(submittedAppName)
+  //     }
+  //   } yield ()
+  // }
 
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req match {
@@ -462,8 +463,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val f = for {
       _ <- application.access.accessType match {
-        case PRIVILEGED => assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
-        case ROPC => assertAppHasUniqueNameAndAudit(application.name, ROPC)
+        case PRIVILEGED => applicationNamingService.assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
+        case ROPC => applicationNamingService.assertAppHasUniqueNameAndAudit(application.name, ROPC)
         case _ => successful(Unit)
       }
 
@@ -598,44 +599,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         case _ => throw InvalidUpliftVerificationCode(verificationCode)
       }
     } yield result
-
-  }
-
-  private def isBlacklistedName(applicationName: String): Future[Boolean] = {
-    def checkNameIsValid(blackListedName: String) = !applicationName.toLowerCase().contains(blackListedName.toLowerCase)
-
-    val isValid = nameValidationConfig
-      .nameBlackList
-      .forall(name => checkNameIsValid(name))
-
-    successful(!isValid)
-  }
-
-  private def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] = {
-
-    def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
-
-    def anyDuplicatesExcludingThis(apps: List[ApplicationData]): Boolean = {
-      apps.exists(!isThisApplication(_))
-    }
-
-    if (nameValidationConfig.validateForDuplicateAppNames) {
-      applicationRepository
-        .fetchApplicationsByName(applicationName)
-        .map(anyDuplicatesExcludingThis)
-    } else {
-      successful(false)
-    }
-  }
-
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]) : Future[ApplicationNameValidationResult] = {
-    for {
-      isBlacklisted <- isBlacklistedName(applicationName)
-      isDuplicate <- isDuplicateName(applicationName, selfApplicationId)
-    } yield (isBlacklisted, isDuplicate) match {
-      case (false, false) => Valid
-      case (blacklist, duplicate) => Invalid(blacklist, duplicate)
-    }
   }
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],

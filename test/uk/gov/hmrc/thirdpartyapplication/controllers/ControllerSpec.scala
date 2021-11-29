@@ -18,6 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.LogSuppressing
+import scala.concurrent.Future
+import play.api.mvc.Result
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 
 abstract class ControllerSpec extends AsyncHmrcSpec
-  with LogSuppressing { }
+  with LogSuppressing { 
+
+  import play.api.test.Helpers._
+
+  def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
+    status(result) shouldBe statusCode
+    (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
+  }
+}

@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
@@ -48,6 +49,8 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
+
 
 
 class ApplicationControllerCreateSpec extends ControllerSpec
@@ -85,6 +88,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val mockApplicationService: ApplicationService = mock[ApplicationService]
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
+    val mockApplicationUpliftService: ApplicationUpliftService = mock[ApplicationUpliftService]
+    val mockApplicationNamingService: ApplicationNamingService = mock[ApplicationNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -106,6 +111,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       config,
       mockGatekeeperService,
       SubmissionsServiceMock.aMock,
+      mockApplicationUpliftService,
+      mockApplicationNamingService,
       Helpers.stubControllerComponents())
   }
 

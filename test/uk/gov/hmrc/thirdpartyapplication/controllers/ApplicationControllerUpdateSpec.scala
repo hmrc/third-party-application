@@ -28,7 +28,6 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
@@ -48,6 +47,8 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -72,6 +73,8 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
+    val mockApplicationUpliftService: ApplicationUpliftService = mock[ApplicationUpliftService]
+    val mockApplicationNamingService: ApplicationNamingService = mock[ApplicationNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -93,9 +96,10 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       config,
       mockGatekeeperService,
       mockSubmissionService,
+      mockApplicationUpliftService,
+      mockApplicationNamingService,
       Helpers.stubControllerComponents())
   }
-
 
   trait SandboxDeleteApplications extends Setup {
     override def canDeleteApplications() = true
@@ -191,11 +195,6 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"
     }
-  }
-
-  private def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
-    status(result) shouldBe statusCode
-    (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
   private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {

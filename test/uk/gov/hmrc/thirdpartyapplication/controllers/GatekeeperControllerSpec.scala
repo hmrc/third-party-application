@@ -25,8 +25,6 @@ import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -498,11 +496,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
                           submittedOn: DateTime = DateTimeUtils.now,
                           state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
-  }
-
-  private def verifyErrorResult(result: Future[Result], statusCode: Int, errorCode: ErrorCode): Unit = {
-    status(result) shouldBe statusCode
-    (contentAsJson(result) \ "code").as[String] shouldBe errorCode.toString
   }
 
   private def anAppResponse(appId: ApplicationId) = {
