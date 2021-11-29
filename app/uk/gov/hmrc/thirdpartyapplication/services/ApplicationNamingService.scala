@@ -29,7 +29,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, Valid, Invalid}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
 

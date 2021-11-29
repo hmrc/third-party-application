@@ -37,8 +37,6 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     val underTest = new ApplicationNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, mockNameValidationConfig)
   }
   
-   val mockNameValidationConfig = mock[ApplicationNameValidationConfig]
-
   "validate application name" should {
 
     "allow valid name" in new Setup {
@@ -90,6 +88,8 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
 
       when(mockNameValidationConfig.nameBlackList)
         .thenReturn(List.empty[String])
+      when(mockNameValidationConfig.validateForDuplicateAppNames)
+        .thenReturn(true)
 
       private val duplicateName = "duplicate name"
       val result = await(underTest.validateApplicationName(duplicateName, None))

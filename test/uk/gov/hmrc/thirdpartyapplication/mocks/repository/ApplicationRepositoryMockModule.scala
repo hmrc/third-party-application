@@ -90,20 +90,20 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.save(*)).thenReturn(failed(failWith))
 
       def verifyCalledWith(applicationData: ApplicationData) =
-        ApplicationRepoMock.verify.save(eqTo(applicationData))
+        verify.save(eqTo(applicationData))
 
       def verifyNeverCalled() =
-        ApplicationRepoMock.verify(never).save(*)
+        verify(never).save(*)
 
       def verifyCalled(): ApplicationData = {
         val applicationDataArgumentCaptor = ArgCaptor[ApplicationData]
-        ApplicationRepoMock.verify.save(applicationDataArgumentCaptor)
+        verify.save(applicationDataArgumentCaptor)
         applicationDataArgumentCaptor.value
       }
 
       def verifyCalled(mode: VerificationMode): Captor[ApplicationData] = {
         val applicationDataArgumentCaptor = ArgCaptor[ApplicationData]
-        ApplicationRepoMock.verify(mode).save(applicationDataArgumentCaptor)
+        verify(mode).save(applicationDataArgumentCaptor)
         applicationDataArgumentCaptor
       }
 
