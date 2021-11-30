@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.approvals.services
 
 import javax.inject.{Inject, Singleton}
-import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
@@ -40,12 +39,16 @@ object ApplicationApprovalsService {
   sealed trait RequestApprovalResult
 
   case object ApprovalAccepted extends RequestApprovalResult
+
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
-  case object ApprovalRejectedDueToDuplicateName extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
   case object ApprovalRejectedDueNoSuchApplication extends ApprovalRejectedResult
   case object ApprovalRejectedDueNoSuchSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
+
+  sealed trait ApprovalRejectedDueToName extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToDuplicateName extends ApprovalRejectedDueToName
+  case object ApprovalRejectedDueToIllegalName extends ApprovalRejectedDueToName
 }
 @Singleton
 class ApplicationApprovalsService @Inject()(
@@ -66,7 +69,7 @@ class ApplicationApprovalsService @Inject()(
 
     val ET = EitherTHelper.make[ApprovalRejectedResult]
 
-    def uplift(existing: ApplicationData, applicationName: String): ApplicationData = existing.copy(
+    def deriveNewAppDetails(existing: ApplicationData, applicationName: String): ApplicationData = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
@@ -75,10 +78,12 @@ class ApplicationApprovalsService @Inject()(
     (
       for {
         app            <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
+        _              <- ET.cond(app.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
         extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueNoSuchSubmission)
         _              <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         appName         = getApplicationName(extSubmission)
-        updatedApp      = uplift(app, appName)
+        _              <- ET.fromEitherF(validateApplicationName(appName))
+        updatedApp      = deriveNewAppDetails(app, appName)
 
         _              <- ET.liftF(writeStateHistory(app, requestedByEmailAddress))
         _               = logCompletedApprovalRequest(updatedApp)
@@ -87,6 +92,8 @@ class ApplicationApprovalsService @Inject()(
     )
     .fold[RequestApprovalResult](identity,identity)
   }
+
+  private def validateApplicationName(appName: String): Future[Either[ApprovalRejectedDueToName, Unit]] = ???
 
   private def logCompletedApprovalRequest(app: ApplicationData) = 
     logger.info(s"Approval-01: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
