@@ -24,11 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService._
+import play.api.libs.json.JsValue
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -50,16 +49,24 @@ class ApprovalsController @Inject()(
 
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      applicationApprovalsService
-        .requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress)
-        .map(_ => NoContent)
-        .recover {
-          case _: InvalidStateTransition =>
-            PreconditionFailed(JsErrorResponse(ErrorCode.INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
-          case e: ApplicationAlreadyExists =>
-            Conflict(JsErrorResponse(ErrorCode.APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-        }
-      }
+      applicationApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
+        case ApprovalAccepted                                                 => NoContent
+        case ApprovalRejectedDueNoSuchApplication | 
+              ApplicationApprovalsService.ApprovalRejectedDueNoSuchSubmission => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
+        case ApprovalRejectedDueToIncompleteSubmission                        => BadRequest(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId was incomplete"))
+        case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name $name ")) 
+        case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name $name contains words that are on a deny list")) 
+        case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'")) 
+      }}
       .recover(recovery)
     }
+  }
+
+  private def asJsonError(errorCode: String, message: String): JsValue = 
+    Json.toJson(
+      Json.obj(
+        "code" -> errorCode,
+        "message" -> message
+      )
+    )
 }

@@ -47,8 +47,8 @@ object ApplicationApprovalsService {
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
 
   sealed trait ApprovalRejectedDueToName extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToDuplicateName extends ApprovalRejectedDueToName
-  case object ApprovalRejectedDueToIllegalName extends ApprovalRejectedDueToName
+  case class ApprovalRejectedDueToDuplicateName(name: String) extends ApprovalRejectedDueToName
+  case class ApprovalRejectedDueToIllegalName(name: String) extends ApprovalRejectedDueToName
 }
 @Singleton
 class ApplicationApprovalsService @Inject()(
