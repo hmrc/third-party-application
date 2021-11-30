@@ -48,7 +48,6 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
 import cats.data.EitherT
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -68,7 +67,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
-                                      applicationUpliftService: ApplicationUpliftService,
                                       applicationNamingService: ApplicationNamingService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext)
@@ -417,12 +415,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery
     }
-  }
-
-  def verifyUplift(verificationCode: String) = Action.async { implicit request =>
-    applicationService.verifyUplift(verificationCode) map (_ => NoContent) recover {
-      case e: InvalidUpliftVerificationCode => BadRequest(e.getMessage)
-    } recover recovery
   }
 
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>

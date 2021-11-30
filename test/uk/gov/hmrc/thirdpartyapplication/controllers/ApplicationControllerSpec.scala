@@ -61,7 +61,6 @@ import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 class ApplicationControllerSpec 
@@ -92,7 +91,6 @@ class ApplicationControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
-    val mockApplicationUpliftService: ApplicationUpliftService = mock[ApplicationUpliftService]
     val mockApplicationNamingService: ApplicationNamingService = mock[ApplicationNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
@@ -115,7 +113,6 @@ class ApplicationControllerSpec
       config,
       mockGatekeeperService,
       mockSubmissionService,
-      mockApplicationUpliftService,
       mockApplicationNamingService,
       Helpers.stubControllerComponents())
   }
@@ -1271,28 +1268,6 @@ class ApplicationControllerSpec
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-  }
-
-  "verifyUplift" should {
-
-    "verify uplift successfully" in new Setup {
-      val verificationCode = "aVerificationCode"
-
-      when(underTest.applicationService.verifyUplift(eqTo(verificationCode))(*)).thenReturn(successful(UpliftVerified))
-
-      val result = underTest.verifyUplift(verificationCode)(request)
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "verify uplift failed" in new Setup {
-      val verificationCode = "aVerificationCode"
-
-      when(underTest.applicationService.verifyUplift(eqTo(verificationCode))(*))
-        .thenReturn(failed(InvalidUpliftVerificationCode(verificationCode)))
-
-      val result = underTest.verifyUplift(verificationCode)(request)
-      status(result) shouldBe BAD_REQUEST
-    }
   }
 
   "update rate limit tier" should {

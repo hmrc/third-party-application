@@ -23,6 +23,7 @@ import org.mockito.verification.VerificationMode
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseSubscriptionRepoMock {
@@ -37,6 +38,14 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     object Fetch {
       def thenReturn(subs: ApiIdentifier*) =
         when(aMock.getSubscriptions(*[ApplicationId])).thenReturn(successful(subs.toList))
+    }
+
+    object Remove {
+      def thenReturnHasSucceeded() =
+        when(aMock.remove(*[ApplicationId], *[ApiIdentifier])).thenReturn(successful(HasSucceeded))
+
+      def verifyCalledWith(appId: ApplicationId, apiIdentifier: ApiIdentifier) =
+        verify.remove(eqTo(appId), eqTo(apiIdentifier))
     }
   }
   

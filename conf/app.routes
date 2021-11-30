@@ -47,10 +47,10 @@ POST          /application/:id/block                                 uk.gov.hmrc
 POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 POST          /application/:id/request-uplift                        uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController.requestUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /verify-uplift/:code                                   uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController.verifyUplift(code: String)
 
 POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateRateLimitTier(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
-POST          /verify-uplift/:code                                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.verifyUplift(code: String)
 
 GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
 GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
