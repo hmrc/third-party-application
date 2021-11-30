@@ -424,8 +424,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      val exec = ec
-      val ET = new EitherTHelper[Result] { implicit val ec: ExecutionContext = exec}
+      val ET = EitherTHelper.make[Result]
       lazy val badRequest = BadRequest("Cannot delete this application")
 
       (

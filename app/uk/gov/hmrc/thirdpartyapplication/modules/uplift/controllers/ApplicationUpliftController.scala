@@ -30,7 +30,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.services.JsonFormatters._
+
+object ApplicationUpliftController {
+  import play.api.libs.json.Json
+  
+  case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
+  implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
+}
 
 @Singleton
 class ApplicationUpliftController @Inject()(
@@ -41,6 +47,8 @@ class ApplicationUpliftController @Inject()(
   implicit val ec: ExecutionContext
 ) extends ExtraHeadersController(cc)  
     with JsonUtils {
+
+  import ApplicationUpliftController._
 
   def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpliftApplicationRequest] { upliftRequest =>

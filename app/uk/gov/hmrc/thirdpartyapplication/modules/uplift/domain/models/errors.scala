@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models
 
-import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models._
-
-trait JsonFormatters {
-    implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
-}
-
-object JsonFormatters extends JsonFormatters
+  
+case class InvalidUpliftVerificationCode(code: String) extends RuntimeException(s"Invalid verification code '$code'")

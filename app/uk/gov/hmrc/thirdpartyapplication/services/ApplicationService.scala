@@ -380,52 +380,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield persistedApplication
   }
 
-  // def requestUplift(applicationId: ApplicationId, applicationName: String,
-  //                   requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-
-  //   def uplift(existing: ApplicationData) = existing.copy(
-  //     name = applicationName,
-  //     normalisedName = applicationName.toLowerCase,
-  //     state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
-
-  //   for {
-  //     app <- fetchApp(applicationId)
-  //     upliftedApp = uplift(app)
-  //     _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-  //     updatedApp <- applicationRepository.save(upliftedApp)
-  //     _ <- insertStateHistory(
-  //       app,
-  //       PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
-  //       requestedByEmailAddress, COLLABORATOR,
-  //       (a: ApplicationData) => applicationRepository.save(a)
-  //     )
-  //     _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
-  //       s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
-  //     _ = auditService.audit(ApplicationUpliftRequested,
-  //       AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
-  //   } yield UpliftRequested
-  // }
-
-  // private def assertAppHasUniqueNameAndAudit(submittedAppName: String,
-  //                                            accessType: AccessType,
-  //                                            existingApp: Option[ApplicationData] = None)
-  //                                           (implicit hc: HeaderCarrier) = {
-  //   for {
-  //     duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-  //     _ = if (duplicate) {
-  //       accessType match {
-  //         case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-  //           Map("applicationName" -> submittedAppName))
-  //         case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
-  //           Map("applicationName" -> submittedAppName))
-  //         case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
-  //           AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
-  //       }
-  //       throw ApplicationAlreadyExists(submittedAppName)
-  //     }
-  //   } yield ()
-  // }
-
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req match {
       case v1 : CreateApplicationRequestV1 => v1.normaliseCollaborators

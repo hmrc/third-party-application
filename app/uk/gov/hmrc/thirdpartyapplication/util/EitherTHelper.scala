@@ -31,3 +31,9 @@ trait EitherTHelper[E] {
   def cond[A](in: => Boolean, right: => A, left: => E)                     = EitherT.cond[Future](in, right,left)
   def pure[A](in: A)                                                       = EitherT.pure[Future, String](in)
 }
+
+object EitherTHelper {
+  def make[E](implicit outerEC: ExecutionContext) = new EitherTHelper[E] {
+    implicit val ec = outerEC
+  }
+}

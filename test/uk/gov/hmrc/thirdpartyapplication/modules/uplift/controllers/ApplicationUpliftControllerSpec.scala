@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.services.JsonFormatters._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.Json
@@ -38,8 +37,8 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models.UpliftApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpliftServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController._
 
 class ApplicationUpliftControllerSpec 
   extends ControllerSpec
@@ -77,7 +76,6 @@ class ApplicationUpliftControllerSpec
     "return updated application if successful" in new Setup {
       aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
 
-      // ApplicationUpliftServiceMock.RequestUplift.thenReturnWhen(applicationId, requestedName, requestedByEmailAddress)(UpliftRequested)
       ApplicationUpliftServiceMock.RequestUplift.thenReturn(UpliftRequested)
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
