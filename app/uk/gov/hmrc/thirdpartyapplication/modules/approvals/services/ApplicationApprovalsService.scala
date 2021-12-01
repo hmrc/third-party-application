@@ -50,6 +50,7 @@ object ApplicationApprovalsService {
   case class ApprovalRejectedDueToDuplicateName(name: String) extends ApprovalRejectedDueToName
   case class ApprovalRejectedDueToIllegalName(name: String) extends ApprovalRejectedDueToName
 }
+
 @Singleton
 class ApplicationApprovalsService @Inject()(
   auditService: AuditService,
@@ -69,12 +70,6 @@ class ApplicationApprovalsService @Inject()(
 
     val ET = EitherTHelper.make[ApprovalRejectedResult]
 
-    def deriveNewAppDetails(existing: ApplicationData, applicationName: String): ApplicationData = existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
-    )
-
     (
       for {
         app            <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
@@ -83,7 +78,7 @@ class ApplicationApprovalsService @Inject()(
         _              <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         appName         = getApplicationName(extSubmission)
         _              <- ET.fromEitherF(validateApplicationName(appName))
-        updatedApp      = deriveNewAppDetails(app, appName)
+        updatedApp      = deriveNewAppDetails(app, appName, requestedByEmailAddress)
 
         _              <- ET.liftF(writeStateHistory(app, requestedByEmailAddress))
         _               = logCompletedApprovalRequest(updatedApp)
@@ -92,6 +87,12 @@ class ApplicationApprovalsService @Inject()(
     )
     .fold[RequestApprovalResult](identity,identity)
   }
+
+  private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String): ApplicationData = existing.copy(
+    name = applicationName,
+    normalisedName = applicationName.toLowerCase,
+    state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
+  )
 
   private def validateApplicationName(appName: String): Future[Either[ApprovalRejectedDueToName, Unit]] = ???
 
@@ -115,7 +116,7 @@ class ApplicationApprovalsService @Inject()(
   }
   
   private def getApplicationName(extSubmission: ExtendedSubmission): String = {
-    // Only calls here if we have a completed submission so this `.get` is safe
+    // Only proceeds here if we have a completed submission so this `.get` is safe
     SubmissionDataExtracter.getApplicationName(extSubmission.submission).get  
   }
 

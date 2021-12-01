@@ -48,7 +48,7 @@ POST          /application/:id/unblock                               uk.gov.hmrc
 POST          /application/:id/request-uplift                        uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController.requestUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /verify-uplift/:code                                   uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController.verifyUplift(code: String)
 
-POST          /application/:id/request-approval                      uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.requestApproval(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/request-approval                      uk.gov.hmrc.thirdpartyapplication.modules.approvals.controllers.ApprovalsController.requestApproval(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateRateLimitTier(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 

@@ -31,6 +31,7 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, Valid, Invalid}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 
 case class ApplicationNameValidationConfig(nameBlackList: List[String], validateForDuplicateAppNames: Boolean)
 
@@ -41,17 +42,29 @@ class ApplicationNamingService @Inject()(
   nameValidationConfig: ApplicationNameValidationConfig
 )(implicit ec: ExecutionContext) {
 
-  def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] = {
+  private type Exclude = (ApplicationData) => Boolean
+  private def excludeThisAppId(appId: ApplicationId): Exclude = (x: ApplicationData) => x.id == appId
+  private val excludeInTesting: Exclude = (x: ApplicationData) => x.state.name == State.TESTING
+  private val excludeNothing: Exclude = (x: ApplicationData) => false
+  private def or(a: Exclude, b:Exclude):Exclude = (x:ApplicationData) => a(x) || b(x)
 
-    def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
+  def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] =
+    thisApplicationId.fold(
+      isDuplicateNameExcluding(applicationName, excludeNothing)
+    )(
+      appId => {
+        isDuplicateNameExcluding(applicationName, excludeThisAppId(appId) )
+      }
+    )
 
-    def anyDuplicatesExcludingThis(apps: List[ApplicationData]): Boolean = {
-      apps.exists(!isThisApplication(_))
-    }
+  def isDuplicateNonTestingName(applicationName: String, appId: ApplicationId): Future[Boolean] = 
+    isDuplicateNameExcluding(applicationName, or( excludeThisAppId(appId), excludeInTesting) )
 
+  def isDuplicateNameExcluding(applicationName: String, exclusions: (ApplicationData) => Boolean): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
-      applicationRepository.fetchApplicationsByName(applicationName)
-        .map(anyDuplicatesExcludingThis)
+      applicationRepository
+        .fetchApplicationsByName(applicationName)
+        .map(_.filterNot(exclusions).nonEmpty)
     } else {
       successful(false)
     }
