@@ -18,13 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
-import scala.concurrent.Future.{successful,failed}
+import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService.ApprovalAccepted
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 
 trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApprovalsServiceMock {
@@ -35,14 +32,19 @@ trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar
         when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalAccepted))
       
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(failed(
-          new InvalidStateTransition(State.TESTING, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL)
-        ))
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectState))
       
       def thenRequestFailsWithApplicationAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(failed(
-          new ApplicationAlreadyExists("my application")
-        ))
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
+
+      def thenRequestFailsWithApplicationDoesNotExistErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueNoSuchApplication))
+
+      def thenRequestFailsWithIncompleteSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIncompleteSubmission))
+
+      def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
     }
   }
   
