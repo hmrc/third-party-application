@@ -48,6 +48,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
 import cats.data.EitherT
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -67,7 +68,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
-                                      applicationNamingService: ApplicationNamingService,
+                                      applicationNamingService: UpliftApplicationNamingService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext)
     extends ExtraHeadersController(cc)

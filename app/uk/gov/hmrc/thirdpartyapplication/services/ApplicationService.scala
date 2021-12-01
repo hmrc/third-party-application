@@ -59,6 +59,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -75,10 +76,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    credentialGenerator: CredentialGenerator,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
-                                   nameValidationConfig: ApplicationNameValidationConfig,
                                    tokenService: TokenService,
                                    submissionsService: SubmissionsService,
-                                   applicationNamingService: ApplicationNamingService)
+                                   applicationNamingService: UpliftApplicationNamingService)
                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {

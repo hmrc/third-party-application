@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
-import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
@@ -40,17 +39,17 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
     with ApplicationUpliftServiceMockModule
-    with ApplicationNamingServiceMockModule
+    with UpliftApplicationNamingServiceMockModule
     with ApiGatewayStoreMockModule
     with ApplicationTestData {
 
     val applicationId: ApplicationId = ApplicationId.random
 
-    val mockAppNamingService = mock[ApplicationNamingService]
+    val mockAppNamingService = mock[UpliftApplicationNamingService]
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
         
-    val underTest = new ApplicationUpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ApplicationNamingServiceMock.aMock, ApiGatewayStoreMock.aMock)
+    val underTest = new ApplicationUpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftApplicationNamingServiceMock.aMock, ApiGatewayStoreMock.aMock)
   }
 
   "requestUplift" should {
@@ -71,7 +70,7 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,expectedApplication)
 
-      ApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
       val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
@@ -87,7 +86,7 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application)
       StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
-      ApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       
       intercept[RuntimeException] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
@@ -102,7 +101,7 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-      ApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
       await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
@@ -115,7 +114,7 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(requestedName)
-      ApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
       await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
@@ -143,7 +142,7 @@ class ApplicationUpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,anotherApplication)
-      ApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
+      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))

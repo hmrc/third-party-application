@@ -28,7 +28,7 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNameValidationConfig, ClientSecretServiceConfig, CredentialConfig}
+import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretServiceConfig, CredentialConfig}
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
@@ -37,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityC
 import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 
 class ConfigurationModule extends Module {
 
@@ -55,7 +56,7 @@ class ConfigurationModule extends Module {
       bind[ApplicationControllerConfig].toProvider[ApplicationControllerConfigProvider],
       bind[CredentialConfig].toProvider[CredentialConfigProvider],
       bind[ClientSecretServiceConfig].toProvider[ClientSecretServiceConfigProvider],
-      bind[ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
+      bind[ApplicationNamingService.ApplicationNameValidationConfig].toProvider[ApplicationNameValidationConfigConfigProvider],
       bind[ResetLastAccessDateJobConfig].toProvider[ResetLastAccessDateJobConfigProvider]
     )
   }
@@ -221,13 +222,13 @@ class ClientSecretServiceConfigProvider @Inject()(val configuration: Configurati
 @Singleton
 class ApplicationNameValidationConfigConfigProvider @Inject()(val configuration: Configuration)
   extends ServicesConfig(configuration)
-  with Provider[ApplicationNameValidationConfig] {
+  with Provider[ApplicationNamingService.ApplicationNameValidationConfig] {
 
   override def get() = {
     val nameBlackList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", configuration.getOptional[Seq[String]]).toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", configuration.getOptional[Boolean])
 
-    ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
+    ApplicationNamingService.ApplicationNameValidationConfig(nameBlackList, validateForDuplicateAppNames)
   }
 }
 

@@ -27,13 +27,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, AuditHelper, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import scala.concurrent.Future.successful
 
 object ApplicationApprovalsService {
   sealed trait RequestApprovalResult
@@ -56,7 +57,7 @@ class ApplicationApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  applicationNamingService: ApplicationNamingService,
+  applicationNamingService: ApprovalsApplicationNamingService,
   submissionService: SubmissionsService
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
@@ -94,7 +95,7 @@ class ApplicationApprovalsService @Inject()(
     state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
   )
 
-  private def validateApplicationName(appName: String): Future[Either[ApprovalRejectedDueToName, Unit]] = ???
+  private def validateApplicationName(appName: String): Future[Either[ApprovalRejectedDueToName, Unit]] = successful(Right(Unit))
 
   private def logCompletedApprovalRequest(app: ApplicationData) = 
     logger.info(s"Approval-01: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
