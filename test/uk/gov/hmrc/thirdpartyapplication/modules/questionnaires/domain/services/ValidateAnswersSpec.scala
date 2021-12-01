@@ -31,7 +31,29 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
   def noAnswer: List[String] = List.empty
     
   "ValidateAnswers" should {   
-    
+
+    "for acknowledgement questions" in {
+      val question = acknowledgementOnly(1)
+      type AnswerMatching = Either[Unit, ActualAnswer]
+      val aFailure: AnswerMatching = Left(())
+      val validAnswer: AnswerMatching = Right(AcknowledgedAnswer)
+
+      val passes = Table(
+        ("description"                              , "question"      , "answer"              , "expects"),
+        ("valid answer"                             , question        , noAnswer              , validAnswer),
+        ("too many answers"                         , question        , answerOf("Yes")       , aFailure),
+      ) 
+      
+      forAll(passes) { (_: String, question: Question, answers: List[String], expects: AnswerMatching) => 
+        expects match {
+          case Right(answer) =>
+            ValidateAnswers.validate(question, answers) shouldBe Right(answer)
+          case Left(()) =>
+            ValidateAnswers.validate(question, answers) shouldBe 'Left
+        }
+      }
+    }
+
     "for single choice questions" in {
       val question = yesNoQuestion(1)
       val optionalQuestion = question.makeOptional

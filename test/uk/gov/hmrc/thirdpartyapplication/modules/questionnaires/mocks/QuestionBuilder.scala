@@ -35,6 +35,13 @@ trait QuestionBuilder {
     def makeOptional: ChooseOneOfQuestion = question.copy(absenceText = Some("Some Text"))
   }
 
+  def acknowledgementOnly(counter: Int): AcknowledgementOnly =
+    AcknowledgementOnly(
+      QuestionId.random,
+      Wording(s"Wording$counter"),
+      Statement(List())
+    )
+    
   def yesNoQuestion(counter: Int): YesNoQuestion = {
     YesNoQuestion(
       QuestionId.random,
