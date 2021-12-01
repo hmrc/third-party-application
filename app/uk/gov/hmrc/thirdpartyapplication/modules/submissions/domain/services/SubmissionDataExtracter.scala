@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.Questi
 object SubmissionDataExtracter {
   def getApplicationName(submission: Submission): Option[String] = {
     val applicationNameQuestion: Question = QuestionnaireDAO.applicationNameQuestion
-    val actualAnswer: ActualAnswer = submission.answersToQuestions(applicationNameQuestion.id)
+    val actualAnswer: ActualAnswer = submission.answersToQuestions.getOrElse(applicationNameQuestion.id, NoAnswer)
     actualAnswer match {
       case TextAnswer(value) => Some(value)
       case _                 => None
