@@ -19,10 +19,11 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationNameValidationConfigMockModule
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
   
@@ -30,21 +31,19 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     extends AuditServiceMockModule
     with ApplicationStateUtil
     with ApplicationRepositoryMockModule
+    with ApplicationNameValidationConfigMockModule
     with ApplicationTestData {
 
     val applicationId: ApplicationId = ApplicationId.random
     
-    val mockNameValidationConfig = mock[ApplicationNameValidationConfig]
-    val underTest = new ApplicationNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, mockNameValidationConfig)
+    val underTest = new ApplicationNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, ApplicationNameValidationConfigMock.aMock)
   }
   
   "validate application name" should {
 
-    "allow valid name" in new Setup {
+    "allow valid name" in new Setup { 
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("HMRC"))
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturns(List("HMRC"))
 
       val result = await(underTest.validateApplicationName("my application name", None))
 
@@ -53,9 +52,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
 
     "block a name with HMRC in" in new Setup {
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("HMRC"))
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturns(List("HMRC"))    
 
       val result = await(underTest.validateApplicationName("Invalid name HMRC", None))
 
@@ -64,9 +61,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
 
     "block a name with multiple blacklisted names in" in new Setup {
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("InvalidName1", "InvalidName2", "InvalidName3"))
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturns(List("InvalidName1", "InvalidName2", "InvalidName3"))
 
       val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", None))
 
@@ -75,9 +70,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
 
     "block an invalid ignoring case" in new Setup {
       ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("InvalidName"))
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturns(List("InvalidName"))
 
       val result = await(underTest.validateApplicationName("invalidname", None))
 
@@ -86,11 +79,8 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
 
     "block a duplicate app name" in new Setup {
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random))
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty[String])
-      when(mockNameValidationConfig.validateForDuplicateAppNames)
-        .thenReturn(true)
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturnsAnEmptyList
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
       private val duplicateName = "duplicate name"
       val result = await(underTest.validateApplicationName(duplicateName, None))
@@ -101,11 +91,8 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty[String])
-
-      when(mockNameValidationConfig.validateForDuplicateAppNames)
-        .thenReturn(false)
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturnsAnEmptyList
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
 
       val result = await(underTest.validateApplicationName("app name", None))
 
@@ -115,8 +102,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "Ignore application when checking for duplicates if it is self application" in new Setup {
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty)
+      ApplicationNameValidationConfigMock.NameBlackList.thenReturnsAnEmptyList
 
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
 
@@ -130,7 +116,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     val appName = "app name"
 
     "detect duplicate if another app has the same name" in new Setup {      
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(true)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
       val isDuplicate = await(underTest.isDuplicateName(appName, None))
 
@@ -138,7 +124,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "not detect duplicate if another app has the same name but also has the same applicationId" in new Setup {      
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(true)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
       val isDuplicate = await(underTest.isDuplicateName(appName, Some(applicationId)))
 
@@ -146,7 +132,7 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     }
 
     "not detect duplicate if another app has the same name but duplicate checking is turned off" in new Setup {      
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(false)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
       val isDuplicate = await(underTest.isDuplicateName(appName, None))
 
@@ -158,21 +144,21 @@ class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
     val appName = "app name"
 
     "detect duplicate if another non-testing app has the same name" in new Setup {      
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(true)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = productionState("test@example.com")))
       val isDuplicate = await(underTest.isDuplicateNonTestingName(appName, applicationId))
 
       isDuplicate shouldBe true
     }
     "not detect duplicate if another non-testing app has the same name but duplicate checking is turned off" in new Setup {      
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(false)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = productionState("test@example.com")))
       val isDuplicate = await(underTest.isDuplicateNonTestingName(appName, applicationId))
 
       isDuplicate shouldBe false
     }
     "not detect duplicate if a test app has the same name" in new Setup { 
-      when(mockNameValidationConfig.validateForDuplicateAppNames).thenReturn(true)
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
       ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = testingState))
       val isDuplicate = await(underTest.isDuplicateNonTestingName(appName, applicationId))
 
