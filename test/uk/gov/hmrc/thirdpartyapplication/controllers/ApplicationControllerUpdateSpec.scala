@@ -47,7 +47,7 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -72,7 +72,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
-    val mockApplicationNamingService: ApplicationNamingService = mock[ApplicationNamingService]
+    val mockApplicationNamingService: UpliftApplicationNamingService = mock[UpliftApplicationNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())

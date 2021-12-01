@@ -60,8 +60,8 @@ import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
 
 class ApplicationControllerSpec 
   extends ControllerSpec
@@ -91,7 +91,7 @@ class ApplicationControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
-    val mockApplicationNamingService: ApplicationNamingService = mock[ApplicationNamingService]
+    val mockApplicationNamingService: UpliftApplicationNamingService = mock[UpliftApplicationNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())

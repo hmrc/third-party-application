@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, ApplicationNamingService, AuditHelper, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 @Singleton
@@ -37,7 +37,7 @@ class ApplicationUpliftService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  applicationNamingService: ApplicationNamingService,
+  applicationNamingService: UpliftApplicationNamingService,
   apiGatewayStore: ApiGatewayStore
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {

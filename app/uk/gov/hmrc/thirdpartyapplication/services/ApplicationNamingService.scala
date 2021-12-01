@@ -20,10 +20,6 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-
-import javax.inject.Inject
-import javax.inject.Singleton
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -31,36 +27,25 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, Valid, Invalid}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 
-case class ApplicationNameValidationConfig(nameBlackList: List[String], validateForDuplicateAppNames: Boolean)
+object ApplicationNamingService {
+  type ExclusionCondition = (ApplicationData) => Boolean
+  def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: ApplicationData) => x.id == appId
 
-@Singleton
-class ApplicationNamingService @Inject()(
+  case class ApplicationNameValidationConfig(nameBlackList: List[String], validateForDuplicateAppNames: Boolean)
+}
+
+
+abstract class AbstractApplicationNamingService(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
-  nameValidationConfig: ApplicationNameValidationConfig
+  nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
 )(implicit ec: ExecutionContext) {
 
-  private type Exclude = (ApplicationData) => Boolean
-  private def excludeThisAppId(appId: ApplicationId): Exclude = (x: ApplicationData) => x.id == appId
-  private val excludeInTesting: Exclude = (x: ApplicationData) => x.state.name == State.TESTING
-  private val excludeNothing: Exclude = (x: ApplicationData) => false
-  private def or(a: Exclude, b:Exclude):Exclude = (x:ApplicationData) => a(x) || b(x)
+  import ApplicationNamingService._
 
-  def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] =
-    thisApplicationId.fold(
-      isDuplicateNameExcluding(applicationName, excludeNothing)
-    )(
-      appId => {
-        isDuplicateNameExcluding(applicationName, excludeThisAppId(appId) )
-      }
-    )
-
-  def isDuplicateNonTestingName(applicationName: String, appId: ApplicationId): Future[Boolean] = 
-    isDuplicateNameExcluding(applicationName, or( excludeThisAppId(appId), excludeInTesting) )
-
-  def isDuplicateNameExcluding(applicationName: String, exclusions: (ApplicationData) => Boolean): Future[Boolean] = {
+  def isDuplicateName(applicationName: String, exclusions: ExclusionCondition): Future[Boolean] = {
     if (nameValidationConfig.validateForDuplicateAppNames) {
       applicationRepository
         .fetchApplicationsByName(applicationName)
@@ -80,9 +65,9 @@ class ApplicationNamingService @Inject()(
     !isValid
   }
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]) : Future[ApplicationNameValidationResult] = {
+  def validateApplicationName(applicationName: String, exclusions: ExclusionCondition) : Future[ApplicationNameValidationResult] = {
     for {
-      isDuplicate   <- isDuplicateName(applicationName, selfApplicationId)
+      isDuplicate   <- isDuplicateName(applicationName, exclusions)
       isBlacklisted =  isBlacklistedName(applicationName)
     } yield (isBlacklisted, isDuplicate) match {
       case (false, false) => Valid
@@ -90,25 +75,14 @@ class ApplicationNamingService @Inject()(
     }
   }
 
-  def assertAppHasUniqueNameAndAudit(
-    submittedAppName: String,
-    accessType: AccessType,
-    existingApp: Option[ApplicationData] = None
-  )(implicit hc: HeaderCarrier) = {
-    
-    for {
-      duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _ = if (duplicate) {
-        accessType match {
-          case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
-            AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
-        }
-        throw ApplicationAlreadyExists(submittedAppName)
-      }
-    } yield ()
-  }
+  def auditDeniedDueToNaming(submittedAppName: String, accessType: AccessType, existingAppId: Option[ApplicationId])(implicit hc: HeaderCarrier) = 
+    accessType match {
+      case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
+        Map("applicationName" -> submittedAppName))
+      case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
+        Map("applicationName" -> submittedAppName))
+      case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
+        existingAppId.map(id => AuditHelper.applicationId(id)).getOrElse(Map.empty) ++ Map("applicationName" -> submittedAppName))
+    }
+
 }
