@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.http.HeaderCarrier
@@ -35,7 +34,6 @@ class ApplicationApprovalsServiceSpec extends AsyncHmrcSpec {
     extends AuditServiceMockModule 
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
-    with ApplicationNamingServiceMockModule
     with SubmissionsServiceMockModule
     with SubmissionsTestData
     with ApplicationTestData {
@@ -43,9 +41,11 @@ class ApplicationApprovalsServiceSpec extends AsyncHmrcSpec {
     val requestedByEmailAddress = "email@example.com"
     val application: ApplicationData = anApplicationData(applicationId, testingState())
 
+    val mockApprovalsApplicationNamingService = mock[ApprovalsApplicationNamingService]
+
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
-    val underTest = new ApplicationApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ApplicationNamingServiceMock.aMock, SubmissionsServiceMock.aMock)
+    val underTest = new ApplicationApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsApplicationNamingService, SubmissionsServiceMock.aMock)
   }
 
   "ApplicationApprovalsService" when {
