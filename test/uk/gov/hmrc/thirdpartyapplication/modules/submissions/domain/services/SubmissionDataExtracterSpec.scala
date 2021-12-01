@@ -27,21 +27,21 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.TextA
 class SubmissionDataExtracterSpec extends HmrcSpec {
   
   trait Setup extends SubmissionsTestData {
-    val expectedAppName = "expected app name"
-    val answersToQuestions: Submissions.AnswersToQuestions = Map(QuestionnaireDAO.applicationNameQuestion.id -> TextAnswer(expectedAppName))  
-    val submissionWithAnswers = Submission(submissionId, applicationId, DateTimeUtils.now, groups, answersToQuestions)
+    val appName = "expected app name"
+    val answersWithAppName: Submissions.AnswersToQuestions = Map(QuestionnaireDAO.applicationNameQuestion.id -> TextAnswer(appName))  
+    val submissionWithAnswers = Submission(submissionId, applicationId, DateTimeUtils.now, groups, answersWithAppName)
   }
 
   "SubmissionDataExtracter" when {
     "getApplicationName is called" should {
       "return application name" in new Setup {
-        val appName: Option[String] = SubmissionDataExtracter.getApplicationName(submissionWithAnswers)
-        appName shouldBe Some(expectedAppName)
+        val actualAppName: Option[String] = SubmissionDataExtracter.getApplicationName(submissionWithAnswers)
+        actualAppName shouldBe Some(appName)
       }
 
       "return None if answer not found" in new Setup {
-        val appName: Option[String] = SubmissionDataExtracter.getApplicationName(submission)
-        appName shouldBe None
+        val actualAppName: Option[String] = SubmissionDataExtracter.getApplicationName(submission)
+        actualAppName shouldBe None
       }
     }
   }

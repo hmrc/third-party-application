@@ -45,6 +45,12 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def verifyCalledWith(sh: StateHistory) =
         verify.insert(eqTo(sh))
+
+      def verifyNeverCalled() =
+        verify(never).insert(*)
+
+      def verifyCalled() =
+        verify.insert(*)
     }
 
     object Delete {
