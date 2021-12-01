@@ -25,7 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationNameValidationConfigMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
 
-class ApplicationNamingServiceSpec extends AsyncHmrcSpec {
+class UpliftApplicationNamingServiceSpec extends AsyncHmrcSpec {
   
   trait Setup 
     extends AuditServiceMockModule

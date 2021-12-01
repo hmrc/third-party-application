@@ -21,7 +21,6 @@ import org.mockito.ArgumentMatchersSugar
 import org.mockito.verification.VerificationMode
 
 import scala.concurrent.Future.{successful,failed}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData

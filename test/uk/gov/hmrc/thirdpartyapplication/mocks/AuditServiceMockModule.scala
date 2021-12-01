@@ -20,15 +20,15 @@ import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
 
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.services.{AuditService, AuditAction}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
-  object AuditServiceMock {
-    lazy val aMock =  mock[AuditService]
+  protected trait BaseAuditServiceMock {
+    def aMock: AuditService
 
     def verify = MockitoSugar.verify(aMock)
 
@@ -66,5 +66,10 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.audit(*,*,*)(*)).thenReturn(successful(AuditResult.Success))
       }
     }
+  }
+
+
+  object AuditServiceMock extends BaseAuditServiceMock {
+    val aMock = mock[AuditService]
   }
 }
