@@ -28,6 +28,8 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService._
 import play.api.libs.json.JsValue
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -50,7 +52,7 @@ class ApprovalsController @Inject()(
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
       approvalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
-        case ApprovalAccepted(application)                                    => Ok(Json.toJson(application))
+        case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueNoSuchApplication | 
               ApprovalRejectedDueNoSuchSubmission                             => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => BadRequest(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId was incomplete"))
