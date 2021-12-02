@@ -37,14 +37,14 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpliftServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.ApplicationUpliftController._
+import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.controllers.UpliftController._
 
-class ApplicationUpliftControllerSpec 
+class UpliftControllerSpec 
   extends ControllerSpec
   with ApplicationStateUtil
   with TableDrivenPropertyChecks
-  with ApplicationUpliftServiceMockModule
+  with UpliftServiceMockModule
   with ControllerTestData {
 
   import play.api.test.Helpers._
@@ -61,8 +61,8 @@ class ApplicationUpliftControllerSpec
     def canDeleteApplications() = true
     def enabled() = true
 
-    val underTest = new ApplicationUpliftController(
-      ApplicationUpliftServiceMock.aMock,
+    val underTest = new UpliftController(
+      UpliftServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
   }
@@ -76,7 +76,7 @@ class ApplicationUpliftControllerSpec
     "return updated application if successful" in new Setup {
       aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
 
-      ApplicationUpliftServiceMock.RequestUplift.thenReturn(UpliftRequested)
+      UpliftServiceMock.RequestUplift.thenReturn(UpliftRequested)
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
@@ -85,7 +85,7 @@ class ApplicationUpliftControllerSpec
 
     "return 404 if the application doesn't exist" in new Setup {
 
-      ApplicationUpliftServiceMock.RequestUplift.thenFailsWith(new NotFoundException("application doesn't exist"))
+      UpliftServiceMock.RequestUplift.thenFailsWith(new NotFoundException("application doesn't exist"))
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
@@ -94,7 +94,7 @@ class ApplicationUpliftControllerSpec
 
     "fail with a 409 (conflict) when an application already exists for that application name" in new Setup {
 
-      ApplicationUpliftServiceMock.RequestUplift.thenFailsWith(ApplicationAlreadyExists("applicationName"))
+      UpliftServiceMock.RequestUplift.thenFailsWith(ApplicationAlreadyExists("applicationName"))
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
@@ -102,7 +102,7 @@ class ApplicationUpliftControllerSpec
     }
 
     "fail with 412 (Precondition Failed) when the application is not in the TESTING state" in new Setup {
-      ApplicationUpliftServiceMock.RequestUplift.thenFailsWith(new InvalidStateTransition(State.PRODUCTION, State.PENDING_GATEKEEPER_APPROVAL, State.TESTING))
+      UpliftServiceMock.RequestUplift.thenFailsWith(new InvalidStateTransition(State.PRODUCTION, State.PENDING_GATEKEEPER_APPROVAL, State.TESTING))
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
@@ -110,7 +110,7 @@ class ApplicationUpliftControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      ApplicationUpliftServiceMock.RequestUplift.thenFailsWith(new RuntimeException("Expected test failure"))
+      UpliftServiceMock.RequestUplift.thenFailsWith(new RuntimeException("Expected test failure"))
 
       val result = underTest.requestUplift(applicationId)(request.withBody(Json.toJson(upliftRequest)))
 
@@ -123,7 +123,7 @@ class ApplicationUpliftControllerSpec
     "verify uplift successfully" in new Setup {
       val verificationCode = "aVerificationCode"
 
-      ApplicationUpliftServiceMock.VerifyUplift.thenSucceeds()
+      UpliftServiceMock.VerifyUplift.thenSucceeds()
 
       val result = underTest.verifyUplift(verificationCode)(request)
       status(result) shouldBe NO_CONTENT
@@ -132,7 +132,7 @@ class ApplicationUpliftControllerSpec
     "verify uplift failed" in new Setup {
       val verificationCode = "aVerificationCode"
 
-      ApplicationUpliftServiceMock.VerifyUplift.thenFailWithInvalidUpliftVerificationCode()
+      UpliftServiceMock.VerifyUplift.thenFailWithInvalidUpliftVerificationCode()
 
       val result = underTest.verifyUplift(verificationCode)(request)
       status(result) shouldBe BAD_REQUEST

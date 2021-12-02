@@ -33,11 +33,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper,
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 
 @Singleton
-class ApplicationUpliftService @Inject()(
+class UpliftService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  applicationNamingService: UpliftApplicationNamingService,
+  applicationNamingService: UpliftNamingService,
   apiGatewayStore: ApiGatewayStore
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {

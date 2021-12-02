@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService._
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApprovalsServiceMock {
-    def aMock: ApplicationApprovalsService
+    def aMock: ApprovalsService
 
     object RequestApproval {
       def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
@@ -49,7 +49,7 @@ trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar
   }
   
   object ApprovalsServiceMock extends BaseApprovalsServiceMock {
-    val aMock = mock[ApplicationApprovalsService]
+    val aMock = mock[ApprovalsService]
   }
 
 }

@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftService
 import org.mockito.verification.VerificationMode
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
 
@@ -27,10 +27,10 @@ import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models.InvalidUpl
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
 
-trait ApplicationUpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     
-  protected trait BaseApplicationUpliftServiceMock {
-    def aMock: ApplicationUpliftService
+  protected trait BaseUpliftServiceMock {
+    def aMock: UpliftService
 
     def verify = MockitoSugar.verify(aMock)
 
@@ -60,7 +60,7 @@ trait ApplicationUpliftServiceMockModule extends MockitoSugar with ArgumentMatch
     }
   }
   
-  object ApplicationUpliftServiceMock extends BaseApplicationUpliftServiceMock {
-    val aMock = mock[ApplicationUpliftService](withSettings.lenient())
+  object UpliftServiceMock extends BaseUpliftServiceMock {
+    val aMock = mock[UpliftService](withSettings.lenient())
   }
 }
