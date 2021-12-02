@@ -61,7 +61,7 @@ import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 
 class ApplicationControllerSpec 
   extends ControllerSpec
@@ -91,7 +91,7 @@ class ApplicationControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
-    val mockApplicationNamingService: UpliftApplicationNamingService = mock[UpliftApplicationNamingService]
+    val mockUpliftNamingService: UpliftNamingService = mock[UpliftNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -113,7 +113,7 @@ class ApplicationControllerSpec
       config,
       mockGatekeeperService,
       mockSubmissionService,
-      mockApplicationNamingService,
+      mockUpliftNamingService,
       Helpers.stubControllerComponents())
   }
 
@@ -671,8 +671,8 @@ class ApplicationControllerSpec
       val appId = ApplicationId.random
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION", "selfApplicationId" : "${appId.value.toString}" }"""
 
-      when(mockApplicationNamingService.validateApplicationName(*, *))
-        .thenReturn(successful(Valid))
+      when(mockUpliftNamingService.validateApplicationName(*, *))
+        .thenReturn(successful(ValidName))
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
@@ -680,15 +680,15 @@ class ApplicationControllerSpec
 
       contentAsJson(result) shouldBe Json.obj()
 
-      verify(mockApplicationNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
+      verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName), eqTo(Some(appId)))
     }
 
     "Allow a valid app with an optional selfApplicationId" in new Setup {
       val applicationName = "my valid app name"
       val payload = s"""{"applicationName":"${applicationName}", "environment":"PRODUCTION"}"""
 
-      when(mockApplicationNamingService.validateApplicationName(*, *))
-        .thenReturn(successful(Valid))
+      when(mockUpliftNamingService.validateApplicationName(*, *))
+        .thenReturn(successful(ValidName))
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
@@ -696,15 +696,15 @@ class ApplicationControllerSpec
 
       contentAsJson(result) shouldBe Json.obj()
 
-      verify(mockApplicationNamingService).validateApplicationName(*, eqTo(None))
+      verify(mockUpliftNamingService).validateApplicationName(*, eqTo(None))
     }
 
     "Reject an app name as it contains a block bit of text" in new Setup {
       val applicationName = "my invalid HMRC app name"
       val payload = s"""{"applicationName":"${applicationName}"}"""
 
-      when(mockApplicationNamingService.validateApplicationName(*, *))
-        .thenReturn(successful(Invalid.invalidName))
+      when(mockUpliftNamingService.validateApplicationName(*, *))
+        .thenReturn(successful(InvalidName))
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
@@ -712,15 +712,15 @@ class ApplicationControllerSpec
 
       contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
 
-      verify(mockApplicationNamingService).validateApplicationName(eqTo(applicationName),eqTo(None))
+      verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName),eqTo(None))
     }
 
     "Reject an app name as it is a duplicate name" in new Setup {
       val applicationName = "my duplicate app name"
       val payload = s"""{"applicationName":"${applicationName}"}"""
 
-      when(mockApplicationNamingService.validateApplicationName(*,*))
-        .thenReturn(successful(Invalid.duplicateName))
+      when(mockUpliftNamingService.validateApplicationName(*,*))
+        .thenReturn(successful(DuplicateName))
 
       private val result =underTest.validateApplicationName(request.withBody(Json.parse(payload)))
 
@@ -728,7 +728,7 @@ class ApplicationControllerSpec
 
       contentAsJson(result) shouldBe Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
 
-      verify(mockApplicationNamingService).validateApplicationName(eqTo(applicationName),eqTo(None))
+      verify(mockUpliftNamingService).validateApplicationName(eqTo(applicationName),eqTo(None))
     }
   }
 

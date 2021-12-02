@@ -59,7 +59,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -78,7 +78,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    tokenService: TokenService,
                                    submissionsService: SubmissionsService,
-                                   applicationNamingService: UpliftApplicationNamingService)
+                                   upliftNamingService: UpliftNamingService)
                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -417,8 +417,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val f = for {
       _ <- application.access.accessType match {
-        case PRIVILEGED => applicationNamingService.assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
-        case ROPC => applicationNamingService.assertAppHasUniqueNameAndAudit(application.name, ROPC)
+        case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
+        case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, ROPC)
         case _ => successful(Unit)
       }
 

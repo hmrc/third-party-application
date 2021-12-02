@@ -24,6 +24,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -34,9 +35,9 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Exten
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
 
-object ApplicationApprovalsService {
+object ApprovalsService {
   sealed trait RequestApprovalResult
 
   case object ApprovalAccepted extends RequestApprovalResult
@@ -53,16 +54,16 @@ object ApplicationApprovalsService {
 }
 
 @Singleton
-class ApplicationApprovalsService @Inject()(
+class ApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  applicationNamingService: ApprovalsApplicationNamingService,
+  approvalsNamingService: ApprovalsNamingService,
   submissionService: SubmissionsService
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
-  import ApplicationApprovalsService._
+  import ApprovalsService._
 
   def requestApproval(applicationId: ApplicationId,
                       requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
@@ -73,17 +74,17 @@ class ApplicationApprovalsService @Inject()(
 
     (
       for {
-        app            <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
-        _              <- ET.cond(app.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
+        originalApp    <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
+        _              <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
         extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueNoSuchSubmission)
         _              <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         appName         = getApplicationName(extSubmission)
-        _              <- ET.fromEitherF(validateApplicationName(appName))
-        updatedApp      = deriveNewAppDetails(app, appName, requestedByEmailAddress)
-
-        _              <- ET.liftF(writeStateHistory(app, requestedByEmailAddress))
-        _               = logCompletedApprovalRequest(updatedApp)
-        _              <- ET.liftF(auditCompletedApprovalRequest(applicationId, updatedApp))
+        _              <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
+        updatedApp      = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress)
+        savedApp       <- ET.liftF(applicationRepository.save(updatedApp))
+        _              <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        _               = logCompletedApprovalRequest(savedApp)
+        _              <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
       } yield ApprovalAccepted
     )
     .fold[RequestApprovalResult](identity,identity)
@@ -95,16 +96,21 @@ class ApplicationApprovalsService @Inject()(
     state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
   )
 
-  private def validateApplicationName(appName: String): Future[Either[ApprovalRejectedDueToName, Unit]] = successful(Right(Unit))
-
+  private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 
+    approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
+      case ValidName     => Right(ApprovalAccepted)
+      case InvalidName   => Left(ApprovalRejectedDueToIllegalName(appName))
+      case DuplicateName => Left(ApprovalRejectedDueToDuplicateName(appName))
+    })
+    
   private def logCompletedApprovalRequest(app: ApplicationData) = 
     logger.info(s"Approval-01: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
 
   private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData)(implicit hc: HeaderCarrier): Future[AuditResult] = 
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
-  private def writeStateHistory(app: ApplicationData, requestedByEmailAddress: String) = 
-    insertStateHistory(app, PENDING_GATEKEEPER_APPROVAL, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
+  private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) = 
+    insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {

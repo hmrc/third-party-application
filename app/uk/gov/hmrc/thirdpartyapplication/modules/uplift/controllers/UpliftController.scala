@@ -28,10 +28,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.ApplicationUpliftService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftService
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models._
 
-object ApplicationUpliftController {
+object UpliftController {
   import play.api.libs.json.Json
   
   case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
@@ -39,8 +39,8 @@ object ApplicationUpliftController {
 }
 
 @Singleton
-class ApplicationUpliftController @Inject()(
-  applicationUpliftService: ApplicationUpliftService,
+class UpliftController @Inject()(
+  upliftService: UpliftService,
   cc: ControllerComponents
 )
 (
@@ -48,11 +48,11 @@ class ApplicationUpliftController @Inject()(
 ) extends ExtraHeadersController(cc)  
     with JsonUtils {
 
-  import ApplicationUpliftController._
+  import UpliftController._
 
   def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[UpliftApplicationRequest] { upliftRequest =>
-      applicationUpliftService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
+      upliftService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
     } recover {
       case _: InvalidStateTransition =>
@@ -64,7 +64,7 @@ class ApplicationUpliftController @Inject()(
 
   
   def verifyUplift(verificationCode: String) = Action.async { implicit request =>
-    applicationUpliftService.verifyUplift(verificationCode) map (_ => NoContent) recover {
+    upliftService.verifyUplift(verificationCode) map (_ => NoContent) recover {
       case e: InvalidUpliftVerificationCode => BadRequest(e.getMessage)
     } recover recovery
   }

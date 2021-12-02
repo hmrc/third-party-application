@@ -25,6 +25,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 import scala.concurrent.Future
+import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -34,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.AbstractApplicationNamingService
 
 @Singleton
-class ApprovalsApplicationNamingService @Inject()(
+class ApprovalsNamingService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
@@ -43,30 +44,22 @@ class ApprovalsApplicationNamingService @Inject()(
 
   import ApplicationNamingService._
 
-  val excludeInTesting: ExclusionCondition = (x: ApplicationData) => x.state.name == State.TESTING
-  val excludeNothing: ExclusionCondition = (x: ApplicationData) => false
-  def or(a: ExclusionCondition, b:ExclusionCondition):ExclusionCondition = (x:ApplicationData) => a(x) || b(x)
+  private val excludeInTesting: ExclusionCondition = (x: ApplicationData) => x.state.name == State.TESTING
+  private def or(a: ExclusionCondition, b:ExclusionCondition):ExclusionCondition = (x:ApplicationData) => a(x) || b(x)
 
-  def approvalsFilter(appId: ApplicationId): ExclusionCondition = or( excludeThisAppId(appId), excludeInTesting)
+  private def approvalsFilter(appId: ApplicationId): ExclusionCondition = or( excludeThisAppId(appId), excludeInTesting)
 
-  def isDuplicateName(applicationName: String, appId: ApplicationId): Future[Boolean] = 
-    isDuplicateName(applicationName, approvalsFilter(appId) )
-
-  def validateApplicationName(applicationName: String, appId: ApplicationId) : Future[ApplicationNameValidationResult] =
+  def validateApplicationName(applicationName: String, appId: ApplicationId): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, approvalsFilter(appId) )
     
-  def assertAppHasUniqueNameAndAudit(
-    submittedAppName: String,
-    accessType: AccessType,
-    existingApp: ApplicationData
-  )(implicit hc: HeaderCarrier) = {
-    
+  def validateApplicationNameAndAudit(applicationName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier) : Future[ApplicationNameValidationResult] =
     for {
-      duplicate <- isDuplicateName(submittedAppName, existingApp.id)
-      _ = if (duplicate) {
-            auditDeniedDueToNaming(submittedAppName, accessType, Some(existingApp.id))
-            throw ApplicationAlreadyExists(submittedAppName)
-          } else { Unit }
-    } yield ()
-  }
+      validationResult <- validateApplicationName(applicationName, approvalsFilter(appId) )
+      _                <- validationResult match {
+                            case ValidName               => successful(Unit)
+                            case DuplicateName           => auditDeniedDueToNaming(applicationName, accessType, Some(appId))
+                            case InvalidName             => auditDeniedDueToDenyListed(applicationName, accessType, Some(appId))
+                          }   
+    }
+    yield validationResult
 }

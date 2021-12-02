@@ -38,7 +38,7 @@ trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
       }
 
       def verifyCalled() = {
-        TokenServiceMock.verify.createEnvironmentToken()
+        verify.createEnvironmentToken()
       }
     }
   }

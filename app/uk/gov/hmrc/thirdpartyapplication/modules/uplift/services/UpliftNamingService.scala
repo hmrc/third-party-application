@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.AbstractApplicationNamingService
 
 @Singleton
-class UpliftApplicationNamingService @Inject()(
+class UpliftNamingService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig

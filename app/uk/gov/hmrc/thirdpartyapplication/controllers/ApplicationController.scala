@@ -48,7 +48,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 import cats.data.EitherT
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
@@ -68,7 +68,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
-                                      applicationNamingService: UpliftApplicationNamingService,
+                                      upliftNamingService: UpliftNamingService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext)
     extends ExtraHeadersController(cc)
@@ -239,13 +239,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
 
-        applicationNamingService
+        upliftNamingService
           .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
           .map((result: ApplicationNameValidationResult) => {
 
             val json = result match {
-              case Valid => Json.obj()
-              case Invalid(invalidName, duplicateName) => Json.obj("errors" -> Json.obj("invalidName" -> invalidName, "duplicateName" -> duplicateName))
+              case ValidName               => Json.obj()
+              case InvalidName             => Json.obj("errors" -> Json.obj("invalidName" -> true,  "duplicateName" -> false))
+              case DuplicateName           => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
             }
 
             Ok(json)

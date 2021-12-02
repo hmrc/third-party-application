@@ -76,7 +76,7 @@ class ApplicationServiceSpec
     with ApplicationRepositoryMockModule
     with TokenServiceMockModule 
     with SubmissionsServiceMockModule
-    with UpliftApplicationNamingServiceMockModule
+    with UpliftNamingServiceMockModule
     with StateHistoryRepositoryMockModule
     with SubscriptionRepositoryMockModule
     {
@@ -127,7 +127,7 @@ class ApplicationServiceSpec
       mockThirdPartyDelegatedAuthorityConnector,
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
-      UpliftApplicationNamingServiceMock.aMock
+      UpliftNamingServiceMock.aMock
     )
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
@@ -142,13 +142,12 @@ class ApplicationServiceSpec
     when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
     when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*,*,*)(*)).thenReturn(successful(true))
 
-    UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+    UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
     
     def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
                                                            subscriptions: List[ApiIdentifier]) =
       SubscriptionRepoMock.Fetch.thenReturn(subscriptions:_*)
-      // when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
 
   }
 
@@ -345,7 +344,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
+      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
@@ -357,7 +356,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-      UpliftApplicationNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
+      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))

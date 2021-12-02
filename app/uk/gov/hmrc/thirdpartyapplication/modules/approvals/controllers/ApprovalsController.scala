@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApplicationApprovalsService._
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService._
 import play.api.libs.json.JsValue
 
 object ApprovalsController {
@@ -37,7 +37,7 @@ object ApprovalsController {
 
 @Singleton
 class ApprovalsController @Inject()(
-  applicationApprovalsService: ApplicationApprovalsService,
+  approvalsService: ApprovalsService,
   cc: ControllerComponents
 )
 (
@@ -49,10 +49,10 @@ class ApprovalsController @Inject()(
 
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      applicationApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
+      approvalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
         case ApprovalAccepted                                                 => NoContent
         case ApprovalRejectedDueNoSuchApplication | 
-              ApplicationApprovalsService.ApprovalRejectedDueNoSuchSubmission => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
+              ApprovalRejectedDueNoSuchSubmission                             => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => BadRequest(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId was incomplete"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name $name ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name $name contains words that are on a deny list")) 
