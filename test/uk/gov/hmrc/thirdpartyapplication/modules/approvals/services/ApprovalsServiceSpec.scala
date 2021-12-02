@@ -28,8 +28,9 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{successful, failed}
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName
+import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 
 class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -54,11 +55,11 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
   "ApplicationApprovalsService" when {
     "requestApproval" should {
 
-      "should update state, save and audit" in new Setup {
+      "update state, save and audit" in new Setup {
         ApplicationRepoMock.Fetch.thenReturn(application)
         SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
-        ApplicationRepoMock.Save.thenReturn(application)
         when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(ValidName))
+        ApplicationRepoMock.Save.thenReturn(application)
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
 
@@ -68,6 +69,19 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
         ApplicationRepoMock.Save.verifyCalled()
+      }
+
+      "return duplicate application name if duplicate" in new Setup {
+        ApplicationRepoMock.Fetch.thenReturn(application)
+        SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
+        when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(DuplicateName))
+
+        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+
+        result shouldBe ApprovalsService.ApprovalRejectedDueToDuplicateName(expectedAppName)
+        StateHistoryRepoMock.Insert.verifyNeverCalled()
+        AuditServiceMock.Audit.verifyNeverCalled()
+        ApplicationRepoMock.Save.verifyNeverCalled()
       }
 
       "return incomplete for an incomplete submission" in new Setup {

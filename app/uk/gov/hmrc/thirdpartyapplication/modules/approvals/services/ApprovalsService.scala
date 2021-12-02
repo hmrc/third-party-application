@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
+import scala.concurrent.Future.successful
 
 object ApprovalsService {
   sealed trait RequestApprovalResult
@@ -74,6 +75,7 @@ class ApprovalsService @Inject()(
 
     (
       for {
+        _              <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
         originalApp    <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
         _              <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
         extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueNoSuchSubmission)
@@ -90,6 +92,11 @@ class ApprovalsService @Inject()(
     .fold[RequestApprovalResult](identity,identity)
   }
 
+  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
+    logger.info(s"Approval-01: approval request made for appId:${applicationId}")
+    successful(Unit)
+  }
+  
   private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String): ApplicationData = existing.copy(
     name = applicationName,
     normalisedName = applicationName.toLowerCase,
@@ -104,7 +111,7 @@ class ApprovalsService @Inject()(
     })
     
   private def logCompletedApprovalRequest(app: ApplicationData) = 
-    logger.info(s"Approval-01: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
+    logger.info(s"Approval-02: approval request (pending) application:${app.name} appId:${app.id} appState:${app.state.name}")
 
   private def auditCompletedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData)(implicit hc: HeaderCarrier): Future[AuditResult] = 
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
