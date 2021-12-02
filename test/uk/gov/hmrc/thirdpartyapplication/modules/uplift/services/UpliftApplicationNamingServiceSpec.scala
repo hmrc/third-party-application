@@ -140,29 +140,4 @@ class UpliftApplicationNamingServiceSpec extends AsyncHmrcSpec {
     }
   }
 
-  // "isDuplicateNonTestingName" should {
-  //   val appName = "app name"
-
-  //   "detect duplicate if another non-testing app has the same name" in new Setup {      
-  //     ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-  //     ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = productionState("test@example.com")))
-  //     val isDuplicate = await(underTest.isDuplicateName(appName, applicationId))
-
-  //     isDuplicate shouldBe true
-  //   }
-  //   "not detect duplicate if another non-testing app has the same name but duplicate checking is turned off" in new Setup {      
-  //     ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(false)
-  //     ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = productionState("test@example.com")))
-  //     val isDuplicate = await(underTest.isDuplicateName(appName, applicationId))
-
-  //     isDuplicate shouldBe false
-  //   }
-  //   "not detect duplicate if a test app has the same name" in new Setup { 
-  //     ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-  //     ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, state = testingState))
-  //     val isDuplicate = await(underTest.isDuplicateName(appName, applicationId))
-
-  //     isDuplicate shouldBe false
-  //   }
-  // }
 }
