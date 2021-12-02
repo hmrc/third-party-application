@@ -29,7 +29,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.AbstractApplicationNamingService

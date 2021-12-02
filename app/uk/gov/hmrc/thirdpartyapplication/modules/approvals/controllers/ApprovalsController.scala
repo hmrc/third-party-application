@@ -50,7 +50,7 @@ class ApprovalsController @Inject()(
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
       approvalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
-        case ApprovalAccepted                                                 => NoContent
+        case ApprovalAccepted(application)                                    => Ok(Json.toJson(application))
         case ApprovalRejectedDueNoSuchApplication | 
               ApprovalRejectedDueNoSuchSubmission                             => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => BadRequest(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId was incomplete"))

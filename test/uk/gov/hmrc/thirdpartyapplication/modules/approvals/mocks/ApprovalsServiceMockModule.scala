@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
+package uk.gov.hmrc.thirdpartyapplication.modules.approvals.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
@@ -22,14 +22,15 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService
 import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait ApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseApprovalsServiceMock {
     def aMock: ApprovalsService
 
     object RequestApproval {
       def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalAccepted))
+        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
       
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectState))

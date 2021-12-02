@@ -41,7 +41,7 @@ import scala.concurrent.Future.successful
 object ApprovalsService {
   sealed trait RequestApprovalResult
 
-  case object ApprovalAccepted extends RequestApprovalResult
+  case class ApprovalAccepted(application: ApplicationData) extends RequestApprovalResult
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
   case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
@@ -87,7 +87,7 @@ class ApprovalsService @Inject()(
         _              <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         _               = logCompletedApprovalRequest(savedApp)
         _              <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
-      } yield ApprovalAccepted
+      } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity,identity)
   }

@@ -28,7 +28,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import scala.concurrent.Future.{successful, failed}
+import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
@@ -60,13 +60,14 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.Fetch.thenReturn(application)
         SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
         when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(ValidName))
-        ApplicationRepoMock.Save.thenReturn(application)
+        val fakeSavedApplication = application.copy(normalisedName = "somethingElse")
+        ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalAccepted
+        result shouldBe ApprovalsService.ApprovalAccepted(fakeSavedApplication)
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
         ApplicationRepoMock.Save.verifyCalled()

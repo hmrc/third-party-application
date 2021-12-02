@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 
 import play.api.test.Helpers
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.ApprovalsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.mocks.ApprovalsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
@@ -45,7 +45,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec {
             ApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
-            status(result) shouldBe NO_CONTENT
+            status(result) shouldBe OK
         }        
 
         "return 'precondition failed' error response if request is not in the correct state" in new Setup {
