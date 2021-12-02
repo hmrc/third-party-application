@@ -44,9 +44,7 @@ class UpliftApplicationNamingService @Inject()(
 
   import ApplicationNamingService._
 
-  val excludeInTesting: ExclusionCondition = (x: ApplicationData) => x.state.name == State.TESTING
   val excludeNothing: ExclusionCondition = (x: ApplicationData) => false
-  def or(a: ExclusionCondition, b:ExclusionCondition):ExclusionCondition = (x:ApplicationData) => a(x) || b(x)
 
   def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition = 
     selfApplicationId.fold(excludeNothing)(appId => excludeThisAppId(appId))

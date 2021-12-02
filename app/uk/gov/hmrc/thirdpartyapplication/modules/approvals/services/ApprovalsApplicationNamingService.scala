@@ -44,7 +44,6 @@ class ApprovalsApplicationNamingService @Inject()(
   import ApplicationNamingService._
 
   val excludeInTesting: ExclusionCondition = (x: ApplicationData) => x.state.name == State.TESTING
-  val excludeNothing: ExclusionCondition = (x: ApplicationData) => false
   def or(a: ExclusionCondition, b:ExclusionCondition):ExclusionCondition = (x:ApplicationData) => a(x) || b(x)
 
   def approvalsFilter(appId: ApplicationId): ExclusionCondition = or( excludeThisAppId(appId), excludeInTesting)
