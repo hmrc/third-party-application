@@ -74,12 +74,16 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
     val mockNamingService: UpliftNamingService = mock[UpliftNamingService]
 
-    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
-    when(mockAuthConfig.enabled).thenReturn(enabled())
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
+    val testAuthConfig: AuthConnector.Config =
+      AuthConnector.Config(
+        baseUrl = "",
+        userRole = "USER",
+        superUserRole = "SUPER",
+        adminRole = "ADMIN",
+        enabled = enabled(),
+        canDeleteApplications = canDeleteApplications(),
+        authorisationKey = "12345"
+      )
 
     val applicationTtlInSecs = 1234
     val subscriptionTtlInSecs = 4321
@@ -88,7 +92,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val underTest = new ApplicationController(
       mockApplicationService,
       mockAuthConnector,
-      mockAuthConfig,
+      testAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,

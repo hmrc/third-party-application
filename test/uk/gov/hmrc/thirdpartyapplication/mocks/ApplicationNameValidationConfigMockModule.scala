@@ -24,9 +24,9 @@ trait ApplicationNameValidationConfigMockModule extends MockitoSugar with Argume
   protected trait BaseApplicationNameValidationConfigMock {
     def aMock: ApplicationNamingService.ApplicationNameValidationConfig
 
-    object NameBlackList {
-      def thenReturns(blacklistedNames: List[String]) = 
-        when(aMock.nameBlackList).thenReturn(blacklistedNames)
+    object NameDenyList {
+      def thenReturns(denyListedNames: List[String]) = 
+        when(aMock.nameDenyList).thenReturn(denyListedNames)
       
       def thenReturnsAnEmptyList() = 
         thenReturns(List.empty[String])

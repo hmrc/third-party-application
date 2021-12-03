@@ -33,7 +33,7 @@ object ApplicationNamingService {
   type ExclusionCondition = (ApplicationData) => Boolean
   def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: ApplicationData) => x.id == appId
 
-  case class ApplicationNameValidationConfig(nameBlackList: List[String], validateForDuplicateAppNames: Boolean)
+  case class ApplicationNameValidationConfig(nameDenyList: List[String], validateForDuplicateAppNames: Boolean)
 }
 
 
@@ -55,11 +55,11 @@ abstract class AbstractApplicationNamingService(
     }
   }
 
-  def isBlacklistedName(applicationName: String): Boolean = {
-    def checkNameIsValid(blackListedName: String) = !applicationName.toLowerCase().contains(blackListedName.toLowerCase)
+  def isDenyListedName(applicationName: String): Boolean = {
+    def checkNameIsValid(denyListedName: String) = !applicationName.toLowerCase().contains(denyListedName.toLowerCase)
 
     val isValid = nameValidationConfig
-      .nameBlackList
+      .nameDenyList
       .forall(name => checkNameIsValid(name))
 
     !isValid
@@ -68,8 +68,8 @@ abstract class AbstractApplicationNamingService(
   def validateApplicationName(applicationName: String, exclusions: ExclusionCondition) : Future[ApplicationNameValidationResult] = {
     for {
       isDuplicate   <- isDuplicateName(applicationName, exclusions)
-      isBlacklisted =  isBlacklistedName(applicationName)
-    } yield (isBlacklisted, isDuplicate) match {
+      isDenyListed =  isDenyListedName(applicationName)
+    } yield (isDenyListed, isDuplicate) match {
       case (false, false) => ValidName
       case (true, _)      => InvalidName
       case (_, true)      => DuplicateName
