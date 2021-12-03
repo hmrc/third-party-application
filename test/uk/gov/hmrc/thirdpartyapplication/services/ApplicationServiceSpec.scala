@@ -143,11 +143,6 @@ class ApplicationServiceSpec
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
-    
-    def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
-                                                           subscriptions: List[ApiIdentifier]) =
-      SubscriptionRepoMock.Fetch.thenReturn(subscriptions:_*)
-
   }
 
   trait LockedSetup extends Setup {
@@ -412,7 +407,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordApplicationUsage.thenReturnWhen(applicationId)(applicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
 
@@ -425,7 +420,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordServerTokenUsage(applicationId))
 
@@ -980,7 +975,7 @@ class ApplicationServiceSpec
     }
 
     "fetch all applications for a given collaborator user id" in new Setup {
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier, "api2".asIdentifier))
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId = UserId.random
       val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())

@@ -225,7 +225,7 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val configuration:
   with Provider[ApplicationNamingService.ApplicationNameValidationConfig] {
 
   override def get() = {
-    val nameDenyList: List[String] = ConfigHelper.getConfig("applicationNameBlackList", configuration.getOptional[Seq[String]]).toList
+    val nameDenyList: List[String] = ConfigHelper.getConfig("applicationNameDenyList", configuration.getOptional[Seq[String]]).toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", configuration.getOptional[Boolean])
 
     ApplicationNamingService.ApplicationNameValidationConfig(nameDenyList, validateForDuplicateAppNames)
