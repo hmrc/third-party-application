@@ -32,6 +32,7 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 
 class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -48,6 +49,9 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val mockApprovalsNamingService = mock[ApprovalsNamingService]
 
+    def namingServiceReturns(result: ApplicationNameValidationResult) = 
+      when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(result))
+      
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val underTest = new ApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock)
@@ -59,7 +63,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
       "update state, save and audit" in new Setup {
         ApplicationRepoMock.Fetch.thenReturn(application)
         SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
-        when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(ValidName))
+        namingServiceReturns(ValidName)
         val fakeSavedApplication = application.copy(normalisedName = "somethingElse")
         ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
         StateHistoryRepoMock.Insert.thenAnswer()
@@ -76,7 +80,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
       "return duplicate application name if duplicate" in new Setup {
         ApplicationRepoMock.Fetch.thenReturn(application)
         SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
-        when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(DuplicateName))
+        namingServiceReturns(DuplicateName)
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
@@ -89,7 +93,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
       "return illegal application name if deny-listed name" in new Setup {
         ApplicationRepoMock.Fetch.thenReturn(application)
         SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
-        when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(InvalidName))
+        namingServiceReturns(InvalidName)
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 

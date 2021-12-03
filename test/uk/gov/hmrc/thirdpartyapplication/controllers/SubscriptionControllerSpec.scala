@@ -26,22 +26,20 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful, apply => _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 import play.api.libs.json.Json
 import akka.stream.testkit.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 
-class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite {
+class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule {
 
   import play.api.test.Helpers._
 
-  val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
-
   override def builder() : GuiceApplicationBuilder = 
       super.builder()
-      .overrides(bind[SubscriptionRepository].to(mockSubscriptionRepository))
+      .overrides(bind[SubscriptionRepository].to(SubscriptionRepoMock.aMock))
 
   trait Setup {
     implicit lazy val materializer: Materializer = NoMaterializer
@@ -57,7 +55,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
       implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
-      when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
+      SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)
 
       val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
@@ -70,7 +68,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
       implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]
 
       private val subscribers = Set(ApplicationId.random, ApplicationId.random)
-      when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(successful(subscribers))
+      SubscriptionRepoMock.GetSubscribers.thenReturn(apiIdentifier)(subscribers)
 
       val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
@@ -79,7 +77,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return 500 if something goes wrong" in new Setup {
-      when(mockSubscriptionRepository.getSubscribers(apiIdentifier)).thenReturn(failed(new RuntimeException("something went wrong")))
+      SubscriptionRepoMock.GetSubscribers.thenFailWith(new RuntimeException("something went wrong"))
 
       val result = callEndpointWith(FakeRequest(GET, asUrl(apiIdentifier)))
 
@@ -94,7 +92,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
 
     "return the subscriptions from the repository" in new Setup {
       val expectedSubscriptions = Set("hello/world".asIdentifier)
-      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(userId)).thenReturn(successful(expectedSubscriptions))
+      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenReturnWhen(userId)(expectedSubscriptions)
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 
@@ -103,7 +101,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return 500 if something goes wrong" in new Setup {
-      when(mockSubscriptionRepository.getSubscriptionsForDeveloper(userId)).thenReturn(failed(new RuntimeException("something went wrong")))
+      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenFailWith(new RuntimeException("something went wrong"))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 

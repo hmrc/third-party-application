@@ -22,8 +22,9 @@ import org.mockito.ArgumentMatchersSugar
 import org.mockito.verification.VerificationMode
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
-import scala.concurrent.Future.successful
+import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseSubscriptionRepoMock {
@@ -39,6 +40,26 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
       def thenReturn(subs: ApiIdentifier*) =
         when(aMock.getSubscriptions(*[ApplicationId])).thenReturn(successful(subs.toList))
     }
+
+    object GetSubscribers {
+      def thenReturnWhen(apiIdentifier: ApiIdentifier)(subs: ApplicationId*) =
+        when(aMock.getSubscribers(eqTo(apiIdentifier))).thenReturn(successful(subs.toSet))
+
+      def thenReturn(apiIdentifier: ApiIdentifier)(subs: Set[ApplicationId]) =
+        when(aMock.getSubscribers(eqTo(apiIdentifier))).thenReturn(successful(subs))
+
+      def thenFailWith(ex: Exception) = 
+        when(aMock.getSubscribers(*[ApiIdentifier])).thenReturn(failed(ex))
+    }
+
+    object GetSubscriptionsForDeveloper {
+      def thenReturnWhen(userId: UserId)(apis: Set[ApiIdentifier]) =
+        when(aMock.getSubscriptionsForDeveloper(eqTo(userId))).thenReturn(successful(apis))
+  
+  
+      def thenFailWith(ex: Exception) = 
+        when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
+  }
 
     object Remove {
       def thenReturnHasSucceeded() =

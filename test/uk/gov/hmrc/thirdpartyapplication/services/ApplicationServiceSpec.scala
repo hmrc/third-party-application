@@ -88,7 +88,6 @@ class ApplicationServiceSpec
 
     lazy val locked = false
     protected val mockitoTimeout = 1000
-    // val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     val mockTotpConnector: TotpConnector = mock[TotpConnector]
     val mockLockKeeper = new MockLockKeeper(locked)

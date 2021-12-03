@@ -61,6 +61,19 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
       def thenReturnWhen(id: ApplicationId, state: State.State)(value: StateHistory) =
         when(aMock.fetchLatestByStateForApplication(eqTo(id), eqTo(state))).thenReturn(successful(Some(value)))
     }
+
+    object FetchLatestByState {
+      def thenReturnWhen(state: State.State)(values: StateHistory*) =
+        when(aMock.fetchByState(eqTo(state))).thenReturn(successful(values.toList))
+    }
+
+    object FetchByApplicationId {
+      def thenReturnWhen(id: ApplicationId)(values: StateHistory*) =
+        when(aMock.fetchByApplicationId(eqTo(id))).thenReturn(successful(values.toList))
+        
+      def thenFailWith(ex: Exception) =
+        when(aMock.fetchByApplicationId(*[ApplicationId])).thenReturn(failed(ex))
+    }
   }
 
 
