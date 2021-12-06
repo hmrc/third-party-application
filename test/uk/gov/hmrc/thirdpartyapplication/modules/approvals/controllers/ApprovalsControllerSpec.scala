@@ -69,11 +69,11 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec {
             status(result) shouldBe BAD_REQUEST
         }
 
-        "return 'bad request' error response if submission is incomplete" in new Setup {
+        "return 'precondition failed' error response if submission is incomplete" in new Setup {
             ApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncompleteSubmissionErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
-            status(result) shouldBe BAD_REQUEST
+            status(result) shouldBe PRECONDITION_FAILED
         }        
 
         "return 'precondition failed' error response if name is illegal" in new Setup {
