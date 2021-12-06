@@ -517,44 +517,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  // def verifyUplift(verificationCode: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-
-  //   def verifyProduction(app: ApplicationData) = {
-  //     logger.info(s"Application uplift for '${app.name}' has been verified already. No update was executed.")
-  //     successful(UpliftVerified)
-  //   }
-
-  //   def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
-  //     history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-  //     state = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
-  //   } yield state.actor.id
-
-  //   def audit(app: ApplicationData) =
-  //     findLatestUpliftRequester(app.id) flatMap { email =>
-  //       auditService.audit(ApplicationUpliftVerified, AuditHelper.applicationId(app.id), Map("upliftRequestedByEmail" -> email))
-  //     }
-
-  //   def verifyPending(app: ApplicationData) = for {
-  //     _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-  //     _ <- applicationRepository.save(app.copy(state = app.state.toProduction))
-  //     _ <- insertStateHistory(app, State.PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
-  //       app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-  //     _ = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
-  //     _ = audit(app)
-  //   } yield UpliftVerified
-
-  //   for {
-  //     app <- applicationRepository.fetchVerifiableUpliftBy(verificationCode)
-  //       .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
-
-  //     result <- app.state.name match {
-  //       case State.PRODUCTION => verifyProduction(app)
-  //       case PENDING_REQUESTER_VERIFICATION => verifyPending(app)
-  //       case _ => throw InvalidUpliftVerificationCode(verificationCode)
-  //     }
-  //   } yield result
-  // }
-
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)

@@ -45,8 +45,8 @@ object ApprovalsService {
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
   case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
-  case object ApprovalRejectedDueNoSuchApplication extends ApprovalRejectedResult
-  case object ApprovalRejectedDueNoSuchSubmission extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToNoSuchApplication extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToNoSuchSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
 
   sealed trait ApprovalRejectedDueToName extends ApprovalRejectedResult
@@ -76,9 +76,9 @@ class ApprovalsService @Inject()(
     (
       for {
         _              <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
-        originalApp    <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueNoSuchApplication)
+        originalApp    <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueToNoSuchApplication)
         _              <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
-        extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueNoSuchSubmission)
+        extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
         _              <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         appName         = getApplicationName(extSubmission)
         _              <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))

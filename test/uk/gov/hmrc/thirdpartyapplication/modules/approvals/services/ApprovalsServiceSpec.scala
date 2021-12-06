@@ -120,7 +120,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueNoSuchApplication
+        result shouldBe ApprovalsService.ApprovalRejectedDueToNoSuchApplication
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -144,7 +144,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueNoSuchSubmission
+        result shouldBe ApprovalsService.ApprovalRejectedDueToNoSuchSubmission
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()

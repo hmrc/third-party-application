@@ -53,8 +53,8 @@ class ApprovalsController @Inject()(
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
       approvalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
-        case ApprovalRejectedDueNoSuchApplication | 
-              ApprovalRejectedDueNoSuchSubmission                             => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
+        case ApprovalRejectedDueToNoSuchApplication | 
+              ApprovalRejectedDueToNoSuchSubmission                             => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => BadRequest(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId was incomplete"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name $name ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name $name contains words that are on a deny list")) 
