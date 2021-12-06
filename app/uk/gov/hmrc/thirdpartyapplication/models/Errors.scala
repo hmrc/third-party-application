@@ -19,8 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
-case class InvalidUpliftVerificationCode(code: String) extends RuntimeException(s"Invalid verification code '$code'")
-
 class UserAlreadyExists extends RuntimeException
 
 class ApplicationNeedsAdmin extends RuntimeException

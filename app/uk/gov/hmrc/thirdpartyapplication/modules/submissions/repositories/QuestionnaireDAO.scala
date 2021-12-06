@@ -42,6 +42,11 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
 }
 
 object QuestionnaireDAO {
+
+  // *** Note - change this if the application name question changes. ***
+  val applicationNameQuestion = 
+    Questionnaires.CustomersAuthorisingYourSoftware.question2
+
   object Questionnaires {
     object DevelopmentPractices {
       val question1 = YesNoQuestion(
@@ -589,5 +594,6 @@ object QuestionnaireDAO {
           )
         )
       )
+
   }
 }

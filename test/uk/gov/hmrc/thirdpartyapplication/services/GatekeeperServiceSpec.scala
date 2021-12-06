@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
@@ -37,9 +36,10 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 
 class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -72,11 +72,11 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   trait Setup extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
-    with ApiGatewayStoreMockModule {
+    with ApiGatewayStoreMockModule
+    with SubscriptionRepositoryMockModule 
+    with StateHistoryRepositoryMockModule {
 
     lazy val locked = false
-    val mockStateHistoryRepository = mock[StateHistoryRepository](withSettings.lenient())
-    val mockSubscriptionRepository = mock[SubscriptionRepository](withSettings.lenient())
     val mockEmailConnector = mock[EmailConnector](withSettings.lenient())
     val response = mock[HttpResponse]
     val mockApplicationService = mock[ApplicationService]
@@ -87,13 +87,13 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     val underTest = new GatekeeperService(
       ApplicationRepoMock.aMock,
-      mockStateHistoryRepository,
-      mockSubscriptionRepository,
+      StateHistoryRepoMock.aMock,
+      SubscriptionRepoMock.aMock,
       AuditServiceMock.aMock,
       mockEmailConnector,
       mockApplicationService)
 
-    when(mockStateHistoryRepository.insert(*)).thenAnswer( (s: StateHistory) => successful(s))
+    StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
@@ -119,7 +119,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val history2 = aHistory(app2.id)
 
       ApplicationRepoMock.FetchStandardNonTestingApps.thenReturn(app1, app2)
-      when(mockStateHistoryRepository.fetchByState(State.PENDING_GATEKEEPER_APPROVAL)).thenReturn(successful(List(history1, history2)))
+      StateHistoryRepoMock.FetchLatestByState.thenReturnWhen(State.PENDING_GATEKEEPER_APPROVAL)(history1, history2)
 
       val result = await(underTest.fetchNonTestingAppsWithSubmittedDate())
 
@@ -136,7 +136,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val history = List(aHistory(app1.id), aHistory(app1.id, State.PRODUCTION))
 
       ApplicationRepoMock.Fetch.thenReturn(app1)
-      when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(successful(history))
+      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(history : _*)
 
       val result = await(underTest.fetchAppWithHistory(appId))
 
@@ -157,7 +157,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
     "propagate the exception when the history repository fail" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(anApplicationData(appId))
-      when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
+      StateHistoryRepoMock.FetchByApplicationId.thenFailWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException](await(underTest.fetchAppWithHistory(appId)))
     }
@@ -173,7 +173,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedHistories = List(aStateHistoryResponse(app1.id), aStateHistoryResponse(app1.id, State.PRODUCTION))
 
       ApplicationRepoMock.Fetch.thenReturn(app1)
-      when(mockStateHistoryRepository.fetchByApplicationId(appId)).thenReturn(successful(returnedHistories))
+      StateHistoryRepoMock.FetchByApplicationId.thenReturnWhen(appId)(returnedHistories : _*)
 
       val result = await(underTest.fetchAppStateHistoryById(appId))
 
@@ -202,7 +202,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       result shouldBe UpliftApproved
 
       val savedApplication = ApplicationRepoMock.Save.verifyCalled()
-      verify(mockStateHistoryRepository).insert(expectedStateHistory)
+      StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
 
       savedApplication.state.name shouldBe State.PENDING_REQUESTER_VERIFICATION
       savedApplication.state.verificationCode shouldBe defined
@@ -213,8 +213,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
-
-      when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
+      StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
         await(underTest.approveUplift(applicationId, gatekeeperUserId))
@@ -315,14 +314,13 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
       result shouldBe UpliftRejected
       ApplicationRepoMock.Save.verifyCalled() shouldBe expectedApplication
-      verify(mockStateHistoryRepository).insert(expectedStateHistory)
+      StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
     }
 
     "rollback the application when storing the state history fails" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenAnswer()
-
-      when(mockStateHistoryRepository.insert(*)).thenReturn(Future.failed(new RuntimeException("Expected test failure")))
+      StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
         await(underTest.rejectUplift(applicationId, rejectUpliftRequest))

@@ -21,7 +21,6 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import cats.implicits._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTimeUtils}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
@@ -38,10 +37,9 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.repository.{StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, CredentialGenerator}
+import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
@@ -53,15 +51,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
 import scala.concurrent.duration.Duration
 import scala.concurrent.{Await, ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 
 class ApplicationServiceSpec 
   extends AsyncHmrcSpec 
   with BeforeAndAfterAll
   with ApplicationStateUtil 
   with ApplicationTestData
-  with UpliftRequestSamples 
-  {
+  with UpliftRequestSamples
+  with LockDownDateTime {
 
   def asUpdateRequest(applicationRequest: ApplicationRequest): UpdateApplicationRequest = {
     UpdateApplicationRequest(
@@ -77,6 +76,9 @@ class ApplicationServiceSpec
     with ApplicationRepositoryMockModule
     with TokenServiceMockModule 
     with SubmissionsServiceMockModule
+    with UpliftNamingServiceMockModule
+    with StateHistoryRepositoryMockModule
+    with SubscriptionRepositoryMockModule
     {
 
     val actorSystem: ActorSystem = ActorSystem("System")
@@ -86,8 +88,6 @@ class ApplicationServiceSpec
 
     lazy val locked = false
     protected val mockitoTimeout = 1000
-    val mockSubscriptionRepository: SubscriptionRepository = mock[SubscriptionRepository]
-    val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
     val mockEmailConnector: EmailConnector = mock[EmailConnector]
     val mockTotpConnector: TotpConnector = mock[TotpConnector]
     val mockLockKeeper = new MockLockKeeper(locked)
@@ -104,15 +104,15 @@ class ApplicationServiceSpec
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
 
-    val mockNameValidationConfig = mock[ApplicationNameValidationConfig]
+    val mockNameValidationConfig = mock[ApplicationNamingService.ApplicationNameValidationConfig]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)
 
     val underTest = new ApplicationService(
       ApplicationRepoMock.aMock,
-      mockStateHistoryRepository,
-      mockSubscriptionRepository,
+      StateHistoryRepoMock.aMock,
+      SubscriptionRepoMock.aMock,
       AuditServiceMock.aMock,
       mockApiPlatformEventService,
       mockEmailConnector,
@@ -124,30 +124,25 @@ class ApplicationServiceSpec
       mockCredentialGenerator,
       ApiSubscriptionFieldsConnectorMock.aMock,
       mockThirdPartyDelegatedAuthorityConnector,
-      mockNameValidationConfig,
       TokenServiceMock.aMock,
-      SubmissionsServiceMock.aMock)
+      SubmissionsServiceMock.aMock,
+      UpliftNamingServiceMock.aMock
+    )
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
-    when(mockStateHistoryRepository.insert(*)).thenAnswer((s:StateHistory) =>successful(s))
+    StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier])).thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
-      .thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
-      .thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(any[ApplicationData], any[String], any[String])(any[HeaderCarrier]))
-      .thenReturn(successful(true))
-    SubmissionsServiceMock.DeleteAll.thenReturn()
-    
-    def mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId: ApplicationId,
-                                                           subscriptions: List[ApiIdentifier]) =
-      when(mockSubscriptionRepository.getSubscriptions(eqTo(applicationId))).thenReturn(successful(subscriptions))
+    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(*,*,*)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*,*,*)(*)).thenReturn(successful(true))
 
+    UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
+    SubmissionsServiceMock.DeleteAll.thenReturn()
   }
 
   trait LockedSetup extends Setup {
@@ -173,14 +168,6 @@ class ApplicationServiceSpec
     }
   }
 
-  override def beforeAll() {
-    DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
-  }
-
-  override def afterAll() {
-    DateTimeUtils.setCurrentMillisSystem()
-  }
-
   "Create with Colloborator userId" should {
 
     "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
@@ -195,7 +182,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -223,7 +210,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -247,7 +234,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -273,7 +260,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -308,7 +295,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -334,7 +321,7 @@ class ApplicationServiceSpec
         createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)), access = Ropc())
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      verify(mockStateHistoryRepository).insert(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -351,15 +338,11 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      AuditServiceMock.Audit.verifyCalledWith(
-        CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-        Map("applicationName" -> applicationRequest.name),
-        hc
-      )
     }
 
     "fail with ApplicationAlreadyExists for ropc application when the name already exists for another application not in testing mode" in new Setup {
@@ -367,15 +350,11 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.FetchByName.thenReturnWhen(applicationRequest.name)(anApplicationData(ApplicationId.random))
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
+      UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
         await(underTest.create(applicationRequest)(hc))
       }
-      AuditServiceMock.Audit.verifyCalledWith(
-        CreateRopcApplicationRequestDeniedDueToNonUniqueName,
-        Map("applicationName" -> applicationRequest.name),
-        hc
-      )
     }
 
     //See https://wso2.org/jira/browse/CAPIMGT-1
@@ -413,7 +392,7 @@ class ApplicationServiceSpec
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       ApiGatewayStoreMock.DeleteApplication.thenReturnHasSucceeded()
-      when(mockStateHistoryRepository.insert(*)).thenReturn(failed(new RuntimeException("Expected test failure")))
+      StateHistoryRepoMock.Insert.thenFailsWith(new RuntimeException("Expected test failure"))
       ApplicationRepoMock.Delete.thenReturnHasSucceeded()
 
       intercept[RuntimeException](await(underTest.create(applicationRequest)))
@@ -428,7 +407,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordApplicationUsage.thenReturnWhen(applicationId)(applicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
 
@@ -441,7 +420,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, subscriptions)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordServerTokenUsage(applicationId))
 
@@ -794,7 +773,7 @@ class ApplicationServiceSpec
     }
   }
 
-"delete collaborator with userId" should {
+  "delete collaborator with userId" should {
     trait DeleteCollaboratorsSetup extends Setup {
       val admin = "admin@example.com"
       val admin2: String = "admin2@example.com"
@@ -996,7 +975,7 @@ class ApplicationServiceSpec
     }
 
     "fetch all applications for a given collaborator user id" in new Setup {
-      mockSubscriptionRepositoryGetSubscriptionsToReturn(applicationId, List("api1".asIdentifier, "api2".asIdentifier))
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId = UserId.random
       val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
@@ -1072,282 +1051,30 @@ class ApplicationServiceSpec
     }
   }
 
-  "verifyUplift" should {
-    val upliftRequestedBy = "email@example.com"
+  "updateToPendingGatekeeperApproval" should {
+    val email = "test@example.com"
 
-    "update the state of the application and create app in the API gateway when application is in pendingRequesterVerification state" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      AuditServiceMock.AuditWithTags.thenReturnSuccess()
-      ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
+    "update the application with new state when an existing applicaiton id is specified" in new Setup {
+      val testApplication = applicationData.copy(state = ApplicationState())
+      ApplicationRepoMock.Fetch.thenReturn(testApplication)
+      ApplicationRepoMock.Save.thenReturn(testApplication)
 
-      val expectedStateHistory = StateHistory(applicationId, State.PRODUCTION, Actor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION))
-      val upliftRequest = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actor(upliftRequestedBy, COLLABORATOR), Some(TESTING))
+      await(underTest.updateToPendingGatekeeperApproval(testApplication.id, email))
 
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
-
-      val expectedApplication: ApplicationData = application.copy(state = productionState(upliftRequestedBy))
-
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-      when(mockStateHistoryRepository.fetchLatestByStateForApplication(applicationId, PENDING_GATEKEEPER_APPROVAL)).thenReturn(successful(Some(upliftRequest)))
-
-      val result: ApplicationStateChange = await(underTest.verifyUplift(generatedVerificationCode))
-      ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
-      ApiGatewayStoreMock.CreateApplication.verifyCalled()
-      result shouldBe UpliftVerified
-      verify(mockStateHistoryRepository).insert(expectedStateHistory)
+      val appData = ApplicationRepoMock.Save.verifyCalled()
+      appData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
     }
 
-    "fail if the application save fails" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
-      val saveException = new RuntimeException("application failed to save")
+    "NotFoundException thrown when an non-existing application id is specified" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNone()
 
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-      ApplicationRepoMock.Save.thenFail(saveException)
+      val nonExistingApplicationId = ApplicationId.random
 
-      intercept[RuntimeException] {
-        await(underTest.verifyUplift(generatedVerificationCode))
+      intercept[NotFoundException] {
+        await(underTest.updateToPendingGatekeeperApproval(nonExistingApplicationId, email))
       }
     }
 
-    "rollback if saving the state history fails" in new Setup {
-      ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
-      val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
-      ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-      when(mockStateHistoryRepository.insert(*)).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      intercept[RuntimeException] {
-        await(underTest.verifyUplift(generatedVerificationCode))
-      }
-
-      ApplicationRepoMock.Save.verifyCalledWith(application)
-    }
-
-    "not update the state but result in success of the application when application is already in production state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, productionState(upliftRequestedBy))
-
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-
-      val result: ApplicationStateChange = await(underTest.verifyUplift(generatedVerificationCode))
-      result shouldBe UpliftVerified
-      ApplicationRepoMock.Save.verifyNeverCalled()
-    }
-
-    "fail when application is in testing state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-
-      intercept[InvalidUpliftVerificationCode] {
-        await(underTest.verifyUplift(generatedVerificationCode))
-      }
-    }
-
-    "fail when application is in pendingGatekeeperApproval state" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
-
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnWhen(generatedVerificationCode)(application)
-
-      intercept[InvalidUpliftVerificationCode] {
-        await(underTest.verifyUplift(generatedVerificationCode))
-      }
-    }
-
-    "fail when application is not found by verification code" in new Setup {
-      anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
-
-      ApplicationRepoMock.FetchVerifiableUpliftBy.thenReturnNoneWhen(generatedVerificationCode)
-
-      intercept[InvalidUpliftVerificationCode] {
-        await(underTest.verifyUplift(generatedVerificationCode))
-      }
-    }
-  }
-
-  "validate application name" should {
-
-    "allow valid name" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("HMRC"))
-
-      val result = await(underTest.validateApplicationName("my application name", None))
-
-      result shouldBe Valid
-    }
-
-    "block a name with HMRC in" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("HMRC"))
-
-      val result = await(underTest.validateApplicationName("Invalid name HMRC", None))
-
-      result shouldBe Invalid.invalidName
-    }
-
-    "block a name with multiple blacklisted names in" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("InvalidName1", "InvalidName2", "InvalidName3"))
-
-      val result = await(underTest.validateApplicationName("ValidName InvalidName1 InvalidName2", None))
-
-      result shouldBe Invalid.invalidName
-    }
-
-    "block an invalid ignoring case" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List("InvalidName"))
-
-      val result = await(underTest.validateApplicationName("invalidname", None))
-
-      result shouldBe Invalid.invalidName
-    }
-
-    "block a duplicate app name" in new Setup {
-      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random))
-
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty[String])
-
-      private val duplicateName = "duplicate name"
-      val result = await(underTest.validateApplicationName(duplicateName, None))
-
-      result shouldBe Invalid.duplicateName
-
-      ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
-    }
-
-    "Ignore duplicate name check if not configured e.g. on a subordinate / sandbox environment" in new Setup {
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty[String])
-
-      when(mockNameValidationConfig.validateForDuplicateAppNames)
-        .thenReturn(false)
-
-      val result = await(underTest.validateApplicationName("app name", None))
-
-      result shouldBe Valid
-
-      ApplicationRepoMock.FetchByName.veryNeverCalled()
-    }
-
-    "Ignore application when checking for duplicates if it is self application" in new Setup {
-      when(mockNameValidationConfig.nameBlackList)
-        .thenReturn(List.empty)
-
-      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
-
-      val result = await(underTest.validateApplicationName("app name", Some(applicationId)))
-
-      result shouldBe Valid
-    }
-  }
-
-  "requestUplift" should {
-    val requestedName = "application name"
-    val upliftRequestedBy = "email@example.com"
-
-    "update the state of the application" in new Setup {
-      AuditServiceMock.Audit.thenReturnSuccess()
-      ApplicationRepoMock.Save.thenAnswer(successful)
-
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-      val expectedApplication: ApplicationData = application.copy(state = pendingGatekeeperApprovalState(upliftRequestedBy),
-        name = requestedName, normalisedName = requestedName.toLowerCase)
-
-      val expectedStateHistory = StateHistory(applicationId = expectedApplication.id, state = PENDING_GATEKEEPER_APPROVAL,
-        actor = Actor(upliftRequestedBy, COLLABORATOR), previousState = Some(TESTING))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,expectedApplication)
-
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-
-      ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
-      result shouldBe UpliftRequested
-      verify(mockStateHistoryRepository).insert(expectedStateHistory)
-    }
-
-    "rollback the application when storing the state history fails" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application)
-
-      when(mockStateHistoryRepository.insert(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-      }
-
-      ApplicationRepoMock.Save.verifyCalledWith(application)
-    }
-
-    "send an Audit event when an application uplift is successfully requested with no name change" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-
-      await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
-      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.value.toString), hc)
-    }
-
-    "send an Audit event when an application uplift is successfully requested with a name change" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-      
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenAnswer(successful)
-      ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(requestedName)
-
-      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-
-      val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.value.toString, "newApplicationName" -> requestedName)
-      AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, expectedAuditDetails, hc)
-    }
-
-    "fail with InvalidStateTransition without invoking fetchNonTestingApplicationByName when the application is not in testing" in new Setup {
-      val application: ApplicationData = anApplicationData(applicationId, pendingGatekeeperApprovalState("test@example.com"))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-
-      intercept[InvalidStateTransition] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-      }
-      ApplicationRepoMock.FetchByName.veryNeverCalled()
-    }
-
-    "fail with ApplicationAlreadyExists when another uplifted application already exist with the same name" in new Setup {
-      AuditServiceMock.Audit.thenReturnSuccess()
-
-      val application: ApplicationData = anApplicationData(applicationId, testingState())
-      val anotherApplication: ApplicationData = anApplicationData(ApplicationId.random, productionState("admin@example.com"))
-
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,anotherApplication)
-
-      intercept[ApplicationAlreadyExists] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-      }
-    }
-
-    "propagate the exception when the repository fail" in new Setup {
-      ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
-
-      intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
-      }
-    }
   }
 
   "update rate limit tier" should {
@@ -1432,10 +1159,10 @@ class ApplicationServiceSpec
 
       when(auditFunction.apply(*)).thenReturn(mockAuditResult)
 
-      when(mockSubscriptionRepository.getSubscriptions(applicationId)).thenReturn(successful(List(api1, api2)))
-      when(mockSubscriptionRepository.remove(*[ApplicationId], *)).thenReturn(successful(HasSucceeded))
+      SubscriptionRepoMock.Fetch.thenReturn(api1, api2)
+      SubscriptionRepoMock.Remove.thenReturnHasSucceeded()
 
-      when(mockStateHistoryRepository.deleteByApplicationId(*[ApplicationId])).thenReturn(successful(HasSucceeded))
+      StateHistoryRepoMock.Delete.thenReturnHasSucceeded()
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
 
@@ -1478,8 +1205,8 @@ class ApplicationServiceSpec
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
-      verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api1))
-      verify(mockSubscriptionRepository).remove(eqTo(applicationId), eqTo(api2))
+      SubscriptionRepoMock.Remove.verifyCalledWith(applicationId, api1)
+      SubscriptionRepoMock.Remove.verifyCalledWith(applicationId, api2)
     }
 
     "delete the application from the repository" in new DeleteApplicationSetup {
@@ -1499,7 +1226,7 @@ class ApplicationServiceSpec
 
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
-      verify(mockStateHistoryRepository).deleteByApplicationId(applicationId)
+      StateHistoryRepoMock.verify.deleteByApplicationId(applicationId)
     }
 
     "audit the application deletion" in new DeleteApplicationSetup {
@@ -1543,8 +1270,8 @@ class ApplicationServiceSpec
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction)) shouldBe Deleted
 
       ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
-      verifyNoMoreInteractions(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock, mockStateHistoryRepository,
-        mockSubscriptionRepository, AuditServiceMock.aMock, mockEmailConnector, ApiSubscriptionFieldsConnectorMock.aMock)
+      verifyNoMoreInteractions(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock,
+        SubscriptionRepoMock.aMock, AuditServiceMock.aMock, mockEmailConnector, ApiSubscriptionFieldsConnectorMock.aMock)
     }
   }
 

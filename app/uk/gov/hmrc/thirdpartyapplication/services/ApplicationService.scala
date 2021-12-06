@@ -59,6 +59,7 @@ import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
@@ -75,9 +76,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    credentialGenerator: CredentialGenerator,
                                    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
-                                   nameValidationConfig: ApplicationNameValidationConfig,
                                    tokenService: TokenService,
-                                   submissionsService: SubmissionsService)
+                                   submissionsService: SubmissionsService,
+                                   upliftNamingService: UpliftNamingService)
                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -370,50 +371,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def requestUplift(applicationId: ApplicationId, applicationName: String,
-                    requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-
-    def uplift(existing: ApplicationData) = existing.copy(
-      name = applicationName,
-      normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
-
+  def updateToPendingGatekeeperApproval(applicationId: ApplicationId, requestedByEmailAddress: String): Future[ApplicationData] = {
     for {
-      app <- fetchApp(applicationId)
-      upliftedApp = uplift(app)
-      _ <- assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-      updatedApp <- applicationRepository.save(upliftedApp)
-      _ <- insertStateHistory(
-        app,
-        PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
-        requestedByEmailAddress, COLLABORATOR,
-        (a: ApplicationData) => applicationRepository.save(a)
-      )
-      _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
-        s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
-      _ = auditService.audit(ApplicationUpliftRequested,
-        AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
-    } yield UpliftRequested
-  }
-
-  private def assertAppHasUniqueNameAndAudit(submittedAppName: String,
-                                             accessType: AccessType,
-                                             existingApp: Option[ApplicationData] = None)
-                                            (implicit hc: HeaderCarrier) = {
-    for {
-      duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _ = if (duplicate) {
-        accessType match {
-          case PRIVILEGED => auditService.audit(CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case ROPC => auditService.audit(CreateRopcApplicationRequestDeniedDueToNonUniqueName,
-            Map("applicationName" -> submittedAppName))
-          case _ => auditService.audit(ApplicationUpliftRequestDeniedDueToNonUniqueName,
-            AuditHelper.applicationId(existingApp.get.id) ++ Map("applicationName" -> submittedAppName))
-        }
-        throw ApplicationAlreadyExists(submittedAppName)
-      }
-    } yield ()
+      application <- fetchApp(applicationId)
+      updatedApplicationState = application.state.toPendingGatekeeperApproval(requestedByEmailAddress)
+      updatedApplication = application.copy(state = updatedApplicationState)
+      persistedApplication <- applicationRepository.save(updatedApplication)
+    } yield persistedApplication
   }
 
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -453,8 +417,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     val f = for {
       _ <- application.access.accessType match {
-        case PRIVILEGED => assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
-        case ROPC => assertAppHasUniqueNameAndAudit(application.name, ROPC)
+        case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
+        case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, ROPC)
         case _ => successful(Unit)
       }
 
@@ -550,82 +514,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     applicationRepository.fetch(applicationId).flatMap {
       case None => failed(notFoundException)
       case Some(app) => successful(app)
-    }
-  }
-
-  def verifyUplift(verificationCode: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-
-    def verifyProduction(app: ApplicationData) = {
-      logger.info(s"Application uplift for '${app.name}' has been verified already. No update was executed.")
-      successful(UpliftVerified)
-    }
-
-    def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
-      history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-      state = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
-    } yield state.actor.id
-
-    def audit(app: ApplicationData) =
-      findLatestUpliftRequester(app.id) flatMap { email =>
-        auditService.audit(ApplicationUpliftVerified, AuditHelper.applicationId(app.id), Map("upliftRequestedByEmail" -> email))
-      }
-
-    def verifyPending(app: ApplicationData) = for {
-      _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toProduction))
-      _ <- insertStateHistory(app, State.PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
-        app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-      _ = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
-      _ = audit(app)
-    } yield UpliftVerified
-
-    for {
-      app <- applicationRepository.fetchVerifiableUpliftBy(verificationCode)
-        .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
-
-      result <- app.state.name match {
-        case State.PRODUCTION => verifyProduction(app)
-        case PENDING_REQUESTER_VERIFICATION => verifyPending(app)
-        case _ => throw InvalidUpliftVerificationCode(verificationCode)
-      }
-    } yield result
-
-  }
-
-  private def isBlacklistedName(applicationName: String): Future[Boolean] = {
-    def checkNameIsValid(blackListedName: String) = !applicationName.toLowerCase().contains(blackListedName.toLowerCase)
-
-    val isValid = nameValidationConfig
-      .nameBlackList
-      .forall(name => checkNameIsValid(name))
-
-    successful(!isValid)
-  }
-
-  private def isDuplicateName(applicationName: String, thisApplicationId: Option[ApplicationId]): Future[Boolean] = {
-
-    def isThisApplication(app: ApplicationData) = thisApplicationId.contains(app.id)
-
-    def anyDuplicatesExcludingThis(apps: List[ApplicationData]): Boolean = {
-      apps.exists(!isThisApplication(_))
-    }
-
-    if (nameValidationConfig.validateForDuplicateAppNames) {
-      applicationRepository
-        .fetchApplicationsByName(applicationName)
-        .map(anyDuplicatesExcludingThis)
-    } else {
-      successful(false)
-    }
-  }
-
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]) : Future[ApplicationNameValidationResult] = {
-    for {
-      isBlacklisted <- isBlacklistedName(applicationName)
-      isDuplicate <- isDuplicateName(applicationName, selfApplicationId)
-    } yield (isBlacklisted, isDuplicate) match {
-      case (false, false) => Valid
-      case (blacklist, duplicate) => Invalid(blacklist, duplicate)
     }
   }
 

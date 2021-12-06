@@ -51,7 +51,7 @@ trait JsonUtils extends Results with ApplicationLogger {
     }
   }
 
-  private[controllers] def recovery: PartialFunction[Throwable, Result] = {
+  def recovery: PartialFunction[Throwable, Result] = {
     case e: NotFoundException => handleNotFound(e.getMessage)
     case e: ScopeNotFoundException => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
     case e: InvalidIpAllowlistException => BadRequest(JsErrorResponse(INVALID_IP_ALLOWLIST, e.getMessage))

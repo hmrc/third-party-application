@@ -108,6 +108,15 @@ object AuditAction {
     val auditType = "ApplicationUpliftRequestDeniedDueToNonUniqueName"
   }
 
+  case object CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
+    val name = "create privileged application request has been denied, due to non-unique name"
+    val auditType = "CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName"
+  }
+
+  case object CreateRopcApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
+    val name = "create ropc application request has been denied, due to non-unique name"
+    val auditType = "CreateRopcApplicationRequestDeniedDueToNonUniqueName"
+  }
   case object ApplicationUpliftVerified extends AuditAction {
     val name = "application uplift to production completed - the verification link sent to the uplift requester has been visited"
     val auditType = "ApplicationUpliftedToProduction"
@@ -128,14 +137,19 @@ object AuditAction {
     val auditType = "VerificationEmailResentByGatekeeper"
   }
 
-  case object CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
-    val name = "create privileged application request has been denied, due to non-unique name"
-    val auditType = "CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName"
+  case object ApplicationUpliftRequestDeniedDueToDenyListedName extends AuditAction {
+    val name = "application uplift to production request has been denied, due to a deny listed name"
+    val auditType = "ApplicationUpliftRequestDeniedDueToDenyListedName"
   }
 
-  case object CreateRopcApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
-    val name = "create ropc application request has been denied, due to non-unique name"
-    val auditType = "CreateRopcApplicationRequestDeniedDueToNonUniqueName"
+  case object CreatePrivilegedApplicationRequestDeniedDueToDenyListedName extends AuditAction {
+    val name = "create privileged application request has been denied, due to a deny listed name"
+    val auditType = "CreatePrivilegedApplicationRequestDeniedDueToDenyListedName"
+  }
+
+  case object CreateRopcApplicationRequestDeniedDueToDenyListedName extends AuditAction {
+    val name = "create ropc application request has been denied, due to a deny listed name"
+    val auditType = "CreateRopcApplicationRequestDeniedDueToDenyListedName"
   }
 
   case object CollaboratorAdded extends AuditAction {

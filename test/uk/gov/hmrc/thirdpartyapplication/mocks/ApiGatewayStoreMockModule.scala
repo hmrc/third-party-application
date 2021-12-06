@@ -46,11 +46,11 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
       }
 
       def verifyCalled() = {
-        ApiGatewayStoreMock.verify.createApplication(*, *)(*)
+        verify.createApplication(*, *)(*)
       }
 
       def verifyNeverCalled() = {
-        ApiGatewayStoreMock.verify(never).createApplication(*, *)(*)
+        verify(never).createApplication(*, *)(*)
       }
     }
 
@@ -64,13 +64,13 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
       }
 
       def verifyCalledWith(applicationData: ApplicationData, tier: RateLimitTier.Value) =
-        ApiGatewayStoreMock.verify.updateApplication(eqTo(applicationData),refEq(tier))(*)
+        verify.updateApplication(eqTo(applicationData),refEq(tier))(*)
 
       def verifyCalled() =
-        ApiGatewayStoreMock.verify.updateApplication(*,*)(*)
+        verify.updateApplication(*,*)(*)
 
       def verifyNeverCalled() =
-        ApiGatewayStoreMock.verify(never).updateApplication(*,*)(*)
+        verify(never).updateApplication(*,*)(*)
 
     }
 
@@ -89,7 +89,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
       }
 
       def verifyCalled() = {
-        ApiGatewayStoreMock.verify.deleteApplication(*)(*)
+        verify.deleteApplication(*)(*)
       }
 
     }

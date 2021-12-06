@@ -24,7 +24,6 @@ import play.api.mvc._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
@@ -34,10 +33,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
-import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -53,8 +48,16 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 import cats.data.EitherT
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
+import uk.gov.hmrc.thirdpartyapplication.services._
+
+object ApplicationController {
+  case class RequestApprovalRequest(requestedByEmailAddress: String)
+
+  implicit val requestApprovalRequest = Json.reads[RequestApprovalRequest]
+}
 
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
@@ -65,28 +68,20 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       config: ApplicationControllerConfig,
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
+                                      upliftNamingService: UpliftNamingService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext)
-    extends BackendController(cc)
+    extends ExtraHeadersController(cc)
     with JsonUtils
     with AuthorisationWrapper
     with ApplicationLogger {
+
+  import ApplicationController.RequestApprovalRequest
 
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
-  // This header is not expected to reach outside but is used to pass information further down the call stack.
-  // TODO - tidy this up to use a better way to decorate calls with the knowledge they came from API Gateway (or not)
-  val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
-  
-  override implicit def hc(implicit request: RequestHeader) = {
-    def header(key: String) = request.headers.get(key) map (key -> _)
-    def renamedHeader(key: String, newKey: String) = request.headers.get(key) map (newKey -> _)
-
-    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), renamedHeader(USER_AGENT, INTERNAL_USER_AGENT)).flatten
-    super.hc.withExtraHeaders(extraHeaders: _*)
-  }
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
     def onV2(createApplicationRequest: CreateApplicationRequest)(fn: => Future[HasSucceeded]) = 
@@ -244,32 +239,29 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
 
-        applicationService
+        upliftNamingService
           .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
           .map((result: ApplicationNameValidationResult) => {
 
             val json = result match {
-              case Valid => Json.obj()
-              case Invalid(invalidName, duplicateName) => Json.obj("errors" -> Json.obj("invalidName" -> invalidName, "duplicateName" -> duplicateName))
+              case ValidName               => Json.obj()
+              case InvalidName             => Json.obj("errors" -> Json.obj("invalidName" -> true,  "duplicateName" -> false))
+              case DuplicateName           => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
             }
 
             Ok(json)
           })
 
       } recover recovery
-  }
-
-
-  def requestUplift(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpliftApplicationRequest] { upliftRequest =>
-      applicationService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
-        .map(_ => NoContent)
-    } recover {
-      case _: InvalidStateTransition =>
-        PreconditionFailed(JsErrorResponse(INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
-      case e: ApplicationAlreadyExists =>
-        Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
-    } recover recovery
+  }  
+  
+  def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+    withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
+      applicationService
+        .updateToPendingGatekeeperApproval(applicationId, requestApprovalRequest.requestedByEmailAddress)
+        .map(app => Ok(Json.toJson(app)))
+        .recover(recovery)
+      }
   }
 
   private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
@@ -427,12 +419,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def verifyUplift(verificationCode: String) = Action.async { implicit request =>
-    applicationService.verifyUplift(verificationCode) map (_ => NoContent) recover {
-      case e: InvalidUpliftVerificationCode => BadRequest(e.getMessage)
-    } recover recovery
-  }
-
   def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
     def audit(app: ApplicationData): Future[AuditResult] = {
       logger.info(s"Delete application ${app.id.value} - ${app.name}")
@@ -440,8 +426,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      val exec = ec
-      val ET = new EitherTHelper[Result] { implicit val ec: ExecutionContext = exec}
+      val ET = EitherTHelper.make[Result]
       lazy val badRequest = BadRequest("Cannot delete this application")
 
       (
