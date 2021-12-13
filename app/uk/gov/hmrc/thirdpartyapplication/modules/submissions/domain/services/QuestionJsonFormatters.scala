@@ -29,13 +29,11 @@ trait QuestionJsonFormatters extends StatementJsonFormatters with MapJsonFormatt
   implicit val jsonFormatFailMarkAnswer = Json.format[Fail.type]
   implicit val jsonFormatWarnMarkAnswer = Json.format[Warn.type]
   implicit val jsonFormatPassMarkAnswer = Json.format[Pass.type]
-  implicit val jsonFormatChangeMeMarkAnswer = Json.format[ChangeMe.type]
-
+  
   implicit val jsonFormatMarkAnswer = Union.from[MarkAnswer]("markAnswer")
     .and[Fail.type]("fail")
     .and[Warn.type]("warn")
     .and[Pass.type]("pass")
-    .and[ChangeMe.type]("get rid of this")
     .format
 
   // implicit val jsonTuple = Json.format[Tuple2[String, MarkAnswer]]

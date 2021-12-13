@@ -52,7 +52,6 @@ sealed trait MarkAnswer
 case object Fail extends MarkAnswer
 case object Warn extends MarkAnswer
 case object Pass extends MarkAnswer
-case object ChangeMe extends MarkAnswer
 
 case class PossibleAnswer(value: String) extends AnyVal
 
