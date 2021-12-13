@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
-trait QuestionJsonFormatters extends StatementJsonFormatters {
+import uk.gov.hmrc.thirdpartyapplication.domain.services.MapJsonFormatters
+
+trait QuestionJsonFormatters extends StatementJsonFormatters with MapJsonFormatters {
   import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
   import play.api.libs.json._
   import uk.gov.hmrc.play.json.Union
@@ -24,6 +26,23 @@ trait QuestionJsonFormatters extends StatementJsonFormatters {
   implicit val jsonFormatWording = Json.valueFormat[Wording]
   implicit val jsonFormatLabel = Json.valueFormat[Label]
 
+  implicit val jsonFormatFailMarkAnswer = Json.format[Fail.type]
+  implicit val jsonFormatWarnMarkAnswer = Json.format[Warn.type]
+  implicit val jsonFormatPassMarkAnswer = Json.format[Pass.type]
+  implicit val jsonFormatChangeMeMarkAnswer = Json.format[ChangeMe.type]
+
+  implicit val jsonFormatMarkAnswer = Union.from[MarkAnswer]("markAnswer")
+    .and[Fail.type]("fail")
+    .and[Warn.type]("warn")
+    .and[Pass.type]("pass")
+    .and[ChangeMe.type]("get rid of this")
+    .format
+
+  // implicit val jsonTuple = Json.format[Tuple2[String, MarkAnswer]]
+
+  implicit val keyReadsPossibleAnswer: KeyReads[PossibleAnswer] = key => JsSuccess(PossibleAnswer(key))
+  implicit val keyWritesPossibleAnswer: KeyWrites[PossibleAnswer] = _.value
+  implicit val jsonListMapKV = listMapReads[PossibleAnswer, MarkAnswer]
 
   implicit val jsonFormatPossibleAnswer = Json.valueFormat[PossibleAnswer]
   implicit val jsonFormatTextQuestion = Json.format[TextQuestion]

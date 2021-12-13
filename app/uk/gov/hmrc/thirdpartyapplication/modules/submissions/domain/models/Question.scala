@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 
 import scala.collection.immutable.ListSet
+import scala.collection.immutable.ListMap
 
 case class Wording(value: String) extends AnyVal
 
@@ -33,28 +34,48 @@ sealed trait Question {
   def wording: Wording
   def statement: Statement
 
-  def absenceText: Option[String]
-  final def isOptional: Boolean = absenceText.isDefined
+  def absence: Option[(String, MarkAnswer)]
+
+  def absenceText: Option[String] = absence.map(_._1)
+  def absenceMark: Option[MarkAnswer] = absence.map(_._2)
+
+  final def isOptional: Boolean = absence.isDefined
 }
 
-case class TextQuestion(id: QuestionId, wording: Wording, statement: Statement, absenceText: Option[String] = None) extends Question
+case class TextQuestion(id: QuestionId, wording: Wording, statement: Statement, absence: Option[(String, MarkAnswer)] = None) extends Question
 
 case class AcknowledgementOnly(id: QuestionId, wording: Wording, statement: Statement) extends Question {
-  val absenceText = None
+  val absence = None
 }
 
+sealed trait MarkAnswer
+case object Fail extends MarkAnswer
+case object Warn extends MarkAnswer
+case object Pass extends MarkAnswer
+case object ChangeMe extends MarkAnswer
 
 case class PossibleAnswer(value: String) extends AnyVal
+
 sealed trait ChoiceQuestion extends Question {
   def choices: ListSet[PossibleAnswer]
+  def marking: ListMap[PossibleAnswer, MarkAnswer]
 }
 
 sealed trait SingleChoiceQuestion extends ChoiceQuestion
 
-case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer], absenceText: Option[String] = None) extends ChoiceQuestion
+case class MultiChoiceQuestion(id: QuestionId, wording: Wording, statement: Statement, marking: ListMap[PossibleAnswer, MarkAnswer], absence: Option[(String, MarkAnswer)] = None) extends ChoiceQuestion {
+  lazy val choices: ListSet[PossibleAnswer] = ListSet(marking.keys.toList : _*)
+}
 
-case class ChooseOneOfQuestion(id: QuestionId, wording: Wording, statement: Statement, choices: ListSet[PossibleAnswer], absenceText: Option[String] = None) extends SingleChoiceQuestion
-case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement, absenceText: Option[String] = None) extends SingleChoiceQuestion {
-  lazy val choices = ListSet(PossibleAnswer("Yes"), PossibleAnswer("No"))
+case class ChooseOneOfQuestion(id: QuestionId, wording: Wording, statement: Statement, marking: ListMap[PossibleAnswer, MarkAnswer], absence: Option[(String, MarkAnswer)] = None) extends SingleChoiceQuestion {
+  lazy val choices: ListSet[PossibleAnswer] = ListSet(marking.keys.toList : _*)
+}
+
+case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement,  yesMarking: MarkAnswer, noMarking: MarkAnswer, absence: Option[(String, MarkAnswer)] = None) extends SingleChoiceQuestion {
+  val YES = PossibleAnswer("Yes")
+  val NO = PossibleAnswer("No")
+
+  lazy val marking: ListMap[PossibleAnswer, MarkAnswer] = ListMap(YES -> yesMarking, NO -> noMarking)
+  lazy val choices = ListSet(YES, NO)
 }
 
