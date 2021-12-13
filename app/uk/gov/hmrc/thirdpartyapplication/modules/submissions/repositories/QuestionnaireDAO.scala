@@ -59,8 +59,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val question2 = YesNoQuestion(
@@ -73,8 +73,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
       
       val question3 = YesNoQuestion(
@@ -87,8 +87,8 @@ object QuestionnaireDAO {
             StatementText(". Desktop software should follow equivalent offline standards.")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val questionnaire = Questionnaire(
@@ -114,8 +114,8 @@ object QuestionnaireDAO {
             StatementText("within 72 hours of becoming aware of it.")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question2 = YesNoQuestion(
@@ -124,8 +124,8 @@ object QuestionnaireDAO {
         Statement(
           StatementText("We expect you to provide an easy contact method in the case of a security breach.")
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val questionnaire = Questionnaire(
@@ -154,8 +154,8 @@ object QuestionnaireDAO {
             )
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
             
       val question2 = YesNoQuestion(
@@ -168,8 +168,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question3 = ChooseOneOfQuestion(
@@ -185,9 +185,9 @@ object QuestionnaireDAO {
           )
         ),
         ListMap(
-          (PossibleAnswer("Yes") -> ChangeMe),
-          (PossibleAnswer("No") -> ChangeMe),
-          (PossibleAnswer("We only have one customer") -> ChangeMe)
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("We only have one customer") -> Pass)
         )
       )
 
@@ -202,9 +202,9 @@ object QuestionnaireDAO {
           )
         ),
         ListMap(
-          (PossibleAnswer("Yes") -> ChangeMe),
-          (PossibleAnswer("No") -> ChangeMe),
-          (PossibleAnswer("We only have one user") -> ChangeMe)
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("We only have one user") -> Pass)
         )
       )
 
@@ -214,8 +214,8 @@ object QuestionnaireDAO {
         Statement(
           StatementText("You must allow customers to change, export or delete their data if they want to.")
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question6 = YesNoQuestion(
@@ -224,8 +224,8 @@ object QuestionnaireDAO {
         Statement(
           StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Fail,
+        noMarking = Pass
       )
 
       val questionnaire = Questionnaire(
@@ -285,9 +285,9 @@ object QuestionnaireDAO {
           StatementText("Select all that apply.")
         ),
         ListMap(
-          (PossibleAnswer("In the UK") -> ChangeMe),
-          (PossibleAnswer("In the European Economic Area") -> ChangeMe),
-          (PossibleAnswer("Outside the European Economic Area") -> ChangeMe)
+          (PossibleAnswer("In the UK") -> Pass),
+          (PossibleAnswer("In the European Economic Area") -> Pass),
+          (PossibleAnswer("Outside the European Economic Area") -> Warn)
         )
       )
 
@@ -300,7 +300,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com/privacy-policy")
           )
         ),
-        Some(("I don't have a privacy policy", ChangeMe))
+        Some(("I don't have a privacy policy", Fail))
       )
       
       val question5 = TextQuestion(
@@ -312,7 +312,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com/terms-conditions")
           )
         ),
-        Some(("I don't have terms and conditions", ChangeMe))
+        Some(("I don't have terms and conditions", Fail))
       )
       
       val questionnaire = Questionnaire(
@@ -336,8 +336,8 @@ object QuestionnaireDAO {
           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
         ),
         ListMap(
-          (PossibleAnswer("Yes") -> ChangeMe),
-          (PossibleAnswer("No, customers install and manage their software") -> ChangeMe)
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No, customers install and manage their software") -> Pass)
         )
       )
 
@@ -353,8 +353,8 @@ object QuestionnaireDAO {
             )
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val question3 = YesNoQuestion(
@@ -369,8 +369,8 @@ object QuestionnaireDAO {
             )
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val questionnaire = Questionnaire(
@@ -395,8 +395,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Pass
       )
 
       val question2 = YesNoQuestion(
@@ -409,8 +409,8 @@ object QuestionnaireDAO {
             StatementText(".")
           )        
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val questionnaire = Questionnaire(
@@ -430,8 +430,8 @@ object QuestionnaireDAO {
         Statement(
           StatementText("You must not use the HMRC logo in any way.")
         ),
-        yesMarking = ChangeMe,
-        noMarking = ChangeMe
+        yesMarking = Warn,
+        noMarking = Pass
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -445,9 +445,9 @@ object QuestionnaireDAO {
           )
         ),
         ListMap(
-          (PossibleAnswer("Yes") -> ChangeMe),
-          (PossibleAnswer("No") -> ChangeMe),
-          (PossibleAnswer("There are no adverts in my software") -> ChangeMe)
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Warn),
+          (PossibleAnswer("There are no adverts in my software") -> Pass)
         )
       )
     
@@ -458,9 +458,9 @@ object QuestionnaireDAO {
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
         ListMap(
-          PossibleAnswer("Yes") -> ChangeMe,
-          PossibleAnswer("No, I call it something else") -> ChangeMe,
-          PossibleAnswer("I do not advertise my software") -> ChangeMe
+          PossibleAnswer("Yes") -> Pass,
+          PossibleAnswer("No, I call it something else") -> Warn,
+          PossibleAnswer("I do not advertise my software") -> Pass
         )
       )
 
@@ -475,9 +475,9 @@ object QuestionnaireDAO {
           )
         ),
         ListMap(
-          (PossibleAnswer("Yes") -> ChangeMe),
-          (PossibleAnswer("No") -> ChangeMe),
-          (PossibleAnswer("I do not share customer data") -> ChangeMe)
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("I do not share customer data") -> Pass)
         )
       )
       
@@ -503,7 +503,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com")
           )
         ),
-        Some(("My organisation doesn't have a website", ChangeMe))
+        Some(("My organisation doesn't have a website", Fail))
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -516,12 +516,12 @@ object QuestionnaireDAO {
           )
         ),
         ListMap(
-          (PossibleAnswer("Unique Taxpayer Reference (UTR)") -> ChangeMe),
-          (PossibleAnswer("VAT registration number") -> ChangeMe),
-          (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)") -> ChangeMe),
-          (PossibleAnswer("PAYE reference") -> ChangeMe),
-          (PossibleAnswer("My organisation is in the UK and doesn't have any of these") -> ChangeMe),
-          (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> ChangeMe)
+          (PossibleAnswer("Unique Taxpayer Reference (UTR)") -> Pass),
+          (PossibleAnswer("VAT registration number") -> Pass),
+          (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)") -> Pass),
+          (PossibleAnswer("PAYE reference") -> Pass),
+          (PossibleAnswer("My organisation is in the UK and doesn't have any of these") -> Pass),
+          (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> Warn)
         )
       )
 
@@ -534,7 +534,7 @@ object QuestionnaireDAO {
             StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
           )
         ),
-        Some(("My organisation doesn't have a company registration", ChangeMe))
+        Some(("My organisation doesn't have a company registration", Warn))
       )
 
       val question2b = TextQuestion(
