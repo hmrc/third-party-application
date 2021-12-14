@@ -19,33 +19,48 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 
 object MarkAnswer {
-  // Assume answer is valid for question
-  def markSingleChoiceAnswer(question: SingleChoiceQuestion, answer: SingleChoiceAnswer): Option[MarkAnswer] =
-    question.marking.get(PossibleAnswer(answer.value))
+  //
+  // Assume answer is valid for question as it is only called for validated completed submissions
+  // 
 
-  def markMultiChoiceAnswer(question: MultiChoiceQuestion, answer: MultipleChoiceAnswer): Option[MarkAnswer] = {
+  protected def markSingleChoiceAnswer(question: SingleChoiceQuestion, answer: SingleChoiceAnswer): Mark =
+    question.marking.get(PossibleAnswer(answer.value)).get
+
+  protected def markMultiChoiceAnswer(question: MultiChoiceQuestion, answer: MultipleChoiceAnswer): Mark = {
     answer.values
     .map(PossibleAnswer)
-    .map(question.marking.get)
+    .map(question.marking.get(_).get)
     .toList
-    .foldRight[Option[MarkAnswer]](Some(Pass))( (a,m) => (a,m) match {
-      case (None, _)       => None
-      case (_, None)       => None
-      case (Some(Fail), _) => Some(Fail)
-      case (_, Some(Fail)) => Some(Fail)
-      case (_, Some(Warn)) => Some(Warn)
+    .foldRight[Mark](Pass)( (a,m) => (a, m) match {
+      case (Fail, _)    => Fail
+      case (_, Fail)    => Fail
+      case (Warn, _)    => Warn
+      case (_, Warn)    => Warn
+      case (Pass, Pass) => Pass
     })
   }
 
-  def markAnswer(question: Question, answer: ActualAnswer): Option[MarkAnswer] = {
+  protected def markAnswer(question: Question, answer: ActualAnswer): Mark = {
 
     (question, answer) match {
-      case (_, NoAnswer) => question.absenceMark
-      case (q: TextQuestion, a: TextAnswer) => Some(Pass)
+      case (_, NoAnswer) => question.absenceMark.get
+      case (q: TextQuestion, a: TextAnswer) => Pass
       case (q: MultiChoiceQuestion, a: MultipleChoiceAnswer) => markMultiChoiceAnswer(q, a)
       case (q: SingleChoiceQuestion, a: SingleChoiceAnswer) => markSingleChoiceAnswer(q, a)
-      case (q: AcknowledgementOnly, AcknowledgedAnswer) => Some(Pass)
-      case _ => None
+      case (q: AcknowledgementOnly, AcknowledgedAnswer) => Pass
+      case _ => throw new IllegalArgumentException("Unexpectely the answer is not valid")
+    }
+  }
+
+  def markSubmission(extSubmission: ExtendedSubmission, progress: Map[QuestionnaireId, QuestionnaireProgress]): Map[QuestionId, Mark] = {
+    require(extSubmission.isCompleted)
+    // All answers must be valid to have got here
+  
+    // All questions should/must exist for these questionIds.
+    def unsafeGetQuestion(id: QuestionId): Question = extSubmission.submission.findQuestion(id).get
+
+    extSubmission.submission.answersToQuestions.map {
+      case (id: QuestionId, answer: ActualAnswer) => (id -> markAnswer(unsafeGetQuestion(id), answer))
     }
   }
 }

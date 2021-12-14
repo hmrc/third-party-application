@@ -18,13 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.AnswerQuestion
 import cats.data.EitherT
 
 @Singleton
@@ -81,6 +81,17 @@ class SubmissionsService @Inject()(
   
   def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(submissionsDAO.fetch(id))
+  }
+
+  def fetchCompletedSubmission(id: SubmissionId): Future[Either[String, CompletedSubmission]] = {
+    (
+      for {
+        ext           <- fromOptionF(fetch(id), "No such submission")
+        _             <- cond(ext.isCompleted, (), "Submission is not complete")
+        markedAnswers =  MarkAnswer.markSubmission(ext, ext.questionnaireProgress)
+      } yield CompletedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)
+    )
+    .value
   }
 
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {

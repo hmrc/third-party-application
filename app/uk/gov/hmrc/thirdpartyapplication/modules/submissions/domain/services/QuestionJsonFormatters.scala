@@ -30,17 +30,17 @@ trait QuestionJsonFormatters extends StatementJsonFormatters with MapJsonFormatt
   implicit val jsonFormatWarnMarkAnswer = Json.format[Warn.type]
   implicit val jsonFormatPassMarkAnswer = Json.format[Pass.type]
   
-  implicit val jsonFormatMarkAnswer = Union.from[MarkAnswer]("markAnswer")
+  implicit val jsonFormatMarkAnswer = Union.from[Mark]("markAnswer")
     .and[Fail.type]("fail")
     .and[Warn.type]("warn")
     .and[Pass.type]("pass")
     .format
 
-  // implicit val jsonTuple = Json.format[Tuple2[String, MarkAnswer]]
+  // implicit val jsonTuple = Json.format[Tuple2[String, Mark]]
 
   implicit val keyReadsPossibleAnswer: KeyReads[PossibleAnswer] = key => JsSuccess(PossibleAnswer(key))
   implicit val keyWritesPossibleAnswer: KeyWrites[PossibleAnswer] = _.value
-  implicit val jsonListMapKV = listMapReads[PossibleAnswer, MarkAnswer]
+  implicit val jsonListMapKV = listMapReads[PossibleAnswer, Mark]
 
   implicit val jsonFormatPossibleAnswer = Json.valueFormat[PossibleAnswer]
   implicit val jsonFormatTextQuestion = Json.format[TextQuestion]

@@ -56,7 +56,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
 
     "for single choice questions" in {
       val question = yesNoQuestion(1)
-      val optionalQuestion = question.makeOptional
+      val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching = Left(())
       val validAnswer: AnswerMatching = Right(SingleChoiceAnswer("Yes"))
@@ -87,7 +87,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
 
     "for multi choice questions" in {
       val question = multichoiceQuestion(1, "One", "Two", "Three")
-      val optionalQuestion = question.makeOptional
+      val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching = Left(())
       val validSingleAnswer: AnswerMatching = Right(MultipleChoiceAnswer(Set("One")))
@@ -126,7 +126,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
 
     "for text questions" in {
       val question = textQuestion(1)
-      val optionalQuestion = question.makeOptional
+      val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
       val aFailure: AnswerMatching = Left(())
       val validAnswer: AnswerMatching = Right(TextAnswer("Bobby"))
