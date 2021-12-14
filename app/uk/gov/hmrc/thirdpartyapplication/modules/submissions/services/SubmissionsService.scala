@@ -88,7 +88,7 @@ class SubmissionsService @Inject()(
       for {
         ext           <- fromOptionF(fetch(id), "No such submission")
         _             <- cond(ext.isCompleted, (), "Submission is not complete")
-        markedAnswers =  MarkAnswer.markSubmission(ext, ext.questionnaireProgress)
+        markedAnswers =  MarkAnswer.markSubmission(ext)
       } yield CompletedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)
     )
     .value

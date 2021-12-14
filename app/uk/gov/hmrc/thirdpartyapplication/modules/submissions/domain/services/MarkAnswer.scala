@@ -52,7 +52,7 @@ object MarkAnswer {
     }
   }
 
-  def markSubmission(extSubmission: ExtendedSubmission, progress: Map[QuestionnaireId, QuestionnaireProgress]): Map[QuestionId, Mark] = {
+  def markSubmission(extSubmission: ExtendedSubmission): Map[QuestionId, Mark] = {
     require(extSubmission.isCompleted)
     // All answers must be valid to have got here
   
