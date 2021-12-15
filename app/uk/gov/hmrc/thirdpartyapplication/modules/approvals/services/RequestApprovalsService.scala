@@ -38,7 +38,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
 import scala.concurrent.Future.successful
 
-object ApprovalsService {
+object RequestApprovalsService {
   sealed trait RequestApprovalResult
 
   case class ApprovalAccepted(application: ApplicationData) extends RequestApprovalResult
@@ -55,7 +55,7 @@ object ApprovalsService {
 }
 
 @Singleton
-class ApprovalsService @Inject()(
+class RequestApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
@@ -64,7 +64,7 @@ class ApprovalsService @Inject()(
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
-  import ApprovalsService._
+  import RequestApprovalsService._
 
   def requestApproval(applicationId: ApplicationId,
                       requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
