@@ -31,7 +31,7 @@ object MarkAnswer {
     .map(PossibleAnswer)
     .map(question.marking.get(_).get)
     .toList
-    .foldRight[Mark](Pass)( (a,m) => (a, m) match {
+    .foldLeft[Mark](Pass)( (acc, mark) => (acc, mark) match {
       case (Fail, _)    => Fail
       case (_, Fail)    => Fail
       case (Warn, _)    => Warn

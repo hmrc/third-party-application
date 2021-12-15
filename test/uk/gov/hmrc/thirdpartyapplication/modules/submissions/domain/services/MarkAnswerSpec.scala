@@ -38,6 +38,10 @@ class MarkAnswerSpec extends HmrcSpec {
     val YES = SingleChoiceAnswer("Yes")
     val NO = SingleChoiceAnswer("No")
 
+    val ANSWER_FAIL = "a1"
+    val ANSWER_WARN = "a2"
+    val ANSWER_PASS = "a3"
+
     def buildSubmissionFromQuestions(questions: Question*) = {
       val questionnaire = Questionnaire(
         id = questionnaireAId,
@@ -97,7 +101,7 @@ class MarkAnswerSpec extends HmrcSpec {
     }
 
     object MultiChoiceQuestionnaireData {
-      val question1 = buildMultiChoiceQuestion(question1Id, ListMap(PossibleAnswer("a1") -> Pass, PossibleAnswer("a2") -> Warn, PossibleAnswer("a3") -> Fail))
+      val question1 = buildMultiChoiceQuestion(question1Id, ListMap(PossibleAnswer(ANSWER_PASS) -> Pass, PossibleAnswer(ANSWER_WARN) -> Warn, PossibleAnswer(ANSWER_FAIL) -> Fail))
 
       val submission = buildSubmissionFromQuestions(question1)
     }
@@ -120,6 +124,9 @@ class MarkAnswerSpec extends HmrcSpec {
   }
   def withAcknowledgementOnlyAnswers(): Submission = {
     AcknowledgementOnlyQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> AcknowledgedAnswer))
+  }
+  def withMultiChoiceAnswers(answers: String*): Submission = {
+    MultiChoiceQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
   }
 
   def extend(submission: Submission): ExtendedSubmission = 
@@ -176,7 +183,51 @@ class MarkAnswerSpec extends HmrcSpec {
     }
 
     "return Fail for Multiple Choice question" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_FAIL))
       
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Fail)      
+    }
+
+    "return Warn for Multiple Choice question" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_WARN))
+      
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Warn)      
+    }
+
+    "return Pass for Multiple Choice question" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_PASS))
+      
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Pass)      
+    }
+
+    "return Fail for Multiple Choice question if answer includes a single failure for the first answer" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_FAIL, ANSWER_WARN, ANSWER_PASS))
+      
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Fail)      
+    }
+
+    "return Fail for Multiple Choice question if answer includes a single failure for the last answer" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers( ANSWER_PASS, ANSWER_WARN, ANSWER_FAIL))
+      
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Fail)      
+    }
+
+    "return Warn for Multiple Choice question if answer includes a single warnng and no failure" in {
+      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_WARN, ANSWER_PASS))
+      
+      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      
+      markedQuestions shouldBe Map(question1Id -> Warn)      
     }
   }
 }
