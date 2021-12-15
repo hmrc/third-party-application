@@ -27,17 +27,15 @@ object MarkAnswer {
     question.marking.get(PossibleAnswer(answer.value)).get
 
   protected def markMultiChoiceAnswer(question: MultiChoiceQuestion, answer: MultipleChoiceAnswer): Mark = {
-    answer.values
-    .map(PossibleAnswer)
-    .map(question.marking.get(_).get)
-    .toList
-    .foldLeft[Mark](Pass)( (acc, mark) => (acc, mark) match {
-      case (Fail, _)    => Fail
-      case (_, Fail)    => Fail
-      case (Warn, _)    => Warn
-      case (_, Warn)    => Warn
-      case (Pass, Pass) => Pass
-    })
+    import cats.Monoid
+    import Mark._
+
+    Monoid.combineAll(
+      answer.values
+      .map(PossibleAnswer)
+      .map(question.marking.get(_).get)
+    )
+    
   }
 
   protected def markAnswer(question: Question, answer: ActualAnswer): Mark = {

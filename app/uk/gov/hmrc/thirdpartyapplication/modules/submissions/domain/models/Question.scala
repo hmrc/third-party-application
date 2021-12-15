@@ -53,6 +53,21 @@ case object Fail extends Mark
 case object Warn extends Mark
 case object Pass extends Mark
 
+object Mark {
+  import cats.Monoid
+
+  implicit val markMonoid: Monoid[Mark] = new Monoid[Mark] {
+    def empty: Mark = Pass
+    def combine(x: Mark, y: Mark): Mark = (x,y) match {
+      case (Fail, _)    => Fail
+      case (_, Fail)    => Fail
+      case (Warn, _)    => Warn
+      case (_, Warn)    => Warn
+      case (Pass, Pass) => Pass
+    }
+  }
+}
+
 case class PossibleAnswer(value: String) extends AnyVal
 
 sealed trait ChoiceQuestion extends Question {

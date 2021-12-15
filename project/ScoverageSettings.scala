@@ -4,7 +4,6 @@ object ScoverageSettings {
   def apply() = Seq(
     ScoverageKeys.coverageExcludedPackages := Seq(
       "<empty",
-      """.*\.domain\.models\..*""" ,
       """uk\.gov\.hmrc\.thirdpartyapplication\.controllers\.binders""",
       """uk\.gov\.hmrc\.thirdpartyapplication\.modules\.submissions\.controllers\.binders""",
       """uk\.gov\.hmrc\.BuildInfo""" ,
