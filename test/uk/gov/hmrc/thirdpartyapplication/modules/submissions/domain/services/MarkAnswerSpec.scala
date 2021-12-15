@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import scala.collection.immutable.ListMap
 
 class MarkAnswerSpec extends HmrcSpec {
 
@@ -37,73 +38,68 @@ class MarkAnswerSpec extends HmrcSpec {
     val YES = SingleChoiceAnswer("Yes")
     val NO = SingleChoiceAnswer("No")
 
-    object YesNoQuestionnaireData {
-      val question1 = YesNoQuestion(
-        question1Id,
-        Wording("wording1"),
-        Statement(StatementText("Statement1")),
-        yesMarking = Pass,
-        noMarking = Warn
-      )
-      val question2 = YesNoQuestion(
-        question2Id,
-        Wording("wording2"),
-        Statement(StatementText("Statement2")),
-        yesMarking = Pass,
-        noMarking = Warn
-      )
-
+    def buildSubmissionFromQuestions(questions: Question*) = {
       val questionnaire = Questionnaire(
         id = questionnaireAId,
         label = Label("Questionnaie"),
-        questions = NonEmptyList.of(
-          QuestionItem(question1), 
-          QuestionItem(question2)
-        )
+        questions = NonEmptyList.fromListUnsafe(questions.map((q:Question) => QuestionItem(q)).toList)
       )
 
       val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      val submission = Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), Map.empty)
-      
+      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), Map.empty)
     }
 
-    object OptionalQuestionnaireData {
-      val question1 = TextQuestion(
-        question1Id,
+    def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
+        id,
+        Wording("wording1"),
+        Statement(StatementText("Statement1")),
+        yesMark,
+        noMark
+      )
+
+    def buildTextQuestion(id: QuestionId) = TextQuestion(
+        id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
         Some(("blah blah blah", Fail))
       )
-
-      val questionnaire = Questionnaire(
-        id = questionnaireAId,
-        label = Label("Questionnaie"),
-        questions = NonEmptyList.of(
-          QuestionItem(question1)
-        )
-      )
-
-      val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      val submission = Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), Map.empty)      
-    }
-
-    object AcknowledgementOnlyQuestionnaireData {
-      val question1 = AcknowledgementOnly(
-        question1Id,
+    
+    def buildAcknowledgementOnlyQuestion(id: QuestionId) = AcknowledgementOnly(
+        id,
         Wording("wording1"),
         Statement(StatementText("Statement1"))        
       )
 
-      val questionnaire = Questionnaire(
-        id = questionnaireAId,
-        label = Label("Questionnaie"),
-        questions = NonEmptyList.of(
-          QuestionItem(question1)
-        )
+    def buildMultiChoiceQuestion(id: QuestionId, answerMap: ListMap[PossibleAnswer, Mark]) = MultiChoiceQuestion(
+        id,
+        Wording("wording1"),
+        Statement(StatementText("Statement1")),
+        answerMap        
       )
 
-      val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      val submission = Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), Map.empty)           
+    object YesNoQuestionnaireData {
+      val question1 = buildYesNoQuestion(question1Id, Pass, Warn)
+      val question2 = buildYesNoQuestion(question2Id, Pass, Warn)
+
+      val submission = buildSubmissionFromQuestions(question1, question2)      
+    }
+
+    object OptionalQuestionnaireData {
+      val question1 = buildTextQuestion(question1Id)
+
+      val submission = buildSubmissionFromQuestions(question1)
+    }
+
+    object AcknowledgementOnlyQuestionnaireData {
+      val question1 = buildAcknowledgementOnlyQuestion(question1Id)
+
+      val submission = buildSubmissionFromQuestions(question1)
+    }
+
+    object MultiChoiceQuestionnaireData {
+      val question1 = buildMultiChoiceQuestion(question1Id, ListMap(PossibleAnswer("a1") -> Pass, PossibleAnswer("a2") -> Warn, PossibleAnswer("a3") -> Fail))
+
+      val submission = buildSubmissionFromQuestions(question1)
     }
   }
 
@@ -177,6 +173,10 @@ class MarkAnswerSpec extends HmrcSpec {
       val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithAcknowledgementOnlyAnswers)
       
       markedQuestions shouldBe Map(question1Id -> Pass)
+    }
+
+    "return Fail for Multiple Choice question" in {
+      
     }
   }
 }
