@@ -21,7 +21,7 @@ import play.api.libs.json._
 import org.joda.time.DateTimeZone
 import uk.gov.hmrc.play.json.Union
 
-trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
+trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   
   implicit val keyReadsQuestionId: KeyReads[QuestionId] = key => JsSuccess(QuestionId(key))
   implicit val keyWritesQuestionId: KeyWrites[QuestionId] = _.value
@@ -46,15 +46,20 @@ trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   implicit val answersToQuestionsFormat: OFormat[Map[QuestionId, Option[ActualAnswer]]] = implicitly
 }
 
-object SubmissionsJsonFormatters extends SubmissionsJsonFormatters {
+trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val submissionFormat = Json.format[Submission]
 }
 
-object SubmissionsFrontendJsonFormatters extends SubmissionsJsonFormatters {
+object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
+
+trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
   implicit val submissionFormat = Json.format[Submission]
   implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
+  implicit val markedSubmissionFormat = Json.format[MarkedSubmission]
 }
+
+object SubmissionsFrontendJsonFormatters extends SubmissionsFrontendJsonFormatters

@@ -30,6 +30,7 @@ import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.MarkedSubmission
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
@@ -108,6 +109,29 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Fetch.thenReturn(None)
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+
+  "fetchLatestMarkedSubmission" should {
+    "return ok response with submission when found" in new Setup {
+      val markedSubmission = MarkedSubmission(submission, initialProgress, Map.empty)
+      SubmissionsServiceMock.FetchLatestMarkedSubmission.thenReturn(markedSubmission)
+
+      val result = underTest.fetchLatestMarkedSubmission(applicationId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).validate[MarkedSubmission] match {
+        case JsSuccess(markedSubmission, _) => succeed
+        case JsError(e) => fail(s"Not parsed as a response $e")
+      }
+    }
+
+    "return not found when not found" in new Setup {
+      SubmissionsServiceMock.FetchLatestMarkedSubmission.thenFails("nope")
+
+      val result = underTest.fetchLatestMarkedSubmission(applicationId)(FakeRequest(GET, "/"))
 
       status(result) shouldBe NOT_FOUND
     }

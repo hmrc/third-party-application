@@ -83,10 +83,10 @@ class SubmissionsService @Inject()(
     fetchAndExtend(submissionsDAO.fetch(id))
   }
 
-  def fetchMarkedSubmission(id: SubmissionId): Future[Either[String, MarkedSubmission]] = {
+  def fetchLatestMarkedSubmission(applicationId: ApplicationId): Future[Either[String, MarkedSubmission]] = {
     (
       for {
-        ext           <- fromOptionF(fetch(id), "No such submission")
+        ext           <- fromOptionF(fetchLatest(applicationId), "No such application submission")
         _             <- cond(ext.isCompleted, (), "Submission is not complete")
         markedAnswers =  MarkAnswer.markSubmission(ext)
       } yield MarkedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)

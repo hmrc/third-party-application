@@ -26,6 +26,7 @@ import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.mvc.Results
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
 
 object SubmissionsController {
 
@@ -43,8 +44,7 @@ class SubmissionsController @Inject()(
 )(
   implicit val ec: ExecutionContext
 ) 
-extends BackendController(cc) {
-  import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
+extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
   import SubmissionsController._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
@@ -69,6 +69,14 @@ extends BackendController(cc) {
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
+  }
+
+  def fetchLatestMarkedSubmission(applicationId: ApplicationId) = Action.async { _ =>
+    lazy val failed = (msg: String) => NotFound(Json.toJson(ErrorMessage(msg)))
+    
+    val success = (s: MarkedSubmission) => Ok(Json.toJson(s))
+
+    service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
   }
 
   def recordAnswers(submissionId: SubmissionId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>

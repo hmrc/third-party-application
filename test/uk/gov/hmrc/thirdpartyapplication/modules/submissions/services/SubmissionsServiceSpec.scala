@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
+import cats.data.NonEmptyList
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -124,6 +125,63 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
     }
     
+    "fetchLatestMarkedSubmission" should {
+      "fetch latest marked submission for id" in new Setup {
+        val completedAnswers: Submissions.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
+        val completedSubmission = submission.copy(
+          answersToQuestions = completedAnswers, 
+          groups = NonEmptyList.of(
+            GroupOfQuestionnaires(
+              heading = "About your processes",
+              links = NonEmptyList.of(
+                Questionnaire(
+                  id = QuestionnaireId("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
+                  label = Label("Marketing your software"),
+                  questions = NonEmptyList.of(
+                    QuestionItem(
+                      TextQuestion(
+                        QuestionId("q1"), 
+                        Wording("Do you provide software as a service (SaaS)?"),
+                        Statement(
+                          StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
+                        ), 
+                        None
+                      ) 
+                    )
+                  )
+                )
+              )             
+            )
+          )
+        )
+        
+        SubmissionsDAOMock.FetchLatest.thenReturn(completedSubmission)
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
+
+        result.right.value.submission shouldBe completedSubmission
+      }
+
+      "fail when given an invalid application id" in new Setup {
+        SubmissionsDAOMock.FetchLatest.thenReturnNothing()
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
+
+        result.left.value shouldBe "No such application submission"
+      }
+
+      "fail when given a valid application that is not completed" in new Setup {
+        SubmissionsDAOMock.FetchLatest.thenReturn(submission)
+        ContextServiceMock.DeriveContext.willReturn(simpleContext)
+
+        val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
+
+        result.left.value shouldBe "Submission is not complete"
+      }
+    }
+
     "recordAnswers" should {
       "records new answers when given a valid question" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(submission)
