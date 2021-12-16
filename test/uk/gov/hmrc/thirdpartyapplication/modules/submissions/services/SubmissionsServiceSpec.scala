@@ -128,7 +128,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
         val completedAnswers: Submissions.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
-        val completedSubmission = submission.copy(
+        val completeSubmission = submission.copy(
           answersToQuestions = completedAnswers, 
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
@@ -155,12 +155,12 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
           )
         )
         
-        SubmissionsDAOMock.FetchLatest.thenReturn(completedSubmission)
+        SubmissionsDAOMock.FetchLatest.thenReturn(completeSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
 
-        result.right.value.submission shouldBe completedSubmission
+        result.right.value.submission shouldBe completeSubmission
       }
 
       "fail when given an invalid application id" in new Setup {

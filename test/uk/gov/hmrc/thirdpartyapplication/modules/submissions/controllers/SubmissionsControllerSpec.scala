@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -25,7 +25,6 @@ import play.api.test.FakeRequest
 import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController
 import play.api.libs.json.JsError
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submission
