@@ -88,4 +88,12 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
       service.recordAnswers(submissionId, questionId, answersRequest.answers).map(_.fold(failed, success))
     }
   }
+
+  def latestSubmissionIsCompleted(applicationId: ApplicationId) = Action.async { _ =>
+    lazy val failed = NotFound(Results.EmptyContent())
+    
+    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s.isCompleted))
+
+    service.fetchLatest(applicationId).map(_.fold(failed)(success))
+  }
 }
