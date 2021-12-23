@@ -1,5 +1,6 @@
 POST        /application/:aid                         uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.createSubmissionFor(aid: ApplicationId)
 GET         /application/:aid                         uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.fetchLatest(aid: ApplicationId)
+GET         /latestiscompleted/:aid                   uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.latestSubmissionIsCompleted(aid: ApplicationId)
 GET         /marked/application/:aid                  uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.fetchLatestMarkedSubmission(aid: ApplicationId)
 
 GET         /:sid                                     uk.gov.hmrc.thirdpartyapplication.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: SubmissionId)
