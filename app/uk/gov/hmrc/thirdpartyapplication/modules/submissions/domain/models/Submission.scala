@@ -62,9 +62,9 @@ case class Submission(
   groups: NonEmptyList[GroupOfQuestionnaires],
   answersToQuestions: Submissions.AnswersToQuestions
 ) {
-  def allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
+  lazy val allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
-  def allQuestions: NonEmptyList[Question] = allQuestionnaires.flatMap(l => l.questions.map(_.question))
+  lazy val allQuestions: NonEmptyList[Question] = allQuestionnaires.flatMap(l => l.questions.map(_.question))
 
   def findQuestion(questionId: QuestionId): Option[Question] = allQuestions.find(q => q.id == questionId)
 
@@ -84,4 +84,15 @@ case class ExtendedSubmission(
     questionnaireProgress.values
     .map(_.state)
     .forall(QuestionnaireState.isCompleted)
+}
+
+
+case class MarkedSubmission(
+  submission: Submission,
+  questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress],
+  markedAnswers: Map[QuestionId, Mark]
+) {
+  lazy val isFail = markedAnswers.values.toList.contains(Fail) | markedAnswers.values.filter(_ == Warn).size >= 4
+  lazy val isWarn = markedAnswers.values.toList.contains(Warn)
+  lazy val isPass = !isWarn && !isFail
 }

@@ -22,9 +22,9 @@ import cats.implicits._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
-import scala.collection.immutable.ListSet
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
 import cats.data.NonEmptyList
+import scala.collection.immutable.ListMap
 
 @Singleton
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
@@ -58,19 +58,23 @@ object QuestionnaireDAO {
             StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
             StatementText(".")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val question2 = YesNoQuestion(
-        QuestionId("6139f57d-36ab-4338-85b3-a2079d6cf376"),
-        Wording("Does your error handling meet our specification?"),
-        Statement(
+        id = QuestionId("6139f57d-36ab-4338-85b3-a2079d6cf376"),
+        wording = Wording("Does your error handling meet our specification?"),
+        statement = Statement(
           CompoundFragment(
             StatementText("We will check for evidence that you comply with our"),
             StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
             StatementText(".")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
       
       val question3 = YesNoQuestion(
@@ -82,7 +86,9 @@ object QuestionnaireDAO {
             StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "http://www.google.com"),
             StatementText(". Desktop software should follow equivalent offline standards.")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val questionnaire = Questionnaire(
@@ -107,7 +113,9 @@ object QuestionnaireDAO {
             StatementLink("notify the ICO about personal data breaches (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"),
             StatementText("within 72 hours of becoming aware of it.")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question2 = YesNoQuestion(
@@ -115,7 +123,9 @@ object QuestionnaireDAO {
         Wording("Do you provide a way for your customers or third parties to tell you about a security risk or incident?"),
         Statement(
           StatementText("We expect you to provide an easy contact method in the case of a security breach.")
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val questionnaire = Questionnaire(
@@ -143,7 +153,9 @@ object QuestionnaireDAO {
               StatementText("for processing personal data")
             )
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
             
       val question2 = YesNoQuestion(
@@ -155,7 +167,9 @@ object QuestionnaireDAO {
             StatementLink("GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
             StatementText(".")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question3 = ChooseOneOfQuestion(
@@ -170,10 +184,10 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No"),
-          PossibleAnswer("We only have one customer")
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("We only have one customer") -> Pass)
         )
       )
 
@@ -187,10 +201,10 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No"),
-          PossibleAnswer("We only have one user")
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("We only have one user") -> Pass)
         )
       )
 
@@ -199,7 +213,9 @@ object QuestionnaireDAO {
         Wording("Can your customers access their data?"),
         Statement(
           StatementText("You must allow customers to change, export or delete their data if they want to.")
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val question6 = YesNoQuestion(
@@ -207,7 +223,9 @@ object QuestionnaireDAO {
         Wording("Do you store your customers' Government Gateway credentials?"),
         Statement(
           StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
-        )
+        ),
+        yesMarking = Fail,
+        noMarking = Pass
       )
 
       val questionnaire = Questionnaire(
@@ -266,10 +284,10 @@ object QuestionnaireDAO {
         Statement(
           StatementText("Select all that apply.")
         ),
-        ListSet(
-          PossibleAnswer("In the UK"),
-          PossibleAnswer("In the European Economic Area"),
-          PossibleAnswer("Outside the European Economic Area")
+        ListMap(
+          (PossibleAnswer("In the UK") -> Pass),
+          (PossibleAnswer("In the European Economic Area") -> Pass),
+          (PossibleAnswer("Outside the European Economic Area") -> Warn)
         )
       )
 
@@ -282,7 +300,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com/privacy-policy")
           )
         ),
-        Some("I don't have a privacy policy")
+        Some(("I don't have a privacy policy", Fail))
       )
       
       val question5 = TextQuestion(
@@ -294,7 +312,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com/terms-conditions")
           )
         ),
-        Some("I don't have terms and conditions")
+        Some(("I don't have terms and conditions", Fail))
       )
       
       val questionnaire = Questionnaire(
@@ -317,9 +335,9 @@ object QuestionnaireDAO {
         Statement(
           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No, customers install and manage their software")
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No, customers install and manage their software") -> Pass)
         )
       )
 
@@ -334,7 +352,9 @@ object QuestionnaireDAO {
               StatementText(".")
             )
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val question3 = YesNoQuestion(
@@ -348,7 +368,9 @@ object QuestionnaireDAO {
               StatementText(".")
             )
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Warn
       )
 
       val questionnaire = Questionnaire(
@@ -372,7 +394,9 @@ object QuestionnaireDAO {
             StatementLink("fraud prevention specification (opens in a new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
             StatementText(".")
           )
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Pass
       )
 
       val question2 = YesNoQuestion(
@@ -384,7 +408,9 @@ object QuestionnaireDAO {
             StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
             StatementText(".")
           )        
-        )
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
       )
 
       val questionnaire = Questionnaire(
@@ -403,7 +429,9 @@ object QuestionnaireDAO {
         Wording("Do you use HMRC logos in your software, marketing or website?"),
         Statement(
           StatementText("You must not use the HMRC logo in any way.")
-        )
+        ),
+        yesMarking = Warn,
+        noMarking = Pass
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -416,10 +444,10 @@ object QuestionnaireDAO {
             StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
           )
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No"),
-          PossibleAnswer("There are no adverts in my software")
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Warn),
+          (PossibleAnswer("There are no adverts in my software") -> Pass)
         )
       )
     
@@ -429,10 +457,10 @@ object QuestionnaireDAO {
         Statement(
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No, I call it something else"),
-          PossibleAnswer("I do not advertise my software")
+        ListMap(
+          PossibleAnswer("Yes") -> Pass,
+          PossibleAnswer("No, I call it something else") -> Warn,
+          PossibleAnswer("I do not advertise my software") -> Pass
         )
       )
 
@@ -446,10 +474,10 @@ object QuestionnaireDAO {
             StatementText("from the Information Commissioner's Office.")
           )
         ),
-        ListSet(
-          PossibleAnswer("Yes"),
-          PossibleAnswer("No"),
-          PossibleAnswer("I do not share customer data")
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("I do not share customer data") -> Pass)
         )
       )
       
@@ -475,7 +503,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com")
           )
         ),
-        Some("My organisation doesn't have a website")
+        Some(("My organisation doesn't have a website", Fail))
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -487,13 +515,13 @@ object QuestionnaireDAO {
             StatementText("Choose one option")
           )
         ),
-        ListSet(
-          PossibleAnswer("Unique Taxpayer Reference (UTR)"),
-          PossibleAnswer("VAT registration number"),
-          PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)"),
-          PossibleAnswer("PAYE reference"),
-          PossibleAnswer("My organisation is in the UK and doesn't have any of these"),
-          PossibleAnswer("My organisation is outside the UK and doesn't have any of these")
+        ListMap(
+          (PossibleAnswer("Unique Taxpayer Reference (UTR)") -> Pass),
+          (PossibleAnswer("VAT registration number") -> Pass),
+          (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)") -> Pass),
+          (PossibleAnswer("PAYE reference") -> Pass),
+          (PossibleAnswer("My organisation is in the UK and doesn't have any of these") -> Pass),
+          (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> Warn)
         )
       )
 
@@ -506,7 +534,7 @@ object QuestionnaireDAO {
             StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
           )
         ),
-        Some("My organisation doesn't have a company registration")
+        Some(("My organisation doesn't have a company registration", Warn))
       )
 
       val question2b = TextQuestion(

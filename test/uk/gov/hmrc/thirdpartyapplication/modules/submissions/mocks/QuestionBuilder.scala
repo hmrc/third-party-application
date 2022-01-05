@@ -17,22 +17,30 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks
 
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
-import scala.collection.immutable.ListSet
+import scala.collection.immutable.ListMap
+
+trait MakeOptional[T <: Question] {
+  def makeOptional(text: String, mark: Mark): T
+  def makeOptionalFail: T = makeOptional("Some text", Fail)
+  def makeOptionalWarn: T = makeOptional("Some text", Warn)
+  def makeOptionalPass: T = makeOptional("Some text", Pass)
+}
 
 trait QuestionBuilder {
-  implicit class TextQuestionSyntax(question: TextQuestion) {
-    def makeOptional: TextQuestion = question.copy(absenceText = Some("Some Text"))
+  implicit class TextQuestionSyntax(question: TextQuestion) extends MakeOptional[TextQuestion] {
+    def makeOptional(text: String, mark: Mark): TextQuestion = question.copy(absence = Some((text, mark)))
   }
-  implicit class MultiChoiceQuestionSyntax(question: MultiChoiceQuestion) {
-    def makeOptional: MultiChoiceQuestion = question.copy(absenceText = Some("Some Text"))
-  }
-
-  implicit class YesNoQuestionSyntax(question: YesNoQuestion) {
-    def makeOptional: YesNoQuestion = question.copy(absenceText = Some("Some Text"))
+  
+  implicit class MultiChoiceQuestionSyntax(question: MultiChoiceQuestion) extends MakeOptional[MultiChoiceQuestion] {
+    def makeOptional(text: String, mark: Mark): MultiChoiceQuestion = question.copy(absence = Some((text, mark)))
   }
 
-  implicit class ChooseOneOfQuestionSyntax(question: ChooseOneOfQuestion) {
-    def makeOptional: ChooseOneOfQuestion = question.copy(absenceText = Some("Some Text"))
+  implicit class YesNoQuestionSyntax(question: YesNoQuestion) extends MakeOptional[YesNoQuestion] {
+    def makeOptional(text: String, mark: Mark): YesNoQuestion = question.copy(absence = Some((text, mark)))
+  }
+
+  implicit class ChooseOneOfQuestionSyntax(question: ChooseOneOfQuestion) extends MakeOptional[ChooseOneOfQuestion] {
+    def makeOptional(text: String, mark: Mark): ChooseOneOfQuestion = question.copy(absence = Some((text, mark)))
   }
 
   def acknowledgementOnly(counter: Int): AcknowledgementOnly =
@@ -46,7 +54,10 @@ trait QuestionBuilder {
     YesNoQuestion(
       QuestionId.random,
       Wording(s"Wording$counter"),
-      Statement(List())
+      Statement(List()),
+      Pass,
+      Fail,
+      None
     )
   }
   
@@ -55,7 +66,7 @@ trait QuestionBuilder {
       QuestionId.random,
       Wording(s"Wording$counter"),
       Statement(List()),
-      ListSet(choices.map(c => PossibleAnswer(c)): _*)
+      choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])( (pair, acc) => acc + pair)
     )
   }
 

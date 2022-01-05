@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.ApprovalsService._
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.RequestApprovalsService
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.services.RequestApprovalsService._
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -39,7 +39,7 @@ object ApprovalsController {
 
 @Singleton
 class ApprovalsController @Inject()(
-  approvalsService: ApprovalsService,
+  requestApprovalsService: RequestApprovalsService,
   cc: ControllerComponents
 )
 (
@@ -51,7 +51,7 @@ class ApprovalsController @Inject()(
 
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      approvalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
+      requestApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueToNoSuchApplication | 
               ApprovalRejectedDueToNoSuchSubmission                           => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))

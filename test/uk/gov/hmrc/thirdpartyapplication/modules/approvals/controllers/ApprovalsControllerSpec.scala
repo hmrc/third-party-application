@@ -21,7 +21,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 
 import play.api.test.Helpers
-import uk.gov.hmrc.thirdpartyapplication.modules.approvals.mocks.ApprovalsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.modules.approvals.mocks.RequestApprovalsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
@@ -33,51 +33,51 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec {
     val emailAddress = "test@example.com"
     val appId = ApplicationId.random
     
-    trait Setup extends ApprovalsServiceMockModule {
+    trait Setup extends RequestApprovalsServiceMockModule {
         val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
         val request = FakeRequest().withBody(jsonBody)
 
-        val underTest = new ApprovalsController(ApprovalsServiceMock.aMock, Helpers.stubControllerComponents())
+        val underTest = new ApprovalsController(RequestApprovalsServiceMock.aMock, Helpers.stubControllerComponents())
     }
 
     "requestApproval" should {
         "return 'no content' success response if request is approved" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe OK
         }        
 
         "return 'precondition failed' error response if request is not in the correct state" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe PRECONDITION_FAILED
         }
 
         "return 'conflict' error response if application already exists" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationAlreadyExistsErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationAlreadyExistsErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe CONFLICT
         }
 
         "return 'bad request' error response if application already exists" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationDoesNotExistErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationDoesNotExistErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe BAD_REQUEST
         }
 
         "return 'precondition failed' error response if submission is incomplete" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncompleteSubmissionErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncompleteSubmissionErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe PRECONDITION_FAILED
         }        
 
         "return 'precondition failed' error response if name is illegal" in new Setup {
-            ApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe PRECONDITION_FAILED

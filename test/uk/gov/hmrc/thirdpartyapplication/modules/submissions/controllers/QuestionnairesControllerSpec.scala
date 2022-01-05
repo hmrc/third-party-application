@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.questionnaires
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import scala.concurrent.ExecutionContext.Implicits.global

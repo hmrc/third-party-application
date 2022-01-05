@@ -19,42 +19,46 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import play.api.libs.json._
 import org.joda.time.DateTimeZone
-import uk.gov.hmrc.play.json.Union
 
-trait SubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
+trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   
-  implicit val keyReadsQuestionId: KeyReads[QuestionId] = key => JsSuccess(QuestionId(key))
-  implicit val keyWritesQuestionId: KeyWrites[QuestionId] = _.value
-
   implicit val keyReadsQuestionnaireId: KeyReads[QuestionnaireId] = key => JsSuccess(QuestionnaireId(key))
   implicit val keyWritesQuestionnaireId: KeyWrites[QuestionnaireId] = _.value
 
-  implicit val notStartedFormat = Json.format[NotStarted.type]
-  implicit val inProgressFormat = Json.format[InProgress.type]
-  implicit val notApplicableFormat = Json.format[NotApplicable.type]
-  implicit val completedFormat = Json.format[Completed.type]
+  implicit val stateWrites : Writes[QuestionnaireState] = Writes {
+    case NotStarted    => JsString("NotStarted")
+    case InProgress    => JsString("InProgress")
+    case NotApplicable => JsString("NotApplicable")
+    case Completed     => JsString("Completed")
+  }
   
-  implicit val questionnaireStateFormat = Union.from[QuestionnaireState]("state")
-    .and[NotStarted.type]("NotStarted")
-    .and[InProgress.type]("InProgress")
-    .and[NotApplicable.type]("NotApplicable")
-    .and[Completed.type]("Completed")
-    .format
+  implicit val stateReads : Reads[QuestionnaireState] = Reads {
+    case JsString("NotStarted") => JsSuccess(NotStarted)
+    case JsString("InProgress") => JsSuccess(InProgress)
+    case JsString("NotApplicable") => JsSuccess(NotApplicable)
+    case JsString("Completed") => JsSuccess(Completed)
+    case _ => JsError("Failed to parse QuestionnaireState value")
+  }
 
   implicit val questionnaireProgressFormat = Json.format[QuestionnaireProgress]
 
   implicit val answersToQuestionsFormat: OFormat[Map[QuestionId, Option[ActualAnswer]]] = implicitly
 }
 
-object SubmissionsJsonFormatters extends SubmissionsJsonFormatters {
+trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
   implicit val submissionFormat = Json.format[Submission]
 }
 
-object SubmissionsFrontendJsonFormatters extends SubmissionsJsonFormatters {
+object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
+
+trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
   implicit val submissionFormat = Json.format[Submission]
   implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
+  implicit val markedSubmissionFormat = Json.format[MarkedSubmission]
 }
+
+object SubmissionsFrontendJsonFormatters extends SubmissionsFrontendJsonFormatters

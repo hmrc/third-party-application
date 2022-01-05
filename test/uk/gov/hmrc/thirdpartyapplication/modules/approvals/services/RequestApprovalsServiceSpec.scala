@@ -34,7 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 
-class ApprovalsServiceSpec extends AsyncHmrcSpec {
+class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
   trait Setup 
     extends AuditServiceMockModule 
@@ -54,10 +54,10 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
       
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
-    val underTest = new ApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock)
+    val underTest = new RequestApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock)
   }
 
-  "ApplicationApprovalsService" when {
+  "RequestApprovalsService" when {
     "requestApproval" should {
 
       "update state, save and audit" in new Setup {
@@ -71,7 +71,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalAccepted(fakeSavedApplication)
+        result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
         ApplicationRepoMock.Save.verifyCalled()
@@ -84,7 +84,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToDuplicateName(expectedAppName)
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToDuplicateName(expectedAppName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -97,7 +97,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToIllegalName(expectedAppName)
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(expectedAppName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -109,7 +109,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToIncompleteSubmission
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncompleteSubmission
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -120,7 +120,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToNoSuchApplication
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToNoSuchApplication
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -132,7 +132,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToIncorrectState
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectState
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -144,7 +144,7 @@ class ApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
-        result shouldBe ApprovalsService.ApprovalRejectedDueToNoSuchSubmission
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToNoSuchSubmission
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
