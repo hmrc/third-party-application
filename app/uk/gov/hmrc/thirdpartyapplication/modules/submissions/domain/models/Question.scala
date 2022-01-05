@@ -92,4 +92,3 @@ case class YesNoQuestion(id: QuestionId, wording: Wording, statement: Statement,
   lazy val marking: ListMap[PossibleAnswer, Mark] = ListMap(YES -> yesMarking, NO -> noMarking)
   lazy val choices = ListSet(YES, NO)
 }
-
