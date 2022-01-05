@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper, DateTimeUtils}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -46,7 +46,8 @@ class ApplicationRepositorySpec
     with BeforeAndAfterEach with BeforeAndAfterAll
     with ApplicationStateUtil
     with IndexVerification
-    with MetricsHelper {
+    with MetricsHelper
+    with DateTimeUtils {
 
   val defaultGrantLength = 547
   val newGrantLength = 1000
@@ -183,19 +184,18 @@ class ApplicationRepositorySpec
 
   "recordApplicationUsage" should {
     "update the lastAccess property" in {
-      val testStartTime = DateTime.now()
 
       val applicationId = ApplicationId.random
-
+      
       val application =
         anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
-          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
-
+        .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
+        
       await(applicationRepository.save(application))
-
+      
       val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
-
-      retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
+      
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get)
     }
 
     "update the grantLength property" in {
@@ -216,7 +216,6 @@ class ApplicationRepositorySpec
 
   "recordServerTokenUsage" should {
     "update the lastAccess and lastAccessTokenUsage properties" in {
-      val testStartTime = DateTime.now()
       val applicationId = ApplicationId.random
       val application =
         anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
@@ -226,14 +225,13 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.recordServerTokenUsage(applicationId))
 
-      retrieved.lastAccess.get.isAfter(testStartTime) shouldBe true
-      retrieved.tokens.production.lastAccessTokenUsage.get.isAfter(testStartTime) shouldBe true
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get)
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.lastAccessTokenUsage.get)
     }
   }
 
   "recordClientSecretUsage" should {
     "create a lastAccess property for client secret if it does not already exist" in {
-      val testStartTime = DateTime.now()
       val applicationId = ApplicationId.random
       val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
       val generatedClientSecretId = application.tokens.production.clientSecrets.head.id
@@ -243,11 +241,10 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId, generatedClientSecretId))
 
       application.tokens.production.clientSecrets.head.lastAccess shouldBe None // Original object has no value
-      retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(testStartTime) shouldBe true // Retrieved object is updated
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get)
     }
 
     "update an existing lastAccess property for a client secret" in {
-      val testStartTime = DateTime.now()
       val applicationId = ApplicationId.random
       val applicationTokens =
         ApplicationTokens(
@@ -262,7 +259,7 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId, generatedClientSecretId))
 
-      retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(testStartTime) shouldBe true
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get)
       retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(applicationTokens.production.clientSecrets.head.lastAccess.get) shouldBe true
     }
 
@@ -287,7 +284,7 @@ class ApplicationRepositorySpec
 
       retrieved.tokens.production.clientSecrets.foreach(retrievedClientSecret =>
         if(retrievedClientSecret.id == secretToUpdate.id)
-          retrievedClientSecret.lastAccess.get.isAfter(testStartTime) shouldBe true
+          timestampShouldBeApproximatelyNow(retrievedClientSecret.lastAccess.get)
         else
           retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
       )
