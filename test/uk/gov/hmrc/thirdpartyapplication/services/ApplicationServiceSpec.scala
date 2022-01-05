@@ -1051,32 +1051,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "updateToPendingGatekeeperApproval" should {
-    val email = "test@example.com"
-
-    "update the application with new state when an existing applicaiton id is specified" in new Setup {
-      val testApplication = applicationData.copy(state = ApplicationState())
-      ApplicationRepoMock.Fetch.thenReturn(testApplication)
-      ApplicationRepoMock.Save.thenReturn(testApplication)
-
-      await(underTest.updateToPendingGatekeeperApproval(testApplication.id, email))
-
-      val appData = ApplicationRepoMock.Save.verifyCalled()
-      appData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
-    }
-
-    "NotFoundException thrown when an non-existing application id is specified" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      val nonExistingApplicationId = ApplicationId.random
-
-      intercept[NotFoundException] {
-        await(underTest.updateToPendingGatekeeperApproval(nonExistingApplicationId, email))
-      }
-    }
-
-  }
-
   "update rate limit tier" should {
 
     "update the application on AWS and in mongo" in new Setup {
