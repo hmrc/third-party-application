@@ -86,7 +86,6 @@ case class ExtendedSubmission(
     .forall(QuestionnaireState.isCompleted)
 }
 
-
 case class MarkedSubmission(
   submission: Submission,
   questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress],

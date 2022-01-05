@@ -76,8 +76,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     with AuthorisationWrapper
     with ApplicationLogger {
 
-  import ApplicationController.RequestApprovalRequest
-
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
@@ -254,15 +252,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
       } recover recovery
   }  
-  
-  def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
-    withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      applicationService
-        .updateToPendingGatekeeperApproval(applicationId, requestApprovalRequest.requestedByEmailAddress)
-        .map(app => Ok(Json.toJson(app)))
-        .recover(recovery)
-      }
-  }
 
   private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
     future.map {

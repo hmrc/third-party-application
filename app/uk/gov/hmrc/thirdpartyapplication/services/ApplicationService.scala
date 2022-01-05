@@ -371,15 +371,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  def updateToPendingGatekeeperApproval(applicationId: ApplicationId, requestedByEmailAddress: String): Future[ApplicationData] = {
-    for {
-      application <- fetchApp(applicationId)
-      updatedApplicationState = application.state.toPendingGatekeeperApproval(requestedByEmailAddress)
-      updatedApplication = application.copy(state = updatedApplicationState)
-      persistedApplication <- applicationRepository.save(updatedApplication)
-    } yield persistedApplication
-  }
-
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val application = req match {
       case v1 : CreateApplicationRequestV1 => v1.normaliseCollaborators
