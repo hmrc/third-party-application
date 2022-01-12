@@ -28,6 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
 object ApplicationNamingService {
   type ExclusionCondition = (ApplicationData) => Boolean
@@ -49,6 +50,7 @@ abstract class AbstractApplicationNamingService(
     if (nameValidationConfig.validateForDuplicateAppNames) {
       applicationRepository
         .fetchApplicationsByName(applicationName)
+        .map(_.filter(a => Environment.withName(a.environment) == Environment.PRODUCTION)) // Helps with single db environments
         .map(_.filterNot(exclusions).nonEmpty)
     } else {
       successful(false)

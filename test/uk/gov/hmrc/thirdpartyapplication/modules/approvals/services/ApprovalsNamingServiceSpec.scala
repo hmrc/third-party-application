@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
 class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
@@ -93,6 +94,19 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.validateApplicationName(duplicateName, applicationId))
 
         result shouldBe DuplicateName
+
+        ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
+      }
+
+      "ignore a duplicate app name for local sandbox app" in new Setup {
+        ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, environment = Environment.SANDBOX))
+        ApplicationNameValidationConfigMock.NameDenyList.thenReturnsAnEmptyList
+        ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
+
+        private val duplicateName = "duplicate name"
+        val result = await(underTest.validateApplicationName(duplicateName, applicationId))
+
+        result shouldBe ValidName
 
         ApplicationRepoMock.FetchByName.verifyCalledWith(duplicateName)
       }

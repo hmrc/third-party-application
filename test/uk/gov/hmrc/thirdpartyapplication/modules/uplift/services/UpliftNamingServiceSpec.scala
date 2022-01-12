@@ -24,6 +24,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationNameValidationConfigMockModule
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
 class UpliftNamingServiceSpec extends AsyncHmrcSpec {
   
@@ -117,10 +118,18 @@ class UpliftNamingServiceSpec extends AsyncHmrcSpec {
 
     "detect duplicate if another app has the same name" in new Setup {      
       ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
-      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = applicationId))
+      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random))
       val isDuplicate = await(underTest.isDuplicateName(appName, None))
 
       isDuplicate shouldBe true
+    }
+
+    "not detect duplicate if another app has the same name but is in Sandbox (local)" in new Setup {      
+      ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
+      ApplicationRepoMock.FetchByName.thenReturn(anApplicationData(applicationId = ApplicationId.random, environment = Environment.SANDBOX))
+      val isDuplicate = await(underTest.isDuplicateName(appName, None))
+
+      isDuplicate shouldBe false
     }
 
     "not detect duplicate if another app has the same name but also has the same applicationId" in new Setup {      
