@@ -39,7 +39,7 @@ case class ApplicationXX(
   wso2ApplicationName: String,
   clientData: Map[ClientId, ClientDataXX],              // Non empty
   state: ApplicationState,
-  access: Access = Standard(List.empty, None, None),
+  access: Access = Standard(),
   environment: String = Environment.PRODUCTION.toString,
   checkInformation: Option[CheckInformation] = None,
   createdOn: DateTime,

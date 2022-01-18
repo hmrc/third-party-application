@@ -312,9 +312,9 @@ class ApplicationRepositorySpec
       val grantLength1 = 510
       val grantLength2 = 1000
       val application1 = anApplicationData(ApplicationId.random, ClientId("aaa"),
-        productionState("requestorEmail@example.com"), access = Standard(List.empty, None, None), grantLength1)
+        productionState("requestorEmail@example.com"), access = Standard(), grantLength1)
       val application2 = anApplicationData(ApplicationId.random, ClientId("zzz"),
-        productionState("requestorEmail@example.com"), access = Standard(List.empty, None, None), grantLength2)
+        productionState("requestorEmail@example.com"), access = Standard(), grantLength2)
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
@@ -1483,7 +1483,7 @@ class ApplicationRepositorySpec
   def anApplicationData(id: ApplicationId,
                         prodClientId: ClientId = ClientId("aaa"),
                         state: ApplicationState = testingState(),
-                        access: Access = Standard(List.empty, None, None),
+                        access: Access = Standard(),
                         grantLength: Int = defaultGrantLength,
                         users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                         checkInformation: Option[CheckInformation] = None,
@@ -1496,7 +1496,7 @@ class ApplicationRepositorySpec
                             name: String,
                             prodClientId: ClientId = ClientId("aaa"),
                             state: ApplicationState = testingState(),
-                            access: Access = Standard(List.empty, None, None),
+                            access: Access = Standard(),
                             users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                             checkInformation: Option[CheckInformation] = None,
                             clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret")),

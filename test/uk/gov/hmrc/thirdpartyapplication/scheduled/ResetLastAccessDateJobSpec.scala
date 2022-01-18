@@ -131,7 +131,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
         Token(ClientId.random, "ccc")
       ),
       ApplicationState(State.PRODUCTION),
-      Standard(List.empty, None, None),
+      Standard(),
       lastAccessDate,
       Some(lastAccessDate)
     )

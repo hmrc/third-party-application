@@ -46,7 +46,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         "a",
         ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
-        Standard(List.empty, None, None),
+        Standard(),
         DateTimeUtils.now,
         Some(DateTimeUtils.now))
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))

@@ -27,6 +27,7 @@ case class Standard(
     redirectUris: List[String] = List.empty,
     termsAndConditionsUrl: Option[String] = None,
     privacyPolicyUrl: Option[String] = None,
+    organisationUrl: Option[String] = None,
     overrides: Set[OverrideFlag] = Set.empty
 ) extends Access {
   override val accessType = STANDARD

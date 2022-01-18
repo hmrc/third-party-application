@@ -160,7 +160,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
         Token(prodClientId, "ccc")
       ),
       state,
-      Standard(List.empty, None, None),
+      Standard(),
       HmrcTime.now,
       Some(HmrcTime.now))
   }

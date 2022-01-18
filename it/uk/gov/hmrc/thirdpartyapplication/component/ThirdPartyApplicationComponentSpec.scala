@@ -79,6 +79,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
+    organisationUrl = Some("http://example.com/home"),
     overrides = Set.empty
   )
   val privilegedAccess = Privileged(totpIds = None, scopes = Set("ogdScope"))

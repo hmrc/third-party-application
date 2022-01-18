@@ -463,7 +463,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     def updatedAccess(existing: ApplicationData): Access =
       existing.access match {
-        case Standard(_, _, _, o: Set[OverrideFlag]) => application.access.asInstanceOf[Standard].copy(overrides = o)
+        case Standard(_, _, _, _, o: Set[OverrideFlag]) => application.access.asInstanceOf[Standard].copy(overrides = o)
         case _ => application.access
       }
 
