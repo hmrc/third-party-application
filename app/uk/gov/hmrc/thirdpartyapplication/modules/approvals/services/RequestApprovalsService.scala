@@ -75,18 +75,21 @@ class RequestApprovalsService @Inject()(
 
     (
       for {
-        _              <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
-        originalApp    <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueToNoSuchApplication)
-        _              <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
-        extSubmission  <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
-        _              <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
-        appName         = getApplicationName(extSubmission)
-        _              <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
-        updatedApp      = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress)
-        savedApp       <- ET.liftF(applicationRepository.save(updatedApp))
-        _              <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        _               = logCompletedApprovalRequest(savedApp)
-        _              <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
+        _                     <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
+        originalApp           <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueToNoSuchApplication)
+        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
+        extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
+        _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
+        appName                = getApplicationName(extSubmission)
+        _                     <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
+        privacyPolicyUrl      = getPrivacyPolictUrl(extSubmission)
+        termsAndConditionsUrl = getTermsAndConditionsUrl(extSubmission)
+        organisationUrl       = getOrganisationUrl(extSubmission)
+        updatedApp            = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl)
+        savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
+        _                     <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        _                      = logCompletedApprovalRequest(savedApp)
+        _                     <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity,identity)
@@ -97,10 +100,23 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
   
-  private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String): ApplicationData = existing.copy(
+  private def replaceUrlsInAccess(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], newOrganisationUrl: Option[String]): Access = {
+    existingAccess match {
+      case s : Standard =>
+        s.copy(
+          termsAndConditionsUrl = newTermsAndConditionsUrl,
+          privacyPolicyUrl      = newPrivacyPolicyUrl,
+          organisationUrl       = newOrganisationUrl
+        )
+      case _ => existingAccess    
+    }
+  }
+
+  private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String, privacyPolicyUrl: Option[String], termsAndConditionsUrl: Option[String], organisationUrl: Option[String]): ApplicationData = existing.copy(
     name = applicationName,
     normalisedName = applicationName.toLowerCase,
-    state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
+    state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
+    access = replaceUrlsInAccess(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl)
   )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 
@@ -131,9 +147,21 @@ class RequestApprovalsService @Inject()(
   
   private def getApplicationName(extSubmission: ExtendedSubmission): String = {
     // Only proceeds here if we have a completed submission so this `.get` is safe
-    SubmissionDataExtracter.getApplicationName(extSubmission.submission).get  
+    SubmissionDataExtracter.getApplicationName(extSubmission.submission).get 
   }
 
+  private def getPrivacyPolictUrl(extSubmission: ExtendedSubmission): Option[String] = {
+    SubmissionDataExtracter.getPrivacyPolicyUrl(extSubmission.submission)
+  }
+
+  private def getTermsAndConditionsUrl(extSubmission: ExtendedSubmission): Option[String] = {
+    SubmissionDataExtracter.getTermsAndConditionsUrl(extSubmission.submission)
+  }
+
+  private def getOrganisationUrl(extSubmission: ExtendedSubmission): Option[String] = {
+    SubmissionDataExtracter.getOrganisationUrl(extSubmission.submission)
+  }
+  
   private def fetchExtendedSubmission(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
     submissionService.fetchLatest(applicationId)
   }

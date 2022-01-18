@@ -55,11 +55,14 @@ object Submissions {
   type AnswersToQuestions = Map[QuestionId, ActualAnswer]
 }
 
+case class QuestionIdsOfInterest(applicationNameId: QuestionId, privacyPolicyUrlId: QuestionId, termsAndConditionsUrlId: QuestionId, organisationUrlId: QuestionId)
+
 case class Submission(
   id: SubmissionId,
   applicationId: ApplicationId,
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
+  questionIdsOfInterest: QuestionIdsOfInterest,
   answersToQuestions: Submissions.AnswersToQuestions
 ) {
   lazy val allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)

@@ -28,8 +28,8 @@ class SubmissionDataExtracterSpec extends HmrcSpec {
   
   trait Setup extends SubmissionsTestData {
     val appName = "expected app name"
-    val answersWithAppName: Submissions.AnswersToQuestions = Map(QuestionnaireDAO.applicationNameQuestion.id -> TextAnswer(appName))  
-    val submissionWithAnswers = Submission(submissionId, applicationId, DateTimeUtils.now, groups, answersWithAppName)
+    val answersWithAppName: Submissions.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(appName))  
+    val submissionWithAnswers = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, answersWithAppName)
   }
 
   "SubmissionDataExtracter" when {

@@ -17,15 +17,29 @@
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 
 object SubmissionDataExtracter {
-  def getApplicationName(submission: Submission): Option[String] = {
-    val applicationNameQuestion: Question = QuestionnaireDAO.applicationNameQuestion
-    val actualAnswer: ActualAnswer = submission.answersToQuestions.getOrElse(applicationNameQuestion.id, NoAnswer)
+  private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId): Option[String] = {
+    val actualAnswer: ActualAnswer = submission.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
       case TextAnswer(value) => Some(value)
       case _                 => None
     }
+  }
+  
+  def getApplicationName(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.applicationNameId)
+  }
+
+  def getPrivacyPolicyUrl(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
+  }
+
+  def getTermsAndConditionsUrl(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
+  }
+
+  def getOrganisationUrl(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
 }

@@ -23,6 +23,7 @@ import cats.data.NonEmptyList
 import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.collection.immutable.ListMap
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 
 class MarkAnswerSpec extends HmrcSpec {
 
@@ -50,7 +51,7 @@ class MarkAnswerSpec extends HmrcSpec {
       )
 
       val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), Map.empty)
+      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), QuestionnaireDAO.questionIdsOfInterest, Map.empty)
     }
 
     def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
