@@ -49,7 +49,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.create(applicationId))
 
         inside(result.right.value) { 
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
             answersToQuestions.size shouldBe 0
             progress.size shouldBe s.submission.allQuestionnaires.size
@@ -69,7 +69,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result1 = await(underTest.create(applicationId))
         
         inside(result1.right.value) {
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
             applicationId shouldBe applicationId
             s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size
           }
@@ -78,7 +78,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result2 = await(underTest.create(applicationId))
         inside(result2.right.value) { 
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, answersToQuestions), progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
             s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
           }
       }

@@ -67,7 +67,7 @@ class SubmissionsService @Inject()(
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  SubmissionId.random
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, emptyAnswers)
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, emptyAnswers)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
         extSubmission         <- extendSubmission(savedSubmission)
       } yield extSubmission

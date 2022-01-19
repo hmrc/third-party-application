@@ -328,7 +328,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   def anApplicationData(id: ApplicationId,
                         clientId: ClientId = ClientId("aaa"),
                         state: ApplicationState = testingState(),
-                        access: Access = Standard(List.empty, None, None),
+                        access: Access = Standard(),
                         user: List[String] = List("user@example.com"),
                         checkInformation: Option[CheckInformation] = None): ApplicationData = {
 
@@ -339,7 +339,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
                             name: String,
                             clientId: ClientId = ClientId("aaa"),
                             state: ApplicationState = testingState(),
-                            access: Access = Standard(List.empty, None, None),
+                            access: Access = Standard(),
                             user: List[String] = List("user@example.com"),
                             checkInformation: Option[CheckInformation] = None): ApplicationData = {
 

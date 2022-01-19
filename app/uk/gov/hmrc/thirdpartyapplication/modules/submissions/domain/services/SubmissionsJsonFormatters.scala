@@ -43,6 +43,8 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
   implicit val questionnaireProgressFormat = Json.format[QuestionnaireProgress]
 
   implicit val answersToQuestionsFormat: OFormat[Map[QuestionId, Option[ActualAnswer]]] = implicitly
+
+  implicit val questionIdsOfInterestFormat = Json.format[QuestionIdsOfInterest]
 }
 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {

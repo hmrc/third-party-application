@@ -210,7 +210,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       "aaaaaaaaaa",
       ApplicationTokens(productionToken),
       state,
-      Standard(List.empty, None, None),
+      Standard(),
       DateTime.now,
       Some(DateTime.now),
       rateLimitTier = rateLimitTier

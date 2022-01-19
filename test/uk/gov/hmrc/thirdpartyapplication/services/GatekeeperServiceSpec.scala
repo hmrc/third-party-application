@@ -67,7 +67,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       collaborators,
       Some("description"),
       "aaaaaaaaaa",
-      ApplicationTokens(productionToken), state, Standard(List.empty, None, None), HmrcTime.now, Some(HmrcTime.now))
+      ApplicationTokens(productionToken), state, Standard(), HmrcTime.now, Some(HmrcTime.now))
   }
 
   trait Setup extends AuditServiceMockModule

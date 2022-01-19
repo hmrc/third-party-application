@@ -44,8 +44,12 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
 object QuestionnaireDAO {
 
   // *** Note - change this if the application name question changes. ***
-  val applicationNameQuestion = 
-    Questionnaires.CustomersAuthorisingYourSoftware.question2
+  val questionIdsOfInterest = QuestionIdsOfInterest(
+    applicationNameId             = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
+    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
+    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    organisationUrlId             = Questionnaires.OrganisationDetails.question1.id
+  )
 
   object Questionnaires {
     object DevelopmentPractices {
