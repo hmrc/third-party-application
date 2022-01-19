@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 import cats.data.NonEmptyList
 
 object AskWhen {
-  import Submissions.AnswersToQuestions
+  import Submission.AnswersToQuestions
   
   def shouldAsk(context: Context, answersToQuestions: AnswersToQuestions)(askWhen: AskWhen): Boolean = {
     askWhen match {

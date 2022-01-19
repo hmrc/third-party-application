@@ -26,7 +26,9 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import cats.data.NonEmptyList
+import uk.gov.hmrc.time.DateTimeUtils
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -46,15 +48,15 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
-        val result = await(underTest.create(applicationId))
+        val result = await(underTest.create(applicationId, UserId.random))
 
         inside(result.right.value) { 
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
+          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, instances), progress) =>
             applicationId shouldBe applicationId
-            answersToQuestions.size shouldBe 0
+            instances.head.answersToQuestions.size shouldBe 0
             progress.size shouldBe s.submission.allQuestionnaires.size
-            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
-            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(NotApplicable, List.empty[QuestionId])
+            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(QuestionnaireState.NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
+            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(QuestionnaireState.NotApplicable, List.empty[QuestionId])
           }
       }
       
@@ -66,7 +68,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
-        val result1 = await(underTest.create(applicationId))
+        val result1 = await(underTest.create(applicationId, UserId.random))
         
         inside(result1.right.value) {
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
@@ -76,7 +78,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
-        val result2 = await(underTest.create(applicationId))
+        val result2 = await(underTest.create(applicationId, UserId.random))
         inside(result2.right.value) { 
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
             s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
@@ -127,9 +129,8 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
-        val completedAnswers: Submissions.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
+        val completedAnswers: Submission.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
         val completeSubmission = submission.copy(
-          answersToQuestions = completedAnswers, 
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
               heading = "About your processes",
@@ -151,6 +152,15 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
                   )
                 )
               )             
+            )
+          ),
+          instances = NonEmptyList.of(
+            SubmissionInstance(
+              index = 0,
+              answersToQuestions = completedAnswers,
+              statusHistory = NonEmptyList.of(
+                SubmissionStatus.Created(DateTimeUtils.now, UserId.random)
+              )
             )
           )
         )
@@ -191,7 +201,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
         
         val out = result.right.value
-        out.submission.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -203,7 +213,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
         
         val out = result.right.value
-        out.submission.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
+        out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

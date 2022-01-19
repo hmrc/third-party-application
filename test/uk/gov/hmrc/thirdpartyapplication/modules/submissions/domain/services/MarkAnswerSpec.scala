@@ -21,18 +21,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.collection.immutable.ListMap
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 class MarkAnswerSpec extends HmrcSpec {
 
-  object TestQuestionnaires {
-    val submissionId = SubmissionId.random
-    val applicationId = ApplicationId.random
-    
+  object TestQuestionnaires extends SubmissionsTestData {
     val question1Id = QuestionId.random
-    val question2Id = QuestionId.random
     
     val questionnaireAId = QuestionnaireId.random
 
@@ -51,7 +47,7 @@ class MarkAnswerSpec extends HmrcSpec {
       )
 
       val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), QuestionnaireDAO.questionIdsOfInterest, Map.empty)
+      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), QuestionnaireDAO.questionIdsOfInterest, initialInstances)
     }
 
     def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
@@ -114,20 +110,20 @@ class MarkAnswerSpec extends HmrcSpec {
     require(List(YES,NO).contains(answer1))
     require(List(YES,NO).contains(answer2))
 
-    YesNoQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> answer1, question2Id -> answer2))
+    YesNoQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> answer1, question2Id -> answer2))
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> NoAnswer))
+    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> NoAnswer))
   }
   def withSingleOptionalQuestionAndAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> TextAnswer("blah blah")))
+    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> TextAnswer("blah blah")))
   }
   def withAcknowledgementOnlyAnswers(): Submission = {
-    AcknowledgementOnlyQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> AcknowledgedAnswer))
+    AcknowledgementOnlyQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> AcknowledgedAnswer))
   }
   def withMultiChoiceAnswers(answers: String*): Submission = {
-    MultiChoiceQuestionnaireData.submission.copy(answersToQuestions = Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
+    MultiChoiceQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
   }
 
   def extend(submission: Submission): ExtendedSubmission = 

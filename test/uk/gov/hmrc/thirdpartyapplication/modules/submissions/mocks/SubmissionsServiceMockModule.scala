@@ -22,6 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.Submission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseSubmissionsServiceMock {
@@ -29,10 +30,10 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object Create {
       def thenReturn(extSubmission: ExtendedSubmission) = 
-        when(aMock.create(*[ApplicationId])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.create(*[ApplicationId], *[UserId])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) =
-        when(aMock.create(*[ApplicationId])).thenReturn(successful(Left(error)))
+        when(aMock.create(*[ApplicationId], *[UserId])).thenReturn(successful(Left(error)))
     }
 
     object FetchLatest {

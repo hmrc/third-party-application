@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 
 object SubmissionDataExtracter {
   private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId): Option[String] = {
-    val actualAnswer: ActualAnswer = submission.answersToQuestions.getOrElse(questionId, NoAnswer)
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
       case TextAnswer(value) => Some(value)
       case _                 => None

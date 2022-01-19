@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models
 
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.QuestionnaireState._
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ExtendedSubmissionSpec extends HmrcSpec {

@@ -30,11 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.MarkedSubmission
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
   implicit val mat = NoMaterializer
- 
  
   implicit val readsExtendedSubmission = Json.reads[Submission]
   
@@ -43,11 +43,13 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   }
   
   "create new submission" should {
-    "return an ok response" in new Setup {
+    implicit val writer = Json.writes[SubmissionsController.CreateSubmissionRequest]
+    val fakeRequest = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest(UserId.random)))
 
+    "return an ok response" in new Setup {
       SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
       
-      val result = underTest.createSubmissionFor(applicationId).apply(FakeRequest(POST, "/"))
+      val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
 
       status(result) shouldBe OK
 
@@ -61,7 +63,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     "return a bad request response" in new Setup {
       SubmissionsServiceMock.Create.thenFails("Test Error")
       
-     val result = underTest.createSubmissionFor(applicationId).apply(FakeRequest(POST, "/"))
+     val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
 
       status(result) shouldBe BAD_REQUEST
     }

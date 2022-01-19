@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 import play.api.libs.json._
 import org.joda.time.DateTimeZone
+import uk.gov.hmrc.play.json.Union
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   
@@ -26,17 +27,17 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
   implicit val keyWritesQuestionnaireId: KeyWrites[QuestionnaireId] = _.value
 
   implicit val stateWrites : Writes[QuestionnaireState] = Writes {
-    case NotStarted    => JsString("NotStarted")
-    case InProgress    => JsString("InProgress")
-    case NotApplicable => JsString("NotApplicable")
-    case Completed     => JsString("Completed")
+    case QuestionnaireState.NotStarted    => JsString("NotStarted")
+    case QuestionnaireState.InProgress    => JsString("InProgress")
+    case QuestionnaireState.NotApplicable => JsString("NotApplicable")
+    case QuestionnaireState.Completed     => JsString("Completed")
   }
   
   implicit val stateReads : Reads[QuestionnaireState] = Reads {
-    case JsString("NotStarted") => JsSuccess(NotStarted)
-    case JsString("InProgress") => JsSuccess(InProgress)
-    case JsString("NotApplicable") => JsSuccess(NotApplicable)
-    case JsString("Completed") => JsSuccess(Completed)
+    case JsString("NotStarted") => JsSuccess(QuestionnaireState.NotStarted)
+    case JsString("InProgress") => JsSuccess(QuestionnaireState.InProgress)
+    case JsString("NotApplicable") => JsSuccess(QuestionnaireState.NotApplicable)
+    case JsString("Completed") => JsSuccess(QuestionnaireState.Completed)
     case _ => JsError("Failed to parse QuestionnaireState value")
   }
 
@@ -50,6 +51,20 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  implicit val RejectedStatusFormat = Json.format[SubmissionStatus.Rejected]
+  implicit val AcceptedStatusFormat = Json.format[SubmissionStatus.Accepted]
+  implicit val SubmittedStatusFormat = Json.format[SubmissionStatus.Submitted]
+  implicit val CreatedStatusFormat = Json.format[SubmissionStatus.Created]
+  
+  implicit val submissionStatus = Union.from[SubmissionStatus]("submissionStatusType")
+    .and[SubmissionStatus.Rejected]("rejected")
+    .and[SubmissionStatus.Accepted]("accepted")
+    .and[SubmissionStatus.Submitted]("submitted")
+    .and[SubmissionStatus.Created]("created")
+    .format
+
+  implicit val submissionInstanceFormat = Json.format[SubmissionInstance]
   implicit val submissionFormat = Json.format[Submission]
 }
 
@@ -58,6 +73,20 @@ object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
 trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
+
+  implicit val RejectedStatusFormat = Json.format[SubmissionStatus.Rejected]
+  implicit val AcceptedStatusFormat = Json.format[SubmissionStatus.Accepted]
+  implicit val SubmittedStatusFormat = Json.format[SubmissionStatus.Submitted]
+  implicit val CreatedStatusFormat = Json.format[SubmissionStatus.Created]
+  
+  implicit val submissionStatus = Union.from[SubmissionStatus]("submissionStatusType")
+    .and[SubmissionStatus.Rejected]("rejected")
+    .and[SubmissionStatus.Accepted]("accepted")
+    .and[SubmissionStatus.Submitted]("submitted")
+    .and[SubmissionStatus.Created]("created")
+    .format
+
+  implicit val submissionInstanceFormat = Json.format[SubmissionInstance]
   implicit val submissionFormat = Json.format[Submission]
   implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
   implicit val markedSubmissionFormat = Json.format[MarkedSubmission]

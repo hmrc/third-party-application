@@ -27,6 +27,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.mvc.Results
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 object SubmissionsController {
 
@@ -35,6 +36,9 @@ object SubmissionsController {
 
   case class RecordAnswersRequest(answers: List[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
+
+  case class CreateSubmissionRequest(userId: UserId)
+  implicit val readsCreateSubmissionRequest = Json.reads[CreateSubmissionRequest]
 }
 
 @Singleton
@@ -47,12 +51,14 @@ class SubmissionsController @Inject()(
 extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
   import SubmissionsController._
 
-  def createSubmissionFor(applicationId: ApplicationId) = Action.async { _ =>
+  def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
-    service.create(applicationId).map(_.fold(failed, success))
+    withJsonBody[CreateSubmissionRequest] { submissionRequest =>
+      service.create(applicationId, submissionRequest.userId).map(_.fold(failed, success))
+    }
   }
 
   def fetchSubmission(id: SubmissionId) = Action.async { _ =>

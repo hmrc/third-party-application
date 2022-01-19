@@ -44,22 +44,25 @@ trait SubmissionsTestData {
 
   def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
 
-  val initialProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(NotStarted, List(firstQuestion(q)))).toMap
-  val completedProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(Completed, List(firstQuestion(q)))).toMap
+  val initialProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.NotStarted, List(firstQuestion(q)))).toMap
+  val completedProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.Completed, List(firstQuestion(q)))).toMap
 
-  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, Map.empty)
+  val initialStatus = SubmissionStatus.Created(DateTimeUtils.now, UserId.random)
+  val initialInstances = NonEmptyList.of(SubmissionInstance(0, Map.empty, NonEmptyList.of(initialStatus)))
+  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
   val extendedSubmission = ExtendedSubmission(submission, initialProgress)
    
   val altSubmissionId = SubmissionId.random
   require(altSubmissionId != submissionId)
-  val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, Map.empty)
+  val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
   val completedSubmissionId = SubmissionId.random
   require(completedSubmissionId != submissionId)
   val expectedAppName = "expectedAppName"
-  val answersToQuestions: Submissions.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName))  
-  val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions)
+  val answersToQuestions: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName))  
+  val answeredInstances = NonEmptyList.of(SubmissionInstance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
+  val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)
   val completedExtendedSubmission = ExtendedSubmission(completedSubmission, completedProgress)
 
   def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =

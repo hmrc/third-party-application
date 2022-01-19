@@ -57,7 +57,7 @@ object MarkAnswer {
     // All questions should/must exist for these questionIds.
     def unsafeGetQuestion(id: QuestionId): Question = extSubmission.submission.findQuestion(id).get
 
-    extSubmission.submission.answersToQuestions.map {
+    extSubmission.submission.latestInstance.answersToQuestions.map {
       case (id: QuestionId, answer: ActualAnswer) => (id -> markAnswer(unsafeGetQuestion(id), answer))
     }
   }

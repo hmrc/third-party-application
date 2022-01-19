@@ -20,6 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.joda.time.DateTime
 import java.util.UUID
 import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 case class SubmissionId(value: String) extends AnyVal
 
@@ -30,14 +31,13 @@ object SubmissionId {
 }
 
 sealed trait QuestionnaireState
-case object NotStarted extends QuestionnaireState
-case object InProgress extends QuestionnaireState
-case object NotApplicable extends QuestionnaireState
-case object Completed extends QuestionnaireState
-
-case class QuestionnaireProgress(state: QuestionnaireState, questionsToAsk: List[QuestionId])
 
 object QuestionnaireState {
+  case object NotStarted extends QuestionnaireState
+  case object InProgress extends QuestionnaireState
+  case object NotApplicable extends QuestionnaireState
+  case object Completed extends QuestionnaireState
+
   def describe(state: QuestionnaireState): String = state match {
     case NotStarted => "Not Started"
     case InProgress => "In Progress"
@@ -51,11 +51,14 @@ object QuestionnaireState {
   }
 }
 
-object Submissions {
-  type AnswersToQuestions = Map[QuestionId, ActualAnswer]
-}
+case class QuestionnaireProgress(state: QuestionnaireState, questionsToAsk: List[QuestionId])
+
 
 case class QuestionIdsOfInterest(applicationNameId: QuestionId, privacyPolicyUrlId: QuestionId, termsAndConditionsUrlId: QuestionId, organisationUrlId: QuestionId)
+
+object Submission {
+  type AnswersToQuestions = Map[QuestionId, ActualAnswer]
+}
 
 case class Submission(
   id: SubmissionId,
@@ -63,7 +66,7 @@ case class Submission(
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
   questionIdsOfInterest: QuestionIdsOfInterest,
-  answersToQuestions: Submissions.AnswersToQuestions
+  instances: NonEmptyList[SubmissionInstance]
 ) {
   lazy val allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
@@ -77,6 +80,53 @@ case class Submission(
         qi.question.id == questionId
       )
     )
+
+  lazy val latestInstance = instances.head
+
+  def isInProgress = latestInstance.isInProgress
+
+  def setLatestAnswers(answers: Submission.AnswersToQuestions): Submission = {
+    val newLatest = latestInstance.copy(answersToQuestions = answers)
+    this.copy(instances = NonEmptyList.of(newLatest, this.instances.tail: _*))
+  }
+}
+
+case class SubmissionInstance(
+  index: Int,
+  answersToQuestions: Submission.AnswersToQuestions,
+  statusHistory: NonEmptyList[SubmissionStatus]
+) {
+  def isInProgress = this.statusHistory.head.isInProgress
+}
+
+sealed trait SubmissionStatus {
+  def isInProgress = this match {
+    case _ : SubmissionStatus.Created => true
+    case _ => false
+  }
+}
+
+object SubmissionStatus {
+  case class Rejected(
+    timestamp: DateTime,
+    name: String,
+    reasons: String
+  ) extends SubmissionStatus
+
+  case class Accepted(
+    timestamp: DateTime,
+    name: String
+  ) extends SubmissionStatus
+
+  case class Submitted(
+    timestamp: DateTime,
+    userId: UserId
+  ) extends SubmissionStatus
+
+  case class Created(
+    timestamp: DateTime,
+    userId: UserId
+  ) extends SubmissionStatus
 }
 
 case class ExtendedSubmission(

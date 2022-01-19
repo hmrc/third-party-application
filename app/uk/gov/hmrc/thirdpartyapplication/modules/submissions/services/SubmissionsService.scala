@@ -26,6 +26,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.EitherT
+import cats.data.NonEmptyList
+import org.joda.time.DateTime
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 @Singleton
 class SubmissionsService @Inject()(
@@ -40,7 +43,7 @@ class SubmissionsService @Inject()(
   def extendSubmission(submission: Submission): EitherT[Future, String, ExtendedSubmission] = {
     for {
       context       <- contextService.deriveContext(submission.applicationId)
-      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, submission.answersToQuestions)
+      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, submission.latestInstance.answersToQuestions)
       extSubmission =  ExtendedSubmission(submission, progress)
     }
     yield extSubmission
@@ -61,13 +64,14 @@ class SubmissionsService @Inject()(
   /*
   * a questionnaire needs answering for the application
   */
-  def create(applicationId: ApplicationId): Future[Either[String, ExtendedSubmission]] = {
+  def create(applicationId: ApplicationId, userId: UserId): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  SubmissionId.random
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, emptyAnswers)
+        newInstance           =  SubmissionInstance(0, emptyAnswers, NonEmptyList.of(SubmissionStatus.Created(DateTime.now, userId)))
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance))
         savedSubmission       <- liftF(submissionsDAO.save(submission))
         extSubmission         <- extendSubmission(savedSubmission)
       } yield extSubmission

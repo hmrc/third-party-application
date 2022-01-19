@@ -82,21 +82,21 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-    def onV2(createApplicationRequest: CreateApplicationRequest)(fn: => Future[HasSucceeded]) = 
+    def onV2(createApplicationRequest: CreateApplicationRequest)( fn: CreateApplicationRequestV2 => Future[HasSucceeded]) = 
       createApplicationRequest match {
         case _ : CreateApplicationRequestV1 => successful(HasSucceeded)
-        case _ : CreateApplicationRequestV2 => fn
+        case r : CreateApplicationRequestV2 => fn(r)
       }
 
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
-          appliationId         = applicationResponse.application.id
+          applicationId         = applicationResponse.application.id
           subs                 = createApplicationRequest.anySubscriptions
           _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
-          _                   <- onV2(createApplicationRequest) {
-                                    EitherT(submissionsService.create(appliationId))
+          _                   <- onV2(createApplicationRequest) { requestV2 =>
+                                    EitherT(submissionsService.create(applicationId, requestV2.requestedBy))
                                     .getOrElseF(Future.failed(new RuntimeException("Unexpected submsissions error")))
                                     .map(_ => HasSucceeded)
                                   }

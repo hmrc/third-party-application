@@ -13,9 +13,9 @@ import uk.gov.hmrc.mongo.MongoConnector
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SubmissionId
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SingleChoiceAnswer
 import scala.concurrent.ExecutionContext
 import reactivemongo.core.errors.DatabaseException
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SingleChoiceAnswer
 
 class SubmissionsDAOSpec
   extends AsyncHmrcSpec
@@ -84,9 +84,9 @@ class SubmissionsDAOSpec
   "update" should {
     "replace the existing record" in {
       await(dao.save(submission))
-      val oldAnswers = submission.answersToQuestions
+      val oldAnswers = submission.latestInstance.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
-      val updatedSubmission = submission.copy(answersToQuestions = newAnswers)
+      val updatedSubmission = submission.setLatestAnswers(newAnswers)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }
