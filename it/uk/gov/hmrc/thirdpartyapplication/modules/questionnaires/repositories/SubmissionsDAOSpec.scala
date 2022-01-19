@@ -12,10 +12,9 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoConnector
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SubmissionId
 import scala.concurrent.ExecutionContext
 import reactivemongo.core.errors.DatabaseException
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.SingleChoiceAnswer
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 
 class SubmissionsDAOSpec
   extends AsyncHmrcSpec
@@ -51,7 +50,7 @@ class SubmissionsDAOSpec
 
   "save and retrieved" should {
     "not find a record that is not there" in {
-      await(dao.fetch(SubmissionId.random)) shouldBe None
+      await(dao.fetch(Submission.Id.random)) shouldBe None
     }
 
     "store a record and retrieve it" in {

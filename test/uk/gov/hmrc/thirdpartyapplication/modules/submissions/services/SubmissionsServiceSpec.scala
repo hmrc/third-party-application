@@ -155,11 +155,11 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
             )
           ),
           instances = NonEmptyList.of(
-            SubmissionInstance(
+            Submission.Instance(
               index = 0,
               answersToQuestions = completedAnswers,
               statusHistory = NonEmptyList.of(
-                SubmissionStatus.Created(DateTimeUtils.now, UserId.random)
+                Submission.Status.Created(DateTimeUtils.now, UserId.random)
               )
             )
           )

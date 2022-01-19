@@ -49,22 +49,23 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 }
 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
+  import Submission.Status._
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
-  implicit val RejectedStatusFormat = Json.format[SubmissionStatus.Rejected]
-  implicit val AcceptedStatusFormat = Json.format[SubmissionStatus.Accepted]
-  implicit val SubmittedStatusFormat = Json.format[SubmissionStatus.Submitted]
-  implicit val CreatedStatusFormat = Json.format[SubmissionStatus.Created]
+  implicit val RejectedStatusFormat = Json.format[Rejected]
+  implicit val AcceptedStatusFormat = Json.format[Accepted]
+  implicit val SubmittedStatusFormat = Json.format[Submitted]
+  implicit val CreatedStatusFormat = Json.format[Created]
   
-  implicit val submissionStatus = Union.from[SubmissionStatus]("submissionStatusType")
-    .and[SubmissionStatus.Rejected]("rejected")
-    .and[SubmissionStatus.Accepted]("accepted")
-    .and[SubmissionStatus.Submitted]("submitted")
-    .and[SubmissionStatus.Created]("created")
+  implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
+    .and[Rejected]("rejected")
+    .and[Accepted]("accepted")
+    .and[Submitted]("submitted")
+    .and[Created]("created")
     .format
 
-  implicit val submissionInstanceFormat = Json.format[SubmissionInstance]
+  implicit val submissionInstanceFormat = Json.format[Submission.Instance]
   implicit val submissionFormat = Json.format[Submission]
 }
 
@@ -72,21 +73,22 @@ object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
 
 trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
+  import Submission.Status._
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
 
-  implicit val RejectedStatusFormat = Json.format[SubmissionStatus.Rejected]
-  implicit val AcceptedStatusFormat = Json.format[SubmissionStatus.Accepted]
-  implicit val SubmittedStatusFormat = Json.format[SubmissionStatus.Submitted]
-  implicit val CreatedStatusFormat = Json.format[SubmissionStatus.Created]
+  implicit val rejectedStatusFormat = Json.format[Rejected]
+  implicit val acceptedStatusFormat = Json.format[Accepted]
+  implicit val submittedStatusFormat = Json.format[Submitted]
+  implicit val createdStatusFormat = Json.format[Created]
   
-  implicit val submissionStatus = Union.from[SubmissionStatus]("submissionStatusType")
-    .and[SubmissionStatus.Rejected]("rejected")
-    .and[SubmissionStatus.Accepted]("accepted")
-    .and[SubmissionStatus.Submitted]("submitted")
-    .and[SubmissionStatus.Created]("created")
+  implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
+    .and[Rejected]("rejected")
+    .and[Accepted]("accepted")
+    .and[Submitted]("submitted")
+    .and[Created]("created")
     .format
 
-  implicit val submissionInstanceFormat = Json.format[SubmissionInstance]
+  implicit val submissionInstanceFormat = Json.format[Submission.Instance]
   implicit val submissionFormat = Json.format[Submission]
   implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
   implicit val markedSubmissionFormat = Json.format[MarkedSubmission]

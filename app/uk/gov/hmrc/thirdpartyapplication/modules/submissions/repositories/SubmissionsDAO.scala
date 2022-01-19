@@ -33,7 +33,7 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
   
   private val DESCENDING = -1
 
-  private def bySubmissionId(id: SubmissionId): (String, Json.JsValueWrapper) = ("id", id.value)
+  private def bySubmissionId(id: Submission.Id): (String, Json.JsValueWrapper) = ("id", id.value)
   private def byApplicationId(id: ApplicationId): (String, Json.JsValueWrapper) = ("applictionId", id.value)
 
   def save(submission: Submission): Future[Submission] = {
@@ -60,7 +60,7 @@ class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: Executi
     .map(_.headOption)
   }
 
-  def fetch(id: SubmissionId): Future[Option[Submission]] = {
+  def fetch(id: Submission.Id): Future[Option[Submission]] = {
     repo
     .find( bySubmissionId(id) )
     .map(_.headOption)

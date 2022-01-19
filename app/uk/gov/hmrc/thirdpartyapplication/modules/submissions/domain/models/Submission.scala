@@ -22,14 +22,6 @@ import java.util.UUID
 import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
-case class SubmissionId(value: String) extends AnyVal
-
-object SubmissionId {
-  implicit val format = play.api.libs.json.Json.valueFormat[SubmissionId]
-  
-  def random: SubmissionId = SubmissionId(UUID.randomUUID().toString())
-}
-
 sealed trait QuestionnaireState
 
 object QuestionnaireState {
@@ -58,15 +50,61 @@ case class QuestionIdsOfInterest(applicationNameId: QuestionId, privacyPolicyUrl
 
 object Submission {
   type AnswersToQuestions = Map[QuestionId, ActualAnswer]
+
+  case class Id(value: String) extends AnyVal
+
+  object Id {
+    implicit val format = play.api.libs.json.Json.valueFormat[Id]
+    
+    def random: Id = Id(UUID.randomUUID().toString())
+  }
+
+  sealed trait Status {
+    def isInProgress = this match {
+      case _ : Submission.Status.Created => true
+      case _ => false
+    }
+  }
+
+  object Status {
+    case class Rejected(
+      timestamp: DateTime,
+      name: String,
+      reasons: String
+    ) extends Status
+
+    case class Accepted(
+      timestamp: DateTime,
+      name: String
+    ) extends Status
+
+    case class Submitted(
+      timestamp: DateTime,
+      userId: UserId
+    ) extends Status
+
+    case class Created(
+      timestamp: DateTime,
+      userId: UserId
+    ) extends Status
+  }
+
+  case class Instance(
+    index: Int,
+    answersToQuestions: Submission.AnswersToQuestions,
+    statusHistory: NonEmptyList[Submission.Status]
+  ) {
+    def isInProgress = this.statusHistory.head.isInProgress
+  }
 }
 
 case class Submission(
-  id: SubmissionId,
+  id: Submission.Id,
   applicationId: ApplicationId,
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
   questionIdsOfInterest: QuestionIdsOfInterest,
-  instances: NonEmptyList[SubmissionInstance]
+  instances: NonEmptyList[Submission.Instance]
 ) {
   lazy val allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
@@ -91,43 +129,6 @@ case class Submission(
   }
 }
 
-case class SubmissionInstance(
-  index: Int,
-  answersToQuestions: Submission.AnswersToQuestions,
-  statusHistory: NonEmptyList[SubmissionStatus]
-) {
-  def isInProgress = this.statusHistory.head.isInProgress
-}
-
-sealed trait SubmissionStatus {
-  def isInProgress = this match {
-    case _ : SubmissionStatus.Created => true
-    case _ => false
-  }
-}
-
-object SubmissionStatus {
-  case class Rejected(
-    timestamp: DateTime,
-    name: String,
-    reasons: String
-  ) extends SubmissionStatus
-
-  case class Accepted(
-    timestamp: DateTime,
-    name: String
-  ) extends SubmissionStatus
-
-  case class Submitted(
-    timestamp: DateTime,
-    userId: UserId
-  ) extends SubmissionStatus
-
-  case class Created(
-    timestamp: DateTime,
-    userId: UserId
-  ) extends SubmissionStatus
-}
 
 case class ExtendedSubmission(
   submission: Submission,

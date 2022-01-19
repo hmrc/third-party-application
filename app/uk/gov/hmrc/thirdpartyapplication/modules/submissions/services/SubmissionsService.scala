@@ -69,8 +69,8 @@ class SubmissionsService @Inject()(
       for {
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
-        submissionId          =  SubmissionId.random
-        newInstance           =  SubmissionInstance(0, emptyAnswers, NonEmptyList.of(SubmissionStatus.Created(DateTime.now, userId)))
+        submissionId          =  Submission.Id.random
+        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, userId)))
         submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance))
         savedSubmission       <- liftF(submissionsDAO.save(submission))
         extSubmission         <- extendSubmission(savedSubmission)
@@ -83,7 +83,7 @@ class SubmissionsService @Inject()(
     fetchAndExtend(submissionsDAO.fetchLatest(applicationId))
   }
   
-  def fetch(id: SubmissionId): Future[Option[ExtendedSubmission]] = {
+  def fetch(id: Submission.Id): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(submissionsDAO.fetch(id))
   }
 
@@ -98,7 +98,7 @@ class SubmissionsService @Inject()(
     .value
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")

@@ -61,7 +61,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
     }
   }
 
-  def fetchSubmission(id: SubmissionId) = Action.async { _ =>
+  def fetchSubmission(id: Submission.Id) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
@@ -85,7 +85,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
     service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
   }
 
-  def recordAnswers(submissionId: SubmissionId, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
+  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))

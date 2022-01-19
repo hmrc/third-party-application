@@ -20,12 +20,12 @@ import play.api.mvc.PathBindable
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models._
 
 package object binders {
-  implicit def submissionIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[SubmissionId] = new PathBindable[SubmissionId] {
-    override def bind(key: String, value: String): Either[String, SubmissionId] = {
-      textBinder.bind(key, value).map(SubmissionId(_))
+  implicit def submissionIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[Submission.Id] = new PathBindable[Submission.Id] {
+    override def bind(key: String, value: String): Either[String, Submission.Id] = {
+      textBinder.bind(key, value).map(Submission.Id(_))
     }
 
-    override def unbind(key: String, submissionId: SubmissionId): String = {
+    override def unbind(key: String, submissionId: Submission.Id): String = {
       submissionId.value
     }
   }
