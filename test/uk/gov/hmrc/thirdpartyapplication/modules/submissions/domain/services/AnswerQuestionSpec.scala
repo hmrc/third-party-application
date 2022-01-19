@@ -42,7 +42,7 @@ trait AsIdsHelpers {
 class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with AsIdsHelpers {
   
   trait Setup extends SubmissionsTestData
-  val blankContext : Context = Map.empty
+  val blankContext : AskWhen.Context = Map.empty
 
   val YesAnswer = List("Yes")
   val NoAnswer = List("No")

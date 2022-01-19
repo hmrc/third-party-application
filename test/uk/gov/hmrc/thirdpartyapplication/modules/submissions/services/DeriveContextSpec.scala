@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
@@ -24,13 +24,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.db.StoredUpliftData
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen.Context.Keys
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 
   val fpContext1 = FraudPrevention.contexts.head
   val fpSubs = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
   val nonFpSubs = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
-  import DeriveContext.Keys._
 
   "DeriveContext" when {
     "deriveFraudPrevention is called" should {
@@ -50,13 +50,13 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.upliftData).thenReturn(Some(StoredUpliftData(aResponsibleIndividual, SellResellOrDistribute("Yes"))))
 
-      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(VAT_OR_ITSA -> "Yes", IN_HOUSE_SOFTWARE -> "No")
+      DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No")
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
       when(aMock.upliftData).thenReturn(Some(StoredUpliftData(aResponsibleIndividual, SellResellOrDistribute("No"))))
 
-      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(VAT_OR_ITSA -> "No", IN_HOUSE_SOFTWARE -> "Yes")
+      DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes")
     }
   }
 }

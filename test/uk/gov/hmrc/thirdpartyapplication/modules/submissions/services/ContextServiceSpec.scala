@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen.Context.Keys
 
 class ContextServiceSpec 
     extends AsyncHmrcSpec 
@@ -49,7 +49,7 @@ class ContextServiceSpec
 
       val result = await(underTest.deriveContext(applicationId).value)
 
-      val expectedContext = Map(DeriveContext.Keys.IN_HOUSE_SOFTWARE -> "Yes", DeriveContext.Keys.VAT_OR_ITSA -> "Yes")
+      val expectedContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "Yes")
       
       result.right.value shouldBe expectedContext
     }

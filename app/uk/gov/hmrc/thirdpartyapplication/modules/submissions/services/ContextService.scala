@@ -23,9 +23,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Context
 import cats.data.EitherT
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen
 
 @Singleton
 class ContextService @Inject()(
@@ -35,7 +34,7 @@ class ContextService @Inject()(
 
   import cats.instances.future.catsStdInstancesForFuture
 
-  def deriveContext(applicationId: ApplicationId): EitherT[Future, String, Context] = {
+  def deriveContext(applicationId: ApplicationId): EitherT[Future, String, AskWhen.Context] = {
     (
       for {
         application           <- fromOptionF(applicationRepository.fetch(applicationId), "No such application")

@@ -14,19 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services
+package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.modules.fraudprevention.domain.models.FraudPrevention
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Context
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen.Context
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen.Context.Keys
 
 object DeriveContext {
-
-  object Keys {
-    val VAT_OR_ITSA = "VAT_OR_ITSA"
-    val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
-  }
 
   def yesNoFromBoolean(b: Boolean) = if(b) "Yes" else "No"
 
@@ -36,15 +32,15 @@ object DeriveContext {
   }
 
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
-    import Keys._
     
     val resell = application.upliftData.fold("No")(ud => ud.sellResellOrDistribute.answer)
     val inHouse = if(resell == "Yes") "No" else "Yes"
 
     Map(
-      VAT_OR_ITSA -> deriveFraudPrevention(subscriptions),
-      IN_HOUSE_SOFTWARE -> inHouse
+      Keys.VAT_OR_ITSA -> deriveFraudPrevention(subscriptions),
+      Keys.IN_HOUSE_SOFTWARE -> inHouse
     )
   }
 
 }
+

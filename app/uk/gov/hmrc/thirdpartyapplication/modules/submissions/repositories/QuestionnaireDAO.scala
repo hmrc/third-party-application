@@ -22,7 +22,7 @@ import cats.implicits._
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
+import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
 import scala.collection.immutable.ListMap
 
@@ -137,7 +137,7 @@ object QuestionnaireDAO {
         label = Label("Service management practices"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question2, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
@@ -240,8 +240,8 @@ object QuestionnaireDAO {
           QuestionItem(question2),
           QuestionItem(question3),
           QuestionItem(question4),
-          QuestionItem(question5, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question6, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question5, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question6, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }
@@ -325,7 +325,7 @@ object QuestionnaireDAO {
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2),
-          QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question4),
           QuestionItem(question5)
         )
@@ -421,8 +421,8 @@ object QuestionnaireDAO {
         id = QuestionnaireId("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
         label = Label("Fraud prevention headers"),
         questions = NonEmptyList.of(
-          QuestionItem(question1, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes")),
-          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.VAT_OR_ITSA, "Yes"))
+          QuestionItem(question1, AskWhenContext(Keys.VAT_OR_ITSA, "Yes")),
+          QuestionItem(question2, AskWhenContext(Keys.VAT_OR_ITSA, "Yes"))
         )
       )
     }
@@ -491,9 +491,9 @@ object QuestionnaireDAO {
         label = Label("Marketing your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question3, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No")),
-          QuestionItem(question4, AskWhenContext(DeriveContext.Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question2, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question4, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
         )
       )
     }

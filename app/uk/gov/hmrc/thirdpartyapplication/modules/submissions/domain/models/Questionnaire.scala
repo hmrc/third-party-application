@@ -21,6 +21,15 @@ import cats.data.NonEmptyList
 object AskWhen {
   import Submission.AnswersToQuestions
   
+  type Context = Map[String, String]
+  
+  object Context {
+    object Keys {
+      val VAT_OR_ITSA = "VAT_OR_ITSA"
+      val IN_HOUSE_SOFTWARE = "IN_HOUSE_SOFTWARE" // Stored on Application
+    } 
+  }
+
   def shouldAsk(context: Context, answersToQuestions: AnswersToQuestions)(askWhen: AskWhen): Boolean = {
     askWhen match {
       case AlwaysAsk => true
