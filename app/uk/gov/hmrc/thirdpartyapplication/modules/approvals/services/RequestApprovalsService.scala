@@ -32,11 +32,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.ExtendedSubmission
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.modules.common.services.EitherTHelper
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult

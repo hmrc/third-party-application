@@ -50,8 +50,8 @@ import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
 import cats.data.EitherT
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.modules.common.services.EitherTHelper
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
