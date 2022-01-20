@@ -23,9 +23,9 @@ import uk.gov.hmrc.thirdpartyapplication.modules.submissions.repositories._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
-import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.EitherT
+import uk.gov.hmrc.modules.common.services.EitherTHelper
+import uk.gov.hmrc.time.DateTimeUtils
 
 @Singleton
 class SubmissionsService @Inject()(

@@ -21,7 +21,7 @@ import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.ContextService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Context
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
+import uk.gov.hmrc.modules.common.services.EitherTHelper
 
 trait ContextServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with EitherTHelper[String] {
   implicit val ec = scala.concurrent.ExecutionContext.Implicits.global

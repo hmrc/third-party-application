@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.modules.submissions.services
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.services.DeriveContext
 import uk.gov.hmrc.thirdpartyapplication.modules.submissions.domain.models.Context
 import cats.data.EitherT
+import uk.gov.hmrc.modules.common.services.EitherTHelper
 
 @Singleton
 class ContextService @Inject()(

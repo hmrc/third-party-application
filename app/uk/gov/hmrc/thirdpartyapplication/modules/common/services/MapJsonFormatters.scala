@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.services
+package uk.gov.hmrc.modules.common.services
 
 import play.api.libs.json._
 import scala.collection.immutable.ListMap
