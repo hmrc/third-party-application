@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.services
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.concurrent.Future
 import javax.inject.{Inject, Singleton}

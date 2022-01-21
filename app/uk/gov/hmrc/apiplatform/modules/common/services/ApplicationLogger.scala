@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.apiplatform.modules.common.services
 
 import play.api.Logger
 

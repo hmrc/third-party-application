@@ -22,8 +22,7 @@ import play.api.{Application, LoggerLike}
 import uk.gov.hmrc.thirdpartyapplication.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import play.api.inject.ApplicationLifecycle
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
-
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {

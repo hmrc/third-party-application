@@ -23,7 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.util.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.EitherT
 import cats.data.NonEmptyList

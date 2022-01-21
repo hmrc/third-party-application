@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.domain.services.MapJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.common.services.MapJsonFormatters
 
 trait QuestionJsonFormatters extends StatementJsonFormatters with MapJsonFormatters {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._

@@ -20,7 +20,7 @@ import akka.actor.{Cancellable, Scheduler}
 import org.apache.commons.lang3.time.StopWatch
 import play.api.Application
 import play.api.inject.ApplicationLifecycle
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}

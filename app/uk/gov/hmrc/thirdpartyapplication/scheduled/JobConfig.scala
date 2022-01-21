@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import uk.gov.hmrc.lock.LockKeeper
 import uk.gov.hmrc.thirdpartyapplication.scheduling.{ExclusiveScheduledJob, ScheduledJob}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
