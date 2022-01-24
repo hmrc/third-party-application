@@ -48,7 +48,7 @@ trait SubmissionsTestData {
   val completedProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.Completed, List(firstQuestion(q)))).toMap
 
   val initialStatus = Submission.Status.Created(DateTimeUtils.now, UserId.random)
-  val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
+  val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus), Submission.Instance.Review()))
   val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
   val extendedSubmission = ExtendedSubmission(submission, initialProgress)
@@ -61,7 +61,7 @@ trait SubmissionsTestData {
   require(completedSubmissionId != submissionId)
   val expectedAppName = "expectedAppName"
   val answersToQuestions: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName))  
-  val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
+  val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus), Submission.Instance.Review()))
   val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)
   val completedExtendedSubmission = ExtendedSubmission(completedSubmission, completedProgress)
 

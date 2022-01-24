@@ -160,7 +160,8 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
               answersToQuestions = completedAnswers,
               statusHistory = NonEmptyList.of(
                 Submission.Status.Created(DateTimeUtils.now, UserId.random)
-              )
+              ),
+              Submission.Instance.Review()
             )
           )
         )

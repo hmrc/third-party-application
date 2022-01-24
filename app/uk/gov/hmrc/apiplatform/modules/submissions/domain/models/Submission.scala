@@ -89,10 +89,28 @@ object Submission {
     ) extends Status
   }
 
+  object Instance {
+    object Review {
+      sealed trait Status
+      case object ReviewNotStarted extends Status
+      case object ReviewInProgress extends Status
+      case object ReviewCompleted extends Status
+    }
+
+    case class Review(
+      checkedFailsAndWarnings: Review.Status = Review.ReviewNotStarted,
+      emailedResponsibleIndividual: Review.Status = Review.ReviewNotStarted,
+      checkedUrls: Review.Status = Review.ReviewNotStarted,
+      checkedForSandboxTesting: Review.Status = Review.ReviewNotStarted,
+      checkedPassedAnswers: Review.Status = Review.ReviewNotStarted
+    )
+  }
+
   case class Instance(
     index: Int,
     answersToQuestions: Submission.AnswersToQuestions,
-    statusHistory: NonEmptyList[Submission.Status]
+    statusHistory: NonEmptyList[Submission.Status],
+    review: Instance.Review
   ) {
     def isInProgress = this.statusHistory.head.isInProgress
   }
