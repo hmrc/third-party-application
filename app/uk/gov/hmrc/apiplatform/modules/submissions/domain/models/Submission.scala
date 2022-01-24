@@ -103,7 +103,9 @@ object Submission {
       checkedUrls: Review.Status = Review.ReviewNotStarted,
       checkedForSandboxTesting: Review.Status = Review.ReviewNotStarted,
       checkedPassedAnswers: Review.Status = Review.ReviewNotStarted
-    )
+    ) {
+      lazy val isCompleted = List(checkedFailsAndWarnings, emailedResponsibleIndividual, checkedUrls, checkedForSandboxTesting, checkedPassedAnswers).forall(s => s == Review.ReviewCompleted)
+    }
   }
 
   case class Instance(

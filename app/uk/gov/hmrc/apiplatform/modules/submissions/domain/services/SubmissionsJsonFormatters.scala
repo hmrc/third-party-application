@@ -71,7 +71,7 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   implicit val ReviewInProgressStatusFormat = Json.format[ReviewInProgress.type]
   implicit val ReviewCompletedStatusFormat = Json.format[ReviewCompleted.type]
 
-  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Submission.Instance.Review.StatusType")
+  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Review.StatusType")
     .and[ReviewNotStarted.type]("notstarted")
     .and[ReviewInProgress.type]("inprogress")
     .and[ReviewCompleted.type]("completed")
@@ -88,6 +88,7 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   import Submission.Status._
   import Submission.Instance.Review._
+
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
 
   implicit val rejectedStatusFormat = Json.format[Rejected]
@@ -106,7 +107,7 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   implicit val ReviewInProgressStatusFormat = Json.format[ReviewInProgress.type]
   implicit val ReviewCompletedStatusFormat = Json.format[ReviewCompleted.type]
 
-  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Submission.Instance.Review.StatusType")
+  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Review.StatusType")
     .and[ReviewNotStarted.type]("notstarted")
     .and[ReviewInProgress.type]("inprogress")
     .and[ReviewCompleted.type]("completed")
