@@ -50,8 +50,7 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import Submission.Status._
-  import Submission.Instance.Review._
-
+  
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
 
@@ -67,17 +66,6 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Created]("created")
     .format
 
-  implicit val ReviewNotStartedStatusFormat = Json.format[ReviewNotStarted.type]
-  implicit val ReviewInProgressStatusFormat = Json.format[ReviewInProgress.type]
-  implicit val ReviewCompletedStatusFormat = Json.format[ReviewCompleted.type]
-
-  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Review.StatusType")
-    .and[ReviewNotStarted.type]("notstarted")
-    .and[ReviewInProgress.type]("inprogress")
-    .and[ReviewCompleted.type]("completed")
-    .format
-
-  implicit val submissionInstanceReviewFormat = Json.format[Submission.Instance.Review]
   implicit val submissionInstanceFormat = Json.format[Submission.Instance]
   implicit val submissionFormat = Json.format[Submission]
 }
@@ -87,7 +75,6 @@ object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
 trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   import JodaWrites.JodaDateTimeWrites
   import Submission.Status._
-  import Submission.Instance.Review._
 
   implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
 
@@ -103,17 +90,6 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Created]("created")
     .format
 
-  implicit val ReviewNotStartedStatusFormat = Json.format[ReviewNotStarted.type]
-  implicit val ReviewInProgressStatusFormat = Json.format[ReviewInProgress.type]
-  implicit val ReviewCompletedStatusFormat = Json.format[ReviewCompleted.type]
-
-  implicit val reviewStatus = Union.from[Submission.Instance.Review.Status]("Review.StatusType")
-    .and[ReviewNotStarted.type]("notstarted")
-    .and[ReviewInProgress.type]("inprogress")
-    .and[ReviewCompleted.type]("completed")
-    .format
-
-  implicit val submissionInstanceReviewFormat = Json.format[Submission.Instance.Review]
   implicit val submissionInstanceFormat = Json.format[Submission.Instance]
   implicit val submissionFormat = Json.format[Submission]
   implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
