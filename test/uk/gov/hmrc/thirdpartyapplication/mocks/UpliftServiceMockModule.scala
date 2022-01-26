@@ -18,12 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
 import org.mockito.verification.VerificationMode
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
 
 import scala.concurrent.Future.{successful,failed}
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.domain.models.InvalidUpliftVerificationCode
+import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
 

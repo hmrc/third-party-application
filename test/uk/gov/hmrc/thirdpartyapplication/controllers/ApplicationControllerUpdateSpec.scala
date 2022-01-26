@@ -46,8 +46,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {

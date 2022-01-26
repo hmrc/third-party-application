@@ -47,7 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -58,8 +58,8 @@ import scala.concurrent.Future.{apply => _, _}
 import scala.concurrent.duration.Duration
 import scala.util.Failure
 import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,

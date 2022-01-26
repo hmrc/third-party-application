@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 
 import cats.implicits._

@@ -22,7 +22,7 @@ import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}

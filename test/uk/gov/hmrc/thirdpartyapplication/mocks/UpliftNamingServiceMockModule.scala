@@ -24,7 +24,7 @@ import scala.concurrent.Future.{successful,failed}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     

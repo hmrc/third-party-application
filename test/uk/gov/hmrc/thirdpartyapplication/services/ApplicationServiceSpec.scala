@@ -44,7 +44,7 @@ import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -1324,7 +1324,7 @@ class ApplicationServiceSpec
   
   private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
     CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random))
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), idOf(loggedInUser))
   }
 
   private def anExistingApplicationRequest() = {
@@ -1341,7 +1341,8 @@ class ApplicationServiceSpec
       Set(
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
-      makeUpliftRequest(ApiIdentifier.random)
+      makeUpliftRequest(ApiIdentifier.random),
+      idOf(loggedInUser)
     )
   }
 }

@@ -90,7 +90,8 @@ case class CreateApplicationRequestV2(
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
-  upliftRequest: UpliftRequest
+  upliftRequest: UpliftRequest,
+  requestedBy: UserId
 ) extends CreateApplicationRequest {
                                       
   validate(this)

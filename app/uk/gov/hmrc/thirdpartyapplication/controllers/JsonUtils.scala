@@ -22,7 +22,7 @@ import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.{InvalidGrantLengthException, InvalidIpAllowlistException, ScopeNotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.Future
 import scala.util.{Failure, Success, Try}

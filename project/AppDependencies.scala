@@ -13,7 +13,8 @@ object AppDependencies {
     "org.reactivemongo"           %% "reactivemongo-akkastream"           % "0.18.8",
     "commons-net"                 %  "commons-net"                        % "3.6",
     "org.typelevel"               %% "cats-core"                          % "2.0.0",
-    "com.github.t3hnar"           %% "scala-bcrypt"                       % "4.1"
+    "com.github.t3hnar"           %% "scala-bcrypt"                       % "4.1",
+    "uk.gov.hmrc"                 %% "time"                               % "3.25.0"
   )
 
   private lazy val testDeps = Seq(

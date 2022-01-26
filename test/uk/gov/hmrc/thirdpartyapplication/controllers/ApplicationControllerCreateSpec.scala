@@ -46,9 +46,9 @@ import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
 
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 
 
 
@@ -387,6 +387,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
-    makeUpliftRequest(ApiIdentifier.random)
+    makeUpliftRequest(ApiIdentifier.random),
+    UserId.random
   )
 }

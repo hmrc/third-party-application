@@ -74,7 +74,8 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
         name = "bob",
         environment = Environment.PRODUCTION,
         collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-        upliftRequest = makeUpliftRequest(ApiIdentifier.random)
+        upliftRequest = makeUpliftRequest(ApiIdentifier.random),
+        requestedBy = UserId.random
       )
       
       "not set the check information at all" in {

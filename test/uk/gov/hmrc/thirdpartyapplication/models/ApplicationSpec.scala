@@ -27,9 +27,7 @@ import uk.gov.hmrc.time.DateTimeUtils
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples {
 
   "RateLimitTier" should {
-
     "have all rate limit tiers" in {
-
       import RateLimitTier._
       RateLimitTier.values shouldBe Set(RHODIUM, PLATINUM, GOLD, SILVER, BRONZE)
     }
@@ -74,7 +72,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           access = access,
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
-          upliftRequest = makeUpliftRequest(ApiIdentifier.random)
+          upliftRequest = makeUpliftRequest(ApiIdentifier.random),
+          requestedBy = UserId.random
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken")

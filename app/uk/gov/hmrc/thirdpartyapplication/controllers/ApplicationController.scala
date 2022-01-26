@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -47,11 +47,11 @@ import scala.concurrent.Future.successful
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
-import uk.gov.hmrc.thirdpartyapplication.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import cats.data.EitherT
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.modules.common.services.EitherTHelper
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -82,21 +82,21 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-    def onV2(createApplicationRequest: CreateApplicationRequest)(fn: => Future[HasSucceeded]) = 
+    def onV2(createApplicationRequest: CreateApplicationRequest)( fn: CreateApplicationRequestV2 => Future[HasSucceeded]) = 
       createApplicationRequest match {
         case _ : CreateApplicationRequestV1 => successful(HasSucceeded)
-        case _ : CreateApplicationRequestV2 => fn
+        case r : CreateApplicationRequestV2 => fn(r)
       }
 
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
         for {
           applicationResponse <- applicationService.create(createApplicationRequest)
-          appliationId         = applicationResponse.application.id
+          applicationId         = applicationResponse.application.id
           subs                 = createApplicationRequest.anySubscriptions
           _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
-          _                   <- onV2(createApplicationRequest) {
-                                    EitherT(submissionsService.create(appliationId))
+          _                   <- onV2(createApplicationRequest) { requestV2 =>
+                                    EitherT(submissionsService.create(applicationId, requestV2.requestedBy))
                                     .getOrElseF(Future.failed(new RuntimeException("Unexpected submsissions error")))
                                     .map(_ => HasSucceeded)
                                   }
