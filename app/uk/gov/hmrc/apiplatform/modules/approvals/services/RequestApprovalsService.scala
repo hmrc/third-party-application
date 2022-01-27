@@ -37,6 +37,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDat
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import org.joda.time.DateTime
+import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -48,6 +52,7 @@ object RequestApprovalsService {
   case object ApprovalRejectedDueToNoSuchApplication extends ApprovalRejectedResult
   case object ApprovalRejectedDueToNoSuchSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToAlreadySubmitted extends ApprovalRejectedResult
 
   sealed trait ApprovalRejectedDueToName extends ApprovalRejectedResult
   case class ApprovalRejectedDueToDuplicateName(name: String) extends ApprovalRejectedDueToName
@@ -80,15 +85,18 @@ class RequestApprovalsService @Inject()(
         _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
         extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
         _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
+        _                     <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
         appName                = getApplicationName(extSubmission)
         _                     <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
-        privacyPolicyUrl      = getPrivacyPolictUrl(extSubmission)
+        privacyPolicyUrl      = getPrivacyPolicyUrl(extSubmission)
         termsAndConditionsUrl = getTermsAndConditionsUrl(extSubmission)
         organisationUrl       = getOrganisationUrl(extSubmission)
         updatedApp            = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        _                      = logCompletedApprovalRequest(savedApp)
+        updatedSubmission     = updateSubmissionToSubmittedState(extSubmission.submission, requestedByEmailAddress, DateTimeUtils.now)
+        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
+        _                     = logCompletedApprovalRequest(savedApp)
         _                     <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
@@ -150,7 +158,7 @@ class RequestApprovalsService @Inject()(
     SubmissionDataExtracter.getApplicationName(extSubmission.submission).get 
   }
 
-  private def getPrivacyPolictUrl(extSubmission: ExtendedSubmission): Option[String] = {
+  private def getPrivacyPolicyUrl(extSubmission: ExtendedSubmission): Option[String] = {
     SubmissionDataExtracter.getPrivacyPolicyUrl(extSubmission.submission)
   }
 
@@ -169,5 +177,9 @@ class RequestApprovalsService @Inject()(
   // Pure duplicate
   private def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] = {
     applicationRepository.fetch(applicationId)
+  }
+
+  private def updateSubmissionToSubmittedState(submission: Submission, requestedBy: String, timestamp: DateTime): Submission = {
+    SubmissionStatusChanges.appendNewState(Submission.Status.Submitted(timestamp, requestedBy))(submission)
   }
 }

@@ -28,7 +28,6 @@ import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.EitherT
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 @Singleton
 class SubmissionsService @Inject()(
@@ -64,13 +63,13 @@ class SubmissionsService @Inject()(
   /*
   * a questionnaire needs answering for the application
   */
-  def create(applicationId: ApplicationId, userId: UserId): Future[Either[String, ExtendedSubmission]] = {
+  def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  Submission.Id.random
-        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, userId)))
+        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, requestedBy)))
         submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance))
         savedSubmission       <- liftF(submissionsDAO.save(submission))
         extSubmission         <- extendSubmission(savedSubmission)
@@ -115,4 +114,7 @@ class SubmissionsService @Inject()(
   */
   def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
     submissionsDAO.deleteAllAnswersForApplication(applicationId)
+
+  def store(submission: Submission): Future[Submission] = 
+    submissionsDAO.update(submission)
 }

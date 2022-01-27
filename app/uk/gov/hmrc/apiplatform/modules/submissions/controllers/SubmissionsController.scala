@@ -27,7 +27,6 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.mvc.Results
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 object SubmissionsController {
 
@@ -37,7 +36,7 @@ object SubmissionsController {
   case class RecordAnswersRequest(answers: List[String])
   implicit val readsRecordAnswersRequest = Json.reads[RecordAnswersRequest]
 
-  case class CreateSubmissionRequest(userId: UserId)
+  case class CreateSubmissionRequest(requestedBy: String)
   implicit val readsCreateSubmissionRequest = Json.reads[CreateSubmissionRequest]
 }
 
@@ -57,7 +56,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     withJsonBody[CreateSubmissionRequest] { submissionRequest =>
-      service.create(applicationId, submissionRequest.userId).map(_.fold(failed, success))
+      service.create(applicationId, submissionRequest.requestedBy).map(_.fold(failed, success))
     }
   }
 
