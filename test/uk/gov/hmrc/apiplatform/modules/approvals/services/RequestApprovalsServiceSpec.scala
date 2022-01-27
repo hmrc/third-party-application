@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ValidName
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -68,6 +69,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
+        SubmissionsServiceMock.Store.thenReturn()
 
         val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
 
@@ -75,6 +77,10 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
         ApplicationRepoMock.Save.verifyCalled()
+        val updatedSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
+        updatedSubmission.status should matchPattern {
+          case Submission.Status.Submitted(_, requestedByEmailAddress) => 
+        }
       }
 
       "return duplicate application name if duplicate" in new Setup {

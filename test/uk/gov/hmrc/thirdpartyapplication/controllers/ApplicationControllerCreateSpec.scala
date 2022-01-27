@@ -388,6 +388,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
     makeUpliftRequest(ApiIdentifier.random),
-    UserId.random
+    "bob@example.com"
   )
 }

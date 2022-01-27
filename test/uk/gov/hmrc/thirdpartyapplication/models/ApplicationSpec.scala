@@ -73,7 +73,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           environment = environment,
           collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
           upliftRequest = makeUpliftRequest(ApiIdentifier.random),
-          requestedBy = UserId.random
+          requestedBy = "user@example.com"
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken")

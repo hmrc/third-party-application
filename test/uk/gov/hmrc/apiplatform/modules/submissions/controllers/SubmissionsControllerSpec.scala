@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.MarkedSubmission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
@@ -44,7 +43,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   
   "create new submission" should {
     implicit val writer = Json.writes[SubmissionsController.CreateSubmissionRequest]
-    val fakeRequest = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest(UserId.random)))
+    val fakeRequest = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
       SubmissionsServiceMock.Create.thenReturn(extendedSubmission)

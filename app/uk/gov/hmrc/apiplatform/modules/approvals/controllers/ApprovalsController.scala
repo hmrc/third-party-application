@@ -56,6 +56,7 @@ class ApprovalsController @Inject()(
         case ApprovalRejectedDueToNoSuchApplication | 
               ApprovalRejectedDueToNoSuchSubmission                           => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
+        case ApprovalRejectedDueToAlreadySubmitted                            => PreconditionFailed(asJsonError("ALREADY_SUBMITTED", s"Submission for $applicationId was already submitted"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
         case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'")) 

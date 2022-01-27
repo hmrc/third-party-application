@@ -47,7 +47,7 @@ trait SubmissionsTestData {
   val initialProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.NotStarted, List(firstQuestion(q)))).toMap
   val completedProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.Completed, List(firstQuestion(q)))).toMap
 
-  val initialStatus = Submission.Status.Created(DateTimeUtils.now, UserId.random)
+  val initialStatus = Submission.Status.Created(DateTimeUtils.now, "bob@example.com")
   val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
   val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 

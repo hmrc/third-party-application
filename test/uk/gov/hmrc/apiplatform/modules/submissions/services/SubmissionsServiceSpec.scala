@@ -26,7 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import cats.data.NonEmptyList
 import uk.gov.hmrc.time.DateTimeUtils
 
@@ -48,7 +47,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
-        val result = await(underTest.create(applicationId, UserId.random))
+        val result = await(underTest.create(applicationId, "bob@example.com"))
 
         inside(result.right.value) { 
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, instances), progress) =>
@@ -68,7 +67,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
-        val result1 = await(underTest.create(applicationId, UserId.random))
+        val result1 = await(underTest.create(applicationId, "bob@example.com"))
         
         inside(result1.right.value) {
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
@@ -78,7 +77,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
-        val result2 = await(underTest.create(applicationId, UserId.random))
+        val result2 = await(underTest.create(applicationId, "bob@example.com"))
         inside(result2.right.value) { 
           case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
             s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
@@ -159,7 +158,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
               index = 0,
               answersToQuestions = completedAnswers,
               statusHistory = NonEmptyList.of(
-                Submission.Status.Created(DateTimeUtils.now, UserId.random)
+                Submission.Status.Created(DateTimeUtils.now, "user@example.com")
               )
             )
           )

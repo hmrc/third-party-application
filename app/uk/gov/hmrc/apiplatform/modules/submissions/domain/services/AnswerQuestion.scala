@@ -38,7 +38,7 @@ object AnswerQuestion {
       validatedAnswers                <- ValidateAnswers.validate(question, rawAnswers)
       latestInstance                   = submission.latestInstance
 
-      updatedAnswersToQuestions       <- cond(latestInstance.isInProgress, latestInstance.answersToQuestions + (questionId -> validatedAnswers), "Answers cannot be recorded for a Submission that is not in progress")
+      updatedAnswersToQuestions       <- cond(latestInstance.isOpenToAnswers, latestInstance.answersToQuestions + (questionId -> validatedAnswers), "Answers cannot be recorded for a Submission that is not in progress")
       // we assume no recursion needed for the next 3 steps - otherwise the ask when question structure must have been implemented in a complex recursive mess
       updatedQuestionnaireProgress     = deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, updatedAnswersToQuestions)
       questionsThatShouldBeAsked       = updatedQuestionnaireProgress.flatMap(_._2.questionsToAsk).toList

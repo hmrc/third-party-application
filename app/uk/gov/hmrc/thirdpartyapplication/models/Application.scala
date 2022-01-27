@@ -91,7 +91,7 @@ case class CreateApplicationRequestV2(
   environment: Environment,
   collaborators: Set[Collaborator],
   upliftRequest: UpliftRequest,
-  requestedBy: UserId
+  requestedBy: String
 ) extends CreateApplicationRequest {
                                       
   validate(this)

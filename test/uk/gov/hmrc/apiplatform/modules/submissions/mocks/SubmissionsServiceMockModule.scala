@@ -22,18 +22,20 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
+import org.mockito.captor.{ArgCaptor, Captor}
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseSubmissionsServiceMock {
     def aMock: SubmissionsService
 
+    def verify = MockitoSugar.verify(aMock)
+
     object Create {
       def thenReturn(extSubmission: ExtendedSubmission) = 
-        when(aMock.create(*[ApplicationId], *[UserId])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) =
-        when(aMock.create(*[ApplicationId], *[UserId])).thenReturn(successful(Left(error)))
+        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Left(error)))
     }
 
     object FetchLatest {
@@ -65,6 +67,17 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object DeleteAll {
       def thenReturn() =
         when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(()))
+    }
+
+    object Store {
+      def thenReturn() =
+        when(aMock.store(*[Submission])).thenAnswer( (s: Submission) => (successful(s)) )
+
+      def verifyCalledWith() = {
+        val capture: Captor[Submission] = ArgCaptor[Submission]
+        SubmissionsServiceMock.verify.store(capture)
+        capture.value
+      }
     }
   }
 
