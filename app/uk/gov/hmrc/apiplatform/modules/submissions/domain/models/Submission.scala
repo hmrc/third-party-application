@@ -121,7 +121,7 @@ case class Submission(
 
   lazy val latestInstance = instances.head
 
-  def isInProgress = latestInstance.isOpenToAnswers
+  lazy val isOpenToAnswers = latestInstance.isOpenToAnswers
   
   lazy val status: Submission.Status = latestInstance.statusHistory.head
 
@@ -141,7 +141,7 @@ case class ExtendedSubmission(
     .map(_.state)
     .forall(QuestionnaireState.isCompleted)
 
-  lazy val isOpenToAnswers = submission.instances.head.isOpenToAnswers
+  lazy val isOpenToAnswers = submission.isOpenToAnswers
   lazy val canBeSubmitted = isOpenToAnswers && isCompleted
 }
 
