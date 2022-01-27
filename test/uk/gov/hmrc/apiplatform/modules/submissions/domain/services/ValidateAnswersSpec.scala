@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.questionnaires.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionBuilder
+import uk.gov.hmrc.apiplatform.modules.submissions.QuestionBuilder
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import org.scalatest.Inside
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AsIdsHelpers

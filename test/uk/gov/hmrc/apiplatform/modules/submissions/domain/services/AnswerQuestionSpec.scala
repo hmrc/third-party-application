@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import cats.data.NonEmptyList
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionBuilder
+import uk.gov.hmrc.apiplatform.modules.submissions.QuestionBuilder
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import org.scalatest.Inside

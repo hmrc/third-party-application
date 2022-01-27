@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.submissions.mocks
+package uk.gov.hmrc.apiplatform.modules.submissions
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import scala.collection.immutable.ListMap
