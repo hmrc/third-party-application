@@ -93,7 +93,7 @@ class DeclineApprovalsService @Inject()(
         updatedApp            = declineApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, name))
-        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, name, reasons, DateTimeUtils.now)
+        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, name, reasons)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     = logDone(savedApp, savedSubmission)
         _                     <- ET.liftF(auditDeclinedApprovalRequest(applicationId, savedApp, updatedSubmission, reasons))
@@ -136,7 +136,7 @@ class DeclineApprovalsService @Inject()(
     applicationRepository.fetch(applicationId)
   }
 
-  private def updateSubmissionToDeclinedState(submission: Submission, name: String, reasons: String, timestamp: DateTime): Submission = {
-    SubmissionStatusChanges.appendNewState(Submission.Status.Declined(timestamp, name, reasons))(submission)
+  private def updateSubmissionToDeclinedState(submission: Submission, timestamp: DateTime, name: String, reasons: String): Submission = {
+    SubmissionStatusChanges.decline(timestamp, name, reasons)(submission)
   }
 }
