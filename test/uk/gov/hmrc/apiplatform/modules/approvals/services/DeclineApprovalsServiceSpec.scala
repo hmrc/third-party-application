@@ -29,6 +29,9 @@ import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireState
+import cats.data.NonEmptyList
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.time.DateTimeUtils
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
@@ -45,8 +48,12 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     val appId = ApplicationId.random
     val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
     val answeredSubmission = buildAnsweredSubmission()
-    val progress = QuestionnaireProgress(QuestionnaireState.Completed, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
-    val answeredExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> progress)))
+    val answeredSubmissionWithCreatedState = answeredSubmission.copy(instances = NonEmptyList.of(answeredSubmission.latestInstance.copy(statusHistory = NonEmptyList.of(Submission.Status.Created(DateTimeUtils.now, "user2")))))
+    val completedQuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.Completed, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
+    val incompleteProgress = QuestionnaireProgress(QuestionnaireState.InProgress, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
+    val answeredExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
+    val incompleteExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> incompleteProgress)))
+    val createdExtendedSubmission = ExtendedSubmission(answeredSubmissionWithCreatedState, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
     val name = "name"
     val reasons = "reasons"
     val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
@@ -67,6 +74,50 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
       result shouldBe DeclineApprovalsService.Actioned(application)
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
+    }
+
+    "fail to decline the specified application if the application cant be found" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNone()
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.RejectedDueToNoSuchApplication
+    }
+
+    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
+
+      ApplicationRepoMock.Fetch.thenReturn(anApplicationData(appId, testingState()))
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectState
+    }
+
+    "fail to decline the specified application if the submission cant be found" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(application)
+      SubmissionsServiceMock.FetchLatest.thenReturnNone()
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.RejectedDueToNoSuchSubmission
+    }
+
+    "fail to decline the specified application if the submission is in the wrong state" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(application)
+      SubmissionsServiceMock.FetchLatest.thenReturn(Some(incompleteExtendedSubmission))
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.RejectedDueToIncompleteSubmission
+    }
+  
+    "fail to decline the specified application if the submission is in the submission state" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(application)
+      SubmissionsServiceMock.FetchLatest.thenReturn(Some(createdExtendedSubmission))
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
     }
   }
 }
