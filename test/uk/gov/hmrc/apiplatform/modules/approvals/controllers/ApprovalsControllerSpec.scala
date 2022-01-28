@@ -22,6 +22,7 @@ import play.api.test.Helpers._
 
 import play.api.test.Helpers
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
@@ -33,11 +34,11 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec {
     val emailAddress = "test@example.com"
     val appId = ApplicationId.random
     
-    trait Setup extends RequestApprovalsServiceMockModule {
+    trait Setup extends RequestApprovalsServiceMockModule with DeclineApprovalsServiceMockModule {
         val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
         val request = FakeRequest().withBody(jsonBody)
 
-        val underTest = new ApprovalsController(RequestApprovalsServiceMock.aMock, Helpers.stubControllerComponents())
+        val underTest = new ApprovalsController(RequestApprovalsServiceMock.aMock, DeclineApprovalsServiceMock.aMock, Helpers.stubControllerComponents())
     }
 
     "requestApproval" should {

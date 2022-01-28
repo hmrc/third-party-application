@@ -27,19 +27,24 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService._
+import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import akka.http.scaladsl.model.HttpHeader
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
+  implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
-  implicit val formatRequestApprovalRequest = Json.reads[RequestApprovalRequest]
+  case class DeclinedRequest(name: String, reasons: String)
+  implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 }
 
 @Singleton
 class ApprovalsController @Inject()(
   requestApprovalsService: RequestApprovalsService,
+  declineApprovalService: DeclineApprovalsService,
   cc: ControllerComponents
 )
 (
@@ -51,7 +56,7 @@ class ApprovalsController @Inject()(
 
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      requestApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map { _ match {
+      requestApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueToNoSuchApplication | 
               ApprovalRejectedDueToNoSuchSubmission                           => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
@@ -60,10 +65,23 @@ class ApprovalsController @Inject()(
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
         case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'")) 
-      }}
+      })
       .recover(recovery)
     }
   }
+
+  def decline(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+    withJsonBody[DeclinedRequest] { declinedRequest => 
+      declineApprovalService.decline(applicationId, declinedRequest.name, declinedRequest.reasons)
+      .map( _ match {
+        // TODO
+        case _ => Ok
+      })
+    }
+    .recover(recovery)
+  }
+
+  def grant(applicationId: ApplicationId) = ???
 
   private def asJsonError(errorCode: String, message: String): JsValue = 
     Json.toJson(

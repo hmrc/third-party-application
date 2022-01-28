@@ -40,25 +40,26 @@ case class StoredUpliftData(responsibleIndividual: ResponsibleIndividual, sellRe
 object StoredUpliftData {
   implicit val format = Json.format[StoredUpliftData]
 }
-case class ApplicationData(id: ApplicationId,
-                           name: String,
-                           normalisedName: String,
-                           collaborators: Set[Collaborator],
-                           description: Option[String] = None,
-                           wso2ApplicationName: String,
-                           tokens: ApplicationTokens,
-                           state: ApplicationState,
-                           access: Access = Standard(),
-                           createdOn: DateTime,
-                           lastAccess: Option[DateTime],
-                           grantLength: Int = grantLengthConfig,
-                           rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
-                           environment: String = Environment.PRODUCTION.toString,
-                           checkInformation: Option[CheckInformation] = None,
-                           blocked: Boolean = false,
-                           ipAllowlist: IpAllowlist = IpAllowlist(),
-                           upliftData: Option[StoredUpliftData] = None
-                           ) {
+case class ApplicationData(
+  id: ApplicationId,
+  name: String,
+  normalisedName: String,
+  collaborators: Set[Collaborator],
+  description: Option[String] = None,
+  wso2ApplicationName: String,
+  tokens: ApplicationTokens,
+  state: ApplicationState,
+  access: Access = Standard(),
+  createdOn: DateTime,
+  lastAccess: Option[DateTime],
+  grantLength: Int = grantLengthConfig,
+  rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
+  environment: String = Environment.PRODUCTION.toString,
+  checkInformation: Option[CheckInformation] = None,
+  blocked: Boolean = false,
+  ipAllowlist: IpAllowlist = IpAllowlist(),
+  upliftData: Option[StoredUpliftData] = None
+) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
 

@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
 
-trait SubmissionsTestData {
+trait SubmissionsTestData extends QuestionBuilder {
   val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
   val questionnaireId = questionnaire.id
   val question = questionnaire.questions.head.question
@@ -64,6 +64,67 @@ trait SubmissionsTestData {
   val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
   val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)
   val completedExtendedSubmission = ExtendedSubmission(completedSubmission, completedProgress)
+
+  def buildCompletedSubmissionWithQuestions(): Submission = {
+    val subId = Submission.Id.random
+    val appId = ApplicationId.random
+
+    val question1 = yesNoQuestion(1)
+    val questionName = textQuestion(2)
+    val questionPrivacy = textQuestion(3)
+    val questionTerms = textQuestion(4)
+    val questionWeb = textQuestion(5)
+    val question2 = acknowledgementOnly(6)
+    val question3 = multichoiceQuestion(7, "a", "b", "c")
+    
+    val questionnaire1 = Questionnaire(
+        id = QuestionnaireId.random,
+        label = Label("Questionnaire 1"),
+        questions = NonEmptyList.of(
+          QuestionItem(question1), 
+          QuestionItem(question2), 
+          QuestionItem(question3), 
+          QuestionItem(questionName), 
+          QuestionItem(questionPrivacy), 
+          QuestionItem(questionTerms),
+          QuestionItem(questionWeb)
+        )
+      )
+
+    val questionnaireGroups = NonEmptyList.of(
+        GroupOfQuestionnaires(
+          heading = "Group 1",
+          links = NonEmptyList.of(
+            questionnaire1
+          )            
+        )
+    )
+
+    val instances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
+    
+    Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id), instances)
+  }
+
+  def buildAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = {
+
+    def passAnswer(question: Question): ActualAnswer = {
+      question match {
+        case TextQuestion(id, wording, statement, absence) => TextAnswer("some random text")
+        case ChooseOneOfQuestion(id, wording, statement, marking, absence) => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
+        case MultiChoiceQuestion(id, wording, statement, marking, absence) => MultipleChoiceAnswer(Set(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value))
+        case AcknowledgementOnly(id, wording, statement) => NoAnswer
+        case YesNoQuestion(id, wording, statement, yesMarking, noMarking, absence) => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
+      }
+    }
+    
+    val allQuestions = submission.allQuestions
+    val answers = allQuestions.map(q => (q.id -> passAnswer(q))).toList.toMap
+
+    val latestInstance = submission.latestInstance
+    val newLatestInstance = latestInstance.copy(answersToQuestions = answers)
+
+    submission.copy(instances = NonEmptyList(newLatestInstance, submission.instances.tail))
+  }
 
   def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
     questionnaires.map { qn =>

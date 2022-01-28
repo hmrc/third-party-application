@@ -71,8 +71,7 @@ class RequestApprovalsService @Inject()(
 
   import RequestApprovalsService._
 
-  def requestApproval(applicationId: ApplicationId,
-                      requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
+  def requestApproval(applicationId: ApplicationId, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -103,7 +102,7 @@ class RequestApprovalsService @Inject()(
     .fold[RequestApprovalResult](identity,identity)
   }
 
-  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
+    private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
     successful(Unit)
   }
@@ -119,7 +118,7 @@ class RequestApprovalsService @Inject()(
       case _ => existingAccess    
     }
   }
-
+ 
   private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String, privacyPolicyUrl: Option[String], termsAndConditionsUrl: Option[String], organisationUrl: Option[String]): ApplicationData = existing.copy(
     name = applicationName,
     normalisedName = applicationName.toLowerCase,

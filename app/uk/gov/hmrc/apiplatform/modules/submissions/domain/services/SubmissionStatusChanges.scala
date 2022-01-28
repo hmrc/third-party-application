@@ -20,7 +20,18 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import cats.data.NonEmptyList
 
 object SubmissionStatusChanges {
+
+  import Submission.Status._
+
+  def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
+    case (c: Created,   s: Submitted) => true
+    case (s: Submitted, d: Declined)  => true
+    case (s: Submitted, g: Granted)   => true
+    case _                            => false
+  }
+
   def appendNewState(newState: Submission.Status)(submission: Submission): Submission = {
+    require(isLegalTransition(submission.status, newState))
     val latestInstance = submission.latestInstance
     val updatedInstance = latestInstance.copy(statusHistory = newState :: latestInstance.statusHistory)
     submission.copy(instances = NonEmptyList(updatedInstance, submission.instances.tail))

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.submissions
+package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import scala.collection.immutable.ListMap

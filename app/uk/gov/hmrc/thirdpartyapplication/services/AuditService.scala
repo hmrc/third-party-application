@@ -203,6 +203,15 @@ object AuditAction {
     val auditType = "ApplicationDeleted"
   }
 
+  case object ApplicationApprovalDeclined extends AuditAction {
+    val name = "Application approval has been declined"
+    val auditType = "ApplicationApprovalDeclined"
+  }
+
+  case object ApplicationApprovalGranted extends AuditAction {
+    val name = "Application approval has been granted"
+    val auditType = "ApplicationApprovalGranted"
+  }
 }
 
 object AuditHelper {
