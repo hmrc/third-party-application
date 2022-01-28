@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import scala.concurrent.ExecutionContext
 import play.api.mvc.ControllerComponents
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -26,12 +25,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
-import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService._
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
+import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 
 object ApprovalsController {
@@ -56,6 +55,8 @@ class ApprovalsController @Inject()(
   import ApprovalsController._
 
   def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+    import RequestApprovalsService._
+
     withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
       requestApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
@@ -72,11 +73,17 @@ class ApprovalsController @Inject()(
   }
 
   def decline(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+    import DeclineApprovalsService._
+
     withJsonBody[DeclinedRequest] { declinedRequest => 
       declineApprovalService.decline(applicationId, declinedRequest.name, declinedRequest.reasons)
       .map( _ match {
-        // TODO
-        case _ => Ok
+        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
+        case RejectedDueToNoSuchApplication  | 
+              RejectedDueToNoSuchSubmission                                   => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
+        case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
+        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
+        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
       })
     }
     .recover(recovery)

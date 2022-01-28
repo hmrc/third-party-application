@@ -93,6 +93,14 @@ object Submission {
       timestamp: DateTime,
       requestedBy: String
     ) extends Status
+
+    def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
+      case (c: Created,   s: Submitted) => true
+      case (s: Submitted, d: Declined)  => true
+      case (s: Submitted, g: Granted)   => true
+      case _                            => false
+    }
+
   }
 
   case class Instance(

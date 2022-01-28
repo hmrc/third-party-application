@@ -47,7 +47,7 @@ object DeclineApprovalsService {
   case class Actioned(application: ApplicationData) extends Result
 
   sealed trait Rejected extends Result
-  case object RejectedDueToIncorrectState extends Rejected
+  case object RejectedDueToIncorrectApplicationState extends Rejected
   case object RejectedDueToNoSuchApplication extends Rejected
   case object RejectedDueToNoSuchSubmission extends Rejected
   case object RejectedDueToIncompleteSubmission extends Rejected
@@ -84,7 +84,7 @@ class DeclineApprovalsService @Inject()(
       for {
         _                     <- ET.liftF(logStart(applicationId))
         originalApp           <- ET.fromOptionF(fetchApp(applicationId), RejectedDueToNoSuchApplication)
-        _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectState)
+        _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
         extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), RejectedDueToNoSuchSubmission)
         _                     <- ET.cond(extSubmission.isCompleted, (), RejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)

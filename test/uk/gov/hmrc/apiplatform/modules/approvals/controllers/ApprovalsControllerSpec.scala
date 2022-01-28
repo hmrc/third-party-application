@@ -27,21 +27,25 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
+import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
-class ApprovalsControllerSpec extends AsyncHmrcSpec {
+class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData  {
     implicit val mat = NoMaterializer
-    implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
     val emailAddress = "test@example.com"
     val appId = ApplicationId.random
     
-    trait Setup extends RequestApprovalsServiceMockModule with DeclineApprovalsServiceMockModule {
-        val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
-        val request = FakeRequest().withBody(jsonBody)
 
+
+    trait Setup extends RequestApprovalsServiceMockModule with DeclineApprovalsServiceMockModule {
         val underTest = new ApprovalsController(RequestApprovalsServiceMock.aMock, DeclineApprovalsServiceMock.aMock, Helpers.stubControllerComponents())
     }
 
     "requestApproval" should {
+    implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
+        val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
+        val request = FakeRequest().withBody(jsonBody)
+
         "return 'no content' success response if request is approved" in new Setup {
             RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
@@ -83,5 +87,19 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec {
 
             status(result) shouldBe PRECONDITION_FAILED
         }                
+    }
+
+    "decline" should {
+        implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
+        val jsonBody = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
+        val request = FakeRequest().withBody(jsonBody)
+        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+        "return 'no content' success response if request is declined" in new Setup {
+            DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
+            val result = underTest.decline(appId)(request)
+
+            status(result) shouldBe OK
+        }        
     }
 }

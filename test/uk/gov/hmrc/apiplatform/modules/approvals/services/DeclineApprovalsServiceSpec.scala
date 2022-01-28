@@ -90,7 +90,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
       val result = await(underTest.decline(appId, name, reasons))
 
-      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectState
+      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to decline the specified application if the submission cant be found" in new Setup {
