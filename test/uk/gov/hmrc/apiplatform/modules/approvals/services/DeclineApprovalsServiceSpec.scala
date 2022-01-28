@@ -19,24 +19,54 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireState
 
-class DeclineApprovalsServiceSpec extends HmrcSpec {
+class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
     with ApplicationRepositoryMockModule 
     with StateHistoryRepositoryMockModule 
-    with ApprovalsNamingServiceMockModule
-    with SubmissionsServiceMockModule {
+    with SubmissionsServiceMockModule
+    with ApplicationTestData 
+    with SubmissionsTestData {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepositoryMock.aMock, StateHistoryRepositoryMock.aMock, ApprovalsNamingServiceMock.aMock, SubmissionsServiceMock.aMock)
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    val appId = ApplicationId.random
+    val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    val answeredSubmission = buildAnsweredSubmission()
+    val progress = QuestionnaireProgress(QuestionnaireState.Completed, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
+    val answeredExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> progress)))
+    val name = "name"
+    val reasons = "reasons"
+    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
   }
 
   "DeclineApprovalsService" should {
-    "" in new Setup {
+    "decline the specified application" in new Setup {
+      import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
+      ApplicationRepoMock.Fetch.thenReturn(application)
+      SubmissionsServiceMock.FetchLatest.thenReturn(Some(answeredExtendedSubmission))
+      ApplicationRepoMock.Save.thenReturn(application)
+      StateHistoryRepoMock.Insert.thenAnswer()
+      SubmissionsServiceMock.Store.thenReturn()
+      AuditServiceMock.Audit.thenReturnSuccess()
+
+      val result = await(underTest.decline(appId, name, reasons))
+
+      result shouldBe DeclineApprovalsService.Actioned(application)
+      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
     }
   }
 }

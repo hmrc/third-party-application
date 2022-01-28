@@ -31,7 +31,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsServic
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import akka.http.scaladsl.model.HttpHeader
+
+import scala.concurrent.Future.successful
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -81,7 +82,9 @@ class ApprovalsController @Inject()(
     .recover(recovery)
   }
 
-  def grant(applicationId: ApplicationId) = ???
+  def grant(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    successful(Ok(""))
+  }
 
   private def asJsonError(errorCode: String, message: String): JsValue = 
     Json.toJson(

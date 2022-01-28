@@ -99,7 +99,7 @@ class RequestApprovalsService @Inject()(
         _                     <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
-    .fold[RequestApprovalResult](identity,identity)
+    .fold[RequestApprovalResult](identity, identity)
   }
 
     private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {

@@ -100,7 +100,7 @@ trait SubmissionsTestData extends QuestionBuilder {
         )
     )
 
-    val instances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
+    val instances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(Submission.Status.Submitted(DateTimeUtils.now, "user1"))))
     
     Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id), instances)
   }

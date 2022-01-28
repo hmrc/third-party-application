@@ -20,7 +20,6 @@ import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
-import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 

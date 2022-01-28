@@ -59,7 +59,6 @@ class DeclineApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  approvalsNamingService: ApprovalsNamingService,
   submissionService: SubmissionsService
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
