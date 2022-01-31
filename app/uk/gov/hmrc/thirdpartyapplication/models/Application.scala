@@ -24,13 +24,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-trait ApplicationRequest {
+trait ModifyApplicationRequest {
   def name: String
   def description: Option[String]
   def access: Access
 }
 
-trait CreateApplicationRequest extends ApplicationRequest {
+trait CreateApplicationRequest extends ModifyApplicationRequest {
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
@@ -115,7 +115,7 @@ object CreateApplicationRequest {
 
 case class UpdateApplicationRequest(override val name: String,
                                     override val access: Access = Standard(),
-                                    override val description: Option[String] = None) extends ApplicationRequest {
+                                    override val description: Option[String] = None) extends ModifyApplicationRequest {
   require(name.nonEmpty, "name is required")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")

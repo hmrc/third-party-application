@@ -62,7 +62,7 @@ class ApplicationServiceSpec
   with UpliftRequestSamples
   with LockDownDateTime {
 
-  def asUpdateRequest(applicationRequest: ApplicationRequest): UpdateApplicationRequest = {
+  def asUpdateRequest(applicationRequest: ModifyApplicationRequest): UpdateApplicationRequest = {
     UpdateApplicationRequest(
       name = applicationRequest.name,
       access = applicationRequest.access,
