@@ -71,7 +71,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchLatest" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(Some(extendedSubmission))
+      SubmissionsServiceMock.FetchLatest.thenReturn(extendedSubmission)
 
       val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
 
@@ -83,7 +83,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
 
     "return not found when not found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(None)
+      SubmissionsServiceMock.FetchLatest.thenReturnNone
 
       val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
 
@@ -94,7 +94,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchSubmission" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.Fetch.thenReturn(Some(extendedSubmission))
+      SubmissionsServiceMock.Fetch.thenReturn(extendedSubmission)
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
 
@@ -106,7 +106,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
 
     "return not found when not found" in new Setup {
-      SubmissionsServiceMock.Fetch.thenReturn(None)
+      SubmissionsServiceMock.Fetch.thenReturnNone
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
 

@@ -30,22 +30,19 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
 
     object RequestApproval {
       def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
       
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectState))
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectState))
       
-      def thenRequestFailsWithApplicationAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
-
-      def thenRequestFailsWithApplicationDoesNotExistErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToNoSuchApplication))
+      def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
       def thenRequestFailsWithIncompleteSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIncompleteSubmission))
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncompleteSubmission))
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(eqTo(applicationId), eqTo(emailAddress))(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
     }
   }
   

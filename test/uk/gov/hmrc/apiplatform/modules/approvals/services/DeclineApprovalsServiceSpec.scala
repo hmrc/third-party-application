@@ -64,7 +64,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
       ApplicationRepoMock.Fetch.thenReturn(application)
-      SubmissionsServiceMock.FetchLatest.thenReturn(Some(answeredExtendedSubmission))
+      SubmissionsServiceMock.FetchLatest.thenReturn(answeredExtendedSubmission)
       ApplicationRepoMock.Save.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
       SubmissionsServiceMock.Store.thenReturn()
@@ -104,7 +104,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     "fail to decline the specified application if the submission is in the wrong state" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(application)
-      SubmissionsServiceMock.FetchLatest.thenReturn(Some(incompleteExtendedSubmission))
+      SubmissionsServiceMock.FetchLatest.thenReturn(incompleteExtendedSubmission)
 
       val result = await(underTest.decline(appId, name, reasons))
 
@@ -113,8 +113,8 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   
     "fail to decline the specified application if the submission is in the submission state" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(application)
-      SubmissionsServiceMock.FetchLatest.thenReturn(Some(createdExtendedSubmission))
-
+      SubmissionsServiceMock.FetchLatest.thenReturn(createdExtendedSubmission)
+      
       val result = await(underTest.decline(appId, name, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState

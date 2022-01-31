@@ -32,6 +32,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
+import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.ApprovalsActionBuilders
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -43,30 +46,32 @@ object ApprovalsController {
 
 @Singleton
 class ApprovalsController @Inject()(
+  val applicationDataService: ApplicationDataService,
+  val submissionService: SubmissionsService,
   requestApprovalsService: RequestApprovalsService,
   declineApprovalService: DeclineApprovalsService,
   cc: ControllerComponents
 )
 (
   implicit val ec: ExecutionContext
-) extends ExtraHeadersController(cc)  
+) extends ExtraHeadersController(cc)
+  with ApprovalsActionBuilders  
     with JsonUtils {
 
   import ApprovalsController._
 
-  def requestApproval(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request => 
     import RequestApprovalsService._
 
-    withJsonBody[RequestApprovalRequest] { requestApprovalRequest => 
-      requestApprovalsService.requestApproval(applicationId, requestApprovalRequest.requestedByEmailAddress).map( _ match {
+    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest => 
+      requestApprovalsService.requestApproval(request.application, request.extSubmission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
-        case ApprovalRejectedDueToNoSuchApplication | 
-              ApprovalRejectedDueToNoSuchSubmission                           => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case ApprovalRejectedDueToIncompleteSubmission                        => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
         case ApprovalRejectedDueToAlreadySubmitted                            => PreconditionFailed(asJsonError("ALREADY_SUBMITTED", s"Submission for $applicationId was already submitted"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
-        case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'")) 
+        case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
+        
       })
       .recover(recovery)
     }

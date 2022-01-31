@@ -52,7 +52,7 @@ trait SubmissionsTestData extends QuestionBuilder {
   val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
   val extendedSubmission = ExtendedSubmission(submission, initialProgress)
-   
+
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)
   val altSubmission = Submission(altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
@@ -62,7 +62,9 @@ trait SubmissionsTestData extends QuestionBuilder {
   val expectedAppName = "expectedAppName"
   val answersToQuestions: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName))  
   val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
+  
   val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)
+
   val completedExtendedSubmission = ExtendedSubmission(completedSubmission, completedProgress)
 
   def buildCompletedSubmissionWithQuestions(): Submission = {

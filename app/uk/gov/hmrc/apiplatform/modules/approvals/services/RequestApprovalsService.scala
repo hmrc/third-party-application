@@ -49,8 +49,6 @@ object RequestApprovalsService {
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
   case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToNoSuchApplication extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToNoSuchSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToAlreadySubmitted extends ApprovalRejectedResult
 
@@ -71,7 +69,7 @@ class RequestApprovalsService @Inject()(
 
   import RequestApprovalsService._
 
-  def requestApproval(applicationId: ApplicationId, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
+  def requestApproval(originalApp: ApplicationData, extSubmission: ExtendedSubmission, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -79,14 +77,12 @@ class RequestApprovalsService @Inject()(
 
     (
       for {
-        _                     <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
-        originalApp           <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueToNoSuchApplication)
+        _                     <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
-        extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
         _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
         appName                = getApplicationName(extSubmission)
-        _                     <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
+        _                     <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
         privacyPolicyUrl      = getPrivacyPolicyUrl(extSubmission)
         termsAndConditionsUrl = getTermsAndConditionsUrl(extSubmission)
         organisationUrl       = getOrganisationUrl(extSubmission)
@@ -96,7 +92,7 @@ class RequestApprovalsService @Inject()(
         updatedSubmission     = updateSubmissionToSubmittedState(extSubmission.submission, requestedByEmailAddress, DateTimeUtils.now)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     = logCompletedApprovalRequest(savedApp)
-        _                     <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
+        _                     <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity, identity)
