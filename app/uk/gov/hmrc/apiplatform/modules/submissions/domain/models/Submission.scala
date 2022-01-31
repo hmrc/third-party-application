@@ -70,6 +70,11 @@ object Submission {
       case _ : Submission.Status.Submitted => true
       case _ => false      
     }
+
+    def isGranted = this match {
+      case _ : Submission.Status.Granted => true
+      case _ => false      
+    }
   }
 
   object Status {

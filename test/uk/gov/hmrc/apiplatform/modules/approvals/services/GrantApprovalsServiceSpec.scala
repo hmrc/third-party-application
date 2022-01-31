@@ -33,7 +33,7 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.time.DateTimeUtils
 
-class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
+class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
     with ApplicationRepositoryMockModule 
     with StateHistoryRepositoryMockModule 
@@ -55,12 +55,11 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     val incompleteExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> incompleteProgress)))
     val createdExtendedSubmission = ExtendedSubmission(answeredSubmissionWithCreatedState, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
     val name = "name"
-    val reasons = "reasons"
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
+    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
   }
 
-  "DeclineApprovalsService" should {
-    "decline the specified application" in new Setup {
+  "GrantApprovalsService" should {
+    "grant the specified application" in new Setup {
       import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
       SubmissionsServiceMock.FetchLatest.thenReturn(answeredExtendedSubmission)
@@ -69,33 +68,32 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Store.thenReturn()
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val result = await(underTest.decline(application, answeredExtendedSubmission, name, reasons))
+      val result = await(underTest.grant(application, answeredExtendedSubmission, name))
 
-      result shouldBe DeclineApprovalsService.Actioned(application)
-      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
-      val finalSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
-      finalSubmission.status.isCreated shouldBe true
-      finalSubmission.instances.tail.head.statusHistory.head should matchPattern {
-        case Submission.Status.Declined(_, name, reasons) =>
+      result shouldBe GrantApprovalsService.Actioned(application)
+      ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
+      SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
+      SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
+        case Submission.Status.Granted(_, name) =>
       }
     }
 
-    "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.decline(anApplicationData(appId, testingState()), extendedSubmission, name, reasons))
+    "fail to grant the specified application if the application is in the incorrect state" in new Setup {
+      val result = await(underTest.grant(anApplicationData(appId, testingState()), extendedSubmission, name))
 
-      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
-    "fail to decline the specified application if the submission is in the wrong state" in new Setup {
-      val result = await(underTest.decline(application, incompleteExtendedSubmission, name, reasons))
+    "fail to grant the specified application if the submission is in the wrong state" in new Setup {
+      val result = await(underTest.grant(application, incompleteExtendedSubmission, name))
 
-      result shouldBe DeclineApprovalsService.RejectedDueToIncompleteSubmission
+      result shouldBe GrantApprovalsService.RejectedDueToIncompleteSubmission
     }
   
-    "fail to decline the specified application if the submission is in the submission state" in new Setup {
-      val result = await(underTest.decline(application, createdExtendedSubmission, name, reasons))
+    "fail to grant the specified application if the submission is in the submission state" in new Setup {
+      val result = await(underTest.grant(application, createdExtendedSubmission, name))
 
-      result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
+      result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
   }
 }

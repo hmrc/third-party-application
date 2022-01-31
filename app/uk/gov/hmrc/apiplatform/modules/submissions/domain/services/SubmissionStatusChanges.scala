@@ -51,4 +51,10 @@ object SubmissionStatusChanges {
       addNewInstanceToSubmission(timestamp)
     )(submission)
   }
+
+  def grant(timestamp: DateTime, name: String)(submission: Submission): Submission = {
+    (
+      appendNewState(Granted(timestamp, name))
+    )(submission)
+  }
 }

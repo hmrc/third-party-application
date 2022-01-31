@@ -23,12 +23,13 @@ import play.api.test.Helpers._
 import play.api.test.Helpers
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
+import uk.gov.hmrc.apiplatform.modules.approvals.services._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -42,6 +43,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     trait Setup 
         extends RequestApprovalsServiceMockModule
         with DeclineApprovalsServiceMockModule
+        with GrantApprovalsServiceMockModule
         with ApplicationDataServiceMockModule
         with SubmissionsServiceMockModule {
       val underTest = new ApprovalsController(
@@ -49,6 +51,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
           SubmissionsServiceMock.aMock,
           RequestApprovalsServiceMock.aMock, 
           DeclineApprovalsServiceMock.aMock,
+          GrantApprovalsServiceMock.aMock,
           Helpers.stubControllerComponents()
       )
 
@@ -142,6 +145,22 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
             hasSubmission
             DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
             val result = underTest.decline(appId)(request)
+
+            status(result) shouldBe OK
+        }        
+    }
+    
+    "grant" should {
+        implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
+        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST"))
+        val request = FakeRequest().withJsonBody(jsonBody)
+        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+        "return 'no content' success response if request is declined" in new Setup {
+            hasApp
+            hasSubmission
+            GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
+            val result = underTest.grant(appId)(request)
 
             status(result) shouldBe OK
         }        

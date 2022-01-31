@@ -35,6 +35,7 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.ApprovalsActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -42,6 +43,9 @@ object ApprovalsController {
 
   case class DeclinedRequest(name: String, reasons: String)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
+
+  case class GrantedRequest(name: String)
+  implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 
 @Singleton
@@ -50,6 +54,7 @@ class ApprovalsController @Inject()(
   val submissionService: SubmissionsService,
   requestApprovalsService: RequestApprovalsService,
   declineApprovalService: DeclineApprovalsService,
+  grantApprovalService: GrantApprovalsService,
   cc: ControllerComponents
 )
 (
@@ -94,8 +99,21 @@ class ApprovalsController @Inject()(
     .recover(recovery)
   }
 
-  def grant(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    successful(Ok(""))
+  def grant(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantApprovalsService._
+
+    withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
+      grantApprovalService.grant(request.application, request.extSubmission, grantedRequest.name)
+      .map( _ match {
+        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
+        case RejectedDueToNoSuchApplication  | 
+              RejectedDueToNoSuchSubmission                                   => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
+        case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
+        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
+        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
+      })
+    }
+    .recover(recovery)
   }
 
   private def asJsonError(errorCode: String, message: String): JsValue = 
