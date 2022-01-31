@@ -20,7 +20,6 @@ import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
@@ -28,7 +27,7 @@ trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
     def aMock: DeclineApprovalsService
 
     object Decline {
-      def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*[ApplicationId], *, *)(*)).thenReturn(successful(result))
+      def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*, *, *, *)(*)).thenReturn(successful(result))
     }
   }
   

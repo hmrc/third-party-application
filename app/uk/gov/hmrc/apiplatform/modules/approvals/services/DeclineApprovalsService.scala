@@ -65,7 +65,7 @@ class DeclineApprovalsService @Inject()(
 
   import DeclineApprovalsService._
 
-  def decline(applicationId: ApplicationId, name: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, extSubmission: ExtendedSubmission, name: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -77,15 +77,12 @@ class DeclineApprovalsService @Inject()(
     def logDone(app: ApplicationData, submission: Submission) = 
       logger.info(s"Decline-02: decline appId:${app.id} ${app.state.name} ${submission.status}")
 
-
     val ET = EitherTHelper.make[Result]
 
     (
       for {
-        _                     <- ET.liftF(logStart(applicationId))
-        originalApp           <- ET.fromOptionF(fetchApp(applicationId), RejectedDueToNoSuchApplication)
+        _                     <- ET.liftF(logStart(originalApp.id))
         _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
-        extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), RejectedDueToNoSuchSubmission)
         _                     <- ET.cond(extSubmission.isCompleted, (), RejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
@@ -96,7 +93,7 @@ class DeclineApprovalsService @Inject()(
         updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, name, reasons)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     = logDone(savedApp, savedSubmission)
-        _                     <- ET.liftF(auditDeclinedApprovalRequest(applicationId, savedApp, updatedSubmission, reasons))
+        _                     <- ET.liftF(auditDeclinedApprovalRequest(originalApp.id, savedApp, updatedSubmission, reasons))
       } yield Actioned(savedApp)
     )
     .fold[Result](identity, identity)
@@ -128,14 +125,6 @@ class DeclineApprovalsService @Inject()(
     }
   }
   
-  private def fetchExtendedSubmission(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
-    submissionService.fetchLatest(applicationId)
-  }
-
-  private def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] = {
-    applicationRepository.fetch(applicationId)
-  }
-
   private def updateSubmissionToDeclinedState(submission: Submission, timestamp: DateTime, name: String, reasons: String): Submission = {
     SubmissionStatusChanges.decline(timestamp, name, reasons)(submission)
   }

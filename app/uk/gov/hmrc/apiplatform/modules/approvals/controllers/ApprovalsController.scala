@@ -70,18 +70,18 @@ class ApprovalsController @Inject()(
         case ApprovalRejectedDueToAlreadySubmitted                            => PreconditionFailed(asJsonError("ALREADY_SUBMITTED", s"Submission for $applicationId was already submitted"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
-        case ApprovalRejectedDueToIncorrectState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
+        case ApprovalRejectedDueToIncorrectApplicationState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
         
       })
       .recover(recovery)
     }
   }
 
-  def decline(applicationId: ApplicationId) = Action.async(parse.json) { implicit request => 
+  def decline(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request => 
     import DeclineApprovalsService._
 
-    withJsonBody[DeclinedRequest] { declinedRequest => 
-      declineApprovalService.decline(applicationId, declinedRequest.name, declinedRequest.reasons)
+    withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
+      declineApprovalService.decline(request.application, request.extSubmission, declinedRequest.name, declinedRequest.reasons)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToNoSuchApplication  | 

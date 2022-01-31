@@ -56,8 +56,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
       
       def hasNoSubmission = SubmissionsServiceMock.FetchLatest.thenReturnNone
-      def hasSubmissionInGoodState = SubmissionsServiceMock.FetchLatest.thenReturn(completedExtendedSubmission)
-      def hasSubmissionInIncompleteState = SubmissionsServiceMock.FetchLatest.thenReturn(extendedSubmission)
+      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(completedExtendedSubmission)
     }
 
     "requestApproval" should {
@@ -77,7 +76,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
         "return 'no content' success response if request is approved" in new Setup {
             hasApp
-            hasSubmissionInGoodState
+            hasSubmission
             RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
@@ -86,7 +85,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
         "return 'precondition failed' error response if request is not in the correct state" in new Setup {
             hasApp
-            hasSubmissionInGoodState
+            hasSubmission
             RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
 
             val result = underTest.requestApproval(appId)(request)
@@ -105,7 +104,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
         "return 'precondition failed' error response if submission is incomplete" in new Setup {
             hasApp
-            hasSubmissionInIncompleteState
+            hasSubmission
             RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncompleteSubmissionErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
@@ -114,7 +113,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
         "return 'conflict' error response if application with same name already exists" in new Setup {
             hasApp
-            hasSubmissionInGoodState
+            hasSubmission
 
             RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
@@ -124,7 +123,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
         "return 'precondition failed' error response if name is illegal" in new Setup {
             hasApp
-            hasSubmissionInGoodState
+            hasSubmission
             RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
@@ -135,10 +134,12 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     "decline" should {
         implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
         val jsonBody = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
-        val request = FakeRequest().withBody(jsonBody)
+        val request = FakeRequest().withJsonBody(jsonBody)
         val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
         "return 'no content' success response if request is declined" in new Setup {
+            hasApp
+            hasSubmission
             DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
             val result = underTest.decline(appId)(request)
 

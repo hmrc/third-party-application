@@ -48,7 +48,7 @@ object RequestApprovalsService {
   case class ApprovalAccepted(application: ApplicationData) extends RequestApprovalResult
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
-  case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToIncorrectApplicationState extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToAlreadySubmitted extends ApprovalRejectedResult
 
@@ -78,7 +78,7 @@ class RequestApprovalsService @Inject()(
     (
       for {
         _                     <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
+        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
         appName                = getApplicationName(extSubmission)
@@ -165,15 +165,6 @@ class RequestApprovalsService @Inject()(
     SubmissionDataExtracter.getOrganisationUrl(extSubmission.submission)
   }
   
-  private def fetchExtendedSubmission(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
-    submissionService.fetchLatest(applicationId)
-  }
-
-  // Pure duplicate
-  private def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] = {
-    applicationRepository.fetch(applicationId)
-  }
-
   private def updateSubmissionToSubmittedState(submission: Submission, requestedBy: String, timestamp: DateTime): Submission = {
     SubmissionStatusChanges.appendNewState(Submission.Status.Submitted(timestamp, requestedBy))(submission)
   }

@@ -33,7 +33,7 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
         when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
       
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectState))
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
       
       def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))

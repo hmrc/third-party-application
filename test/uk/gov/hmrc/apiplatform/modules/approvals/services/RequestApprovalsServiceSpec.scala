@@ -117,7 +117,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         
         val result = await(underTest.requestApproval(prodApplication, extendedSubmission, requestedByEmailAddress))
 
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectState
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectApplicationState
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
