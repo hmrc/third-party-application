@@ -67,4 +67,15 @@ object ApplicationState {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
  
   implicit val formatApplicationState = Json.format[ApplicationState]
+
+  val testing = ApplicationState(State.TESTING, None)
+
+  def pendingGatekeeperApproval(requestedBy: String) =
+    ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, Some(requestedBy))
+
+  def pendingRequesterVerification(requestedBy: String, verificationCode: String) =
+    ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(requestedBy), Some(verificationCode))
+
+  def production(requestedBy: String, verificationCode: String) =
+    ApplicationState(State.PRODUCTION, Some(requestedBy), Some(verificationCode))
 }

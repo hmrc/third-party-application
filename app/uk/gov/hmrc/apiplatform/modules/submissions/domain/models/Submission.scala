@@ -59,20 +59,32 @@ object Submission {
   }
 
   sealed trait Status {
-    def isOpenToAnswers = this match {
+    def isOpenToAnswers = isCreated
+
+    def isCreated = this match {
       case _ : Submission.Status.Created => true
-      case _ => false
+      case _ => false      
+    }
+    
+    def isSubmitted = this match {
+      case _ : Submission.Status.Submitted => true
+      case _ => false      
+    }
+
+    def isGranted = this match {
+      case _ : Submission.Status.Granted => true
+      case _ => false      
     }
   }
 
   object Status {
-    case class Rejected(
+    case class Declined(
       timestamp: DateTime,
       name: String,
       reasons: String
     ) extends Status
-
-    case class Accepted(
+    
+    case class Granted(
       timestamp: DateTime,
       name: String
     ) extends Status
@@ -86,6 +98,14 @@ object Submission {
       timestamp: DateTime,
       requestedBy: String
     ) extends Status
+
+    def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
+      case (c: Created,   s: Submitted) => true
+      case (s: Submitted, d: Declined)  => true
+      case (s: Submitted, g: Granted)   => true
+      case _                            => false
+    }
+
   }
 
   case class Instance(
@@ -143,6 +163,7 @@ case class ExtendedSubmission(
 
   lazy val isOpenToAnswers = submission.isOpenToAnswers
   lazy val canBeSubmitted = isOpenToAnswers && isCompleted
+  lazy val status: Submission.Status = submission.status
 }
 
 case class MarkedSubmission(

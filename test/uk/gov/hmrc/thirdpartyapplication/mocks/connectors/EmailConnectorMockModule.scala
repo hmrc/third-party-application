@@ -70,5 +70,11 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedClientSecretNotification(*, *, *, *)(*)
     }
+
+    object SendApplicationApprovedAdminConfirmation {
+      def thenReturnSuccess() = {
+        when(aMock.sendApplicationApprovedAdminConfirmation(*,*,*)(*)).thenReturn(successful(HasSucceeded))
+      }
+    }
   }
 }

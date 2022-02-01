@@ -48,9 +48,7 @@ object RequestApprovalsService {
   case class ApprovalAccepted(application: ApplicationData) extends RequestApprovalResult
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
-  case object ApprovalRejectedDueToIncorrectState extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToNoSuchApplication extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToNoSuchSubmission extends ApprovalRejectedResult
+  case object ApprovalRejectedDueToIncorrectApplicationState extends ApprovalRejectedResult
   case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
   case object ApprovalRejectedDueToAlreadySubmitted extends ApprovalRejectedResult
 
@@ -71,8 +69,7 @@ class RequestApprovalsService @Inject()(
 
   import RequestApprovalsService._
 
-  def requestApproval(applicationId: ApplicationId,
-                      requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
+  def requestApproval(originalApp: ApplicationData, extSubmission: ExtendedSubmission, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -80,14 +77,12 @@ class RequestApprovalsService @Inject()(
 
     (
       for {
-        _                     <- ET.liftF(logStartingApprovalRequestProcessing(applicationId))
-        originalApp           <- ET.fromOptionF(fetchApp(applicationId), ApprovalRejectedDueToNoSuchApplication)
-        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectState)
-        extSubmission         <- ET.fromOptionF(fetchExtendedSubmission(applicationId), ApprovalRejectedDueToNoSuchSubmission)
+        _                     <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
+        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
         appName                = getApplicationName(extSubmission)
-        _                     <- ET.fromEitherF(validateApplicationName(appName, applicationId, originalApp.access.accessType))
+        _                     <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
         privacyPolicyUrl      = getPrivacyPolicyUrl(extSubmission)
         termsAndConditionsUrl = getTermsAndConditionsUrl(extSubmission)
         organisationUrl       = getOrganisationUrl(extSubmission)
@@ -97,13 +92,13 @@ class RequestApprovalsService @Inject()(
         updatedSubmission     = updateSubmissionToSubmittedState(extSubmission.submission, requestedByEmailAddress, DateTimeUtils.now)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     = logCompletedApprovalRequest(savedApp)
-        _                     <- ET.liftF(auditCompletedApprovalRequest(applicationId, savedApp))
+        _                     <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
-    .fold[RequestApprovalResult](identity,identity)
+    .fold[RequestApprovalResult](identity, identity)
   }
 
-  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
+    private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
     successful(Unit)
   }
@@ -119,7 +114,7 @@ class RequestApprovalsService @Inject()(
       case _ => existingAccess    
     }
   }
-
+ 
   private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String, privacyPolicyUrl: Option[String], termsAndConditionsUrl: Option[String], organisationUrl: Option[String]): ApplicationData = existing.copy(
     name = applicationName,
     normalisedName = applicationName.toLowerCase,
@@ -170,15 +165,6 @@ class RequestApprovalsService @Inject()(
     SubmissionDataExtracter.getOrganisationUrl(extSubmission.submission)
   }
   
-  private def fetchExtendedSubmission(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
-    submissionService.fetchLatest(applicationId)
-  }
-
-  // Pure duplicate
-  private def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] = {
-    applicationRepository.fetch(applicationId)
-  }
-
   private def updateSubmissionToSubmittedState(submission: Submission, requestedBy: String, timestamp: DateTime): Submission = {
     SubmissionStatusChanges.appendNewState(Submission.Status.Submitted(timestamp, requestedBy))(submission)
   }

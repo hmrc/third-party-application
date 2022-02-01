@@ -62,8 +62,6 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     "requestApproval" should {
 
       "update state, save and audit" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturn(application)
-        SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
         namingServiceReturns(ValidName)
         val fakeSavedApplication = application.copy(normalisedName = "somethingElse")
         ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
@@ -71,7 +69,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
 
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+        val result = await(underTest.requestApproval(application, completedExtendedSubmission, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         StateHistoryRepoMock.Insert.verifyCalled()
@@ -84,11 +82,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return duplicate application name if duplicate" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturn(application)
-        SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
         namingServiceReturns(DuplicateName)
 
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+        val result = await(underTest.requestApproval(application, completedExtendedSubmission, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToDuplicateName(expectedAppName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
@@ -97,11 +93,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return illegal application name if deny-listed name" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturn(application)
-        SubmissionsServiceMock.FetchLatest.thenReturn(Some(completedExtendedSubmission))
         namingServiceReturns(InvalidName)
 
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+        val result = await(underTest.requestApproval(application, completedExtendedSubmission, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(expectedAppName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
@@ -110,10 +104,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       "return incomplete for an incomplete submission" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturn(application)
-        SubmissionsServiceMock.FetchLatest.thenReturn(Some(extendedSubmission))
-
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+        val result = await(underTest.requestApproval(application, extendedSubmission, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncompleteSubmission
         StateHistoryRepoMock.Insert.verifyNeverCalled()
@@ -121,39 +112,15 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         ApplicationRepoMock.Save.verifyNeverCalled()
       }
 
-      "return application not found for an application not found with given appId" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-        
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
-
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToNoSuchApplication
-        StateHistoryRepoMock.Insert.verifyNeverCalled()
-        AuditServiceMock.Audit.verifyNeverCalled()
-        ApplicationRepoMock.Save.verifyNeverCalled()
-      }
-
       "return application in incorrect state an application not in TESTING" in new Setup {
         val prodApplication: ApplicationData = anApplicationData(applicationId, productionState(requestedByEmailAddress))
-        ApplicationRepoMock.Fetch.thenReturn(prodApplication)
         
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
+        val result = await(underTest.requestApproval(prodApplication, extendedSubmission, requestedByEmailAddress))
 
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectState
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIncorrectApplicationState
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
-      }
-
-      "return submission not found for an submission not found" in new Setup {
-        ApplicationRepoMock.Fetch.thenReturn(application)
-        SubmissionsServiceMock.FetchLatest.thenReturn(None)
-        
-        val result = await(underTest.requestApproval(applicationId, requestedByEmailAddress))
-
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToNoSuchSubmission
-        StateHistoryRepoMock.Insert.verifyNeverCalled()
-        ApplicationRepoMock.Save.verifyNeverCalled()
-        AuditServiceMock.Audit.verifyNeverCalled()
       }
     }
   }

@@ -83,6 +83,9 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenAnswer(fn: ApplicationData => Future[ApplicationData] = defaultFn) =
         when(aMock.save(*)).thenAnswer(fn)
 
+      def thenAnswer() = 
+        when(aMock.save(*)).thenAnswer((app: ApplicationData) => successful(app))
+      
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.save(*)).thenReturn(successful(applicationData))
 
