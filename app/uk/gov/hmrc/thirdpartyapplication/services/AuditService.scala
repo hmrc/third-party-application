@@ -35,8 +35,7 @@ class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     audit(action, data, Map.empty)
 
-  def audit(action: AuditAction, data: Map[String, String],
-            tags: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
+  def audit(action: AuditAction, data: Map[String, String], tags: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     auditConnector.sendEvent(DataEvent(
       auditSource = "third-party-application",
       auditType = action.auditType,
@@ -44,6 +43,16 @@ class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec
       detail = hc.toAuditDetails(data.toSeq: _*)
     ))
 
+  def auditGatekeeperAction(
+      gatekeeperId: String,
+      app: ApplicationData,
+      action: AuditAction,
+      extra: Map[String, String] = Map.empty
+  )(implicit hc: HeaderCarrier): Future[AuditResult] = {
+    val tags = Map("gatekeeperId" -> gatekeeperId)
+    audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
+      
+  }
 }
 
 sealed trait AuditAction {
@@ -223,15 +232,15 @@ object AuditHelper {
     else Map.empty
 
   def gatekeeperActionDetails(app: ApplicationData) =
-    Map("applicationId" -> app.id.value.toString,
+    Map(
+      "applicationId" -> app.id.value.toString,
       "applicationName" -> app.name,
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
       "applicationAdmins" -> app.admins.map(_.emailAddress).mkString(", ")
     )
 
   def calculateAppChanges(previous: ApplicationData, updated: ApplicationData) = {
-    val common = Map(
-      "applicationId" -> updated.id.value.toString)
+    val common = Map("applicationId" -> updated.id.value.toString)
 
     val genericEvents = Set(calcNameChange(previous, updated))
 

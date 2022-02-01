@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
@@ -48,8 +48,6 @@ object DeclineApprovalsService {
 
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
-  case object RejectedDueToNoSuchApplication extends Rejected
-  case object RejectedDueToNoSuchSubmission extends Rejected
   case object RejectedDueToIncompleteSubmission extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
 }
@@ -65,7 +63,7 @@ class DeclineApprovalsService @Inject()(
 
   import DeclineApprovalsService._
 
-  def decline(originalApp: ApplicationData, extSubmission: ExtendedSubmission, name: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, extSubmission: ExtendedSubmission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -78,10 +76,10 @@ class DeclineApprovalsService @Inject()(
       logger.info(s"Decline-02: decline appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET = EitherTHelper.make[Result]
-
+    val appId = originalApp.id
     (
       for {
-        _                     <- ET.liftF(logStart(originalApp.id))
+        _                     <- ET.liftF(logStart(appId))
         _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
         _                     <- ET.cond(extSubmission.isCompleted, (), RejectedDueToIncompleteSubmission)
         _                     <- ET.cond(extSubmission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
@@ -89,11 +87,11 @@ class DeclineApprovalsService @Inject()(
         // Set application state to user verification
         updatedApp            = declineApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
-        _                     <- ET.liftF(writeStateHistory(originalApp, name))
-        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, name, reasons)
+        _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
+        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, gatekeeperUserName, reasons)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
+        _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, reasons))
         _                     = logDone(savedApp, savedSubmission)
-        _                     <- ET.liftF(auditDeclinedApprovalRequest(originalApp.id, savedApp, updatedSubmission, reasons))
       } yield Actioned(savedApp)
     )
     .fold[Result](identity, identity)
@@ -103,13 +101,14 @@ class DeclineApprovalsService @Inject()(
     application.copy(state = application.state.toTesting)
   }
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     
-    val declineData = Map("status" -> "declined")
-    val reasonsData = Map("reasons" -> reasons)
+    val declinedData = Map("status" -> "declined", "reasons" -> reasons)
 
-    auditService.audit(ApplicationApprovalDeclined, AuditHelper.applicationId(applicationId) ++ questionsWithAnswers ++ declineData ++ reasonsData)
+    val extraDetails = questionsWithAnswers ++ declinedData
+
+    auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalDeclined, extraDetails)
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) = 

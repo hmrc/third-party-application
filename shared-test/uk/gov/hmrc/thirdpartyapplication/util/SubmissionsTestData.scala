@@ -49,9 +49,9 @@ trait SubmissionsTestData extends QuestionBuilder {
 
   val initialStatus = Submission.Status.Created(DateTimeUtils.now, "bob@example.com")
   val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
-  val submission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
+  val aSubmission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
-  val extendedSubmission = ExtendedSubmission(submission, initialProgress)
+  val extendedSubmission = ExtendedSubmission(aSubmission, initialProgress)
 
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)
@@ -121,7 +121,6 @@ trait SubmissionsTestData extends QuestionBuilder {
     
     val allQuestions = submission.allQuestions
     val answers = allQuestions.map(q => (q.id -> passAnswer(q))).toList.toMap
-
     val latestInstance = submission.latestInstance
     val newLatestInstance = latestInstance.copy(answersToQuestions = answers)
 

@@ -32,6 +32,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireSt
 import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
@@ -54,7 +56,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     val answeredExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
     val incompleteExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> incompleteProgress)))
     val createdExtendedSubmission = ExtendedSubmission(answeredSubmissionWithCreatedState, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
-    val name = "name"
+    val gatekeeperUserName = "gatekeeperUserName"
     val reasons = "reasons"
     val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
   }
@@ -67,33 +69,40 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
       SubmissionsServiceMock.Store.thenReturn()
-      AuditServiceMock.Audit.thenReturnSuccess()
+      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
-      val result = await(underTest.decline(application, answeredExtendedSubmission, name, reasons))
+      val result = await(underTest.decline(application, answeredExtendedSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.Actioned(application)
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
       val finalSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
       finalSubmission.status.isCreated shouldBe true
       finalSubmission.instances.tail.head.statusHistory.head should matchPattern {
-        case Submission.Status.Declined(_, name, reasons) =>
+        case Submission.Status.Declined(_, gatekeeperUserName, reasons) =>
       }
+      
+      val (someQuestionId, expectedAnswer) = answeredExtendedSubmission.submission.latestInstance.answersToQuestions.head
+      val someQuestionWording = answeredExtendedSubmission.submission.findQuestion(someQuestionId).get.wording.value
+
+      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
+      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalDeclined
+      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.decline(anApplicationData(appId, testingState()), extendedSubmission, name, reasons))
+      val result = await(underTest.decline(anApplicationData(appId, testingState()), extendedSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to decline the specified application if the submission is in the wrong state" in new Setup {
-      val result = await(underTest.decline(application, incompleteExtendedSubmission, name, reasons))
+      val result = await(underTest.decline(application, incompleteExtendedSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncompleteSubmission
     }
   
     "fail to decline the specified application if the submission is in the submission state" in new Setup {
-      val result = await(underTest.decline(application, createdExtendedSubmission, name, reasons))
+      val result = await(underTest.decline(application, createdExtendedSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
     }

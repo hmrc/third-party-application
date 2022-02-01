@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 import scala.concurrent.ExecutionContext
-import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.ApprovalsActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -41,10 +40,10 @@ object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
-  case class DeclinedRequest(name: String, reasons: String)
+  case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(name: String)
+  case class GrantedRequest(gatekeeperUserName: String)
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 
@@ -75,7 +74,7 @@ class ApprovalsController @Inject()(
         case ApprovalRejectedDueToAlreadySubmitted                            => PreconditionFailed(asJsonError("ALREADY_SUBMITTED", s"Submission for $applicationId was already submitted"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
-        case ApprovalRejectedDueToIncorrectApplicationState                              => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
+        case ApprovalRejectedDueToIncorrectApplicationState                   => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
         
       })
       .recover(recovery)
@@ -86,11 +85,9 @@ class ApprovalsController @Inject()(
     import DeclineApprovalsService._
 
     withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
-      declineApprovalService.decline(request.application, request.extSubmission, declinedRequest.name, declinedRequest.reasons)
+      declineApprovalService.decline(request.application, request.extSubmission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToNoSuchApplication  | 
-              RejectedDueToNoSuchSubmission                                   => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
@@ -103,11 +100,9 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.extSubmission, grantedRequest.name)
+      grantApprovalService.grant(request.application, request.extSubmission, grantedRequest.gatekeeperUserName)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToNoSuchApplication  | 
-              RejectedDueToNoSuchSubmission                                   => BadRequest(asJsonError("INVALID_ARGS", s"ApplicationId $applicationId is invalid"))
         case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 

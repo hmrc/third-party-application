@@ -54,7 +54,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
       contentAsJson(result).validate[ExtendedSubmission] match {
         case JsSuccess(extendedSubmission, _) =>
-          submission shouldBe submission
+          extendedSubmission.submission shouldBe aSubmission
         case JsError(f) => fail(s"Not parsed as a response $f")        
       }
     }
@@ -116,7 +116,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "fetchLatestMarkedSubmission" should {
     "return ok response with submission when found" in new Setup {
-      val markedSubmission = MarkedSubmission(submission, initialProgress, Map.empty)
+      val markedSubmission = MarkedSubmission(aSubmission, initialProgress, Map.empty)
       SubmissionsServiceMock.FetchLatestMarkedSubmission.thenReturn(markedSubmission)
 
       val result = underTest.fetchLatestMarkedSubmission(applicationId)(FakeRequest(GET, "/"))

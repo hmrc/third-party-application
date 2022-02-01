@@ -54,14 +54,14 @@ class SubmissionsDAOSpec
     }
 
     "store a record and retrieve it" in {
-      await(dao.save(submission)) shouldBe submission
-      await(dao.fetch(submission.id)).value shouldBe submission
+      await(dao.save(aSubmission)) shouldBe aSubmission
+      await(dao.fetch(aSubmission.id)).value shouldBe aSubmission
     }
 
     "not store multiple records of the same submission id" in {
-      await(dao.save(submission)) shouldBe submission
+      await(dao.save(aSubmission)) shouldBe aSubmission
       intercept[DatabaseException] {
-        await(dao.save(submission))
+        await(dao.save(aSubmission))
       }
       await(repo.count(implicitly[ExecutionContext])) shouldBe 1
     }
@@ -69,12 +69,12 @@ class SubmissionsDAOSpec
 
   "fetchLastest" should {
     "find the only one" in {
-      await(dao.save(submission)) 
-      await(dao.fetchLatest(applicationId)).value shouldBe submission
+      await(dao.save(aSubmission)) 
+      await(dao.fetchLatest(applicationId)).value shouldBe aSubmission
     }
 
     "find the latest one" in {
-      await(dao.save(submission))
+      await(dao.save(aSubmission))
       await(dao.save(altSubmission))
       await(dao.fetchLatest(applicationId)).value shouldBe altSubmission
     }
@@ -82,10 +82,10 @@ class SubmissionsDAOSpec
 
   "update" should {
     "replace the existing record" in {
-      await(dao.save(submission))
-      val oldAnswers = submission.latestInstance.answersToQuestions
+      await(dao.save(aSubmission))
+      val oldAnswers = aSubmission.latestInstance.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
-      val updatedSubmission = submission.setLatestAnswers(newAnswers)
+      val updatedSubmission = aSubmission.setLatestAnswers(newAnswers)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }

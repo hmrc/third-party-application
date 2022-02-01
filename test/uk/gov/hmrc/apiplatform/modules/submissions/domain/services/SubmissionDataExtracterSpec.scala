@@ -39,7 +39,7 @@ class SubmissionDataExtracterSpec extends HmrcSpec {
       }
 
       "return None if answer not found" in new Setup {
-        val actualAppName: Option[String] = SubmissionDataExtracter.getApplicationName(submission)
+        val actualAppName: Option[String] = SubmissionDataExtracter.getApplicationName(aSubmission)
         actualAppName shouldBe None
       }
     }

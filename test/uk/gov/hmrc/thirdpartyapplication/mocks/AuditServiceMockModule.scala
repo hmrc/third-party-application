@@ -66,6 +66,30 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.audit(*,*,*)(*)).thenReturn(successful(AuditResult.Success))
       }
     }
+
+    object AuditGatekeeperAction {
+      def thenReturnSuccess() =
+        when(aMock.auditGatekeeperAction(*,*,*,*)(*)).thenReturn(successful(AuditResult.Success))
+      
+      def verifyUserName() = {
+        val captureGatekeeperUser: Captor[String] = ArgCaptor[String]
+        verify.auditGatekeeperAction(captureGatekeeperUser, *, *, *)(*)
+        captureGatekeeperUser.value
+      }
+
+      def verifyAction() = {
+        val captureAction: Captor[AuditAction] = ArgCaptor[AuditAction]
+        
+        verify.auditGatekeeperAction(*, *, captureAction, *)(*)
+        captureAction.value
+      }
+
+      def verifyExtras() = {
+        val captureExtras: Captor[Map[String, String]] = ArgCaptor[Map[String, String]]
+        verify.auditGatekeeperAction(*, *, *, captureExtras)(*)
+        captureExtras.value
+      }
+    }
   }
 
 

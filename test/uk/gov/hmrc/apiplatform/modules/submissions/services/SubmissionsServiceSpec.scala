@@ -60,7 +60,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
       
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
@@ -87,12 +87,12 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
     "fetchLatest" should {
       "fetch latest submission for an application id" in new Setup {
-        SubmissionsDAOMock.FetchLatest.thenReturn(submission)
+        SubmissionsDAOMock.FetchLatest.thenReturn(aSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.fetchLatest(applicationId))
 
-        result.value.submission shouldBe submission
+        result.value.submission shouldBe aSubmission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -108,12 +108,12 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   
     "fetch" should {
       "fetch latest submission for id" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.fetch(submissionId))
 
-        result.value.submission shouldBe submission
+        result.value.submission shouldBe aSubmission
       }
 
       "fail when given an invalid application id" in new Setup {
@@ -129,7 +129,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
         val completedAnswers: Submission.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
-        val completeSubmission = submission.copy(
+        val completeSubmission = aSubmission.copy(
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
               heading = "About your processes",
@@ -182,7 +182,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
 
       "fail when given a valid application that is not completed" in new Setup {
-        SubmissionsDAOMock.FetchLatest.thenReturn(submission)
+        SubmissionsDAOMock.FetchLatest.thenReturn(aSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
@@ -193,7 +193,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
     "recordAnswers" should {
       "records new answers when given a valid question" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
@@ -205,7 +205,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
 
       "records new answers when given a valid optional question" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
@@ -217,7 +217,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
 
       "fail when given an invalid question" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
@@ -227,7 +227,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
       }
 
       "fail when given a optional answer to non optional question" in new Setup {
-        SubmissionsDAOMock.Fetch.thenReturn(submission)
+        SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 

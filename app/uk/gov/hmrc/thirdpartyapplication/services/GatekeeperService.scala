@@ -95,11 +95,11 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     for {
       app <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _ <- insertStateHistory(app, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL),
+      _ <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL),
         gatekeeperUserId, GATEKEEPER, applicationRepository.save)
       _ = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
         s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
-      _ = auditGatekeeperAction(gatekeeperUserId, app, ApplicationUpliftApproved)
+      _ = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
       _ = recoverAll(sendEmails(newApp))
     } yield UpliftApproved
 
@@ -122,7 +122,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       _ = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
         s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
         s" gatekeeperUserId:${request.gatekeeperUserId}")
-      _ = auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationUpliftRejected, Map("reason" -> request.reason))
+      _ = auditService.auditGatekeeperAction(request.gatekeeperUserId, newApp, ApplicationUpliftRejected, Map("reason" -> request.reason))
       _ = recoverAll(sendEmails(newApp, request.reason))
     } yield UpliftRejected
   }
@@ -142,7 +142,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     for {
       app <- fetchApp(applicationId)
       _ = rejectIfNotPendingVerification(app)
-      _ = auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerficationResent)
+      _ = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerficationResent)
       _ = recoverAll(sendEmails(app))
     } yield UpliftApproved
 
@@ -150,7 +150,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
   def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-        auditGatekeeperAction(request.gatekeeperUserId.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress.toString))
+        auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
     }
     for {
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
@@ -187,12 +187,6 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       case None => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)
     }
-  }
-
-  private def auditGatekeeperAction(gatekeeperId: String, app: ApplicationData, action: AuditAction,
-                                    extra: Map[String, String] = Map.empty)(implicit hc: HeaderCarrier): Future[AuditResult] = {
-    auditService.audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra,
-      Map("gatekeeperId" -> gatekeeperId))
   }
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],

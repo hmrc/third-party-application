@@ -29,14 +29,14 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
       (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
       (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
     )
-    val submissionWithMissingQuestionIds = submission.copy(instances = NonEmptyList.of(Submission.Instance(0, answersToQuestionsWithMissingIds, NonEmptyList.of(initialStatus))))
+    val submissionWithMissingQuestionIds = aSubmission.copy(instances = NonEmptyList.of(Submission.Instance(0, answersToQuestionsWithMissingIds, NonEmptyList.of(initialStatus))))
   }
 
   "QuestionsAndAnswersToMap" should {
     "return a map of questions to answers" in new Setup {
-      val aSubmission = buildAnsweredSubmission()
-      val map = QuestionsAndAnswersToMap(aSubmission)
-      map.size shouldBe aSubmission.latestInstance.answersToQuestions.size
+      val answeredSubmission = buildAnsweredSubmission()
+      val map = QuestionsAndAnswersToMap(answeredSubmission)
+      map.size shouldBe answeredSubmission.latestInstance.answersToQuestions.size
     }
     
     "return a map of questions to answers omitting missing question ids" in new Setup {

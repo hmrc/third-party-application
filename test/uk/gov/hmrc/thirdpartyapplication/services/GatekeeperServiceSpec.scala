@@ -29,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -229,14 +228,12 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenAnswer()
-
+      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
+      
       await(underTest.approveUplift(applicationId, gatekeeperUserId))
       
-      AuditServiceMock.verify.audit(
-        ApplicationUpliftApproved,
-        AuditHelper.gatekeeperActionDetails(application),
-        Map("gatekeeperId" -> gatekeeperUserId)
-        )(hc)
+      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserId
+      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationUpliftApproved
     }
 
     "fail with InvalidStateTransition when the application is not in PENDING_GATEKEEPER_APPROVAL state" in new Setup {
@@ -335,14 +332,12 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     "send an Audit event when an application uplift is rejected" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenAnswer()
+      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
       await(underTest.rejectUplift(applicationId, rejectUpliftRequest))
-      
-      AuditServiceMock.verify.audit(
-        ApplicationUpliftRejected,
-        AuditHelper.gatekeeperActionDetails(application) + ("reason" -> rejectUpliftRequest.reason),
-        Map("gatekeeperId" -> gatekeeperUserId)
-      )(hc)
+
+      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserId
+      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationUpliftRejected
     }
 
     "fail with InvalidStateTransition when the application is not in PENDING_GATEKEEPER_APPROVAL state" in new Setup {
@@ -383,14 +378,12 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val application = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
+      AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
       await(underTest.resendVerification(applicationId, gatekeeperUserId))
       
-      AuditServiceMock.verify.audit(
-        ApplicationVerficationResent,
-        AuditHelper.gatekeeperActionDetails(application),
-        Map("gatekeeperId" -> gatekeeperUserId)
-      )(hc)
+      AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserId
+      AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationVerficationResent
     }
 
     "fail with InvalidStateTransition when the application is not in PENDING_REQUESTER_VERIFICATION state" in new Setup {
