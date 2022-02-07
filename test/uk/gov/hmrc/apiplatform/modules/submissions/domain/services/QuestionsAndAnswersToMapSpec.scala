@@ -43,8 +43,8 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
       val map = QuestionsAndAnswersToMap(submissionWithMissingQuestionIds)
 
       map.size shouldBe 2
-      map should contain (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question1.wording.value -> "question 1")
-      map should contain (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question2.wording.value -> "question 2")
+      map should contain ("CustomersAuthorisingYourSoftware" -> "question 1")
+      map should contain ("ConfirmTheNameOfYourSoftware" -> "question 2")
     }
   }
 }

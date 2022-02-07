@@ -19,13 +19,18 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object QuestionsAndAnswersToMap {
+
+  def stripSpacesAndCapitalise(inputText: String): String = {
+    inputText.split("\\s").map(_.capitalize).mkString
+  }
+
   def apply(submission: Submission) = {
      submission.latestInstance.answersToQuestions
     .map{ 
       case (questionId, answer) => (submission.findQuestion(questionId) -> answer)
     }
     .collect {
-      case (Some(question), answer) => (question.wording.value -> ActualAnswersAsText(answer))  
+      case (Some(question), answer) => (stripSpacesAndCapitalise(question.wording.value) -> ActualAnswersAsText(answer))  
     }
   }
 }
