@@ -33,7 +33,7 @@ object DeriveContext {
 
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
     
-    val resell = application.upliftData.fold("No")(ud => ud.sellResellOrDistribute.answer)
+    val resell = application.sellResellOrDistribute.fold("No")(s => s.answer)
     val inHouse = if(resell == "Yes") "No" else "Yes"
 
     Map(
@@ -41,6 +41,5 @@ object DeriveContext {
       Keys.IN_HOUSE_SOFTWARE -> inHouse
     )
   }
-
 }
 

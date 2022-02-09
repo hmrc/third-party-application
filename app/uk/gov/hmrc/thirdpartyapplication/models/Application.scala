@@ -73,7 +73,6 @@ object CreateApplicationRequestV1 {
 }
 
 case class UpliftRequest(
-  responsibleIndividual: ResponsibleIndividual,
   sellResellOrDistribute: SellResellOrDistribute,
   subscriptions: Set[ApiIdentifier]
 )

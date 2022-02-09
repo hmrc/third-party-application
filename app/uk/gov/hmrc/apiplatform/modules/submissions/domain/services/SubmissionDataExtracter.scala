@@ -42,4 +42,11 @@ object SubmissionDataExtracter {
   def getOrganisationUrl(submission: Submission): Option[String] = {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
-}
+
+  def getResponsibleIndividualName(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId)
+  }
+
+  def getResponsibleIndividualEmail(submission: Submission): Option[String] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
+  }}

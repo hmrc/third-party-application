@@ -45,7 +45,14 @@ object QuestionnaireState {
 case class QuestionnaireProgress(state: QuestionnaireState, questionsToAsk: List[QuestionId])
 
 
-case class QuestionIdsOfInterest(applicationNameId: QuestionId, privacyPolicyUrlId: QuestionId, termsAndConditionsUrlId: QuestionId, organisationUrlId: QuestionId)
+case class QuestionIdsOfInterest(
+    applicationNameId: QuestionId,
+    privacyPolicyUrlId: QuestionId,
+    termsAndConditionsUrlId: QuestionId,
+    organisationUrlId: QuestionId,
+    responsibleIndividualNameId: QuestionId,
+    responsibleIndividualEmailId: QuestionId
+)
 
 object Submission {
   type AnswersToQuestions = Map[QuestionId, ActualAnswer]

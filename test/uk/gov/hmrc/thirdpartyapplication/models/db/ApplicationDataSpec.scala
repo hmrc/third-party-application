@@ -87,7 +87,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
       }
 
       "ensure uplift data is set" in {
-        ApplicationData.create(request, "bob", token).upliftData.value shouldBe StoredUpliftData(aResponsibleIndividual, sellResellOrDistribute)
+        ApplicationData.create(request, "bob", token).sellResellOrDistribute.value shouldBe sellResellOrDistribute
       }
     }
   }
