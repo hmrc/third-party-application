@@ -48,13 +48,13 @@ class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftReq
   "deriveFor is called" should {
     "return the appropriate context when one subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
-      when(aMock.upliftData).thenReturn(Some(StoredUpliftData(aResponsibleIndividual, SellResellOrDistribute("Yes"))))
+      when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("Yes")))
 
       DeriveContext.deriveFor(aMock, fpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "Yes", Keys.IN_HOUSE_SOFTWARE -> "No")
     }
     "return the appropriate context when no subscription is a fraud prevention candidate" in {
       val aMock: ApplicationData = mock[ApplicationData]
-      when(aMock.upliftData).thenReturn(Some(StoredUpliftData(aResponsibleIndividual, SellResellOrDistribute("No"))))
+      when(aMock.sellResellOrDistribute).thenReturn(Some(SellResellOrDistribute("No")))
 
       DeriveContext.deriveFor(aMock, nonFpSubs) shouldBe Map(Keys.VAT_OR_ITSA -> "No", Keys.IN_HOUSE_SOFTWARE -> "Yes")
     }

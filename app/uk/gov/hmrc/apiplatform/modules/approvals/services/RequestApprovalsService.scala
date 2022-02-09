@@ -75,24 +75,29 @@ class RequestApprovalsService @Inject()(
 
     val ET = EitherTHelper.make[ApprovalRejectedResult]
 
+    import SubmissionDataExtracter._
+
     (
       for {
-        _                     <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                     <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
-        _                     <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
-        _                     <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
-        appName                = getApplicationName(extSubmission)
-        _                     <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
-        privacyPolicyUrl      = getPrivacyPolicyUrl(extSubmission)
-        termsAndConditionsUrl = getTermsAndConditionsUrl(extSubmission)
-        organisationUrl       = getOrganisationUrl(extSubmission)
-        updatedApp            = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl)
-        savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
-        _                     <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        updatedSubmission     = updateSubmissionToSubmittedState(extSubmission.submission, requestedByEmailAddress, DateTimeUtils.now)
-        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     = logCompletedApprovalRequest(savedApp)
-        _                     <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
+        _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
+        _                         <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                         <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
+        _                         <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
+        submission                 = extSubmission.submission
+        appName                    = getApplicationName(submission).get // Safe at this point
+        _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
+        privacyPolicyUrl           = getPrivacyPolicyUrl(submission)
+        termsAndConditionsUrl      = getTermsAndConditionsUrl(submission)
+        organisationUrl            = getOrganisationUrl(submission)
+        responsibleIndividualName  = getResponsibleIndividualName(submission).get // Safe at this point
+        responsibleIndividualEmail = getResponsibleIndividualEmail(submission).get // Safe at this point
+        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, responsibleIndividualName, responsibleIndividualEmail)
+        savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
+        _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        updatedSubmission          = updateSubmissionToSubmittedState(extSubmission.submission, requestedByEmailAddress, DateTimeUtils.now)
+        savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
+        _                          = logCompletedApprovalRequest(savedApp)
+        _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity, identity)
@@ -115,12 +120,23 @@ class RequestApprovalsService @Inject()(
     }
   }
  
-  private def deriveNewAppDetails(existing: ApplicationData, applicationName: String, requestedByEmailAddress: String, privacyPolicyUrl: Option[String], termsAndConditionsUrl: Option[String], organisationUrl: Option[String]): ApplicationData = existing.copy(
-    name = applicationName,
-    normalisedName = applicationName.toLowerCase,
-    state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
-    access = replaceUrlsInAccess(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl)
-  )
+  private def deriveNewAppDetails(
+      existing: ApplicationData,
+      applicationName: String,
+      requestedByEmailAddress: String,
+      privacyPolicyUrl: Option[String],
+      termsAndConditionsUrl: Option[String],
+      organisationUrl: Option[String],
+      responsibleIndividualName: String,
+      responsibleIndividualEmail: String
+  ): ApplicationData = 
+    existing.copy(
+      name = applicationName,
+      normalisedName = applicationName.toLowerCase,
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
+      access = replaceUrlsInAccess(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl),
+      responsibleIndividual = Some(ResponsibleIndividual(responsibleIndividualName, responsibleIndividualEmail))
+    )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 
     approvalsNamingService.validateApplicationNameAndAudit(appName, appId, accessType).map(_ match {
@@ -147,24 +163,7 @@ class RequestApprovalsService @Inject()(
         rollback(snapshotApp)
     }
   }
-  
-  private def getApplicationName(extSubmission: ExtendedSubmission): String = {
-    // Only proceeds here if we have a completed submission so this `.get` is safe
-    SubmissionDataExtracter.getApplicationName(extSubmission.submission).get 
-  }
-
-  private def getPrivacyPolicyUrl(extSubmission: ExtendedSubmission): Option[String] = {
-    SubmissionDataExtracter.getPrivacyPolicyUrl(extSubmission.submission)
-  }
-
-  private def getTermsAndConditionsUrl(extSubmission: ExtendedSubmission): Option[String] = {
-    SubmissionDataExtracter.getTermsAndConditionsUrl(extSubmission.submission)
-  }
-
-  private def getOrganisationUrl(extSubmission: ExtendedSubmission): Option[String] = {
-    SubmissionDataExtracter.getOrganisationUrl(extSubmission.submission)
-  }
-  
+    
   private def updateSubmissionToSubmittedState(submission: Submission, requestedBy: String, timestamp: DateTime): Submission = {
     SubmissionStatusChanges.appendNewState(Submission.Status.Submitted(timestamp, requestedBy))(submission)
   }

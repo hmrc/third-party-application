@@ -60,7 +60,12 @@ trait SubmissionsTestData extends QuestionBuilder {
   val completedSubmissionId = Submission.Id.random
   require(completedSubmissionId != submissionId)
   val expectedAppName = "expectedAppName"
-  val answersToQuestions: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName))  
+  val answersToQuestions: Submission.AnswersToQuestions = 
+    Map(
+      QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
+      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
+      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
+    )  
   val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
   
   val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)

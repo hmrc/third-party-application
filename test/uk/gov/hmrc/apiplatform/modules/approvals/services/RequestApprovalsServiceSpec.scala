@@ -37,7 +37,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
-  trait Setup 
+  trait Setup
     extends AuditServiceMockModule 
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule

@@ -58,7 +58,8 @@ case class ApplicationData(
   checkInformation: Option[CheckInformation] = None,
   blocked: Boolean = false,
   ipAllowlist: IpAllowlist = IpAllowlist(),
-  upliftData: Option[StoredUpliftData] = None
+  sellResellOrDistribute: Option[SellResellOrDistribute] = None,
+  responsibleIndividual: Option[ResponsibleIndividual] = None
 ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 }
@@ -83,9 +84,9 @@ object ApplicationData {
       case _ => None
     }
 
-    val storedUpliftData: Option[StoredUpliftData] = application match {
+    val extractSellResellOrDistribute: Option[SellResellOrDistribute] = application match {
       case v1: CreateApplicationRequestV1 => None
-      case v2: CreateApplicationRequestV2 => Some(StoredUpliftData(v2.upliftRequest.responsibleIndividual, v2.upliftRequest.sellResellOrDistribute))
+      case v2: CreateApplicationRequestV2 => Some(v2.upliftRequest.sellResellOrDistribute)
     }
 
     ApplicationData(
@@ -102,7 +103,8 @@ object ApplicationData {
       Some(createdOn),
       environment = application.environment.toString,
       checkInformation = checkInfo,
-      upliftData = storedUpliftData
+      sellResellOrDistribute = extractSellResellOrDistribute,
+      responsibleIndividual = None
     )
   }
 
@@ -128,7 +130,8 @@ object ApplicationData {
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
     ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-    (JsPath \ "upliftData").readNullable[StoredUpliftData]
+    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
+    (JsPath \ "responsibleIndividual").readNullable[ResponsibleIndividual]
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

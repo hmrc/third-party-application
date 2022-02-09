@@ -60,12 +60,36 @@ object QuestionnaireDAO {
         QuestionId("36b7e670-83fc-4b31-8f85-4d3394908495"),
         Wording("What is the name of your responsible individual"),
         
-        Statement(Nil)
+        Statement(
+          List(
+            StatementText("The responsible individual:"),
+            CompoundFragment(
+              StatementText("ensures your software meets our "),
+              StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+            ),
+            CompoundFragment(
+              StatementText("understands the "),
+              StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
+            )
+          )
+        )
       )
       val questionRI2 = TextQuestion(
         QuestionId("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
         Wording("What is the email address of your responsible individual"),
-        Statement(Nil)
+        Statement(
+          List(
+            StatementText("The responsible individual:"),
+            CompoundFragment(
+              StatementText("ensures your software meets our "),
+              StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+            ),
+            CompoundFragment(
+              StatementText("understands the "),
+              StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
+            )
+          )
+        )
       )
 
       val question1 = TextQuestion(

@@ -205,8 +205,7 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedUpliftData = StoredUpliftData(aResponsibleIndividual, sellResellOrDistribute)
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(upliftData = Some(expectedUpliftData))
+      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
