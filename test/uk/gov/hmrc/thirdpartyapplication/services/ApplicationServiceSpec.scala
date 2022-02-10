@@ -1323,7 +1323,7 @@ class ApplicationServiceSpec
   
   private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
     CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser)
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser, ApplicationId.random)
   }
 
   private def anExistingApplicationRequest() = {
@@ -1341,7 +1341,8 @@ class ApplicationServiceSpec
         Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
       makeUpliftRequest(ApiIdentifier.random),
-      loggedInUser
+      loggedInUser,
+      ApplicationId.random
     )
   }
 }

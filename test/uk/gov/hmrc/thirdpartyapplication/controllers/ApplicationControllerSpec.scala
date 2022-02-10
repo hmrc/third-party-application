@@ -62,6 +62,7 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 
 class ApplicationControllerSpec 
   extends ControllerSpec
@@ -92,6 +93,7 @@ class ApplicationControllerSpec
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
     val mockUpliftNamingService: UpliftNamingService = mock[UpliftNamingService]
+    val mockUpliftLinkService: UpliftLinkService = mock[UpliftLinkService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -114,6 +116,7 @@ class ApplicationControllerSpec
       mockGatekeeperService,
       mockSubmissionService,
       mockUpliftNamingService,
+      mockUpliftLinkService,
       Helpers.stubControllerComponents())
   }
 

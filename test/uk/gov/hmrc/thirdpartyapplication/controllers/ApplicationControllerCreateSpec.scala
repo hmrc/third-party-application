@@ -49,6 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 
 
 
@@ -88,6 +89,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val mockAuthConnector: AuthConnector = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockNamingService: UpliftNamingService = mock[UpliftNamingService]
+    val mockUpliftLinkService: UpliftLinkService = mock[UpliftLinkService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -110,6 +112,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       mockGatekeeperService,
       SubmissionsServiceMock.aMock,
       mockNamingService,
+      mockUpliftLinkService,
       Helpers.stubControllerComponents())
   }
 
@@ -388,6 +391,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       Collaborator("dev@example.com", ADMINISTRATOR, UserId.random)
     ),
     makeUpliftRequest(ApiIdentifier.random),
-    "bob@example.com"
+    "bob@example.com",
+    ApplicationId.random
   )
 }

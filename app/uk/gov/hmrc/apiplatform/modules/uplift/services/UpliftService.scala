@@ -31,12 +31,14 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
 
 @Singleton
 class UpliftService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
+  upliftLinksRepository: UpliftLinksRepository,
   applicationNamingService: UpliftNamingService,
   apiGatewayStore: ApiGatewayStore
 )(implicit ec: ExecutionContext)
@@ -49,7 +51,8 @@ class UpliftService @Inject()(
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress))
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress)
+    )
 
     for {
       app         <- fetchApp(applicationId)
