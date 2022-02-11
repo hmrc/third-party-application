@@ -52,6 +52,8 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import cats.data.EitherT
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -69,6 +71,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
                                       gatekeeperService: GatekeeperService,
                                       submissionsService: SubmissionsService,
                                       upliftNamingService: UpliftNamingService,
+                                      upliftLinkService: UpliftLinkService,
                                       cc: ControllerComponents)
                                      (implicit val ec: ExecutionContext)
     extends ExtraHeadersController(cc)
@@ -76,30 +79,40 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     with AuthorisationWrapper
     with ApplicationLogger {
 
+  import cats.implicits._
+  
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
+  private val E = EitherTHelper.make[String]
+
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-    def onV2(createApplicationRequest: CreateApplicationRequest)( fn: CreateApplicationRequestV2 => Future[HasSucceeded]) = 
+
+    def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] = 
       createApplicationRequest match {
         case _ : CreateApplicationRequestV1 => successful(HasSucceeded)
         case r : CreateApplicationRequestV2 => fn(r)
       }
 
+    def processV2(applicationId: ApplicationId)(requestV2: CreateApplicationRequestV2): Future[HasSucceeded] =
+      (
+        for {
+          _          <- E.liftF(upliftLinkService.createUpliftLink(requestV2.sandboxApplicationId, applicationId))
+          submission <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
+        } yield HasSucceeded
+      )
+      .getOrElseF(Future.failed(new RuntimeException("Bang")))
+
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
         for {
-          applicationResponse <- applicationService.create(createApplicationRequest)
-          applicationId         = applicationResponse.application.id
-          subs                 = createApplicationRequest.anySubscriptions
-          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
-          _                   <- onV2(createApplicationRequest) { requestV2 =>
-                                    EitherT(submissionsService.create(applicationId, requestV2.requestedBy))
-                                    .getOrElseF(Future.failed(new RuntimeException("Unexpected submsissions error")))
-                                    .map(_ => HasSucceeded)
-                                  }
+          applicationResponse   <- applicationService.create(createApplicationRequest)
+          applicationId          = applicationResponse.application.id
+          subs                   = createApplicationRequest.anySubscriptions
+          _                     <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+          _                     <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>

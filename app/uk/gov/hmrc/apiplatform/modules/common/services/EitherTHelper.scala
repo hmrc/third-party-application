@@ -30,7 +30,7 @@ trait EitherTHelper[E] {
   def fromOptionF[A](in: Future[Option[A]], error: => E): EitherT[Future,E,A] = EitherT.fromOptionF(in, error)
   def fromEither[A](in: Either[E,A]): EitherT[Future,E,A]                     = EitherT.fromEither(in)
   def fromEitherF[A](in: Future[Either[E,A]]): EitherT[Future,E,A]            = EitherT.apply(in)
-  def cond[A](in: => Boolean, right: => A, left: => E)                        = EitherT.cond[Future](in, right,left)
+  def cond[A](in: => Boolean, right: => A, left: => E)                        = EitherT.cond[Future](in, right, left)
 }
 
 object EitherTHelper {

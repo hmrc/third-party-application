@@ -32,6 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 
 class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
   trait Setup 
@@ -40,6 +41,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
     with StateHistoryRepositoryMockModule
     with UpliftServiceMockModule
     with UpliftNamingServiceMockModule
+    with UpliftLinksRepositoryMockModule
     with ApiGatewayStoreMockModule
     with ApplicationTestData {
 
@@ -49,7 +51,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
         
-    val underTest = new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock)
+    val underTest = new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftLinksRepositoryMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock)
   }
 
   "requestUplift" should {
