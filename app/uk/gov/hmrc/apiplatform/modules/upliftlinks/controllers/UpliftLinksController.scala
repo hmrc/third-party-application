@@ -22,7 +22,6 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import cats.implicits._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import play.api.mvc.ControllerComponents
 import play.api.libs.json.Json
@@ -31,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
  @Singleton
  class UpliftLinksController @Inject() (
       upliftLinkService: UpliftLinkService,
-      applicationService: ApplicationService,
       cc: ControllerComponents
   )(implicit ec: ExecutionContext) extends ExtraHeadersController(cc) with JsonFormatters {
     def getSandboxAppIdForProductionApp(productionAppId: ApplicationId) = Action.async {

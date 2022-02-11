@@ -24,11 +24,9 @@ import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import cats.data.OptionT
 import cats.implicits._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 
 @Singleton
-class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository, applicationService: ApplicationService)(implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
     val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
     upliftLinksRepository.insert(upliftLink)
