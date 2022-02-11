@@ -35,11 +35,7 @@ class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository, 
     Future.successful(upliftLink)
   }
 
-  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationResponse] = {
-    for {
-      upliftLink <- OptionT(upliftLinksRepository.find("productionApplicationId" -> productionAppId).map(_.headOption))
-      sandboxAppId = upliftLink.sandboxApplicationId
-      sandboxAppData <- applicationService.fetch(sandboxAppId)
-    } yield sandboxAppData    
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] = {
+    OptionT(upliftLinksRepository.find("productionApplicationId" -> productionAppId).map(_.headOption)).map(_.sandboxApplicationId)
   }
 }

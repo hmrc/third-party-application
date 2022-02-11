@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
 import play.api.mvc.ControllerComponents
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
 
  @Singleton
@@ -35,9 +34,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
       applicationService: ApplicationService,
       cc: ControllerComponents
   )(implicit ec: ExecutionContext) extends ExtraHeadersController(cc) with JsonFormatters {
-    def getSandboxAppForProductionApp(productionAppId: ApplicationId) = Action.async {
+    def getSandboxAppIdForProductionApp(productionAppId: ApplicationId) = Action.async {
       val failure = NotFound(s"No sandbox application found for productionAppId ${productionAppId.value}")
-      val success = (applicationResponse: ApplicationResponse) => Ok(Json.toJson(applicationResponse))
+      val success = (sandboxAppId: ApplicationId) => Ok(Json.toJson(sandboxAppId))
 
       upliftLinkService.getSandboxAppForProductionAppId(productionAppId).fold(failure)(success)
     }
