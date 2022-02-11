@@ -82,6 +82,16 @@ object Submission {
       case _ : Submission.Status.Granted => true
       case _ => false      
     }
+
+    def isGrantedWithWarnings = this match {
+      case _ : Submission.Status.GrantedWithWarnings => true
+      case _ => false          
+    }
+
+    def isDeclined = this match {
+      case _ : Submission.Status.Declined => true
+      case _ => false
+    }
   }
 
   object Status {
@@ -96,6 +106,12 @@ object Submission {
       name: String
     ) extends Status
 
+    case class GrantedWithWarnings(
+      timestamp: DateTime,
+      name: String,
+      warnings: String
+    ) extends Status
+
     case class Submitted(
       timestamp: DateTime,
       requestedBy: String
@@ -107,10 +123,11 @@ object Submission {
     ) extends Status
 
     def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
-      case (c: Created,   s: Submitted) => true
-      case (s: Submitted, d: Declined)  => true
-      case (s: Submitted, g: Granted)   => true
-      case _                            => false
+      case (c: Created,   s: Submitted)             => true
+      case (s: Submitted, d: Declined)              => true
+      case (s: Submitted, g: Granted)               => true
+      case (s: Submitted, g: GrantedWithWarnings)   => true
+      case _                                        => false
     }
 
   }

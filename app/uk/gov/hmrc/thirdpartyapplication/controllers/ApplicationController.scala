@@ -49,11 +49,9 @@ import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import cats.data.EitherT
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 
 object ApplicationController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)

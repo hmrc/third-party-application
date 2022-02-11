@@ -57,4 +57,10 @@ object SubmissionStatusChanges {
       appendNewState(Granted(timestamp, name))
     )(submission)
   }
+
+  def grantWithWarnings(timestamp: DateTime, name: String, warnings: String)(submission: Submission): Submission = {
+    (
+      appendNewState(GrantedWithWarnings(timestamp, name, warnings))
+    )(submission)
+  }
 }
