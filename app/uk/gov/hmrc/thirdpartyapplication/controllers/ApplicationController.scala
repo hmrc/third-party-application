@@ -79,14 +79,16 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     with AuthorisationWrapper
     with ApplicationLogger {
 
+  import cats.implicits._
+  
   val applicationCacheExpiry = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
 
+  private val E = EitherTHelper.make[String]
+
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-    val E = EitherTHelper.make[String]
-    import cats.implicits._
 
     def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] = 
       createApplicationRequest match {
