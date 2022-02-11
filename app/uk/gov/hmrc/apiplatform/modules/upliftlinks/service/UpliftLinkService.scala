@@ -22,12 +22,24 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import cats.data.OptionT
+import cats.implicits._
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 
 @Singleton
-class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository, applicationService: ApplicationService)(implicit ec: ExecutionContext) {
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
     val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
     upliftLinksRepository.insert(upliftLink)
     Future.successful(upliftLink)
+  }
+
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationResponse] = {
+    for {
+      upliftLink <- OptionT(upliftLinksRepository.find("productionApplicationId" -> productionAppId).map(_.headOption))
+      sandboxAppId = upliftLink.sandboxApplicationId
+      sandboxAppData <- applicationService.fetch(sandboxAppId)
+    } yield sandboxAppData    
   }
 }

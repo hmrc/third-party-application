@@ -1,0 +1,44 @@
+/*
+ * Copyright 2022 HM Revenue & Customs
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+package uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers
+
+import javax.inject.Inject
+import javax.inject.Singleton
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import cats.implicits._
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
+import play.api.mvc.ControllerComponents
+import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
+
+ @Singleton
+ class UpliftLinksController @Inject() (
+      upliftLinkService: UpliftLinkService,
+      applicationService: ApplicationService,
+      cc: ControllerComponents
+  )(implicit ec: ExecutionContext) extends ExtraHeadersController(cc) with JsonFormatters {
+    def getSandboxAppForProductionApp(productionAppId: ApplicationId) = Action.async {
+      val failure = NotFound(s"No sandbox application found for productionAppId ${productionAppId.value}")
+      val success = (applicationResponse: ApplicationResponse) => Ok(Json.toJson(applicationResponse))
+
+      upliftLinkService.getSandboxAppForProductionAppId(productionAppId).fold(failure)(success)
+    }
+ }
