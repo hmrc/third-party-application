@@ -74,7 +74,7 @@
       val addAnsweringStatus = addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, areQuestionsAnswered))
       val updateAnsweringStatus = changeStatusHistory(_ => Submission.Status.Answering(timestamp = DateTimeUtils.now, areQuestionsAnswered))
 
-      val updateOrAddAnswering = if(submission.latestInstance.statusHistory.head.isCreated) {
+      val updateOrAddAnswering = if(submission.status.isCreated) {
         addAnsweringStatus
       } else {
         updateAnsweringStatus

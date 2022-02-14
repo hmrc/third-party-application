@@ -99,16 +99,21 @@ object Submission {
 
   val grant: (DateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Status.Granted(timestamp, name))
 
+  val grantWithWarnings: (DateTime, String, String) => Submission => Submission = (timestamp, name, warnings) => {
+    addStatusHistory(Status.GrantedWithWarnings(timestamp, name, warnings))
+  }
+
   val submit: (DateTime, String) => Submission => Submission = (timestamp, requestedBy) => addStatusHistory(Status.Submitted(timestamp, requestedBy))
 
+  
   sealed trait Status {
     def isOpenToAnswers = isCreated || isAnswering
     
     def isAnsweredCompletely = this match {
       case Submission.Status.Answering(_, completed) => completed
-      case _ => false      
+      case Submission.Status.Created(_, _)           => false
+      case _                                         => true      
     }
-
 
     def isCreated = this match {
       case _ : Submission.Status.Created => true
@@ -129,6 +134,16 @@ object Submission {
       case _ : Submission.Status.Granted => true
       case _ => false      
     }
+
+    def isGrantedWithWarnings = this match {
+      case _ : Submission.Status.GrantedWithWarnings => true
+      case _ => false          
+    }
+
+    def isDeclined = this match {
+      case _ : Submission.Status.Declined => true
+      case _ => false
+    }
   }
 
   object Status {
@@ -141,6 +156,12 @@ object Submission {
     case class Granted(
       timestamp: DateTime,
       name: String
+    ) extends Status
+
+    case class GrantedWithWarnings(
+      timestamp: DateTime,
+      name: String,
+      warnings: String
     ) extends Status
 
     case class Submitted(
@@ -159,11 +180,14 @@ object Submission {
     ) extends Status
 
     def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
-      case (c: Created, a: Answering)         => true
-      case (Answering(_, true), s: Submitted) => true
-      case (s: Submitted, d: Declined)        => true
-      case (s: Submitted, g: Granted)         => true
-      case _                                  => false
+      case (c: Created, a: Answering)               => true
+      case (Answering(_, true), s: Submitted)       => true
+      case (s: Submitted, d: Declined)              => true
+      case (s: Submitted, g: Granted)               => true
+      case (s: Submitted, w: GrantedWithWarnings)   => true
+      case (w: GrantedWithWarnings, d: Declined)    => true   // ? Maybe
+      case (w: GrantedWithWarnings, g: Granted)     => true   // ? Maybe
+      case _                                        => false
     }
   }
 
