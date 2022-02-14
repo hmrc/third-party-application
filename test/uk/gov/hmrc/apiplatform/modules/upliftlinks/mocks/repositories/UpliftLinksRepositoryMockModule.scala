@@ -22,6 +22,9 @@ import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import reactivemongo.api.commands.WriteResult
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import scala.concurrent.ExecutionContext.Implicits.global
+import play.api.libs.json.Json
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseUpliftLinksRepositoryRepoMock {
@@ -30,6 +33,15 @@ trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object Insert {
       def thenReturn() =
         when(aMock.insert(*)(*)).thenReturn(successful(mock[WriteResult]))
+
+      def verifyCalled() = 
+          verify(aMock, atLeast(1)).insert(*[UpliftLink])(*)
+
+    }
+
+    object Find {
+      def thenReturn(upliftLink : UpliftLink) = when(aMock.find(*)(*)).thenReturn(successful(List(upliftLink)))
+      def thenReturnNothing = when(aMock.find(*)(*)).thenReturn(successful(List()))
     }
   }
   
