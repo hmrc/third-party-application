@@ -65,11 +65,48 @@ object Submission {
     def random: Id = Id(UUID.randomUUID().toString())
   }
 
+  val addInstance: (Submission.AnswersToQuestions, Submission.Status) => Submission => Submission = (answers, status) => s => {
+    val newInstance = Submission.Instance(s.latestInstance.index+1, answers, NonEmptyList.of(status))
+    s.copy(instances = newInstance :: s.instances)
+  }
+  
+  val changeLatestInstance: (Submission.Instance => Submission.Instance) => Submission => Submission = delta => s => {
+    s.copy(instances = NonEmptyList(delta(s.instances.head), s.instances.tail))
+  }
+
+  val addStatusHistory: (Submission.Status) => Submission => Submission = newStatus => s => {
+    require(Submission.Status.isLegalTransition(s.status, newStatus))
+    changeLatestInstance(_.copy(statusHistory = newStatus :: s.latestInstance.statusHistory))(s)
+  }
+
+  val changeStatusHistory: (Submission.Status => Submission.Status) => Submission => Submission = delta => s => {
+    val inStatus = s.latestInstance.statusHistory.head
+    val outStatus = delta(inStatus)
+
+    changeLatestInstance(
+      _.copy(statusHistory = NonEmptyList(outStatus, s.latestInstance.statusHistory.tail))
+    )(s)
+  }
+
+  val updateLatestAnswersTo: (Submission.AnswersToQuestions) => Submission => Submission = (newAnswers) => changeLatestInstance(_.copy(answersToQuestions = newAnswers))
+
+
   sealed trait Status {
-    def isOpenToAnswers = isCreated
+    def isOpenToAnswers = isCreated || isAnswering
+    
+    def isAnsweredCompletely = this match {
+      case Submission.Status.Answering(_, completed) => completed
+      case _ => false      
+    }
+
 
     def isCreated = this match {
       case _ : Submission.Status.Created => true
+      case _ => false      
+    }
+
+    def isAnswering = this match {
+      case _ : Submission.Status.Answering => true
       case _ => false      
     }
     
@@ -101,18 +138,23 @@ object Submission {
       requestedBy: String
     ) extends Status
 
+    case class Answering(
+      timestamp: DateTime,
+      completed: Boolean
+    ) extends Status
+
     case class Created(
       timestamp: DateTime,
       requestedBy: String
     ) extends Status
 
     def isLegalTransition(from: Submission.Status, to: Submission.Status): Boolean = (from, to) match {
-      case (c: Created,   s: Submitted) => true
-      case (s: Submitted, d: Declined)  => true
-      case (s: Submitted, g: Granted)   => true
-      case _                            => false
+      case (c: Created, a: Answering)         => true
+      case (Answering(_, true), s: Submitted) => true
+      case (s: Submitted, d: Declined)        => true
+      case (s: Submitted, g: Granted)         => true
+      case _                                  => false
     }
-
   }
 
   case class Instance(
@@ -151,11 +193,6 @@ case class Submission(
   lazy val isOpenToAnswers = latestInstance.isOpenToAnswers
   
   lazy val status: Submission.Status = latestInstance.statusHistory.head
-
-  def setLatestAnswers(answers: Submission.AnswersToQuestions): Submission = {
-    val newLatest = latestInstance.copy(answersToQuestions = answers)
-    this.copy(instances = NonEmptyList.of(newLatest, this.instances.tail: _*))
-  }
 }
 
 

@@ -48,6 +48,7 @@ trait SubmissionsTestData extends QuestionBuilder {
   val completedProgress = QuestionnaireDAO.Questionnaires.allIndividualQuestionnaires.map(q => q.id -> QuestionnaireProgress(QuestionnaireState.Completed, List(firstQuestion(q)))).toMap
 
   val initialStatus = Submission.Status.Created(DateTimeUtils.now, "bob@example.com")
+  val answeredCompletelyStatus = Submission.Status.Answering(DateTimeUtils.now, true)
   val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
   val aSubmission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
 
@@ -66,7 +67,7 @@ trait SubmissionsTestData extends QuestionBuilder {
       QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
       QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
     )  
-  val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(initialStatus)))
+  val answeredInstances = NonEmptyList.of(Submission.Instance(0, answersToQuestions, NonEmptyList.of(answeredCompletelyStatus, initialStatus)))
   
   val completedSubmission = Submission(completedSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest, answeredInstances)
 

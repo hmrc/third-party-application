@@ -85,7 +85,7 @@ class SubmissionsDAOSpec
       await(dao.save(aSubmission))
       val oldAnswers = aSubmission.latestInstance.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
-      val updatedSubmission = aSubmission.setLatestAnswers(newAnswers)
+      val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }

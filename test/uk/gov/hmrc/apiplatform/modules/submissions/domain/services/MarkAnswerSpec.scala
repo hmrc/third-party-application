@@ -105,25 +105,27 @@ class MarkAnswerSpec extends HmrcSpec {
   }
 
   import TestQuestionnaires._
+  import Submission._
 
   def withYesNoAnswers(answer1: SingleChoiceAnswer, answer2: SingleChoiceAnswer): Submission = {
     require(List(YES,NO).contains(answer1))
     require(List(YES,NO).contains(answer2))
 
-    YesNoQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> answer1, question2Id -> answer2))
+    updateLatestAnswersTo(Map(question1Id -> answer1, question2Id -> answer2))(YesNoQuestionnaireData.submission)
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> NoAnswer))
+    updateLatestAnswersTo(Map(question1Id -> NoAnswer))(OptionalQuestionnaireData.submission)
   }
   def withSingleOptionalQuestionAndAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> TextAnswer("blah blah")))
+    updateLatestAnswersTo(Map(question1Id -> TextAnswer("blah blah")))(OptionalQuestionnaireData.submission)
   }
+
   def withAcknowledgementOnlyAnswers(): Submission = {
-    AcknowledgementOnlyQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> AcknowledgedAnswer))
+    updateLatestAnswersTo(Map(question1Id -> AcknowledgedAnswer))(AcknowledgementOnlyQuestionnaireData.submission)
   }
   def withMultiChoiceAnswers(answers: String*): Submission = {
-    MultiChoiceQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
+    updateLatestAnswersTo(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))(MultiChoiceQuestionnaireData.submission)
   }
 
   def extend(submission: Submission): ExtendedSubmission = 

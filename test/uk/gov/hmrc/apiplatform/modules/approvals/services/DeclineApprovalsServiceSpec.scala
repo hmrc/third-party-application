@@ -76,7 +76,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       result shouldBe DeclineApprovalsService.Actioned(application)
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
       val finalSubmission = SubmissionsServiceMock.Store.verifyCalledWith()
-      finalSubmission.status.isCreated shouldBe true
+      finalSubmission.status.isAnswering shouldBe true
       finalSubmission.instances.tail.head.statusHistory.head should matchPattern {
         case Submission.Status.Declined(_, gatekeeperUserName, reasons) =>
       }

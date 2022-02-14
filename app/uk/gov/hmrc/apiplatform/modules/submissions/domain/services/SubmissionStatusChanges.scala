@@ -17,44 +17,21 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import cats.data.NonEmptyList
 import org.joda.time.DateTime
 
 object SubmissionStatusChanges {
 
   import Submission.Status._
+  import Submission._
 
-  def appendNewState(newState: Submission.Status): Submission => Submission = (submission) => {
-    require(isLegalTransition(submission.status, newState))
-    val latestInstance = submission.latestInstance
-    val updatedInstance = latestInstance.copy(statusHistory = newState :: latestInstance.statusHistory)
-    submission.copy(instances = NonEmptyList(updatedInstance, submission.instances.tail))
+  val decline: (DateTime, String, String) => Submission => Submission = (timestamp, name, reasons) => {
+    val addDeclinedStatus = addStatusHistory(Declined(timestamp, name, reasons))
+    val addNewlyAnsweringInstance: Submission => Submission = (s) => addInstance(s.latestInstance.answersToQuestions, Answering(timestamp, true))(s)
+    
+    addDeclinedStatus andThen addNewlyAnsweringInstance
   }
 
-  def addNewInstanceToSubmission(timestamp: DateTime): Submission => Submission = (submission) => {
-    val latestInstance = submission.latestInstance
-    val originalCreator = latestInstance.statusHistory.last match {
-      case Created(_, email) => email
-      case _                 => "unknown"
-    }
+  val grant: (DateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Granted(timestamp, name))
 
-    val newInstance = latestInstance.copy(
-      index = latestInstance.index+1,
-      statusHistory = NonEmptyList.of(Created(timestamp, originalCreator))
-    )
-    submission.copy(instances = newInstance :: submission.instances)
-  }
-
-  def decline(timestamp: DateTime, name: String, reasons: String)(submission: Submission): Submission = {
-    (
-      appendNewState(Declined(timestamp, name, reasons)) andThen 
-      addNewInstanceToSubmission(timestamp)
-    )(submission)
-  }
-
-  def grant(timestamp: DateTime, name: String)(submission: Submission): Submission = {
-    (
-      appendNewState(Granted(timestamp, name))
-    )(submission)
-  }
+  val submit: (DateTime, String) => Submission => Submission = (timestamp, requestedBy) => addStatusHistory(Submitted(timestamp, requestedBy))
 }
