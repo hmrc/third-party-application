@@ -38,7 +38,7 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -92,7 +92,7 @@ class RequestApprovalsService @Inject()(
         updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, responsibleIndividualName, responsibleIndividualEmail)
         savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        updatedSubmission          = SubmissionStatusChanges.submit(DateTimeUtils.now, requestedByEmailAddress)(submission)
+        updatedSubmission          = Submission.submit(DateTimeUtils.now, requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))

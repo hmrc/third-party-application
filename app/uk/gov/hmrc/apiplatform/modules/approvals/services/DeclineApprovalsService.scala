@@ -35,9 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 
@@ -88,7 +86,7 @@ class DeclineApprovalsService @Inject()(
         updatedApp            = declineApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, gatekeeperUserName, reasons)
+        updatedSubmission     = Submission.decline(DateTimeUtils.now, gatekeeperUserName, reasons)(extSubmission.submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, reasons))
         _                     = logDone(savedApp, savedSubmission)
@@ -122,9 +120,5 @@ class DeclineApprovalsService @Inject()(
       case e: Failure[_] =>
         rollback(snapshotApp)
     }
-  }
-  
-  private def updateSubmissionToDeclinedState(submission: Submission, timestamp: DateTime, name: String, reasons: String): Submission = {
-    SubmissionStatusChanges.decline(timestamp, name, reasons)(submission)
   }
 }

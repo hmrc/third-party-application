@@ -90,6 +90,16 @@ object Submission {
 
   val updateLatestAnswersTo: (Submission.AnswersToQuestions) => Submission => Submission = (newAnswers) => changeLatestInstance(_.copy(answersToQuestions = newAnswers))
 
+  val decline: (DateTime, String, String) => Submission => Submission = (timestamp, name, reasons) => {
+    val addDeclinedStatus = addStatusHistory(Status.Declined(timestamp, name, reasons))
+    val addNewlyAnsweringInstance: Submission => Submission = (s) => addInstance(s.latestInstance.answersToQuestions, Status.Answering(timestamp, true))(s)
+    
+    addDeclinedStatus andThen addNewlyAnsweringInstance
+  }
+
+  val grant: (DateTime, String) => Submission => Submission = (timestamp, name) => addStatusHistory(Status.Granted(timestamp, name))
+
+  val submit: (DateTime, String) => Submission => Submission = (timestamp, requestedBy) => addStatusHistory(Status.Submitted(timestamp, requestedBy))
 
   sealed trait Status {
     def isOpenToAnswers = isCreated || isAnswering

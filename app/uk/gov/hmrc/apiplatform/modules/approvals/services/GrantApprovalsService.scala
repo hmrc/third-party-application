@@ -35,9 +35,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -92,7 +90,7 @@ class GrantApprovalsService @Inject()(
         _ = println("VC:" +updatedApp.state.verificationCode)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = updateSubmissionToGrantedState(extSubmission.submission, DateTimeUtils.now, gatekeeperUserName)
+        updatedSubmission     = Submission.grant(DateTimeUtils.now, gatekeeperUserName)(extSubmission.submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName))
         _                     <- ET.liftF(sendEmails(savedApp))
@@ -125,10 +123,6 @@ class GrantApprovalsService @Inject()(
       case e: Failure[_] =>
         rollback(snapshotApp)
     }
-  }
-  
-  private def updateSubmissionToGrantedState(submission: Submission, timestamp: DateTime, name: String): Submission = {
-    SubmissionStatusChanges.grant(timestamp, name)(submission)
   }
 
   private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
