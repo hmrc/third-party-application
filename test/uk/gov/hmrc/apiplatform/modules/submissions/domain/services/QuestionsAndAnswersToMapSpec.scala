@@ -20,7 +20,6 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import cats.data.NonEmptyList
 
 class QuestionsAndAnswersToMapSpec extends HmrcSpec {
   trait Setup extends SubmissionsTestData {
@@ -29,7 +28,7 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
       (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
       (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
     )
-    val submissionWithMissingQuestionIds = aSubmission.copy(instances = NonEmptyList.of(Submission.Instance(0, answersToQuestionsWithMissingIds, NonEmptyList.of(initialStatus))))
+    val submissionWithMissingQuestionIds = Submission.updateLatestAnswersTo(answersToQuestionsWithMissingIds)(aSubmission)
   }
 
   "QuestionsAndAnswersToMap" should {

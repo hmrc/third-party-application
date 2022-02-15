@@ -26,7 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import cats.data.NonEmptyList
-import uk.gov.hmrc.time.DateTimeUtils
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
   trait Setup 
@@ -148,18 +147,9 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
                 )
               )             
             )
-          ),
-          instances = NonEmptyList.of(
-            Submission.Instance(
-              index = 0,
-              answersToQuestions = completedAnswers,
-              statusHistory = NonEmptyList.of(
-                Submission.Status.Created(DateTimeUtils.now, "user@example.com")
-              )
-            )
           )
         )
-        .hasCompletelyAnswered
+        .hasCompletelyAnsweredWith(completedAnswers)
         
         SubmissionsDAOMock.FetchLatest.thenReturn(completeSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)

@@ -65,6 +65,19 @@ object Submission {
     def random: Id = Id(UUID.randomUUID().toString())
   }
 
+  val create: (
+      String,
+      Submission.Id,
+      ApplicationId,
+      DateTime,
+      NonEmptyList[GroupOfQuestionnaires],
+      QuestionIdsOfInterest) => Submission = (requestedBy, id, applicationId, timestamp, groups, questionIdsOfInterest) => {
+
+      val initialStatus = Submission.Status.Created(timestamp, requestedBy)
+      val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
+    Submission(id, applicationId, timestamp, groups, questionIdsOfInterest, initialInstances)
+  }
+  
   val addInstance: (Submission.AnswersToQuestions, Submission.Status) => Submission => Submission = (answers, status) => s => {
     val newInstance = Submission.Instance(s.latestInstance.index+1, answers, NonEmptyList.of(status))
     s.copy(instances = newInstance :: s.instances)

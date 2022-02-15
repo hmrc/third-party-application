@@ -19,9 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
 import scala.collection.immutable.ListMap
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 class MarkAnswerSpec extends HmrcSpec {
@@ -45,8 +43,8 @@ class MarkAnswerSpec extends HmrcSpec {
         questions = NonEmptyList.fromListUnsafe(questions.map((q:Question) => QuestionItem(q)).toList)
       )
 
-      val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), QuestionnaireDAO.questionIdsOfInterest, initialInstances)
+      val oneGroups = NonEmptyList.of(GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire)))
+      aSubmission.copy(groups = oneGroups)
     }
 
     def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
@@ -104,27 +102,27 @@ class MarkAnswerSpec extends HmrcSpec {
   }
 
   import TestQuestionnaires._
-  import Submission._
 
   def withYesNoAnswers(answer1: SingleChoiceAnswer, answer2: SingleChoiceAnswer): Submission = {
     require(List(YES,NO).contains(answer1))
     require(List(YES,NO).contains(answer2))
 
-    updateLatestAnswersTo(Map(question1Id -> answer1, question2Id -> answer2))(YesNoQuestionnaireData.submission).hasCompletelyAnswered
+    YesNoQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> answer1, question2Id -> answer2))
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> NoAnswer))(OptionalQuestionnaireData.submission).hasCompletelyAnswered
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> NoAnswer))
   }
+
   def withSingleOptionalQuestionAndAnswer(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> TextAnswer("blah blah")))(OptionalQuestionnaireData.submission).hasCompletelyAnswered
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> TextAnswer("blah blah")))
   }
 
   def withAcknowledgementOnlyAnswers(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> AcknowledgedAnswer))(AcknowledgementOnlyQuestionnaireData.submission).hasCompletelyAnswered
+    AcknowledgementOnlyQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> AcknowledgedAnswer))
   }
   def withMultiChoiceAnswers(answers: String*): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))(MultiChoiceQuestionnaireData.submission).hasCompletelyAnswered
+    MultiChoiceQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
   }
 
   "markSubmission" should {
