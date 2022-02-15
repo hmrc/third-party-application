@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -47,8 +46,7 @@ object RequestApprovalsService {
 
   sealed trait ApprovalRejectedResult extends RequestApprovalResult
   case object ApprovalRejectedDueToIncorrectApplicationState extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToIncompleteSubmission extends ApprovalRejectedResult
-  case object ApprovalRejectedDueToAlreadySubmitted extends ApprovalRejectedResult
+  case class ApprovalRejectedDueToIncorrectSubmissionState(state: Submission.Status) extends ApprovalRejectedResult
 
   sealed trait ApprovalRejectedDueToName extends ApprovalRejectedResult
   case class ApprovalRejectedDueToDuplicateName(name: String) extends ApprovalRejectedDueToName
@@ -67,7 +65,7 @@ class RequestApprovalsService @Inject()(
 
   import RequestApprovalsService._
 
-  def requestApproval(originalApp: ApplicationData, extSubmission: ExtendedSubmission, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
+  def requestApproval(originalApp: ApplicationData, submission: Submission, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -79,9 +77,7 @@ class RequestApprovalsService @Inject()(
       for {
         _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                         <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
-        _                         <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
-        _                         <- ET.cond(extSubmission.status.isAnsweredCompletely, (), ApprovalRejectedDueToAlreadySubmitted)
-        submission                 = extSubmission.submission
+        _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         appName                    = getApplicationName(submission).get // Safe at this point
         _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
         privacyPolicyUrl           = getPrivacyPolicyUrl(submission)

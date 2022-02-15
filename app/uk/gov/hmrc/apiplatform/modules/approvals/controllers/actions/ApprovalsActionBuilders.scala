@@ -93,14 +93,6 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
       }
     }
 
-  // def withApplication(applicationId: ApplicationId)(block: ApplicationRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
-  //   Action.async { implicit request =>
-  //     (
-  //       applicationRequestRefiner(applicationId)
-  //     ).invokeBlock(request, block)
-  //   }
-  // }
-
   def withApplicationAndSubmission(applicationId: ApplicationId)(block: ApplicationSubmissionRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
     Action.async { implicit request =>
       (

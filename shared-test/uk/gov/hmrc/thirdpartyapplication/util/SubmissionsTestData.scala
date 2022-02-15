@@ -26,7 +26,7 @@ import cats.data.NonEmptyList
 
 trait StatusTestData {
   implicit class StatusHistorySyntax(submission: Submission) {
-    def completelyAnswered: Submission = {
+    def hasCompletelyAnswered: Submission = {
       Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true))(submission)
     }
     def answering: Submission = {
@@ -92,8 +92,6 @@ trait SubmissionsTestData extends QuestionBuilder with ProgressTestData with Sta
   val answeredCompletelyStatus = Submission.Status.Answering(DateTimeUtils.now, true)
   val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
   val aSubmission = Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, initialInstances)
-
-  val extendedSubmission = ExtendedSubmission(aSubmission, initialProgress)
 
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)

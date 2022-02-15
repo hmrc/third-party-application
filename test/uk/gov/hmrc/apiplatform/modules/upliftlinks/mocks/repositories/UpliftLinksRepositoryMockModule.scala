@@ -18,9 +18,8 @@ package uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
-import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import reactivemongo.api.commands.WriteResult
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {

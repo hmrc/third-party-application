@@ -23,6 +23,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsServic
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.time.DateTimeUtils
 
 trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseRequestApprovalsServiceMock {
@@ -38,8 +40,8 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
       def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
-      def thenRequestFailsWithIncompleteSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncompleteSubmission))
+      def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
+        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(DateTimeUtils.now, "Bob@fake.com"))))
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))

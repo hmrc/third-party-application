@@ -68,14 +68,12 @@ class ApprovalsController @Inject()(
     import RequestApprovalsService._
 
     withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest => 
-      requestApprovalsService.requestApproval(request.application, request.extSubmission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
+      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
-        case ApprovalRejectedDueToIncompleteSubmission                        => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
-        case ApprovalRejectedDueToAlreadySubmitted                            => PreconditionFailed(asJsonError("ALREADY_SUBMITTED", s"Submission for $applicationId was already submitted"))
+        case ApprovalRejectedDueToIncorrectSubmissionState(state)             => PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
         case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
         case ApprovalRejectedDueToIncorrectApplicationState                   => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
-        
       })
       .recover(recovery)
     }
@@ -85,7 +83,7 @@ class ApprovalsController @Inject()(
     import DeclineApprovalsService._
 
     withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
-      declineApprovalService.decline(request.application, request.extSubmission.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
+      declineApprovalService.decline(request.application, request.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
@@ -99,7 +97,7 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.extSubmission.submission, grantedRequest.gatekeeperUserName)
+      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))

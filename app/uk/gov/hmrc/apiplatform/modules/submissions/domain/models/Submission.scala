@@ -111,10 +111,11 @@ object Submission {
     
     def isOpenToAnswers = isCreated || isAnswering
     
+    def canBeMarked = isAnsweredCompletely | isSubmitted | isDeclined | isGranted | isGrantedWithWarnings
+
     def isAnsweredCompletely = this match {
       case Submission.Status.Answering(_, completed) => completed
-      case Submission.Status.Created(_, _)           => false
-      case _                                         => true      
+      case _                                         => false      
     }
 
     def isCreated = this match {
@@ -241,14 +242,7 @@ case class Submission(
 case class ExtendedSubmission(
   submission: Submission,
   questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress]
-) {
-  lazy val isCompleted = 
-    questionnaireProgress.values
-    .map(_.state)
-    .forall(QuestionnaireState.isCompleted)
-
-  lazy val status: Submission.Status = submission.status
-}
+)
 
 case class MarkedSubmission(
   submission: Submission,

@@ -24,7 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import cats.data.NonEmptyList
 import uk.gov.hmrc.time.DateTimeUtils
@@ -50,12 +49,9 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.create(applicationId, "bob@example.com"))
 
         inside(result.right.value) { 
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, instances), progress) =>
+          case s @ Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, instances) =>
             applicationId shouldBe applicationId
             instances.head.answersToQuestions.size shouldBe 0
-            progress.size shouldBe s.submission.allQuestionnaires.size
-            progress.get(DevelopmentPractices.questionnaire.id).value shouldBe QuestionnaireProgress(QuestionnaireState.NotStarted, DevelopmentPractices.questionnaire.questions.asIds)
-            progress.get(FraudPreventionHeaders.questionnaire.id).value shouldBe QuestionnaireProgress(QuestionnaireState.NotApplicable, List.empty[QuestionId])
           }
       }
       
@@ -70,17 +66,17 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result1 = await(underTest.create(applicationId, "bob@example.com"))
         
         inside(result1.right.value) {
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
+          case s @ Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions) =>
             applicationId shouldBe applicationId
-            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size
+            s.allQuestionnaires.size shouldBe allQuestionnaires.size
           }
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
         val result2 = await(underTest.create(applicationId, "bob@example.com"))
         inside(result2.right.value) { 
-          case s @ ExtendedSubmission(Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions), progress) =>
-            s.submission.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
+          case s @ Submission(_, applicationId, _, groupings, QuestionnaireDAO.questionIdsOfInterest, answersToQuestions) =>
+            s.allQuestionnaires.size shouldBe allQuestionnaires.size - 2 // The number from the dropped group
           }
       }
     }
@@ -163,7 +159,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
             )
           )
         )
-        .completelyAnswered
+        .hasCompletelyAnswered
         
         SubmissionsDAOMock.FetchLatest.thenReturn(completeSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
@@ -188,7 +184,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetchLatestMarkedSubmission(applicationId))
 
-        result.left.value shouldBe "Submission is not complete"
+        result.left.value shouldBe "Submission cannot be marked yet"
       }
     }
 

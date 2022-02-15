@@ -110,21 +110,21 @@ class MarkAnswerSpec extends HmrcSpec {
     require(List(YES,NO).contains(answer1))
     require(List(YES,NO).contains(answer2))
 
-    updateLatestAnswersTo(Map(question1Id -> answer1, question2Id -> answer2))(YesNoQuestionnaireData.submission).completelyAnswered
+    updateLatestAnswersTo(Map(question1Id -> answer1, question2Id -> answer2))(YesNoQuestionnaireData.submission).hasCompletelyAnswered
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> NoAnswer))(OptionalQuestionnaireData.submission).completelyAnswered
+    updateLatestAnswersTo(Map(question1Id -> NoAnswer))(OptionalQuestionnaireData.submission).hasCompletelyAnswered
   }
   def withSingleOptionalQuestionAndAnswer(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> TextAnswer("blah blah")))(OptionalQuestionnaireData.submission).completelyAnswered
+    updateLatestAnswersTo(Map(question1Id -> TextAnswer("blah blah")))(OptionalQuestionnaireData.submission).hasCompletelyAnswered
   }
 
   def withAcknowledgementOnlyAnswers(): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> AcknowledgedAnswer))(AcknowledgementOnlyQuestionnaireData.submission).completelyAnswered
+    updateLatestAnswersTo(Map(question1Id -> AcknowledgedAnswer))(AcknowledgementOnlyQuestionnaireData.submission).hasCompletelyAnswered
   }
   def withMultiChoiceAnswers(answers: String*): Submission = {
-    updateLatestAnswersTo(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))(MultiChoiceQuestionnaireData.submission).completelyAnswered
+    updateLatestAnswersTo(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))(MultiChoiceQuestionnaireData.submission).hasCompletelyAnswered
   }
 
   "markSubmission" should {

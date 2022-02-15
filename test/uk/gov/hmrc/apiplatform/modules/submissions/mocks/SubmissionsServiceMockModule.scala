@@ -31,8 +31,8 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     def verify = MockitoSugar.verify(aMock)
 
     object Create {
-      def thenReturn(extSubmission: ExtendedSubmission) = 
-        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(extSubmission)))
+      def thenReturn(submission: Submission) = 
+        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(submission)))
 
       def thenFails(error: String) =
         when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Left(error)))

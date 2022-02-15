@@ -63,7 +63,7 @@ class SubmissionsService @Inject()(
   /*
   * a questionnaire needs answering for the application
   */
-  def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, ExtendedSubmission]] = {
+  def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, Submission]] = {
     (
       for {
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
@@ -72,8 +72,7 @@ class SubmissionsService @Inject()(
         newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, requestedBy)))
         submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance))
         savedSubmission       <- liftF(submissionsDAO.save(submission))
-        extSubmission         <- extendSubmission(savedSubmission)
-      } yield extSubmission
+      } yield savedSubmission
     )
     .value
   }
@@ -91,7 +90,7 @@ class SubmissionsService @Inject()(
       for {
         ext           <- fromOptionF(fetchLatest(applicationId), "No such application submission")
         submission     = ext.submission
-        _             <- cond(ext.isCompleted, (), "Submission is not complete")
+        _             <- cond(submission.status.canBeMarked, (), "Submission cannot be marked yet")
         markedAnswers =  MarkAnswer.markSubmission(submission)
       } yield MarkedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)
     )

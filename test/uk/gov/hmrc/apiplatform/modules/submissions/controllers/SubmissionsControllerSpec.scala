@@ -46,15 +46,15 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     val fakeRequest = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
       
       val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
 
       status(result) shouldBe OK
 
-      contentAsJson(result).validate[ExtendedSubmission] match {
-        case JsSuccess(extendedSubmission, _) =>
-          extendedSubmission.submission shouldBe aSubmission
+      contentAsJson(result).validate[Submission] match {
+        case JsSuccess(submission, _) =>
+          submission shouldBe aSubmission
         case JsError(f) => fail(s"Not parsed as a response $f")        
       }
     }
@@ -71,7 +71,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchLatest" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.withNotStartedProgresss)
 
       val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
 
@@ -94,7 +94,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchSubmission" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.Fetch.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Fetch.thenReturn(aSubmission.withNotStartedProgresss)
 
       val result = underTest.fetchSubmission(submissionId)(FakeRequest(GET, "/"))
 

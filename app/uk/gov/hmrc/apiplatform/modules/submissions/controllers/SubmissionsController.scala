@@ -53,7 +53,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
-    val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
+    val success = (s: Submission) => Ok(Json.toJson(s))
 
     withJsonBody[CreateSubmissionRequest] { submissionRequest =>
       service.create(applicationId, submissionRequest.requestedBy).map(_.fold(failed, success))
