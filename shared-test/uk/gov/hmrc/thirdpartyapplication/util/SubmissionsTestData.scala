@@ -24,7 +24,48 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
 
-trait SubmissionsTestData extends QuestionBuilder {
+trait StatusTestData {
+  implicit class StatusHistorySyntax(submission: Submission) {
+    def completelyAnswered: Submission = {
+      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true))(submission)
+    }
+    def answering: Submission = {
+      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false))(submission)
+    }
+    def submitted: Submission = {
+      Submission.addStatusHistory(Submission.Status.Submitted(DateTimeUtils.now, "bob@example.com"))(submission)
+    }
+  }
+}
+
+trait ProgressTestData {
+  
+    implicit class ProgressSyntax(submission: Submission) {
+      private val allQuestionnaireIds: NonEmptyList[QuestionnaireId] = submission.allQuestionnaires.map(_.id)
+      private val allQuestionIds = submission.allQuestions.map(_.id)
+      private def questionnaire(qId: QuestionnaireId): Questionnaire = submission.allQuestionnaires.find(q => q.id == qId).get
+      private def allQuestionIds(qId: QuestionnaireId) = questionnaire(qId).questions.map(_.question).map(_.id).toList
+
+      private def incompleteQuestionnaireProgress(qId: QuestionnaireId): QuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.InProgress, allQuestionIds(qId))
+      private def completedQuestionnaireProgress(qId: QuestionnaireId): QuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.Completed, allQuestionIds.toList)
+      private def notStartedQuestionnaireProgress(qId: QuestionnaireId): QuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.NotStarted, allQuestionIds.toList)
+      private def notApplicableQuestionnaireProgress(qId: QuestionnaireId): QuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.NotApplicable, allQuestionIds.toList)
+
+      def withIncompleteProgress(): ExtendedSubmission =
+        ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> incompleteQuestionnaireProgress(i))).toList.toMap)
+        
+      def withCompletedProgresss(): ExtendedSubmission =
+        ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> completedQuestionnaireProgress(i))).toList.toMap)
+
+      def withNotStartedProgresss(): ExtendedSubmission =
+        ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notStartedQuestionnaireProgress(i))).toList.toMap)
+
+      def withNotApplicableProgresss(): ExtendedSubmission =
+        ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notApplicableQuestionnaireProgress(i))).toList.toMap)
+    }
+}
+trait SubmissionsTestData extends QuestionBuilder with ProgressTestData with StatusTestData {
+
   val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
   val questionnaireId = questionnaire.id
   val question = questionnaire.questions.head.question
@@ -73,6 +114,14 @@ trait SubmissionsTestData extends QuestionBuilder {
 
   val completedExtendedSubmission = ExtendedSubmission(completedSubmission, completedProgress)
 
+
+  val now = DateTimeUtils.now
+  val createdSubmission = aSubmission
+  val answeringSubmission = (Submission.addStatusHistory(Submission.Status.Answering(now,false)) andThen Submission.changeLatestInstance(in => in.copy(answersToQuestions = answersToQuestions)))(aSubmission)
+  val answeredSubmission = (Submission.addStatusHistory(Submission.Status.Answering(now,true)) andThen Submission.changeLatestInstance(in => in.copy(answersToQuestions = answersToQuestions)))(aSubmission)
+  val submittedSubmission = Submission.addStatusHistory(Submission.Status.Submitted(now, "bob@example.com"))(answeredSubmission)
+
+
   def buildCompletedSubmissionWithQuestions(): Submission = {
     val subId = Submission.Id.random
     val appId = ApplicationId.random
@@ -115,7 +164,13 @@ trait SubmissionsTestData extends QuestionBuilder {
     Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id), instances)
   }
 
-  def buildAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = {
+  def buildPartiallyAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = 
+    buildAnsweredSubmission(false)(submission)
+
+  def buildFullyAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission =
+    buildAnsweredSubmission(true)(submission)
+
+  def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = {
 
     def passAnswer(question: Question): ActualAnswer = {
       question match {
@@ -127,8 +182,8 @@ trait SubmissionsTestData extends QuestionBuilder {
       }
     }
     
-    val allQuestions = submission.allQuestions
-    val answers = allQuestions.map(q => (q.id -> passAnswer(q))).toList.toMap
+    val answerQuestions = submission.allQuestions.toList.drop(if(fullyAnswered) 0 else 1)
+    val answers = answerQuestions.map(q => (q.id -> passAnswer(q))).toMap
     val latestInstance = submission.latestInstance
     val newLatestInstance = latestInstance.copy(answersToQuestions = answers)
 

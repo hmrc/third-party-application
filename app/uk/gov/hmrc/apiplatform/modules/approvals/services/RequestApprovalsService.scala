@@ -80,7 +80,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
         _                         <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                         <- ET.cond(extSubmission.isCompleted, (), ApprovalRejectedDueToIncompleteSubmission)
-        _                         <- ET.cond(extSubmission.canBeSubmitted, (), ApprovalRejectedDueToAlreadySubmitted)
+        _                         <- ET.cond(extSubmission.status.isAnsweredCompletely, (), ApprovalRejectedDueToAlreadySubmitted)
         submission                 = extSubmission.submission
         appName                    = getApplicationName(submission).get // Safe at this point
         _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))

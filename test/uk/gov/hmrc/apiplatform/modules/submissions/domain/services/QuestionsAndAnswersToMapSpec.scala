@@ -34,7 +34,6 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
 
   "QuestionsAndAnswersToMap" should {
     "return a map of questions to answers" in new Setup {
-      val answeredSubmission = buildAnsweredSubmission()
       val map = QuestionsAndAnswersToMap(answeredSubmission)
       map.size shouldBe answeredSubmission.latestInstance.answersToQuestions.size
     }

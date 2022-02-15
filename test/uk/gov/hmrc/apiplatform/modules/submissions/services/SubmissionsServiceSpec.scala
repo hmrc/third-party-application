@@ -163,6 +163,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
             )
           )
         )
+        .completelyAnswered
         
         SubmissionsDAOMock.FetchLatest.thenReturn(completeSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
@@ -200,7 +201,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
         
         val out = result.right.value
-        out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out._1.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -212,7 +213,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
         
         val out = result.right.value
-        out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
+        out._1.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

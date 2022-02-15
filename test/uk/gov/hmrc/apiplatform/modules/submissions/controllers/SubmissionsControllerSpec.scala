@@ -141,10 +141,11 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     "return an OK response" in new Setup {
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
-      SubmissionsServiceMock.RecordAnswers.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.RecordAnswers.thenReturn( (answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress) )
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
-      val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val answerJsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
+
+      val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(answerJsonBody))
 
       status(result) shouldBe OK
     }
@@ -154,8 +155,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
-      val jsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
-      val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(jsonBody))
+      val answerJsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
+      val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(answerJsonBody))
 
       status(result) shouldBe BAD_REQUEST
     }

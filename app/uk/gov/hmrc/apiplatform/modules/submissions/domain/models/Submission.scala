@@ -107,6 +107,8 @@ object Submission {
 
   
   sealed trait Status {
+    def timestamp: DateTime
+    
     def isOpenToAnswers = isCreated || isAnswering
     
     def isAnsweredCompletely = this match {
@@ -198,6 +200,14 @@ object Submission {
   ) {
     lazy val status: Status = statusHistory.head
     lazy val isOpenToAnswers = status.isOpenToAnswers
+    lazy val isAnsweredCompletely = status.isAnsweredCompletely
+
+    lazy val isCreated = status.isCreated
+    lazy val isAnswering = status.isAnswering
+    lazy val isGranted = status.isGranted
+    lazy val isGrantedWithWarnings = status.isGrantedWithWarnings
+    lazy val isDeclined = status.isDeclined
+    lazy val isSubmitted = status.isSubmitted
   }
 }
 
@@ -224,8 +234,6 @@ case class Submission(
 
   lazy val latestInstance = instances.head
 
-  lazy val isOpenToAnswers = latestInstance.isOpenToAnswers
-  
   lazy val status: Submission.Status = latestInstance.statusHistory.head
 }
 
@@ -239,8 +247,6 @@ case class ExtendedSubmission(
     .map(_.state)
     .forall(QuestionnaireState.isCompleted)
 
-  lazy val isOpenToAnswers = submission.isOpenToAnswers
-  lazy val canBeSubmitted = isOpenToAnswers && isCompleted
   lazy val status: Submission.Status = submission.status
 }
 

@@ -50,15 +50,30 @@ object MarkAnswer {
     }
   }
 
-  def markSubmission(extSubmission: ExtendedSubmission): Map[QuestionId, Mark] = {
-    require(extSubmission.isCompleted)
+  def markSubmission(submission: Submission): Map[QuestionId, Mark] = {
+    require(submission.status.isAnsweredCompletely)
     // All answers must be valid to have got here
   
     // All questions should/must exist for these questionIds.
-    def unsafeGetQuestion(id: QuestionId): Question = extSubmission.submission.findQuestion(id).get
+    def unsafeGetQuestion(id: QuestionId): Question = submission.findQuestion(id).get
 
-    extSubmission.submission.latestInstance.answersToQuestions.map {
+    submission.latestInstance.answersToQuestions.map {
       case (id: QuestionId, answer: ActualAnswer) => (id -> markAnswer(unsafeGetQuestion(id), answer))
     }
   }
 }
+
+/*
+  submission => (questions, instance) => (questions, answersToQuestions)
+
+  id -> answer =>
+    id -> option(question), answer =>
+      allowed noanswer?
+      id -> option(question), option(mark) =>
+        id -> mark
+
+  Fails
+    No question
+    No matching answer
+    No mark
+*/

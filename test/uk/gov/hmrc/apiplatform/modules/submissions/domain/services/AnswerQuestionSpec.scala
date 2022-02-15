@@ -52,7 +52,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val after = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer, blankContext)
 
         inside(after.right.value) {
-          case ExtendedSubmission(submission, _) =>
+          case (submission, _) =>
             submission.id shouldBe submission.id
             submission.applicationId shouldBe submission.applicationId
             submission.startedOn shouldBe submission.startedOn
@@ -63,10 +63,10 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
       "return updated submission after overwriting answer" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer, blankContext)
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value._1, questionId, NoAnswer, blankContext)
 
         inside(s2.right.value) {
-          case ExtendedSubmission(submission, _) =>
+          case (submission, _) =>
             submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
         }
       }
@@ -74,10 +74,10 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       "return updated submission does not loose other answers in same questionnaire" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer, blankContext)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value._1, questionId, NoAnswer, blankContext)
 
         inside(s2.right.value) {
-          case ExtendedSubmission(submission, _) =>
+          case (submission, _) =>
             submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
             submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
         }
@@ -86,10 +86,10 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
         val s1 = AnswerQuestion.recordAnswer(aSubmission, questionAltId, YesAnswer, blankContext)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value._1, questionId, NoAnswer, blankContext)
 
         inside(s2.right.value) {
-          case ExtendedSubmission(submission, _) =>
+          case (submission, _) =>
             submission.latestInstance.answersToQuestions.get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
             submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
         }

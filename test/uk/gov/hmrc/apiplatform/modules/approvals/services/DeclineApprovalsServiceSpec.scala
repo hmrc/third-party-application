@@ -26,14 +26,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireState
-import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
@@ -49,29 +45,24 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val appId = ApplicationId.random
     val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
-    val answeredSubmission = buildAnsweredSubmission()
-    val answeredSubmissionWithCreatedState = answeredSubmission.copy(instances = NonEmptyList.of(answeredSubmission.latestInstance.copy(statusHistory = NonEmptyList.of(Submission.Status.Created(DateTimeUtils.now, "user2")))))
-    val completedQuestionnaireProgress = QuestionnaireProgress(QuestionnaireState.Completed, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
-    val incompleteProgress = QuestionnaireProgress(QuestionnaireState.InProgress, answeredSubmission.allQuestionnaires.flatMap(_.questions).map(_.question.id).toList)
-    val answeredExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
-    val incompleteExtendedSubmission = ExtendedSubmission(answeredSubmission, Map((answeredSubmission.allQuestionnaires.head.id -> incompleteProgress)))
-    val createdExtendedSubmission = ExtendedSubmission(answeredSubmissionWithCreatedState, Map((answeredSubmission.allQuestionnaires.head.id -> completedQuestionnaireProgress)))
+
     val gatekeeperUserName = "gatekeeperUserName"
     val reasons = "reasons"
     val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
+
+
   }
 
   "DeclineApprovalsService" should {
     "decline the specified application" in new Setup {
       import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 
-      SubmissionsServiceMock.FetchLatest.thenReturn(answeredExtendedSubmission)
       ApplicationRepoMock.Save.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
       SubmissionsServiceMock.Store.thenReturn()
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
-      val result = await(underTest.decline(application, answeredExtendedSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(application, submittedSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.Actioned(application)
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
@@ -80,9 +71,10 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       finalSubmission.instances.tail.head.statusHistory.head should matchPattern {
         case Submission.Status.Declined(_, gatekeeperUserName, reasons) =>
       }
-      
-      val (someQuestionId, expectedAnswer) = answeredExtendedSubmission.submission.latestInstance.answersToQuestions.head
-      val someQuestionWording = answeredExtendedSubmission.submission.findQuestion(someQuestionId).get.wording.value
+
+      val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
+      println(submittedSubmission.findQuestion(someQuestionId))
+      val someQuestionWording = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalDeclined
@@ -90,19 +82,13 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.decline(anApplicationData(appId, testingState()), extendedSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(anApplicationData(appId, testingState()), answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
     }
-
-    "fail to decline the specified application if the submission is in the wrong state" in new Setup {
-      val result = await(underTest.decline(application, incompleteExtendedSubmission, gatekeeperUserName, reasons))
-
-      result shouldBe DeclineApprovalsService.RejectedDueToIncompleteSubmission
-    }
-  
-    "fail to decline the specified application if the submission is in the submission state" in new Setup {
-      val result = await(underTest.decline(application, createdExtendedSubmission, gatekeeperUserName, reasons))
+ 
+    "fail to decline the specified application if the submission is not in the submitted state" in new Setup {
+      val result = await(underTest.decline(application, answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
     }

@@ -58,6 +58,7 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   implicit val AcceptedStatusFormat = Json.format[Granted]
   implicit val AcceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
   implicit val SubmittedStatusFormat = Json.format[Submitted]
+  implicit val answeringStatusFormat = Json.format[Answering]
   implicit val CreatedStatusFormat = Json.format[Created]
   
   implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
@@ -65,6 +66,7 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Granted]("granted")
     .and[GrantedWithWarnings]("grantedWithWarnings")
     .and[Submitted]("submitted")
+    .and[Answering]("answering")
     .and[Created]("created")
     .format
 
@@ -84,6 +86,7 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
   implicit val acceptedStatusFormat = Json.format[Granted]
   implicit val acceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
   implicit val submittedStatusFormat = Json.format[Submitted]
+  implicit val answeringStatusFormat = Json.format[Answering]
   implicit val createdStatusFormat = Json.format[Created]
   
   implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
@@ -91,6 +94,7 @@ trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Granted]("granted")
     .and[GrantedWithWarnings]("grantedWithWarnings")
     .and[Submitted]("submitted")
+    .and[Answering]("answering")
     .and[Created]("created")
     .format
 

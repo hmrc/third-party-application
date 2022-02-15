@@ -85,10 +85,9 @@ class ApprovalsController @Inject()(
     import DeclineApprovalsService._
 
     withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
-      declineApprovalService.decline(request.application, request.extSubmission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
+      declineApprovalService.decline(request.application, request.extSubmission.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
       })
@@ -100,10 +99,9 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.extSubmission, grantedRequest.gatekeeperUserName)
+      grantApprovalService.grant(request.application, request.extSubmission.submission, grantedRequest.gatekeeperUserName)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToIncompleteSubmission                                => PreconditionFailed(asJsonError("INCOMPLETE_SUBMISSION", s"Submission for $applicationId is incomplete"))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
       })

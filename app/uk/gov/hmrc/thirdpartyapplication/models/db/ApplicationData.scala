@@ -35,11 +35,6 @@ object ApplicationTokens {
   implicit val format = Json.format[ApplicationTokens]
 }
 
-case class StoredUpliftData(responsibleIndividual: ResponsibleIndividual, sellResellOrDistribute: SellResellOrDistribute)
-
-object StoredUpliftData {
-  implicit val format = Json.format[StoredUpliftData]
-}
 case class ApplicationData(
   id: ApplicationId,
   name: String,

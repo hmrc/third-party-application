@@ -90,21 +90,23 @@ class SubmissionsService @Inject()(
     (
       for {
         ext           <- fromOptionF(fetchLatest(applicationId), "No such application submission")
+        submission     = ext.submission
         _             <- cond(ext.isCompleted, (), "Submission is not complete")
-        markedAnswers =  MarkAnswer.markSubmission(ext)
+        markedAnswers =  MarkAnswer.markSubmission(submission)
       } yield MarkedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)
     )
     .value
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, (Submission, Map[QuestionnaireId, QuestionnaireProgress])]] = {
     (
       for {
-        initialSubmission   <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        context             <- contextService.deriveContext(initialSubmission.applicationId)
-        extSubmission       <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
-        savedSubmission     <- liftF(submissionsDAO.update(extSubmission.submission))
-      } yield extSubmission
+        initialSubmission       <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        context                 <- contextService.deriveContext(initialSubmission.applicationId)
+        data                    <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
+        (submission, progress)   = data
+        savedSubmission         <- liftF(submissionsDAO.update(submission))
+      } yield (savedSubmission, progress)
     )
     .value
   }
