@@ -77,10 +77,14 @@ class SubmissionsService @Inject()(
     .value
   }
 
-  def fetchLatest(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
-    fetchAndExtend(submissionsDAO.fetchLatest(applicationId))
+  def fetchLatest(applicationId: ApplicationId): Future[Option[Submission]] = {
+    submissionsDAO.fetchLatest(applicationId)
   }
   
+    def fetchLatestExtended(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
+    fetchAndExtend(fetchLatest(applicationId))
+  }
+
   def fetch(id: Submission.Id): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(submissionsDAO.fetch(id))
   }
@@ -88,7 +92,7 @@ class SubmissionsService @Inject()(
   def fetchLatestMarkedSubmission(applicationId: ApplicationId): Future[Either[String, MarkedSubmission]] = {
     (
       for {
-        ext           <- fromOptionF(fetchLatest(applicationId), "No such application submission")
+        ext           <- fromOptionF(fetchLatestExtended(applicationId), "No such application submission")
         submission     = ext.submission
         _             <- cond(submission.status.canBeMarked, (), "Submission cannot be marked yet")
         markedAnswers =  MarkAnswer.markSubmission(submission)

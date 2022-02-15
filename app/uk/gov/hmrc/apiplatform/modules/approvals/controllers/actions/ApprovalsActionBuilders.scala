@@ -25,9 +25,11 @@ import play.api.libs.json.{Json, JsObject}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
 
 
 trait JsonErrorResponse {
@@ -53,12 +55,15 @@ class ApplicationRequest[A](
 ) extends WrappedRequest[A](request)
 
 class ApplicationSubmissionRequest[A](
-    val extSubmission: ExtendedSubmission, 
+    val submission: Submission, 
     val applicationRequest: ApplicationRequest[A]
-) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) {
-  lazy val submission = extSubmission.submission
-}
+) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
 
+class ApplicationExtendedSubmissionRequest[A](
+    val submission: Submission, 
+    val questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress],
+    val applicationRequest: ApplicationRequest[A]
+) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
 
 trait ApprovalsActionBuilders extends JsonErrorResponse {
   self: BackendController =>
@@ -88,7 +93,18 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
       
       override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationSubmissionRequest[A]]] = {
         E.fromOptionF(submissionService.fetchLatest(applicationId), submissionNotFound(applicationId))
-        .map(extSubmission => new ApplicationSubmissionRequest[A](extSubmission, input))
+        .map(submission => new ApplicationSubmissionRequest[A](submission, input))
+        .value
+      }
+    }
+
+  private def extendedSubmissionRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationExtendedSubmissionRequest] =
+    new ActionRefiner[ApplicationRequest, ApplicationExtendedSubmissionRequest] {
+      def executionContext = ec
+      
+      override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationExtendedSubmissionRequest[A]]] = {
+        E.fromOptionF(submissionService.fetchLatestExtended(applicationId), submissionNotFound(applicationId))
+        .map(extSubmission => new ApplicationExtendedSubmissionRequest[A](extSubmission.submission, extSubmission.questionnaireProgress, input))
         .value
       }
     }
@@ -98,6 +114,15 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
       (
         applicationRequestRefiner(applicationId) andThen
         submissionRefiner(applicationId)
+      ).invokeBlock(request, block)
+    }  
+  }
+
+  def withApplicationAndExtendedSubmission(applicationId: ApplicationId)(block: ApplicationExtendedSubmissionRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
+    Action.async { implicit request =>
+      (
+        applicationRequestRefiner(applicationId) andThen
+        extendedSubmissionRefiner(applicationId)
       ).invokeBlock(request, block)
     }  
   }

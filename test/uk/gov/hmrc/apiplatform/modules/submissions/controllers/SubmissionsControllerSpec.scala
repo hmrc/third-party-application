@@ -71,9 +71,31 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "fetchLatest" should {
 
     "return ok response with submission when found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.withNotStartedProgresss)
+      SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission)
 
       val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe OK
+      contentAsJson(result).validate[Submission] match {
+        case JsSuccess(_, _) => succeed
+        case JsError(e) => fail(s"Not parsed as a response $e")
+      }
+    }
+
+    "return not found when not found" in new Setup {
+      SubmissionsServiceMock.FetchLatest.thenReturnNone
+
+      val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
+
+      status(result) shouldBe NOT_FOUND
+    }
+  }
+  "fetchLatestExtended" should {
+
+    "return ok response with submission when found" in new Setup {
+      SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.withNotStartedProgresss)
+
+      val result = underTest.fetchLatestExtended(applicationId)(FakeRequest(GET, "/"))
 
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
@@ -83,9 +105,9 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     }
 
     "return not found when not found" in new Setup {
-      SubmissionsServiceMock.FetchLatest.thenReturnNone
+      SubmissionsServiceMock.FetchLatestExtended.thenReturnNone
 
-      val result = underTest.fetchLatest(applicationId)(FakeRequest(GET, "/"))
+      val result = underTest.fetchLatestExtended(applicationId)(FakeRequest(GET, "/"))
 
       status(result) shouldBe NOT_FOUND
     }

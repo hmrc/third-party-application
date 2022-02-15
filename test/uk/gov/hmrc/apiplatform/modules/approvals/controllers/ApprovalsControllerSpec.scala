@@ -59,7 +59,8 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
       
       def hasNoSubmission = SubmissionsServiceMock.FetchLatest.thenReturnNone
-      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
+      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
+      def hasExtSubmission = SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
     }
 
     "requestApproval" should {

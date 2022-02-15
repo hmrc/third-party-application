@@ -33,7 +33,7 @@ trait StatusTestData {
       Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false))(submission)
     }
     def submitted: Submission = {
-      Submission.addStatusHistory(Submission.Status.Submitted(DateTimeUtils.now, "bob@example.com"))(submission)
+      Submission.submit(DateTimeUtils.now, "bob@example.com")(submission)
     }
   }
 }

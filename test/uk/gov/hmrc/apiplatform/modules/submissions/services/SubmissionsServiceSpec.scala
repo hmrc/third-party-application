@@ -88,7 +88,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
 
         val result = await(underTest.fetchLatest(applicationId))
 
-        result.value.submission shouldBe aSubmission
+        result.value shouldBe aSubmission
       }
 
       "fail when given an invalid application id" in new Setup {
