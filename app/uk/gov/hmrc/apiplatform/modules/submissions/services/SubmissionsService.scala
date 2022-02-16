@@ -81,7 +81,7 @@ class SubmissionsService @Inject()(
     submissionsDAO.fetchLatest(applicationId)
   }
   
-    def fetchLatestExtended(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
+  def fetchLatestExtended(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(fetchLatest(applicationId))
   }
 

@@ -46,6 +46,12 @@ trait JsonErrorResponse {
 
   def submissionNotFound(applicationId: ApplicationId) = 
     NotFound(asBody("SUBMISSION_NOT_FOUND", s"No submission found for application ${applicationId.value}"))
+
+  def applicationInIncorrectState(applicationId: ApplicationId, state: String) =
+    PreconditionFailed(asBody("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state #'${state}'"))
+  
+  def submissionInIncorrectState(applicationId: ApplicationId, state: String) =
+    PreconditionFailed(asBody("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is not in state #'$state'"))  
 }
 
 

@@ -17,12 +17,44 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
+
+
+trait QuestionnaireTestData {
+  import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
+
+  val testQuestionIdsOfInterest = QuestionnaireDAO.questionIdsOfInterest
+  val testGroups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
+
+  val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+  val questionnaireId = questionnaire.id
+  val question = questionnaire.questions.head.question
+  val questionId = question.id
+  val question2Id = questionnaire.questions.tail.head.question.id
+  val questionnaireAlt = QuestionnaireDAO.Questionnaires.ServiceManagementPractices.questionnaire
+  val questionnaireAltId = questionnaireAlt.id
+  val questionAltId = questionnaireAlt.questions.head.question.id
+  val optionalQuestion = QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question4
+  val optionalQuestionId = optionalQuestion.id
+
+  val allQuestionnaires = testGroups.flatMap(_.links)
+
+  val expectedAppName = "expectedAppName"
+
+  val answersToQuestions: Submission.AnswersToQuestions = 
+    Map(
+      QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
+      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
+      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
+    )  
+
+
+  def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
+}
 
 trait StatusTestDataHelper {
   implicit class StatusHistorySyntax(submission: Submission) {
@@ -80,62 +112,34 @@ trait ProgressTestDataHelper {
         ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notApplicableQuestionnaireProgress(i))).toList.toMap)
     }
 }
-
-trait QuestionnaireTestData extends QuestionBuilder {
-
-  val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
-  val questionnaireId = questionnaire.id
-  val question = questionnaire.questions.head.question
-  val questionId = question.id
-  val question2Id = questionnaire.questions.tail.head.question.id
-  val questionnaireAlt = QuestionnaireDAO.Questionnaires.ServiceManagementPractices.questionnaire
-  val questionnaireAltId = questionnaireAlt.id
-  val questionAltId = questionnaireAlt.questions.head.question.id
-  val optionalQuestion = QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question4
-  val optionalQuestionId = optionalQuestion.id
-
-  val groups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-  val allQuestionnaires = groups.flatMap(_.links)
-
-  def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
-}
-
 trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
 
   val submissionId = Submission.Id.random
   val applicationId = ApplicationId.random
 
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest)
+  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, DateTimeUtils.now, testGroups, testQuestionIdsOfInterest)
 
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)
-  val altSubmission = Submission.create("bob@example.com", altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), groups, QuestionnaireDAO.questionIdsOfInterest)
+  val altSubmission = Submission.create("bob@example.com", altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), testGroups, testQuestionIdsOfInterest)
 
   val completedSubmissionId = Submission.Id.random
   require(completedSubmissionId != submissionId)
-  val expectedAppName = "expectedAppName"
 
-  val answersToQuestions: Submission.AnswersToQuestions = 
-    Map(
-      QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
-      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
-      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
-    )  
-
-  val completedExtendedSubmission = 
-      aSubmission
+  val completelyAnswerExtendedSubmission = 
+      aSubmission.copy(id = completedSubmissionId)
       .hasCompletelyAnsweredWith(answersToQuestions)
       .withCompletedProgresss
 
-
   val now = DateTimeUtils.now
+
   val createdSubmission = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
   val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(answersToQuestions)
   val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
 
 
-  def buildCompletedSubmissionWithQuestions(): Submission = {
+  def buildSubmissionWithQuestions(): Submission = {
     val subId = Submission.Id.random
     val appId = ApplicationId.random
 
@@ -172,18 +176,10 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         )
     )
 
-    val instances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(Submission.Status.Submitted(DateTimeUtils.now, "user1"))))
-    
-    Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id), instances)
+    Submission.create("bob@example.com", subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id))
   }
 
-  def buildPartiallyAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = 
-    buildAnsweredSubmission(false)(submission)
-
-  def buildFullyAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission =
-    buildAnsweredSubmission(true)(submission)
-
-  def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = {
+  private def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission): Submission = {
 
     def passAnswer(question: Question): ActualAnswer = {
       question match {
@@ -197,8 +193,20 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     
     val answerQuestions = submission.allQuestions.toList.drop(if(fullyAnswered) 0 else 1)
     val answers = answerQuestions.map(q => (q.id -> passAnswer(q))).toMap
-    Submission.updateLatestAnswersTo(answers)(submission)
+
+    if(fullyAnswered) {
+      submission.hasCompletelyAnsweredWith(answers)
+    } else {
+      submission.answeringWith(answers)
+    }
   }
+
+  def buildPartiallyAnsweredSubmission(submission: Submission = buildSubmissionWithQuestions()): Submission = 
+    buildAnsweredSubmission(false)(submission)
+
+  def buildFullyAnsweredSubmission(submission: Submission = buildSubmissionWithQuestions()): Submission =
+    buildAnsweredSubmission(true)(submission)
+
 
   def allFirstQuestions(questionnaires: NonEmptyList[Questionnaire]): Map[QuestionnaireId, QuestionId] =
     questionnaires.map { qn =>
