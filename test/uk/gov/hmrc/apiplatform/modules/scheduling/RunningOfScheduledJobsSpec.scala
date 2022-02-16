@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.scheduling
+package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import akka.actor.{Cancellable, Scheduler}
 import org.scalatest.concurrent.Eventually
@@ -26,12 +26,19 @@ import scala.concurrent.{ExecutionContext, Future}
 import org.mockito.scalatest.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerTest
 import java.util.concurrent.{TimeUnit, CountDownLatch}
 import org.scalatest.time.{Span, Minute}
+import org.scalatestplus.play.guice.GuiceOneAppPerTest
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 
-class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with NoMetricsGuiceOneAppPerTest {
-
+class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest {
+  final override def fakeApplication(): Application =
+    GuiceApplicationBuilder()
+      .configure("metrics.jvm" -> false)
+      .disable(classOf[SchedulerModule])
+      .build()
+  
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = 5.seconds)
 

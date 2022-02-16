@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.scheduling
+package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import java.util.concurrent.Semaphore
 import scala.concurrent.{ExecutionContext, Future}

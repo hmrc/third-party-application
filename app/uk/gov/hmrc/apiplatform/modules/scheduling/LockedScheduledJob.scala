@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.scheduling
+package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import org.joda.time.Duration
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}

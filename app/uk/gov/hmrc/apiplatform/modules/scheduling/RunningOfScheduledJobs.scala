@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.scheduling
+package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import akka.actor.{Cancellable, Scheduler}
 import org.apache.commons.lang3.time.StopWatch
