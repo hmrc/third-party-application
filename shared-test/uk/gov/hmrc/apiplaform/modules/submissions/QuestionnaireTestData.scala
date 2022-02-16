@@ -247,4 +247,44 @@ trait QuestionnaireTestData {
     termsAndConditionsUrlId       = CustomersAuthorisingYourSoftware.question5.id,
     organisationUrlId             = OrganisationDetails.question1.id,
   )
+
+  val questionnaire = DevelopmentPractices.questionnaire
+  val questionnaireId = questionnaire.id
+  val question = questionnaire.questions.head.question
+  val questionId = question.id
+  val question2Id = questionnaire.questions.tail.head.question.id
+  val questionnaireAlt = OrganisationDetails.questionnaire
+  val questionnaireAltId = questionnaireAlt.id
+  val questionAltId = questionnaireAlt.questions.head.question.id
+  val optionalQuestion = CustomersAuthorisingYourSoftware.question4
+  val optionalQuestionId = optionalQuestion.id
+
+  val allQuestionnaires = testGroups.flatMap(_.links)
+
+  val expectedAppName = "expectedAppName"
+
+  val answersToQuestions: Submission.AnswersToQuestions = 
+    Map(
+      testQuestionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
+      testQuestionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
+      testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
+    )  
+
+  val sampleAnswersToQuestions = Map(
+    (DevelopmentPractices.question1.id -> SingleChoiceAnswer("Yes")),
+    (DevelopmentPractices.question2.id -> SingleChoiceAnswer("No")),
+    (DevelopmentPractices.question3.id -> SingleChoiceAnswer("No")),
+    (OrganisationDetails.question1.id -> TextAnswer("https://example.com")),
+    (OrganisationDetails.questionRI1.id -> TextAnswer("Bob Cratchett")),
+    (OrganisationDetails.questionRI2.id -> TextAnswer("bob@example.com")),
+    (OrganisationDetails.question1.id -> TextAnswer("https://example.com")),
+    (CustomersAuthorisingYourSoftware.question1.id -> AcknowledgedAnswer),
+    (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("name of software")),
+    (CustomersAuthorisingYourSoftware.question3.id -> MultipleChoiceAnswer(Set("In the UK"))),
+    (CustomersAuthorisingYourSoftware.question4.id -> TextAnswer("https://example.com/privacy-policy")),
+    (CustomersAuthorisingYourSoftware.question5.id -> NoAnswer)
+  )
+
+  def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
+
 }

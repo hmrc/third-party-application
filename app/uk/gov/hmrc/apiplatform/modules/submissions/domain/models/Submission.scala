@@ -213,7 +213,7 @@ object Submission {
     statusHistory: NonEmptyList[Submission.Status]
   ) {
     lazy val status: Status = statusHistory.head
-    
+
     lazy val isOpenToAnswers = status.isOpenToAnswers
     lazy val isAnsweredCompletely = status.isAnsweredCompletely
 

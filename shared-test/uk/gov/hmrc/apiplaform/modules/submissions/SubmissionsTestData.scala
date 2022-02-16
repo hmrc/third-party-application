@@ -22,34 +22,8 @@ import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
-
-
-trait QuestionnaireTestData2 extends QuestionnaireTestData {
-  val questionnaire = DevelopmentPractices.questionnaire
-  val questionnaireId = questionnaire.id
-  val question = questionnaire.questions.head.question
-  val questionId = question.id
-  val question2Id = questionnaire.questions.tail.head.question.id
-  val questionnaireAlt = OrganisationDetails.questionnaire
-  val questionnaireAltId = questionnaireAlt.id
-  val questionAltId = questionnaireAlt.questions.head.question.id
-  val optionalQuestion = CustomersAuthorisingYourSoftware.question4
-  val optionalQuestionId = optionalQuestion.id
-
-  val allQuestionnaires = testGroups.flatMap(_.links)
-
-  val expectedAppName = "expectedAppName"
-
-  val answersToQuestions: Submission.AnswersToQuestions = 
-    Map(
-      testQuestionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
-      testQuestionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
-      testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
-    )  
-
-
-  def firstQuestion(questionnaire: Questionnaire) = questionnaire.questions.head.question.id
-}
+import scala.util.Random
+import org.joda.time.DateTime
 
 trait StatusTestDataHelper {
   implicit class StatusHistorySyntax(submission: Submission) {
@@ -107,7 +81,7 @@ trait ProgressTestDataHelper {
         ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notApplicableQuestionnaireProgress(i))).toList.toMap)
     }
 }
-trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData2 with ProgressTestDataHelper with StatusTestDataHelper {
+trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
 
   val submissionId = Submission.Id.random
   val applicationId = ApplicationId.random
@@ -214,4 +188,93 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData2 wi
   val simpleContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "No")
   val soldContext = Map(Keys.IN_HOUSE_SOFTWARE -> "No", Keys.VAT_OR_ITSA -> "No")
   val vatContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "Yes")
+}
+
+trait AnsweringQuestionsHelper {
+    def answerForQuestion(desiredMark: Mark)(question: Question): Map[QuestionId, Option[ActualAnswer]] = {
+      val answers: List[Option[ActualAnswer]] = question match {
+
+      case YesNoQuestion(id, _, _, yesMarking, noMarking, absence) =>
+        (if(yesMarking == desiredMark) Some(SingleChoiceAnswer("Yes")) else None) ::
+        (if(noMarking == desiredMark) Some(SingleChoiceAnswer("No")) else None) ::
+        (absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None)) ::
+        List.empty[Option[ActualAnswer]]
+
+      case ChooseOneOfQuestion(id, _, _, marking, absence) => {
+        marking.map {
+          case (pa, mark) => Some(SingleChoiceAnswer(pa.value))
+          case _ => None
+        }
+        .toList ++
+        List(absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None))
+      }
+
+      case TextQuestion(id, _, _, absence) => 
+        if(desiredMark == Pass)
+          Some(TextAnswer(Random.nextString(Random.nextInt(25)+1))) ::
+          absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None) ::
+          List.empty[Option[ActualAnswer]]
+        else
+          List(Some(NoAnswer))  // Cos we can't do anything else
+
+      case AcknowledgementOnly(id, _, _) => List(Some(NoAnswer))
+
+      case MultiChoiceQuestion(id, _, _, marking, absence) => 
+        marking.map {
+          case (pa, mark) if(mark == desiredMark) => Some(MultipleChoiceAnswer(Set(pa.value)))
+          case _ => None
+        }
+        .toList ++
+        List(absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None))
+    }
+
+    Map(question.id -> Random.shuffle(
+      answers.collect {
+        case Some(a) => a
+      }
+    ).headOption)
+  }
+
+  def answersForQuestionnaire(desiredMark: Mark)(questionnaire: Questionnaire): Map[QuestionId, ActualAnswer] = {
+    questionnaire.questions
+    .toList
+    .map(qi => qi.question)
+    .flatMap(x => answerForQuestion(desiredMark)(x))
+    .collect {
+      case (id, Some(a)) => id -> a
+    }
+    .toMap
+  }
+
+  def answersForGroups(desiredMark: Mark)(groups: NonEmptyList[GroupOfQuestionnaires]): Map[QuestionId, ActualAnswer] = {
+    groups
+    .flatMap(g => g.links)
+    .toList
+    .flatMap(qn => answersForQuestionnaire(desiredMark)(qn))
+    .toMap
+  }
+}
+trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuestionsHelper {
+  val markedAnswers: Map[QuestionId, Mark] = Map(
+    (DevelopmentPractices.question1.id -> Pass),
+    (DevelopmentPractices.question2.id -> Fail),
+    (DevelopmentPractices.question3.id -> Warn),
+    (OrganisationDetails.question1.id -> Pass),
+    (OrganisationDetails.questionRI1.id -> Pass),
+    (OrganisationDetails.questionRI2.id -> Pass),
+    (CustomersAuthorisingYourSoftware.question3.id -> Pass),
+    (CustomersAuthorisingYourSoftware.question4.id -> Pass),
+    (CustomersAuthorisingYourSoftware.question5.id -> Fail)
+  )
+
+  val markedSubmission = MarkedSubmission(aSubmission, aSubmission.withCompletedProgresss.questionnaireProgress, markedAnswers)
+
+  def markAsPass(now: DateTime = DateTimeUtils.now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+    val answers = answersForGroups(Pass)(submission.groups)
+    val marks = answers.map { case (q,a) => q -> Pass }
+
+    val progress = aSubmission.withCompletedProgresss.questionnaireProgress
+
+    MarkedSubmission(submission.hasCompletelyAnsweredWith(answers), progress, marks)
+  }
 }
