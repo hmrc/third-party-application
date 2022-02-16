@@ -163,7 +163,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
     "return an OK response" in new Setup {
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
       
-      SubmissionsServiceMock.RecordAnswers.thenReturn( (answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress) )
+      SubmissionsServiceMock.RecordAnswers.thenReturn( ExtendedSubmission(answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress) )
 
       val answerJsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
 

@@ -187,7 +187,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
         
         val out = result.right.value
-        out._1.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
+        out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -199,7 +199,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
         
         val out = result.right.value
-        out._1.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
+        out.submission .latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

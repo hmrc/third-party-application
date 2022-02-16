@@ -49,7 +49,7 @@
       }
     }
 
-    def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: List[String], context: AskWhen.Context): Either[String, (Submission, Map[QuestionnaireId, QuestionnaireProgress])] = {
+    def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: List[String], context: AskWhen.Context): Either[String, ExtendedSubmission] = {
       for {
         question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
         validatedAnswers                <- ValidateAnswers.validate(question, rawAnswers)
@@ -64,7 +64,7 @@
         questionsThatShouldBeAsked       = updatedQuestionnaireProgress.flatMap(_._2.questionsToAsk).toList
         finalAnswersToQuestions          = updatedAnswersToQuestions.filter { case (qid, _) => questionsThatShouldBeAsked.contains(qid) }
         updatedSubmission                = updateSubmissionState(finalAnswersToQuestions, areQuestionsAnswered, submission)
-      } yield (updatedSubmission, updatedQuestionnaireProgress)
+      } yield ExtendedSubmission(updatedSubmission, updatedQuestionnaireProgress)
     }
 
     def updateSubmissionState(answers: Submission.AnswersToQuestions, areQuestionsAnswered: Boolean, submission: Submission): Submission = {

@@ -101,15 +101,14 @@ class SubmissionsService @Inject()(
     .value
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, (Submission, Map[QuestionnaireId, QuestionnaireProgress])]] = {
+  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission       <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
         context                 <- contextService.deriveContext(initialSubmission.applicationId)
-        data                    <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
-        (submission, progress)   = data
-        savedSubmission         <- liftF(submissionsDAO.update(submission))
-      } yield (savedSubmission, progress)
+        extSubmission           <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
+        savedSubmission         <- liftF(submissionsDAO.update(extSubmission.submission))
+      } yield extSubmission.copy(submission = savedSubmission)
     )
     .value
   }

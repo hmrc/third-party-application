@@ -71,8 +71,8 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object RecordAnswers {
-      def thenReturn( data: (Submission, Map[QuestionnaireId, QuestionnaireProgress]) ) =
-        when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Right(data)))
+      def thenReturn( extSubmission: ExtendedSubmission ) =
+        when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) = 
         when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Left(error)))
