@@ -92,11 +92,10 @@ class SubmissionsService @Inject()(
   def fetchLatestMarkedSubmission(applicationId: ApplicationId): Future[Either[String, MarkedSubmission]] = {
     (
       for {
-        ext           <- fromOptionF(fetchLatestExtended(applicationId), "No such application submission")
-        submission     = ext.submission
+        submission    <- fromOptionF(fetchLatest(applicationId), "No such application submission")
         _             <- cond(submission.status.canBeMarked, (), "Submission cannot be marked yet")
         markedAnswers =  MarkAnswer.markSubmission(submission)
-      } yield MarkedSubmission(ext.submission, ext.questionnaireProgress, markedAnswers)
+      } yield MarkedSubmission(submission, markedAnswers)
     )
     .value
   }

@@ -138,7 +138,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
   "fetchLatestMarkedSubmission" should {
     "return ok response with submission when found" in new Setup {
-      val markedSubmission = MarkedSubmission(aSubmission, Map.empty, Map.empty)
+      val markedSubmission = MarkedSubmission(aSubmission, Map.empty)
       SubmissionsServiceMock.FetchLatestMarkedSubmission.thenReturn(markedSubmission)
 
       val result = underTest.fetchLatestMarkedSubmission(applicationId)(FakeRequest(GET, "/"))

@@ -267,14 +267,12 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
     (CustomersAuthorisingYourSoftware.question5.id -> Fail)
   )
 
-  val markedSubmission = MarkedSubmission(aSubmission, aSubmission.withCompletedProgresss.questionnaireProgress, markedAnswers)
+  val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
   def markAsPass(now: DateTime = DateTimeUtils.now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks = answers.map { case (q,a) => q -> Pass }
 
-    val progress = aSubmission.withCompletedProgresss.questionnaireProgress
-
-    MarkedSubmission(submission.hasCompletelyAnsweredWith(answers), progress, marks)
+    MarkedSubmission(submission.hasCompletelyAnsweredWith(answers), marks)
   }
 }

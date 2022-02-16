@@ -260,7 +260,6 @@ case class ExtendedSubmission(
 
 case class MarkedSubmission(
   submission: Submission,
-  questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress],
   markedAnswers: Map[QuestionId, Mark]
 ) {
   lazy val isFail = markedAnswers.values.toList.contains(Fail) | markedAnswers.values.filter(_ == Warn).size >= 4
