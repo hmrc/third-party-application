@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.QuestionBuilder
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 import org.scalatest.Inside
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.apiplatform.modules.submissions.{SubmissionsTestData, QuestionBuilder}
 
 trait AsIdsHelpers {
  
@@ -84,13 +83,13 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(aSubmission, questionAltId, YesAnswer, blankContext)
+        val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer, blankContext)
 
         val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
 
         inside(s2.right.value) {
           case ExtendedSubmission(submission, _) =>
-            submission.latestInstance.answersToQuestions.get(questionAltId).value shouldBe SingleChoiceAnswer("Yes")
+            submission.latestInstance.answersToQuestions.get(question2Id).value shouldBe SingleChoiceAnswer("Yes")
             submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("No")
         }
       }

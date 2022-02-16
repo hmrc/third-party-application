@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.data.NonEmptyList
 import scala.collection.immutable.ListMap
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 
 class MarkAnswerSpec extends HmrcSpec {
 

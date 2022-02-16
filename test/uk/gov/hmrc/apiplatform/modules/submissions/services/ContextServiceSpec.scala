@@ -18,8 +18,8 @@ package uk.gov.hmrc.apiplatform.modules.submissions.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import org.scalatest.Inside
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-import  scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId

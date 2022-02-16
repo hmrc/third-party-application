@@ -26,7 +26,7 @@ import play.api.libs.json.JsSuccess
 import play.api.libs.json.Json
 import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.JsError
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.MarkedSubmission

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.util
+package uk.gov.hmrc.apiplatform.modules.submissions
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -24,21 +24,16 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import cats.data.NonEmptyList
 
 
-trait QuestionnaireTestData {
-  import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-
-  val testQuestionIdsOfInterest = QuestionnaireDAO.questionIdsOfInterest
-  val testGroups = QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings
-
-  val questionnaire = QuestionnaireDAO.Questionnaires.DevelopmentPractices.questionnaire
+trait QuestionnaireTestData2 extends QuestionnaireTestData {
+  val questionnaire = DevelopmentPractices.questionnaire
   val questionnaireId = questionnaire.id
   val question = questionnaire.questions.head.question
   val questionId = question.id
   val question2Id = questionnaire.questions.tail.head.question.id
-  val questionnaireAlt = QuestionnaireDAO.Questionnaires.ServiceManagementPractices.questionnaire
+  val questionnaireAlt = OrganisationDetails.questionnaire
   val questionnaireAltId = questionnaireAlt.id
   val questionAltId = questionnaireAlt.questions.head.question.id
-  val optionalQuestion = QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question4
+  val optionalQuestion = CustomersAuthorisingYourSoftware.question4
   val optionalQuestionId = optionalQuestion.id
 
   val allQuestionnaires = testGroups.flatMap(_.links)
@@ -47,9 +42,9 @@ trait QuestionnaireTestData {
 
   val answersToQuestions: Submission.AnswersToQuestions = 
     Map(
-      QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
-      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
-      QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
+      testQuestionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
+      testQuestionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
+      testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
     )  
 
 
@@ -112,16 +107,18 @@ trait ProgressTestDataHelper {
         ExtendedSubmission(submission, allQuestionnaireIds.map(i => (i -> notApplicableQuestionnaireProgress(i))).toList.toMap)
     }
 }
-trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData with ProgressTestDataHelper with StatusTestDataHelper {
+trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData2 with ProgressTestDataHelper with StatusTestDataHelper {
 
   val submissionId = Submission.Id.random
   val applicationId = ApplicationId.random
+  
+  val now = DateTimeUtils.now
 
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, DateTimeUtils.now, testGroups, testQuestionIdsOfInterest)
+  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest)
 
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)
-  val altSubmission = Submission.create("bob@example.com", altSubmissionId, applicationId, DateTimeUtils.now.plusMillis(100), testGroups, testQuestionIdsOfInterest)
+  val altSubmission = Submission.create("bob@example.com", altSubmissionId, applicationId, now.plusSeconds(100), testGroups, testQuestionIdsOfInterest)
 
   val completedSubmissionId = Submission.Id.random
   require(completedSubmissionId != submissionId)
@@ -131,7 +128,6 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
       .hasCompletelyAnsweredWith(answersToQuestions)
       .withCompletedProgresss
 
-  val now = DateTimeUtils.now
 
   val createdSubmission = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
