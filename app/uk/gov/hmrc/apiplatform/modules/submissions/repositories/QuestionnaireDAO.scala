@@ -50,7 +50,8 @@ object QuestionnaireDAO {
     termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
     organisationUrlId             = Questionnaires.OrganisationDetails.question1.id,
     responsibleIndividualNameId   = Questionnaires.OrganisationDetails.questionRI1.id,
-    responsibleIndividualEmailId  = Questionnaires.OrganisationDetails.questionRI2.id
+    responsibleIndividualEmailId  = Questionnaires.OrganisationDetails.questionRI2.id,
+    identifyYourOrganisationId    = Questionnaires.OrganisationDetails.question2.id
   )
 
   object Questionnaires {

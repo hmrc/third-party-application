@@ -85,6 +85,7 @@ trait SubmissionsTestData extends QuestionBuilder {
     val questionWeb = textQuestion(7)
     val question2 = acknowledgementOnly(8)
     val question3 = multichoiceQuestion(9, "a", "b", "c")
+    val questionIdentifyOrg = chooseOneOfQuestion(10, "a", "b", "c")
     
     val questionnaire1 = Questionnaire(
         id = QuestionnaireId.random,
@@ -111,7 +112,7 @@ trait SubmissionsTestData extends QuestionBuilder {
 
     val instances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(Submission.Status.Submitted(DateTimeUtils.now, "user1"))))
     
-    Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id), instances)
+    Submission(subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id), instances)
   }
 
   def buildAnsweredSubmission(submission: Submission = buildCompletedSubmissionWithQuestions()): Submission = {
