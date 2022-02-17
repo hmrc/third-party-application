@@ -102,12 +102,15 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
       .hasCompletelyAnsweredWith(answersToQuestions)
       .withCompletedProgresss
 
+  val gatekeeperUserName = "gatekeeperUserName"
+  val reasons = "some reasons"
 
   val createdSubmission = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
   val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(answersToQuestions)
   val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
-
+  val declinedSubmission = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
+  val grantedSubmission = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
     val subId = Submission.Id.random
