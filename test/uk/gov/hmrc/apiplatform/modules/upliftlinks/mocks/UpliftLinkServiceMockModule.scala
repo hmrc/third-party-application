@@ -23,6 +23,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import cats.data.OptionT
+import scala.concurrent.Future
+import cats.implicits._
+import scala.concurrent.ExecutionContext.Implicits.global
 
 trait UpliftLinkServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseUpliftLinksServiceMock {
@@ -31,6 +35,10 @@ trait UpliftLinkServiceMockModule extends MockitoSugar with ArgumentMatchersSuga
     object CreateUpliftLink {
       def thenReturn(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId) = 
         when(aMock.createUpliftLink(*[ApplicationId], *[ApplicationId])).thenReturn(successful(UpliftLink(sandboxApplicationId, productionApplicationId)))
+    }
+    object GetSandboxAppForProductionAppId {
+      def thenReturn(appId: ApplicationId) = when(aMock.getSandboxAppForProductionAppId(*[ApplicationId])).thenReturn(OptionT.pure[Future](appId))
+      def thenReturnNothing = when(aMock.getSandboxAppForProductionAppId(*[ApplicationId])).thenReturn(OptionT.fromOption(None))
     }
   }
   

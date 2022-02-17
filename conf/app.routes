@@ -63,3 +63,5 @@ GET           /developer/:userId/applications                        uk.gov.hmrc
 
 POST          /admin/application/restore-aws-data                    uk.gov.hmrc.thirdpartyapplication.controllers.AwsRestoreController.restoreAwsData()
 
+GET           /application/:id/linked-subordinate-id                 uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers.UpliftLinksController.getSandboxAppIdForProductionApp(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+

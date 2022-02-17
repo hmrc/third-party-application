@@ -122,6 +122,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     val questionWeb = textQuestion(7)
     val question2 = acknowledgementOnly(8)
     val question3 = multichoiceQuestion(9, "a", "b", "c")
+    val questionIdentifyOrg = chooseOneOfQuestion(10, "a", "b", "c")
     
     val questionnaire1 = Questionnaire(
         id = QuestionnaireId.random,
@@ -146,7 +147,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         )
     )
 
-    Submission.create("bob@example.com", subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id))
+    Submission.create("bob@example.com", subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionTerms.id, questionWeb.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id))
   }
 
   private def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission): Submission = {
