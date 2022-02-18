@@ -71,15 +71,7 @@
       import Submission._
 
       val addAnsweringStatus = addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, areQuestionsAnswered))
-      val updateAnsweringStatus = changeStatusHistory(_ => Submission.Status.Answering(timestamp = DateTimeUtils.now, areQuestionsAnswered))
-
-      val updateOrAddAnswering = if(submission.status.isCreated) {
-        addAnsweringStatus
-      } else {
-        updateAnsweringStatus
-      }
-
-      (updateOrAddAnswering andThen updateLatestAnswersTo(answers))(submission)
+      (addAnsweringStatus andThen updateLatestAnswersTo(answers))(submission)
     }
 
     def deriveProgressOfQuestionnaire(questionnaire: Questionnaire, context: AskWhen.Context, answersToQuestions: AnswersToQuestions): QuestionnaireProgress = {

@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
@@ -43,11 +42,8 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    val application = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
 
-    val gatekeeperUserName = "gatekeeperUserName"
-    val reasons = "reasons"
     val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
 
 
@@ -82,7 +78,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.decline(anApplicationData(appId, testingState()), answeredSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
     }

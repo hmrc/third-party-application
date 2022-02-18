@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
@@ -45,10 +44,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val applicationPendingGKApproval = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
-    // val applicationPendingRequesterVerification = anApplicationData(appId, pendingRequesterVerificationState("bob"))
-    val gatekeeperUserName = "name"
+    val applicationPendingGKApproval = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
     val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock)
   }
 
@@ -83,7 +79,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grant(anApplicationData(appId, testingState()), answeredSubmission, gatekeeperUserName))
+      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }

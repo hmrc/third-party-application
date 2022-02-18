@@ -35,7 +35,6 @@ object MarkAnswer {
       .map(PossibleAnswer)
       .map(question.marking.get(_).get)
     )
-    
   }
 
   protected def markQuestion(question: Question, answer: ActualAnswer): Mark = {
@@ -73,18 +72,3 @@ object MarkAnswer {
     markInstanceInternal(submission, submission.latestInstance)
   }
 }
-
-/*
-  submission => (questions, instance) => (questions, answersToQuestions)
-
-  id -> answer =>
-    id -> option(question), answer =>
-      allowed noanswer?
-      id -> option(question), option(mark) =>
-        id -> mark
-
-  Fails
-    No question
-    No matching answer
-    No mark
-*/
