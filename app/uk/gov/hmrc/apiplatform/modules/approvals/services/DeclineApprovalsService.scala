@@ -30,14 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 
@@ -48,7 +45,6 @@ object DeclineApprovalsService {
 
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
-  case object RejectedDueToIncompleteSubmission extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
 }
 
@@ -63,7 +59,7 @@ class DeclineApprovalsService @Inject()(
 
   import DeclineApprovalsService._
 
-  def decline(originalApp: ApplicationData, extSubmission: ExtendedSubmission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -81,14 +77,13 @@ class DeclineApprovalsService @Inject()(
       for {
         _                     <- ET.liftF(logStart(appId))
         _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
-        _                     <- ET.cond(extSubmission.isCompleted, (), RejectedDueToIncompleteSubmission)
-        _                     <- ET.cond(extSubmission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
+        _                     <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
         updatedApp            = declineApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = updateSubmissionToDeclinedState(extSubmission.submission, DateTimeUtils.now, gatekeeperUserName, reasons)
+        updatedSubmission     = Submission.decline(DateTimeUtils.now, gatekeeperUserName, reasons)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, reasons))
         _                     = logDone(savedApp, savedSubmission)
@@ -122,9 +117,5 @@ class DeclineApprovalsService @Inject()(
       case e: Failure[_] =>
         rollback(snapshotApp)
     }
-  }
-  
-  private def updateSubmissionToDeclinedState(submission: Submission, timestamp: DateTime, name: String, reasons: String): Submission = {
-    SubmissionStatusChanges.decline(timestamp, name, reasons)(submission)
   }
 }

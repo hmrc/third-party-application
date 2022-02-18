@@ -23,8 +23,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireId
 
 import scala.concurrent.Future.successful
 import cats.data.NonEmptyList
+import uk.gov.hmrc.apiplatform.modules.submissions.QuestionnaireTestData
 
-trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
+trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar with QuestionnaireTestData {
   protected trait BaseQuestionnaireDAOMock {
     def aMock: QuestionnaireDAO
 
@@ -35,9 +36,9 @@ trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar
 
     object ActiveQuestionnaireGroupings {
       def thenUseStandardOnes() = 
-        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings))
+        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(testGroups))
       def thenUseChangedOnes() = 
-        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(NonEmptyList.fromListUnsafe(QuestionnaireDAO.Questionnaires.activeQuestionnaireGroupings.tail)))
+        when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(NonEmptyList.fromListUnsafe(testGroups.tail)))
     }
   }
 

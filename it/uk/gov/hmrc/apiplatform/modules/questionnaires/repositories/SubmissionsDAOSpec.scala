@@ -11,7 +11,7 @@ import akka.stream.Materializer
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.MongoConnector
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import scala.concurrent.ExecutionContext
 import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
@@ -85,7 +85,7 @@ class SubmissionsDAOSpec
       await(dao.save(aSubmission))
       val oldAnswers = aSubmission.latestInstance.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
-      val updatedSubmission = aSubmission.setLatestAnswers(newAnswers)
+      val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
     }

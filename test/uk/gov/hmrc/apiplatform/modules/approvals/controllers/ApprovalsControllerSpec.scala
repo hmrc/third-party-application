@@ -33,8 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
-
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
     implicit val mat = NoMaterializer
     val emailAddress = "test@example.com"
@@ -59,7 +58,8 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
       
       def hasNoSubmission = SubmissionsServiceMock.FetchLatest.thenReturnNone
-      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(completedExtendedSubmission)
+      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
+      def hasExtSubmission = SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
     }
 
     "requestApproval" should {
@@ -108,7 +108,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
         "return 'precondition failed' error response if submission is incomplete" in new Setup {
             hasApp
             hasSubmission
-            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncompleteSubmissionErrorFor(appId, emailAddress)
+            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncorrectSubmissionErrorFor(appId, emailAddress)
             val result = underTest.requestApproval(appId)(request)
 
             status(result) shouldBe PRECONDITION_FAILED

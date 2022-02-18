@@ -35,11 +35,9 @@ object MarkAnswer {
       .map(PossibleAnswer)
       .map(question.marking.get(_).get)
     )
-    
   }
 
-  protected def markAnswer(question: Question, answer: ActualAnswer): Mark = {
-
+  protected def markQuestion(question: Question, answer: ActualAnswer): Mark = {
     (question, answer) match {
       case (_, NoAnswer) => question.absenceMark.get
       case (q: TextQuestion, a: TextAnswer) => Pass
@@ -50,15 +48,27 @@ object MarkAnswer {
     }
   }
 
-  def markSubmission(extSubmission: ExtendedSubmission): Map[QuestionId, Mark] = {
-    require(extSubmission.isCompleted)
-    // All answers must be valid to have got here
-  
+  private def markInstanceInternal(submission: Submission, instance: Submission.Instance): Map[QuestionId,Mark] = {
     // All questions should/must exist for these questionIds.
-    def unsafeGetQuestion(id: QuestionId): Question = extSubmission.submission.findQuestion(id).get
+    def unsafeGetQuestion(id: QuestionId): Question = submission.findQuestion(id).get
 
-    extSubmission.submission.latestInstance.answersToQuestions.map {
-      case (id: QuestionId, answer: ActualAnswer) => (id -> markAnswer(unsafeGetQuestion(id), answer))
+    instance.answersToQuestions.map {
+        case (id: QuestionId, answer: ActualAnswer) => (id -> markQuestion(unsafeGetQuestion(id), answer))
     }
+  }
+
+  def markInstance(submission: Submission, index: Int): Map[QuestionId, Mark] = {
+    // All answers must be valid to have got here
+    require(submission.status.canBeMarked)
+
+    submission.instances.find(_.index == index)
+    .fold(Map.empty[QuestionId, Mark])(i => markInstanceInternal(submission, i))
+  }
+
+  def markSubmission(submission: Submission): Map[QuestionId, Mark] = {
+    // All answers must be valid to have got here
+    require(submission.status.canBeMarked)
+  
+    markInstanceInternal(submission, submission.latestInstance)
   }
 }

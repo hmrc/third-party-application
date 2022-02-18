@@ -17,31 +17,41 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import cats.data.NonEmptyList
 
 class QuestionsAndAnswersToMapSpec extends HmrcSpec {
   trait Setup extends SubmissionsTestData {
+
     val answersToQuestionsWithMissingIds: Map[QuestionId, ActualAnswer] = Map(
       (QuestionId.random -> TextAnswer("bad question")),
-      (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
-      (QuestionnaireDAO.Questionnaires.CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+      (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
+      (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
     )
-    val submissionWithMissingQuestionIds = aSubmission.copy(instances = NonEmptyList.of(Submission.Instance(0, answersToQuestionsWithMissingIds, NonEmptyList.of(initialStatus))))
+    val submissionWithMissingQuestionIds = Submission.updateLatestAnswersTo(answersToQuestionsWithMissingIds)(aSubmission)
   }
 
   "QuestionsAndAnswersToMap" should {
     "return a map of questions to answers" in new Setup {
-      val answeredSubmission = buildAnsweredSubmission()
-      val map = QuestionsAndAnswersToMap(answeredSubmission)
-      map.size shouldBe answeredSubmission.latestInstance.answersToQuestions.size
+      val answers: Map[QuestionId, ActualAnswer] = Map(
+        (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
+        (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+      )
+
+      val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))
+      map.size shouldBe 2
+      map should contain ("CustomersAuthorisingYourSoftware" -> "question 1")
+      map should contain ("ConfirmTheNameOfYourSoftware" -> "question 2")
     }
     
     "return a map of questions to answers omitting missing question ids" in new Setup {
-      val map = QuestionsAndAnswersToMap(submissionWithMissingQuestionIds)
-
+      val answers: Map[QuestionId, ActualAnswer] = Map(
+        (QuestionId.random -> TextAnswer("bad question")),
+        (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
+        (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
+      )
+        
+      val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))
       map.size shouldBe 2
       map should contain ("CustomersAuthorisingYourSoftware" -> "question 1")
       map should contain ("ConfirmTheNameOfYourSoftware" -> "question 2")

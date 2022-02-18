@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.config
 import com.google.inject.AbstractModule
 import javax.inject.{Inject, Singleton}
 import play.api.{Application, LoggerLike}
-import uk.gov.hmrc.thirdpartyapplication.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
+import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
 import play.api.inject.ApplicationLifecycle
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger

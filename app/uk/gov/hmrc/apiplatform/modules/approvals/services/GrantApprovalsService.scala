@@ -30,14 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditService
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import org.joda.time.DateTime
 import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionStatusChanges
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -50,7 +47,6 @@ object GrantApprovalsService {
 
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
-  case object RejectedDueToIncompleteSubmission extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
 }
 
@@ -66,7 +62,7 @@ class GrantApprovalsService @Inject()(
 
   import GrantApprovalsService._
 
-  def grant(originalApp: ApplicationData, extSubmission: ExtendedSubmission, gatekeeperUserName: String)(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
+  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String)(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -84,15 +80,14 @@ class GrantApprovalsService @Inject()(
       for {
         _                     <- ET.liftF(logStart(appId))
         _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
-        _                     <- ET.cond(extSubmission.isCompleted, (), RejectedDueToIncompleteSubmission)
-        _                     <- ET.cond(extSubmission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
+        _                     <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
         updatedApp            = grantApp(originalApp)
         _ = println("VC:" +updatedApp.state.verificationCode)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = updateSubmissionToGrantedState(extSubmission.submission, DateTimeUtils.now, gatekeeperUserName)
+        updatedSubmission     = Submission.grant(DateTimeUtils.now, gatekeeperUserName)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName))
         _                     <- ET.liftF(sendEmails(savedApp))
@@ -125,10 +120,6 @@ class GrantApprovalsService @Inject()(
       case e: Failure[_] =>
         rollback(snapshotApp)
     }
-  }
-  
-  private def updateSubmissionToGrantedState(submission: Submission, timestamp: DateTime, name: String): Submission = {
-    SubmissionStatusChanges.grant(timestamp, name)(submission)
   }
 
   private def sendEmails(app: ApplicationData)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {

@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
 import scala.collection.immutable.ListMap
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 
 class MarkAnswerSpec extends HmrcSpec {
 
@@ -46,8 +43,8 @@ class MarkAnswerSpec extends HmrcSpec {
         questions = NonEmptyList.fromListUnsafe(questions.map((q:Question) => QuestionItem(q)).toList)
       )
 
-      val groups = GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire))
-      Submission(submissionId, applicationId, DateTime.now, NonEmptyList.of(groups), QuestionnaireDAO.questionIdsOfInterest, initialInstances)
+      val oneGroups = NonEmptyList.of(GroupOfQuestionnaires("Group", NonEmptyList.of(questionnaire)))
+      aSubmission.copy(groups = oneGroups)
     }
 
     def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
@@ -110,119 +107,87 @@ class MarkAnswerSpec extends HmrcSpec {
     require(List(YES,NO).contains(answer1))
     require(List(YES,NO).contains(answer2))
 
-    YesNoQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> answer1, question2Id -> answer2))
+    YesNoQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> answer1, question2Id -> answer2))
   }
 
   def withSingleOptionalQuestionNoAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> NoAnswer))
-  }
-  def withSingleOptionalQuestionAndAnswer(): Submission = {
-    OptionalQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> TextAnswer("blah blah")))
-  }
-  def withAcknowledgementOnlyAnswers(): Submission = {
-    AcknowledgementOnlyQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> AcknowledgedAnswer))
-  }
-  def withMultiChoiceAnswers(answers: String*): Submission = {
-    MultiChoiceQuestionnaireData.submission.setLatestAnswers(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> NoAnswer))
   }
 
-  def extend(submission: Submission): ExtendedSubmission = 
-    ExtendedSubmission(submission, Map.empty[QuestionnaireId, QuestionnaireProgress])
+  def withSingleOptionalQuestionAndAnswer(): Submission = {
+    OptionalQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> TextAnswer("blah blah")))
+  }
+
+  def withAcknowledgementOnlyAnswers(): Submission = {
+    AcknowledgementOnlyQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> AcknowledgedAnswer))
+  }
+  def withMultiChoiceAnswers(answers: String*): Submission = {
+    MultiChoiceQuestionnaireData.submission.hasCompletelyAnsweredWith(Map(question1Id -> MultipleChoiceAnswer(answers.toList.toSet)))
+  }
 
   "markSubmission" should {
     "not accept incomplete submissions without throwing exception" in {
-      val incompleteSubmission = mock[ExtendedSubmission]
-      when(incompleteSubmission.isCompleted).thenReturn(false)
-
       intercept[IllegalArgumentException] {
-        MarkAnswer.markSubmission(incompleteSubmission)
+        MarkAnswer.markSubmission(aSubmission)
       }
     }
 
-    "return an empty map if there are no questions" in {
-      val extSubmissionWithNoAnswers = extend(YesNoQuestionnaireData.submission)
-
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithNoAnswers)
-
-      markedQuestions shouldBe Map.empty[QuestionnaireId, Mark]
-    }
-
     "return Fail for NoAnswer in optional text question" in {
-      val extSubmissionWithOptionalAnswers = extend(withSingleOptionalQuestionNoAnswer())
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithOptionalAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withSingleOptionalQuestionNoAnswer())
       
       markedQuestions shouldBe Map(question1Id -> Fail)
     }
 
     "return Pass for Answer in optional text question" in {
-      val extSubmissionWithOptionalAnswers = extend(withSingleOptionalQuestionAndAnswer())
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithOptionalAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withSingleOptionalQuestionAndAnswer())
       
       markedQuestions shouldBe Map(question1Id -> Pass)
     }
 
     "return the correct marks for Single Choice questions" in {
-      val extSubmissionWithSingleChoiceAnswers = extend(withYesNoAnswers(YES, NO))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithSingleChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withYesNoAnswers(YES, NO))
       
       markedQuestions shouldBe Map(question1Id -> Pass, question2Id -> Warn)
     }
 
     "return the correct mark for AcknowledgementOnly question" in {
-      val extSubmissionWithAcknowledgementOnlyAnswers = extend(withAcknowledgementOnlyAnswers())
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithAcknowledgementOnlyAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withAcknowledgementOnlyAnswers())
       
       markedQuestions shouldBe Map(question1Id -> Pass)
     }
 
     "return Fail for Multiple Choice question" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_FAIL))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_FAIL))
       
       markedQuestions shouldBe Map(question1Id -> Fail)      
     }
 
     "return Warn for Multiple Choice question" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_WARN))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_WARN))
       
       markedQuestions shouldBe Map(question1Id -> Warn)      
     }
 
     "return Pass for Multiple Choice question" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_PASS))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_PASS))
       
       markedQuestions shouldBe Map(question1Id -> Pass)      
     }
 
     "return Fail for Multiple Choice question if answer includes a single failure for the first answer" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_FAIL, ANSWER_WARN, ANSWER_PASS))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_FAIL, ANSWER_WARN, ANSWER_PASS))
       
       markedQuestions shouldBe Map(question1Id -> Fail)      
     }
 
     "return Fail for Multiple Choice question if answer includes a single failure for the last answer" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers( ANSWER_PASS, ANSWER_WARN, ANSWER_FAIL))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers( ANSWER_PASS, ANSWER_WARN, ANSWER_FAIL))
       
       markedQuestions shouldBe Map(question1Id -> Fail)      
     }
 
     "return Warn for Multiple Choice question if answer includes a single warnng and no failure" in {
-      val extSubmissionWithMultiChoiceAnswers = extend(withMultiChoiceAnswers(ANSWER_WARN, ANSWER_PASS))
-      
-      val markedQuestions = MarkAnswer.markSubmission(extSubmissionWithMultiChoiceAnswers)
+      val markedQuestions = MarkAnswer.markSubmission(withMultiChoiceAnswers(ANSWER_WARN, ANSWER_PASS))
       
       markedQuestions shouldBe Map(question1Id -> Warn)      
     }

@@ -47,7 +47,7 @@ import akka.stream.testkit.NoMaterializer
 
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 
@@ -130,7 +130,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequest)))
 
@@ -154,7 +154,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
 
@@ -168,7 +168,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
 
@@ -184,7 +184,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithOneSubscription)))
 
@@ -201,7 +201,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
-      SubmissionsServiceMock.Create.thenReturn(extendedSubmission)
+      SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       apis.map( api =>
         when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))

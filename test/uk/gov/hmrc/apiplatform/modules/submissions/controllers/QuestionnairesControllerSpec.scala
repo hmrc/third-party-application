@@ -27,7 +27,6 @@ import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.JsError
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.controllers.QuestionnairesController
-import uk.gov.hmrc.thirdpartyapplication.util.SubmissionsTestData
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._

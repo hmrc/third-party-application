@@ -31,19 +31,27 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     def verify = MockitoSugar.verify(aMock)
 
     object Create {
-      def thenReturn(extSubmission: ExtendedSubmission) = 
-        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(extSubmission)))
+      def thenReturn(submission: Submission) = 
+        when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(submission)))
 
       def thenFails(error: String) =
         when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Left(error)))
     }
 
     object FetchLatest {
-      def thenReturn(extSubmission: ExtendedSubmission) =
-        when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(Some(extSubmission)))
+      def thenReturn(submission: Submission) =
+        when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(Some(submission)))
 
       def thenReturnNone() =
         when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(None))
+    }
+
+    object FetchLatestExtended {
+      def thenReturn(extSubmission: ExtendedSubmission) =
+        when(aMock.fetchLatestExtended(*[ApplicationId])).thenReturn(successful(Some(extSubmission)))
+
+      def thenReturnNone() =
+        when(aMock.fetchLatestExtended(*[ApplicationId])).thenReturn(successful(None))
     }
 
     object FetchLatestMarkedSubmission {
@@ -63,7 +71,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object RecordAnswers {
-      def thenReturn(extSubmission: ExtendedSubmission) =
+      def thenReturn( extSubmission: ExtendedSubmission ) =
         when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) = 
