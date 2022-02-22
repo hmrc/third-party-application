@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantWithWarningsApprovalsServiceMockModule
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
     implicit val mat = NoMaterializer
     val emailAddress = "test@example.com"
@@ -43,6 +44,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
         extends RequestApprovalsServiceMockModule
         with DeclineApprovalsServiceMockModule
         with GrantApprovalsServiceMockModule
+        with GrantWithWarningsApprovalsServiceMockModule
         with ApplicationDataServiceMockModule
         with SubmissionsServiceMockModule {
       val underTest = new ApprovalsController(
@@ -51,6 +53,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
           RequestApprovalsServiceMock.aMock, 
           DeclineApprovalsServiceMock.aMock,
           GrantApprovalsServiceMock.aMock,
+          GrantWithWarningsApprovalsServiceMock.aMock,
           Helpers.stubControllerComponents()
       )
 
@@ -66,7 +69,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
         implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
         val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
         val request = FakeRequest().withJsonBody(jsonBody)
-
         
         "return 'not found' error response if application is missing" in new Setup {
             hasNoApp
@@ -161,6 +163,22 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
             hasSubmission
             GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
             val result = underTest.grant(appId)(request)
+
+            status(result) shouldBe OK
+        }        
+    }
+    
+    "grant with warnings" should {
+        implicit val writes = Json.writes[ApprovalsController.GrantedWithWarningsRequest]
+        val jsonBody = Json.toJson(ApprovalsController.GrantedWithWarningsRequest("Bob from SDST", "This is a warning"))
+        val request = FakeRequest().withJsonBody(jsonBody)
+        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+        "return 'no content' success response if request is granted with warnings" in new Setup {
+            hasApp
+            hasSubmission
+            GrantWithWarningsApprovalsServiceMock.Grant.thenReturn(GrantWithWarningsApprovalsService.Actioned(application))
+            val result = underTest.grantWithWarnings(appId)(request)
 
             status(result) shouldBe OK
         }        

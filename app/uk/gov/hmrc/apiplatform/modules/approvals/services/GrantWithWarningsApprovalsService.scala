@@ -40,7 +40,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndA
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
-object GrantApprovalsService {
+object GrantWithWarningsApprovalsService {
   sealed trait Result
 
   case class Actioned(application: ApplicationData) extends Result
@@ -51,7 +51,7 @@ object GrantApprovalsService {
 }
 
 @Singleton
-class GrantApprovalsService @Inject()(
+class GrantWithWarningsApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
@@ -60,19 +60,19 @@ class GrantApprovalsService @Inject()(
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
-  import GrantApprovalsService._
+  import GrantWithWarningsApprovalsService._
 
-  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String)(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
+  def grantWithWarnings(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: String)(implicit hc: HeaderCarrier): Future[GrantWithWarningsApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
     def logStart(applicationId: ApplicationId): Future[Unit] = {
-      logger.info(s"Granted-01: grant appId:${applicationId}")
+      logger.info(s"Granted-with-warnings-01: grant appId:${applicationId}")
       successful(Unit)
     }
 
     def logDone(app: ApplicationData, submission: Submission) = 
-      logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
+      logger.info(s"Granted-with-warnings-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET = EitherTHelper.make[Result]
     val appId = originalApp.id
@@ -88,7 +88,7 @@ class GrantApprovalsService @Inject()(
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission     = Submission.grant(DateTimeUtils.now, gatekeeperUserName)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName))
+        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings))
         _                     <- ET.liftF(sendEmails(savedApp))
         _                     = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
@@ -100,9 +100,9 @@ class GrantApprovalsService @Inject()(
     application.copy(state = application.state.toPendingRequesterVerification)
   }
 
-  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
-    val grantedData = Map("status" -> "granted")
+    val grantedData = Map("status" -> "granted", "warnings" -> warnings)
     val extraData = questionsWithAnswers ++ grantedData
 
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)

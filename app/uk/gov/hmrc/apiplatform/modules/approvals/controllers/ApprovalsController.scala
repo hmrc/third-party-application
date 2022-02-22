@@ -36,6 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
+import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantWithWarningsApprovalsService
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -46,6 +47,9 @@ object ApprovalsController {
 
   case class GrantedRequest(gatekeeperUserName: String)
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
+
+  case class GrantedWithWarningsRequest(gatekeeperUserName: String, warnings: String)
+  implicit val readsGrantedWithWarningsRequest = Json.reads[GrantedWithWarningsRequest]
 }
 
 @Singleton
@@ -55,11 +59,10 @@ class ApprovalsController @Inject()(
   requestApprovalsService: RequestApprovalsService,
   declineApprovalService: DeclineApprovalsService,
   grantApprovalService: GrantApprovalsService,
+  grantWithWarningsApprovalService: GrantWithWarningsApprovalsService,
   cc: ControllerComponents
 )
-(
-  implicit val ec: ExecutionContext
-) extends ExtraHeadersController(cc)
+(implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
   with ApprovalsActionBuilders  
     with JsonUtils
     with JsonErrorResponse {
@@ -100,6 +103,20 @@ class ApprovalsController @Inject()(
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
       grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName)
+      .map( _ match {
+        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
+        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
+        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
+      })
+    }
+    .recover(recovery)
+  }
+
+  def grantWithWarnings(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
+    import GrantWithWarningsApprovalsService._
+
+    withJsonBodyFromAnyContent[GrantedWithWarningsRequest] { grantedRequest => 
+      grantWithWarningsApprovalService.grantWithWarnings(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
