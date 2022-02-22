@@ -72,11 +72,13 @@ object Submission {
       ApplicationId,
       DateTime,
       NonEmptyList[GroupOfQuestionnaires],
-      QuestionIdsOfInterest) => Submission = (requestedBy, id, applicationId, timestamp, groups, questionIdsOfInterest) => {
+      QuestionIdsOfInterest,
+      AskWhen.Context
+  ) => Submission = (requestedBy, id, applicationId, timestamp, groups, questionIdsOfInterest, context) => {
 
-      val initialStatus = Submission.Status.Created(timestamp, requestedBy)
-      val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
-    Submission(id, applicationId, timestamp, groups, questionIdsOfInterest, initialInstances)
+    val initialStatus = Submission.Status.Created(timestamp, requestedBy)
+    val initialInstances = NonEmptyList.of(Submission.Instance(0, Map.empty, NonEmptyList.of(initialStatus)))
+    Submission(id, applicationId, timestamp, groups, questionIdsOfInterest, initialInstances, context)
   }
   
   val addInstance: (Submission.AnswersToQuestions, Submission.Status) => Submission => Submission = (answers, status) => s => {
@@ -233,7 +235,8 @@ case class Submission(
   startedOn: DateTime,
   groups: NonEmptyList[GroupOfQuestionnaires],
   questionIdsOfInterest: QuestionIdsOfInterest,
-  instances: NonEmptyList[Submission.Instance]
+  instances: NonEmptyList[Submission.Instance],
+  context: AskWhen.Context
 ) {
   lazy val allQuestionnaires: NonEmptyList[Questionnaire] = groups.flatMap(g => g.links)
 
@@ -252,7 +255,6 @@ case class Submission(
 
   lazy val status: Submission.Status = latestInstance.statusHistory.head
 }
-
 
 case class ExtendedSubmission(
   submission: Submission,

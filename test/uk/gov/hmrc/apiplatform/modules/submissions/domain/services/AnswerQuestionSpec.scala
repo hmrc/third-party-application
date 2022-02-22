@@ -48,7 +48,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
   "AnswerQuestion" when {
     "answer is called" should {
       "return updated submission" in new Setup {
-        val after = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer, blankContext)
+        val after = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer)
 
         inside(after.right.value) {
           case ExtendedSubmission(submission, _) =>
@@ -61,8 +61,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return updated submission after overwriting answer" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer, blankContext)
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s1 = AnswerQuestion.recordAnswer(aSubmission, questionId, YesAnswer)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer)
 
         inside(s2.right.value) {
           case ExtendedSubmission(submission, _) =>
@@ -71,9 +71,9 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return updated submission does not loose other answers in same questionnaire" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer, blankContext)
+        val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer)
 
         inside(s2.right.value) {
           case ExtendedSubmission(submission, _) =>
@@ -83,9 +83,9 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return updated submission does not loose other answers in other questionnaires" in new Setup {
-        val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer, blankContext)
+        val s1 = AnswerQuestion.recordAnswer(aSubmission, question2Id, YesAnswer)
 
-        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer, blankContext)
+        val s2 = AnswerQuestion.recordAnswer(s1.right.value.submission, questionId, NoAnswer)
 
         inside(s2.right.value) {
           case ExtendedSubmission(submission, _) =>
@@ -95,13 +95,13 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return left when question is not part of the questionnaire" in new Setup {
-        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionId.random, YesAnswer, blankContext)
+        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionId.random, YesAnswer)
 
         after.left.value
       }
 
       "return left when answer is not valid" in new Setup {
-        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionnaireDAO.Questionnaires.DevelopmentPractices.question1.id, List("Bob"), blankContext)
+        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionnaireDAO.Questionnaires.DevelopmentPractices.question1.id, List("Bob"))
 
         after.left.value
       }

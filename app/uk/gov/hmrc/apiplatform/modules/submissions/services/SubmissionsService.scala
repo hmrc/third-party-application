@@ -25,7 +25,6 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.time.DateTimeUtils
-import cats.data.EitherT
 import cats.data.NonEmptyList
 import org.joda.time.DateTime
 
@@ -39,22 +38,17 @@ class SubmissionsService @Inject()(
 
   private val emptyAnswers = Map.empty[QuestionId,ActualAnswer]
 
-  def extendSubmission(submission: Submission): EitherT[Future, String, ExtendedSubmission] = {
-    for {
-      context       <- contextService.deriveContext(submission.applicationId)
-      progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, context, submission.latestInstance.answersToQuestions)
-      extSubmission =  ExtendedSubmission(submission, progress)
-    }
-    yield extSubmission
+  def extendSubmission(submission: Submission): ExtendedSubmission = {
+    val progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, submission.context, submission.latestInstance.answersToQuestions)
+    ExtendedSubmission(submission, progress)
   }
   
   def fetchAndExtend(submissionFn: => Future[Option[Submission]]): Future[Option[ExtendedSubmission]] = {
     (
       for {
         submission    <- fromOptionF(submissionFn, "ignored")
-        extSubmission <- extendSubmission(submission)
       }
-      yield extSubmission
+      yield extendSubmission(submission)
     )
     .toOption
     .value 
@@ -69,8 +63,9 @@ class SubmissionsService @Inject()(
         groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  Submission.Id.random
+        context               <- contextService.deriveContext(applicationId)
         newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, requestedBy)))
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance))
+        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
@@ -104,8 +99,7 @@ class SubmissionsService @Inject()(
     (
       for {
         initialSubmission       <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        context                 <- contextService.deriveContext(initialSubmission.applicationId)
-        extSubmission           <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers, context))
+        extSubmission           <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers))
         savedSubmission         <- liftF(submissionsDAO.update(extSubmission.submission))
       } yield extSubmission.copy(submission = savedSubmission)
     )
