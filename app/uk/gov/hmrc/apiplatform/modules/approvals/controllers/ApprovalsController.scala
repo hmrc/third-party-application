@@ -44,7 +44,7 @@ object ApprovalsController {
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(gatekeeperUserName: String)
+  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 
@@ -57,9 +57,7 @@ class ApprovalsController @Inject()(
   grantApprovalService: GrantApprovalsService,
   cc: ControllerComponents
 )
-(
-  implicit val ec: ExecutionContext
-) extends ExtraHeadersController(cc)
+(implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
   with ApprovalsActionBuilders  
     with JsonUtils
     with JsonErrorResponse {
@@ -99,7 +97,7 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName)
+      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
