@@ -36,7 +36,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
-import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantWithWarningsApprovalsService
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
@@ -56,7 +55,6 @@ class ApprovalsController @Inject()(
   requestApprovalsService: RequestApprovalsService,
   declineApprovalService: DeclineApprovalsService,
   grantApprovalService: GrantApprovalsService,
-  grantWithWarningsApprovalService: GrantWithWarningsApprovalsService,
   cc: ControllerComponents
 )
 (implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
