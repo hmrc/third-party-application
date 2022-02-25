@@ -45,11 +45,8 @@ object ApprovalsController {
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(gatekeeperUserName: String)
+  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
-
-  case class GrantedWithWarningsRequest(gatekeeperUserName: String, warnings: String)
-  implicit val readsGrantedWithWarningsRequest = Json.reads[GrantedWithWarningsRequest]
 }
 
 @Singleton
@@ -102,21 +99,7 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName)
-      .map( _ match {
-        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
-        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
-      })
-    }
-    .recover(recovery)
-  }
-
-  def grantWithWarnings(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import GrantWithWarningsApprovalsService._
-
-    withJsonBodyFromAnyContent[GrantedWithWarningsRequest] { grantedRequest => 
-      grantWithWarningsApprovalService.grantWithWarnings(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings)
+      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
