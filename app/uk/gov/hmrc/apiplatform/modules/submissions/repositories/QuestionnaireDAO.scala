@@ -220,7 +220,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Web-based software must meet level AA of the"),
-            StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "http://www.google.com"),
+            StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "https://www.w3.org/WAI/standards-guidelines/wcag/"),
             StatementText(". Desktop software should follow equivalent offline standards.")
           )
         ),
@@ -500,7 +500,7 @@ object QuestionnaireDAO {
         Statement(
           List(
             CompoundFragment(
-              StatementText("Asses your compliance using the "),
+              StatementText("Assess your compliance using the "),
               StatementLink("ICO information security checklist (opens in a new tab)", "https://ico.org.uk/for-organisations/sme-web-hub/checklists/data-protection-self-assessment"),
               StatementText(".")
             )

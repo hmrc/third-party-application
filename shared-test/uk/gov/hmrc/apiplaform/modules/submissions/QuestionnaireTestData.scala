@@ -28,7 +28,7 @@ trait QuestionnaireTestData {
       Statement(
         CompoundFragment(
           StatementText("You must develop software following our"),
-          StatementLink("development practices (opens in a new tab)", "http://www.google.com"),
+          StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
           StatementText(".")
         )
       ),
@@ -42,7 +42,7 @@ trait QuestionnaireTestData {
       Statement(
         CompoundFragment(
           StatementText("We will check for evidence that you comply with our"),
-          StatementLink("error handling specification (opens in new tab)", "http://www.google.com"),
+          StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
           StatementText(".")
         )
       ),
@@ -56,7 +56,7 @@ trait QuestionnaireTestData {
       Statement(
         CompoundFragment(
           StatementText("Web-based software must meet level AA of the"),
-          StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "http://www.google.com"),
+          StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "https://www.w3.org/WAI/standards-guidelines/wcag/"),
           StatementText(". Desktop software should follow equivalent offline standards.")
         )
       ),
