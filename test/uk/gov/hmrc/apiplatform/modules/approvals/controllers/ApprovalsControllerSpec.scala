@@ -43,7 +43,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
         extends RequestApprovalsServiceMockModule
         with DeclineApprovalsServiceMockModule
         with GrantApprovalsServiceMockModule
-        // with GrantWithWarningsApprovalsServiceMockModule
         with ApplicationDataServiceMockModule
         with SubmissionsServiceMockModule {
       val underTest = new ApprovalsController(
@@ -52,7 +51,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
           RequestApprovalsServiceMock.aMock, 
           DeclineApprovalsServiceMock.aMock,
           GrantApprovalsServiceMock.aMock,
-          // GrantWithWarningsApprovalsServiceMock.aMock,
           Helpers.stubControllerComponents()
       )
 
