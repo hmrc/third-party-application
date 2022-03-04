@@ -109,8 +109,7 @@ object QuestionnaireDAO {
         Wording("Identify your organisation"),
         Statement(
           List(
-            StatementText("Provide evidence that your organisation is officially registered in the UK."),
-            StatementText("Choose one option")
+            StatementText("Provide evidence that you or your organisation is officially registered in the UK. Choose one option.")
           )
         ),
         ListMap(
