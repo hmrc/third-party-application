@@ -240,6 +240,16 @@ object QuestionnaireDAO {
     
     object ServiceManagementPractices {
       val question1 = YesNoQuestion(
+        QuestionId("f67c64be-6a1a-41f4-a899-6c93fa7bd98d"),
+        Wording("Do you provide a way for your customers or third parties to tell you about a security risk or incident?"),
+        Statement(
+          StatementText("We expect you to provide an easy contact method in the case of a security breach.")
+        ),
+        yesMarking = Pass,
+        noMarking = Fail
+      )
+
+      val question2 = YesNoQuestion(
         QuestionId("b30e3d75-b16b-4bcb-b1ae-4f47d8b23fd0"),
         Wording("Do you have a process for notifying HMRC in the case of a security breach?"),
         Statement(
@@ -254,22 +264,13 @@ object QuestionnaireDAO {
         noMarking = Fail
       )
 
-      val question2 = YesNoQuestion(
-        QuestionId("f67c64be-6a1a-41f4-a899-6c93fa7bd98d"),
-        Wording("Do you provide a way for your customers or third parties to tell you about a security risk or incident?"),
-        Statement(
-          StatementText("We expect you to provide an easy contact method in the case of a security breach.")
-        ),
-        yesMarking = Pass,
-        noMarking = Fail
-      )
 
       val questionnaire = Questionnaire(
         id = QuestionnaireId("ba30fb9b-db99-4d18-8ed8-8e5d94842bcc"),
         label = Label("Service management practices"),
         questions = NonEmptyList.of(
-          QuestionItem(question1),
-          QuestionItem(question2, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No"))
+          QuestionItem(question1, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
+          QuestionItem(question2)
         )
       )
     }
