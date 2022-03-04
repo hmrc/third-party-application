@@ -420,7 +420,10 @@ object QuestionnaireDAO {
         Statement(
           StatementText("For cloud software, check the server location with your cloud provider."),
           CompoundFragment(
-            StatementLink("Check if a country has an adequacy agreement (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
+            StatementText("Learn about "),
+            StatementLink("adequacy agreements (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
+            StatementText(" or "),
+            StatementLink("check if a country has an adequacy agreement (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/#:~:text=Andorra%2C%20Argentina%2C%20Canada%20(commercial,a%20finding%20of%20adequacy%20about"),
             StatementText(" with the UK.")
           ),
           StatementText("Select all that apply.")
