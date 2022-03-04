@@ -350,7 +350,7 @@ object QuestionnaireDAO {
         Wording("Can customers access their data?"),
         Statement(
           CompoundFragment(
-            StatementText("You must allow customers to change, export or delete their data if they want to. Read the"),
+            StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
             StatementLink("UK GDPR guidelines on individuals rights", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
           )
         ),
