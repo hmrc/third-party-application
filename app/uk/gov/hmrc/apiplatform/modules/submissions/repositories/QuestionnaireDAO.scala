@@ -278,9 +278,9 @@ object QuestionnaireDAO {
     object HandlingPersonalData {
       val question1 = YesNoQuestion(
         QuestionId("31b9f463-eafe-4273-be80-227922048046"),
-        Wording("Do you comply with the General Data Protection Regulation (GDPR)?"),
+        Wording("Do you comply with the UK General Data Protection Regulation (UK GDPR)?"),
         Statement(
-          StatementText("To be GDPR compliant you must keep customer data safe. This includes telling customers:"),
+          StatementText("To be UK GDPR compliant you must keep customer data safe. This includes telling customers:"),
           StatementBullets(
             StatementText("what personal data you will be processing and why"),
             StatementText("that you are responsible for protecting their data"),
@@ -301,7 +301,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must encrypt access tokens and personally identifiable data when it is stored and in transit. Read the "),
-            StatementLink("GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
+            StatementLink("UK GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
             StatementText(".")
           )
         ),
@@ -349,7 +349,8 @@ object QuestionnaireDAO {
         QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
         Wording("Can your customers access their data?"),
         Statement(
-          StatementText("You must allow customers to change, export or delete their data if they want to.")
+          StatementText("You must allow customers to change, export or delete their data if they want to. Read the"),
+          StatementLink("UK GDPR guidelines on individuals rights", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/"),
         ),
         yesMarking = Pass,
         noMarking = Fail
