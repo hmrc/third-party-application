@@ -417,14 +417,20 @@ object QuestionnaireDAO {
 
       val question3 = MultiChoiceQuestion(
         QuestionId("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
-        Wording("Where are your servers that store customer information?"),
+        Wording("Where are your servers that process customer information?"),
         Statement(
+          StatementText("For cloud software, check the server location with your cloud provider."),
+          CompoundFragment(
+            StatementLink("Check if a country has an adequacy agreement (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
+            StatementText(" with the UK.")
+          ),
           StatementText("Select all that apply.")
         ),
         ListMap(
           (PossibleAnswer("In the UK") -> Pass),
-          (PossibleAnswer("In the European Economic Area") -> Pass),
-          (PossibleAnswer("Outside the European Economic Area") -> Warn)
+          (PossibleAnswer("In the European Economic Area (EEA)") -> Pass),
+          (PossibleAnswer("Outside the EEA with adequacy agreements") -> Pass),
+          (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Pass)
         )
       )
 
