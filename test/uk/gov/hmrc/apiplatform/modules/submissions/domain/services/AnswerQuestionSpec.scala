@@ -139,7 +139,8 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
         val context = simpleContext
         val answers = emptyAnswers
         val res = AnswerQuestion.deriveProgressOfQuestionnaire(CustomersAuthorisingYourSoftware.questionnaire, context, answers)
-        val listOfQuestions = List(CustomersAuthorisingYourSoftware.question1.id, CustomersAuthorisingYourSoftware.question2.id, CustomersAuthorisingYourSoftware.question4.id, CustomersAuthorisingYourSoftware.question5.id)
+        val listOfQuestions = List(CustomersAuthorisingYourSoftware.question1.id, CustomersAuthorisingYourSoftware.question2.id,
+          CustomersAuthorisingYourSoftware.question4.id, CustomersAuthorisingYourSoftware.question6.id)
         res shouldBe QuestionnaireProgress(QuestionnaireState.NotStarted, listOfQuestions)
       }
 

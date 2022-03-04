@@ -46,8 +46,8 @@ object QuestionnaireDAO {
   // *** Note - change this if the application name question changes. ***
   val questionIdsOfInterest = QuestionIdsOfInterest(
     applicationNameId             = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
-    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
-    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
     organisationUrlId             = Questionnaires.OrganisationDetails.question1.id,
     responsibleIndividualNameId   = Questionnaires.OrganisationDetails.questionRI1.id,
     responsibleIndividualEmailId  = Questionnaires.OrganisationDetails.questionRI2.id,
@@ -408,7 +408,7 @@ object QuestionnaireDAO {
             CompoundFragment(
               StatementText("It must comply with our "),
               StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
-              StatementText(".")            
+              StatementText(".")
             ),
             StatementText("Application name")
           )
@@ -437,28 +437,54 @@ object QuestionnaireDAO {
         )
       )
 
-      val question4 = TextQuestion(
-        QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
-        Wording("Give us your privacy policy URL"),
+      val question4 = ChooseOneOfQuestion(
+        QuestionId("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
+        Wording("Do you have a privacy policy URL for your software?"),
         Statement(
           List(
-            StatementText("Include the policy which covers the software you are requesting production credentials for."),
+            StatementText("You need a privacy policy covering the software you request production credentials for.")
+          )
+        ),
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("The privacy policy is in desktop software") -> Pass)
+        )
+      )
+
+      val question5 = TextQuestion(
+        QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
+        Wording("What is your privacy policy URL?"),
+        Statement(
+          List(
             StatementText("For example https://example.com/privacy-policy")
           )
-        ),
-        Some(("I don't have a privacy policy", Fail))
+        )
       )
-      
-      val question5 = TextQuestion(
-        QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
-        Wording("Give us your terms and conditions URL"),
+
+      val question6 = ChooseOneOfQuestion(
+        QuestionId("ca6af382-4007-4228-a781-1446231578b9"),
+        Wording("Do you have a terms and conditions URL for your software?"),
         Statement(
           List(
-            StatementText("Your terms and conditions should cover the software you are requesting production credentials for."),
-            StatementText("For example https://example.com/terms-conditions")
+            StatementText("You need terms and conditions covering the software you request production credentials for.")
           )
         ),
-        Some(("I don't have terms and conditions", Fail))
+        ListMap(
+          (PossibleAnswer("Yes") -> Pass),
+          (PossibleAnswer("No") -> Fail),
+          (PossibleAnswer("The terms and conditions are in desktop software") -> Pass)
+        )
+      )
+
+      val question7 = TextQuestion(
+        QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
+        Wording("What is your terms and conditions URL?"),
+        Statement(
+          List(
+            StatementText("For example https://example.com/terms-conditions")
+          )
+        )
       )
       
       val questionnaire = Questionnaire(
@@ -469,7 +495,9 @@ object QuestionnaireDAO {
           QuestionItem(question2),
           QuestionItem(question3, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question4),
-          QuestionItem(question5)
+          QuestionItem(question5, AskWhenAnswer(question4, "Yes")),
+          QuestionItem(question6),
+          QuestionItem(question7, AskWhenAnswer(question6, "Yes"))
         )
       )
     }
