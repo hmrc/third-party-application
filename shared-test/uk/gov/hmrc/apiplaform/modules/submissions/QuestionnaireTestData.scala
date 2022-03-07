@@ -19,6 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires
 
 import scala.collection.immutable.ListMap
 
@@ -345,8 +346,10 @@ trait QuestionnaireTestData {
     responsibleIndividualNameId   = OrganisationDetails.questionRI1.id,
     responsibleIndividualEmailId  = OrganisationDetails.questionRI2.id,
     applicationNameId             = CustomersAuthorisingYourSoftware.question2.id,
-    privacyPolicyUrlId            = CustomersAuthorisingYourSoftware.question5.id,
-    termsAndConditionsUrlId       = CustomersAuthorisingYourSoftware.question7.id,
+    privacyPolicyId               = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
+    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    termsAndConditionsId          = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
+    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
     organisationUrlId             = OrganisationDetails.question1.id,
     identifyYourOrganisationId    = OrganisationDetails.question2.id
   )
