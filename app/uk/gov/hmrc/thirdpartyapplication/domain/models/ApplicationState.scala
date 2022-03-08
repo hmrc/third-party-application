@@ -25,8 +25,12 @@ import org.apache.commons.codec.binary.Base64
 import java.nio.charset.StandardCharsets
 import java.{util => ju}
 
-case class ApplicationState(name: State = TESTING, requestedByEmailAddress: Option[String] = None,
-                            verificationCode: Option[String] = None, updatedOn: DateTime = DateTimeUtils.now) {
+case class ApplicationState(
+  name: State = TESTING,
+  requestedByEmailAddress: Option[String] = None,
+  verificationCode: Option[String] = None,
+  updatedOn: DateTime = DateTimeUtils.now
+) {
 
   final def requireState(requirement: State, transitionTo: State): Unit = {
     if (name != requirement) {
