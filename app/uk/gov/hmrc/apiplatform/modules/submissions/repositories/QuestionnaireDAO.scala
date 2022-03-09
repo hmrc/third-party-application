@@ -313,13 +313,13 @@ object QuestionnaireDAO {
 
       val question3 = ChooseOneOfQuestion(
         QuestionId("36c22dc2-8101-4469-adf4-12717ade4528"),
-        Wording("Do you ensure that each customer's data cannot be accessed by other users?"),
+        Wording("Do you ensure that each customer's data cannot be accessed by unauthorised users?"),
         Statement(
           CompoundFragment(
             StatementText("Read the National Cyber Security Centre's guidance on "),
             StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
             StatementText("and best practice for "),
-            StatementLink("a username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
+            StatementLink("username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
             StatementText(".")
           )
         ),
@@ -349,7 +349,7 @@ object QuestionnaireDAO {
 
       val question5 = YesNoQuestion(
         QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
-        Wording("Can customers access their data?"),
+        Wording("Can customers get their data from your software if they switch providers?"),
         Statement(
           CompoundFragment(
             StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
@@ -511,12 +511,10 @@ object QuestionnaireDAO {
       val question1 = ChooseOneOfQuestion(
         QuestionId("227b404a-ae8a-4a76-9a4b-70bc568109ac"),
         Wording("Do you provide software as a service (SaaS)?"),
-        Statement(
-          StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
-        ),
+        Statement(),
         ListMap(
           (PossibleAnswer("Yes") -> Pass),
-          (PossibleAnswer("No, customers install and manage their software") -> Pass)
+          (PossibleAnswer("No") -> Pass)
         )
       )
 
@@ -606,9 +604,7 @@ object QuestionnaireDAO {
       val question1 = YesNoQuestion(
         QuestionId("169f2ba5-4a07-438a-8eaa-cfc0efd5cdcf"),
         Wording("Do you use HMRC logos in your software, marketing or website?"),
-        Statement(
-          StatementText("You must not use the HMRC logo in any way.")
-        ),
+        Statement(),
         yesMarking = Warn,
         noMarking = Pass
       )
@@ -617,7 +613,7 @@ object QuestionnaireDAO {
         QuestionId("3a37889c-6e6c-4aa8-a818-12ac28f7dcc2"),
         Wording("Do adverts in your software comply with UK standards?"),
         Statement(
-          StatementText("Advertising that appears in your software must follow:"),
+          StatementText("Advertising that appears in your software (including third party advertising) must follow:"),
           StatementBullets(
             StatementLink("Advertising Standards Authority Codes (opens in a new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html "),
             StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
