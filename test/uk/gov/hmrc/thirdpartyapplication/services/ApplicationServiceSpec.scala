@@ -201,11 +201,12 @@ class ApplicationServiceSpec
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
       ApplicationRepoMock.Save.thenAnswer(successful)
 
-      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(access = Standard(), environment = Environment.PRODUCTION)
+      val applicationRequest: CreateApplicationRequest = aNewV2ApplicationRequest(environment = Environment.PRODUCTION)
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(sellResellOrDistribute = Some(sellResellOrDistribute))
+      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION, access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute)))
+      
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -1321,8 +1322,8 @@ class ApplicationServiceSpec
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
   }
   
-  private def aNewV2ApplicationRequest(access: Access, environment: Environment) = {
-    CreateApplicationRequestV2("MyApp", access, Some("description"), environment,
+  private def aNewV2ApplicationRequest(environment: Environment) = {
+    CreateApplicationRequestV2("MyApp", Standard(), Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser, ApplicationId.random)
   }
 

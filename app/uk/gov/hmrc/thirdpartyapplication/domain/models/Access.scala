@@ -28,7 +28,9 @@ case class Standard(
     termsAndConditionsUrl: Option[String] = None,
     privacyPolicyUrl: Option[String] = None,
     organisationUrl: Option[String] = None,
-    overrides: Set[OverrideFlag] = Set.empty
+    overrides: Set[OverrideFlag] = Set.empty,
+    sellResellOrDistribute: Option[SellResellOrDistribute] = None,
+    responsibleIndividual: Option[ResponsibleIndividual] = None
 ) extends Access {
   override val accessType = STANDARD
 }

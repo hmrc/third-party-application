@@ -52,11 +52,14 @@ case class ApplicationData(
   environment: String = Environment.PRODUCTION.toString,
   checkInformation: Option[CheckInformation] = None,
   blocked: Boolean = false,
-  ipAllowlist: IpAllowlist = IpAllowlist(),
-  sellResellOrDistribute: Option[SellResellOrDistribute] = None,
-  responsibleIndividual: Option[ResponsibleIndividual] = None
+  ipAllowlist: IpAllowlist = IpAllowlist()
 ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
+
+  lazy val sellResellOrDistribute = access match {
+    case Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
+    case _ => None
+  }
 }
 
 object ApplicationData {
@@ -79,11 +82,6 @@ object ApplicationData {
       case _ => None
     }
 
-    val extractSellResellOrDistribute: Option[SellResellOrDistribute] = application match {
-      case v1: CreateApplicationRequestV1 => None
-      case v2: CreateApplicationRequestV2 => Some(v2.upliftRequest.sellResellOrDistribute)
-    }
-
     ApplicationData(
       ApplicationId.random,
       application.name,
@@ -97,9 +95,7 @@ object ApplicationData {
       createdOn,
       Some(createdOn),
       environment = application.environment.toString,
-      checkInformation = checkInfo,
-      sellResellOrDistribute = extractSellResellOrDistribute,
-      responsibleIndividual = None
+      checkInformation = checkInfo
     )
   }
 
@@ -124,9 +120,7 @@ object ApplicationData {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
-    (JsPath \ "responsibleIndividual").readNullable[ResponsibleIndividual]
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

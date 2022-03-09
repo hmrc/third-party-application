@@ -34,7 +34,8 @@ trait CreateApplicationRequest extends ModifyApplicationRequest {
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
-
+  def access: Access
+  
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
     in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
   }
@@ -52,7 +53,7 @@ trait CreateApplicationRequest extends ModifyApplicationRequest {
 
 case class CreateApplicationRequestV1(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty),
+  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
@@ -83,9 +84,12 @@ object UpliftRequest {
   implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
 }
 
+/*
+** This is only used for creating an app when uplifting a standard sandbox app to production
+*/
 case class CreateApplicationRequestV2(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty),
+  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
@@ -143,9 +147,7 @@ case class ApplicationResponse(id: ApplicationId,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                trusted: Boolean = false,
-                               ipAllowlist: IpAllowlist = IpAllowlist()/*,
-                               responsibleIndividual: Option[ResponsibleIndividual] = None,
-                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/ // TODO once tech decision is made
+                               ipAllowlist: IpAllowlist = IpAllowlist()
                                )
 
 object ApplicationResponse {
@@ -184,9 +186,7 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist= data.ipAllowlist /*,
-      responsibleIndividual = data.responsibleIndividual,
-      sellResellOrDistribute = data.sellResellOrDistribute */
+      ipAllowlist= data.ipAllowlist
     )
   }
 }

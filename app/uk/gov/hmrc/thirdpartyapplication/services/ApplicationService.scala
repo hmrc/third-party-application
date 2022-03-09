@@ -372,12 +372,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
-    val application = req match {
+    val createApplicationRequest: CreateApplicationRequest = req match {
       case v1 : CreateApplicationRequestV1 => v1.normaliseCollaborators
       case v2 : CreateApplicationRequestV2 => v2.normaliseCollaborators
     }
 
-    logger.info(s"Creating application ${application.name}")
+    logger.info(s"Creating application ${createApplicationRequest.name}")
 
     val wso2ApplicationName = credentialGenerator.generate()
 
@@ -390,30 +390,21 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def createAppData(ids: Option[TotpId]): ApplicationData = {
-      def newPrivilegedAccess = {
-        application.access.asInstanceOf[Privileged].copy(totpIds = ids)
+      val updatedApplication = (req, ids, createApplicationRequest.access) match {
+        case (req: CreateApplicationRequestV1, Some(_), priv@ Privileged(_,_))  => req.copy(access = priv.copy(totpIds = ids))
+        case (req: CreateApplicationRequestV2, None,    std: Standard)          => req.copy(access = std.copy(sellResellOrDistribute = Some(req.upliftRequest.sellResellOrDistribute)))
+        case _                                                                  => createApplicationRequest
       }
-
-      val updatedApplication = ids match {
-        case Some(_) if application.access.accessType == PRIVILEGED => 
-          application match {
-            case v1 : CreateApplicationRequestV1 => v1.copy(access = newPrivilegedAccess)
-            case v2 : CreateApplicationRequestV2 => v2.copy(access = newPrivilegedAccess)
-          }
-        case _ => application
-      }
-      
       ApplicationData.create(updatedApplication, wso2ApplicationName, tokenService.createEnvironmentToken())
     }
 
     val f = for {
-      _ <- application.access.accessType match {
-        case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, PRIVILEGED)
-        case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(application.name, ROPC)
+      _ <- createApplicationRequest.access.accessType match {
+        case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
+        case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
         case _ => successful(Unit)
       }
-
-      totp <- generateApplicationTotp(application.access.accessType)
+      totp <- generateApplicationTotp(createApplicationRequest.access.accessType)
       appData = createAppData(extractTotpId(totp))
       _ <- createInApiGateway(appData)
       _ <- applicationRepository.save(appData)
@@ -458,34 +449,34 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       "newApplicationDescription" -> app.description.getOrElse("")
     ))
 
-  private def updateApp(applicationId: ApplicationId)(application: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
-    logger.info(s"Updating application ${application.name}")
+  private def updateApp(applicationId: ApplicationId)(applicationRequest: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
+    logger.info(s"Updating application ${applicationRequest.name}")
 
     def updatedAccess(existing: ApplicationData): Access =
-      existing.access match {
-        case Standard(_, _, _, _, o: Set[OverrideFlag]) => application.access.asInstanceOf[Standard].copy(overrides = o)
-        case _ => application.access
+      (applicationRequest.access, existing.access) match {
+        case (newAccess: Standard, oldAccess: Standard) => newAccess.copy(overrides = oldAccess.overrides)
+        case _ => applicationRequest.access
       }
 
     def updatedApplication(existing: ApplicationData): ApplicationData =
       existing.copy(
-        name = application.name,
-        normalisedName = application.name.toLowerCase,
-        description = application.description,
+        name = applicationRequest.name,
+        normalisedName = applicationRequest.name.toLowerCase,
+        description = applicationRequest.description,
         access = updatedAccess(existing)
       )
 
     def checkAccessType(existing: ApplicationData): Unit =
-      if (existing.access.accessType != application.access.accessType) {
+      if (existing.access.accessType != applicationRequest.access.accessType) {
         throw new ForbiddenException("Updating the access type of an application is not allowed")
       }
 
     for {
       existing <- fetchApp(applicationId)
-      _ = checkAccessType(existing)
+      _         = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
-      _ = sendEventIfRedirectUrisChanged(existing, savedApp)
-      _ = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      _         = sendEventIfRedirectUrisChanged(existing, savedApp)
+      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
     } yield savedApp
   }
 
