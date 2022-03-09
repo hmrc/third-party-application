@@ -64,14 +64,6 @@ class ApplicationSearchSpec extends HmrcSpec {
       searchObject.filters should contain (PendingGatekeeperCheck)
     }
 
-    "correctly parse Terms of Use filter" in {
-      val request = FakeRequest("GET", "/applications?termsOfUse=NOT_ACCEPTED")
-
-      val searchObject = ApplicationSearch.fromQueryString(request.queryString)
-
-      searchObject.filters should contain (TermsOfUseNotAccepted)
-    }
-
     "correctly parse Access Type filter" in {
       val request = FakeRequest("GET", "/applications?accessType=PRIVILEGED")
 
@@ -146,7 +138,6 @@ class ApplicationSearchSpec extends HmrcSpec {
             s"?apiSubscription=$expectedAPIContext" +
             s"&apiVersion=$expectedAPIVersion" +
             s"&status=CREATED" +
-            s"&termsOfUse=ACCEPTED" +
             s"&accessType=ROPC" +
             s"&search=$expectedSearchText" +
             s"&page=$expectedPageNumber" +
@@ -156,7 +147,6 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       searchObject.filters should contain (SpecificAPISubscription)
       searchObject.filters should contain (Created)
-      searchObject.filters should contain (TermsOfUseAccepted)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {

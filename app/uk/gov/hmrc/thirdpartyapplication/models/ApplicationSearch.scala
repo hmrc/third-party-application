@@ -45,7 +45,6 @@ object ApplicationSearch {
             case "search" => TextSearchFilter(value.head)
             case "apiSubscription" => APISubscriptionFilter(value.head)
             case "status" => ApplicationStatusFilter(value.head)
-            case "termsOfUse" => TermsOfUseStatusFilter(value.head)
             case "accessType" => AccessTypeFilter(value.head)
             case "lastUseBefore" | "lastUseAfter" => LastUseDateFilter(key, value.head)
             case _ => None // ignore anything that isn't a search filter
@@ -108,19 +107,6 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "PENDING_GATEKEEPER_CHECK" => Some(PendingGatekeeperCheck)
       case "PENDING_SUBMITTER_VERIFICATION" => Some(PendingSubmitterVerification)
       case "ACTIVE" => Some(Active)
-      case _ => None
-    }
-  }
-}
-sealed trait TermsOfUseFilter extends ApplicationSearchFilter
-case object TermsOfUseNotAccepted extends TermsOfUseFilter
-case object TermsOfUseAccepted extends TermsOfUseFilter
-
-case object TermsOfUseStatusFilter extends TermsOfUseFilter {
-  def apply(value: String): Option[TermsOfUseFilter] = {
-    value match {
-      case "NOT_ACCEPTED" => Some(TermsOfUseNotAccepted)
-      case "ACCEPTED" => Some(TermsOfUseAccepted)
       case _ => None
     }
   }
