@@ -280,16 +280,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
       case Active => applicationStatusMatch(State.PRODUCTION)
 
-      // Terms of Use
-      case TermsOfUseAccepted => matches("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$gt" -> Json.obj(f"$$size" -> 0)))
-      case TermsOfUseNotAccepted =>
-        matches(
-          f"$$or" ->
-            Json.arr(
-              Json.obj("checkInformation" -> Json.obj(f"$$exists" -> false)),
-              Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$exists" -> false)),
-              Json.obj("checkInformation.termsOfUseAgreements" -> Json.obj(f"$$size" -> 0))))
-
       // Access Type
       case StandardAccess => accessTypeMatch(AccessType.STANDARD)
       case ROPCAccess => accessTypeMatch(AccessType.ROPC)

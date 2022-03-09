@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-case class Collaborator(emailAddress: String, role: Role.Role, userId: UserId)
+case class Collaborator(
+  emailAddress: String,
+  role: Role.Role,
+  userId: UserId
+  )
 
 object Collaborator {
   import play.api.libs.json.Json
