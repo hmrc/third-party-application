@@ -66,35 +66,41 @@ object ApplicationData {
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
-  def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
+  def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
+    import createApplicationRequest._
 
-    val applicationState = (application.environment, application.access.accessType) match {
+    val applicationState = (environment, accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
-      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
+      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress))
       case _ => ApplicationState(TESTING)
     }
     
     val createdOn = DateTimeUtils.now
 
-    val checkInfo = application match {
+    val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
       case v2: CreateApplicationRequestV2 => None
       case _ => None
     }
 
+    val applicationAccess = createApplicationRequest match {
+      case v1: CreateApplicationRequestV1 => v1.access
+      case v2: CreateApplicationRequestV2 => Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
+    }
+    
     ApplicationData(
       ApplicationId.random,
-      application.name,
-      application.name.toLowerCase,
-      application.collaborators,
-      application.description,
+      name,
+      name.toLowerCase,
+      collaborators,
+      description,
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,
-      application.access,
+      applicationAccess,
       createdOn,
       Some(createdOn),
-      environment = application.environment.toString,
+      environment = environment.toString,
       checkInformation = checkInfo
     )
   }

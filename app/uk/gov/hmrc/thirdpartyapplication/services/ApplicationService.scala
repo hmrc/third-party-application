@@ -366,8 +366,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         pageSize = applicationSearch.pageSize,
         total = data.totals.foldLeft(0)(_ + _.total),
         matching = data.matching.foldLeft(0)(_ + _.total),
-        applications =
-          data.applications.map(application => ApplicationResponse(data = application)))
+        applications = data.applications.map(application => ApplicationResponse(data = application)))
     }
   }
 
@@ -389,23 +388,22 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
     }
 
-    def createAppData(ids: Option[TotpId]): ApplicationData = {
-      val updatedApplication = (req, ids, createApplicationRequest.access) match {
-        case (req: CreateApplicationRequestV1, Some(_), priv@ Privileged(_,_))  => req.copy(access = priv.copy(totpIds = ids))
-        case (req: CreateApplicationRequestV2, None,    std: Standard)          => req.copy(access = std.copy(sellResellOrDistribute = Some(req.upliftRequest.sellResellOrDistribute)))
-        case _                                                                  => createApplicationRequest
+    def applyTotpForPrivAppsOnly(totp: Option[Totp], request: CreateApplicationRequest): CreateApplicationRequest = {
+      request match {
+        case v1 @ CreateApplicationRequestV1(_, priv: Privileged, _,_,_,_) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
+        case _ => request
       }
-      ApplicationData.create(updatedApplication, wso2ApplicationName, tokenService.createEnvironmentToken())
     }
 
     val f = for {
-      _ <- createApplicationRequest.access.accessType match {
+      _ <- createApplicationRequest.accessType match {
         case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
         case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
         case _ => successful(Unit)
       }
-      totp <- generateApplicationTotp(createApplicationRequest.access.accessType)
-      appData = createAppData(extractTotpId(totp))
+      totp <- generateApplicationTotp(createApplicationRequest.accessType)
+      modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
+      appData = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken())
       _ <- createInApiGateway(appData)
       _ <- applicationRepository.save(appData)
       _ <- createStateHistory(appData)

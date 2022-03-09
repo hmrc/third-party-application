@@ -65,9 +65,9 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
   }
 
   "Application from CreateApplicationRequest" should {
-    def createRequest(access: Access, environment: Environment) = {
+    def createRequestV2(access: StandardAccessDataToCopy, environment: Environment) = {
       ApplicationData.create(
-        application = CreateApplicationRequestV2(
+        createApplicationRequest = CreateApplicationRequestV2(
           name = "an application",
           access = access,
           environment = environment,
@@ -80,29 +80,43 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         environmentToken = Token(ClientId("clientId"), "accessToken")
       )
     }
+    
+    def createRequestV1(access: Access, environment: Environment) = {
+      ApplicationData.create(
+        createApplicationRequest = CreateApplicationRequestV1(
+          name = "an application",
+          access = access,
+          environment = environment,
+          collaborators = Set(Collaborator("jim@example.com", Role.ADMINISTRATOR, UserId.random)),
+          subscriptions = None
+        ),
+        wso2ApplicationName = "wso2ApplicationName",
+        environmentToken = Token(ClientId("clientId"), "accessToken")
+      )
+    }
 
     "be automatically uplifted to PRODUCTION state when the app is for the sandbox environment" in {
-      val actual = createRequest(Standard(), Environment.SANDBOX)
+      val actual = createRequestV1(Standard(), Environment.SANDBOX)
       actual.state.name shouldBe PRODUCTION
     }
 
     "defer to STANDARD accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequest(Standard(), Environment.PRODUCTION)
+      val actual = createRequestV2(StandardAccessDataToCopy(), Environment.PRODUCTION)
       actual.state.name shouldBe TESTING
     }
 
     "defer to PRIVILEGED accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequest(Privileged(), Environment.PRODUCTION)
+      val actual = createRequestV1(Privileged(), Environment.PRODUCTION)
       actual.state.name shouldBe PRODUCTION
     }
 
     "defer to ROPC accessType to determine application state when the app is for the production environment" in {
-      val actual = createRequest(Ropc(), Environment.PRODUCTION)
+      val actual = createRequestV1(Ropc(), Environment.PRODUCTION)
       actual.state.name shouldBe PRODUCTION
     }
 
     "use the same value for createdOn and lastAccess fields" in {
-      val actual = createRequest(Standard(), Environment.PRODUCTION)
+      val actual = createRequestV1(Standard(), Environment.PRODUCTION)
       actual.createdOn shouldBe actual.lastAccess.get
     }
   }

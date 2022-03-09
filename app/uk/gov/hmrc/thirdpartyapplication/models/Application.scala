@@ -24,18 +24,22 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-trait ModifyApplicationRequest {
+trait SharedApplicationRequest {
   def name: String
   def description: Option[String]
+}
+trait ModifyApplicationRequest extends SharedApplicationRequest {
   def access: Access
 }
 
-trait CreateApplicationRequest extends ModifyApplicationRequest {
+trait CreateApplicationRequest extends SharedApplicationRequest {
+  def name: String
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
-  def access: Access
   
+  def accessType: AccessType.AccessType
+
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
     in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
   }
@@ -44,11 +48,8 @@ trait CreateApplicationRequest extends ModifyApplicationRequest {
     require(in.name.nonEmpty, "name is required")
     require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
     require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
-    in.access match {
-      case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-      case _ =>
-    }
   }
+
 }
 
 case class CreateApplicationRequestV1(
@@ -58,9 +59,19 @@ case class CreateApplicationRequestV1(
   environment: Environment,
   collaborators: Set[Collaborator],
   subscriptions: Option[Set[ApiIdentifier]]
-) extends CreateApplicationRequest {
-  
+) extends CreateApplicationRequest with ModifyApplicationRequest {
+
+  private def validate(in: CreateApplicationRequestV1): Unit = {
+    super.validate(in)
+    in.access match {
+      case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
+      case _ =>
+    }
+  }
+
   validate(this)
+
+  lazy val accessType = access.accessType
 
   def normaliseCollaborators: CreateApplicationRequestV1 = copy(collaborators = lowerCaseEmails(collaborators))
 
@@ -84,12 +95,24 @@ object UpliftRequest {
   implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
 }
 
+
+case class StandardAccessDataToCopy(
+    redirectUris: List[String] = List.empty,
+    overrides: Set[OverrideFlag] = Set.empty
+)
+
+object StandardAccessDataToCopy {
+  import play.api.libs.json.Json
+
+  implicit val format = Json.format[StandardAccessDataToCopy]
+}
+
 /*
 ** This is only used for creating an app when uplifting a standard sandbox app to production
 */
 case class CreateApplicationRequestV2(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
+  access: StandardAccessDataToCopy = StandardAccessDataToCopy(List.empty, Set.empty),   // TODO - rename field
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
@@ -97,8 +120,10 @@ case class CreateApplicationRequestV2(
   requestedBy: String,
   sandboxApplicationId: ApplicationId
 ) extends CreateApplicationRequest {
-                                      
+
   validate(this)
+
+  lazy val accessType = AccessType.STANDARD
 
   lazy val anySubscriptions: Set[ApiIdentifier] = upliftRequest.subscriptions
 

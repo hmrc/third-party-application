@@ -62,13 +62,13 @@ class ApplicationServiceSpec
   with UpliftRequestSamples
   with LockDownDateTime {
 
-  def asUpdateRequest(applicationRequest: ModifyApplicationRequest): UpdateApplicationRequest = {
-    UpdateApplicationRequest(
-      name = applicationRequest.name,
-      access = applicationRequest.access,
-      description = applicationRequest.description
-    )
-  }
+  // def asUpdateRequest(applicationRequest: ModifyApplicationRequest): UpdateApplicationRequest = {
+  //   UpdateApplicationRequest(
+  //     name = applicationRequest.name,
+  //     access = applicationRequest.access,
+  //     description = applicationRequest.description
+  //   )
+  // }
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -78,8 +78,7 @@ class ApplicationServiceSpec
     with SubmissionsServiceMockModule
     with UpliftNamingServiceMockModule
     with StateHistoryRepositoryMockModule
-    with SubscriptionRepositoryMockModule
-    {
+    with SubscriptionRepositoryMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
@@ -431,13 +430,13 @@ class ApplicationServiceSpec
   }
 
   "Update" should {
-    val applicationRequest = anExistingApplicationRequest()
+    val applicationUpdateRequest = anUpdateRequest()
 
     "update an existing application if an id is provided" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
+      await(underTest.update(applicationId, applicationUpdateRequest))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -446,7 +445,7 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(applicationData)
 
-      await(underTest.update(applicationId, asUpdateRequest(applicationRequest)))
+      await(underTest.update(applicationId, applicationUpdateRequest))
 
       ApplicationRepoMock.Save.verifyCalled()
     }
@@ -454,17 +453,17 @@ class ApplicationServiceSpec
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
-      intercept[NotFoundException](await(underTest.update(applicationId, asUpdateRequest(applicationRequest))))
+      intercept[NotFoundException](await(underTest.update(applicationId, applicationUpdateRequest)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
 
     "throw a ForbiddenException when trying to change the access type of an application" in new Setup {
 
-      val privilegedApplicationRequest: CreateApplicationRequest = applicationRequest.copy(access = Privileged())
+      val privilegedApplicationUpdateRequest: UpdateApplicationRequest = applicationUpdateRequest.copy(access = Privileged())
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
 
-      intercept[ForbiddenException](await(underTest.update(applicationId, asUpdateRequest(privilegedApplicationRequest))))
+      intercept[ForbiddenException](await(underTest.update(applicationId, privilegedApplicationUpdateRequest)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }
@@ -1323,17 +1322,15 @@ class ApplicationServiceSpec
   }
   
   private def aNewV2ApplicationRequest(environment: Environment) = {
-    CreateApplicationRequestV2("MyApp", Standard(), Some("description"), environment,
+    CreateApplicationRequestV2("MyApp", StandardAccessDataToCopy(), Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser, ApplicationId.random)
   }
 
   private def anExistingApplicationRequest() = {
     CreateApplicationRequestV2(
       "My Application",
-      access = Standard(
+      access = StandardAccessDataToCopy(
         redirectUris = List("http://example.com/redirect"),
-        termsAndConditionsUrl = Some("http://example.com/terms"),
-        privacyPolicyUrl = Some("http://example.com/privacy"),
         overrides = Set.empty
       ),
       Some("Description"),
@@ -1344,6 +1341,14 @@ class ApplicationServiceSpec
       makeUpliftRequest(ApiIdentifier.random),
       loggedInUser,
       ApplicationId.random
+    )
+  }
+
+  private def anUpdateRequest() = {
+    UpdateApplicationRequest(
+      name = "My Application",
+      access = Standard().copy(redirectUris = List("http://example.com/redirect")),
+      description = Some("Description")
     )
   }
 }
