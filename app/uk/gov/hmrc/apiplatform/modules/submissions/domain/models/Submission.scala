@@ -47,7 +47,9 @@ case class QuestionnaireProgress(state: QuestionnaireState, questionsToAsk: List
 
 case class QuestionIdsOfInterest(
     applicationNameId: QuestionId,
+    privacyPolicyId: QuestionId,
     privacyPolicyUrlId: QuestionId,
+    termsAndConditionsId: QuestionId,
     termsAndConditionsUrlId: QuestionId,
     organisationUrlId: QuestionId,
     responsibleIndividualNameId: QuestionId,

@@ -19,25 +19,41 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object SubmissionDataExtracter {
-  private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId): Option[String] = {
+  private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
-      case TextAnswer(value) => Some(value)
-      case _                 => None
+      case TextAnswer(answer) => Some(answer)
+      case _                  => None
     }
   }
-  
+
+  private def getSingleChoiceQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
+    actualAnswer match {
+      case SingleChoiceAnswer(answer) => Some(answer)
+      case _                          => None
+    }
+  }
+
   def getApplicationName(submission: Submission): Option[String] = {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.applicationNameId)
   }
 
-  def getPrivacyPolicyUrl(submission: Submission): Option[String] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
+  private def getUrlOrDesktopText(firstQuestionId: QuestionId, urlValueQuestionId: QuestionId)(submission: Submission): Option[String] = {
+    getSingleChoiceQuestionOfInterest(submission, firstQuestionId).flatMap(answer => {
+      answer match {
+        case "Yes" => getTextQuestionOfInterest(submission, urlValueQuestionId)
+        case "No" => None
+        case _ => Some("desktop")
+      }
+    })
   }
 
-  def getTermsAndConditionsUrl(submission: Submission): Option[String] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
-  }
+  def getPrivacyPolicyUrl(submission: Submission) = getUrlOrDesktopText(
+    submission.questionIdsOfInterest.privacyPolicyId, submission.questionIdsOfInterest.privacyPolicyUrlId)(submission)
+
+  def getTermsAndConditionsUrl(submission: Submission) = getUrlOrDesktopText(
+    submission.questionIdsOfInterest.termsAndConditionsId, submission.questionIdsOfInterest.termsAndConditionsUrlId)(submission)
 
   def getOrganisationUrl(submission: Submission): Option[String] = {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
