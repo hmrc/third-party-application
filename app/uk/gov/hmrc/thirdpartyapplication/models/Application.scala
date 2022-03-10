@@ -24,16 +24,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-trait SharedApplicationRequest {
+trait CreateApplicationRequest {
   def name: String
   def description: Option[String]
-}
-trait ModifyApplicationRequest extends SharedApplicationRequest {
-  def access: Access
-}
-
-trait CreateApplicationRequest extends SharedApplicationRequest {
-  def name: String
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
@@ -49,7 +42,6 @@ trait CreateApplicationRequest extends SharedApplicationRequest {
     require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
     require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
   }
-
 }
 
 case class CreateApplicationRequestV1(
@@ -59,7 +51,7 @@ case class CreateApplicationRequestV1(
   environment: Environment,
   collaborators: Set[Collaborator],
   subscriptions: Option[Set[ApiIdentifier]]
-) extends CreateApplicationRequest with ModifyApplicationRequest {
+) extends CreateApplicationRequest {
 
   private def validate(in: CreateApplicationRequestV1): Unit = {
     super.validate(in)
@@ -142,9 +134,9 @@ object CreateApplicationRequest {
   implicit val reads = CreateApplicationRequestV2.reads.map(_.asInstanceOf[CreateApplicationRequest]) or CreateApplicationRequestV1.reads.map(_.asInstanceOf[CreateApplicationRequest])
 }
 
-case class UpdateApplicationRequest(override val name: String,
-                                    override val access: Access = Standard(),
-                                    override val description: Option[String] = None) extends ModifyApplicationRequest {
+case class UpdateApplicationRequest(name: String,
+                                    access: Access = Standard(),
+                                    description: Option[String] = None) {
   require(name.nonEmpty, "name is required")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
