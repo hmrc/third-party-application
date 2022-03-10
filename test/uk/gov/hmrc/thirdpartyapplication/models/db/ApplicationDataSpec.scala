@@ -70,6 +70,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
 
     "for version 2 requests" should {
       val token = Token(ClientId.random, "st")
+
       val request = CreateApplicationRequestV2(
         name = "bob",
         environment = Environment.PRODUCTION,
@@ -85,10 +86,6 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
 
       "ensure correct grant length when app is created" in {
         ApplicationData.create(request, "bob", token).grantLength shouldBe 547
-      }
-
-      "ensure uplift data is set" in {
-        ApplicationData.create(request, "bob", token).sellResellOrDistribute.value shouldBe sellResellOrDistribute
       }
     }
   }

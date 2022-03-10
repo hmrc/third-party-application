@@ -52,54 +52,56 @@ case class ApplicationData(
   environment: String = Environment.PRODUCTION.toString,
   checkInformation: Option[CheckInformation] = None,
   blocked: Boolean = false,
-  ipAllowlist: IpAllowlist = IpAllowlist(),
-  sellResellOrDistribute: Option[SellResellOrDistribute] = None,
-  responsibleIndividual: Option[ResponsibleIndividual] = None
+  ipAllowlist: IpAllowlist = IpAllowlist()
 ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
+
+  lazy val sellResellOrDistribute = access match {
+    case Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
+    case _ => None
+  }
 }
 
 object ApplicationData {
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
-  def create(application: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
+  def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
+    import createApplicationRequest._
 
-    val applicationState = (application.environment, application.access.accessType) match {
+    val applicationState = (environment, accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
-      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, application.collaborators.headOption.map(_.emailAddress))
+      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress))
       case _ => ApplicationState(TESTING)
     }
     
     val createdOn = DateTimeUtils.now
 
-    val checkInfo = application match {
+    val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
       case v2: CreateApplicationRequestV2 => None
       case _ => None
     }
 
-    val extractSellResellOrDistribute: Option[SellResellOrDistribute] = application match {
-      case v1: CreateApplicationRequestV1 => None
-      case v2: CreateApplicationRequestV2 => Some(v2.upliftRequest.sellResellOrDistribute)
+    val applicationAccess = createApplicationRequest match {
+      case v1: CreateApplicationRequestV1 => v1.access
+      case v2: CreateApplicationRequestV2 => Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
-
+    
     ApplicationData(
       ApplicationId.random,
-      application.name,
-      application.name.toLowerCase,
-      application.collaborators,
-      application.description,
+      name,
+      name.toLowerCase,
+      collaborators,
+      description,
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,
-      application.access,
+      applicationAccess,
       createdOn,
       Some(createdOn),
-      environment = application.environment.toString,
-      checkInformation = checkInfo,
-      sellResellOrDistribute = extractSellResellOrDistribute,
-      responsibleIndividual = None
+      environment = environment.toString,
+      checkInformation = checkInfo
     )
   }
 
@@ -124,9 +126,7 @@ object ApplicationData {
     (JsPath \ "environment").read[String] and
     (JsPath \ "checkInformation").readNullable[CheckInformation] and
     ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist())) and
-    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
-    (JsPath \ "responsibleIndividual").readNullable[ResponsibleIndividual]
+    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

@@ -102,13 +102,14 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
   
-  private def replaceUrlsInAccess(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], newOrganisationUrl: Option[String]): Access = {
+  private def updateStandardData(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], newOrganisationUrl: Option[String], responsibleIndividual: ResponsibleIndividual): Access = {
     existingAccess match {
       case s : Standard =>
         s.copy(
           termsAndConditionsUrl = newTermsAndConditionsUrl,
           privacyPolicyUrl      = newPrivacyPolicyUrl,
-          organisationUrl       = newOrganisationUrl
+          organisationUrl       = newOrganisationUrl,
+          responsibleIndividual = Some(responsibleIndividual)
         )
       case _ => existingAccess    
     }
@@ -128,8 +129,7 @@ class RequestApprovalsService @Inject()(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
-      access = replaceUrlsInAccess(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl),
-      responsibleIndividual = Some(ResponsibleIndividual(responsibleIndividualName, responsibleIndividualEmail))
+      access = updateStandardData(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, ResponsibleIndividual(responsibleIndividualName, responsibleIndividualEmail))
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 

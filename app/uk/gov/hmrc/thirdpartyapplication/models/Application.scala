@@ -24,16 +24,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, Ra
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-trait ModifyApplicationRequest {
+trait CreateApplicationRequest {
   def name: String
   def description: Option[String]
-  def access: Access
-}
-
-trait CreateApplicationRequest extends ModifyApplicationRequest {
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
+  
+  def accessType: AccessType.AccessType
 
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
     in.map(c => c.copy(emailAddress = c.emailAddress.toLowerCase))
@@ -43,23 +41,29 @@ trait CreateApplicationRequest extends ModifyApplicationRequest {
     require(in.name.nonEmpty, "name is required")
     require(in.collaborators.exists(_.role == Role.ADMINISTRATOR), "at least one ADMINISTRATOR collaborator is required")
     require(in.collaborators.size == collaborators.map(_.emailAddress.toLowerCase).size, "duplicate email in collaborator")
-    in.access match {
-      case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-      case _ =>
-    }
   }
 }
 
 case class CreateApplicationRequestV1(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty),
+  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
   subscriptions: Option[Set[ApiIdentifier]]
 ) extends CreateApplicationRequest {
-  
+
+  private def validate(in: CreateApplicationRequestV1): Unit = {
+    super.validate(in)
+    in.access match {
+      case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
+      case _ =>
+    }
+  }
+
   validate(this)
+
+  lazy val accessType = access.accessType
 
   def normaliseCollaborators: CreateApplicationRequestV1 = copy(collaborators = lowerCaseEmails(collaborators))
 
@@ -83,9 +87,24 @@ object UpliftRequest {
   implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
 }
 
+
+case class StandardAccessDataToCopy(
+    redirectUris: List[String] = List.empty,
+    overrides: Set[OverrideFlag] = Set.empty
+)
+
+object StandardAccessDataToCopy {
+  import play.api.libs.json.Json
+
+  implicit val format = Json.format[StandardAccessDataToCopy]
+}
+
+/*
+** This is only used for creating an app when uplifting a standard sandbox app to production
+*/
 case class CreateApplicationRequestV2(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty),
+  access: StandardAccessDataToCopy = StandardAccessDataToCopy(List.empty, Set.empty),   // TODO - rename field
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
@@ -93,8 +112,10 @@ case class CreateApplicationRequestV2(
   requestedBy: String,
   sandboxApplicationId: ApplicationId
 ) extends CreateApplicationRequest {
-                                      
+
   validate(this)
+
+  lazy val accessType = AccessType.STANDARD
 
   lazy val anySubscriptions: Set[ApiIdentifier] = upliftRequest.subscriptions
 
@@ -113,9 +134,9 @@ object CreateApplicationRequest {
   implicit val reads = CreateApplicationRequestV2.reads.map(_.asInstanceOf[CreateApplicationRequest]) or CreateApplicationRequestV1.reads.map(_.asInstanceOf[CreateApplicationRequest])
 }
 
-case class UpdateApplicationRequest(override val name: String,
-                                    override val access: Access = Standard(),
-                                    override val description: Option[String] = None) extends ModifyApplicationRequest {
+case class UpdateApplicationRequest(name: String,
+                                    access: Access = Standard(),
+                                    description: Option[String] = None) {
   require(name.nonEmpty, "name is required")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
@@ -143,9 +164,7 @@ case class ApplicationResponse(id: ApplicationId,
                                checkInformation: Option[CheckInformation] = None,
                                blocked: Boolean = false,
                                trusted: Boolean = false,
-                               ipAllowlist: IpAllowlist = IpAllowlist()/*,
-                               responsibleIndividual: Option[ResponsibleIndividual] = None,
-                               sellResellOrDistribute: Option[SellResellOrDistribute] = None*/ // TODO once tech decision is made
+                               ipAllowlist: IpAllowlist = IpAllowlist()
                                )
 
 object ApplicationResponse {
@@ -184,9 +203,7 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist= data.ipAllowlist /*,
-      responsibleIndividual = data.responsibleIndividual,
-      sellResellOrDistribute = data.sellResellOrDistribute */
+      ipAllowlist= data.ipAllowlist
     )
   }
 }

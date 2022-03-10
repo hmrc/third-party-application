@@ -116,10 +116,10 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   }
 
   "Create" should {
-    val standardApplicationRequest =  aCreateApplicationRequestV2(standardAccess)
+    val standardApplicationRequest =  aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccess.redirectUris))
     val standardApplicationRequestV1 =  aCreateApplicationRequestV1(standardAccess)
-    val privilegedApplicationRequest = aCreateApplicationRequestV2(privilegedAccess)
-    val ropcApplicationRequest = aCreateApplicationRequestV2(ropcAccess)
+    val privilegedApplicationRequest = aCreateApplicationRequestV1(privilegedAccess)
+    val ropcApplicationRequest = aCreateApplicationRequestV1(ropcAccess)
 
     val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
     val totp = TotpSecret("pTOTP")
@@ -385,7 +385,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     Some(Set(ApiIdentifier.random))
   )
 
-  private def aCreateApplicationRequestV2(access: Access) = CreateApplicationRequestV2(
+  private def aCreateApplicationRequestV2(access: StandardAccessDataToCopy) = CreateApplicationRequestV2(
     "My Application",
     access,
     Some("Description"),
