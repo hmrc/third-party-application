@@ -62,14 +62,6 @@ class ApplicationServiceSpec
   with UpliftRequestSamples
   with LockDownDateTime {
 
-  // def asUpdateRequest(applicationRequest: ModifyApplicationRequest): UpdateApplicationRequest = {
-  //   UpdateApplicationRequest(
-  //     name = applicationRequest.name,
-  //     access = applicationRequest.access,
-  //     description = applicationRequest.description
-  //   )
-  // }
-
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
@@ -1324,24 +1316,6 @@ class ApplicationServiceSpec
   private def aNewV2ApplicationRequest(environment: Environment) = {
     CreateApplicationRequestV2("MyApp", StandardAccessDataToCopy(), Some("description"), environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser, ApplicationId.random)
-  }
-
-  private def anExistingApplicationRequest() = {
-    CreateApplicationRequestV2(
-      "My Application",
-      access = StandardAccessDataToCopy(
-        redirectUris = List("http://example.com/redirect"),
-        overrides = Set.empty
-      ),
-      Some("Description"),
-      environment = Environment.PRODUCTION,
-      Set(
-        Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail))),
-      makeUpliftRequest(ApiIdentifier.random),
-      loggedInUser,
-      ApplicationId.random
-    )
   }
 
   private def anUpdateRequest() = {
