@@ -19,6 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
+import cats.data.NonEmptySet
 
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
@@ -85,7 +86,8 @@ class RequestApprovalsService @Inject()(
         organisationUrl            = getOrganisationUrl(submission)
         responsibleIndividualName  = getResponsibleIndividualName(submission).get // Safe at this point
         responsibleIndividualEmail = getResponsibleIndividualEmail(submission).get // Safe at this point
-        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, responsibleIndividualName, responsibleIndividualEmail)
+        serverLocations            = getServerLocations(submission).get // Safe at this point
+        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, responsibleIndividualName, responsibleIndividualEmail, serverLocations)
         savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(DateTimeUtils.now, requestedByEmailAddress)(submission)
@@ -102,14 +104,15 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
   
-  private def updateStandardData(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], newOrganisationUrl: Option[String], responsibleIndividual: ResponsibleIndividual): Access = {
+  private def updateStandardData(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], newOrganisationUrl: Option[String], responsibleIndividual: ResponsibleIndividual, serverLocations: NonEmptySet[String]): Access = {
     existingAccess match {
       case s : Standard =>
         s.copy(
           termsAndConditionsUrl = newTermsAndConditionsUrl,
           privacyPolicyUrl      = newPrivacyPolicyUrl,
           organisationUrl       = newOrganisationUrl,
-          responsibleIndividual = Some(responsibleIndividual)
+          responsibleIndividual = Some(responsibleIndividual),
+          serverLocations       = Some(serverLocations)
         )
       case _ => existingAccess    
     }
@@ -123,13 +126,14 @@ class RequestApprovalsService @Inject()(
       termsAndConditionsUrl: Option[String],
       organisationUrl: Option[String],
       responsibleIndividualName: String,
-      responsibleIndividualEmail: String
-  ): ApplicationData = 
+      responsibleIndividualEmail: String,
+      serverLocations: NonEmptySet[String]
+  ): ApplicationData =
     existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
-      access = updateStandardData(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, ResponsibleIndividual(responsibleIndividualName, responsibleIndividualEmail))
+      access = updateStandardData(existing.access, privacyPolicyUrl, termsAndConditionsUrl, organisationUrl, ResponsibleIndividual(responsibleIndividualName, responsibleIndividualEmail), serverLocations)
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 

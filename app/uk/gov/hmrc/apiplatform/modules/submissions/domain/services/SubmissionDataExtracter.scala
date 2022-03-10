@@ -17,7 +17,8 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-
+import cats.data.NonEmptySet
+import scala.collection.immutable.SortedSet
 object SubmissionDataExtracter {
   private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
@@ -32,6 +33,13 @@ object SubmissionDataExtracter {
     actualAnswer match {
       case SingleChoiceAnswer(answer) => Some(answer)
       case _                          => None
+    }
+  }
+  private def getMultiChoiceQuestionOfInterest(submission: Submission, questionId: QuestionId): Option[Set[String]] = {
+    val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
+    actualAnswer match {
+      case MultipleChoiceAnswer(answers) => Some(answers)
+      case _                             => None
     }
   }
 
@@ -65,4 +73,11 @@ object SubmissionDataExtracter {
 
   def getResponsibleIndividualEmail(submission: Submission): Option[String] = {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
-  }}
+  }
+
+  def getServerLocations(submission: Submission): Option[NonEmptySet[String]] = {
+    getMultiChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.serverLocationsId)
+    .map(s => SortedSet.empty[String] ++ s)
+    .flatMap(sortedSet => NonEmptySet.fromSet(sortedSet))
+  }
+}

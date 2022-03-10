@@ -351,7 +351,8 @@ trait QuestionnaireTestData {
     termsAndConditionsId          = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
     termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
     organisationUrlId             = OrganisationDetails.question1.id,
-    identifyYourOrganisationId    = OrganisationDetails.question2.id
+    identifyYourOrganisationId    = OrganisationDetails.question2.id,
+    serverLocationsId             = Questionnaires.CustomersAuthorisingYourSoftware.question3.id
   )
 
   val questionnaire = DevelopmentPractices.questionnaire
@@ -373,7 +374,8 @@ trait QuestionnaireTestData {
     Map(
       testQuestionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
       testQuestionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
-      testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett")
+      testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett"),
+      testQuestionIdsOfInterest.serverLocationsId -> MultipleChoiceAnswer(Set("a", "b"))
     )  
 
   val sampleAnswersToQuestions = Map(
