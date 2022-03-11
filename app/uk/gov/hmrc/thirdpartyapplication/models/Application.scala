@@ -46,7 +46,7 @@ trait CreateApplicationRequest {
 
 case class CreateApplicationRequestV1(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
+  access: Access = Standard(List.empty, None, None, Set.empty, None, None),
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],

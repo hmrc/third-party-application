@@ -17,8 +17,9 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import cats.data.NonEmptySet
-import scala.collection.immutable.SortedSet
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import cats.Apply
 object SubmissionDataExtracter {
   private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
@@ -75,9 +76,20 @@ object SubmissionDataExtracter {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
   }
 
-  def getServerLocations(submission: Submission): Option[NonEmptySet[String]] = {
+  def getServerLocations(submission: Submission): Option[Set[String]] = {
     getMultiChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.serverLocationsId)
-    .map(s => SortedSet.empty[String] ++ s)
-    .flatMap(sortedSet => NonEmptySet.fromSet(sortedSet))
+  }
+
+  def getImportantSubmissionData(submission: Submission): Option[ImportantSubmissionData] = {
+    val organisationUrl            = getOrganisationUrl(submission)
+    val responsibleIndividualName  = getResponsibleIndividualName(submission)
+    val responsibleIndividualEmail = getResponsibleIndividualEmail(submission)
+    val serverLocations            = getServerLocations(submission).getOrElse(Set.empty)
+
+    import cats.implicits._
+    Apply[Option].map2(responsibleIndividualEmail, responsibleIndividualName) {
+      case (n, e) => 
+        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(n, e), serverLocations)
+    }
   }
 }

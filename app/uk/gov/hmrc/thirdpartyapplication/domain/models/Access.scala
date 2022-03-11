@@ -18,21 +18,28 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import play.api.libs.json._
-import cats.data.NonEmptySet
-import uk.gov.hmrc.apiplatform.modules.common.services.NonEmptySetFormatters
+
 sealed trait Access {
   val accessType: AccessType.Value
+}
+
+case class ImportantSubmissionData(
+  organisationUrl: Option[String] = None,
+  responsibleIndividual: ResponsibleIndividual,
+  serverLocations: Set[String]
+)
+
+object ImportantSubmissionData {
+  implicit val format = Json.format[ImportantSubmissionData]
 }
 
 case class Standard(
     redirectUris: List[String] = List.empty,
     termsAndConditionsUrl: Option[String] = None,
     privacyPolicyUrl: Option[String] = None,
-    organisationUrl: Option[String] = None,
     overrides: Set[OverrideFlag] = Set.empty,
     sellResellOrDistribute: Option[SellResellOrDistribute] = None,
-    responsibleIndividual: Option[ResponsibleIndividual] = None,
-    serverLocations: Option[NonEmptySet[String]] = None
+    importantSubmissionData: Option[ImportantSubmissionData] = None
 ) extends Access {
   override val accessType = STANDARD
 }
@@ -49,36 +56,7 @@ case class Ropc(scopes: Set[String] = Set.empty) extends Access {
 }
 
 object Standard {
-  import NonEmptySetFormatters._
-
-  import play.api.libs.functional.syntax._
-
-  implicit val ordering = new cats.kernel.instances.StringOrder
-  implicit val nesString = nesReads[String]
-
-  val reads: Reads[Standard] = (
-    (JsPath \ "redirectUris").read[List[String]] and
-    (JsPath \ "termsAndConditionsUrl").readNullable[String] and
-    (JsPath \ "privacyPolicyUrl").readNullable[String] and
-    (JsPath \ "organisationUrl").readNullable[String] and
-    (JsPath \ "overrides").read[Set[OverrideFlag]] and
-    (JsPath \ "sellResellOrDistribute").readNullable[SellResellOrDistribute] and
-    (JsPath \ "responsibleIndividual").readNullable[ResponsibleIndividual] and
-    (JsPath \ "serverLocations").readNullable[NonEmptySet[String]]
-  )(Standard.apply _)
-
-  val writes: OWrites[Standard] = (
-    (JsPath \ "redirectUris").write[List[String]] and
-    (JsPath \ "termsAndConditionsUrl").writeNullable[String] and
-    (JsPath \ "privacyPolicyUrl").writeNullable[String] and
-    (JsPath \ "organisationUrl").writeNullable[String] and
-    (JsPath \ "overrides").write[Set[OverrideFlag]] and
-    (JsPath \ "sellResellOrDistribute").writeNullable[SellResellOrDistribute] and
-    (JsPath \ "responsibleIndividual").writeNullable[ResponsibleIndividual] and
-    (JsPath \ "serverLocations").writeNullable[NonEmptySet[String]]   
-  )(unlift(Standard.unapply))
-
-  implicit val format = OFormat(reads, writes)
+  implicit val format = Json.format[Standard]
 }
 
 object Privileged {
