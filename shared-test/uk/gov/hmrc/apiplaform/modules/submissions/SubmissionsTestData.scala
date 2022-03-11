@@ -128,11 +128,11 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     val questionTermsUrl = textQuestion(6)
     val questionWeb = textQuestion(7)
     val question2 = acknowledgementOnly(8)
-    val question3 = multichoiceQuestion(9, "a", "b", "c")
-    val questionIdentifyOrg = chooseOneOfQuestion(10, "a", "b", "c")
+    val question3 = multichoiceQuestion(9, "a1", "b", "c")
+    val questionIdentifyOrg = chooseOneOfQuestion(10, "a2", "b", "c")
     val questionPrivacy = textQuestion(11)
     val questionTerms = textQuestion(12)
-    val questionServerLocations = multichoiceQuestion(13, "a", "b", "c")
+    val questionServerLocations = multichoiceQuestion(13, "In the UK", "Outside the EEA with adequacy agreements")
 
     val questionnaire1 = Questionnaire(
         id = QuestionnaireId.random,
@@ -144,7 +144,8 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
           QuestionItem(questionName), 
           QuestionItem(questionPrivacyUrl),
           QuestionItem(questionTermsUrl),
-          QuestionItem(questionWeb)
+          QuestionItem(questionWeb),
+          QuestionItem(questionServerLocations)
         )
       )
 

@@ -20,6 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import cats.Apply
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ServerLocation
 object SubmissionDataExtracter {
   private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
@@ -76,9 +77,15 @@ object SubmissionDataExtracter {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
   }
 
-  def getServerLocations(submission: Submission): Option[Set[String]] = {
+  def getServerLocations(submission: Submission): Option[Set[ServerLocation]] =
     getMultiChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.serverLocationsId)
-  }
+    .map( _.map( text => text match {
+      case "In the UK" => ServerLocation.InUk
+      case "In the European Economic Area (EEA)" => ServerLocation.InEEA
+      case "Outside the EEA with adequacy agreements" => ServerLocation.OutsideEEAWithAdequacy
+      case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
+      case s => println(s"Oh dear XXX $s"); throw new RuntimeException()
+    }))
 
   def getImportantSubmissionData(submission: Submission): Option[ImportantSubmissionData] = {
     val organisationUrl            = getOrganisationUrl(submission)

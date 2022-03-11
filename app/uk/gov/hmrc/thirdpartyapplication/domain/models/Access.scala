@@ -26,7 +26,7 @@ sealed trait Access {
 case class ImportantSubmissionData(
   organisationUrl: Option[String] = None,
   responsibleIndividual: ResponsibleIndividual,
-  serverLocations: Set[String]
+  serverLocations: Set[ServerLocation]
 )
 
 object ImportantSubmissionData {

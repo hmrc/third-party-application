@@ -375,7 +375,7 @@ trait QuestionnaireTestData {
       testQuestionIdsOfInterest.applicationNameId -> TextAnswer(expectedAppName), 
       testQuestionIdsOfInterest.responsibleIndividualEmailId -> TextAnswer("bob@example.com"),
       testQuestionIdsOfInterest.responsibleIndividualNameId -> TextAnswer("Bob Cratchett"),
-      testQuestionIdsOfInterest.serverLocationsId -> MultipleChoiceAnswer(Set("a", "b"))
+      testQuestionIdsOfInterest.serverLocationsId -> MultipleChoiceAnswer(Set("In the UK", "Outside the EEA with adequacy agreements"))
     )  
 
   val sampleAnswersToQuestions = Map(
