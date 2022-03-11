@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import akka.japi.Option.Some
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}

@@ -21,7 +21,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import cats.Apply
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ServerLocation
-object SubmissionDataExtracter {
+import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocation
+import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
+object SubmissionDataExtracter extends ApplicationLogger {
   private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
@@ -69,12 +73,12 @@ object SubmissionDataExtracter {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
 
-  def getResponsibleIndividualName(submission: Submission): Option[String] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId)
+  def getResponsibleIndividualName(submission: Submission): Option[ResponsibleIndividual.Name] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
   }
 
-  def getResponsibleIndividualEmail(submission: Submission): Option[String] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId)
+  def getResponsibleIndividualEmail(submission: Submission): Option[ResponsibleIndividual.EmailAddress] = {
+    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
   }
 
   def getServerLocations(submission: Submission): Option[Set[ServerLocation]] =
@@ -87,16 +91,49 @@ object SubmissionDataExtracter {
       case s => println(s"Oh dear XXX $s"); throw new RuntimeException()
     }))
 
+  def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {
+    import cats.implicits._
+    val yesNoOrDesktop = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsId)
+    lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
+
+    yesNoOrDesktop.flatMap( _ match {
+      case "Yes" => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
+      case "No" => TermsAndConditionsLocation.NoneProvided.some
+      case "The privacy policy is in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
+    })
+  }
+
+  def getPrivacyPolicyLocation(submission: Submission): Option[PrivacyPolicyLocation] = {
+    import cats.implicits._
+    val yesNoOrDesktop = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyId)
+    lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
+
+    yesNoOrDesktop.flatMap( _ match {
+      case "Yes" => urlIfChosen.map(PrivacyPolicyLocation.Url(_))
+      case "No" => PrivacyPolicyLocation.NoneProvided.some
+      case "The privacy policy is in desktop software" => PrivacyPolicyLocation.InDesktopSoftware.some
+    })
+  }
+
   def getImportantSubmissionData(submission: Submission): Option[ImportantSubmissionData] = {
     val organisationUrl            = getOrganisationUrl(submission)
     val responsibleIndividualName  = getResponsibleIndividualName(submission)
     val responsibleIndividualEmail = getResponsibleIndividualEmail(submission)
     val serverLocations            = getServerLocations(submission).getOrElse(Set.empty)
+    val termsAndConditionsLocation = getTermsAndConditionsLocation(submission)
+    val privacyPolicyLocation      = getPrivacyPolicyLocation(submission)
+
+    logger.debug(s"Organisation url $organisationUrl")
+    logger.debug(s"responsibleIndividualName $responsibleIndividualName")
+    logger.debug(s"responsibleIndividualEmail $responsibleIndividualEmail")
+    logger.debug(s"serverLocations $serverLocations")
+    logger.debug(s"termsAndConditionsLocation $termsAndConditionsLocation")
+    logger.debug(s"privacyPolicyLocation $privacyPolicyLocation")
 
     import cats.implicits._
-    Apply[Option].map2(responsibleIndividualEmail, responsibleIndividualName) {
-      case (n, e) => 
-        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(n, e), serverLocations)
+    Apply[Option].map4(responsibleIndividualName, responsibleIndividualEmail, termsAndConditionsLocation, privacyPolicyLocation) {
+      case (name, email, tnc, pp) => 
+        ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email), serverLocations, tnc, pp, List.empty)
     }
   }
 }

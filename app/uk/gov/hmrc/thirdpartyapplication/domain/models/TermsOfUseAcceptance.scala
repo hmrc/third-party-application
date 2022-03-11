@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import play.api.libs.json._
+import org.joda.time.{DateTime, DateTimeZone}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
-case class ResponsibleIndividual(fullName: ResponsibleIndividual.Name, emailAddress: ResponsibleIndividual.EmailAddress)
-object ResponsibleIndividual {
-  import play.api.libs.json.{Format, Json}
+case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: DateTime, submissionId: Submission.Id, version: String)
 
-  case class Name(value: String) extends AnyVal
-  case class EmailAddress(value: String) extends AnyVal
-  
-  implicit val nameFormat = Json.valueFormat[Name]
-  implicit val emailAddressFormat = Json.valueFormat[EmailAddress]
+object TermsOfUseAcceptance {
+  import JodaWrites.JodaDateTimeWrites
+  implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
 
-  implicit val format: Format[ResponsibleIndividual] = Json.format[ResponsibleIndividual]
+  implicit val format = Json.format[TermsOfUseAcceptance]
 }
