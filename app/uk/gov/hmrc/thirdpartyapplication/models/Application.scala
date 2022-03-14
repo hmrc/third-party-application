@@ -46,7 +46,7 @@ trait CreateApplicationRequest {
 
 case class CreateApplicationRequestV1(
   name: String,
-  access: Access = Standard(List.empty, None, None, None, Set.empty, None, None),
+  access: Access = Standard(List.empty, None, None, Set.empty, None, None),
   description: Option[String] = None,
   environment: Environment,
   collaborators: Set[Collaborator],
@@ -144,28 +144,29 @@ case class UpdateApplicationRequest(name: String,
   }
 }
 
-case class ApplicationResponse(id: ApplicationId,
-                               clientId: ClientId,
-                               gatewayId: String,
-                               name: String,
-                               deployedTo: String,
-                               description: Option[String] = None,
-                               collaborators: Set[Collaborator],
-                               createdOn: DateTime,
-                               lastAccess: Option[DateTime],
-                               grantLength: Int,
-                               lastAccessTokenUsage: Option[DateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
-                               redirectUris: List[String] = List.empty,
-                               termsAndConditionsUrl: Option[String] = None,
-                               privacyPolicyUrl: Option[String] = None,
-                               access: Access = Standard(),
-                               state: ApplicationState = ApplicationState(name = State.TESTING),
-                               rateLimitTier: RateLimitTier = BRONZE,
-                               checkInformation: Option[CheckInformation] = None,
-                               blocked: Boolean = false,
-                               trusted: Boolean = false,
-                               ipAllowlist: IpAllowlist = IpAllowlist()
-                               )
+case class ApplicationResponse(
+  id: ApplicationId,
+  clientId: ClientId,
+  gatewayId: String,
+  name: String,
+  deployedTo: String,
+  description: Option[String] = None,
+  collaborators: Set[Collaborator],
+  createdOn: DateTime,
+  lastAccess: Option[DateTime],
+  grantLength: Int,
+  lastAccessTokenUsage: Option[DateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
+  redirectUris: List[String] = List.empty,
+  termsAndConditionsUrl: Option[String] = None,
+  privacyPolicyUrl: Option[String] = None,
+  access: Access = Standard(),
+  state: ApplicationState = ApplicationState(name = State.TESTING),
+  rateLimitTier: RateLimitTier = BRONZE,
+  checkInformation: Option[CheckInformation] = None,
+  blocked: Boolean = false,
+  trusted: Boolean = false,
+  ipAllowlist: IpAllowlist = IpAllowlist()
+)
 
 object ApplicationResponse {
 

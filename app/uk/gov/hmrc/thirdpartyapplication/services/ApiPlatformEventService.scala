@@ -84,7 +84,6 @@ class ApiPlatformEventService @Inject()(val apiPlatformEventsConnector: ApiPlatf
       })
   }
 
-
   def sendApiUnsubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)
                             (implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString

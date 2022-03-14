@@ -23,14 +23,26 @@ sealed trait Access {
   val accessType: AccessType.Value
 }
 
+case class ImportantSubmissionData(
+  organisationUrl: Option[String] = None,
+  responsibleIndividual: ResponsibleIndividual,
+  serverLocations: Set[ServerLocation],
+  termsAndConditionsLocation: TermsAndConditionsLocation,
+  privacyPolicyLocation: PrivacyPolicyLocation,
+  termsOfUseAcceptances: List[TermsOfUseAcceptance]
+)
+
+object ImportantSubmissionData {
+  implicit val format = Json.format[ImportantSubmissionData]
+}
+
 case class Standard(
-    redirectUris: List[String] = List.empty,
-    termsAndConditionsUrl: Option[String] = None,
-    privacyPolicyUrl: Option[String] = None,
-    organisationUrl: Option[String] = None,
-    overrides: Set[OverrideFlag] = Set.empty,
-    sellResellOrDistribute: Option[SellResellOrDistribute] = None,
-    responsibleIndividual: Option[ResponsibleIndividual] = None
+  redirectUris: List[String] = List.empty,
+  termsAndConditionsUrl: Option[String] = None,
+  privacyPolicyUrl: Option[String] = None,
+  overrides: Set[OverrideFlag] = Set.empty,
+  sellResellOrDistribute: Option[SellResellOrDistribute] = None,
+  importantSubmissionData: Option[ImportantSubmissionData] = None
 ) extends Access {
   override val accessType = STANDARD
 }

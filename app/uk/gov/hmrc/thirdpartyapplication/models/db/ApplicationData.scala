@@ -57,7 +57,7 @@ case class ApplicationData(
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 
   lazy val sellResellOrDistribute = access match {
-    case Standard(_, _, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
+    case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
     case _ => None
   }
 }

@@ -54,7 +54,8 @@ case class QuestionIdsOfInterest(
     organisationUrlId: QuestionId,
     responsibleIndividualNameId: QuestionId,
     responsibleIndividualEmailId: QuestionId,
-    identifyYourOrganisationId: QuestionId
+    identifyYourOrganisationId: QuestionId,
+    serverLocationsId: QuestionId
 )
 
 object Submission {

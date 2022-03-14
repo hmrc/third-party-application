@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import play.api.libs.json._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, TermsOfUseAcceptance}
 import play.api.libs.functional.syntax._
 
 object MongoJsonFormatterOverrides {
@@ -30,4 +30,6 @@ object MongoJsonFormatterOverrides {
     ((JsPath \ "allowlist").read[Set[String]]or Reads.pure(Set.empty[String]))
   )(IpAllowlist.apply _)
   implicit val formatIpAllowlist = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+
+  implicit val formatTermsOfUseAcceptance = Json.format[TermsOfUseAcceptance]
 }
