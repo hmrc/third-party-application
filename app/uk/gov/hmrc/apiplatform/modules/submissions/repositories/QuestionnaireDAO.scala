@@ -538,7 +538,7 @@ object QuestionnaireDAO {
         Statement(
           List(
             CompoundFragment(
-              StatementText("Use either penetration test tools or an independant third party supplier. For penetration methodologies read the "),
+              StatementText("Use either penetration test tools or an independant third party supplier. For penetration testing methodologies read the "),
               StatementLink("Open Web Application Security Project (OWASP) guide (opens in a new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
               StatementText(".")
             )
@@ -592,10 +592,10 @@ object QuestionnaireDAO {
 
       val question2 = YesNoQuestion(
         QuestionId("b58f910f-3630-4b0f-9431-7727aed4c2a1"),
-        Wording("Do your fraud prevention headers meet our specification?"),
+        Wording("Have you checked that your software submits fraud prevention data correctly?"),
         Statement(
           CompoundFragment(
-            StatementText("Check your headers meet the specification using the "),
+            StatementText("Before you submit any header data, you need to use the "),
             StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
             StatementText(".")
           )        
