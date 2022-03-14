@@ -99,7 +99,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     yesNoOrDesktop.flatMap( _ match {
       case "Yes" => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
       case "No" => TermsAndConditionsLocation.NoneProvided.some
-      case "The privacy policy is in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
+      case "The terms and conditions are in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
     })
   }
 
