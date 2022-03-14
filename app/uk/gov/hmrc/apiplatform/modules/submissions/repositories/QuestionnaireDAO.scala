@@ -62,36 +62,33 @@ object QuestionnaireDAO {
     object OrganisationDetails {
       val questionRI1 = TextQuestion(
         QuestionId("36b7e670-83fc-4b31-8f85-4d3394908495"),
-        Wording("What is the name of your responsible individual"),
+        Wording("Provide details for a responsible individual in your organisation"),
         
         Statement(
           List(
             StatementText("The responsible individual:"),
-            CompoundFragment(
-              StatementText("ensures your software meets our "),
-              StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+            StatementBullets(
+              CompoundFragment(
+                StatementText("ensures your software conforms to the "),
+                StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+              ),
+              CompoundFragment(
+                StatementText("understands the "),
+                StatementLink("consequences of not conforming to the terms of use", "/api-documentation/docs/terms-of-use")
+              )
             ),
-            CompoundFragment(
-              StatementText("understands the "),
-              StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
-            )
+            StatementText("First and last name")
           )
         )
       )
       val questionRI2 = TextQuestion(
         QuestionId("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
-        Wording("What is the email address of your responsible individual"),
+        Wording("Provide an email address for the responsible individual"),
         Statement(
           List(
-            StatementText("The responsible individual:"),
-            CompoundFragment(
-              StatementText("ensures your software meets our "),
-              StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
-            ),
-            CompoundFragment(
-              StatementText("understands the "),
-              StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
-            )
+            StatementText("We will send a verification email to the email address provided."),
+            StatementText("The responsible individual must verify within 10 days that they are responsible for ensuring your software conforms to our terms of use."),
+            StatementText("Email address (cannot be a shared mailbox).")
           )
         )
       )
@@ -140,22 +137,38 @@ object QuestionnaireDAO {
       val question2b = TextQuestion(
         QuestionId("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
         Wording("What is your Unique Taxpayer Reference (UTR)?"),
-        Statement(List.empty)
+        Statement(
+          CompoundFragment(
+            StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Self Assessment. It may be called 'reference', 'UTR' or 'official use'. You can "),
+            StatementLink("find a lost UTR number (opens in new tab)", "https://www.gov.uk/find-lost-utr-number"),
+            StatementText(".")
+          )
+        )
       )
       val question2c = TextQuestion(
         QuestionId("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
         Wording("What is your VAT registration number?"),
-        Statement(List.empty)
+        Statement(
+          StatementText("This is 9 numbers, sometimes with 'GB' at the start, for example 123456789 or GB123456789. You can find it on your company's VAT registration certificate.")
+        )
       )
       val question2d = TextQuestion(
         QuestionId("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
         Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
-        Statement(List.empty)
+        Statement(
+          CompoundFragment(
+            StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Corporation Tax. It may be called 'reference', 'UTR' or 'official use'. You can "),
+            StatementLink("find a lost UTR number (opens in new tab)", "https://www.gov.uk/find-lost-utr-number"),
+            StatementText(".")
+          )
+        )
       )
       val question2e = TextQuestion(
         QuestionId("a143760e-72f3-423b-a6b4-558db37a3453"),
         Wording("What is your PAYE reference?"),
-        Statement(List.empty)
+        Statement(
+          StatementText("This is a 3 digit tax office number, a forward slash, and a tax office employer reference, like 123/AB456. It may be called 'Employer PAYE reference' or 'PAYE reference'. It will be on your P60.")
+        )
       )
       
       val question3 = AcknowledgementOnly(
@@ -289,8 +302,8 @@ object QuestionnaireDAO {
             StatementText("that you are responsible for protecting their data"),
             CompoundFragment(
               StatementText("your "),
-              StatementLink("lawful basis (opens in new tab) ", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/lawful-basis-for-processing"),
-              StatementText("for processing personal data")
+              StatementLink("lawful basis (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/lawful-basis-for-processing"),
+              StatementText(" for processing personal data")
             )
           )
         ),
@@ -337,7 +350,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
-            StatementLink("National Cyber Security Centre's guidance", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
+            StatementLink("National Cyber Security Centre's guidance (opens in a new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
@@ -354,7 +367,7 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
-            StatementLink("UK GDPR guidelines on individuals rights", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
+            StatementLink("UK GDPR guidelines on individuals rights (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
           )
         ),
         yesMarking = Pass,
@@ -646,8 +659,8 @@ object QuestionnaireDAO {
         Statement(
           CompoundFragment(
             StatementText("You must not share customers' personal data without their consent. Read the "),
-            StatementLink("Direct Marketing Guidance (opens in a new tab) ", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
-            StatementText("from the Information Commissioner's Office.")
+            StatementLink("Direct Marketing Guidance (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
+            StatementText(" from the Information Commissioner's Office.")
           )
         ),
         ListMap(
