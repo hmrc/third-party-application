@@ -84,11 +84,11 @@ object SubmissionDataExtracter extends ApplicationLogger {
   def getServerLocations(submission: Submission): Option[Set[ServerLocation]] =
     getMultiChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.serverLocationsId)
     .map( _.map( text => text match {
-      case "In the UK" => ServerLocation.InUk
+      case "In the UK" => ServerLocation.InUK
       case "In the European Economic Area (EEA)" => ServerLocation.InEEA
       case "Outside the EEA with adequacy agreements" => ServerLocation.OutsideEEAWithAdequacy
       case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
-      case s => println(s"Oh dear XXX $s"); throw new RuntimeException()
+      case s => throw new RuntimeException()
     }))
 
   def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {
