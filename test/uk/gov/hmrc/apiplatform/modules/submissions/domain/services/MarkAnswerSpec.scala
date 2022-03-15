@@ -59,7 +59,7 @@ class MarkAnswerSpec extends HmrcSpec {
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
-        Some(("blah blah blah", Fail))
+        absence = Some(("blah blah blah", Fail))
       )
     
     def buildAcknowledgementOnlyQuestion(id: QuestionId) = AcknowledgementOnly(
