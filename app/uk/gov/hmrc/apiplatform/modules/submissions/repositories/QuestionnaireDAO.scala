@@ -86,17 +86,10 @@ object QuestionnaireDAO {
         Wording("What is the email address of your responsible individual"),
         Statement(
           List(
-            StatementText("The responsible individual:"),
-            CompoundFragment(
-              StatementText("ensures your software meets our "),
-              StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
-            ),
-            CompoundFragment(
-              StatementText("understands the "),
-              StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
-            )
           )
-        )
+        ),
+        label = Some(TextQuestion.Label("Email address")),
+        hintText = Some(TextQuestion.HintText("Cannot be a shared mailbox"))
       )
 
       val question1 = TextQuestion(
@@ -421,7 +414,8 @@ object QuestionnaireDAO {
             ),
             StatementText("Application name")
           )
-        )
+        ),
+        label = Some(TextQuestion.Label("Application name"))
       )
 
       val question3 = MultiChoiceQuestion(
