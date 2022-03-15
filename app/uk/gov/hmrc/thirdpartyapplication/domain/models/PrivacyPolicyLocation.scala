@@ -30,7 +30,7 @@ object PrivacyPolicyLocation {
   implicit val inDesktopSoftwareFormat = Json.format[InDesktopSoftware.type]
   implicit val urlFormat = Json.format[Url]
 
-  implicit val format = Union.from[PrivacyPolicyLocation]("privacyPolicy")
+  implicit val format = Union.from[PrivacyPolicyLocation]("privacyPolicyType")
     .and[NoneProvided.type]("noneProvided")
     .and[InDesktopSoftware.type]("inDesktop")
     .and[Url]("url")

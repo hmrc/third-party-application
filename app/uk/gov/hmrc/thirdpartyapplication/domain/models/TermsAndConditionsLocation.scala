@@ -30,7 +30,7 @@ object TermsAndConditionsLocation {
   implicit val inDesktopSoftwareFormat = Json.format[InDesktopSoftware.type]
   implicit val urlFormat = Json.format[Url]
 
-  implicit val format = Union.from[TermsAndConditionsLocation]("termsAndConditions")
+  implicit val format = Union.from[TermsAndConditionsLocation]("termsAndConditionsType")
     .and[NoneProvided.type]("noneProvided")
     .and[InDesktopSoftware.type]("inDesktop")
     .and[Url]("url")
