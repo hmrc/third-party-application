@@ -125,11 +125,11 @@ object QuestionnaireDAO {
 
       val question2a = TextQuestion(
         QuestionId("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
-        Wording("Do you have a company registration number?"),
+        Wording("What is your company registration number?"),
         Statement(
           List(
             StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
-            StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
+            StatementText("It's 8 characters long or 2 letters followed by 6 numbers. Check any documents from Companies House.")
           )
         ),
         absence = Some(("My organisation doesn't have a company registration", Warn))
