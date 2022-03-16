@@ -429,8 +429,7 @@ object QuestionnaireDAO {
               StatementText("It must comply with our "),
               StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
               StatementText(".")
-            ),
-            StatementText("Application name")
+            )
           )
         ),
         label = Some(TextQuestion.Label("Application name"))
