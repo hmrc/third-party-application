@@ -76,10 +76,10 @@ object QuestionnaireDAO {
                 StatementText("understands the "),
                 StatementLink("consequences of not conforming to the terms of use", "/api-documentation/docs/terms-of-use")
               )
-            ),
-            StatementText("First and last name")
+            )
           )
-        )
+        ),
+        label = Some(TextQuestion.Label("First and last name"))
       )
       val questionRI2 = TextQuestion(
         QuestionId("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
@@ -88,9 +88,10 @@ object QuestionnaireDAO {
           List(
             StatementText("We will send a verification email to the email address provided."),
             StatementText("The responsible individual must verify within 10 days that they are responsible for ensuring your software conforms to our terms of use."),
-            StatementText("Email address (cannot be a shared mailbox).")
           )
-        )
+        ),
+        label = Some(TextQuestion.Label("Email address")),
+        hintText = Some(TextQuestion.HintText("Cannot be a shared mailbox"))
       )
 
       val question1 = TextQuestion(
@@ -101,7 +102,7 @@ object QuestionnaireDAO {
             StatementText("For example https://example.com")
           )
         ),
-        Some(("My organisation doesn't have a website", Fail))
+        absence = Some(("My organisation doesn't have a website", Fail))
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -131,7 +132,7 @@ object QuestionnaireDAO {
             StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
           )
         ),
-        Some(("My organisation doesn't have a company registration", Warn))
+        absence = Some(("My organisation doesn't have a company registration", Warn))
       )
 
       val question2b = TextQuestion(
@@ -431,7 +432,8 @@ object QuestionnaireDAO {
             ),
             StatementText("Application name")
           )
-        )
+        ),
+        label = Some(TextQuestion.Label("Application name"))
       )
 
       val question3 = MultiChoiceQuestion(
