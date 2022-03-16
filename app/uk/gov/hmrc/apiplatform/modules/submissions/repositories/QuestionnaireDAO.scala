@@ -95,7 +95,7 @@ object QuestionnaireDAO {
 
       val question1 = TextQuestion(
         QuestionId("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
-        Wording("Give us your organisation's website URL"),
+        Wording("What is your organisation's URL?"),
         Statement(
           List(
             StatementText("For example https://example.com")
@@ -124,7 +124,7 @@ object QuestionnaireDAO {
 
       val question2a = TextQuestion(
         QuestionId("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
-        Wording("What is your company registration number?"),
+        Wording("Do you have a company registration number?"),
         Statement(
           List(
             StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
@@ -136,7 +136,7 @@ object QuestionnaireDAO {
 
       val question2b = TextQuestion(
         QuestionId("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
-        Wording("What is your Unique Taxpayer Reference (UTR)?"),
+        Wording("What is your Self-Assessment Unique Taxpayer Reference?"),
         Statement(
           CompoundFragment(
             StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Self Assessment. It may be called 'reference', 'UTR' or 'official use'. You can "),
@@ -147,14 +147,14 @@ object QuestionnaireDAO {
       )
       val question2c = TextQuestion(
         QuestionId("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
-        Wording("What is your VAT registration number?"),
+        Wording("What is your company's VAT registration number?"),
         Statement(
           StatementText("This is 9 numbers, sometimes with 'GB' at the start, for example 123456789 or GB123456789. You can find it on your company's VAT registration certificate.")
         )
       )
       val question2d = TextQuestion(
         QuestionId("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
-        Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
+        Wording("What is your Corporation Tax Unique Taxpayer Reference?"),
         Statement(
           CompoundFragment(
             StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Corporation Tax. It may be called 'reference', 'UTR' or 'official use'. You can "),
@@ -165,7 +165,7 @@ object QuestionnaireDAO {
       )
       val question2e = TextQuestion(
         QuestionId("a143760e-72f3-423b-a6b4-558db37a3453"),
-        Wording("What is your PAYE reference?"),
+        Wording("What is your company's employer PAYE reference?"),
         Statement(
           StatementText("This is a 3 digit tax office number, a forward slash, and a tax office employer reference, like 123/AB456. It may be called 'Employer PAYE reference' or 'PAYE reference'. It will be on your P60.")
         )
