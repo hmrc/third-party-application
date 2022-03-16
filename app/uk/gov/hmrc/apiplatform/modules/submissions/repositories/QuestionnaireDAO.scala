@@ -207,7 +207,7 @@ object QuestionnaireDAO {
         Wording("Do your development practices follow our guidance?"),
         Statement(
           CompoundFragment(
-            StatementText("You must develop software following our"),
+            StatementText("You must develop your software following our"),
             StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
             StatementText(".")
           )
@@ -579,10 +579,10 @@ object QuestionnaireDAO {
     object FraudPreventionHeaders {
       val question1 = YesNoQuestion(
         QuestionId("968076cb-6267-43fe-a193-d1b7a090c844"),
-        Wording("Have you implemented fraud prevention headers?"),
+        Wording("Does your software submit fraud prevention data?"),
         Statement(
           CompoundFragment(
-            StatementText("You must implement headers in line with our "),
+            StatementText("You must submit header data in line with the "),
             StatementLink("fraud prevention specification (opens in a new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
             StatementText(".")
           )
