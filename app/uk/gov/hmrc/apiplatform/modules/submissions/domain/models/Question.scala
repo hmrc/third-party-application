@@ -25,6 +25,7 @@ sealed trait Question {
   def id: Question.Id
   def wording: Wording
   def statement: Statement
+  def afterStatement: Statement
 
   def absence: Option[(String, Mark)]
 
@@ -67,8 +68,9 @@ case class TextQuestion(
   absence: Option[(String, Mark)] = None
 ) extends Question
 
-case class AcknowledgementOnly(id: Question.Id, wording: Wording, statement: Statement) extends Question {
+case class AcknowledgementOnly(id: Question.Id, wording: Wording, statement: Statement = Statement()) extends Question {
   val absence = None
+  val afterStatement = Statement()
 }
 
 sealed trait Mark
@@ -127,7 +129,8 @@ case class ChooseOneOfQuestion(
 case class YesNoQuestion(
   id: Question.Id,
   wording: Wording,
-  statement: Statement,
+  statement: Statement = Statement(),
+  afterStatement: Statement = Statement(),
   label: Option[Question.Label] = None,
   hintText: Option[NonBulletStatementFragment] = None,
   yesMarking: Mark, noMarking: Mark,
