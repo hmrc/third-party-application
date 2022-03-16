@@ -68,6 +68,7 @@ trait QuestionBuilder {
       Question.Id.random,
       Wording(s"Wording$counter"),
       Statement(List()),
+      Statement(),
       None,
       None,
       choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])( (pair, acc) => acc + pair)

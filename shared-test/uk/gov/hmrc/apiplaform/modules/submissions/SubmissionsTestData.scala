@@ -166,7 +166,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     def passAnswer(question: Question): ActualAnswer = {
       question match {
         case TextQuestion(id, wording, statement, _, _, _, absence) => TextAnswer("some random text")
-        case ChooseOneOfQuestion(id, wording, statement, _, _, marking, absence) => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
+        case ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence) => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
         case MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence) => MultipleChoiceAnswer(Set(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value))
         case AcknowledgementOnly(id, wording, statement) => NoAnswer
         case YesNoQuestion(id, wording, statement, _, _, yesMarking, noMarking, absence) => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
@@ -212,7 +212,7 @@ trait AnsweringQuestionsHelper {
         (absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None)) ::
         List.empty[Option[ActualAnswer]]
 
-      case ChooseOneOfQuestion(id, _, _, _, _, marking, absence) => {
+      case ChooseOneOfQuestion(id, _, _, _, _, _, marking, absence) => {
         marking.map {
           case (pa, mark) => Some(SingleChoiceAnswer(pa.value))
           case _ => None

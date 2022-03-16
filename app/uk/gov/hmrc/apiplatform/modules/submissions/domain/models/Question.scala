@@ -112,7 +112,15 @@ case class MultiChoiceQuestion(
   lazy val choices: ListSet[PossibleAnswer] = ListSet(marking.keys.toList : _*)
 }
 
-case class ChooseOneOfQuestion(id: Question.Id, wording: Wording, statement: Statement, label: Option[Question.Label] = None, hintText: Option[NonBulletStatementFragment] = None, marking: ListMap[PossibleAnswer, Mark], absence: Option[(String, Mark)] = None) extends SingleChoiceQuestion {
+case class ChooseOneOfQuestion(
+  id: Question.Id,
+  wording: Wording,
+  statement: Statement,
+  afterStatement: Statement = Statement(),
+  label: Option[Question.Label] = None,
+  hintText: Option[NonBulletStatementFragment] = None,
+  marking: ListMap[PossibleAnswer, Mark],
+  absence: Option[(String, Mark)] = None) extends SingleChoiceQuestion {
   lazy val choices: ListSet[PossibleAnswer] = ListSet(marking.keys.toList : _*)
 }
 
