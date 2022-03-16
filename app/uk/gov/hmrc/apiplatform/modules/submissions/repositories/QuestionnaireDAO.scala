@@ -28,7 +28,7 @@ import scala.collection.immutable.ListMap
 
 @Singleton
 class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
-  private val store: mutable.Map[QuestionnaireId, Questionnaire] = mutable.Map()
+  private val store: mutable.Map[Questionnaire.Id, Questionnaire] = mutable.Map()
 
   import QuestionnaireDAO.Questionnaires._
   
@@ -36,7 +36,7 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
   
   // N.B. Using futures even though not necessary as it mixes better AND means any move to an actual Mongo collection is proof against lots of change
 
-  def fetch(id: QuestionnaireId): Future[Option[Questionnaire]] = store.get(id).pure[Future]
+  def fetch(id: Questionnaire.Id): Future[Option[Questionnaire]] = store.get(id).pure[Future]
 
   def fetchActiveGroupsOfQuestionnaires() : Future[NonEmptyList[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
 }
@@ -61,10 +61,10 @@ object QuestionnaireDAO {
 
     object OrganisationDetails {
       val questionRI1 = TextQuestion(
-        QuestionId("36b7e670-83fc-4b31-8f85-4d3394908495"),
+        Question.Id("36b7e670-83fc-4b31-8f85-4d3394908495"),
         Wording("What is the name of your responsible individual"),
         
-        Statement(
+        statement = Statement(
           List(
             StatementText("The responsible individual:"),
             StatementBullets(
@@ -79,39 +79,43 @@ object QuestionnaireDAO {
             )
           )
         ),
-        label = Some(TextQuestion.Label("First and last name"))
+        label = Some(Question.Label("First and last name"))
       )
+
       val questionRI2 = TextQuestion(
-        QuestionId("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
+        Question.Id("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
         Wording("What is the email address of your responsible individual"),
-        Statement(
+        statement = Statement(
           List(
           )
         ),
-        label = Some(TextQuestion.Label("Email address")),
-        hintText = Some(TextQuestion.HintText("Cannot be a shared mailbox"))
+        afterStatement = Statement(
+          List(
+            StatementText(" We will send a verification email to the email address provided."),
+            StatementText("The responsible individual must verify within 10 days that they are responsible for ensuring your software conforms to our terms of use.")
+          )
+        ),
+        label = Some(Question.Label("Email address")),
+        hintText = Some(StatementText("Cannot be a shared mailbox"))
       )
 
       val question1 = TextQuestion(
-        QuestionId("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
-        Wording("Give us your organisation's website URL"),
-        Statement(
-          List(
-            StatementText("For example https://example.com")
-          )
-        ),
+        Question.Id("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
+        Wording("What is your organisation's website URL"),
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("For example https://example.com")),
         absence = Some(("My organisation doesn't have a website", Fail))
       )
 
       val question2 = ChooseOneOfQuestion(
-        QuestionId("cbdf264f-be39-4638-92ff-6ecd2259c662"),
+        Question.Id("cbdf264f-be39-4638-92ff-6ecd2259c662"),
         Wording("Identify your organisation"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("Provide evidence that you or your organisation is officially registered in the UK. Choose one option.")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Unique Taxpayer Reference (UTR)") -> Pass),
           (PossibleAnswer("VAT registration number") -> Pass),
           (PossibleAnswer("Corporation Tax Unique Taxpayer Reference (UTR)") -> Pass),
@@ -122,42 +126,60 @@ object QuestionnaireDAO {
       )
 
       val question2a = TextQuestion(
-        QuestionId("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
+        Question.Id("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
         Wording("What is your company registration number?"),
-        Statement(
+        statement = Statement(
           List(
-            StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
-            StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
+            StatementText("You can find your company registration number on any official documentation you receive from Companies House.")
           )
         ),
+        hintText = Some(StatementText("It is 8 characters. For example, 01234567 or AC012345.")),
         absence = Some(("My organisation doesn't have a company registration", Warn))
       )
 
       val question2b = TextQuestion(
-        QuestionId("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
+        Question.Id("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
         Wording("What is your Unique Taxpayer Reference (UTR)?"),
-        Statement(List.empty)
+        statement = Statement(List.empty),
+        hintText = Some(
+          CompoundFragment(
+            StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Self Assessment. It may be called ‘reference’, ‘UTR’ or ‘official use’. You can "),
+            StatementLink("find a lost UTR number (opens in new tab)", "https://www.gov.uk/find-lost-utr-number"),
+            StatementText(".")
+          )
+        )
       )
+
       val question2c = TextQuestion(
-        QuestionId("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
+        Question.Id("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
         Wording("What is your VAT registration number?"),
-        Statement(List.empty)
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("This is 9 numbers, sometimes with ‘GB’ at the start, for example 123456789 or GB123456789. You can find it on your company’s VAT registration certificate."))
       )
       val question2d = TextQuestion(
-        QuestionId("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
+        Question.Id("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
         Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
-        Statement(List.empty)
+        statement = Statement(List.empty),
+        hintText = Some(
+          CompoundFragment(
+            StatementText("This is 10 numbers, for example 1234567890. It will be on tax returns and other letters about Corporation Tax. It may be called ‘reference’, ‘UTR’ or ‘official use’. You can "),
+            StatementLink("find a lost UTR number (opens in new tab)", "https://www.gov.uk/find-lost-utr-number"),
+            StatementText(".")
+          )
+        )
       )
+
       val question2e = TextQuestion(
-        QuestionId("a143760e-72f3-423b-a6b4-558db37a3453"),
+        Question.Id("a143760e-72f3-423b-a6b4-558db37a3453"),
         Wording("What is your PAYE reference?"),
-        Statement(List.empty)
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("This is a 3 digit tax office number, a forward slash, and a tax office employer reference, like 123/AB456. It may be called ‘Employer PAYE reference’ or ‘PAYE reference’. It will be on your P60."))
       )
       
       val question3 = AcknowledgementOnly(
-        QuestionId("a12f314e-bc12-4e0d-87ba-1326acb31008"),
+        Question.Id("a12f314e-bc12-4e0d-87ba-1326acb31008"),
         Wording("Provide evidence of your organisation's registration"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
             StatementText("You will be asked for a digital copy of the official registration document.")
@@ -166,8 +188,8 @@ object QuestionnaireDAO {
       )
       
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("ac69b129-524a-4d10-89a5-7bfa46ed95c7"),
-        label = Label("Organisation details"),
+        id = Questionnaire.Id("ac69b129-524a-4d10-89a5-7bfa46ed95c7"),
+        label = Questionnaire.Label("Organisation details"),
         questions = NonEmptyList.of(
           QuestionItem(questionRI1),
           QuestionItem(questionRI2),
@@ -185,9 +207,9 @@ object QuestionnaireDAO {
 
     object DevelopmentPractices {
       val question1 = YesNoQuestion(
-        QuestionId("653d2ee4-09cf-46a0-bc73-350a385ae860"),
+        Question.Id("653d2ee4-09cf-46a0-bc73-350a385ae860"),
         Wording("Do your development practices follow our guidance?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("You must develop software following our"),
             StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
@@ -199,7 +221,7 @@ object QuestionnaireDAO {
       )
 
       val question2 = YesNoQuestion(
-        id = QuestionId("6139f57d-36ab-4338-85b3-a2079d6cf376"),
+        id = Question.Id("6139f57d-36ab-4338-85b3-a2079d6cf376"),
         wording = Wording("Does your error handling meet our specification?"),
         statement = Statement(
           CompoundFragment(
@@ -213,9 +235,9 @@ object QuestionnaireDAO {
       )
       
       val question3 = YesNoQuestion(
-        QuestionId("3c5cd29d-bec2-463f-8593-cd5412fab1e5"),
+        Question.Id("3c5cd29d-bec2-463f-8593-cd5412fab1e5"),
         Wording("Does your software meet accessibility standards?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("Web-based software must meet level AA of the"),
             StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "https://www.w3.org/WAI/standards-guidelines/wcag/"),
@@ -227,8 +249,8 @@ object QuestionnaireDAO {
       )
 
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("796336a5-f7b4-4dad-8003-a818e342cbb4"),
-        label = Label("Development practices"),
+        id = Questionnaire.Id("796336a5-f7b4-4dad-8003-a818e342cbb4"),
+        label = Questionnaire.Label("Development practices"),
         questions = NonEmptyList.of(
           QuestionItem(question1), 
           QuestionItem(question2), 
@@ -239,9 +261,9 @@ object QuestionnaireDAO {
     
     object ServiceManagementPractices {
       val question1 = YesNoQuestion(
-        QuestionId("f67c64be-6a1a-41f4-a899-6c93fa7bd98d"),
+        Question.Id("f67c64be-6a1a-41f4-a899-6c93fa7bd98d"),
         Wording("Do you provide a way for your customers or third parties to tell you about a security risk or incident?"),
-        Statement(
+        statement = Statement(
           StatementText("We expect you to provide an easy contact method in the case of a security breach.")
         ),
         yesMarking = Pass,
@@ -249,9 +271,9 @@ object QuestionnaireDAO {
       )
 
       val question2 = YesNoQuestion(
-        QuestionId("b30e3d75-b16b-4bcb-b1ae-4f47d8b23fd0"),
+        Question.Id("b30e3d75-b16b-4bcb-b1ae-4f47d8b23fd0"),
         Wording("Do you have a process for notifying HMRC in the case of a security breach?"),
-        Statement(
+        statement = Statement(
           StatementText("Any issues concerning the security of customer data must be reported immediately to HMRC."),
           CompoundFragment(
             StatementText("You must also "),
@@ -265,8 +287,8 @@ object QuestionnaireDAO {
 
 
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("ba30fb9b-db99-4d18-8ed8-8e5d94842bcc"),
-        label = Label("Service management practices"),
+        id = Questionnaire.Id("ba30fb9b-db99-4d18-8ed8-8e5d94842bcc"),
+        label = Questionnaire.Label("Service management practices"),
         questions = NonEmptyList.of(
           QuestionItem(question1, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),
           QuestionItem(question2)
@@ -276,9 +298,9 @@ object QuestionnaireDAO {
 
     object HandlingPersonalData {
       val question1 = YesNoQuestion(
-        QuestionId("31b9f463-eafe-4273-be80-227922048046"),
+        Question.Id("31b9f463-eafe-4273-be80-227922048046"),
         Wording("Do you comply with the UK General Data Protection Regulation (UK GDPR)?"),
-        Statement(
+        statement = Statement(
           StatementText("To be UK GDPR compliant you must keep customer data safe. This includes telling customers:"),
           StatementBullets(
             StatementText("what personal data you will be processing and why"),
@@ -295,9 +317,9 @@ object QuestionnaireDAO {
       )
             
       val question2 = YesNoQuestion(
-        QuestionId("00ec1641-fc7f-4398-b537-348ddf7ec435"),
+        Question.Id("00ec1641-fc7f-4398-b537-348ddf7ec435"),
         Wording("Do you encrypt all customer data that you handle?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("You must encrypt access tokens and personally identifiable data when it is stored and in transit. Read the "),
             StatementLink("UK GDPR guidelines on encryption (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/encryption/encryption-and-data-transfer"),
@@ -309,9 +331,9 @@ object QuestionnaireDAO {
       )
 
       val question3 = ChooseOneOfQuestion(
-        QuestionId("36c22dc2-8101-4469-adf4-12717ade4528"),
+        Question.Id("36c22dc2-8101-4469-adf4-12717ade4528"),
         Wording("Do you ensure that each customer's data cannot be accessed by unauthorised users?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("Read the National Cyber Security Centre's guidance on "),
             StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
@@ -320,7 +342,7 @@ object QuestionnaireDAO {
             StatementText(".")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("We only have one customer") -> Pass)
@@ -328,16 +350,16 @@ object QuestionnaireDAO {
       )
 
       val question4 = ChooseOneOfQuestion(
-        QuestionId("164ff4b1-aa49-484e-82cf-1981835b34cf"),
+        Question.Id("164ff4b1-aa49-484e-82cf-1981835b34cf"),
         Wording("Do you have access control for employees using customer data?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
             StatementLink("National Cyber Security Centre's guidance", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("We only have one user") -> Pass)
@@ -345,9 +367,9 @@ object QuestionnaireDAO {
       )
 
       val question5 = YesNoQuestion(
-        QuestionId("10249171-e87a-498e-8239-a417af29e2ff"),
+        Question.Id("10249171-e87a-498e-8239-a417af29e2ff"),
         Wording("Can customers get their data from your software if they switch providers?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
             StatementLink("UK GDPR guidelines on individuals rights", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
@@ -358,9 +380,9 @@ object QuestionnaireDAO {
       )
 
       val question6 = YesNoQuestion(
-        QuestionId("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
+        Question.Id("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
         Wording("Do you store your customers' Government Gateway credentials?"),
-        Statement(
+        statement = Statement(
           StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         ),
         yesMarking = Fail,
@@ -368,8 +390,8 @@ object QuestionnaireDAO {
       )
 
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("19a26563-6d6a-488a-a81b-66436ccd17b7"),
-        label = Label("Handling personal data"),
+        id = Questionnaire.Id("19a26563-6d6a-488a-a81b-66436ccd17b7"),
+        label = Questionnaire.Label("Handling personal data"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2),
@@ -383,9 +405,9 @@ object QuestionnaireDAO {
 
     object CustomersAuthorisingYourSoftware {
       val question1 = AcknowledgementOnly(
-        QuestionId("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
+        Question.Id("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
         Wording("Customers authorising your software"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
             StatementText("Before you continue, you will need:"),
@@ -402,9 +424,9 @@ object QuestionnaireDAO {
       )
 
       val question2 = TextQuestion(
-        QuestionId("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
+        Question.Id("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
         Wording("Confirm the name of your software"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
             CompoundFragment(
@@ -415,13 +437,13 @@ object QuestionnaireDAO {
             StatementText("Application name")
           )
         ),
-        label = Some(TextQuestion.Label("Application name"))
+        label = Some(Question.Label("Application name"))
       )
 
       val question3 = MultiChoiceQuestion(
-        QuestionId("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
+        Question.Id("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that process customer information?"),
-        Statement(
+        statement = Statement(
           StatementText("For cloud software, check the server location with your cloud provider."),
           CompoundFragment(
             StatementText("Learn about "),
@@ -432,23 +454,23 @@ object QuestionnaireDAO {
           ),
           StatementText("Select all that apply.")
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("In the UK") -> Pass),
           (PossibleAnswer("In the European Economic Area (EEA)") -> Pass),
           (PossibleAnswer("Outside the EEA with adequacy agreements") -> Pass),
           (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Pass)
-        )
+        ),
       )
 
       val question4 = ChooseOneOfQuestion(
-        QuestionId("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
+        Question.Id("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
         Wording("Do you have a privacy policy URL for your software?"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("You need a privacy policy covering the software you request production credentials for.")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("The privacy policy is in desktop software") -> Pass)
@@ -456,9 +478,9 @@ object QuestionnaireDAO {
       )
 
       val question5 = TextQuestion(
-        QuestionId("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
+        Question.Id("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
         Wording("What is your privacy policy URL?"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("For example https://example.com/privacy-policy")
           )
@@ -466,14 +488,14 @@ object QuestionnaireDAO {
       )
 
       val question6 = ChooseOneOfQuestion(
-        QuestionId("ca6af382-4007-4228-a781-1446231578b9"),
+        Question.Id("ca6af382-4007-4228-a781-1446231578b9"),
         Wording("Do you have a terms and conditions URL for your software?"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("You need terms and conditions covering the software you request production credentials for.")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("The terms and conditions are in desktop software") -> Pass)
@@ -481,9 +503,9 @@ object QuestionnaireDAO {
       )
 
       val question7 = TextQuestion(
-        QuestionId("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
+        Question.Id("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
         Wording("What is your terms and conditions URL?"),
-        Statement(
+        statement = Statement(
           List(
             StatementText("For example https://example.com/terms-conditions")
           )
@@ -491,8 +513,8 @@ object QuestionnaireDAO {
       )
       
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
-        label = Label("Customers authorising your software"),
+        id = Questionnaire.Id("3a7f3369-8e28-447c-bd47-efbabeb6d93f"),
+        label = Questionnaire.Label("Customers authorising your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2),
@@ -507,19 +529,19 @@ object QuestionnaireDAO {
 
     object SoftwareSecurity {
       val question1 = ChooseOneOfQuestion(
-        QuestionId("227b404a-ae8a-4a76-9a4b-70bc568109ac"),
+        Question.Id("227b404a-ae8a-4a76-9a4b-70bc568109ac"),
         Wording("Do you provide software as a service (SaaS)?"),
-        Statement(),
-        ListMap(
+        statement = Statement(),
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Pass)
         )
       )
 
       val question2 = YesNoQuestion(
-        QuestionId("d6f895de-962c-4dc4-8399-9b995ab5da45"),
+        Question.Id("d6f895de-962c-4dc4-8399-9b995ab5da45"),
         Wording("Has your application passed software penetration testing?"),
-        Statement(
+        statement = Statement(
           List(
             CompoundFragment(
               StatementText("Use either penetration test tools or an independant third party supplier. For penetration methodologies read the "),
@@ -533,9 +555,9 @@ object QuestionnaireDAO {
       )
 
       val question3 = YesNoQuestion(
-        QuestionId("a26fe624-179c-4beb-b469-63f2dbe358a0"),
+        Question.Id("a26fe624-179c-4beb-b469-63f2dbe358a0"),
         Wording("Do you audit security controls to ensure you comply with data protection law?"),
-        Statement(
+        statement = Statement(
           List(
             CompoundFragment(
               StatementText("Assess your compliance using the "),
@@ -549,8 +571,8 @@ object QuestionnaireDAO {
       )
 
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("6c6b18cc-239f-443b-b63d-89393014ea64"),
-        label = Label("Software security"),
+        id = Questionnaire.Id("6c6b18cc-239f-443b-b63d-89393014ea64"),
+        label = Questionnaire.Label("Software security"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2, AskWhenAnswer(question1, "Yes")),
@@ -561,9 +583,9 @@ object QuestionnaireDAO {
 
     object FraudPreventionHeaders {
       val question1 = YesNoQuestion(
-        QuestionId("968076cb-6267-43fe-a193-d1b7a090c844"),
+        Question.Id("968076cb-6267-43fe-a193-d1b7a090c844"),
         Wording("Have you implemented fraud prevention headers?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("You must implement headers in line with our "),
             StatementLink("fraud prevention specification (opens in a new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
@@ -575,9 +597,9 @@ object QuestionnaireDAO {
       )
 
       val question2 = YesNoQuestion(
-        QuestionId("b58f910f-3630-4b0f-9431-7727aed4c2a1"),
+        Question.Id("b58f910f-3630-4b0f-9431-7727aed4c2a1"),
         Wording("Do your fraud prevention headers meet our specification?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("Check your headers meet the specification using the "),
             StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
@@ -589,8 +611,8 @@ object QuestionnaireDAO {
       )
 
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
-        label = Label("Fraud prevention headers"),
+        id = Questionnaire.Id("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
+        label = Questionnaire.Label("Fraud prevention headers"),
         questions = NonEmptyList.of(
           QuestionItem(question1, AskWhenContext(Keys.VAT_OR_ITSA, "Yes")),
           QuestionItem(question2, AskWhenContext(Keys.VAT_OR_ITSA, "Yes"))
@@ -600,24 +622,24 @@ object QuestionnaireDAO {
 
     object MarketingYourSoftware {
       val question1 = YesNoQuestion(
-        QuestionId("169f2ba5-4a07-438a-8eaa-cfc0efd5cdcf"),
+        Question.Id("169f2ba5-4a07-438a-8eaa-cfc0efd5cdcf"),
         Wording("Do you use HMRC logos in your software, marketing or website?"),
-        Statement(),
+        statement = Statement(),
         yesMarking = Warn,
         noMarking = Pass
       )
 
       val question2 = ChooseOneOfQuestion(
-        QuestionId("3a37889c-6e6c-4aa8-a818-12ac28f7dcc2"),
+        Question.Id("3a37889c-6e6c-4aa8-a818-12ac28f7dcc2"),
         Wording("Do adverts in your software comply with UK standards?"),
-        Statement(
+        statement = Statement(
           StatementText("Advertising that appears in your software (including third party advertising) must follow:"),
           StatementBullets(
             StatementLink("Advertising Standards Authority Codes (opens in a new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html "),
             StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Warn),
           (PossibleAnswer("There are no adverts in my software") -> Pass)
@@ -625,12 +647,12 @@ object QuestionnaireDAO {
       )
     
       val question3 = ChooseOneOfQuestion(
-        QuestionId("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
+        Question.Id("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
         Wording("Do you advertise your software as 'HMRC recognised'?"),
-        Statement(
+        statement = Statement(
           StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
         ),
-        ListMap(
+        marking = ListMap(
           PossibleAnswer("Yes") -> Pass,
           PossibleAnswer("No, I call it something else") -> Warn,
           PossibleAnswer("I do not advertise my software") -> Pass
@@ -638,16 +660,16 @@ object QuestionnaireDAO {
       )
 
       val question4 = ChooseOneOfQuestion(
-        QuestionId("1dd933ee-7f89-4eb4-a54e-bc54396afa55"),
+        Question.Id("1dd933ee-7f89-4eb4-a54e-bc54396afa55"),
         Wording("Do you get your customers' consent before sharing their personal data for marketing?"),
-        Statement(
+        statement = Statement(
           CompoundFragment(
             StatementText("You must not share customers' personal data without their consent. Read the "),
             StatementLink("Direct Marketing Guidance (opens in a new tab) ", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
             StatementText("from the Information Commissioner's Office.")
           )
         ),
-        ListMap(
+        marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("I do not share customer data") -> Pass)
@@ -656,8 +678,8 @@ object QuestionnaireDAO {
       
       
       val questionnaire = Questionnaire(
-        id = QuestionnaireId("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
-        label = Label("Marketing your software"),
+        id = Questionnaire.Id("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
+        label = Questionnaire.Label("Marketing your software"),
         questions = NonEmptyList.of(
           QuestionItem(question1),
           QuestionItem(question2, AskWhenContext(Keys.IN_HOUSE_SOFTWARE, "No")),

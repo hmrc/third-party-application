@@ -72,10 +72,10 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object RecordAnswers {
       def thenReturn( extSubmission: ExtendedSubmission ) =
-        when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Right(extSubmission)))
+        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
       def thenFails(error: String) = 
-        when(aMock.recordAnswers(*[Submission.Id], *[QuestionId], *[List[String]])).thenReturn(successful(Left(error)))
+        when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
     }
 
     object DeleteAll {

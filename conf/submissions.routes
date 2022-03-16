@@ -5,4 +5,4 @@ GET         /latestiscompleted/:aid                   uk.gov.hmrc.apiplatform.mo
 GET         /marked/application/:aid                  uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchLatestMarkedSubmission(aid: ApplicationId)
 
 GET         /:sid                                     uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.fetchSubmission(sid: Submission.Id)
-POST        /:sid/question/:qid                       uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: Submission.Id, qid: QuestionId)
+POST        /:sid/question/:qid                       uk.gov.hmrc.apiplatform.modules.submissions.controllers.SubmissionsController.recordAnswers(sid: Submission.Id, qid: Question.Id)
