@@ -127,11 +127,13 @@ object QuestionnaireDAO {
         QuestionId("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
         Wording("What is your company registration number?"),
         Statement(
-          List(
-            StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
-            StatementText("It's 8 characters long or 2 letters followed by 6 numbers. Check any documents from Companies House.")
+          CompoundFragment(
+            StatementText("You can "),
+            StatementLink("search Companies House for your company registration number (opens in a new tab)", "https://find-and-update.company-information.service.gov.uk/"),
+            StatementText(".")
           )
         ),
+        hintText = Some(TextQuestion.HintText("It is 8 characters. For example, 01234567 or AC012345.")),
         absence = Some(("My organisation doesn't have a company registration", Warn))
       )
 
