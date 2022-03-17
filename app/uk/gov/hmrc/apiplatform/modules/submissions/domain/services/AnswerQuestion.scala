@@ -43,13 +43,13 @@
 
     private def cond[A](cond: => Boolean, ok: A, msg: String): Either[String, A] = if(cond) Right(ok) else Left(msg)
 
-    def questionsToAsk(questionnaire: Questionnaire, context: AskWhen.Context, answersToQuestions: AnswersToQuestions): List[QuestionId] = {
+    def questionsToAsk(questionnaire: Questionnaire, context: AskWhen.Context, answersToQuestions: AnswersToQuestions): List[Question.Id] = {
       questionnaire.questions.collect {
         case (qi) if AskWhen.shouldAsk(context, answersToQuestions)(qi.askWhen) => qi.question.id
       }
     }
 
-    def recordAnswer(submission: Submission, questionId: QuestionId, rawAnswers: List[String]): Either[String, ExtendedSubmission] = {
+    def recordAnswer(submission: Submission, questionId: Question.Id, rawAnswers: List[String]): Either[String, ExtendedSubmission] = {
       for {
         question                        <- fromOption(submission.findQuestion(questionId), "Not valid for this submission")
         context                          = submission.context
@@ -88,7 +88,7 @@
       QuestionnaireProgress(state, questionsToAsk)
     }
       
-    def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: AskWhen.Context, answersToQuestions: AnswersToQuestions): Map[QuestionnaireId, QuestionnaireProgress] = {
+    def deriveProgressOfQuestionnaires(questionnaires: NonEmptyList[Questionnaire], context: AskWhen.Context, answersToQuestions: AnswersToQuestions): Map[Questionnaire.Id, QuestionnaireProgress] = {
       questionnaires.toList.map(q => (q.id -> deriveProgressOfQuestionnaire(q, context, answersToQuestions))).toMap
     }
   }

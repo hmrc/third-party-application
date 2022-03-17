@@ -21,7 +21,7 @@ class MarkedSubmissionSpec extends HmrcSpec {
 
   private def buildMarkedSubmissionWithMarks(marks: Mark*): MarkedSubmission = {
     val submission = mock[Submission]
-    val markedQuestions = marks.toList.map(m => QuestionId.random -> m).toMap
+    val markedQuestions = marks.toList.map(m => Question.Id.random -> m).toMap
     MarkedSubmission(submission, markedQuestions)
   }
 

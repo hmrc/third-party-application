@@ -125,23 +125,24 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
-        val completedAnswers: Submission.AnswersToQuestions = Map(QuestionId("q1") -> TextAnswer("ok"))
+        val completedAnswers: Submission.AnswersToQuestions = Map(Question.Id("q1") -> TextAnswer("ok"))
         val completeSubmission = aSubmission.copy(
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
               heading = "About your processes",
               links = NonEmptyList.of(
                 Questionnaire(
-                  id = QuestionnaireId("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
-                  label = Label("Marketing your software"),
+                  id = Questionnaire.Id("79590bd3-cc0d-49d9-a14d-6fa5dfc73f39"),
+                  label = Questionnaire.Label("Marketing your software"),
                   questions = NonEmptyList.of(
                     QuestionItem(
                       TextQuestion(
-                        QuestionId("q1"), 
+                        Question.Id("q1"), 
                         Wording("Do you provide software as a service (SaaS)?"),
                         Statement(
                           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
-                        ), 
+                        ),
+                        Statement(),
                         None
                       ) 
                     )
@@ -210,7 +211,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, QuestionId.random, List("Yes")))
+        val result = await(underTest.recordAnswers(submissionId, Question.Id.random, List("Yes")))
 
         result shouldBe 'left
       }

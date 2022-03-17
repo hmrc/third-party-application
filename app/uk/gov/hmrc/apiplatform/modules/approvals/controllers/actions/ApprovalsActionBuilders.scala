@@ -28,8 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
 
 
 trait JsonErrorResponse {
@@ -67,7 +67,7 @@ class ApplicationSubmissionRequest[A](
 
 class ApplicationExtendedSubmissionRequest[A](
     val submission: Submission, 
-    val questionnaireProgress: Map[QuestionnaireId, QuestionnaireProgress],
+    val questionnaireProgress: Map[Questionnaire.Id, QuestionnaireProgress],
     val applicationRequest: ApplicationRequest[A]
 ) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
 

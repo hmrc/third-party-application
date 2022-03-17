@@ -30,22 +30,22 @@ package object binders {
     }
   }
 
-  implicit def questionnaireIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[QuestionnaireId] = new PathBindable[QuestionnaireId] {
-    override def bind(key: String, value: String): Either[String, QuestionnaireId] = {
-      textBinder.bind(key, value).map(QuestionnaireId(_))
+  implicit def questionnaireIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[Questionnaire.Id] = new PathBindable[Questionnaire.Id] {
+    override def bind(key: String, value: String): Either[String, Questionnaire.Id] = {
+      textBinder.bind(key, value).map(Questionnaire.Id(_))
     }
 
-    override def unbind(key: String, questionnaireId: QuestionnaireId): String = {
+    override def unbind(key: String, questionnaireId: Questionnaire.Id): String = {
       questionnaireId.value
     }
   }
 
-  implicit def questionIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[QuestionId] = new PathBindable[QuestionId] {
-    override def bind(key: String, value: String): Either[String, QuestionId] = {
-      textBinder.bind(key, value).map(QuestionId(_))
+  implicit def questionIdPathBinder(implicit textBinder: PathBindable[String]): PathBindable[Question.Id] = new PathBindable[Question.Id] {
+    override def bind(key: String, value: String): Either[String, Question.Id] = {
+      textBinder.bind(key, value).map(Question.Id(_))
     }
 
-    override def unbind(key: String, questionId: QuestionId): String = {
+    override def unbind(key: String, questionId: Question.Id): String = {
       questionId.value
     }
   }
