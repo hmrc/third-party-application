@@ -97,7 +97,7 @@ object QuestionnaireDAO {
 
       val question1 = TextQuestion(
         Question.Id("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
-        Wording("What is your organisation's URL"),
+        Wording("What is your organisation’s URL"),
         statement = Statement(List.empty),
         hintText = Some(StatementText("For example https://example.com")),
         absence = Some(("My organisation doesn't have a website", Fail))
@@ -150,14 +150,14 @@ object QuestionnaireDAO {
 
       val question2c = TextQuestion(
         Question.Id("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
-        Wording("What is your company's VAT registration number?"),
+        Wording("What is your company’s VAT registration number?"),
         statement = Statement(List.empty),
         hintText = Some(StatementText("This is 9 numbers, sometimes with ‘GB’ at the start, for example 123456789 or GB123456789. You can find it on your company’s VAT registration certificate."))
       )
 
       val question2d = TextQuestion(
         Question.Id("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
-        Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
+        Wording("What is your Corporation Tax Unique Taxpayer Reference?"),
         statement = Statement(List.empty),
         hintText = Some(
           CompoundFragment(
@@ -170,14 +170,14 @@ object QuestionnaireDAO {
 
       val question2e = TextQuestion(
         Question.Id("a143760e-72f3-423b-a6b4-558db37a3453"),
-        Wording("What is your company's employer PAYE reference?"),
+        Wording("What is your company’s employer PAYE reference?"),
         statement = Statement(List.empty),
         hintText = Some(StatementText("This is a 3 digit tax office number, a forward slash, and a tax office employer reference, like 123/AB456. It may be called ‘Employer PAYE reference’ or ‘PAYE reference’. It will be on your P60."))
       )
       
       val question3 = AcknowledgementOnly(
         Question.Id("a12f314e-bc12-4e0d-87ba-1326acb31008"),
-        Wording("Provide evidence of your organisation's registration"),
+        Wording("Provide evidence of your organisation’s registration"),
         statement = Statement(
           List(
             StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
@@ -331,10 +331,10 @@ object QuestionnaireDAO {
 
       val question3 = ChooseOneOfQuestion(
         Question.Id("36c22dc2-8101-4469-adf4-12717ade4528"),
-        Wording("Do you ensure that each customer's data cannot be accessed by unauthorised users?"),
+        Wording("Do you ensure that each customer’s data cannot be accessed by unauthorised users?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("Read the National Cyber Security Centre's guidance on "),
+            StatementText("Read the National Cyber Security Centre’s guidance on "),
             StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
             StatementText("and best practice for "),
             StatementLink("username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
@@ -354,7 +354,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
-            StatementLink("National Cyber Security Centre's guidance (opens in a new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
+            StatementLink("National Cyber Security Centre’s guidance (opens in a new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
@@ -380,7 +380,7 @@ object QuestionnaireDAO {
 
       val question6 = YesNoQuestion(
         Question.Id("a66cd7b1-e8c1-4982-9ee8-727aa172aa9b"),
-        Wording("Do you store your customers' Government Gateway credentials?"),
+        Wording("Do you store your customers’ Government Gateway credentials?"),
         statement = Statement(
           StatementText("Implementing OAuth 2.0 means there is no need to store Government Gateway credentials.")
         ),
@@ -646,9 +646,9 @@ object QuestionnaireDAO {
     
       val question3 = ChooseOneOfQuestion(
         Question.Id("0b4695a0-f9bd-4595-9383-279f64ff3e2e"),
-        Wording("Do you advertise your software as 'HMRC recognised'?"),
+        Wording("Do you advertise your software as ‘HMRC recognised’?"),
         statement = Statement(
-          StatementText("Only use 'HMRC recognised' when advertising your software.  Do not use terms like 'accredited' or 'approved'.")
+          StatementText("Only use ‘HMRC recognised’ when advertising your software.  Do not use terms like ‘accredited’ or ‘approved’.")
         ),
         marking = ListMap(
           PossibleAnswer("Yes") -> Pass,
@@ -659,12 +659,12 @@ object QuestionnaireDAO {
 
       val question4 = ChooseOneOfQuestion(
         Question.Id("1dd933ee-7f89-4eb4-a54e-bc54396afa55"),
-        Wording("Do you get your customers' consent before sharing their personal data for marketing?"),
+        Wording("Do you get your customers’ consent before sharing their personal data for marketing?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("You must not share customers' personal data without their consent. Read the "),
+            StatementText("You must not share customers’ personal data without their consent. Read the "),
             StatementLink("Direct Marketing Guidance (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
-            StatementText(" from the Information Commissioner's Office.")
+            StatementText(" from the Information Commissioner’s Office.")
           )
         ),
         marking = ListMap(
