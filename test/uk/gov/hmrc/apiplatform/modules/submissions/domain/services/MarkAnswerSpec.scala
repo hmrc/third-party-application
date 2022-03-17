@@ -25,9 +25,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 class MarkAnswerSpec extends HmrcSpec {
 
   object TestQuestionnaires extends SubmissionsTestData {
-    val question1Id = QuestionId.random
+    val question1Id = Question.Id.random
     
-    val questionnaireAId = QuestionnaireId.random
+    val questionnaireAId = Questionnaire.Id.random
 
     val YES = SingleChoiceAnswer("Yes")
     val NO = SingleChoiceAnswer("No")
@@ -39,7 +39,7 @@ class MarkAnswerSpec extends HmrcSpec {
     def buildSubmissionFromQuestions(questions: Question*) = {
       val questionnaire = Questionnaire(
         id = questionnaireAId,
-        label = Label("Questionnaie"),
+        label = Questionnaire.Label("Questionnaie"),
         questions = NonEmptyList.fromListUnsafe(questions.map((q:Question) => QuestionItem(q)).toList)
       )
 
@@ -47,32 +47,38 @@ class MarkAnswerSpec extends HmrcSpec {
       aSubmission.copy(groups = oneGroups)
     }
 
-    def buildYesNoQuestion(id: QuestionId, yesMark: Mark, noMark: Mark) = YesNoQuestion(
+    def buildYesNoQuestion(id: Question.Id, yesMark: Mark, noMark: Mark) = YesNoQuestion(
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
+        Statement(),
+        None,
+        None,
         yesMark,
         noMark
       )
 
-    def buildTextQuestion(id: QuestionId) = TextQuestion(
+    def buildTextQuestion(id: Question.Id) = TextQuestion(
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
         absence = Some(("blah blah blah", Fail))
       )
     
-    def buildAcknowledgementOnlyQuestion(id: QuestionId) = AcknowledgementOnly(
+    def buildAcknowledgementOnlyQuestion(id: Question.Id) = AcknowledgementOnly(
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1"))        
       )
 
-    def buildMultiChoiceQuestion(id: QuestionId, answerMap: ListMap[PossibleAnswer, Mark]) = MultiChoiceQuestion(
+    def buildMultiChoiceQuestion(id: Question.Id, answerMap: ListMap[PossibleAnswer, Mark]) = MultiChoiceQuestion(
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
-        answerMap        
+        Statement(),
+        None,
+        None,
+        answerMap
       )
 
     object YesNoQuestionnaireData {

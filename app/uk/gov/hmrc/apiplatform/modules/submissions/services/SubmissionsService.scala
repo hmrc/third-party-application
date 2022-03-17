@@ -36,7 +36,7 @@ class SubmissionsService @Inject()(
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 
-  private val emptyAnswers = Map.empty[QuestionId,ActualAnswer]
+  private val emptyAnswers = Map.empty[Question.Id,ActualAnswer]
 
   def extendSubmission(submission: Submission): ExtendedSubmission = {
     val progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, submission.context, submission.latestInstance.answersToQuestions)
@@ -95,7 +95,7 @@ class SubmissionsService @Inject()(
     .value
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
+  def recordAnswers(submissionId: Submission.Id, questionId: Question.Id, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
         initialSubmission       <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")

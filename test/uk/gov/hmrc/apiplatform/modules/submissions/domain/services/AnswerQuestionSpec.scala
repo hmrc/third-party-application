@@ -26,12 +26,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.{SubmissionsTestData, Questio
 trait AsIdsHelpers {
  
   implicit class ListQIdSyntax(questionItems: List[QuestionItem]) {
-    def asIds(): List[QuestionId] = {
+    def asIds(): List[Question.Id] = {
       questionItems.map(_.question.id)
     }
   }
   implicit class NELQIdSyntax(questionItems: NonEmptyList[QuestionItem]) {
-    def asIds(): List[QuestionId] = {
+    def asIds(): List[Question.Id] = {
       questionItems.toList.map(_.question.id)
     }
   }
@@ -95,7 +95,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return left when question is not part of the questionnaire" in new Setup {
-        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionId.random, YesAnswer)
+        val after = AnswerQuestion.recordAnswer(aSubmission, Question.Id.random, YesAnswer)
 
         after.left.value
       }
@@ -109,7 +109,7 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
 
     "deriveProgressOfQuestionnaire" should {
       import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
-      val emptyAnswers = Map.empty[QuestionId, ActualAnswer]
+      val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
 
       "return not started, with answerable questions when nothing answered" in new Setup {
         val context = simpleContext

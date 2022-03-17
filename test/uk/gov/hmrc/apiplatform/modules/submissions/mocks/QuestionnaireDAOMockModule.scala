@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireId
 
 import scala.concurrent.Future.successful
 import cats.data.NonEmptyList
@@ -31,7 +30,7 @@ trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar
 
     object Fetch {
       def thenReturn(questionnaire: Option[Questionnaire]) =
-        when(aMock.fetch(*[QuestionnaireId])).thenReturn(successful(questionnaire))
+        when(aMock.fetch(*[Questionnaire.Id])).thenReturn(successful(questionnaire))
     }
 
     object ActiveQuestionnaireGroupings {

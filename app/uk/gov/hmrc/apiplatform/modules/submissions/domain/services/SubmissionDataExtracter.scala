@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 object SubmissionDataExtracter extends ApplicationLogger {
-  private def getTextQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
+  private def getTextQuestionOfInterest(submission: Submission, questionId: Question.Id) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
       case TextAnswer(answer) => Some(answer)
@@ -34,14 +34,14 @@ object SubmissionDataExtracter extends ApplicationLogger {
     }
   }
 
-  private def getSingleChoiceQuestionOfInterest(submission: Submission, questionId: QuestionId) = {
+  private def getSingleChoiceQuestionOfInterest(submission: Submission, questionId: Question.Id) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
       case SingleChoiceAnswer(answer) => Some(answer)
       case _                          => None
     }
   }
-  private def getMultiChoiceQuestionOfInterest(submission: Submission, questionId: QuestionId): Option[Set[String]] = {
+  private def getMultiChoiceQuestionOfInterest(submission: Submission, questionId: Question.Id): Option[Set[String]] = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
       case MultipleChoiceAnswer(answers) => Some(answers)
@@ -53,7 +53,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.applicationNameId)
   }
 
-  private def getUrlOrDesktopText(firstQuestionId: QuestionId, urlValueQuestionId: QuestionId)(submission: Submission): Option[String] = {
+  private def getUrlOrDesktopText(firstQuestionId: Question.Id, urlValueQuestionId: Question.Id)(submission: Submission): Option[String] = {
     getSingleChoiceQuestionOfInterest(submission, firstQuestionId).flatMap(answer => {
       answer match {
         case "Yes" => getTextQuestionOfInterest(submission, urlValueQuestionId)

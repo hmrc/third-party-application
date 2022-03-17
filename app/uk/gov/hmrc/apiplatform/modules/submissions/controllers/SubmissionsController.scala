@@ -92,7 +92,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
     service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
   }
 
-  def recordAnswers(submissionId: Submission.Id, questionId: QuestionId) = Action.async(parse.json) { implicit request =>
+  def recordAnswers(submissionId: Submission.Id, questionId: Question.Id) = Action.async(parse.json) { implicit request =>
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))

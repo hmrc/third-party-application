@@ -44,7 +44,7 @@ extends BackendController(cc) {
     dao.fetchActiveGroupsOfQuestionnaires.map(xs => Ok(Json.toJson(xs)))
   }
 
-  def fetch(questionnaireId: QuestionnaireId) = Action.async { _ =>
+  def fetch(questionnaireId: Questionnaire.Id) = Action.async { _ =>
     val failed = BadRequest(Json.toJson(ErrorMessage("No such questionnaire")))
 
     val success = (questionnaire: Questionnaire) => Ok(Json.toJson(questionnaire))
