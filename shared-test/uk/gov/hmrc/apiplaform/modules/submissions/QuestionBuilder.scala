@@ -55,6 +55,7 @@ trait QuestionBuilder {
       Question.Id.random,
       Wording(s"Wording$counter"),
       Statement(List()),
+      Statement(),
       None,
       None,
       Pass,

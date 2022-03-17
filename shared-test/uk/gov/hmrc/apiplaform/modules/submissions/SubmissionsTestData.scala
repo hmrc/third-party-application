@@ -169,7 +169,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         case ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence) => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
         case MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence) => MultipleChoiceAnswer(Set(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value))
         case AcknowledgementOnly(id, wording, statement) => NoAnswer
-        case YesNoQuestion(id, wording, statement, _, _, yesMarking, noMarking, absence) => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
+        case YesNoQuestion(id, wording, statement, _, _, _, yesMarking, noMarking, absence) => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
       }
     }
     
@@ -206,7 +206,7 @@ trait AnsweringQuestionsHelper {
     def answerForQuestion(desiredMark: Mark)(question: Question): Map[Question.Id, Option[ActualAnswer]] = {
       val answers: List[Option[ActualAnswer]] = question match {
 
-      case YesNoQuestion(id, _, _, _, _, yesMarking, noMarking, absence) =>
+      case YesNoQuestion(id, _, _, _, _, _, yesMarking, noMarking, absence) =>
         (if(yesMarking == desiredMark) Some(SingleChoiceAnswer("Yes")) else None) ::
         (if(noMarking == desiredMark) Some(SingleChoiceAnswer("No")) else None) ::
         (absence.flatMap(a => if(a._2 == desiredMark) Some(NoAnswer) else None)) ::

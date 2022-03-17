@@ -51,6 +51,7 @@ class MarkAnswerSpec extends HmrcSpec {
         id,
         Wording("wording1"),
         Statement(StatementText("Statement1")),
+        Statement(),
         None,
         None,
         yesMark,
