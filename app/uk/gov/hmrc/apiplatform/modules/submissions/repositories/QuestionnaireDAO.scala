@@ -458,7 +458,7 @@ object QuestionnaireDAO {
           (PossibleAnswer("In the European Economic Area (EEA)") -> Pass),
           (PossibleAnswer("Outside the EEA with adequacy agreements") -> Pass),
           (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Pass)
-        ),
+        )
       )
 
       val question4 = ChooseOneOfQuestion(
