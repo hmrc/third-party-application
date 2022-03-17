@@ -48,24 +48,24 @@ object MarkAnswer {
     }
   }
 
-  private def markInstanceInternal(submission: Submission, instance: Submission.Instance): Map[QuestionId,Mark] = {
+  private def markInstanceInternal(submission: Submission, instance: Submission.Instance): Map[Question.Id,Mark] = {
     // All questions should/must exist for these questionIds.
-    def unsafeGetQuestion(id: QuestionId): Question = submission.findQuestion(id).get
+    def unsafeGetQuestion(id: Question.Id): Question = submission.findQuestion(id).get
 
     instance.answersToQuestions.map {
-        case (id: QuestionId, answer: ActualAnswer) => (id -> markQuestion(unsafeGetQuestion(id), answer))
+        case (id: Question.Id, answer: ActualAnswer) => (id -> markQuestion(unsafeGetQuestion(id), answer))
     }
   }
 
-  def markInstance(submission: Submission, index: Int): Map[QuestionId, Mark] = {
+  def markInstance(submission: Submission, index: Int): Map[Question.Id, Mark] = {
     // All answers must be valid to have got here
     require(submission.status.canBeMarked)
 
     submission.instances.find(_.index == index)
-    .fold(Map.empty[QuestionId, Mark])(i => markInstanceInternal(submission, i))
+    .fold(Map.empty[Question.Id, Mark])(i => markInstanceInternal(submission, i))
   }
 
-  def markSubmission(submission: Submission): Map[QuestionId, Mark] = {
+  def markSubmission(submission: Submission): Map[Question.Id, Mark] = {
     // All answers must be valid to have got here
     require(submission.status.canBeMarked)
   

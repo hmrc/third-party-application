@@ -23,8 +23,8 @@ import uk.gov.hmrc.play.json.Union
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   
-  implicit val keyReadsQuestionnaireId: KeyReads[QuestionnaireId] = key => JsSuccess(QuestionnaireId(key))
-  implicit val keyWritesQuestionnaireId: KeyWrites[QuestionnaireId] = _.value
+  implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id] = key => JsSuccess(Questionnaire.Id(key))
+  implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = _.value
 
   implicit val stateWrites : Writes[QuestionnaireState] = Writes {
     case QuestionnaireState.NotStarted    => JsString("NotStarted")
@@ -43,7 +43,7 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 
   implicit val questionnaireProgressFormat = Json.format[QuestionnaireProgress]
 
-  implicit val answersToQuestionsFormat: OFormat[Map[QuestionId, Option[ActualAnswer]]] = implicitly
+  implicit val answersToQuestionsFormat: OFormat[Map[Question.Id, Option[ActualAnswer]]] = implicitly
 
   implicit val questionIdsOfInterestFormat = Json.format[QuestionIdsOfInterest]
 }
