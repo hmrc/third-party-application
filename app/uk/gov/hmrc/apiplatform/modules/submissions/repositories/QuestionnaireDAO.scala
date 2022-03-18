@@ -97,7 +97,7 @@ object QuestionnaireDAO {
 
       val question1 = TextQuestion(
         Question.Id("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
-        Wording("What is your organisation’s URL"),
+        Wording("What is your organisation’s URL?"),
         statement = Statement(List.empty),
         hintText = Some(StatementText("For example https://example.com")),
         absence = Some(("My organisation doesn't have a website", Fail))
@@ -137,7 +137,7 @@ object QuestionnaireDAO {
 
       val question2b = TextQuestion(
         Question.Id("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
-        Wording("What is your Self-Assessment Unique Taxpayer Reference?"),
+        Wording("What is your Self Assessment Unique Taxpayer Reference?"),
         statement = Statement(List.empty),
         hintText = Some(
           CompoundFragment(
@@ -442,15 +442,19 @@ object QuestionnaireDAO {
         Question.Id("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that process customer information?"),
         statement = Statement(
-          StatementText("For cloud software, check the server location with your cloud provider."),
+          List(
+            StatementText("For cloud software, check the server location with your cloud provider."),
+            StatementText("Select all that apply.")
+          )
+        ),
+        afterStatement = Statement(
           CompoundFragment(
             StatementText("Learn about "),
             StatementLink("adequacy agreements (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
             StatementText(" or "),
             StatementLink("check if a country has an adequacy agreement (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/#:~:text=Andorra%2C%20Argentina%2C%20Canada%20(commercial,a%20finding%20of%20adequacy%20about"),
             StatementText(" with the UK.")
-          ),
-          StatementText("Select all that apply.")
+          )
         ),
         marking = ListMap(
           (PossibleAnswer("In the UK") -> Pass),
@@ -463,11 +467,8 @@ object QuestionnaireDAO {
       val question4 = ChooseOneOfQuestion(
         Question.Id("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
         Wording("Do you have a privacy policy URL for your software?"),
-        statement = Statement(
-          List(
-            StatementText("You need a privacy policy covering the software you request production credentials for.")
-          )
-        ),
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("You need a privacy policy covering the software you request production credentials for.")),
         marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
@@ -478,21 +479,15 @@ object QuestionnaireDAO {
       val question5 = TextQuestion(
         Question.Id("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
         Wording("What is your privacy policy URL?"),
-        statement = Statement(
-          List(
-            StatementText("For example https://example.com/privacy-policy")
-          )
-        )
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("For example https://example.com/privacy-policy"))
       )
 
       val question6 = ChooseOneOfQuestion(
         Question.Id("ca6af382-4007-4228-a781-1446231578b9"),
         Wording("Do you have a terms and conditions URL for your software?"),
-        statement = Statement(
-          List(
-            StatementText("You need terms and conditions covering the software you request production credentials for.")
-          )
-        ),
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("You need terms and conditions covering the software you request production credentials for.")),
         marking = ListMap(
           (PossibleAnswer("Yes") -> Pass),
           (PossibleAnswer("No") -> Fail),
@@ -503,11 +498,8 @@ object QuestionnaireDAO {
       val question7 = TextQuestion(
         Question.Id("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
         Wording("What is your terms and conditions URL?"),
-        statement = Statement(
-          List(
-            StatementText("For example https://example.com/terms-conditions")
-          )
-        )
+        statement = Statement(List.empty),
+        hintText = Some(StatementText("For example https://example.com/terms-conditions"))
       )
       
       val questionnaire = Questionnaire(
@@ -610,7 +602,7 @@ object QuestionnaireDAO {
 
       val questionnaire = Questionnaire(
         id = Questionnaire.Id("f6483de4-7bfa-49d2-b4a2-70f95316472e"),
-        label = Questionnaire.Label("Fraud prevention headers"),
+        label = Questionnaire.Label("Fraud prevention data"),
         questions = NonEmptyList.of(
           QuestionItem(question1, AskWhenContext(Keys.VAT_OR_ITSA, "Yes")),
           QuestionItem(question2, AskWhenContext(Keys.VAT_OR_ITSA, "Yes"))
