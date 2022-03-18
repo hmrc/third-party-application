@@ -442,10 +442,7 @@ object QuestionnaireDAO {
         Question.Id("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
         Wording("Where are your servers that process customer information?"),
         statement = Statement(
-          List(
-            StatementText("For cloud software, check the server location with your cloud provider."),
-            StatementText("Select all that apply.")
-          )
+          StatementText("For cloud software, check the server location with your cloud provider.")
         ),
         afterStatement = Statement(
           CompoundFragment(
@@ -461,7 +458,8 @@ object QuestionnaireDAO {
           (PossibleAnswer("In the European Economic Area (EEA)") -> Pass),
           (PossibleAnswer("Outside the EEA with adequacy agreements") -> Pass),
           (PossibleAnswer("Outside the EEA with no adequacy agreements") -> Pass)
-        )
+        ),
+        hintText = Some(StatementText("Select all that apply."))
       )
 
       val question4 = ChooseOneOfQuestion(
