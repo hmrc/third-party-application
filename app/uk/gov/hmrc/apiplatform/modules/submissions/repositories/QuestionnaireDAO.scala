@@ -69,11 +69,11 @@ object QuestionnaireDAO {
             StatementBullets(
               CompoundFragment(
                 StatementText("ensures your software conforms to the "),
-                StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+                StatementLink("terms of use (opens in new tab)", "/api-documentation/docs/terms-of-use")
               ),
               CompoundFragment(
                 StatementText("understands the "),
-                StatementLink("consequences of not conforming to the terms of use", "/api-documentation/docs/terms-of-use")
+                StatementLink("consequences of not conforming to the terms of use (opens in new tab)", "/api-documentation/docs/terms-of-use")
               )
             )
           )
@@ -87,7 +87,7 @@ object QuestionnaireDAO {
         statement = Statement(List.empty),
         afterStatement = Statement(
           List(
-            StatementText(" We will send a verification email to the email address provided."),
+            StatementText("We will send a verification email to the email address provided."),
             StatementText("The responsible individual must verify within 10 days that they are responsible for ensuring your software conforms to our terms of use.")
           )
         ),
@@ -127,7 +127,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You can "),
-            StatementLink("search Companies House for your company registration number (opens in a new tab)", "https://find-and-update.company-information.service.gov.uk/"),
+            StatementLink("search Companies House for your company registration number (opens in new tab)", "https://find-and-update.company-information.service.gov.uk/"),
             StatementText(".")
           )
         ),
@@ -211,7 +211,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You must develop your software following our"),
-            StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
+            StatementLink("development practices (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
             StatementText(".")
           )
         ),
@@ -276,7 +276,7 @@ object QuestionnaireDAO {
           StatementText("Any issues concerning the security of customer data must be reported immediately to HMRC."),
           CompoundFragment(
             StatementText("You must also "),
-            StatementLink("notify the ICO about personal data breaches (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"),
+            StatementLink("notify the ICO about personal data breaches (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"),
             StatementText("within 72 hours of becoming aware of it.")
           )
         ),
@@ -354,7 +354,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("Using a personal security policy and Role Based Access Control (RBAC) will ensure that employees can only access data essential to their job role. Read the "),
-            StatementLink("National Cyber Security Centre’s guidance (opens in a new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
+            StatementLink("National Cyber Security Centre’s guidance (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/personnel-security"),
             StatementText(".")
           )
         ),
@@ -371,7 +371,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You must allow customers to change, export or delete their data if they want to. Read the "),
-            StatementLink("UK GDPR guidelines on individuals rights (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
+            StatementLink("UK GDPR guidelines on individuals rights (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/individual-rights/")
           )
         ),
         yesMarking = Pass,
@@ -430,7 +430,7 @@ object QuestionnaireDAO {
             StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
             CompoundFragment(
               StatementText("It must comply with our "),
-              StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+              StatementLink("naming guidelines (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
               StatementText(".")
             )
           )
@@ -447,9 +447,9 @@ object QuestionnaireDAO {
         afterStatement = Statement(
           CompoundFragment(
             StatementText("Learn about "),
-            StatementLink("adequacy agreements (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
+            StatementLink("adequacy agreements (opens in new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/adequacy/"),
             StatementText(" or "),
-            StatementLink("check if a country has an adequacy agreement (opens in a new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/#:~:text=Andorra%2C%20Argentina%2C%20Canada%20(commercial,a%20finding%20of%20adequacy%20about"),
+            StatementLink("check if a country has an adequacy agreement (opens in new tab)", "https://ico.org.uk/for-organisations/dp-at-the-end-of-the-transition-period/data-protection-and-the-eu-in-detail/the-uk-gdpr/international-data-transfers/#:~:text=Andorra%2C%20Argentina%2C%20Canada%20(commercial,a%20finding%20of%20adequacy%20about"),
             StatementText(" with the UK.")
           )
         ),
@@ -533,7 +533,7 @@ object QuestionnaireDAO {
           List(
             CompoundFragment(
               StatementText("Use either penetration test tools or an independant third party supplier. For penetration testing methodologies read the "),
-              StatementLink("Open Web Application Security Project (OWASP) guide (opens in a new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
+              StatementLink("Open Web Application Security Project (OWASP) guide (opens in new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
               StatementText(".")
             )
           )
@@ -549,7 +549,7 @@ object QuestionnaireDAO {
           List(
             CompoundFragment(
               StatementText("Assess your compliance using the "),
-              StatementLink("ICO information security checklist (opens in a new tab)", "https://ico.org.uk/for-organisations/sme-web-hub/checklists/data-protection-self-assessment"),
+              StatementLink("ICO information security checklist (opens in new tab)", "https://ico.org.uk/for-organisations/sme-web-hub/checklists/data-protection-self-assessment"),
               StatementText(".")
             )
           )
@@ -576,7 +576,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You must submit header data in line with the "),
-            StatementLink("fraud prevention specification (opens in a new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
+            StatementLink("fraud prevention specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/guides/fraud-prevention"),
             StatementText(".")
           )
         ),
@@ -590,7 +590,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("Before you submit any header data, you need to use the "),
-            StatementLink("Test Fraud Prevention Headers API (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
+            StatementLink("Test Fraud Prevention Headers API (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/api/service/txm-fph-validator-api/1.0"),
             StatementText(".")
           )        
         ),
@@ -623,8 +623,8 @@ object QuestionnaireDAO {
         statement = Statement(
           StatementText("Advertising that appears in your software (including third party advertising) must follow:"),
           StatementBullets(
-            StatementLink("Advertising Standards Authority Codes (opens in a new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html "),
-            StatementLink("UK marketing and advertising laws (opens in a new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
+            StatementLink("Advertising Standards Authority Codes (opens in new tab)", "https://www.asa.org.uk/codes-and-rulings/advertising-codes.html "),
+            StatementLink("UK marketing and advertising laws (opens in new tab)", "https://www.gov.uk/marketing-advertising-law/regulations-that-affect-advertising ")
           )
         ),
         marking = ListMap(
@@ -653,7 +653,7 @@ object QuestionnaireDAO {
         statement = Statement(
           CompoundFragment(
             StatementText("You must not share customers’ personal data without their consent. Read the "),
-            StatementLink("Direct Marketing Guidance (opens in a new tab)", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
+            StatementLink("Direct Marketing Guidance (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-pecr/electronic-and-telephone-marketing/"),
             StatementText(" from the Information Commissioner’s Office.")
           )
         ),
