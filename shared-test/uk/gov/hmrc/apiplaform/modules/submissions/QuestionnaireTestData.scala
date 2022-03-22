@@ -28,13 +28,13 @@ trait QuestionnaireTestData {
     val question1 = YesNoQuestion(
       Question.Id("653d2ee4-09cf-46a0-bc73-350a385ae860"),
       Wording("Do your development practices follow our guidance?"),
-      Statement(
+      Some(Statement(
         CompoundFragment(
           StatementText("You must develop software following our"),
           StatementLink("development practices (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
           StatementText(".")
         )
-      ),
+      )),
       yesMarking = Pass,
       noMarking = Warn
     )
@@ -42,13 +42,13 @@ trait QuestionnaireTestData {
     val question2 = YesNoQuestion(
       Question.Id("6139f57d-36ab-4338-85b3-a2079d6cf376"),
       Wording("Does your error handling meet our specification?"),
-      Statement(
+      Some(Statement(
         CompoundFragment(
           StatementText("We will check for evidence that you comply with our"),
           StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
           StatementText(".")
         )
-      ),
+      )),
       yesMarking = Pass,
       noMarking = Fail
     )
@@ -56,13 +56,13 @@ trait QuestionnaireTestData {
     val question3 = YesNoQuestion(
       Question.Id("3c5cd29d-bec2-463f-8593-cd5412fab1e5"),
       Wording("Does your software meet accessibility standards?"),
-      Statement(
+      Some(Statement(
         CompoundFragment(
           StatementText("Web-based software must meet level AA of the"),
           StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "https://www.w3.org/WAI/standards-guidelines/wcag/"),
           StatementText(". Desktop software should follow equivalent offline standards.")
         )
-      ),
+      )),
       yesMarking = Pass,
       noMarking = Warn
     )
@@ -82,58 +82,49 @@ trait QuestionnaireTestData {
     val questionRI1 = TextQuestion(
       Question.Id("36b7e670-83fc-4b31-8f85-4d3394908495"),
       Wording("What is the name of your responsible individual"),
-      
-      Statement(
-        List(
-          StatementText("The responsible individual:"),
-          CompoundFragment(
-            StatementText("ensures your software meets our "),
-            StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
-          ),
-          CompoundFragment(
-            StatementText("understands the "),
-            StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
-          )
+      Some(Statement(
+        StatementText("The responsible individual:"),
+        CompoundFragment(
+          StatementText("ensures your software meets our "),
+          StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+        ),
+        CompoundFragment(
+          StatementText("understands the "),
+          StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
         )
-      )
+      ))
     )
     val questionRI2 = TextQuestion(
       Question.Id("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
       Wording("What is the email address of your responsible individual"),
-      Statement(
-        List(
-          StatementText("The responsible individual:"),
-          CompoundFragment(
-            StatementText("ensures your software meets our "),
-            StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
-          ),
-          CompoundFragment(
-            StatementText("understands the "),
-            StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
-          )
+      Some(Statement(
+        StatementText("The responsible individual:"),
+        CompoundFragment(
+          StatementText("ensures your software meets our "),
+          StatementLink("terms of use", "/api-documentation/docs/terms-of-use")
+        ),
+        CompoundFragment(
+          StatementText("understands the "),
+          StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
         )
-      )
+      ))
     )
 
     val question1 = TextQuestion(
       Question.Id("b9dbf0a5-e72b-4c89-a735-26f0858ca6cc"),
       Wording("Give us your organisation's website URL"),
-      Statement(
-        List(
+      Some(Statement(
           StatementText("For example https://example.com")
-        )
-      ),
+      )),
       absence = Some(("My organisation doesn't have a website", Fail))
     )
 
     val question2 = ChooseOneOfQuestion(
       Question.Id("cbdf264f-be39-4638-92ff-6ecd2259c662"),
       Wording("Identify your organisation"),
-      Statement(
-        List(
-          StatementText("Provide evidence that you or your organisation is officially registered in the UK. Choose one option.")
-        )
-      ),
+      Some(Statement(
+        StatementText("Provide evidence that you or your organisation is officially registered in the UK. Choose one option.")
+      )),
       marking = ListMap(
         (PossibleAnswer("Unique Taxpayer Reference (UTR)") -> Pass),
         (PossibleAnswer("VAT registration number") -> Pass),
@@ -147,45 +138,41 @@ trait QuestionnaireTestData {
     val question2a = TextQuestion(
       Question.Id("4e148791-1a07-4f28-8fe4-ba3e18cdc118"),
       Wording("What is your company registration number?"),
-      Statement(
-        List(
-          StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
-          StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
-        )
-      ),
+      Some(Statement(
+        StatementText("You can find your company registration number on any official documentation you receive from Companies House."),
+        StatementText("It's 8 characters long or 2 letters followed by 6  numbers. Check and documents from Companies House.")
+      )),
       absence = Some(("My organisation doesn't have a company registration", Warn))
     )
 
     val question2b = TextQuestion(
       Question.Id("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
       Wording("What is your Unique Taxpayer Reference (UTR)?"),
-      Statement(List.empty)
+      None
     )
     val question2c = TextQuestion(
       Question.Id("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
       Wording("What is your VAT registration number?"),
-      Statement(List.empty)
+      None
     )
     val question2d = TextQuestion(
       Question.Id("6be23951-ac69-47bf-aa56-86d3d690ee0b"),
       Wording("What is your Corporation Tax Unique Taxpayer Reference (UTR)?"),
-      Statement(List.empty)
+      None
     )
     val question2e = TextQuestion(
       Question.Id("a143760e-72f3-423b-a6b4-558db37a3453"),
       Wording("What is your PAYE reference?"),
-      Statement(List.empty)
+      None
     )
     
     val question3 = AcknowledgementOnly(
       Question.Id("a12f314e-bc12-4e0d-87ba-1326acb31008"),
       Wording("Provide evidence of your organisation's registration"),
-      Statement(
-        List(
-          StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
-          StatementText("You will be asked for a digital copy of the official registration document.")
-        )
-      )
+      Some(Statement(
+        StatementText("You will need to provide evidence that your organisation is officially registered in a country outside of the UK."),
+        StatementText("You will be asked for a digital copy of the official registration document.")
+      ))
     )
       
     val questionnaire = Questionnaire(
@@ -210,44 +197,38 @@ trait QuestionnaireTestData {
     val question1 = AcknowledgementOnly(
       Question.Id("95da25e8-af3a-4e05-a621-4a5f4ca788f6"),
       Wording("Customers authorising your software"),
-      Statement(
-        List(
-          StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
-          StatementText("Before you continue, you will need:"),
-          StatementBullets(
-            List(
-              StatementText("the name of your software"),
-              StatementText("the location of your servers which store customer data"),
-              StatementText("a link to your privacy policy"),
-              StatementText("a link to your terms and conditions")
-            )
-          )
+      Some(Statement(
+        StatementText("Your customers will see the information you provide here when they authorise your software to interact with HMRC."),
+        StatementText("Before you continue, you will need:"),
+        StatementBullets(
+            StatementText("the name of your software"),
+            StatementText("the location of your servers which store customer data"),
+            StatementText("a link to your privacy policy"),
+            StatementText("a link to your terms and conditions")
         )
-      )
+      ))
     )
 
     val question2 = TextQuestion(
       Question.Id("4d5a41c8-8727-4d09-96c0-e2ce1bc222d3"),
       Wording("Confirm the name of your software"),
-      Statement(
-        List(
-          StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
-          CompoundFragment(
-            StatementText("It must comply with our "),
-            StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
-            StatementText(".")
-          ),
-          StatementText("Application name")
-        )
-      )
+      Some(Statement(
+        StatementText("We show this name to your users when they authorise your software to interact with HMRC."),
+        CompoundFragment(
+          StatementText("It must comply with our "),
+          StatementLink("naming guidelines (opens in a new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/using-the-hub/name-guidelines"),
+          StatementText(".")
+        ),
+        StatementText("Application name")
+      ))
     )
 
     val question3 = MultiChoiceQuestion(
       Question.Id("57d706ad-c0b8-462b-a4f8-90e7aa58e57a"),
       Wording("Where are your servers that store customer information?"),
-      Statement(
+      Some(Statement(
         StatementText("Select all that apply.")
-      ),
+      )),
       marking = ListMap(
         (PossibleAnswer("In the UK") -> Pass),
         (PossibleAnswer("In the European Economic Area") -> Pass),
@@ -258,11 +239,9 @@ trait QuestionnaireTestData {
     val question4 = ChooseOneOfQuestion(
       Question.Id("b0ae9d71-e6a7-4cf6-abd4-7eb7ba992bc6"),
       Wording("Do you have a privacy policy URL for your software?"),
-      Statement(
-        List(
-          StatementText("You need a privacy policy covering the software you request production credentials for.")
-        )
-      ),
+      Some(Statement(
+        StatementText("You need a privacy policy covering the software you request production credentials for.")
+      )),
       marking = ListMap(
         (PossibleAnswer("Yes") -> Pass),
         (PossibleAnswer("No") -> Fail),
@@ -273,21 +252,17 @@ trait QuestionnaireTestData {
     val question5 = TextQuestion(
       Question.Id("c0e4b068-23c9-4d51-a1fa-2513f50e428f"),
       Wording("What is your privacy policy URL?"),
-      Statement(
-        List(
-          StatementText("For example https://example.com/privacy-policy")
-        )
-      )
+      Some(Statement(
+        StatementText("For example https://example.com/privacy-policy")
+      ))
     )
 
     val question6 = ChooseOneOfQuestion(
       Question.Id("ca6af382-4007-4228-a781-1446231578b9"),
       Wording("Do you have a terms and conditions URL for your software?"),
-      Statement(
-        List(
-          StatementText("You need terms and conditions covering the software you request production credentials for.")
-        )
-      ),
+      Some(Statement(
+        StatementText("You need terms and conditions covering the software you request production credentials for.")
+      )),
       marking = ListMap(
         (PossibleAnswer("Yes") -> Pass),
         (PossibleAnswer("No") -> Fail),
@@ -298,11 +273,9 @@ trait QuestionnaireTestData {
     val question7 = TextQuestion(
       Question.Id("0a6d6973-c49a-49c3-93ff-de58daa1b90c"),
       Wording("What is your terms and conditions URL?"),
-      Statement(
-        List(
-          StatementText("For example https://example.com/terms-conditions")
-        )
-      )
+      Some(Statement(
+        StatementText("For example https://example.com/terms-conditions")
+      ))
     )
 
     val questionnaire = Questionnaire(
