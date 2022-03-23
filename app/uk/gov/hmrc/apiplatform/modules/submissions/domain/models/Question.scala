@@ -78,6 +78,7 @@ case class TextQuestion(
   afterStatement: Option[Statement] = None,
   label: Option[Question.Label] = None,
   hintText: Option[NonBulletStatementFragment] = None,
+  validation: Option[TextValidation] = None,
   absence: Option[(String, Mark)] = None,
   errorMessage: Option[String] = None,
   errorSummary: Option[String] = None
