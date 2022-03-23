@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
@@ -27,6 +28,17 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // NOTE - these override the defaults in order to push dates in non-mongo format
   implicit val formatTermsOfUserAgreement = Json.format[TermsOfUseAgreement]
+  implicit val formatTermsOfUseAcceptance = Json.format[TermsOfUseAcceptance]
+  implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
+  implicit val formatStandard = Json.format[Standard]
+  import uk.gov.hmrc.play.json.Union
+
+  implicit val formatAccess = Union.from[Access]("accessType")
+    .and[Standard](STANDARD.toString)
+    .and[Privileged](PRIVILEGED.toString)
+    .and[Ropc](ROPC.toString)
+    .format
+
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
   implicit val formatApplicationState = Json.format[ApplicationState]
@@ -55,6 +67,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatRejectUpliftRequest = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest = Json.format[ResendVerificationRequest]
   implicit val formatAddCollaboratorRequest = Json.format[AddCollaboratorRequest]
+  implicit val formatAddTermsOfUseAgreement = Json.format[AddTermsOfUseAcceptanceRequest]
   implicit val formatAddCollaboratorResponse = Json.format[AddCollaboratorResponse]
   implicit val formatScopeRequest = Json.format[ScopeRequest]
   implicit val formatScopeResponse = Json.format[ScopeResponse]

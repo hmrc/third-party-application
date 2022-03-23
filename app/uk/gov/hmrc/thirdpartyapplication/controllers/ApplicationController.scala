@@ -27,7 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -452,6 +451,23 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         nonStrideAuthenticatedApplicationDelete()
       }
     } recover recovery
+  }
+
+  def addTermsOfUseAcceptance(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[AddTermsOfUseAcceptanceRequest] { request =>
+      val acceptance = TermsOfUseAcceptance(
+        ResponsibleIndividual(
+          ResponsibleIndividual.Name(request.name),
+          ResponsibleIndividual.EmailAddress(request.emailAddress)
+        ),
+        request.acceptanceDate,
+        request.submissionId,
+        request.version
+      )
+      applicationService.addTermsOfUseAcceptance(applicationId, acceptance) map { _ =>
+          NoContent
+      } recover recovery
+    }
   }
 }
 
