@@ -42,4 +42,3 @@ case class Statement(fragments: NonEmptyList[StatementFragment])
 object Statement {
   def apply(fragment: StatementFragment, fragments: StatementFragment*) = new Statement(NonEmptyList.of(fragment, fragments: _*))
 }
-

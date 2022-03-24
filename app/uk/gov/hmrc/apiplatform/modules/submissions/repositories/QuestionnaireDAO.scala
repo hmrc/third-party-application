@@ -77,8 +77,7 @@ object QuestionnaireDAO {
           )
         ).some,
         label = Question.Label("First and last name").some,
-        errorMessage = "Enter a first and last name".some,
-        errorSummary = "First and last name cannot be blank".some
+        errorInfo = ErrorInfo("Enter a first and last name","First and last name cannot be blank").some
       )
 
       val questionRI2 = TextQuestion(
@@ -92,8 +91,7 @@ object QuestionnaireDAO {
         label = Question.Label("Email address").some,
         hintText = StatementText("Cannot be a shared mailbox").some,
         validation = TextValidation.Email.some,
-        errorMessage = "Enter an email address in the correct format, like yourname@example.com".some,
-        errorSummary = "Email address cannot be blank".some
+        errorInfo = ErrorInfo("Enter an email address in the correct format, like yourname@example.com","Email address cannot be blank").some
       )
 
       val question1 = TextQuestion(
@@ -103,8 +101,7 @@ object QuestionnaireDAO {
         hintText = StatementText("For example https://example.com").some,
         absence = ("My organisation doesn't have a website", Fail).some,
         validation = TextValidation.Url.some,
-        errorMessage = "Enter the URL, like https://example.com".some,
-        errorSummary = "URL cannot be blank".some
+        errorInfo = ErrorInfo("Enter the URL, like https://example.com","URL cannot be blank").some
       )
 
       val question2 = ChooseOneOfQuestion(
@@ -121,8 +118,7 @@ object QuestionnaireDAO {
           (PossibleAnswer("My organisation is in the UK and doesn't have any of these") -> Pass),
           (PossibleAnswer("My organisation is outside the UK and doesn't have any of these") -> Warn)
         ),
-        errorMessage = "Select a way to identify your organisation".some,
-        errorSummary = "Select a way to identify your organisation".some       
+        errorInfo = ErrorInfo("Select a way to identify your organisation","Select a way to identify your organisation").some       
       )
 
       val question2a = TextQuestion(
