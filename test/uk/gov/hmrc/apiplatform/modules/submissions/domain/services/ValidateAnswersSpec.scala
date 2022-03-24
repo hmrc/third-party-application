@@ -124,7 +124,7 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
       }
     }
 
-    "for text questions" in {
+    "for text questions without validation" in {
       val question = textQuestion(1)
       val optionalQuestion = question.makeOptionalPass
       type AnswerMatching = Either[Unit, ActualAnswer]
@@ -137,6 +137,36 @@ class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with
         ("valid answer"                             , question        , answerOf("Bobby")        , validAnswer),
         ("too many answers"                         , question        , answerOf("Bobby", "Fred"), aFailure),
         ("valid answer on optional"                 , optionalQuestion, answerOf("Bobby")        , validAnswer),
+        
+        ("empty answer is invalid on non optional"  , question        , noAnswer                 , aFailure),
+        ("empty answer is valid on optional"        , optionalQuestion, noAnswer                 , validEmptyAnswer)
+      ) 
+      
+      forAll(passes) { (_: String, question: Question, answers: List[String], expects: AnswerMatching) => 
+        expects match {
+          case Right(answer) =>
+            ValidateAnswers.validate(question, answers) shouldBe Right(answer)
+          case Left(()) =>
+            ValidateAnswers.validate(question, answers) shouldBe 'Left
+        }
+      }
+    }
+
+    
+    "for text questions with validation" in {
+      val question = textQuestion(1).copy(validation = Some(TextValidation.MatchRegex("[0-9]+")))
+      val optionalQuestion = question.makeOptionalPass
+      type AnswerMatching = Either[Unit, ActualAnswer]
+      val aFailure: AnswerMatching = Left(())
+      val validAnswer: AnswerMatching = Right(TextAnswer("123"))
+      val validEmptyAnswer: AnswerMatching = Right(NoAnswer)
+
+      val passes = Table(
+        ("description"                              , "question"      , "answer"                 , "expects"),
+        ("valid answer"                             , question        , answerOf("123")          , validAnswer),
+        ("invalid answer"                           , question        , answerOf("abc")          , aFailure),
+        ("too many answers"                         , question        , answerOf("123", "456")   , aFailure),
+        ("valid answer on optional"                 , optionalQuestion, answerOf("123")          , validAnswer),
         
         ("empty answer is invalid on non optional"  , question        , noAnswer                 , aFailure),
         ("empty answer is valid on optional"        , optionalQuestion, noAnswer                 , validEmptyAnswer)

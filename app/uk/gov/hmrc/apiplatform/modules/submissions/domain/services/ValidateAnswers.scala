@@ -32,10 +32,16 @@ object ValidateAnswers {
       case (q : MultiChoiceQuestion, answers)         => validateAgainstPossibleAnswers(q, answers.toSet)
       case (_, a :: b :: Nil)                         => Either.left("Question only accepts one answer")
 
-      case (_ : TextQuestion, head :: Nil )           => Either.right(TextAnswer(head))
+      case (q : TextQuestion, head :: Nil )           => validateAgainstPossibleTextValidationRule(q, head)
       case (q : SingleChoiceQuestion, head :: Nil )   => validateAgainstPossibleAnswers(q, head)
 
     }
+  }
+
+  def validateAgainstPossibleTextValidationRule(question: TextQuestion, rawAnswer: String): Either[String, ActualAnswer] = {
+    question.validation
+    .fold(rawAnswer.asRight[String])(v => v.validate(rawAnswer))
+    .map(TextAnswer(_))
   }
 
   def validateAgainstPossibleAnswers(question: MultiChoiceQuestion, rawAnswers: Set[String]): Either[String, ActualAnswer] = {

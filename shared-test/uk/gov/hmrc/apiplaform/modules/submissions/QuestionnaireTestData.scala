@@ -22,6 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires
 
 import scala.collection.immutable.ListMap
+import cats.implicits._
 
 trait QuestionnaireTestData {
   object DevelopmentPractices {
@@ -92,8 +93,10 @@ trait QuestionnaireTestData {
           StatementText("understands the "),
           StatementLink("consequences of not meeting the terms of use", "/api-documentation/docs/terms-of-use")
         )
-      ))
+      )),
+      validation = TextValidation.Email.some
     )
+
     val questionRI2 = TextQuestion(
       Question.Id("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
       Wording("What is the email address of your responsible individual"),
@@ -148,7 +151,8 @@ trait QuestionnaireTestData {
     val question2b = TextQuestion(
       Question.Id("55da0b97-178c-45b5-a139-b61ad7b9ca84"),
       Wording("What is your Unique Taxpayer Reference (UTR)?"),
-      None
+      None,
+      validation = TextValidation.MatchRegex("[0-9]{10}").some
     )
     val question2c = TextQuestion(
       Question.Id("dd12fd8b-907b-4ba1-95d3-ef6317f36199"),
@@ -254,7 +258,8 @@ trait QuestionnaireTestData {
       Wording("What is your privacy policy URL?"),
       Some(Statement(
         StatementText("For example https://example.com/privacy-policy")
-      ))
+      )),
+      validation = TextValidation.Url.some
     )
 
     val question6 = ChooseOneOfQuestion(
