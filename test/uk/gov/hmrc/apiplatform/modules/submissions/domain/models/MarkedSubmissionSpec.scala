@@ -15,6 +15,7 @@
  */
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
+
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class MarkedSubmissionSpec extends HmrcSpec {
