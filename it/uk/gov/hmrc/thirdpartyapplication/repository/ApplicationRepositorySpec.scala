@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import java.util.UUID
-
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
@@ -28,16 +27,15 @@ import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ClientId, ImportantSubmissionData, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper, DateTimeTestUtils}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, DateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 class ApplicationRepositorySpec
   extends AsyncHmrcSpec
@@ -1339,6 +1337,39 @@ class ApplicationRepositorySpec
       otherClientSecrets(updatedApplication, clientSecretId) foreach { otherSecret =>
         otherSecret.name should be ("secret-that-should-not-change")
       }
+    }
+  }
+
+  "addApplicationTermsOfUseAcceptance" should {
+    "update the application correctly" in {
+      val responsibleIndividual = ResponsibleIndividual(
+        ResponsibleIndividual.Name("bob"),
+        ResponsibleIndividual.EmailAddress("bob@example.com")
+      )
+      val version = "2.0"
+      val acceptanceDate = DateTime.now
+      val submissionId = Submission.Id.random
+      val acceptance = TermsOfUseAcceptance(
+        responsibleIndividual,
+        acceptanceDate,
+        submissionId,
+        version
+      )
+      val applicationId = ApplicationId.random
+      val importantSubmissionData = ImportantSubmissionData(None, responsibleIndividual, Set.empty, TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware, termsOfUseAcceptances = List())
+      val application = anApplicationData(applicationId).copy(access = Standard(importantSubmissionData = Some(importantSubmissionData)))
+      await(applicationRepository.save(application))
+      val updatedApplication = await(applicationRepository.addApplicationTermsOfUseAcceptance(applicationId, acceptance))
+
+      val termsOfUseAcceptances = updatedApplication.access.asInstanceOf[Standard].importantSubmissionData.get.termsOfUseAcceptances
+      termsOfUseAcceptances.size shouldBe 1
+
+      val termsOfUseAcceptance = termsOfUseAcceptances.head
+      termsOfUseAcceptance.responsibleIndividual shouldBe responsibleIndividual
+      termsOfUseAcceptance.version shouldBe version
+      termsOfUseAcceptance.dateTime.getMillis shouldBe acceptanceDate.getMillis
+      termsOfUseAcceptance.submissionId shouldBe submissionId
     }
   }
 

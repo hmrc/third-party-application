@@ -17,10 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json._
-import org.joda.time.{DateTime, DateTimeZone}
+import org.joda.time.DateTime
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.UtcMillisDateTimeFormatters
 
 case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: DateTime, submissionId: Submission.Id, version: String)
 

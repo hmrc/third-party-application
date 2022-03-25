@@ -260,7 +260,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
           })
 
       } recover recovery
-  }  
+  }
 
   private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
     future.map {
