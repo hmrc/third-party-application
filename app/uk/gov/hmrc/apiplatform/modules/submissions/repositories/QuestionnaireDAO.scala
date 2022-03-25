@@ -696,9 +696,9 @@ object QuestionnaireDAO {
           heading = "About your software",
           links = NonEmptyList.of(
             HandlingPersonalData.questionnaire,
-            CustomersAuthorisingYourSoftware.questionnaire,
             SoftwareSecurity.questionnaire,
-            FraudPreventionHeaders.questionnaire
+            FraudPreventionHeaders.questionnaire,
+            CustomersAuthorisingYourSoftware.questionnaire
           )
         )
       )
