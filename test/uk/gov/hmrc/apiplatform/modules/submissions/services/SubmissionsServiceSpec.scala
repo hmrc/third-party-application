@@ -139,10 +139,10 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
                       TextQuestion(
                         Question.Id("q1"), 
                         Wording("Do you provide software as a service (SaaS)?"),
-                        Statement(
+                        Some(Statement(
                           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
-                        ),
-                        Statement(),
+                        )),
+                        None,
                         None
                       ) 
                     )

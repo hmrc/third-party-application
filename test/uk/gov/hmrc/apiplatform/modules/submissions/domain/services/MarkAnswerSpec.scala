@@ -50,8 +50,8 @@ class MarkAnswerSpec extends HmrcSpec {
     def buildYesNoQuestion(id: Question.Id, yesMark: Mark, noMark: Mark) = YesNoQuestion(
         id,
         Wording("wording1"),
-        Statement(StatementText("Statement1")),
-        Statement(),
+        Some(Statement(StatementText("Statement1"))),
+        None,
         None,
         None,
         yesMark,
@@ -61,21 +61,21 @@ class MarkAnswerSpec extends HmrcSpec {
     def buildTextQuestion(id: Question.Id) = TextQuestion(
         id,
         Wording("wording1"),
-        Statement(StatementText("Statement1")),
+        Some(Statement(StatementText("Statement1"))),
         absence = Some(("blah blah blah", Fail))
       )
     
     def buildAcknowledgementOnlyQuestion(id: Question.Id) = AcknowledgementOnly(
         id,
         Wording("wording1"),
-        Statement(StatementText("Statement1"))        
+        Some(Statement(StatementText("Statement1")))       
       )
 
     def buildMultiChoiceQuestion(id: Question.Id, answerMap: ListMap[PossibleAnswer, Mark]) = MultiChoiceQuestion(
         id,
         Wording("wording1"),
-        Statement(StatementText("Statement1")),
-        Statement(),
+        Some(Statement(StatementText("Statement1"))),
+        None,
         None,
         None,
         answerMap
