@@ -16,8 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
@@ -84,6 +86,8 @@ case class DeleteCollaboratorRequest(
   adminsToEmail: Set[String],
   notifyCollaborator: Boolean
 )
+
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: DateTime, submissionId: Submission.Id, version: String)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value

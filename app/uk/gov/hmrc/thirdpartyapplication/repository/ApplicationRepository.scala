@@ -128,6 +128,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("grantLength" -> grantLength)))
 
+  def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$push" -> Json.obj("access.importantSubmissionData.termsOfUseAcceptances" -> Json.toJson(acceptance))))
+
   def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 

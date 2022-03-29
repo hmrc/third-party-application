@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.concurrent.{TimeUnit, TimeoutException}
-
 import akka.actor.ActorSystem
 import cats.implicits._
+import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -46,6 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsC
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
+
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
@@ -54,10 +56,10 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 
-class ApplicationServiceSpec 
-  extends AsyncHmrcSpec 
+class ApplicationServiceSpec
+  extends AsyncHmrcSpec
   with BeforeAndAfterAll
-  with ApplicationStateUtil 
+  with ApplicationStateUtil
   with ApplicationTestData
   with UpliftRequestSamples
   with LockDownDateTime {
@@ -66,7 +68,7 @@ class ApplicationServiceSpec
     with ApiGatewayStoreMockModule
     with ApiSubscriptionFieldsConnectorMockModule
     with ApplicationRepositoryMockModule
-    with TokenServiceMockModule 
+    with TokenServiceMockModule
     with SubmissionsServiceMockModule
     with UpliftNamingServiceMockModule
     with StateHistoryRepositoryMockModule
@@ -391,6 +393,19 @@ class ApplicationServiceSpec
       val dbApplication = ApplicationRepoMock.Save.verifyCalled()
       ApiGatewayStoreMock.DeleteApplication.verifyCalled()
       ApplicationRepoMock.Delete.verifyCalledWith(dbApplication.id)
+    }
+  }
+
+  "addTermsOfUseAcceptance" should {
+    "update the repository correctly" in new Setup {
+      val termsOfUseAcceptance = TermsOfUseAcceptance(
+        ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob@example.com")),
+        DateTime.now(), Submission.Id.random, "2.0"
+      )
+      val appData = anApplicationData(ApplicationId.random)
+      ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(appData)
+      val result = await(underTest.addTermsOfUseAcceptance(applicationId, termsOfUseAcceptance))
+      result shouldBe appData
     }
   }
 

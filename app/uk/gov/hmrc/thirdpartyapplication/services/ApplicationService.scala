@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
+import org.joda.time.DateTime
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
@@ -149,6 +150,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       _ = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
       _ = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
+  }
+
+  def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] = {
+    for {
+      updatedApp <- applicationRepository.addApplicationTermsOfUseAcceptance(applicationId, acceptance)
+    } yield updatedApp
   }
 
   def updateRateLimitTier(applicationId: ApplicationId, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
