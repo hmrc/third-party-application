@@ -20,7 +20,7 @@ import play.api.libs.json._
 import org.joda.time.DateTime
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
-case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: DateTime, submissionId: Submission.Id, version: String)
+case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: DateTime, submissionId: Submission.Id)
 
 object TermsOfUseAcceptance {
   import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats

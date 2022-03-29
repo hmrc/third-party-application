@@ -265,9 +265,8 @@ class ApplicationControllerSpec
       val emailAddress = "bob@example.com"
       val acceptanceDate = DateTime.now()
       val submissionId = Submission.Id.random
-      val version = "2.0"
       val captor = ArgCaptor[TermsOfUseAcceptance]
-      val addTermsOfUseAcceptanceRequest = AddTermsOfUseAcceptanceRequest(name, emailAddress, acceptanceDate, submissionId, version)
+      val addTermsOfUseAcceptanceRequest = AddTermsOfUseAcceptanceRequest(name, emailAddress, acceptanceDate, submissionId)
 
       when(mockApplicationService.addTermsOfUseAcceptance(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
 
@@ -280,7 +279,6 @@ class ApplicationControllerSpec
       * before and after serialization are not considered equal even though they have the same value
       * (known JodaTime bug) */
       val termsOfUseAcceptance = captor.value
-      termsOfUseAcceptance.version shouldBe version
       termsOfUseAcceptance.dateTime.getMillis shouldBe acceptanceDate.getMillis
       termsOfUseAcceptance.submissionId shouldBe submissionId
       termsOfUseAcceptance.responsibleIndividual.fullName.value shouldBe name

@@ -461,8 +461,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
           ResponsibleIndividual.EmailAddress(request.emailAddress)
         ),
         request.acceptanceDate,
-        request.submissionId,
-        request.version
+        request.submissionId
       )
       applicationService.addTermsOfUseAcceptance(applicationId, acceptance) map { _ =>
           NoContent
