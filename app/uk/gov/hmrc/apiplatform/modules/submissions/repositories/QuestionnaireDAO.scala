@@ -132,7 +132,7 @@ object QuestionnaireDAO {
           )
         ).some,
         hintText = StatementText("It is 8 characters. For example, 01234567 or AC012345.").some,
-        absence = Tuple2("My organisation doesn't have a company registration", Warn).some,
+        absence = Tuple2("My organisation doesn't have a company registration", Fail).some,
         errorInfo = ErrorInfo("Your company registration number cannot be blank","Enter your company registration number, like 01234567").some       
       )
 
