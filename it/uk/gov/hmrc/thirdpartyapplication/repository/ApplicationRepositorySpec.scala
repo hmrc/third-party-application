@@ -1346,14 +1346,12 @@ class ApplicationRepositorySpec
         ResponsibleIndividual.Name("bob"),
         ResponsibleIndividual.EmailAddress("bob@example.com")
       )
-      val version = "2.0"
       val acceptanceDate = DateTime.now
       val submissionId = Submission.Id.random
       val acceptance = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
-        submissionId,
-        version
+        submissionId
       )
       val applicationId = ApplicationId.random
       val importantSubmissionData = ImportantSubmissionData(None, responsibleIndividual, Set.empty, TermsAndConditionsLocation.InDesktopSoftware,
@@ -1367,7 +1365,6 @@ class ApplicationRepositorySpec
 
       val termsOfUseAcceptance = termsOfUseAcceptances.head
       termsOfUseAcceptance.responsibleIndividual shouldBe responsibleIndividual
-      termsOfUseAcceptance.version shouldBe version
       termsOfUseAcceptance.dateTime.getMillis shouldBe acceptanceDate.getMillis
       termsOfUseAcceptance.submissionId shouldBe submissionId
     }
