@@ -87,7 +87,7 @@ case class DeleteCollaboratorRequest(
   notifyCollaborator: Boolean
 )
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: DateTime, submissionId: Submission.Id, version: String)
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: DateTime, submissionId: Submission.Id)
 
 object ErrorCode extends Enumeration {
   type ErrorCode = Value

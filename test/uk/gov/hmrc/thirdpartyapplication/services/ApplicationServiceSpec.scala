@@ -400,7 +400,7 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob@example.com")),
-        DateTime.now(), Submission.Id.random, "2.0"
+        DateTime.now(), Submission.Id.random
       )
       val appData = anApplicationData(ApplicationId.random)
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(appData)

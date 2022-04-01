@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
-import org.joda.time.DateTime
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
