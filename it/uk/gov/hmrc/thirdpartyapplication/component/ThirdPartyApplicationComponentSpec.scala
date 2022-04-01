@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
+import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteCollaboratorRequest
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -329,8 +330,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val application = createApplication()
 
       When("We request to remove a collaborator to the application")
-      val response = Http(s"$serviceUrl/application/${application.id.value}/collaborator/user@example.com?admin=admin@example.com&adminsToEmail=")
-        .method("DELETE").asString
+      val deleteRequest = DeleteCollaboratorRequest(emailAddress, Set("admin@example.com"), false)
+      val response = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)) )
+
       response.code shouldBe NO_CONTENT
 
       Then("The collaborator is removed")

@@ -186,18 +186,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
+      println(s"POME: $dcRequest")
       applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {
-        case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
-      } recover recovery
-    }
-  }
-
-  def deleteCollaboratorByEmail(applicationId: ApplicationId, email: String, adminsToEmail: String, notifyCollaborator: Boolean) = {
-
-    val adminsToEmailSet = adminsToEmail.split(",").toSet[String].map(_.trim).filter(_.nonEmpty)
-
-    Action.async { implicit request =>
-      applicationService.deleteCollaborator(applicationId, email, adminsToEmailSet, notifyCollaborator) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery
     }
@@ -300,10 +290,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
         )(
           userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head)
         )
-      case ("emailAddress" :: "environment" :: _, _) =>
-        fetchAllForCollaboratorAndEnvironment(request.queryString("emailAddress").head, request.queryString("environment").head)
-      case ("emailAddress" :: _, _) =>
-        fetchAllForCollaborator(request.queryString("emailAddress").head)
       case ("subscribesTo" :: "version" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
         val version = ApiVersion(request.queryString("version").head)
@@ -357,16 +343,8 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     applicationService.fetchAllForCollaborator(userId).map(apps => Ok(toJson(apps))) recover recovery
   }
 
-  private def fetchAllForCollaborator(emailAddress: String) = {
-    applicationService.fetchAllForCollaborator(emailAddress).map(apps => Ok(toJson(apps))) recover recovery
-  }
-
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String) = {
     applicationService.fetchAllForUserIdAndEnvironment(userId, environment).map(apps => Ok(toJson(apps))) recover recovery
-  }
-
-  private def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String) = {
-    applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAll() = {

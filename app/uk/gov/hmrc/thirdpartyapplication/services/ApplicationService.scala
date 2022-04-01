@@ -314,23 +314,9 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     applicationRepository.fetchAllForUserId(userId).flatMap(asExtendedResponses)
   }
 
-  // TODO: Remove as should no longer be used due to email address.
-  def fetchAllForCollaborator(emailAddress: String): Future[List[ApplicationResponse]] = {
-    applicationRepository.fetchAllForEmailAddress(emailAddress).map {
-      _.map(application => ApplicationResponse(data = application))
-    }
-  }
-
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
     applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
     .flatMap(asExtendedResponses)
-  }
-
-  // TODO: Remove as should no longer be used due to email address.
-  def fetchAllForCollaboratorAndEnvironment(emailAddress: String, environment: String): Future[List[ApplicationResponse]] = {
-    applicationRepository.fetchAllForEmailAddressAndEnvironment(emailAddress, environment).map {
-      _.map(application => ApplicationResponse(data = application))
-    }
   }
 
   def fetchAll(): Future[List[ApplicationResponse]] = {
