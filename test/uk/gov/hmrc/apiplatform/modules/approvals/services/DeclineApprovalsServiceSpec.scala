@@ -69,7 +69,6 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      println(submittedSubmission.findQuestion(someQuestionId))
       val someQuestionWording = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName

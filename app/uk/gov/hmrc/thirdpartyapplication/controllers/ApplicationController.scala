@@ -186,7 +186,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
   def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
-      println(s"POME: $dcRequest")
       applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {
         case _: ApplicationNeedsAdmin => Forbidden(JsErrorResponse(APPLICATION_NEEDS_ADMIN, "Application requires at least one admin"))
       } recover recovery
