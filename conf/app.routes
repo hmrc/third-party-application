@@ -27,7 +27,6 @@ POST          /application/name/validate                             uk.gov.hmrc
 
 POST          /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 PUT           /application/:id/collaborator                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fixCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-DELETE        /application/:id/collaborator/:email                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteCollaboratorByEmail(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, email: String, adminsToEmail: String, notifyCollaborator: Boolean ?= true)
 POST          /application/:id/collaborator/delete                   uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteCollaborator(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 GET           /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.fetchAllSubscriptions(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)

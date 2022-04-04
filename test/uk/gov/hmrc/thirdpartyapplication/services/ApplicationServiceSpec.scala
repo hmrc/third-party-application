@@ -968,18 +968,6 @@ class ApplicationServiceSpec
   }
 
   "fetchAllForCollaborator" should {
-
-    "fetch all applications for a given collaborator email address" in new Setup {
-      val emailAddress = "user@example.com"
-      val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
-      val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
-      val ropcApplicationData: ApplicationData = anApplicationData(applicationId, access = Ropc())
-
-      ApplicationRepoMock.FetchAllForEmail.thenReturnWhen(emailAddress)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
-
-      await(underTest.fetchAllForCollaborator(emailAddress)).size shouldBe 3
-    }
-
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
       val userId = UserId.random

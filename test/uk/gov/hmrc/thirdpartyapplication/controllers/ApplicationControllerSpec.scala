@@ -397,86 +397,6 @@ class ApplicationControllerSpec
 
   }
 
-  "remove collaborator by email" should {
-    val applicationId = ApplicationId.random
-    val admin = "admin@example.com"
-    val collaborator = "dev@example.com"
-    val adminsToEmailSet = Set.empty[String]
-    val adminsToEmailString = ""
-    val notifyCollaborator = true
-
-    "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-
-      givenUserIsAuthenticated(underTest)
-
-      testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-        when(underTest.applicationService.deleteCollaborator(
-          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-        val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-        status(result) shouldBe NO_CONTENT
-      })
-    }
-
-    "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is not logged in" in new PrivilegedAndRopcSetup {
-      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-        when(underTest.applicationService.deleteCollaborator(
-          eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-          .thenReturn(successful(Set(Collaborator(admin, Role.ADMINISTRATOR, UserId.random))))
-
-        val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-        status(result) shouldBe NO_CONTENT
-      })
-    }
-
-    "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(failed(new NotFoundException(s"application not found for id: ${applicationId.value}")))
-
-      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(failed(new ApplicationNeedsAdmin))
-
-      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-      verifyErrorResult(result, FORBIDDEN, ErrorCode.APPLICATION_NEEDS_ADMIN)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(underTest.applicationService.deleteCollaborator(
-        eqTo(applicationId), eqTo(collaborator), eqTo(adminsToEmailSet), eqTo(notifyCollaborator))(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.deleteCollaboratorByEmail(applicationId, collaborator, adminsToEmailString, notifyCollaborator)(request)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-  }
-
   "remove collaborator" should {
     val applicationId = ApplicationId.random
     val admin = "admin@example.com"
@@ -900,51 +820,9 @@ class ApplicationControllerSpec
       }
     }
 
-    val emailAddress = "dev@example.com"
     val userId = UserId.random
     val environment = "PRODUCTION"
-    val queryRequest = FakeRequest("GET", s"?emailAddress=$emailAddress")
 
-    "succeed with a 200 when applications are found for a collaborator by email address" in new Setup {
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-
-      when(underTest.applicationService.fetchAllForCollaborator(emailAddress))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
-
-      status(underTest.queryDispatcher()(queryRequest)) shouldBe OK
-    }
-
-    "succeed with a 200 when no applications are found for the collaborator by email address" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(successful(Nil))
-
-      val result = underTest.queryDispatcher()(queryRequest)
-
-      status(result) shouldBe OK
-      contentAsString(result) shouldBe "[]"
-    }
-
-    "fail with a 500 when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetchAllForCollaborator(emailAddress)).thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.queryDispatcher()(queryRequest)
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-    "succeed with a 200 when applications are found for the collaborator by email address and environment" in new Setup {
-      val queryRequestWithEnvironment = FakeRequest("GET", s"?emailAddress=$emailAddress&environment=$environment")
-      val standardApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Standard())
-      val privilegedApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Privileged())
-      val ropcApplicationResponse: ApplicationResponse = aNewApplicationResponse(access = Ropc())
-
-      when(underTest.applicationService.fetchAllForCollaboratorAndEnvironment(emailAddress, environment))
-        .thenReturn(successful(List(standardApplicationResponse, privilegedApplicationResponse, ropcApplicationResponse)))
-
-      status(underTest.queryDispatcher()(queryRequestWithEnvironment)) shouldBe OK
-    }
-    
     "succeed with a 200 when applications are found for the collaborator by userId and environment" in new Setup with ExtendedResponses {
       val queryRequestWithEnvironment = FakeRequest("GET", s"?userId=${userId.asText}&environment=$environment")
 
