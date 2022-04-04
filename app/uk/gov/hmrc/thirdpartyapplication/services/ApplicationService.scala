@@ -387,7 +387,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val wso2ApplicationName = credentialGenerator.generate()
 
     def createInApiGateway(appData: ApplicationData): Future[HasSucceeded] = {
-      if (appData.state.name == State.PRODUCTION) {
+      if (appData.state.name == State.PRE_PRODUCTION || appData.state.name == State.PRODUCTION) {
         apiGatewayStore.createApplication(appData.wso2ApplicationName, appData.tokens.production.accessToken)
       } else {
         successful(HasSucceeded)

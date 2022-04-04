@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object State extends Enumeration {
   type State = Value
-  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRODUCTION = Value
+  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRE_PRODUCTION, PRODUCTION = Value
 
   implicit val format = EnumJson.enumFormat(State)
 }

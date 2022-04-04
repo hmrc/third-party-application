@@ -255,11 +255,12 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
+  private def in(fieldName: String, values: Seq[String]): JsObject = Json.obj(fieldName -> Json.obj(f"$$in" -> values))
 
   private def sorting(clause: (String, JsValueWrapper)): JsObject = Json.obj(f"$$sort" -> Json.obj(clause))
 
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): JsObject = {
-    def applicationStatusMatch(state: State): JsObject = matches("state.name" -> state.toString)
+    def applicationStatusMatch(states: State*): JsObject = in("state.name", states.map(_.toString))
 
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
@@ -281,7 +282,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case Created => applicationStatusMatch(State.TESTING)
       case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
       case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active => applicationStatusMatch(State.PRODUCTION)
+      case Active => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
 
       // Access Type
       case StandardAccess => accessTypeMatch(AccessType.STANDARD)

@@ -92,8 +92,8 @@ class UpliftService @Inject()(
 
     def verifyPending(app: ApplicationData) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
-      _ <- applicationRepository.save(app.copy(state = app.state.toProduction))
-      _ <- insertStateHistory(app, State.PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
+      _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction))
+      _ <- insertStateHistory(app, State.PRE_PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
         app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
       _ = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
       _ = audit(app)
@@ -105,7 +105,8 @@ class UpliftService @Inject()(
 
       result <- app.state.name match {
         case State.PRODUCTION => verifyProduction(app)
-        case PENDING_REQUESTER_VERIFICATION => verifyPending(app)
+        case State.PRE_PRODUCTION => verifyProduction(app)
+        case State.PENDING_REQUESTER_VERIFICATION => verifyPending(app)
         case _ => throw InvalidUpliftVerificationCode(verificationCode)
       }
     } yield result
