@@ -255,7 +255,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
-  private def in(fieldName: String, values: Seq[String]): JsObject = Json.obj(fieldName -> Json.obj(f"$$in" -> values))
+  private def in(fieldName: String, values: Seq[String]): JsObject = matches(fieldName -> Json.obj(f"$$in"-> values))
 
   private def sorting(clause: (String, JsValueWrapper)): JsObject = Json.obj(f"$$sort" -> Json.obj(clause))
 

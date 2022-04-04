@@ -103,10 +103,9 @@ class UpliftService @Inject()(
       app <- applicationRepository.fetchVerifiableUpliftBy(verificationCode)
         .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
 
-      result <- app.state.name match {
-        case State.PRODUCTION => verifyProduction(app)
-        case State.PRE_PRODUCTION => verifyProduction(app)
-        case State.PENDING_REQUESTER_VERIFICATION => verifyPending(app)
+      result <- app match {
+        case a if a.isInPreProductionOrProduction => verifyProduction(app)
+        case a if a.isPendingRequesterVerification => verifyPending(app)
         case _ => throw InvalidUpliftVerificationCode(verificationCode)
       }
     } yield result

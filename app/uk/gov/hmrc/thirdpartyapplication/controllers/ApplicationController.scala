@@ -430,7 +430,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       (
         for {
           app   <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || ! List(State.PRODUCTION, State.PRE_PRODUCTION).contains(app.state.name), app, badRequest)
+          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || ! app.state.isInPreProductionOrProduction, app, badRequest)
           _     <- ET.liftF(applicationService.deleteApplication(id, None, audit))
         } yield NoContent
       )

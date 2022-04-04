@@ -38,6 +38,11 @@ case class ApplicationState(
     }
   }
 
+  def isInTesting = name == State.TESTING
+  def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
+  def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
+  def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
+
   def toProduction = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
     copy(name = PRODUCTION, updatedOn = DateTimeUtils.now)

@@ -76,7 +76,7 @@ class RequestApprovalsService @Inject()(
     (
       for {
         _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                         <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                         <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         appName                    = getApplicationName(submission).get // Safe at this point
         _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
