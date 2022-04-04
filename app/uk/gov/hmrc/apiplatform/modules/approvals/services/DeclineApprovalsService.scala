@@ -68,7 +68,7 @@ class DeclineApprovalsService @Inject()(
       successful(Unit)
     }
 
-    def logDone(app: ApplicationData, submission: Submission) = 
+    def logDone(app: ApplicationData, submission: Submission) =
       logger.info(s"Decline-02: decline appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET = EitherTHelper.make[Result]
