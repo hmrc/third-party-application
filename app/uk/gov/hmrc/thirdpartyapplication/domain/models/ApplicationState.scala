@@ -90,9 +90,9 @@ object ApplicationState {
   def pendingRequesterVerification(requestedBy: String, verificationCode: String) =
     ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(requestedBy), Some(verificationCode))
 
-  def preProduction(requestedBy: String, verificationCode: String) =
-    ApplicationState(State.PRE_PRODUCTION, Some(requestedBy), Some(verificationCode))
+  def preProduction(requestedBy: String) =
+    ApplicationState(State.PRE_PRODUCTION, Some(requestedBy))
 
-  def production(requestedBy: String, verificationCode: String) =
-    ApplicationState(State.PRODUCTION, Some(requestedBy), Some(verificationCode))
+  def production(requestedBy: String) =
+    ApplicationState(State.PRODUCTION, Some(requestedBy))
 }
