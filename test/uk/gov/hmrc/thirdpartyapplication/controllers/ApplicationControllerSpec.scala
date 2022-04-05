@@ -284,7 +284,20 @@ class ApplicationControllerSpec
       termsOfUseAcceptance.responsibleIndividual.fullName.value shouldBe name
       termsOfUseAcceptance.responsibleIndividual.emailAddress.value shouldBe emailAddress
     }
+  }
 
+  "confirmSetupComplete" should {
+    "call applicationService correctly" in new Setup {
+      val applicationId = ApplicationId.random
+      val emailAddress = "bob@example.com"
+      val confirmSetupCompleteRequest = ConfirmSetupCompleteRequest(emailAddress)
+
+      when(mockApplicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
+
+      val result = underTest.confirmSetupComplete(applicationId)(request.withBody(Json.toJson(confirmSetupCompleteRequest)))
+
+      status(result) shouldBe NO_CONTENT
+    }
   }
 
   "add collaborators with UserId" should {

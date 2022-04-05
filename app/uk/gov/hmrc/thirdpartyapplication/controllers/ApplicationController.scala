@@ -468,6 +468,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       } recover recovery
     }
   }
+
+  def confirmSetupComplete(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[ConfirmSetupCompleteRequest] {request =>
+      applicationService.confirmSetupComplete(applicationId, request.requesterEmailAddress) map { _ =>
+        NoContent
+      } recover recovery
+    }
+  }
 }
 
 case class ApplicationControllerConfig(fetchApplicationTtlInSecs: Int, fetchSubscriptionTtlInSecs: Int)

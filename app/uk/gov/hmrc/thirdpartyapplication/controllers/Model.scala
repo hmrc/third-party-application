@@ -89,6 +89,8 @@ case class DeleteCollaboratorRequest(
 
 case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: DateTime, submissionId: Submission.Id)
 
+case class ConfirmSetupCompleteRequest(requesterEmailAddress: String)
+
 object ErrorCode extends Enumeration {
   type ErrorCode = Value
 
