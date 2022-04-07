@@ -111,7 +111,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
 
   val createdSubmission = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
-  val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(answersToQuestions)
+  val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
   val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
   val declinedSubmission = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
   val grantedSubmission = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
@@ -168,7 +168,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         case TextQuestion(id, wording, statement, _, _, _, _, absence, _)                         => TextAnswer("some random text")
         case ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence, _)            => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
         case MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence, _)            => MultipleChoiceAnswer(Set(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value))
-        case AcknowledgementOnly(id, wording, statement)                                          => NoAnswer
+        case AcknowledgementOnly(id, wording, statement)                                          => AcknowledgedAnswer
         case YesNoQuestion(id, wording, statement, _, _, _, yesMarking, noMarking, absence, _)    => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
       }
     }
@@ -229,7 +229,7 @@ trait AnsweringQuestionsHelper {
         else
           List(Some(NoAnswer))  // Cos we can't do anything else
 
-      case AcknowledgementOnly(id, _, _) => List(Some(NoAnswer))
+      case AcknowledgementOnly(id, _, _) => List(Some(AcknowledgedAnswer))
 
       case MultiChoiceQuestion(id, _, _, _, _, _, marking, absence, _) => 
         marking.map {
@@ -266,6 +266,8 @@ trait AnsweringQuestionsHelper {
     .toMap
   }
 }
+
+object AnsweringQuestionsHelper extends AnsweringQuestionsHelper
 trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuestionsHelper {
   val markedAnswers: Map[Question.Id, Mark] = Map(
     (DevelopmentPractices.question1.id -> Pass),

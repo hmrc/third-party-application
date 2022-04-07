@@ -88,7 +88,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
       case "In the European Economic Area (EEA)" => ServerLocation.InEEA
       case "Outside the EEA with adequacy agreements" => ServerLocation.OutsideEEAWithAdequacy
       case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
-      case s => throw new RuntimeException()
+      case s => throw new RuntimeException(s)
     }))
 
   def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {

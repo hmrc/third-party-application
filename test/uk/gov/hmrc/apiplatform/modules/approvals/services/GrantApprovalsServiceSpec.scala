@@ -30,6 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import org.joda.time.DateTime
+import cats.implicits._
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
@@ -46,6 +48,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val applicationPendingGKApproval = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
     val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock)
+    
+    val responsibleIndividualVerificationDate = DateTime.now
   }
 
   "GrantApprovalsService" should {
@@ -58,7 +62,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
 
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
@@ -79,13 +83,13 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the submitted state" in new Setup {
-      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }

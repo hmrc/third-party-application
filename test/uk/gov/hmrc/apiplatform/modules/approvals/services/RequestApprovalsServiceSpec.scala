@@ -34,6 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.TextAnswer
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -86,7 +88,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
         val result = await(underTest.requestApproval(application, answeredSubmission, requestedByEmailAddress))
 
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToDuplicateName(expectedAppName)
+        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+        
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToDuplicateName(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()
@@ -95,9 +99,11 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       "return illegal application name if deny-listed name" in new Setup {
         namingServiceReturns(InvalidName)
 
+        val generatedName = SubmissionDataExtracter.getApplicationName(submittedSubmission).get
+        
         val result = await(underTest.requestApproval(application, answeredSubmission, requestedByEmailAddress))
 
-        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(expectedAppName)
+        result shouldBe RequestApprovalsService.ApprovalRejectedDueToIllegalName(generatedName)
         StateHistoryRepoMock.Insert.verifyNeverCalled()
         AuditServiceMock.Audit.verifyNeverCalled()
         ApplicationRepoMock.Save.verifyNeverCalled()

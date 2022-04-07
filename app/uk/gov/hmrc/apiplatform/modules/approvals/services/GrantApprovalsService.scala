@@ -39,6 +39,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 
 object GrantApprovalsService {
   sealed trait Result
@@ -62,7 +65,13 @@ class GrantApprovalsService @Inject()(
 
   import GrantApprovalsService._
 
-  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String])(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
+  def grant(
+      originalApp: ApplicationData,
+      submission: Submission, 
+      gatekeeperUserName: String,
+      warnings: Option[String],
+      responsibleIndividualVerificationDate: Option[DateTime]
+  )(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -88,7 +97,7 @@ class GrantApprovalsService @Inject()(
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission     = grantSubmission(gatekeeperUserName, warnings)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings))
+        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings, responsibleIndividualVerificationDate))
         _                     <- ET.liftF(sendEmails(savedApp))
         _                     = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
@@ -108,11 +117,37 @@ class GrantApprovalsService @Inject()(
     application.copy(state = application.state.toPendingRequesterVerification)
   }
 
-  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String])(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private val fmt = ISODateTimeFormat.dateTime()
+
+  private def auditGrantedApprovalRequest(
+      applicationId: ApplicationId,
+      updatedApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      warnings: Option[String],
+      responsibleIndividualVerificationDate: Option[DateTime]
+  )(implicit hc: HeaderCarrier): Future[AuditResult] = {
+
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     val grantedData = Map("status" -> "granted")
     val warningsData = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
-    val extraData = questionsWithAnswers ++ grantedData ++ warningsData
+    val submittedOn: DateTime = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val grantedOn: DateTime = submission.latestInstance.statusHistory.find(s => s.isGranted).map(_.timestamp).get
+    val dates = Map(
+      "submission.started.date" -> submission.startedOn.toString(fmt),
+      "submission.submitted.date" -> submittedOn.toString(fmt),
+      "submission.granted.date" -> grantedOn.toString(fmt)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.toString(fmt)))
+    
+    val markedAnswers =  MarkAnswer.markSubmission(submission)
+    val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
+    val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+    val counters = Map(
+      "failures" -> nbrOfFails.toString,
+      "warnings" -> nbrOfWarnings.toString
+    )
+
+    val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters
 
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)
   }

@@ -37,6 +37,9 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import org.joda.time.DateTime
+import org.joda.time.format.ISODateTimeFormat
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 
 object DeclineApprovalsService {
   sealed trait Result
@@ -59,7 +62,7 @@ class DeclineApprovalsService @Inject()(
 
   import DeclineApprovalsService._
 
-  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime])(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -85,7 +88,7 @@ class DeclineApprovalsService @Inject()(
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission     = Submission.decline(DateTimeUtils.now, gatekeeperUserName, reasons)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, reasons))
+        _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate))
         _                     = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
     )
@@ -96,12 +99,31 @@ class DeclineApprovalsService @Inject()(
     application.copy(state = application.state.toTesting)
   }
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private val fmt = ISODateTimeFormat.dateTime()
+
+  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime])(implicit hc: HeaderCarrier): Future[AuditResult] = {
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     
+    
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
+    println(submission.latestInstance.statusHistory)
+    val submittedOn: DateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val declinedOn: DateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val dates = Map(
+      "submission.started.date" -> submission.startedOn.toString(fmt),
+      "submission.submitted.date" -> submittedOn.toString(fmt),
+      "submission.declined.date" -> declinedOn.toString(fmt)
+      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.toString(fmt)))
 
-    val extraDetails = questionsWithAnswers ++ declinedData
+    val markedAnswers =  MarkAnswer.markSubmission(submissionBeforeDeclined)
+    val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
+    val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+    val counters = Map(
+      "failures" -> nbrOfFails.toString,
+      "warnings" -> nbrOfWarnings.toString
+    )
+
+    val extraDetails = questionsWithAnswers ++ declinedData ++ dates ++ counters
 
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalDeclined, extraDetails)
   }
