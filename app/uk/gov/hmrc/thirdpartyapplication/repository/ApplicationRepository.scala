@@ -251,7 +251,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       Json.obj(f"$$skip" -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
       Json.obj(f"$$limit" -> applicationSearch.pageSize))
 
-    runApplicationQueryAggregation(commandQueryDocument(filters, pagination, sort))
+    runApplicationQueryAggregation(commandQueryDocument(filters, pagination, sort, applicationSearch.hasSubscriptionFilter()))
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
@@ -328,10 +328,15 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }
   }
 
-  private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject]): JsObject = {
+  private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject], hasSubscriptionsQuery: Boolean): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
-    val filteredPipelineCount = Json.toJson(subscriptionsLookup +: filters :+ Json.obj(f"$$count" -> "total"))
-    val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookup +: filters) ++ sort ++ pagination :+ applicationProjection)
+    
+    val subscriptionsLookupFilter = if (hasSubscriptionsQuery) {
+      Seq(subscriptionsLookup)
+    } else Seq.empty
+
+    val filteredPipelineCount = Json.toJson(subscriptionsLookupFilter ++ filters :+ Json.obj(f"$$count" -> "total"))
+    val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookupFilter ++ filters) ++ sort ++ pagination :+ applicationProjection)
 
     Json.obj(
       "aggregate" -> "application",

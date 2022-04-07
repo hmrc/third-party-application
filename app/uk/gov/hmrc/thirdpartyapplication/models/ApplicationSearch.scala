@@ -30,7 +30,9 @@ case class ApplicationSearch(pageNumber: Int = 1,
                              textToSearch: Option[String] = None,
                              apiContext: Option[ApiContext] = None,
                              apiVersion: Option[ApiVersion] = None,
-                             sort: ApplicationSort = SubmittedAscending)
+                             sort: ApplicationSort = SubmittedAscending){
+                               def hasSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
+                             }
 
 object ApplicationSearch {
   def fromQueryString(queryString: Map[String, Seq[String]]): ApplicationSearch = {
