@@ -106,7 +106,6 @@ class DeclineApprovalsService @Inject()(
     
     
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
-    println(submission.latestInstance.statusHistory)
     val submittedOn: DateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val declinedOn: DateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
     val dates = Map(
@@ -119,8 +118,8 @@ class DeclineApprovalsService @Inject()(
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
     val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
     val counters = Map(
-      "failures" -> nbrOfFails.toString,
-      "warnings" -> nbrOfWarnings.toString
+      "submission.failures" -> nbrOfFails.toString,
+      "submission.warnings" -> nbrOfWarnings.toString
     )
 
     val extraDetails = questionsWithAnswers ++ declinedData ++ dates ++ counters

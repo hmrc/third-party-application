@@ -143,8 +143,8 @@ class GrantApprovalsService @Inject()(
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
     val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
     val counters = Map(
-      "failures" -> nbrOfFails.toString,
-      "warnings" -> nbrOfWarnings.toString
+      "submission.failures" -> nbrOfFails.toString,
+      "submission.warnings" -> nbrOfWarnings.toString
     )
 
     val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters
