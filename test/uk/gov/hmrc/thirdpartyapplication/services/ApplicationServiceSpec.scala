@@ -20,6 +20,7 @@ import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import cats.implicits._
 import org.joda.time.DateTime
+import org.mockito.captor.ArgCaptor
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -419,6 +420,39 @@ class ApplicationServiceSpec
 
       applicationResponse.id shouldBe applicationId
       applicationResponse.subscriptions shouldBe subscriptions
+    }
+  }
+
+  "confirmSetupComplete" should {
+    "update pre-production application state and store state history" in new Setup {
+      val oldApplication = anApplicationData(applicationId, state = ApplicationState.preProduction("previous@example.com"))
+      ApplicationRepoMock.Fetch.thenReturn(oldApplication)
+      ApplicationRepoMock.Save.thenAnswer()
+      StateHistoryRepoMock.Insert.thenAnswer()
+      val stateHistoryCaptor = ArgCaptor[StateHistory]
+
+      val applicationResponse = await(underTest.confirmSetupComplete(applicationId, requestedByEmail))
+
+      ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
+      verify(StateHistoryRepoMock.aMock).insert(stateHistoryCaptor.capture)
+
+      applicationResponse.id shouldBe applicationId
+      applicationResponse.state.name shouldBe State.PRODUCTION
+
+      val stateHistory = stateHistoryCaptor.value
+      stateHistory.state shouldBe State.PRODUCTION
+      stateHistory.previousState shouldBe Some(State.PRE_PRODUCTION)
+      stateHistory.applicationId shouldBe applicationId
+      stateHistory.actor shouldBe Actor(requestedByEmail, COLLABORATOR)
+    }
+
+    "not update application in wrong state" in new Setup {
+      val oldApplication = anApplicationData(applicationId, state = ApplicationState.pendingGatekeeperApproval("previous@example.com"))
+      ApplicationRepoMock.Fetch.thenReturn(oldApplication)
+      ApplicationRepoMock.Save.thenAnswer()
+
+      val ex: RuntimeException = intercept[RuntimeException](await(underTest.confirmSetupComplete(applicationId, requestedByEmail)))
+      ex.getMessage shouldBe "Transition to 'PRODUCTION' state requires the application to be in 'PRE_PRODUCTION' state, but it was in 'PENDING_GATEKEEPER_APPROVAL'"
     }
   }
 

@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
+import org.joda.time.DateTime
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
@@ -154,6 +155,18 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   def addTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] = {
     for {
       updatedApp <- applicationRepository.addApplicationTermsOfUseAcceptance(applicationId, acceptance)
+    } yield updatedApp
+  }
+
+  def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: String): Future[ApplicationData] = {
+    for {
+      app              <- fetchApp(applicationId)
+      oldState          = app.state
+      newState          = app.state.toProduction
+      appWithNewState   = app.copy(state = newState)
+      updatedApp       <- applicationRepository.save(appWithNewState)
+      stateHistory      = StateHistory(applicationId, newState.name, Actor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      _                <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
 
@@ -373,7 +386,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     val wso2ApplicationName = credentialGenerator.generate()
 
     def createInApiGateway(appData: ApplicationData): Future[HasSucceeded] = {
-      if (appData.state.name == State.PRODUCTION) {
+      if (appData.isInPreProductionOrProduction) {
         apiGatewayStore.createApplication(appData.wso2ApplicationName, appData.tokens.production.accessToken)
       } else {
         successful(HasSucceeded)

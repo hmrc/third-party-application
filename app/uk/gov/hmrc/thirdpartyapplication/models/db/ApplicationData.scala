@@ -60,6 +60,11 @@ case class ApplicationData(
     case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
     case _ => None
   }
+
+  def isInTesting = state.isInTesting
+  def isPendingGatekeeperApproval = state.isPendingGatekeeperApproval
+  def isPendingRequesterVerification = state.isPendingRequesterVerification
+  def isInPreProductionOrProduction = state.isInPreProductionOrProduction
 }
 
 object ApplicationData {

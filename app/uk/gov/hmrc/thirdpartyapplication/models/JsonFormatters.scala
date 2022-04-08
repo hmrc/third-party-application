@@ -68,6 +68,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatResendVerificationRequest = Json.format[ResendVerificationRequest]
   implicit val formatAddCollaboratorRequest = Json.format[AddCollaboratorRequest]
   implicit val formatAddTermsOfUseAcceptanceRequest = Json.format[AddTermsOfUseAcceptanceRequest]
+  implicit val formatConfirmSetupCompleteRequest = Json.format[ConfirmSetupCompleteRequest]
   implicit val formatAddCollaboratorResponse = Json.format[AddCollaboratorResponse]
   implicit val formatScopeRequest = Json.format[ScopeRequest]
   implicit val formatScopeResponse = Json.format[ScopeResponse]

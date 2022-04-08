@@ -58,16 +58,16 @@ class ApprovalsController @Inject()(
   cc: ControllerComponents
 )
 (implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
-  with ApprovalsActionBuilders  
+  with ApprovalsActionBuilders
     with JsonUtils
     with JsonErrorResponse {
 
   import ApprovalsController._
 
-  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request => 
+  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import RequestApprovalsService._
 
-    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest => 
+    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
       requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueToIncorrectSubmissionState(state)             => PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))

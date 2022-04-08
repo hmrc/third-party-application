@@ -79,7 +79,7 @@ class GrantApprovalsService @Inject()(
     (
       for {
         _                     <- ET.liftF(logStart(appId))
-        _                     <- ET.cond(originalApp.state.name == State.PENDING_GATEKEEPER_APPROVAL, (), RejectedDueToIncorrectApplicationState)
+        _                     <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
         _                     <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
