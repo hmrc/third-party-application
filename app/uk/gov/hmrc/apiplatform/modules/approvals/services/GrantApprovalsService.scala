@@ -62,7 +62,7 @@ class GrantApprovalsService @Inject()(
 
   import GrantApprovalsService._
 
-  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String])(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
+  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String], escalatedBy: Option[String])(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -86,9 +86,9 @@ class GrantApprovalsService @Inject()(
         updatedApp            = grantApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = grantSubmission(gatekeeperUserName, warnings)(submission)
+        updatedSubmission     = grantSubmission(gatekeeperUserName, warnings, escalatedBy)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings))
+        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings, escalatedBy))
         _                     <- ET.liftF(sendEmails(savedApp))
         _                     = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
@@ -96,11 +96,11 @@ class GrantApprovalsService @Inject()(
     .fold[Result](identity, identity)
   }
 
-  private def grantSubmission(gatekeeperUserName: String, warnings: Option[String])(submission: Submission) = {
+  private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedBy: Option[String])(submission: Submission) = {
     warnings.fold(
       Submission.grant(DateTimeUtils.now, gatekeeperUserName)(submission)
     )( value =>
-      Submission.grantWithWarnings(DateTimeUtils.now, gatekeeperUserName, value)(submission)
+      Submission.grantWithWarnings(DateTimeUtils.now, gatekeeperUserName, value, escalatedBy)(submission)
     )
   }
 
@@ -108,11 +108,12 @@ class GrantApprovalsService @Inject()(
     application.copy(state = application.state.toPendingRequesterVerification)
   }
 
-  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String])(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String], escalatedBy: Option[String])(implicit hc: HeaderCarrier): Future[AuditResult] = {
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     val grantedData = Map("status" -> "granted")
     val warningsData = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
-    val extraData = questionsWithAnswers ++ grantedData ++ warningsData
+    val escalatedByData = escalatedBy.fold(Map.empty[String, String])(escalatedBy => Map("escalatedBy" -> escalatedBy))
+    val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ escalatedByData
 
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)
   }

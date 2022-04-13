@@ -58,7 +58,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
 
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, None))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
@@ -79,13 +79,13 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None, None))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the submitted state" in new Setup {
-      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, None))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }
