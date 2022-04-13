@@ -87,8 +87,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
 
       val warning = Some("Here are some warnings")
-      val escaledBy = Some("Marty McFly")
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escaledBy))
+      val escalatedTo = Some("Marty McFly")
+      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
       
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
@@ -96,7 +96,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
       SubmissionsServiceMock.Store.verifyCalledWith().status should matchPattern {
-        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, escaledBy) =>
+        case Submission.Status.GrantedWithWarnings(_, gatekeeperUserName, warning, escalatedTo) =>
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
