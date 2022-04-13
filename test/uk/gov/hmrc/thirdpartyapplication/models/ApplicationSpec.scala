@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util._
@@ -121,70 +121,4 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
     }
   }
 
-  val applicationResponse =
-    ApplicationData(
-      ApplicationId.random,
-      "appName",
-      "normalisedAppName",
-      Set.empty[Collaborator],
-      None,
-      "wso2ApplicationName",
-      ApplicationTokens(Token(ClientId.random, "accessToken")),
-      productionState("user1"),
-      Standard(),
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now))
-
-  val importantSubmissionData = ImportantSubmissionData(
-    None,
-    ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob")),
-    Set.empty[ServerLocation],
-    TermsAndConditionsLocation.NoneProvided,
-    PrivacyPolicyLocation.NoneProvided,
-    List.empty[TermsOfUseAcceptance]
-  )
-
-  val url = "http://example.com"
-
-  "privacy policy location" should {
-    "be correct for old journey app when no location supplied" in {
-      ApplicationResponse.privacyPolicyUrl(applicationResponse.copy(access = Standard(privacyPolicyUrl = None))) shouldBe None
-    }
-    "be correct for old journey app when location was supplied" in {
-      ApplicationResponse.privacyPolicyUrl(applicationResponse.copy(access = Standard(privacyPolicyUrl = Some(url)))) shouldBe Some(url)
-    }
-    "be correct for new journey app when location was url" in {
-      val isd = importantSubmissionData.copy(privacyPolicyLocation = PrivacyPolicyLocation.Url(url))
-      ApplicationResponse.privacyPolicyUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe Some(url)
-    }
-    "be correct for new journey app when location was in desktop app" in {
-      val isd = importantSubmissionData.copy(privacyPolicyLocation = PrivacyPolicyLocation.InDesktopSoftware)
-      ApplicationResponse.privacyPolicyUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe None
-    }
-    "be correct for new journey app when location was not supplied" in {
-      val isd = importantSubmissionData.copy(privacyPolicyLocation = PrivacyPolicyLocation.NoneProvided)
-      ApplicationResponse.privacyPolicyUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe None
-    }
-  }
-
-  "terms and conditions location" should {
-    "be correct for old journey app when no location supplied" in {
-      ApplicationResponse.termsAndConditionsUrl(applicationResponse.copy(access = Standard(termsAndConditionsUrl = None))) shouldBe None
-    }
-    "be correct for old journey app when location was supplied" in {
-      ApplicationResponse.termsAndConditionsUrl(applicationResponse.copy(access = Standard(termsAndConditionsUrl = Some(url)))) shouldBe Some(url)
-    }
-    "be correct for new journey app when location was url" in {
-      val isd = importantSubmissionData.copy(termsAndConditionsLocation = TermsAndConditionsLocation.Url(url))
-      ApplicationResponse.termsAndConditionsUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe Some(url)
-    }
-    "be correct for new journey app when location was in desktop app" in {
-      val isd = importantSubmissionData.copy(termsAndConditionsLocation = TermsAndConditionsLocation.InDesktopSoftware)
-      ApplicationResponse.termsAndConditionsUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe None
-    }
-    "be correct for new journey app when location was not supplied" in {
-      val isd = importantSubmissionData.copy(termsAndConditionsLocation = TermsAndConditionsLocation.NoneProvided)
-      ApplicationResponse.termsAndConditionsUrl(applicationResponse.copy(access = Standard(importantSubmissionData = Some(isd)))) shouldBe None
-    }
-  }
 }

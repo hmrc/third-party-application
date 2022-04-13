@@ -16,14 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+
 import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.{Url => PrivacyPolicyUrl}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocation.{Url => TermsAndConditionsUrl}
 
 trait CreateApplicationRequest {
   def name: String
@@ -175,16 +174,12 @@ object ApplicationResponse {
     case a: Standard => a.redirectUris
     case _ => List.empty
   }
-
   def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
-    case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, TermsAndConditionsUrl(url), _, _))) => Some(url)
-    case Standard(_, Some(url), _, _, _, None) => Some(url)
+    case a: Standard => a.termsAndConditionsUrl
     case _ => None
   }
-
   def privacyPolicyUrl(data: ApplicationData): Option[String] = data.access match {
-    case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, PrivacyPolicyUrl(url), _))) => Some(url)
-    case Standard(_, _, Some(url), _, _, None) => Some(url)
+    case a: Standard => a.privacyPolicyUrl
     case _ => None
   }
 
