@@ -53,22 +53,6 @@ object SubmissionDataExtracter extends ApplicationLogger {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.applicationNameId)
   }
 
-  private def getUrlOrDesktopText(firstQuestionId: Question.Id, urlValueQuestionId: Question.Id)(submission: Submission): Option[String] = {
-    getSingleChoiceQuestionOfInterest(submission, firstQuestionId).flatMap(answer => {
-      answer match {
-        case "Yes" => getTextQuestionOfInterest(submission, urlValueQuestionId)
-        case "No" => None
-        case _ => Some("desktop")
-      }
-    })
-  }
-
-  def getPrivacyPolicyUrl(submission: Submission) = getUrlOrDesktopText(
-    submission.questionIdsOfInterest.privacyPolicyId, submission.questionIdsOfInterest.privacyPolicyUrlId)(submission)
-
-  def getTermsAndConditionsUrl(submission: Submission) = getUrlOrDesktopText(
-    submission.questionIdsOfInterest.termsAndConditionsId, submission.questionIdsOfInterest.termsAndConditionsUrlId)(submission)
-
   def getOrganisationUrl(submission: Submission): Option[String] = {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
