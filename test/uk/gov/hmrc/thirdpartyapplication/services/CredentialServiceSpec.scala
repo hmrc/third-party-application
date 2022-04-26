@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.UUID
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
@@ -29,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
@@ -38,6 +36,8 @@ import play.api.Logger
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
+import java.time.LocalDateTime
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule with EmailConnectorMockModule {
@@ -116,7 +116,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
     "return application details when credentials match" in new Setup {
       val applicationData = anApplicationData(ApplicationId.random)
-      val updatedApplicationData = applicationData.copy(lastAccess = Some(DateTime.now))
+      val updatedApplicationData = applicationData.copy(lastAccess = Some(LocalDateTime.now))
       val expectedApplicationResponse = ApplicationResponse(data = updatedApplicationData)
       val clientId = applicationData.tokens.production.clientId
       val secret = UUID.randomUUID().toString
@@ -329,7 +329,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationTokens(environmentToken),
       state,
       Standard(),
-      HmrcTime.now,
-      Some(HmrcTime.now))
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)))
   }
 }

@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -32,14 +31,13 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
+
+import java.time.{Clock, LocalDateTime}
 
 object DeclineApprovalsService {
   sealed trait Result
@@ -56,13 +54,14 @@ class DeclineApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
-  submissionService: SubmissionsService
+  submissionService: SubmissionsService,
+  val clock: Clock
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
   import DeclineApprovalsService._
 
-  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime])(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime])(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -86,7 +85,7 @@ class DeclineApprovalsService @Inject()(
         updatedApp            = declineApp(originalApp)
         savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = Submission.decline(DateTimeUtils.now, gatekeeperUserName, reasons)(submission)
+        updatedSubmission     = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
         _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate))
         _                     = logDone(savedApp, savedSubmission)
@@ -96,15 +95,18 @@ class DeclineApprovalsService @Inject()(
   }
 
   private def declineApp(application: ApplicationData): ApplicationData = {
-    application.copy(state = application.state.toTesting)
+    application.copy(state = application.state.toTesting(clock))
   }
 
-  private val fmt = ISODateTimeFormat.dateTime()
+  private def auditDeclinedApprovalRequest(applicationId: ApplicationId,
+                                           updatedApp: ApplicationData,
+                                           submission: Submission,
+                                           gatekeeperUserName: String,
+                                           reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime])(implicit hc: HeaderCarrier): Future[AuditResult] = {
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     
-    
+
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
     val submittedOn: DateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val declinedOn: DateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
@@ -127,12 +129,16 @@ class DeclineApprovalsService @Inject()(
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalDeclined, extraDetails)
   }
 
-  private def writeStateHistory(snapshotApp: ApplicationData, name: String) = 
+  private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
     insertStateHistory(snapshotApp, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
 
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
+  private def insertStateHistory(snapshotApp: ApplicationData,
+                                 newState: State,
+                                 oldState: Option[State],
+                                 requestedBy: String,
+                                 actorType: ActorType.ActorType,
+                                 rollback: ApplicationData => Any): Future[StateHistory] = {
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
     .andThen {
       case e: Failure[_] =>

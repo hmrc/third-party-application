@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import cats.implicits._
-import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.BeforeAndAfterAll
@@ -42,7 +41,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -57,13 +55,15 @@ import scala.concurrent.{Await, ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 
+import java.time.{LocalDateTime, ZoneOffset}
+
 class ApplicationServiceSpec
   extends AsyncHmrcSpec
   with BeforeAndAfterAll
   with ApplicationStateUtil
   with ApplicationTestData
   with UpliftRequestSamples
-  with LockDownDateTime {
+  with FixedClock {
 
   trait Setup extends AuditServiceMockModule
     with ApiGatewayStoreMockModule
@@ -120,7 +120,8 @@ class ApplicationServiceSpec
       mockThirdPartyDelegatedAuthorityConnector,
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
-      UpliftNamingServiceMock.aMock
+      UpliftNamingServiceMock.aMock,
+      clock
     )
 
     when(mockCredentialGenerator.generate()).thenReturn("a" * 10)
@@ -176,7 +177,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -204,7 +205,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -228,7 +229,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -248,13 +249,13 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION),
+      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION, updatedOn = LocalDateTime.now(clock)),
         environment = Environment.SANDBOX)
       createdApp.totp shouldBe None
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -282,14 +283,14 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: ApplicationData = anApplicationData(
         createdApp.application.id,
-        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)),
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
       createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -312,10 +313,10 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData = anApplicationData(
-        createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser)), access = Ropc())
+        createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock) ), access = Ropc())
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -401,7 +402,7 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob@example.com")),
-        DateTime.now(), Submission.Id.random
+        LocalDateTime.now(ZoneOffset.UTC), Submission.Id.random
       )
       val appData = anApplicationData(ApplicationId.random)
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(appData)
@@ -584,8 +585,8 @@ class ApplicationServiceSpec
         wso2ApplicationName = "wso2ApplicationName",
         tokens = tokens,
         state = testingState(),
-        createdOn = HmrcTime.now,
-        lastAccess = Some(HmrcTime.now)
+        createdOn = LocalDateTime.now,
+        lastAccess = Some(LocalDateTime.now)
       )
       val newRedirectUris =   List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
@@ -1339,8 +1340,8 @@ class ApplicationServiceSpec
       ApplicationTokens(productionToken),
       state,
       access,
-      HmrcTime.now,
-      Some(HmrcTime.now),
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)),
       rateLimitTier = rateLimitTier,
       environment = environment.toString)
   }

@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -32,16 +31,17 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import org.joda.time.DateTime
 import org.joda.time.format.ISODateTimeFormat
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
+
+import java.time.{Clock, LocalDateTime}
 
 object GrantApprovalsService {
   sealed trait Result
@@ -59,7 +59,8 @@ class GrantApprovalsService @Inject()(
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
   submissionService: SubmissionsService,
-  emailConnector: EmailConnector
+  emailConnector: EmailConnector,
+  val clock: Clock
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
@@ -108,14 +109,14 @@ class GrantApprovalsService @Inject()(
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(DateTimeUtils.now, gatekeeperUserName)(submission)
+      Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
     )( value =>
-      Submission.grantWithWarnings(DateTimeUtils.now, gatekeeperUserName, value, escalatedTo)(submission)
+      Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
     )
   }
 
   private def grantApp(application: ApplicationData): ApplicationData = {
-    application.copy(state = application.state.toPendingRequesterVerification)
+    application.copy(state = application.state.toPendingRequesterVerification(clock))
   }
 
   private val fmt = ISODateTimeFormat.dateTime()
@@ -160,7 +161,7 @@ class GrantApprovalsService @Inject()(
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
     .andThen {
       case e: Failure[_] =>

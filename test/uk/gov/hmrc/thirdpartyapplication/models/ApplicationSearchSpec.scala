@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import org.joda.time.{DateTime, DateTimeZone}
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+
+import java.time.{ZoneOffset, ZonedDateTime}
 
 
 class ApplicationSearchSpec extends HmrcSpec {
@@ -74,7 +75,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
       val dateAsISOString = "2020-02-22T16:35:00Z"
-      val expectedDateTime = new DateTime(2020, 2, 22, 16, 35, 0, DateTimeZone.UTC)
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
@@ -87,7 +88,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse date only into LastUseBeforeDate filter" in {
       val dateAsISOString = "2020-02-22"
-      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0, DateTimeZone.UTC)
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
 
@@ -100,7 +101,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse lastUseAfter into LastUseAfterDate filter" in {
       val dateAsISOString = "2020-02-22T16:35:00Z"
-      val expectedDateTime = new DateTime(2020, 2, 22, 16, 35, 0, DateTimeZone.UTC)
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 
@@ -113,7 +114,8 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse date only into LastUseAfterDate filter" in {
       val dateAsISOString = "2020-02-22"
-      val expectedDateTime = new DateTime(2020, 2, 22, 0, 0, 0, DateTimeZone.UTC)
+
+      val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
 

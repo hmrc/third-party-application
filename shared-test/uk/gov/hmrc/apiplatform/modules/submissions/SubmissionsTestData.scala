@@ -22,35 +22,38 @@ import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
+
 import scala.util.Random
 import org.joda.time.DateTime
+
+import java.time.LocalDateTime
 
 trait StatusTestDataHelper {
   implicit class StatusHistorySyntax(submission: Submission) {
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true)) andThen
         Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true))(submission)
     }
     
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false)) andThen
         Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false))(submission)
     }
     
     def submitted: Submission = {
-      Submission.submit(DateTimeUtils.now, "bob@example.com")(submission)
+      Submission.submit(LocalDateTime.now, "bob@example.com")(submission)
     }
   }
 }
@@ -89,7 +92,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
     AskWhen.Context.Keys.VAT_OR_ITSA -> "No"
   )
-  val now = DateTimeUtils.now
+  val now = LocalDateTime.now
 
   val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
@@ -158,7 +161,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         )
     )
 
-    Submission.create("bob@example.com", subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
+    Submission.create("bob@example.com", subId, appId, LocalDateTime.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
   }
 
   private def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission): Submission = {

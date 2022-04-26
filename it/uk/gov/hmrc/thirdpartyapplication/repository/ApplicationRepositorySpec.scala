@@ -16,26 +16,25 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import java.util.UUID
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ClientId, ImportantSubmissionData, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, DateTimeTestUtils, MetricsHelper}
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 
+import java.time.{LocalDateTime, ZoneOffset}
+import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 class ApplicationRepositorySpec
   extends AsyncHmrcSpec
@@ -45,13 +44,14 @@ class ApplicationRepositorySpec
     with ApplicationStateUtil
     with IndexVerification
     with MetricsHelper
-    with DateTimeTestUtils {
+    with JavaDateTimeTestUtils
+    with FixedClock {
 
   val defaultGrantLength = 547
   val newGrantLength = 1000
 
   implicit val mat = app.materializer
- 
+
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }
@@ -122,7 +122,7 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
       await(
         applicationRepository.save(
-          anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE))))
+          anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(rateLimitTier = Some(RateLimitTier.BRONZE), lastAccess = Some(LocalDateTime.now(clock)))))
 
       val updatedRateLimit = RateLimitTier.GOLD
 
@@ -184,16 +184,16 @@ class ApplicationRepositorySpec
     "update the lastAccess property" in {
 
       val applicationId = ApplicationId.random
-      
+
       val application =
         anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
-        .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
-        
+        .copy(lastAccess = Some(LocalDateTime.now(clock).minusDays(20))) // scalastyle:ignore magic.number
+
       await(applicationRepository.save(application))
-      
+
       val retrieved = await(applicationRepository.recordApplicationUsage(applicationId))
-      
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get)
+
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
     }
 
     "update the grantLength property" in {
@@ -202,7 +202,7 @@ class ApplicationRepositorySpec
 
       val application =
         anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"), grantLength = newGrantLength )
-          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
+          .copy(lastAccess = Some(LocalDateTime.now(clock).minusDays(20))) // scalastyle:ignore magic.number
 
       await(applicationRepository.save(application))
 
@@ -217,14 +217,14 @@ class ApplicationRepositorySpec
       val applicationId = ApplicationId.random
       val application =
         anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com"))
-          .copy(lastAccess = Some(DateTime.now.minusDays(20))) // scalastyle:ignore magic.number
+          .copy(lastAccess = Some(LocalDateTime.now(clock).minusDays(20))) // scalastyle:ignore magic.number
       application.tokens.production.lastAccessTokenUsage shouldBe None
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.recordServerTokenUsage(applicationId))
 
-      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get)
-      timestampShouldBeApproximatelyNow(retrieved.tokens.production.lastAccessTokenUsage.get)
+      timestampShouldBeApproximatelyNow(retrieved.lastAccess.get, clock = clock)
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.lastAccessTokenUsage.get, clock= clock)
     }
   }
 
@@ -239,7 +239,7 @@ class ApplicationRepositorySpec
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId, generatedClientSecretId))
 
       application.tokens.production.clientSecrets.head.lastAccess shouldBe None // Original object has no value
-      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get)
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get, clock = clock)
     }
 
     "update an existing lastAccess property for a client secret" in {
@@ -249,7 +249,7 @@ class ApplicationRepositorySpec
           Token(
             ClientId("aaa"),
             generateAccessToken,
-            List(ClientSecret(name = "Default", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret"))))
+            List(ClientSecret(name = "Default", lastAccess = Some(LocalDateTime.now(clock).minusDays(20)), hashedSecret = "hashed-secret"))))
       val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
       val generatedClientSecretId = application.tokens.production.clientSecrets.head.id
 
@@ -257,15 +257,15 @@ class ApplicationRepositorySpec
 
       val retrieved = await(applicationRepository.recordClientSecretUsage(applicationId, generatedClientSecretId))
 
-      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get)
+      timestampShouldBeApproximatelyNow(retrieved.tokens.production.clientSecrets.head.lastAccess.get, clock = clock)
       retrieved.tokens.production.clientSecrets.head.lastAccess.get.isAfter(applicationTokens.production.clientSecrets.head.lastAccess.get) shouldBe true
     }
 
     "update the correct client secret when there are multiple" in {
-      val testStartTime = DateTime.now()
+      val testStartTime = LocalDateTime.now(clock)
       val applicationId = ApplicationId.random
       val secretToUpdate =
-        ClientSecret(name = "SecretToUpdate", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret")
+        ClientSecret(name = "SecretToUpdate", lastAccess = Some(LocalDateTime.now(clock).minusDays(20)), hashedSecret = "hashed-secret")
       val applicationTokens =
         ApplicationTokens(
           Token(
@@ -273,7 +273,7 @@ class ApplicationRepositorySpec
             generateAccessToken,
             List(
               secretToUpdate,
-              ClientSecret(name = "SecretToLeave", lastAccess = Some(DateTime.now.minusDays(20)), hashedSecret = "hashed-secret"))))
+              ClientSecret(name = "SecretToLeave", lastAccess = Some(LocalDateTime.now(clock).minusDays(20)), hashedSecret = "hashed-secret"))))
       val application = anApplicationData(applicationId, ClientId("aaa"), productionState("requestorEmail@example.com")).copy(tokens = applicationTokens)
 
       await(applicationRepository.save(application))
@@ -282,7 +282,7 @@ class ApplicationRepositorySpec
 
       retrieved.tokens.production.clientSecrets.foreach(retrievedClientSecret =>
         if(retrievedClientSecret.id == secretToUpdate.id)
-          timestampShouldBeApproximatelyNow(retrievedClientSecret.lastAccess.get)
+          timestampShouldBeApproximatelyNow(retrievedClientSecret.lastAccess.get, clock = clock)
         else
           retrievedClientSecret.lastAccess.get.isBefore(testStartTime) shouldBe true
       )
@@ -431,7 +431,7 @@ class ApplicationRepositorySpec
 
   "fetchAllByStatusDetails" should {
 
-    val dayOfExpiry = HmrcTime.now
+    val dayOfExpiry = LocalDateTime.now(clock)
 
     val expiryOnTheDayBefore = dayOfExpiry.minusDays(1)
 
@@ -444,6 +444,7 @@ class ApplicationRepositorySpec
         responseApplications.size shouldBe expectedNumber
       }
     }
+
 
 
     "retrieve the only application with PENDING_REQUESTER_VERIFICATION state that have been updated before the expiryDay" in {
@@ -671,7 +672,7 @@ class ApplicationRepositorySpec
   }
 
   "Search" should {
-    def applicationWithLastAccessDate(applicationId: ApplicationId, lastAccessDate: DateTime): ApplicationData =
+    def applicationWithLastAccessDate(applicationId: ApplicationId, lastAccessDate: LocalDateTime): ApplicationData =
       anApplicationData(id = applicationId, prodClientId = generateClientId).copy(lastAccess = Some(lastAccessDate))
 
     "correctly include the skip and limit clauses" in {
@@ -696,7 +697,7 @@ class ApplicationRepositorySpec
 
     "return applications based on application state filter" in {
       val applicationInTest = anApplicationData(id = ApplicationId.random, prodClientId = generateClientId)
-      val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, DateTime.now())
+      val applicationInProduction = createAppWithStatusUpdatedOn(State.PRODUCTION, LocalDateTime.now(clock))
       await(applicationRepository.save(applicationInTest))
       await(applicationRepository.save(applicationInProduction))
 
@@ -926,10 +927,10 @@ class ApplicationRepositorySpec
 
     "return applications last used before a certain date" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
-      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, DateTime.now.minusMonths(18))))
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, LocalDateTime.now(clock).minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -945,11 +946,11 @@ class ApplicationRepositorySpec
 
     "include applications with no lastAccess date where they were created before cutoff date" in {
       val oldApplicationId = ApplicationId.random
-      val oldApplication = anApplicationData(oldApplicationId).copy(createdOn = DateTime.now.minusMonths(18), lastAccess = None)
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val oldApplication = anApplicationData(oldApplicationId).copy(createdOn = LocalDateTime.now(clock).minusMonths(18), lastAccess = None)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
       await(applicationRepository.save(oldApplication))
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now)))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -965,7 +966,7 @@ class ApplicationRepositorySpec
 
     "return applications that are equal to the specified cutoff date when searching for older applications" in {
       val oldApplicationId = ApplicationId.random
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(oldApplicationId, cutoffDate)))
 
@@ -982,8 +983,8 @@ class ApplicationRepositorySpec
     }
 
     "return no results if no applications are last used before the cutoff date" in {
-      val cutoffDate = DateTime.now.minusMonths(12)
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now)))
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseBeforeDate(cutoffDate)))
 
@@ -994,10 +995,10 @@ class ApplicationRepositorySpec
 
     "return applications last used after a certain date" in {
       val newerApplicationId = ApplicationId.random
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
-      await(applicationRepository.save(applicationWithLastAccessDate(newerApplicationId, DateTime.now)))
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(newerApplicationId, LocalDateTime.now(clock))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock).minusMonths(18))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1014,10 +1015,10 @@ class ApplicationRepositorySpec
     "include applications with no lastAccess date where they were created after cutoff date" in {
       val newerApplicationId = ApplicationId.random
       val newerApplication = anApplicationData(newerApplicationId).copy(lastAccess = None)
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
       await(applicationRepository.save(newerApplication))
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now.minusMonths(18))))
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock).minusMonths(18))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1033,7 +1034,7 @@ class ApplicationRepositorySpec
 
     "return applications that are equal to the specified cutoff date when searching for newer applications" in {
       val applicationId = ApplicationId.random
-      val cutoffDate = DateTime.now.minusMonths(12)
+      val cutoffDate = LocalDateTime.now(clock).minusMonths(12)
 
       await(applicationRepository.save(applicationWithLastAccessDate(applicationId, cutoffDate)))
 
@@ -1050,8 +1051,8 @@ class ApplicationRepositorySpec
     }
 
     "return no results if no applications are last used after the cutoff date" in {
-      val cutoffDate = DateTime.now
-      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, DateTime.now.minusMonths(6))))
+      val cutoffDate = LocalDateTime.now(clock)
+      await(applicationRepository.save(applicationWithLastAccessDate(ApplicationId.random, LocalDateTime.now(clock).minusMonths(6))))
 
       val applicationSearch = new ApplicationSearch(filters = List(LastUseAfterDate(cutoffDate)))
 
@@ -1107,8 +1108,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications sorted by submitted ascending" in {
-      val firstCreatedOn = HmrcTime.now.minusDays(2)
-      val secondCreatedOn = HmrcTime.now.minusDays(1)
+      val firstCreatedOn = LocalDateTime.now(clock).minusDays(2)
+      val secondCreatedOn = LocalDateTime.now(clock).minusDays(1)
       val firstApplication =
         anApplicationData(id = ApplicationId.random, prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
@@ -1130,8 +1131,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications sorted by submitted descending" in {
-      val firstCreatedOn = HmrcTime.now.minusDays(2)
-      val secondCreatedOn = HmrcTime.now.minusDays(1)
+      val firstCreatedOn = LocalDateTime.now(clock).minusDays(2)
+      val secondCreatedOn = LocalDateTime.now(clock).minusDays(1)
       val firstApplication =
         anApplicationData(id = ApplicationId.random, prodClientId = generateClientId).copy(createdOn = firstCreatedOn)
       val secondApplication =
@@ -1153,8 +1154,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications sorted by lastAccess ascending" in {
-      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
-      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
+      val oldestLastAccessDate = LocalDateTime.now(clock).minusDays(2)
       val firstApplication = applicationWithLastAccessDate(ApplicationId.random, mostRecentlyAccessedDate)
       val secondApplication = applicationWithLastAccessDate(ApplicationId.random, oldestLastAccessDate)
 
@@ -1174,8 +1175,8 @@ class ApplicationRepositorySpec
     }
 
     "return applications sorted by lastAccess descending" in {
-      val mostRecentlyAccessedDate = HmrcTime.now.minusDays(1)
-      val oldestLastAccessDate = HmrcTime.now.minusDays(2)
+      val mostRecentlyAccessedDate = LocalDateTime.now(clock).minusDays(1)
+      val oldestLastAccessDate = LocalDateTime.now(clock).minusDays(2)
       val firstApplication = applicationWithLastAccessDate(ApplicationId.random, mostRecentlyAccessedDate)
       val secondApplication = applicationWithLastAccessDate(ApplicationId.random, oldestLastAccessDate)
 
@@ -1346,7 +1347,7 @@ class ApplicationRepositorySpec
         ResponsibleIndividual.Name("bob"),
         ResponsibleIndividual.EmailAddress("bob@example.com")
       )
-      val acceptanceDate = DateTime.now
+      val acceptanceDate = LocalDateTime.now(clock)
       val submissionId = Submission.Id.random
       val acceptance = TermsOfUseAcceptance(
         responsibleIndividual,
@@ -1365,7 +1366,7 @@ class ApplicationRepositorySpec
 
       val termsOfUseAcceptance = termsOfUseAcceptances.head
       termsOfUseAcceptance.responsibleIndividual shouldBe responsibleIndividual
-      termsOfUseAcceptance.dateTime.getMillis shouldBe acceptanceDate.getMillis
+      termsOfUseAcceptance.dateTime.toInstant(ZoneOffset.UTC).toEpochMilli shouldBe acceptanceDate.toInstant(ZoneOffset.UTC).toEpochMilli
       termsOfUseAcceptance.submissionId shouldBe submissionId
     }
   }
@@ -1422,7 +1423,7 @@ class ApplicationRepositorySpec
 
   }
 
-  def createAppWithStatusUpdatedOn(state: State.State, updatedOn: DateTime) = anApplicationData(
+  def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime) = anApplicationData(
     id = ApplicationId.random,
     prodClientId = generateClientId,
     state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
@@ -1464,8 +1465,8 @@ class ApplicationRepositorySpec
       ApplicationTokens(Token(prodClientId, generateAccessToken, clientSecrets)),
       state,
       access,
-      HmrcTime.now,
-      Some(HmrcTime.now),
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)),
       grantLength = grantLength,
       checkInformation = checkInformation)
   }

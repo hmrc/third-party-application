@@ -28,13 +28,16 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 
-class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
+import java.time.LocalDateTime
+
+class UpliftServiceSpec extends AsyncHmrcSpec {
   trait Setup 
     extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
@@ -43,7 +46,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
     with UpliftNamingServiceMockModule
     with UpliftLinksRepositoryMockModule
     with ApiGatewayStoreMockModule
-    with ApplicationTestData {
+    with ApplicationTestData
+    with FixedClock {
 
     val applicationId: ApplicationId = ApplicationId.random
 
@@ -51,7 +55,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
         
-    val underTest = new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftLinksRepositoryMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock)
+    val underTest = new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftLinksRepositoryMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
   }
 
   "requestUplift" should {
@@ -67,7 +71,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
         name = requestedName, normalisedName = requestedName.toLowerCase)
 
       val expectedStateHistory = StateHistory(applicationId = expectedApplication.id, state = PENDING_GATEKEEPER_APPROVAL,
-        actor = Actor(upliftRequestedBy, COLLABORATOR), previousState = Some(TESTING))
+        actor = Actor(upliftRequestedBy, COLLABORATOR), previousState = Some(TESTING), changedAt = LocalDateTime.now(clock))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.FetchByName.thenReturnWhen(requestedName)(application,expectedApplication)
@@ -168,8 +172,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec with LockDownDateTime {
       AuditServiceMock.AuditWithTags.thenReturnSuccess()
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
-      val expectedStateHistory = StateHistory(applicationId, State.PRE_PRODUCTION, Actor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION))
-      val upliftRequest = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actor(upliftRequestedBy, COLLABORATOR), Some(TESTING))
+      val expectedStateHistory = StateHistory(applicationId, State.PRE_PRODUCTION, Actor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock))
+      val upliftRequest = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
 
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 

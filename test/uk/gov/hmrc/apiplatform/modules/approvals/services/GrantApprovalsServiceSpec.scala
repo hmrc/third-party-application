@@ -19,19 +19,18 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
-import org.joda.time.DateTime
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import cats.implicits._
+
+import java.time.LocalDateTime
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule 
@@ -40,16 +39,18 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     with SubmissionsServiceMockModule
     with EmailConnectorMockModule
     with ApplicationTestData 
-    with SubmissionsTestData {
+    with SubmissionsTestData
+    with FixedClock {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val applicationPendingGKApproval = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
+    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
     val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock)
-    
-    val responsibleIndividualVerificationDate = DateTime.now
+
+    val responsibleIndividualVerificationDate = LocalDateTime.now
   }
 
   "GrantApprovalsService" should {

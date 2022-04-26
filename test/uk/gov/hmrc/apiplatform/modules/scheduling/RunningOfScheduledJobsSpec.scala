@@ -18,27 +18,32 @@ package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import akka.actor.{Cancellable, Scheduler}
 import org.scalatest.concurrent.Eventually
-import play.api.Application
-import play.api.inject.ApplicationLifecycle
+import play.api.{Application, inject}
+import play.api.inject.{ApplicationLifecycle, bind}
 
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
 import org.mockito.scalatest.MockitoSugar
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import java.util.concurrent.{TimeUnit, CountDownLatch}
-import org.scalatest.time.{Span, Minute}
+
+import java.util.concurrent.{CountDownLatch, TimeUnit}
+import org.scalatest.time.{Minute, Span}
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest {
+import java.time.Clock
+
+class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest with FixedClock {
   final override def fakeApplication(): Application =
     GuiceApplicationBuilder()
       .configure("metrics.jvm" -> false)
-      .disable(classOf[SchedulerModule])
+      .overrides(bind[Clock].toInstance(clock))
+      .disable(classOf[SchedulerModule], classOf[ClockModule])
       .build()
-  
+
   override implicit val patienceConfig: PatienceConfig =
     PatienceConfig(timeout = 5.seconds)
 

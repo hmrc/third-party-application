@@ -17,31 +17,37 @@
 package uk.gov.hmrc.thirdpartyapplication
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-trait ApplicationStateUtil {
+import java.time.LocalDateTime
 
+trait ApplicationStateUtil extends FixedClock {
   val generatedVerificationCode: String = "verificationCode"
 
-  def testingState() = ApplicationState(name = State.TESTING)
+  def testingState() = ApplicationState(name = State.TESTING, updatedOn = LocalDateTime.now(clock))
 
   def preProductionState(requestedBy: String) = ApplicationState(
     name = State.PRE_PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode))
+    verificationCode = Some(generatedVerificationCode),
+    updatedOn = LocalDateTime.now(clock))
 
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode))
+    verificationCode = Some(generatedVerificationCode),
+    updatedOn = LocalDateTime.now(clock))
 
   def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_REQUESTER_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = Some(generatedVerificationCode))
+    verificationCode = Some(generatedVerificationCode),
+    updatedOn = LocalDateTime.now(clock))
 
   def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
     name = State.PENDING_GATEKEEPER_APPROVAL,
     requestedByEmailAddress = Some(requestedBy),
-    verificationCode = None)
+    verificationCode = None,
+    updatedOn = LocalDateTime.now(clock))
 
 }

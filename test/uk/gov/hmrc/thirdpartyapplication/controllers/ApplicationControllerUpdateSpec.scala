@@ -40,7 +40,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -49,6 +48,8 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+
+import java.time.LocalDateTime
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
   with ApplicationStateUtil with TableDrivenPropertyChecks {
@@ -211,8 +212,8 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now),
+      LocalDateTime.now,
+      Some(LocalDateTime.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

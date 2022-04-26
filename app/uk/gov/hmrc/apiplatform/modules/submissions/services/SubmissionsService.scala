@@ -20,19 +20,21 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
+
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.time.DateTimeUtils
 import cats.data.NonEmptyList
-import org.joda.time.DateTime
+
+import java.time.{Clock, LocalDateTime}
 
 @Singleton
 class SubmissionsService @Inject()(
   questionnaireDAO: QuestionnaireDAO,
   submissionsDAO: SubmissionsDAO,
-  contextService: ContextService
+  contextService: ContextService,
+  val clock: Clock
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -64,8 +66,8 @@ class SubmissionsService @Inject()(
         allQuestionnaires     =  groups.flatMap(_.links)
         submissionId          =  Submission.Id.random
         context               <- contextService.deriveContext(applicationId)
-        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(DateTime.now, requestedBy)))
-        submission            =  Submission(submissionId, applicationId, DateTimeUtils.now, groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), requestedBy)))
+        submission            =  Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
         savedSubmission       <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )

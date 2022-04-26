@@ -38,18 +38,18 @@ import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
-
 import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
+
+import java.time.LocalDateTime
 
 
 
@@ -362,8 +362,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now),
+      LocalDateTime.now,
+      Some(LocalDateTime.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

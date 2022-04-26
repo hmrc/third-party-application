@@ -17,17 +17,18 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.http.HeaderCarrier
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
@@ -45,7 +46,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     with StateHistoryRepositoryMockModule
     with SubmissionsServiceMockModule
     with SubmissionsTestData
-    with ApplicationTestData {
+    with ApplicationTestData
+    with FixedClock {
 
     val requestedByEmailAddress = "email@example.com"
     val application: ApplicationData = anApplicationData(applicationId, testingState())
@@ -56,8 +58,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(result))
       
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-
-    val underTest = new RequestApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock)
+    val underTest = new RequestApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock, clock)
   }
 
   "RequestApprovalsService" when {

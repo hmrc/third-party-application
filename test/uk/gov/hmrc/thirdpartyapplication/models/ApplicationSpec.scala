@@ -22,7 +22,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.time.DateTimeUtils
+
+import java.time.LocalDateTime
 
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples {
 
@@ -45,9 +46,9 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(),
-        DateTimeUtils.now,
-        Some(DateTimeUtils.now))
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR))
+        LocalDateTime.now,
+        Some(LocalDateTime.now))
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR), changedAt = LocalDateTime.now(clock))
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)
@@ -77,7 +78,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           sandboxApplicationId = ApplicationId.random
         ),
         wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken")
+        environmentToken = Token(ClientId("clientId"), "accessToken"),
+        createdOn = LocalDateTime.now(clock)
       )
     }
     
@@ -91,7 +93,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
           subscriptions = None
         ),
         wso2ApplicationName = "wso2ApplicationName",
-        environmentToken = Token(ClientId("clientId"), "accessToken")
+        environmentToken = Token(ClientId("clientId"), "accessToken"),
+        createdOn = LocalDateTime.now(clock)
       )
     }
 

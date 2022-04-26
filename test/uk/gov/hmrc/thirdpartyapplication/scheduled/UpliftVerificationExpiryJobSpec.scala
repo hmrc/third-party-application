@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
-
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.joda.time.{DateTime, DateTimeUtils, Duration}
 import org.scalatest.BeforeAndAfterAll
@@ -37,6 +36,8 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+
+import java.time.LocalDateTime
 
 class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -75,18 +76,10 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
 
     import scala.concurrent.ExecutionContext.Implicits.global
-    val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, config)
+    val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, clock, config)
 
     def whenSaveCalledWork =
       when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer((a: ApplicationData) => successful(a))
-  }
-
-  override def beforeAll(): Unit = {
-    DateTimeUtils.setCurrentMillisFixed(FixedTimeNow.toDate.getTime)
-  }
-
-  override def afterAll(): Unit = {
-    DateTimeUtils.setCurrentMillisSystem()
   }
 
   import scala.concurrent.ExecutionContext.Implicits.global
@@ -96,19 +89,19 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
 
       whenSaveCalledWork
 
       await(underTest.execute)
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedTimeNow.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
       verify(mockStateHistoryRepository).insert(StateHistory(app1.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION)))
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
       verify(mockStateHistoryRepository).insert(StateHistory(app2.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION)))
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
     }
 
     "not execute if the job is already running" in new Setup {
@@ -118,7 +111,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     }
 
     "handle error on first database call to fetch all applications" in new Setup {
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime])).thenReturn(
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing fetchAllByStatusDetails db query"))
       )
       val result = await(underTest.execute)
@@ -132,7 +125,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
       val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
-      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[DateTime]))
+      when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
       when(mockApplicationRepository.save(any[ApplicationData])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing save db query"))
@@ -140,7 +133,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
       val result = await(underTest.execute)
 
-      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, FixedTimeNow.minusDays(expiryTimeInDays))
+      verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
           " The next execution of the job will do retry."
@@ -161,7 +154,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       ),
       state,
       Standard(),
-      HmrcTime.now,
-      Some(HmrcTime.now))
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)))
   }
 }
