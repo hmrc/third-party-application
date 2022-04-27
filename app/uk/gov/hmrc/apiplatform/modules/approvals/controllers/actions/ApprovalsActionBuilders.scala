@@ -41,17 +41,17 @@ trait JsonErrorResponse {
       "message" -> message
     )
 
-  def applicationNotFound(applicationId: ApplicationId) = 
+  def applicationNotFound(applicationId: ApplicationId) =
     NotFound(asBody("APPLICATION_NOT_FOUND", s"Application ${applicationId.value} doesn't exist"))
 
-  def submissionNotFound(applicationId: ApplicationId) = 
+  def submissionNotFound(applicationId: ApplicationId) =
     NotFound(asBody("SUBMISSION_NOT_FOUND", s"No submission found for application ${applicationId.value}"))
 
   def applicationInIncorrectState(applicationId: ApplicationId, state: String) =
     PreconditionFailed(asBody("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state #'${state}'"))
   
   def submissionInIncorrectState(applicationId: ApplicationId, state: String) =
-    PreconditionFailed(asBody("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is not in state #'$state'"))  
+    PreconditionFailed(asBody("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is not in state #'$state'"))
 }
 
 
@@ -61,12 +61,12 @@ class ApplicationRequest[A](
 ) extends WrappedRequest[A](request)
 
 class ApplicationSubmissionRequest[A](
-    val submission: Submission, 
+    val submission: Submission,
     val applicationRequest: ApplicationRequest[A]
 ) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
 
 class ApplicationExtendedSubmissionRequest[A](
-    val submission: Submission, 
+    val submission: Submission,
     val questionnaireProgress: Map[Questionnaire.Id, QuestionnaireProgress],
     val applicationRequest: ApplicationRequest[A]
 ) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
@@ -121,7 +121,7 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
         applicationRequestRefiner(applicationId) andThen
         submissionRefiner(applicationId)
       ).invokeBlock(request, block)
-    }  
+    }
   }
 
   def withApplicationAndExtendedSubmission(applicationId: ApplicationId)(block: ApplicationExtendedSubmissionRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
@@ -130,7 +130,7 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
         applicationRequestRefiner(applicationId) andThen
         extendedSubmissionRefiner(applicationId)
       ).invokeBlock(request, block)
-    }  
+    }
   }
 
 }

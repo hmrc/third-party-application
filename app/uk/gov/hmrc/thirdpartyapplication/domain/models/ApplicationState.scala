@@ -38,9 +38,19 @@ case class ApplicationState(
     }
   }
 
+  def isInTesting = name == State.TESTING
+  def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
+  def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
+  def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
+
   def toProduction = {
-    requireState(requirement = State.PENDING_REQUESTER_VERIFICATION, transitionTo = PRODUCTION)
+    requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
     copy(name = PRODUCTION, updatedOn = DateTimeUtils.now)
+  }
+
+  def toPreProduction = {
+    requireState(requirement = State.PENDING_REQUESTER_VERIFICATION, transitionTo = PRE_PRODUCTION)
+    copy(name = PRE_PRODUCTION, updatedOn = DateTimeUtils.now)
   }
 
   def toTesting = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = DateTimeUtils.now)
@@ -80,6 +90,9 @@ object ApplicationState {
   def pendingRequesterVerification(requestedBy: String, verificationCode: String) =
     ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(requestedBy), Some(verificationCode))
 
-  def production(requestedBy: String, verificationCode: String) =
-    ApplicationState(State.PRODUCTION, Some(requestedBy), Some(verificationCode))
+  def preProduction(requestedBy: String) =
+    ApplicationState(State.PRE_PRODUCTION, Some(requestedBy))
+
+  def production(requestedBy: String) =
+    ApplicationState(State.PRODUCTION, Some(requestedBy))
 }

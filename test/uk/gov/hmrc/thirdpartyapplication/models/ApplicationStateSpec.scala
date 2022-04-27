@@ -45,6 +45,10 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
       intercept[InvalidStateTransition](startingState.toProduction)
     }
 
+    "fail when application state is changed to PRE_PRODUCTION" in {
+      intercept[InvalidStateTransition](startingState.toPreProduction)
+    }
+
     "fail when application state is changed to PENDING_REQUESTER_VERIFICATION" in {
       intercept[InvalidStateTransition](startingState.toPendingRequesterVerification)
     }
@@ -61,6 +65,10 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
     }
 
+    "fail when application state is changed to PRE_PRODUCTION" in {
+      intercept[InvalidStateTransition](startingState.toPreProduction)
+    }
+
     "fail when application state is changed to PRODUCTION" in {
       intercept[InvalidStateTransition](startingState.toProduction)
     }
@@ -73,6 +81,37 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
 
   "state transition from PENDING_REQUESTER_VERIFICATION " should {
     val startingState = pendingRequesterVerificationState(upliftRequestedBy)
+    "move application to PRE_PRODUCTION state" in {
+      val resultState = startingState.toPreProduction
+
+      resultState.name shouldBe State.PRE_PRODUCTION
+      resultState.requestedByEmailAddress shouldBe Some(upliftRequestedBy)
+      resultState.verificationCode shouldBe defined
+      resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
+    }
+    "fail when application state is changed to PENDING_GATEKEEPER_APPROVAL" in {
+      intercept[InvalidStateTransition](startingState.toPendingGatekeeperApproval(upliftRequestedBy))
+    }
+    "fail when application state is changed to PRODUCTION" in {
+      intercept[InvalidStateTransition](startingState.toProduction)
+    }
+    "fail when application state is changed to PENDING_REQUESTER_VERIFICATION" in {
+      intercept[InvalidStateTransition](startingState.toPendingRequesterVerification)
+    }
+  }
+
+  "state transition from PRE_PRODUCTION " should {
+    val startingState = preProductionState(upliftRequestedBy)
+
+    "move back application to TESTING state" in {
+      val resultState = startingState.toTesting
+
+      resultState.name shouldBe State.TESTING
+      resultState.requestedByEmailAddress shouldBe None
+      resultState.verificationCode shouldBe None
+      resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
+    }
+
     "move application to PRODUCTION state" in {
       val resultState = startingState.toProduction
 
@@ -81,12 +120,16 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
       resultState.verificationCode shouldBe defined
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
     }
+
     "fail when application state is changed to PENDING_GATEKEEPER_APPROVAL" in {
       intercept[InvalidStateTransition](startingState.toPendingGatekeeperApproval(upliftRequestedBy))
     }
 
     "fail when application state is changed to PENDING_REQUESTER_VERIFICATION" in {
       intercept[InvalidStateTransition](startingState.toPendingRequesterVerification)
+    }
+    "fail when application state is changed to PRE_PRODUCTION" in {
+      intercept[InvalidStateTransition](startingState.toPreProduction)
     }
   }
 
@@ -106,6 +149,9 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
 
     "fail when application state is changed to PENDING_REQUESTER_VERIFICATION" in {
       intercept[InvalidStateTransition](startingState.toPendingRequesterVerification)
+    }
+    "fail when application state is changed to PRE_PRODUCTION" in {
+      intercept[InvalidStateTransition](startingState.toPreProduction)
     }
 
     "fail when application state is changed to PRODUCTION" in {

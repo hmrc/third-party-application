@@ -153,7 +153,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     
     "grant" should {
         implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None))
+        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None, None))
         val request = FakeRequest().withJsonBody(jsonBody)
         val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
@@ -169,7 +169,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     
     "grant with warnings" should {
         implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning")))
+        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), None, Some("Marty McFly")))
         val request = FakeRequest().withJsonBody(jsonBody)
         val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 

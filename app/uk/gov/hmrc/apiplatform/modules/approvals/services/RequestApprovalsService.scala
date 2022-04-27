@@ -76,14 +76,12 @@ class RequestApprovalsService @Inject()(
     (
       for {
         _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                         <- ET.cond(originalApp.state.name == State.TESTING, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                         <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
         _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         appName                    = getApplicationName(submission).get // Safe at this point
         _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
-        privacyPolicyUrl           = getPrivacyPolicyUrl(submission)
-        termsAndConditionsUrl      = getTermsAndConditionsUrl(submission)
         importantSubmissionData    = getImportantSubmissionData(submission).get // Safe at this point
-        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, privacyPolicyUrl, termsAndConditionsUrl, importantSubmissionData)
+        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, importantSubmissionData)
         savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(DateTimeUtils.now, requestedByEmailAddress)(submission)
@@ -100,15 +98,10 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
   
-  private def updateStandardData(existingAccess: Access, newPrivacyPolicyUrl: Option[String], newTermsAndConditionsUrl: Option[String], importantSubmissionData: ImportantSubmissionData): Access = {
+  private def updateStandardData(existingAccess: Access, importantSubmissionData: ImportantSubmissionData): Access = {
     existingAccess match {
-      case s : Standard =>
-        s.copy(
-          termsAndConditionsUrl = newTermsAndConditionsUrl,
-          privacyPolicyUrl      = newPrivacyPolicyUrl,
-          importantSubmissionData = Some(importantSubmissionData)
-        )
-      case _ => existingAccess    
+      case s : Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))
+      case _ => existingAccess
     }
   }
  
@@ -116,15 +109,13 @@ class RequestApprovalsService @Inject()(
       existing: ApplicationData,
       applicationName: String,
       requestedByEmailAddress: String,
-      privacyPolicyUrl: Option[String],
-      termsAndConditionsUrl: Option[String],
       importantSubmissionData: ImportantSubmissionData
   ): ApplicationData =
     existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
       state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
-      access = updateStandardData(existing.access, privacyPolicyUrl, termsAndConditionsUrl, importantSubmissionData)
+      access = updateStandardData(existing.access, importantSubmissionData)
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 

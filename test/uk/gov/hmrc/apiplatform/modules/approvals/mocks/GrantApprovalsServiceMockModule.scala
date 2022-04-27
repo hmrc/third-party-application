@@ -27,7 +27,7 @@ trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchers
     def aMock: GrantApprovalsService
 
     object Grant {
-      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.grant(*, *, *, *, *)(*)).thenReturn(successful(result))
+      def thenReturn(result: GrantApprovalsService.Result) = when(aMock.grant(*, *, *, *, *, *)(*)).thenReturn(successful(result))
     }
   }
   

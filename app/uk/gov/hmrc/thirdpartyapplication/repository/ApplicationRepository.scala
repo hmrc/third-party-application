@@ -251,15 +251,16 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       Json.obj(f"$$skip" -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
       Json.obj(f"$$limit" -> applicationSearch.pageSize))
 
-    runApplicationQueryAggregation(commandQueryDocument(filters, pagination, sort))
+    runApplicationQueryAggregation(commandQueryDocument(filters, pagination, sort, applicationSearch.hasSubscriptionFilter()))
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
+  private def in(fieldName: String, values: Seq[String]): JsObject = matches(fieldName -> Json.obj(f"$$in"-> values))
 
   private def sorting(clause: (String, JsValueWrapper)): JsObject = Json.obj(f"$$sort" -> Json.obj(clause))
 
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): JsObject = {
-    def applicationStatusMatch(state: State): JsObject = matches("state.name" -> state.toString)
+    def applicationStatusMatch(states: State*): JsObject = in("state.name", states.map(_.toString))
 
     def accessTypeMatch(accessType: AccessType): JsObject = matches("access.accessType" -> accessType.toString)
 
@@ -281,7 +282,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
       case Created => applicationStatusMatch(State.TESTING)
       case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
       case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active => applicationStatusMatch(State.PRODUCTION)
+      case Active => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
 
       // Access Type
       case StandardAccess => accessTypeMatch(AccessType.STANDARD)
@@ -328,10 +329,15 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     }
   }
 
-  private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject]): JsObject = {
+  private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject], hasSubscriptionsQuery: Boolean): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
-    val filteredPipelineCount = Json.toJson(subscriptionsLookup +: filters :+ Json.obj(f"$$count" -> "total"))
-    val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookup +: filters) ++ sort ++ pagination :+ applicationProjection)
+    
+    val subscriptionsLookupFilter = if (hasSubscriptionsQuery) {
+      Seq(subscriptionsLookup)
+    } else Seq.empty
+
+    val filteredPipelineCount = Json.toJson(subscriptionsLookupFilter ++ filters :+ Json.obj(f"$$count" -> "total"))
+    val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookupFilter ++ filters) ++ sort ++ pagination :+ applicationProjection)
 
     Json.obj(
       "aggregate" -> "application",

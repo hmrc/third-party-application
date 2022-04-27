@@ -24,6 +24,11 @@ trait ApplicationStateUtil {
 
   def testingState() = ApplicationState(name = State.TESTING)
 
+  def preProductionState(requestedBy: String) = ApplicationState(
+    name = State.PRE_PRODUCTION,
+    requestedByEmailAddress = Some(requestedBy),
+    verificationCode = Some(generatedVerificationCode))
+
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),

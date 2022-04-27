@@ -407,7 +407,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       (
         for {
           app   <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || app.state.name != State.PRODUCTION, app, badRequest)
+          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || ! app.state.isInPreProductionOrProduction, app, badRequest)
           _     <- ET.liftF(applicationService.deleteApplication(id, None, audit))
         } yield NoContent
       )
@@ -442,6 +442,14 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       )
       applicationService.addTermsOfUseAcceptance(applicationId, acceptance) map { _ =>
           NoContent
+      } recover recovery
+    }
+  }
+
+  def confirmSetupComplete(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[ConfirmSetupCompleteRequest] {request =>
+      applicationService.confirmSetupComplete(applicationId, request.requesterEmailAddress) map { _ =>
+        NoContent
       } recover recovery
     }
   }

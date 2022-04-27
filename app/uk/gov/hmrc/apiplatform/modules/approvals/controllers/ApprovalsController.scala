@@ -45,7 +45,7 @@ object ApprovalsController {
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime] = None)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], responsibleIndividualVerificationDate: Option[DateTime] = None)
+  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], responsibleIndividualVerificationDate: Option[DateTime] = None, escalatedTo: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 
@@ -59,16 +59,16 @@ class ApprovalsController @Inject()(
   cc: ControllerComponents
 )
 (implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
-  with ApprovalsActionBuilders  
+  with ApprovalsActionBuilders
     with JsonUtils
     with JsonErrorResponse {
 
   import ApprovalsController._
 
-  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request => 
+  def requestApproval(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import RequestApprovalsService._
 
-    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest => 
+    withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
       requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueToIncorrectSubmissionState(state)             => PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
@@ -98,7 +98,7 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.responsibleIndividualVerificationDate)
+      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.responsibleIndividualVerificationDate, grantedRequest.escalatedTo)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
