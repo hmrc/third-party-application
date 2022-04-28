@@ -52,6 +52,7 @@ case class QuestionIdsOfInterest(
     termsAndConditionsId: Question.Id,
     termsAndConditionsUrlId: Question.Id,
     organisationUrlId: Question.Id,
+    responsibleIndividualIsRequesterId: Question.Id,
     responsibleIndividualNameId: Question.Id,
     responsibleIndividualEmailId: Question.Id,
     identifyYourOrganisationId: Question.Id,

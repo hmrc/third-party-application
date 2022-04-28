@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
     implicit val mat = NoMaterializer
+    val name = "bob example"
     val emailAddress = "test@example.com"
     val appId = ApplicationId.random
 
@@ -64,7 +65,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
     "requestApproval" should {
         implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
-        val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(emailAddress))
+        val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
         val request = FakeRequest().withJsonBody(jsonBody)
         
         "return 'not found' error response if application is missing" in new Setup {

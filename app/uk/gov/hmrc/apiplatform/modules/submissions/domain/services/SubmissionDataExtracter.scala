@@ -57,12 +57,24 @@ object SubmissionDataExtracter extends ApplicationLogger {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
 
-  def getResponsibleIndividualName(submission: Submission): Option[ResponsibleIndividual.Name] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
+  def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
+    val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
+    val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
+
+    yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
+      case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
+      case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
+    })
   }
 
-  def getResponsibleIndividualEmail(submission: Submission): Option[ResponsibleIndividual.EmailAddress] = {
-    getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
+  def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[ResponsibleIndividual.EmailAddress] = {
+    val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
+    val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
+
+    yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
+      case "Yes" => Some(ResponsibleIndividual.EmailAddress(requestedByEmailAddress))
+      case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
+    })
   }
 
   def getServerLocations(submission: Submission): Option[Set[ServerLocation]] =
@@ -99,10 +111,10 @@ object SubmissionDataExtracter extends ApplicationLogger {
     })
   }
 
-  def getImportantSubmissionData(submission: Submission): Option[ImportantSubmissionData] = {
+  def getImportantSubmissionData(submission: Submission, requestedByName: String, requestedByEmailAddress: String): Option[ImportantSubmissionData] = {
     val organisationUrl            = getOrganisationUrl(submission)
-    val responsibleIndividualName  = getResponsibleIndividualName(submission)
-    val responsibleIndividualEmail = getResponsibleIndividualEmail(submission)
+    val responsibleIndividualName  = getResponsibleIndividualName(submission, requestedByName)
+    val responsibleIndividualEmail = getResponsibleIndividualEmail(submission, requestedByEmailAddress)
     val serverLocations            = getServerLocations(submission).getOrElse(Set.empty)
     val termsAndConditionsLocation = getTermsAndConditionsLocation(submission)
     val privacyPolicyLocation      = getPrivacyPolicyLocation(submission)

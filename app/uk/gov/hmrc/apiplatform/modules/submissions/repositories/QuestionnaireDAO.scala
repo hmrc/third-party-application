@@ -45,16 +45,17 @@ object QuestionnaireDAO {
 
   // *** Note - change this if the application name question changes. ***
   val questionIdsOfInterest = QuestionIdsOfInterest(
-    applicationNameId             = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
-    privacyPolicyId               = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
-    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
-    termsAndConditionsId          = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
-    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
-    organisationUrlId             = Questionnaires.OrganisationDetails.question1.id,
-    responsibleIndividualNameId   = Questionnaires.OrganisationDetails.questionRI2.id,
-    responsibleIndividualEmailId  = Questionnaires.OrganisationDetails.questionRI3.id,
-    identifyYourOrganisationId    = Questionnaires.OrganisationDetails.question2.id,
-    serverLocationsId             = Questionnaires.CustomersAuthorisingYourSoftware.question3.id
+    applicationNameId                  = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
+    privacyPolicyId                    = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
+    privacyPolicyUrlId                 = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    termsAndConditionsId               = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
+    termsAndConditionsUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
+    organisationUrlId                  = Questionnaires.OrganisationDetails.question1.id,
+    responsibleIndividualIsRequesterId = Questionnaires.OrganisationDetails.questionRI1.id,
+    responsibleIndividualNameId        = Questionnaires.OrganisationDetails.questionRI2.id,
+    responsibleIndividualEmailId       = Questionnaires.OrganisationDetails.questionRI3.id,
+    identifyYourOrganisationId         = Questionnaires.OrganisationDetails.question2.id,
+    serverLocationsId                  = Questionnaires.CustomersAuthorisingYourSoftware.question3.id
   )
 
   object Questionnaires {
