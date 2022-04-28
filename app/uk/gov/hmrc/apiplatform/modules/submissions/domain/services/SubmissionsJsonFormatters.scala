@@ -18,8 +18,8 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import play.api.libs.json._
-import org.joda.time.DateTimeZone
 import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
   
@@ -50,9 +50,8 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
 
 trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import Submission.Status._
-  
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   implicit val RejectedStatusFormat = Json.format[Declined]
   implicit val AcceptedStatusFormat = Json.format[Granted]
@@ -76,11 +75,11 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
 
 object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
 
-trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters {
-  import JodaWrites.JodaDateTimeWrites
+trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters with EnvReads {
+
   import Submission.Status._
 
-  implicit val utcReads = JodaReads.DefaultJodaDateTimeReads.map(dt => dt.withZone(DateTimeZone.UTC))
+  implicit val utcReads = DefaultLocalDateTimeReads
 
   implicit val rejectedStatusFormat = Json.format[Declined]
   implicit val acceptedStatusFormat = Json.format[Granted]

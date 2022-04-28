@@ -17,10 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-
 import com.github.t3hnar.bcrypt._
+
 import javax.inject.{Inject, Singleton}
-import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
@@ -30,7 +29,8 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.{Future, blocking}
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import org.joda.time.DateTimeZone
+
+import java.time.{Instant, ZoneOffset}
 
 @Singleton
 class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) extends ApplicationLogger {
@@ -91,8 +91,10 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
     }
   }
 
-  def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean =
-    (first, second) => first.lastAccess.getOrElse(new DateTime(0, DateTimeZone.UTC)).isAfter(second.lastAccess.getOrElse(new DateTime(0, DateTimeZone.UTC)))
+  def lastUsedOrdering: (ClientSecret, ClientSecret) => Boolean = {
+    val oldEpochDateTime = Instant.ofEpochMilli(0).atOffset(ZoneOffset.UTC).toLocalDateTime
+    (first, second) => first.lastAccess.getOrElse(oldEpochDateTime).isAfter(second.lastAccess.getOrElse(oldEpochDateTime))
+  }
 
   def requiresRehash(hashedSecret: String): Boolean = workFactorOfHash(hashedSecret) != config.hashFunctionWorkFactor
 

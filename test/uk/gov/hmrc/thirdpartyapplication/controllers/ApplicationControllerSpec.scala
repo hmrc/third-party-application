@@ -20,7 +20,6 @@ import akka.stream.Materializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
-import org.joda.time.DateTime
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.JsValue
 import play.api.libs.json.Json
@@ -49,7 +48,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.time.DateTimeUtils
 
 import java.nio.charset.StandardCharsets
 import java.util.Base64
@@ -66,9 +64,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 
+import java.time.{LocalDateTime, ZoneOffset}
+
 class ApplicationControllerSpec
   extends ControllerSpec
-  with ApplicationStateUtil 
+  with ApplicationStateUtil
   with ControllerTestData
   with TableDrivenPropertyChecks
   with ApplicationTestData {
@@ -174,7 +174,7 @@ class ApplicationControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", DateTimeUtils.now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now, "1.0".asVersion.value)
     val checkInformation = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")), termsOfUseAgreements = List(termsOfUseAgreement))
     val id = ApplicationId.random
@@ -263,7 +263,7 @@ class ApplicationControllerSpec
       val applicationId = ApplicationId.random
       val name = "bob"
       val emailAddress = "bob@example.com"
-      val acceptanceDate = DateTime.now()
+      val acceptanceDate = LocalDateTime.now(ZoneOffset.UTC)
       val submissionId = Submission.Id.random
       val captor = ArgCaptor[TermsOfUseAcceptance]
       val addTermsOfUseAcceptanceRequest = AddTermsOfUseAcceptanceRequest(name, emailAddress, acceptanceDate, submissionId)
@@ -279,7 +279,7 @@ class ApplicationControllerSpec
       * before and after serialization are not considered equal even though they have the same value
       * (known JodaTime bug) */
       val termsOfUseAcceptance = captor.value
-      termsOfUseAcceptance.dateTime.getMillis shouldBe acceptanceDate.getMillis
+      termsOfUseAcceptance.dateTime.toInstant(ZoneOffset.UTC).toEpochMilli shouldBe acceptanceDate.toInstant(ZoneOffset.UTC).toEpochMilli
       termsOfUseAcceptance.submissionId shouldBe submissionId
       termsOfUseAcceptance.responsibleIndividual.fullName.value shouldBe name
       termsOfUseAcceptance.responsibleIndividual.emailAddress.value shouldBe emailAddress
@@ -704,8 +704,8 @@ class ApplicationControllerSpec
     val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: DateTime = DateTime.now()
-      val lastAccessTime: DateTime = updatedLastAccessTime.minusDays(10) //scalastyle:ignore magic.number
+      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now()
+      val lastAccessTime: LocalDateTime = updatedLastAccessTime.minusDays(10) //scalastyle:ignore magic.number
       val applicationId: ApplicationId = ApplicationId.random
 
       val applicationResponse: ApplicationResponse = aNewApplicationResponse().copy(id = applicationId, lastAccess = Some(lastAccessTime))
@@ -781,11 +781,11 @@ class ApplicationControllerSpec
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime", "shouldUpdate"),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.getMillis, true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.getMillis,true),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.getMillis, false),
-          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.getMillis, false)
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli,true),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken, USER_AGENT -> "foobar"), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false),
+          (Seq(SERVER_TOKEN_HEADER -> serverToken), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, false)
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime, shouldUpdate) =>
@@ -809,11 +809,11 @@ class ApplicationControllerSpec
       val scenarios =
         Table(
           ("headers", "expectedLastAccessTime","shouldUpdate"),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
-          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.getMillis, true),
-          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.getMillis, true),
-          (Seq(USER_AGENT -> "foobar"), lastAccessTime.getMillis,false),
-          (Seq(), lastAccessTime.getMillis,false)
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
+          (Seq(USER_AGENT -> "APIPlatformAuthorizer,foobar"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
+          (Seq(USER_AGENT -> "foobar,APIPlatformAuthorizer"), updatedLastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli, true),
+          (Seq(USER_AGENT -> "foobar"), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli,false),
+          (Seq(), lastAccessTime.toInstant(ZoneOffset.UTC).toEpochMilli,false)
         )
 
       forAll(scenarios) { (headers, expectedLastAccessTime,shouldUpdate) =>
@@ -1531,8 +1531,8 @@ trait ControllerTestData {
       environment.toString,
       Some("Description"),
       collaborators,
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now),
+      LocalDateTime.now,
+      Some(LocalDateTime.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

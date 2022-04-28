@@ -17,20 +17,21 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.concurrent.TimeUnit
-
 import javax.inject.Inject
-import org.joda.time.{DateTime, Duration, LocalDate}
+import org.joda.time.{DateTime, Duration}
 import play.api.libs.json.{Format, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, MongoJavaTimeFormats}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import java.time.LocalDate
 
 class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLockKeeper,
                                        applicationRepository: ApplicationRepository,
@@ -45,23 +46,24 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
   implicit val mongoDateTimeFormats: Format[DateTime] = ReactiveMongoFormats.dateTimeFormats
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    applicationRepository.processAll(updateLastAccessDate(jobConfig.noLastAccessDateBefore.toDateTimeAtStartOfDay, jobConfig.dryRun))
+    applicationRepository.processAll(updateLastAccessDate(jobConfig.noLastAccessDateBefore, jobConfig.dryRun))
       .map(_ => RunningOfJobSuccessful)
   }
 
-  def updateLastAccessDate(earliestLastAccessDate: DateTime, dryRun: Boolean): ApplicationData => Unit = {
+  def updateLastAccessDate(earliestLastAccessDate: LocalDate, dryRun: Boolean): ApplicationData => Unit = {
     def updateApplicationRecord(applicationId: ApplicationId, applicationName: String) = {
       if (dryRun) {
         logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
         logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
-        applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj("lastAccess" -> earliestLastAccessDate)))
+         implicit val dateFormats = MongoJavaTimeFormats.localDateTimeFormat
+        applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj("lastAccess" -> earliestLastAccessDate.atStartOfDay())))
       }
     }
 
     application => {
       application.lastAccess match {
-        case Some(lastAccessDate) => if (lastAccessDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
+        case Some(lastAccessDate) => if (lastAccessDate.toLocalDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
         case None => updateApplicationRecord(application.id, application.name)
       }
     }

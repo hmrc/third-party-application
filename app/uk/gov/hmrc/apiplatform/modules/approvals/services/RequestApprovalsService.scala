@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -34,10 +33,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.models.{ValidName, InvalidName, DuplicateName}
+import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, ValidName}
+
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+
+import java.time.{Clock, LocalDateTime}
 
 object RequestApprovalsService {
   sealed trait RequestApprovalResult
@@ -59,7 +60,8 @@ class RequestApprovalsService @Inject()(
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
   approvalsNamingService: ApprovalsNamingService,
-  submissionService: SubmissionsService
+  submissionService: SubmissionsService,
+  val clock: Clock
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
@@ -84,7 +86,7 @@ class RequestApprovalsService @Inject()(
         updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, importantSubmissionData)
         savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        updatedSubmission          = Submission.submit(DateTimeUtils.now, requestedByEmailAddress)(submission)
+        updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
@@ -114,7 +116,7 @@ class RequestApprovalsService @Inject()(
     existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress),
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock),
       access = updateStandardData(existing.access, importantSubmissionData)
     )
 
@@ -136,7 +138,7 @@ class RequestApprovalsService @Inject()(
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
     .andThen {
       case e: Failure[_] =>

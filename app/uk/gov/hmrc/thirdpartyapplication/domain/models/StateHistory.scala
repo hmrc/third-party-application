@@ -16,23 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import State.State
-import org.joda.time.DateTime
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+
+import java.time.LocalDateTime
 
 case class StateHistory(applicationId: ApplicationId,
 state: State,
 actor: Actor,
 previousState: Option[State] = None,
 notes: Option[String] = None,
-changedAt: DateTime = DateTimeUtils.now)
+changedAt: LocalDateTime)
 
 object StateHistory {
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
   import play.api.libs.json.Json
   
-  implicit def dateTimeOrdering: Ordering[DateTime] = Ordering.fromLessThan(_ isBefore _)
+  implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isBefore _)
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
   implicit val format = Json.format[StateHistory]
 }

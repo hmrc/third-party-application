@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import org.joda.time.DateTime
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
+import java.time.LocalDateTime
 
 case class StateHistoryResponse(applicationId: ApplicationId,
                                 state: State,
                                 actor: Actor,
                                 notes: Option[String],
-                                changedAt: DateTime)
+                                changedAt: LocalDateTime)
 
 object StateHistoryResponse {
   def from(sh: StateHistory) = StateHistoryResponse(sh.applicationId, sh.state, sh.actor, sh.notes, sh.changedAt)

@@ -18,12 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.time.DateTimeUtils
+
+
+import java.time.LocalDateTime
 
 class StateHistorySpec extends HmrcSpec {
 
   val applicationId = ApplicationId.random
-  val now = DateTimeUtils.now
+  val now = LocalDateTime.now
   val actor = Actor("admin@example.com", ActorType.COLLABORATOR)
 
   "State history" should {

@@ -17,11 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.config
 
 import java.util.concurrent.TimeUnit._
-
 import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import org.joda.time.format.ISODateTimeFormat
 import play.api.inject.{Binding, Module}
 import play.api.{Configuration, Environment}
 import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
@@ -38,6 +36,9 @@ import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
 
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
+
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
 
 class ConfigurationModule extends Module {
 
@@ -250,12 +251,12 @@ class ResetLastAccessDateJobConfigProvider @Inject()(configuration: Configuratio
     with Provider[ResetLastAccessDateJobConfig] {
 
   override def get(): ResetLastAccessDateJobConfig = {
-    val dateFormatter = ISODateTimeFormat.date()
+    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
     val enabled = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
     val dryRun = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
-    ResetLastAccessDateJobConfig(dateFormatter.parseLocalDate(noLastAccessDateBeforeAsString), enabled, dryRun)
+    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString, dateFormatter), enabled, dryRun)
   }
 }

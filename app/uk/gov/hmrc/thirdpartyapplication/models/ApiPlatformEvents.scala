@@ -18,10 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import java.util.UUID
 import java.util.UUID.randomUUID
-
-import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.utils
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
+
+import java.time.{LocalDateTime, ZoneOffset}
 
 case class EventId(value: UUID) extends AnyVal
 object EventId {
@@ -43,7 +43,7 @@ object EventType extends Enumeration {
 trait ApplicationEvent {
   val id: EventId
   val applicationId: String
-  val eventDateTime: DateTime
+  val eventDateTime: LocalDateTime
   val eventType: EventType.Value
   val actor: Actor
 }
@@ -51,7 +51,7 @@ trait ApplicationEvent {
 case class TeamMemberAddedEvent(override val id: EventId,
                                 override val applicationId: String,
                                 override val actor: Actor,
-                                override val eventDateTime: DateTime = DateTime.now(),
+                                override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                 teamMemberEmail: String,
                                 teamMemberRole: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.TEAM_MEMBER_ADDED
@@ -59,7 +59,7 @@ case class TeamMemberAddedEvent(override val id: EventId,
 
 case class TeamMemberRemovedEvent(override val id: EventId,
                                   override val applicationId: String,
-                                  override val eventDateTime: DateTime = DateTime.now(),
+                                  override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                   override val actor: Actor,
                                   teamMemberEmail: String,
                                   teamMemberRole: String) extends ApplicationEvent {
@@ -68,7 +68,7 @@ case class TeamMemberRemovedEvent(override val id: EventId,
 
 case class ClientSecretAddedEvent(override val id: EventId,
                                   override val applicationId: String,
-                                  override val eventDateTime: DateTime = DateTime.now(),
+                                  override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                   override val actor: Actor,
                                   clientSecretId: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.CLIENT_SECRET_ADDED
@@ -76,7 +76,7 @@ case class ClientSecretAddedEvent(override val id: EventId,
 
 case class ClientSecretRemovedEvent(override val id: EventId,
                                     override val applicationId: String,
-                                    override val eventDateTime: DateTime = DateTime.now(),
+                                    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                     override val actor: Actor,
                                     clientSecretId: String) extends ApplicationEvent {
   override val eventType: EventType.Value = EventType.CLIENT_SECRET_REMOVED
@@ -84,7 +84,7 @@ case class ClientSecretRemovedEvent(override val id: EventId,
 
 case class RedirectUrisUpdatedEvent(override val id: EventId,
                                     override val applicationId: String,
-                                    override val eventDateTime: DateTime = DateTime.now(),
+                                    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                     override val actor: Actor,
                                     oldRedirectUris: String,
                                     newRedirectUris: String) extends ApplicationEvent {
@@ -93,7 +93,7 @@ case class RedirectUrisUpdatedEvent(override val id: EventId,
 
 case class ApiSubscribedEvent(override val id: EventId,
                               override val applicationId: String,
-                              override val eventDateTime:  DateTime = DateTime.now(),
+                              override val eventDateTime:  LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                               override val actor: Actor,
                               context: String,
                               version: String) extends ApplicationEvent {
@@ -102,7 +102,7 @@ case class ApiSubscribedEvent(override val id: EventId,
 
 case class ApiUnsubscribedEvent(override val id: EventId,
                                 override val applicationId: String,
-                                override val eventDateTime:  DateTime = DateTime.now(),
+                                override val eventDateTime:  LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
                                 override val actor: Actor,
                                 context: String,
                                 version: String) extends ApplicationEvent {

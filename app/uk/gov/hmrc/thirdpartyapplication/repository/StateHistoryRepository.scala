@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
   extends ReactiveRepository[StateHistory, BSONObjectID]("stateHistory", mongo.mongoConnector.db, StateHistory.format, ReactiveMongoFormats.objectIdFormats) {
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   override def indexes = List(
     createSingleFieldAscendingIndex(

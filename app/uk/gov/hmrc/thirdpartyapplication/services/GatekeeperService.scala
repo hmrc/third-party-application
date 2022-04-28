@@ -27,20 +27,21 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrde
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 @Singleton
 class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                   stateHistoryRepository: StateHistoryRepository,
-                                  subscriptionRepository: SubscriptionRepository,
                                   auditService: AuditService,
                                   emailConnector: EmailConnector,
-                                  applicationService: ApplicationService)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+                                  applicationService: ApplicationService,
+                                  clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
@@ -80,7 +81,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def approveUplift(applicationId: ApplicationId, gatekeeperUserId: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
-    def approve(existing: ApplicationData) = existing.copy(state = existing.state.toPendingRequesterVerification)
+    def approve(existing: ApplicationData) = existing.copy(state = existing.state.toPendingRequesterVerification(clock))
 
     def sendEmails(app: ApplicationData) = {
       val requesterEmail = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
@@ -108,7 +109,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
   def rejectUplift(applicationId: ApplicationId, request: RejectUpliftRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def reject(existing: ApplicationData) = {
       existing.state.requireState(State.PENDING_GATEKEEPER_APPROVAL, State.TESTING)
-      existing.copy(state = existing.state.toTesting)
+      existing.copy(state = existing.state.toTesting(clock))
     }
 
     def sendEmails(app: ApplicationData, reason: String) =
@@ -193,7 +194,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
                                  requestedBy: String, actorType: ActorType.ActorType,
                                  rollback: ApplicationData => Any,
                                  notes: Option[String] = None): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, notes)
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

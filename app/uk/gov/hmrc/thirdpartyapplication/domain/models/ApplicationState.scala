@@ -16,20 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.time.DateTimeUtils
-import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
+
 import java.security.MessageDigest
 import org.apache.commons.codec.binary.Base64
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+
 import java.nio.charset.StandardCharsets
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
 case class ApplicationState(
   name: State = TESTING,
   requestedByEmailAddress: Option[String] = None,
   verificationCode: Option[String] = None,
-  updatedOn: DateTime = DateTimeUtils.now
+  updatedOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
 ) {
 
   final def requireState(requirement: State, transitionTo: State): Unit = {
@@ -43,27 +45,27 @@ case class ApplicationState(
   def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
 
-  def toProduction = {
+  def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
-    copy(name = PRODUCTION, updatedOn = DateTimeUtils.now)
+    copy(name = PRODUCTION, updatedOn = LocalDateTime.now(clock))
   }
 
-  def toPreProduction = {
+  def toPreProduction(clock: Clock) = {
     requireState(requirement = State.PENDING_REQUESTER_VERIFICATION, transitionTo = PRE_PRODUCTION)
-    copy(name = PRE_PRODUCTION, updatedOn = DateTimeUtils.now)
+    copy(name = PRE_PRODUCTION, updatedOn = LocalDateTime.now(clock))
   }
 
-  def toTesting = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = DateTimeUtils.now)
+  def toTesting(clock: Clock) = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = LocalDateTime.now(clock))
 
-  def toPendingGatekeeperApproval(requestedByEmailAddress: String) = {
+  def toPendingGatekeeperApproval(requestedByEmailAddress: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
     copy(name = State.PENDING_GATEKEEPER_APPROVAL,
-      updatedOn = DateTimeUtils.now,
+      updatedOn = LocalDateTime.now(clock),
       requestedByEmailAddress = Some(requestedByEmailAddress))
   }
 
-  def toPendingRequesterVerification = {
+  def toPendingRequesterVerification(clock: Clock) = {
     requireState(requirement = State.PENDING_GATEKEEPER_APPROVAL, transitionTo = State.PENDING_REQUESTER_VERIFICATION)
 
     def verificationCode(input: String = ju.UUID.randomUUID().toString): String = {
@@ -72,14 +74,13 @@ case class ApplicationState(
       val digest = MessageDigest.getInstance("SHA-256")
       urlSafe(new String(Base64.encodeBase64(digest.digest(input.getBytes(StandardCharsets.UTF_8))), StandardCharsets.UTF_8))
     }
-    copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = DateTimeUtils.now)
+    copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = LocalDateTime.now(clock))
   }
 }
 
 object ApplicationState {
   import play.api.libs.json.Json
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
- 
+  implicit val dateTimeFormats = MongoJavaTimeFormats.localDateTimeFormat
   implicit val formatApplicationState = Json.format[ApplicationState]
 
   val testing = ApplicationState(State.TESTING, None)

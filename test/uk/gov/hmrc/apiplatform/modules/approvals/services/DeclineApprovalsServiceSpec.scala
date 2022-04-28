@@ -19,26 +19,25 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
-import org.joda.time.DateTime
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import cats.implicits._
+import java.time.LocalDateTime
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
-  trait Setup extends AuditServiceMockModule 
-    with ApplicationRepositoryMockModule 
-    with StateHistoryRepositoryMockModule 
+  trait Setup extends AuditServiceMockModule
+    with ApplicationRepositoryMockModule
+    with StateHistoryRepositoryMockModule
     with SubmissionsServiceMockModule
-    with ApplicationTestData 
-    with SubmissionsTestData {
+    with ApplicationTestData
+    with SubmissionsTestData
+    with FixedClock {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -46,9 +45,9 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val application = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
 
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
+    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, clock)
 
-    val responsibleIndividualVerificationDate = DateTime.now
+    val responsibleIndividualVerificationDate = LocalDateTime.now(clock)
   }
 
   "DeclineApprovalsService" should {

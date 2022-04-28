@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import akka.stream.Materializer
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTime
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
@@ -33,11 +32,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
-
 import cats.implicits._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -48,8 +44,11 @@ import cats.data.OptionT
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import akka.stream.testkit.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil {
+import java.time.LocalDateTime
+
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock{
 
   import play.api.test.Helpers._
 
@@ -118,8 +117,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       environment.toString,
       Some("Description"),
       collaborators,
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now),
+      LocalDateTime.now,
+      Some(LocalDateTime.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,
@@ -489,17 +488,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, DateTimeUtils.now)
+    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, LocalDateTime.now)
   }
 
   private def anAppResult(id: ApplicationId = ApplicationId.random,
-                          submittedOn: DateTime = DateTimeUtils.now,
+                          submittedOn: LocalDateTime = LocalDateTime.now,
                           state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 
   private def anAppResponse(appId: ApplicationId) = {
     val grantLengthInDays = 547
-    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays)
+    new ApplicationResponse(appId, ClientId("clientId"), "gatewayId", "My Application", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
   }
 }

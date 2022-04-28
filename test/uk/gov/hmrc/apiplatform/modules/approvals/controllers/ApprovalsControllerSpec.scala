@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
-
 import play.api.test.Helpers
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
@@ -30,13 +30,10 @@ import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.approvals.services._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import play.api.libs.json.JodaWrites.JodaDateTimeWrites
-
-class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData with FixedClock {
     implicit val mat = NoMaterializer
     val emailAddress = "test@example.com"
     val appId = ApplicationId.random
@@ -148,7 +145,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
         val result = underTest.decline(appId)(request)
 
         status(result) shouldBe OK
-      }        
+      }
     }
     
     "grant" should {

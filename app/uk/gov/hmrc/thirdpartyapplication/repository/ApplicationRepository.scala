@@ -18,15 +18,15 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+
 import javax.inject.{Inject, Singleton}
-import org.joda.time.DateTime
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONDateTime, BSONObjectID}
+import reactivemongo.bson.{BSONObjectID}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -215,8 +216,9 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     find("state.verificationCode" -> verificationCode).map(_.headOption)
   }
 
-  def fetchAllByStatusDetails(state: State.State, updatedBefore: DateTime): Future[List[ApplicationData]] = {
-    find("state.name" -> state, "state.updatedOn" -> Json.obj(f"$$lte" -> BSONDateTime(updatedBefore.getMillis)))
+  def fetchAllByStatusDetails(state: State.State, updatedBefore: LocalDateTime): Future[List[ApplicationData]] = {
+    implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+    find("state.name" -> state, "state.updatedOn" -> Json.obj(f"$$lte" -> updatedBefore))
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationData]] = {

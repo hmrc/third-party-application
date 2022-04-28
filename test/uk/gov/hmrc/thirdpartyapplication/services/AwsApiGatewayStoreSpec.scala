@@ -24,12 +24,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import java.time.LocalDateTime
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -52,8 +52,8 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationTokens(
       Token(ClientId.random, serverToken)),
       testingState(),
-      createdOn = DateTimeUtils.now,
-      lastAccess = Some(DateTimeUtils.now))
+      createdOn = LocalDateTime.now,
+      lastAccess = Some(LocalDateTime.now))
   }
 
   "createApplication" should {
