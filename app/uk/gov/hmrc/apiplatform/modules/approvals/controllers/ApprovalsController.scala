@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
 import play.api.mvc.ControllerComponents
+
 import javax.inject.Inject
 import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
@@ -36,16 +37,17 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
-import org.joda.time.DateTime
+
+import java.time.LocalDateTime
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
-  case class DeclinedRequest(gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime] = None)
+  case class DeclinedRequest(gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime] = None)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], responsibleIndividualVerificationDate: Option[DateTime] = None, escalatedTo: Option[String])
+  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], responsibleIndividualVerificationDate: Option[LocalDateTime] = None, escalatedTo: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 

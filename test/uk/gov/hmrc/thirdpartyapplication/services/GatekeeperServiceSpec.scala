@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTimeUtils
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector

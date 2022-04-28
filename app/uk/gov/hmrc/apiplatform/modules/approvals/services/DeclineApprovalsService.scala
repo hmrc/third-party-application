@@ -34,9 +34,11 @@ import uk.gov.hmrc.play.audit.http.connector.AuditResult
 
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 
+import java.time.format.DateTimeFormatter
 import java.time.{Clock, LocalDateTime}
 
 object DeclineApprovalsService {
@@ -97,24 +99,21 @@ class DeclineApprovalsService @Inject()(
   private def declineApp(application: ApplicationData): ApplicationData = {
     application.copy(state = application.state.toTesting(clock))
   }
+  private val fmt = DateTimeFormatter.ISO_DATE_TIME
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId,
-                                           updatedApp: ApplicationData,
-                                           submission: Submission,
-                                           gatekeeperUserName: String,
-                                           reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime])(implicit hc: HeaderCarrier): Future[AuditResult] = {
 
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     
 
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
-    val submittedOn: DateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-    val declinedOn: DateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val submittedOn: LocalDateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val declinedOn: LocalDateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
     val dates = Map(
-      "submission.started.date" -> submission.startedOn.toString(fmt),
-      "submission.submitted.date" -> submittedOn.toString(fmt),
-      "submission.declined.date" -> declinedOn.toString(fmt)
-      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.toString(fmt)))
+      "submission.started.date" -> submission.startedOn.format(fmt),
+      "submission.submitted.date" -> submittedOn.format(fmt),
+      "submission.declined.date" -> declinedOn.format(fmt)
+      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.format(fmt)))
 
     val markedAnswers =  MarkAnswer.markSubmission(submissionBeforeDeclined)
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
@@ -132,12 +131,8 @@ class DeclineApprovalsService @Inject()(
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
     insertStateHistory(snapshotApp, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
 
-  private def insertStateHistory(snapshotApp: ApplicationData,
-                                 newState: State,
-                                 oldState: Option[State],
-                                 requestedBy: String,
-                                 actorType: ActorType.ActorType,
-                                 rollback: ApplicationData => Any): Future[StateHistory] = {
+  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
+                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
     .andThen {

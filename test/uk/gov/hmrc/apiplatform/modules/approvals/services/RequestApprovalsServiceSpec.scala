@@ -35,7 +35,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.TextAnswer
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {

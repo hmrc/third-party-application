@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils, Duration}
+import org.joda.time.{DateTime, Duration}
 import org.scalatest.BeforeAndAfterAll
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository

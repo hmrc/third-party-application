@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.scheduling
 
 import akka.actor.{Cancellable, Scheduler}
 import org.scalatest.concurrent.Eventually
-import play.api.{Application, inject}
+import play.api.Application
 import play.api.inject.{ApplicationLifecycle, bind}
 
 import scala.concurrent.duration._

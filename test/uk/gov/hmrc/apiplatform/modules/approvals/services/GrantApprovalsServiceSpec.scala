@@ -48,7 +48,6 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val applicationPendingGKApproval = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
     val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
-    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock)
 
     val responsibleIndividualVerificationDate = LocalDateTime.now
   }
