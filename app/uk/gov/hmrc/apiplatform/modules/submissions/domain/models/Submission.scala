@@ -151,6 +151,12 @@ object Submission {
       case _ => false      
     }
 
+    def isGrantedWithOrWithoutWarnings = this match {
+      case _ : Submission.Status.Granted => true
+      case _ : Submission.Status.GrantedWithWarnings => true
+      case _ => false      
+    }
+
     def isGranted = this match {
       case _ : Submission.Status.Granted => true
       case _ => false      

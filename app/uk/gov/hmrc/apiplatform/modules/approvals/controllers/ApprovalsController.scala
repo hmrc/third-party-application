@@ -36,15 +36,16 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
+import org.joda.time.DateTime
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
-  case class DeclinedRequest(gatekeeperUserName: String, reasons: String)
+  case class DeclinedRequest(gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[DateTime] = None)
   implicit val readsDeclinedRequest = Json.reads[DeclinedRequest]
 
-  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])
+  case class GrantedRequest(gatekeeperUserName: String, warnings: Option[String], responsibleIndividualVerificationDate: Option[DateTime] = None, escalatedTo: Option[String])
   implicit val readsGrantedRequest = Json.reads[GrantedRequest]
 }
 
@@ -83,7 +84,7 @@ class ApprovalsController @Inject()(
     import DeclineApprovalsService._
 
     withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
-      declineApprovalService.decline(request.application, request.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
+      declineApprovalService.decline(request.application, request.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons, declinedRequest.responsibleIndividualVerificationDate)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
@@ -97,7 +98,7 @@ class ApprovalsController @Inject()(
     import GrantApprovalsService._
 
     withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
-      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.escalatedTo)
+      grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.responsibleIndividualVerificationDate, grantedRequest.escalatedTo)
       .map( _ match {
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))

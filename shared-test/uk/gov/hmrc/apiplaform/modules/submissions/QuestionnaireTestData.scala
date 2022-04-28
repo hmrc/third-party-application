@@ -235,7 +235,7 @@ trait QuestionnaireTestData {
       )),
       marking = ListMap(
         (PossibleAnswer("In the UK") -> Pass),
-        (PossibleAnswer("In the European Economic Area") -> Pass),
+        (PossibleAnswer("In the European Economic Area (EEA)") -> Pass),
         (PossibleAnswer("Outside the European Economic Area") -> Warn)
       )
     )
