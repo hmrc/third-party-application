@@ -19,24 +19,25 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswersAsText
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import cats.implicits._
+import java.time.LocalDateTime
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
-  trait Setup extends AuditServiceMockModule 
-    with ApplicationRepositoryMockModule 
-    with StateHistoryRepositoryMockModule 
+  trait Setup extends AuditServiceMockModule
+    with ApplicationRepositoryMockModule
+    with StateHistoryRepositoryMockModule
     with SubmissionsServiceMockModule
-    with ApplicationTestData 
-    with SubmissionsTestData {
+    with ApplicationTestData
+    with SubmissionsTestData
+    with FixedClock {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -44,9 +45,9 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     val application = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
 
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock)
+    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, clock)
 
-
+    val responsibleIndividualVerificationDate = LocalDateTime.now(clock)
   }
 
   "DeclineApprovalsService" should {
@@ -58,7 +59,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       SubmissionsServiceMock.Store.thenReturn()
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
-      val result = await(underTest.decline(application, submittedSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(application, submittedSubmission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate.some))
 
       result shouldBe DeclineApprovalsService.Actioned(application)
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe TESTING
@@ -77,13 +78,13 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.decline(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate.some))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
     }
  
     "fail to decline the specified application if the submission is not in the submitted state" in new Setup {
-      val result = await(underTest.decline(application, answeredSubmission, gatekeeperUserName, reasons))
+      val result = await(underTest.decline(application, answeredSubmission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate.some))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
     }

@@ -27,7 +27,7 @@ trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
     def aMock: DeclineApprovalsService
 
     object Decline {
-      def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*, *, *, *)(*)).thenReturn(successful(result))
+      def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*, *, *, *, *)(*)).thenReturn(successful(result))
     }
   }
   

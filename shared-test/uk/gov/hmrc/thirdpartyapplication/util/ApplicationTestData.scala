@@ -19,27 +19,27 @@ package uk.gov.hmrc.thirdpartyapplication.util
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-
 
 import scala.collection.mutable.Map
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-trait ApplicationTestData extends ApplicationStateUtil {
+import java.time.LocalDateTime
+
+trait ApplicationTestData extends ApplicationStateUtil  {
 
   val idsByEmail = Map[String, UserId]()
   def idOf(email: String) = {
     idsByEmail.getOrElseUpdate(email, UserId.random)
-  } 
+  }
 
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   val loggedInUser = "loggedin@example.com"
   val devEmail = "dev@example.com"
 
-  val serverTokenLastAccess = HmrcTime.now
+  val serverTokenLastAccess = LocalDateTime.now(clock)
   val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   
@@ -64,8 +64,8 @@ trait ApplicationTestData extends ApplicationStateUtil {
       ApplicationTokens(productionToken),
       state,
       access,
-      HmrcTime.now,
-      Some(HmrcTime.now),
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)),
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,

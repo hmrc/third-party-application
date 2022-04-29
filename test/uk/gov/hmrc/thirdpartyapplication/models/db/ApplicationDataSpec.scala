@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
+import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 
-class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
+class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples{
   import ApiIdentifierSyntax._
   
   "ApplicationData" should {

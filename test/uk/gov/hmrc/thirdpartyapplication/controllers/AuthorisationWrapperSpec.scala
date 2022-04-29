@@ -22,7 +22,7 @@ import cats.implicits._
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.mvc.Results.Ok
-import play.api.test.{Helpers, FakeRequest}
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
@@ -30,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext
@@ -38,6 +37,8 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import akka.stream.testkit.NoMaterializer
+
+import java.time.LocalDateTime
 
 class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) extends ControllerSpec {
 
@@ -202,7 +203,7 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   private def application(access: Access) = {
     val grantLengthInDays = 547
     ApplicationResponse(
-      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays, access = access)
+      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays, access = access)
   }
 
 }

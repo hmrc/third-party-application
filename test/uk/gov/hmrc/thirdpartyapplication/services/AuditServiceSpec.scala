@@ -26,11 +26,12 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.time.DateTimeUtils
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
+import java.time.LocalDateTime
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -129,8 +130,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       wso2ApplicationName = "wso2ApplicationName",
       tokens = tokens,
       state = testingState(),
-      createdOn = DateTimeUtils.now,
-      lastAccess = Some(DateTimeUtils.now)
+      createdOn = LocalDateTime.now,
+      lastAccess = Some(LocalDateTime.now)
     )
 
     val updatedApp = previousApp.copy(

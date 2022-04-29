@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.joda.time.DateTime
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+
+import java.time.{LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
 case class ClientSecret(
-  name: String,
-  createdOn: DateTime = DateTimeUtils.now,
-  lastAccess: Option[DateTime] = None,
-  id: String = ju.UUID.randomUUID().toString,
-  hashedSecret: String
+                         name: String,
+                         createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                         lastAccess: Option[LocalDateTime] = None,
+                         id: String = ju.UUID.randomUUID().toString,
+                         hashedSecret: String
   )
   
 object ClientSecret {
   import play.api.libs.json.Json
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
-  
+
+  implicit val dateformat = MongoJavaTimeFormats.localDateTimeFormat
   implicit val format = Json.format[ClientSecret]
 }

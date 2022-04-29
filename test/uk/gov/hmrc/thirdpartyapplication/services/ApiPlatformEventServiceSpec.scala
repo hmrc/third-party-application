@@ -17,8 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-
-import org.joda.time.DateTime
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -32,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 
-
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
@@ -45,7 +43,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
     description = None, wso2ApplicationName = "wso2Name",
     tokens = ApplicationTokens(Token(ClientId("clientId"), "accessToken", List.empty)),
     state = applicationState,
-    createdOn = DateTime.now(),
+    createdOn = LocalDateTime.now(),
     lastAccess = None,
     rateLimitTier = None,
     environment = "",

@@ -18,13 +18,15 @@ package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
+
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.time.DateTimeUtils
+
+import java.time.LocalDateTime
 
 trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseRequestApprovalsServiceMock {
@@ -41,7 +43,7 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
       def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(DateTimeUtils.now, "Bob@fake.com"))))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(LocalDateTime.now, "Bob@fake.com"))))
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))

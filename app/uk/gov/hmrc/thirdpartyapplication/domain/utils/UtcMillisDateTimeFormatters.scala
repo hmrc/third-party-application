@@ -16,20 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
-trait UtcMillisDateTimeFormatters {
-  import org.joda.time.{DateTimeZone, DateTime}
+import play.api.libs.json.EnvWrites
+
+import java.time.{Instant, LocalDateTime, ZoneOffset}
+
+trait UtcMillisDateTimeFormatters extends EnvWrites {
   import play.api.libs.json._
-  import play.api.libs.json.JodaWrites._
 
-  implicit val dateTimeWriter: Writes[DateTime] = JodaDateTimeNumberWrites
+  implicit val dateTimeWriter: Writes[LocalDateTime] = LocalDateTimeEpochMilliWrites
 
-  implicit val dateTimeReader: Reads[DateTime] = new Reads[DateTime] {
-    def reads(json: JsValue): JsResult[DateTime] = json match {
-      case JsNumber(n) => JsSuccess(new DateTime(n.toLong, DateTimeZone.UTC))
+  implicit val dateTimeReader: Reads[LocalDateTime] = new Reads[LocalDateTime] {
+    def reads(json: JsValue): JsResult[LocalDateTime] = json match {
+      case JsNumber(n) => JsSuccess( Instant.ofEpochMilli(n.toLong).
+        atZone(ZoneOffset.UTC).toLocalDateTime)
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
     }
   }
-  implicit val dateTimeFormat: Format[DateTime] = Format(dateTimeReader, dateTimeWriter)
+  implicit val dateTimeFormat: Format[LocalDateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 
 object UtcMillisDateTimeFormatters extends UtcMillisDateTimeFormatters

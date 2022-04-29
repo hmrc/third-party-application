@@ -39,7 +39,7 @@ object MarkAnswer {
 
   protected def markQuestion(question: Question, answer: ActualAnswer): Mark = {
     (question, answer) match {
-      case (_, NoAnswer) => question.absenceMark.get
+      case (_, NoAnswer) => question.absenceMark.getOrElse(throw new RuntimeException(s"Failed with $answer for $question"))
       case (q: TextQuestion, a: TextAnswer) => Pass
       case (q: MultiChoiceQuestion, a: MultipleChoiceAnswer) => markMultiChoiceAnswer(q, a)
       case (q: SingleChoiceQuestion, a: SingleChoiceAnswer) => markSingleChoiceAnswer(q, a)

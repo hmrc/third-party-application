@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -32,13 +31,16 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
+
+import java.time.format.DateTimeFormatter
+import java.time.{Clock, LocalDateTime}
 
 object GrantApprovalsService {
   sealed trait Result
@@ -56,13 +58,21 @@ class GrantApprovalsService @Inject()(
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
   submissionService: SubmissionsService,
-  emailConnector: EmailConnector
+  emailConnector: EmailConnector,
+  val clock: Clock
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
 
   import GrantApprovalsService._
 
-  def grant(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
+  def grant(
+      originalApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      warnings: Option[String],
+      responsibleIndividualVerificationDate: Option[LocalDateTime],
+      escalatedTo: Option[String]
+  )(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -71,7 +81,7 @@ class GrantApprovalsService @Inject()(
       successful(Unit)
     }
 
-    def logDone(app: ApplicationData, submission: Submission) = 
+    def logDone(app: ApplicationData, submission: Submission) =
       logger.info(s"Granted-02: grant appId:${app.id} ${app.state.name} ${submission.status}")
 
     val ET = EitherTHelper.make[Result]
@@ -88,7 +98,7 @@ class GrantApprovalsService @Inject()(
         _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission     = grantSubmission(gatekeeperUserName, warnings, escalatedTo)(submission)
         savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, updatedSubmission, gatekeeperUserName, warnings, escalatedTo))
+        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, savedSubmission, gatekeeperUserName, warnings, responsibleIndividualVerificationDate, escalatedTo))
         _                     <- ET.liftF(sendEmails(savedApp))
         _                     = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
@@ -98,22 +108,49 @@ class GrantApprovalsService @Inject()(
 
   private def grantSubmission(gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(submission: Submission) = {
     warnings.fold(
-      Submission.grant(DateTimeUtils.now, gatekeeperUserName)(submission)
+      Submission.grant(LocalDateTime.now(clock), gatekeeperUserName)(submission)
     )( value =>
-      Submission.grantWithWarnings(DateTimeUtils.now, gatekeeperUserName, value, escalatedTo)(submission)
+      Submission.grantWithWarnings(LocalDateTime.now(clock), gatekeeperUserName, value, escalatedTo)(submission)
     )
   }
 
   private def grantApp(application: ApplicationData): ApplicationData = {
-    application.copy(state = application.state.toPendingRequesterVerification)
+    application.copy(state = application.state.toPendingRequesterVerification(clock))
   }
 
-  private def auditGrantedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, gatekeeperUserName: String, warnings: Option[String], escalatedTo: Option[String])(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
+
+  private def auditGrantedApprovalRequest(
+      applicationId: ApplicationId,
+      updatedApp: ApplicationData,
+      submission: Submission,
+      gatekeeperUserName: String,
+      warnings: Option[String],
+      responsibleIndividualVerificationDate: Option[LocalDateTime],
+      escalatedTo: Option[String]
+  )(implicit hc: HeaderCarrier): Future[AuditResult] = {
+
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     val grantedData = Map("status" -> "granted")
     val warningsData = warnings.fold(Map.empty[String, String])(warning => Map("warnings" -> warning))
     val escalatedData = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
-    val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ escalatedData
+    val submittedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val grantedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
+    val dates = Map(
+      "submission.started.date" -> submission.startedOn.format(fmt),
+      "submission.submitted.date" -> submittedOn.format(fmt),
+      "submission.granted.date" -> grantedOn.format(fmt)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.format(fmt)))
+    
+    val markedAnswers =  MarkAnswer.markSubmission(submission)
+    val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
+    val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+    val counters = Map(
+      "submission.failures" -> nbrOfFails.toString,
+      "submission.warnings" -> nbrOfWarnings.toString
+    )
+
+    val extraData = questionsWithAnswers ++ grantedData ++ warningsData ++ dates ++ counters ++ escalatedData
 
     auditService.auditGatekeeperAction(gatekeeperUserName, updatedApp, ApplicationApprovalGranted, extraData)
   }
@@ -123,7 +160,7 @@ class GrantApprovalsService @Inject()(
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
     .andThen {
       case e: Failure[_] =>

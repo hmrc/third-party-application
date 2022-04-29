@@ -29,16 +29,17 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.time.DateTimeUtils
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import akka.stream.testkit.NoMaterializer
 
+import java.time.LocalDateTime
+
 class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks {
+  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks with FixedClock {
 
   implicit val m : Materializer = NoMaterializer
 
@@ -355,8 +356,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
-      DateTimeUtils.now,
-      Some(DateTimeUtils.now),
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)),
       checkInformation = checkInformation)
   }
 

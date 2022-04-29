@@ -17,12 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json._
-import org.joda.time.DateTime
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
-case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: DateTime, submissionId: Submission.Id)
+import java.time.LocalDateTime
+
+case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id)
 
 object TermsOfUseAcceptance {
-  import uk.gov.hmrc.mongo.json.ReactiveMongoFormats.dateTimeFormats
+  implicit val dateformat = MongoJavaTimeFormats.localDateTimeFormat
   implicit val format = Json.format[TermsOfUseAcceptance]
 }

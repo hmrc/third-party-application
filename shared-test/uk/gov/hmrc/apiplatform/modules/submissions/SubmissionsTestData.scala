@@ -22,35 +22,38 @@ import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import cats.data.NonEmptyList
+
 import scala.util.Random
 import org.joda.time.DateTime
+
+import java.time.LocalDateTime
 
 trait StatusTestDataHelper {
   implicit class StatusHistorySyntax(submission: Submission) {
     def hasCompletelyAnsweredWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true)) andThen
         Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def hasCompletelyAnswered: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, true))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, true))(submission)
     }
     
     def answeringWith(answers: Submission.AnswersToQuestions): Submission = {
       (
-        Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false)) andThen
+        Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false)) andThen
         Submission.updateLatestAnswersTo(answers)
       )(submission)
     }
 
     def answering: Submission = {
-      Submission.addStatusHistory(Submission.Status.Answering(DateTimeUtils.now, false))(submission)
+      Submission.addStatusHistory(Submission.Status.Answering(LocalDateTime.now, false))(submission)
     }
     
     def submitted: Submission = {
-      Submission.submit(DateTimeUtils.now, "bob@example.com")(submission)
+      Submission.submit(LocalDateTime.now, "bob@example.com")(submission)
     }
   }
 }
@@ -89,7 +92,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
     AskWhen.Context.Keys.VAT_OR_ITSA -> "No"
   )
-  val now = DateTimeUtils.now
+  val now = LocalDateTime.now
 
   val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 
@@ -111,7 +114,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
 
   val createdSubmission = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
-  val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(answersToQuestions)
+  val answeredSubmission = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
   val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
   val declinedSubmission = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
   val grantedSubmission = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
@@ -139,10 +142,10 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         id = Questionnaire.Id.random,
         label = Questionnaire.Label("Questionnaire 1"),
         questions = NonEmptyList.of(
-          QuestionItem(question1), 
-          QuestionItem(question2), 
-          QuestionItem(question3), 
-          QuestionItem(questionName), 
+          QuestionItem(question1),
+          QuestionItem(question2),
+          QuestionItem(question3),
+          QuestionItem(questionName),
           QuestionItem(questionPrivacyUrl),
           QuestionItem(questionTermsUrl),
           QuestionItem(questionWeb),
@@ -155,11 +158,11 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
           heading = "Group 1",
           links = NonEmptyList.of(
             questionnaire1
-          )            
+          )
         )
     )
 
-    Submission.create("bob@example.com", subId, appId, DateTimeUtils.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIRequester.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
+    Submission.create("bob@example.com", subId, appId, LocalDateTime.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIRequester.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
   }
 
   private def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission): Submission = {
@@ -169,7 +172,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
         case TextQuestion(id, wording, statement, _, _, _, _, absence, _)                         => TextAnswer("some random text")
         case ChooseOneOfQuestion(id, wording, statement, _, _, _, marking, absence, _)            => SingleChoiceAnswer(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value)
         case MultiChoiceQuestion(id, wording, statement, _, _, _, marking, absence, _)            => MultipleChoiceAnswer(Set(marking.filter { case (pa, Pass) => true; case _ => false }.head._1.value))
-        case AcknowledgementOnly(id, wording, statement)                                          => NoAnswer
+        case AcknowledgementOnly(id, wording, statement)                                          => AcknowledgedAnswer
         case YesNoQuestion(id, wording, statement, _, _, _, yesMarking, noMarking, absence, _)    => if(yesMarking == Pass) SingleChoiceAnswer("Yes") else SingleChoiceAnswer("No")
       }
     }
@@ -230,7 +233,7 @@ trait AnsweringQuestionsHelper {
         else
           List(Some(NoAnswer))  // Cos we can't do anything else
 
-      case AcknowledgementOnly(id, _, _) => List(Some(NoAnswer))
+      case AcknowledgementOnly(id, _, _) => List(Some(AcknowledgedAnswer))
 
       case MultiChoiceQuestion(id, _, _, _, _, _, marking, absence, _) => 
         marking.map {
@@ -267,6 +270,8 @@ trait AnsweringQuestionsHelper {
     .toMap
   }
 }
+
+object AnsweringQuestionsHelper extends AnsweringQuestionsHelper
 trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuestionsHelper {
   val markedAnswers: Map[Question.Id, Mark] = Map(
     (DevelopmentPractices.question1.id -> Pass),

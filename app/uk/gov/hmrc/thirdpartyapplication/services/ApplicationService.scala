@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
-import org.joda.time.DateTime
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
@@ -62,6 +61,8 @@ import scala.util.Try
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 
+import java.time.{Clock, LocalDateTime}
+
 @Singleton
 class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    stateHistoryRepository: StateHistoryRepository,
@@ -79,7 +80,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
                                    tokenService: TokenService,
                                    submissionsService: SubmissionsService,
-                                   upliftNamingService: UpliftNamingService)
+                                   upliftNamingService: UpliftNamingService,
+                                   clock: Clock)
                                    (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
@@ -162,7 +164,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     for {
       app              <- fetchApp(applicationId)
       oldState          = app.state
-      newState          = app.state.toProduction
+      newState          = app.state.toProduction(clock)
       appWithNewState   = app.copy(state = newState)
       updatedApp       <- applicationRepository.save(appWithNewState)
       stateHistory      = StateHistory(applicationId, newState.name, Actor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
@@ -408,7 +410,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       }
       totp <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
-      appData = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken())
+      appData = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
       _ <- createInApiGateway(appData)
       _ <- applicationRepository.save(appData)
       _ <- createStateHistory(appData)
@@ -504,7 +506,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
                                  requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState)
+    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

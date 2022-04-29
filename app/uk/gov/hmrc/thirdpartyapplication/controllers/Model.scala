@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import org.joda.time.DateTime
 import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
+
+import java.time.LocalDateTime
 
 
 case class ValidationRequest(clientId: ClientId, clientSecret: String)
@@ -85,7 +86,7 @@ case class DeleteCollaboratorRequest(
   notifyCollaborator: Boolean
 )
 
-case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: DateTime, submissionId: Submission.Id)
+case class AddTermsOfUseAcceptanceRequest(name: String, emailAddress: String, acceptanceDate: LocalDateTime, submissionId: Submission.Id)
 
 case class ConfirmSetupCompleteRequest(requesterEmailAddress: String)
 

@@ -16,13 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import play.api.libs.json._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{IpAllowlist, TermsOfUseAcceptance}
 import play.api.libs.functional.syntax._
 
 object MongoJsonFormatterOverrides {
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   // Non-standard format compared to companion object
   val ipAllowlistReads: Reads[IpAllowlist] = (

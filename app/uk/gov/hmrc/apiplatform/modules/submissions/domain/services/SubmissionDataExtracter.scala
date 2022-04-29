@@ -60,7 +60,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
   def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
     val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
     val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
-
+println("yesOrNoResponsibleIndividualIsRequester " + yesOrNoResponsibleIndividualIsRequester)
     yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
       case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
@@ -84,7 +84,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
       case "In the European Economic Area (EEA)" => ServerLocation.InEEA
       case "Outside the EEA with adequacy agreements" => ServerLocation.OutsideEEAWithAdequacy
       case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
-      case s => throw new RuntimeException()
+      case s => throw new RuntimeException(s)
     }))
 
   def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {

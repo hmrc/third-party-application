@@ -21,7 +21,6 @@ import play.api.test.FakeRequest
 import org.scalatest.prop.TableDrivenPropertyChecks
 import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
-
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -39,13 +38,15 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class UpliftControllerSpec 
   extends ControllerSpec
   with ApplicationStateUtil
   with TableDrivenPropertyChecks
   with UpliftServiceMockModule
-  with ControllerTestData {
+  with ControllerTestData
+  with FixedClock {
 
   import play.api.test.Helpers._
   import play.api.test.Helpers

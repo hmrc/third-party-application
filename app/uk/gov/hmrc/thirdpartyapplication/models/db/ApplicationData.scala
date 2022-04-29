@@ -16,22 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import org.joda.time.DateTime
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
 import com.typesafe.config.ConfigFactory
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+
+import java.time.{LocalDateTime, ZoneOffset}
 
 case class ApplicationTokens(production: Token)
 
 object ApplicationTokens {
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
   implicit val format = Json.format[ApplicationTokens]
 }
 
@@ -45,8 +47,8 @@ case class ApplicationData(
   tokens: ApplicationTokens,
   state: ApplicationState,
   access: Access = Standard(),
-  createdOn: DateTime,
-  lastAccess: Option[DateTime],
+  createdOn: LocalDateTime,
+  lastAccess: Option[LocalDateTime],
   grantLength: Int = grantLengthConfig,
   rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
   environment: String = Environment.PRODUCTION.toString,
@@ -71,16 +73,14 @@ object ApplicationData {
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
-  def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token): ApplicationData = {
+  def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token, createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): ApplicationData = {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
-      case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION)
-      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress))
-      case _ => ApplicationState(TESTING)
+      case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION, updatedOn = createdOn)
+      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress), updatedOn = createdOn)
+      case _ => ApplicationState(TESTING, updatedOn = createdOn)
     }
-    
-    val createdOn = DateTimeUtils.now
 
     val checkInfo = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
@@ -112,7 +112,7 @@ object ApplicationData {
 
   import play.api.libs.functional.syntax._
   import play.api.libs.json._
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   val applicationDataReads: Reads[ApplicationData] = (
     (JsPath \ "id").read[ApplicationId] and
@@ -124,8 +124,8 @@ object ApplicationData {
     (JsPath \ "tokens").read[ApplicationTokens] and
     (JsPath \ "state").read[ApplicationState] and
     (JsPath \ "access").read[Access] and
-    (JsPath \ "createdOn").read[DateTime] and
-    (JsPath \ "lastAccess").readNullable[DateTime] and
+    (JsPath \ "createdOn").read[LocalDateTime] and
+    (JsPath \\ "lastAccess").readNullable[LocalDateTime] and
     ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig) ) and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and

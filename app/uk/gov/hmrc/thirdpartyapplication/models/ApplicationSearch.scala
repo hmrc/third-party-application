@@ -18,11 +18,12 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import org.joda.time.DateTime
-import org.joda.time.format.ISODateTimeFormat
 import play.api.libs.json.Json
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+
+import java.time.{LocalDate, LocalDateTime}
+import java.time.format.DateTimeFormatter
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,
@@ -131,8 +132,8 @@ case object AccessTypeFilter extends AccessTypeFilter {
 }
 
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
-case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter {
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   def toMongoMatch =
     Json.obj("$match" ->
@@ -145,8 +146,8 @@ case class LastUseBeforeDate(lastUseDate: DateTime) extends LastUseDateFilter {
               Json.obj("createdOn" -> Json.obj("$lte" -> lastUseDate)))))))
 }
 
-case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter {
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
+case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
+  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   def toMongoMatch =
     Json.obj("$match" ->
@@ -160,12 +161,15 @@ case class LastUseAfterDate(lastUseDate: DateTime) extends LastUseDateFilter {
 }
 
 case object LastUseDateFilter extends LastUseDateFilter {
-  private val dateFormatter = ISODateTimeFormat.dateTimeParser()
+  private def parseDateString(value: String) =  {
+    if(value.matches("""^\d{4}-\d{1,2}-\d{1,2}$""")) LocalDate.parse(value, DateTimeFormatter.ISO_DATE).atStartOfDay()
+    else LocalDateTime.parse(value, DateTimeFormatter.ISO_DATE_TIME)
+  }
 
   def apply(queryType: String, value: String): Option[LastUseDateFilter] =
     queryType match {
-      case "lastUseBefore" => Some(LastUseBeforeDate(dateFormatter.parseDateTime(value)))
-      case "lastUseAfter" => Some(LastUseAfterDate(dateFormatter.parseDateTime(value)))
+      case "lastUseBefore" => Some(LastUseBeforeDate(parseDateString(value)))
+      case "lastUseAfter" => Some(LastUseAfterDate(parseDateString(value)))
       case _ => None
     }
 }

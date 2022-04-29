@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.models
 
 
-import org.joda.time.DateTime
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
+import java.time.LocalDateTime
 
 trait CreateApplicationRequest {
   def name: String
@@ -152,10 +153,10 @@ case class ApplicationResponse(
   deployedTo: String,
   description: Option[String] = None,
   collaborators: Set[Collaborator],
-  createdOn: DateTime,
-  lastAccess: Option[DateTime],
+  createdOn: LocalDateTime,
+  lastAccess: Option[LocalDateTime],
   grantLength: Int,
-  lastAccessTokenUsage: Option[DateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
+  lastAccessTokenUsage: Option[LocalDateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
   redirectUris: List[String] = List.empty,
   termsAndConditionsUrl: Option[String] = None,
   privacyPolicyUrl: Option[String] = None,
@@ -216,8 +217,8 @@ case class ExtendedApplicationResponse(id: ApplicationId,
                                        deployedTo: String,
                                        description: Option[String] = None,
                                        collaborators: Set[Collaborator],
-                                       createdOn: DateTime,
-                                       lastAccess: Option[DateTime],
+                                       createdOn: LocalDateTime,
+                                       lastAccess: Option[LocalDateTime],
                                        grantLength: Int,
                                        redirectUris: List[String] = List.empty,
                                        termsAndConditionsUrl: Option[String] = None,
@@ -268,7 +269,7 @@ case class CreateApplicationResponse(application: ApplicationResponse, totp: Opt
 
 case class ApplicationWithUpliftRequest(id: ApplicationId,
                                         name: String,
-                                        submittedOn: DateTime,
+                                        submittedOn: LocalDateTime,
                                         state: State)
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
@@ -299,8 +300,8 @@ object ApplicationTokenResponse {
 case class ClientSecretResponse(id: String,
                                 name: String,
                                 secret: Option[String],
-                                createdOn: DateTime,
-                                lastAccess: Option[DateTime])
+                                createdOn: LocalDateTime,
+                                lastAccess: Option[LocalDateTime])
 
 object ClientSecretResponse {
   def apply(clientSecret: ClientSecret): ClientSecretResponse =

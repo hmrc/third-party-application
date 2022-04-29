@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
-
 import play.api.test.Helpers
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
@@ -30,11 +30,10 @@ import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.approvals.services._
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
+class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData with FixedClock {
     implicit val mat = NoMaterializer
     val name = "bob example"
     val emailAddress = "test@example.com"
@@ -135,24 +134,24 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     }
 
     "decline" should {
-        implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
-        val request = FakeRequest().withJsonBody(jsonBody)
-        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+      implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
+      val jsonBody = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
+      val request = FakeRequest().withJsonBody(jsonBody)
+      val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
-        "return 'no content' success response if request is declined" in new Setup {
-            hasApp
-            hasSubmission
-            DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
-            val result = underTest.decline(appId)(request)
+      "return 'no content' success response if request is declined" in new Setup {
+        hasApp
+        hasSubmission
+        DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
+        val result = underTest.decline(appId)(request)
 
-            status(result) shouldBe OK
-        }        
+        status(result) shouldBe OK
+      }
     }
     
     "grant" should {
         implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
+        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None, None))
         val request = FakeRequest().withJsonBody(jsonBody)
         val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
@@ -168,7 +167,7 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
     
     "grant with warnings" should {
         implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
+        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), None, Some("Marty McFly")))
         val request = FakeRequest().withJsonBody(jsonBody)
         val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 

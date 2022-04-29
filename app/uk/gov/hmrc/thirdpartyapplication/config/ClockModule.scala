@@ -14,22 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.config
 
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+import com.google.inject.AbstractModule
 
-import java.time.LocalDateTime
+import java.time.Clock
 
-case class Token(
-  clientId: ClientId,
-  accessToken: String,
-  clientSecrets: List[ClientSecret] = List(),
-  lastAccessTokenUsage: Option[LocalDateTime] = None
-  )
-  
-object Token {
-  import play.api.libs.json.Json
-
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[Token]
+class ClockModule extends AbstractModule {
+  override def configure(): Unit = {
+    bind(classOf[Clock]).toInstance(Clock.systemUTC())
+  }
 }
+

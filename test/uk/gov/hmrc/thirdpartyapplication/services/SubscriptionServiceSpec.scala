@@ -18,8 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, DateTimeUtils}
-import org.scalatest.BeforeAndAfterAll
+
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -35,10 +34,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
-class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class SubscriptionServiceSpec extends AsyncHmrcSpec  with ApplicationStateUtil {
 
   private val loggedInUser = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
@@ -72,13 +72,6 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
 
   private def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4),  hashedSecret = secret.bcrypt(4))
 
-  override def beforeAll() {
-    DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
-  }
-
-  override def afterAll() {
-    DateTimeUtils.setCurrentMillisSystem()
-  }
 
   "isSubscribed" should {
     val applicationId = ApplicationId.random
@@ -211,8 +204,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with 
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      DateTime.now,
-      Some(DateTime.now),
+      LocalDateTime.now(clock),
+      Some(LocalDateTime.now(clock)),
       rateLimitTier = rateLimitTier
     )
   }

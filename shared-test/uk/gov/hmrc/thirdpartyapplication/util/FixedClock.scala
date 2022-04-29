@@ -14,22 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
 
-import java.time.LocalDateTime
+trait FixedClock {
 
-case class Token(
-  clientId: ClientId,
-  accessToken: String,
-  clientSecrets: List[ClientSecret] = List(),
-  lastAccessTokenUsage: Option[LocalDateTime] = None
-  )
-  
-object Token {
-  import play.api.libs.json.Json
+  val utc = ZoneOffset.UTC
 
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[Token]
+  final val clock = Clock.fixed(Instant.ofEpochMilli(1650878658447L), utc)
+
+  def clockMinusHours(hours: Long) = {
+    val newInstant = LocalDateTime
+      .ofInstant(clock.instant(), utc)
+      .minusHours(hours)
+      .toInstant(utc)
+    Clock.fixed(newInstant, utc)
+  }
 }

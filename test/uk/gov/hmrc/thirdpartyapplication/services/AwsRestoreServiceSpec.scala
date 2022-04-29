@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import java.util.UUID
-
 import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector._
@@ -30,7 +29,9 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
+import java.time.LocalDateTime
+
+class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
@@ -42,7 +43,8 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar {
           subscriptions = None
         ),
         applicationName,
-        Token(ClientId(""), serverToken, List.empty))
+        Token(ClientId(""), serverToken, List.empty),
+        createdOn = LocalDateTime.now(clock))
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]

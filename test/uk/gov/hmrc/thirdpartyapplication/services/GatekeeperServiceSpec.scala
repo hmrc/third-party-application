@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.DateTimeUtils
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -29,18 +28,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApiGatewayStoreMockModule, AuditServiceMockModule}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 
-class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+import java.time.LocalDateTime
+
+class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil with FixedClock {
 
   private val requestedByEmail = "john.smith@example.com"
 
@@ -50,11 +48,11 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING))
+    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, HmrcTime.now)
+    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, LocalDateTime.now(clock))
   }
 
   private def anApplicationData(applicationId: ApplicationId, state: ApplicationState = productionState(requestedByEmail),
@@ -66,13 +64,12 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       collaborators,
       Some("description"),
       "aaaaaaaaaa",
-      ApplicationTokens(productionToken), state, Standard(), HmrcTime.now, Some(HmrcTime.now))
+      ApplicationTokens(productionToken), state, Standard(), LocalDateTime.now(clock), Some(LocalDateTime.now(clock)))
   }
 
   trait Setup extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
     with ApiGatewayStoreMockModule
-    with SubscriptionRepositoryMockModule 
     with StateHistoryRepositoryMockModule {
 
     lazy val locked = false
@@ -87,10 +84,10 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     val underTest = new GatekeeperService(
       ApplicationRepoMock.aMock,
       StateHistoryRepoMock.aMock,
-      SubscriptionRepoMock.aMock,
       AuditServiceMock.aMock,
       mockEmailConnector,
-      mockApplicationService)
+      mockApplicationService,
+      clock)
 
     StateHistoryRepoMock.Insert.thenAnswer()
     when(mockEmailConnector.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
@@ -99,14 +96,6 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationRejectedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
-  }
-
-  override def beforeAll() {
-    DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
-  }
-
-  override def afterAll() {
-    DateTimeUtils.setCurrentMillisSystem()
   }
 
   "fetch nonTestingApps with submitted date" should {
@@ -192,7 +181,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val application = anApplicationData(applicationId, pendingGatekeeperApprovalState(upliftRequestedBy))
       val expectedApplication = application.copy(state = pendingRequesterVerificationState(upliftRequestedBy))
       val expectedStateHistory = StateHistory(applicationId = expectedApplication.id, state = PENDING_REQUESTER_VERIFICATION,
-        actor = Actor(gatekeeperUserId, GATEKEEPER), previousState = Some(PENDING_GATEKEEPER_APPROVAL))
+        actor = Actor(gatekeeperUserId, GATEKEEPER), previousState = Some(PENDING_GATEKEEPER_APPROVAL), changedAt = LocalDateTime.now(clock))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
 
@@ -303,7 +292,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedApplication = application.copy(state = testingState())
       val expectedStateHistory = StateHistory(applicationId = application.id, state = TESTING,
         actor = Actor(gatekeeperUserId, GATEKEEPER), previousState = Some(PENDING_GATEKEEPER_APPROVAL),
-        notes = Some(rejectReason))
+        notes = Some(rejectReason), changedAt = LocalDateTime.now(clock))
 
       ApplicationRepoMock.Fetch.thenReturn(application)
 

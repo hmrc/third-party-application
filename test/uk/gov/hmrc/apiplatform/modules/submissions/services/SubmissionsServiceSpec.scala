@@ -28,8 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import cats.data.NonEmptyList
 
-
-class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
+class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
   trait Setup 
     extends SubmissionsDAOMockModule 
     with ApplicationRepositoryMockModule
@@ -37,8 +36,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
     with ApplicationTestData
     with SubmissionsTestData
     with AsIdsHelpers {
-
-    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
+    val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)
   }
 
   "SubmissionsService" when {
@@ -61,7 +59,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside {
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
         
-        override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock)
+        override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
         val result1 = await(underTest.create(applicationId, "bob@example.com"))

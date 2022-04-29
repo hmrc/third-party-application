@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -34,6 +33,8 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import akka.stream.testkit.NoMaterializer
+
+import java.time.LocalDateTime
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
@@ -202,8 +203,8 @@ class AccessControllerSpec extends ControllerSpec {
         "PRODUCTION",
         Some("description"),
         Set.empty,
-        DateTimeUtils.now,
-        Some(DateTimeUtils.now),
+        LocalDateTime.now,
+        Some(LocalDateTime.now),
         grantLengthInDays,
         access = Standard())
     ))
@@ -213,7 +214,7 @@ class AccessControllerSpec extends ControllerSpec {
     val grantLengthInDays = 547
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
-        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, DateTimeUtils.now, Some(DateTimeUtils.now), grantLengthInDays)
+        ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
       when(mockApplicationService.fetch(applicationId)).thenReturn(
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))

@@ -17,13 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, Duration, LocalDate}
+import org.joda.time.Duration
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, MongoJavaTimeFormats}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
@@ -33,9 +33,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 import akka.stream.Materializer
 
+import java.time.LocalDateTime
+
 class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with NoMetricsGuiceOneAppPerSuite {
 
   implicit val m : Materializer = app.materializer
+
+  implicit val dateFormatters = MongoJavaTimeFormats.localDateTimeFormat
 
   private lazy val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
@@ -63,13 +67,13 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
   val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   trait DryRunSetup extends Setup {
-    val dateToSet = new LocalDate(2019, 6, 1)
+    val dateToSet = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
     val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
     val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-    val dateToSet = new LocalDate(2019, 7, 10)
+    val dateToSet = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
 
     val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
@@ -87,10 +91,9 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
       await(applicationRepository.bulkInsert(
         Seq(
-          anApplicationData(lastAccessDate = dateToSet.minusDays(1).toDateTimeAtCurrentTime),
-          anApplicationData(lastAccessDate = dateToSet.minusDays(2).toDateTimeAtCurrentTime),
-          anApplicationData(lastAccessDate = dateToSet.plusDays(3).toDateTimeAtCurrentTime))))
-
+          anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay()),
+          anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay()),
+          anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay()))))
 
       await(underTest.runJob)
 
@@ -98,14 +101,14 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
       retrievedApplications.size should be (3)
       retrievedApplications.foreach(app => {
         app.lastAccess.isDefined should be (true)
-        app.lastAccess.get.isBefore(dateToSet.toDateTimeAtStartOfDay) should be (false)
+        app.lastAccess.get.isBefore(dateToSet.atStartOfDay()) should be (false)
       })
     }
 
     "not update the database if dryRun option is specified" in new DryRunSetup {
-      val application1 = anApplicationData(lastAccessDate = dateToSet.minusDays(1).toDateTimeAtCurrentTime)
-      val application2 = anApplicationData(lastAccessDate = dateToSet.minusDays(2).toDateTimeAtCurrentTime)
-      val application3 = anApplicationData(lastAccessDate = dateToSet.plusDays(3).toDateTimeAtCurrentTime)
+      val application1 = anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay())
+      val application2 = anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay())
+      val application3 = anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay())
 
       await(applicationRepository.bulkInsert(Seq(application1, application2, application3)))
 
@@ -119,7 +122,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random, lastAccessDate: DateTime): ApplicationData = {
+  def anApplicationData(id: ApplicationId = ApplicationId.random, lastAccessDate: LocalDateTime): ApplicationData = {
     ApplicationData(
       id,
       s"myApp-${id.value}",
@@ -133,7 +136,7 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
       ApplicationState(State.PRODUCTION),
       Standard(),
       lastAccessDate,
-      Some(lastAccessDate)
+      lastAccess = Some(lastAccessDate)
     )
   }
 }

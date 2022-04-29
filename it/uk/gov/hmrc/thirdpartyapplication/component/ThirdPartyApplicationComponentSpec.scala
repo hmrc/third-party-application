@@ -17,10 +17,10 @@
 package uk.gov.hmrc.thirdpartyapplication.component
 
 import java.util.UUID
-
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
+import play.api.inject
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -37,6 +37,8 @@ import scala.concurrent.Await.{ready, result}
 import scala.util.Random
 import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteCollaboratorRequest
 
+import java.time. ZoneOffset
+
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
@@ -51,7 +53,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     "microservice.services.email.port" -> 18300,
     "microservice.services.third-party-delegated-authority.port" -> 19606,
     "microservice.services.totp.port" -> 19988,
-    "mongodb.uri" -> "mongodb://localhost:27017/third-party-application-test"          
+    "mongodb.uri" -> "mongodb://localhost:27017/third-party-application-test"
   )
 
   override def fakeApplication =
@@ -89,8 +91,6 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
-
-    DateTimeUtils.setCurrentMillisFixed(DateTimeUtils.currentTimeMillis())
   }
 
   override protected def afterEach(): Unit = {
@@ -184,7 +184,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
       val returnedClientSecret = returnedResponse.clientSecrets.head
       returnedClientSecret.name should be(expectedClientSecrets.head.name)
       returnedClientSecret.secret.isDefined should be(false)
-      returnedClientSecret.createdOn.getMillis should be(expectedClientSecrets.head.createdOn.getMillis)
+      returnedClientSecret.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli should be(expectedClientSecrets.head.createdOn.toInstant(ZoneOffset.UTC).toEpochMilli)
     }
   }
 
@@ -218,7 +218,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       And("The application is returned")
       val returnedApplication = Json.parse(validationResponse.body).as[ApplicationResponse]
-      returnedApplication shouldBe application
+      returnedApplication shouldBe application.copy(lastAccess = returnedApplication.lastAccess)
     }
 
     Scenario("Return UNAUTHORIZED if clientId is incorrect") {

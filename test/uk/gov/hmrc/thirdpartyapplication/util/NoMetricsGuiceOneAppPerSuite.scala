@@ -21,8 +21,11 @@ import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import org.scalatest.TestSuite
+import play.api.inject.bind
 
-trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
+import java.time.Clock
+
+trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite with FixedClock {
   self : TestSuite =>
   
   final override def fakeApplication(): Application =
@@ -31,6 +34,7 @@ trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite {
   def builder(): GuiceApplicationBuilder = {
         GuiceApplicationBuilder()
         .configure("metrics.jvm" -> false)
+        .overrides(bind[Clock].toInstance(clock))
         .disable(classOf[SchedulerModule])
   }
 }
