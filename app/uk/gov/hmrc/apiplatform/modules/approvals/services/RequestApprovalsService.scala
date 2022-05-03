@@ -92,7 +92,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
-        _                         <- ET.liftF(sendVerificationEmailIfNeeded(originalApp.name submission, importantSubmissionData, requestedByName))
+        _                         <- ET.liftF(sendVerificationEmailIfNeeded(originalApp.name, submission, importantSubmissionData, requestedByName))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
@@ -100,7 +100,7 @@ class RequestApprovalsService @Inject()(
     .fold[RequestApprovalResult](identity, identity)
   }
 
-    private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
+  private def logStartingApprovalRequestProcessing(applicationId: ApplicationId): Future[Unit] = {
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
     successful(Unit)
   }
