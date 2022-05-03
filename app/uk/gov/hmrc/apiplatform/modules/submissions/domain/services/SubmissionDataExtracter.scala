@@ -60,7 +60,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
   def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
     val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
     val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
-println("yesOrNoResponsibleIndividualIsRequester " + yesOrNoResponsibleIndividualIsRequester)
+
     yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
       case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
