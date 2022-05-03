@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -33,10 +35,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, InvalidName, ValidName}
+import uk.gov.hmrc.thirdpartyapplication.models.{DuplicateName, HasSucceeded, InvalidName, ValidName}
 
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 
 import java.time.{Clock, LocalDateTime}
 
@@ -61,6 +64,7 @@ class RequestApprovalsService @Inject()(
   stateHistoryRepository: StateHistoryRepository,
   approvalsNamingService: ApprovalsNamingService,
   submissionService: SubmissionsService,
+  emailConnector: EmailConnector,
   val clock: Clock
 )(implicit ec: ExecutionContext)
   extends ApplicationLogger {
@@ -88,6 +92,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
+        _                         <- ET.liftF(sendVerificationEmailIfNeeded(originalApp.name submission, importantSubmissionData, requestedByName))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
@@ -99,7 +104,22 @@ class RequestApprovalsService @Inject()(
     logger.info(s"Approval-01: approval request made for appId:${applicationId}")
     successful(Unit)
   }
-  
+
+  private def sendVerificationEmailIfNeeded(applicationName: String, submission: Submission,
+                                            importantSubmissionData: ImportantSubmissionData,
+                                            requestedByName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    if (! SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)) {
+      val responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value
+      val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
+      val verificationId = ResponsibleIndividualVerificationId.random
+
+      emailConnector.sendVerifyResponsibleIndividualNotification(responsibleIndividualName, responsibleIndividualEmail,
+        applicationName, requestedByName, verificationId.value)
+    } else {
+      Future.successful(HasSucceeded)
+    }
+  }
+
   private def updateStandardData(existingAccess: Access, importantSubmissionData: ImportantSubmissionData): Access = {
     existingAccess match {
       case s : Standard => s.copy(importantSubmissionData = Some(importantSubmissionData))

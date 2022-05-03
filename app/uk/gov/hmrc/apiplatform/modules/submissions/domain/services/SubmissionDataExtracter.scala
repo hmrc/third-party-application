@@ -57,21 +57,22 @@ object SubmissionDataExtracter extends ApplicationLogger {
     getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.organisationUrlId)
   }
 
-  def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
+  private def getAnswerForYesOrNoResponsibleIndividualIsRequester(submission: Submission): Option[String] = {
     val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
-    val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
+    getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
+  }
 
-    yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
+  def isRequesterTheResponsibleIndividual(submission: Submission) = getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).contains("Yes")
+
+  def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
+    getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
       case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
     })
   }
 
   def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[ResponsibleIndividual.EmailAddress] = {
-    val responsibleIndividualIsRequesterId = submission.questionIdsOfInterest.responsibleIndividualIsRequesterId
-    val yesOrNoResponsibleIndividualIsRequester = getSingleChoiceQuestionOfInterest(submission, responsibleIndividualIsRequesterId)
-
-    yesOrNoResponsibleIndividualIsRequester.flatMap(_ match {
+    getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.EmailAddress(requestedByEmailAddress))
       case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
     })
