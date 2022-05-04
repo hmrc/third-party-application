@@ -27,7 +27,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJs
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 
 @Singleton
-class SubmissionsRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
+class SubmissionsRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
 extends ReactiveRepository[Submission, BSONObjectID]("submissions", mongo.mongoConnector.db,
 SubmissionsJsonFormatters.submissionFormat, ReactiveMongoFormats.objectIdFormats) {
   

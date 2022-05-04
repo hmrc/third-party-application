@@ -69,7 +69,7 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
   val applicationDeletedNotification = "apiApplicationDeletedNotification"
   val addedClientSecretNotification = "apiAddedClientSecretNotification"
   val removedClientSecretNotification = "apiRemovedClientSecretNotification"
-  val verifyResponsibleIndividualNotification = "apiVerifyResponsibleIndividualNotification"
+  val verifyResponsibleIndividual = "apiVerifyResponsibleIndividual"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val article = if(role == "admin") "an" else "a"
@@ -164,12 +164,12 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
                                                      applicationName: String,
                                                      requesterName: String,
                                                      verifyResponsibleIndividualUniqueId: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(Set(responsibleIndividualEmailAddress), verifyResponsibleIndividualNotification,
+    post(SendEmailRequest(Set(responsibleIndividualEmailAddress), verifyResponsibleIndividual,
       Map(
         "responsibleIndividualName" -> responsibleIndividualName,
         "applicationName" -> applicationName,
         "requesterName" -> requesterName,
-        "developerHubLink" -> s"$devHubBaseUrl/developer/verify-responsible-individual/$verifyResponsibleIndividualUniqueId")
+        "developerHubLink" -> s"$devHubBaseUrl/developer/submissions/responsible-individual-verification?code=$verifyResponsibleIndividualUniqueId")
       )
     )
   }
