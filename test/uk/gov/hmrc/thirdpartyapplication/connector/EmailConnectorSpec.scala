@@ -239,5 +239,23 @@ class EmailConnectorSpec extends ConnectorSpec {
 
       await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
     }
+
+    "send verify responsible individual notification email" in new Setup {
+      val responsibleIndividualName = "Bob Example"
+      val responsibleIndividualEmail = "bob@example.com"
+      val adminName = "John Admin"
+      val appName = "my app"
+      val uniqueId = "abc123"
+      val expectedParameters: Map[String, String] = Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> appName,
+        "requesterName" -> adminName,
+        "developerHubLink" -> s"$hubUrl/developer/submissions/responsible-individual-verification?code=$uniqueId"
+      )
+      val expectedRequest: SendEmailRequest = SendEmailRequest(Set(responsibleIndividualEmail), "apiVerifyResponsibleIndividual", expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendVerifyResponsibleIndividualNotification(responsibleIndividualName, responsibleIndividualEmail, appName, adminName, uniqueId))
+    }
   }
 }

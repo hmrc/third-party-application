@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
@@ -36,6 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -44,6 +46,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
     with SubmissionsServiceMockModule
+    with EmailConnectorMockModule
+    with ResponsibleIndividualVerificationServiceMockModule
     with SubmissionsTestData
     with ApplicationTestData
     with FixedClock {
@@ -58,7 +62,10 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(result))
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-    val underTest = new RequestApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService, SubmissionsServiceMock.aMock, clock)
+    val underTest = new RequestApprovalsService(
+      AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService,
+      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock, clock
+    )
   }
 
   "RequestApprovalsService" when {
@@ -71,6 +78,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
+        EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
+        ResponsibleIndividualVerificationServiceMock.Verification.thenCreateNewVerification()
 
         val questionsRiName = "andy pandy"
         val questionsRiEmail = "andy@pandy.com"
@@ -103,6 +112,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
+
         val answersWithoutRIDetails = answersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
           .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, NoAnswer)
@@ -123,6 +133,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         updatedSubmission.status should matchPattern {
           case Submission.Status.Submitted(_, requestedByEmailAddress) =>
         }
+        EmailConnectorMock.verifyZeroInteractions()
+        ResponsibleIndividualVerificationServiceMock.verifyZeroInteractions()
       }
 
       "return duplicate application name if duplicate" in new Setup {
