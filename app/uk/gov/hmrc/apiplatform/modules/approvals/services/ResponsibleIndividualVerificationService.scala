@@ -19,17 +19,18 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.Inject
 
 class ResponsibleIndividualVerificationService @Inject()(
     responsibleIndividualVerificationDao: ResponsibleIndividualVerificationDAO) {
-  def createNewVerification(applicationId: ApplicationId, submissionId: Submission.Id, submissionInstance: Int) = {
+  def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int) = {
     val verification = ResponsibleIndividualVerification(
-      applicationId = applicationId,
+      applicationId = applicationData.id,
       submissionId = submissionId,
-      submissionInstance = submissionInstance
+      submissionInstance = submissionInstance,
+      applicationName = applicationData.name
     )
     responsibleIndividualVerificationDao.save(verification)
   }

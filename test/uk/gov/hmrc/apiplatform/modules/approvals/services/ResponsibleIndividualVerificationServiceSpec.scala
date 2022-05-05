@@ -20,13 +20,15 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 import scala.concurrent.Future
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
-  trait Setup {
+  trait Setup extends ApplicationTestData{
     val applicationId = ApplicationId.random
+    val appName = "my shiny app"
+    val appData = anApplicationData(applicationId, testingState()).copy(name = appName)
     val submissionId = Submission.Id.random
     val submissionInstanceIndex = 0
     val dao = mock[ResponsibleIndividualVerificationDAO]
@@ -36,11 +38,12 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     "create a new verification object and save it to the database" in new Setup {
       when(dao.save(*)).thenAnswer((details: ResponsibleIndividualVerification) => Future.successful(details))
 
-      val result = await(underTest.createNewVerification(applicationId, submissionId, submissionInstanceIndex))
+      val result = await(underTest.createNewVerification(appData, submissionId, submissionInstanceIndex))
 
       result.applicationId shouldBe applicationId
       result.submissionId shouldBe submissionId
       result.submissionInstance shouldBe submissionInstanceIndex
+      result.applicationName shouldBe appName
 
       verify(dao).save(result)
     }

@@ -114,7 +114,7 @@ class RequestApprovalsService @Inject()(
       val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
 
       for {
-        verification <- responsibleIndividualVerificationService.createNewVerification(application.id, submission.id, submission.latestInstance.index)
+        verification <- responsibleIndividualVerificationService.createNewVerification(application, submission.id, submission.latestInstance.index)
         _            <- emailConnector.sendVerifyResponsibleIndividualNotification(responsibleIndividualName, responsibleIndividualEmail, application.name, requestedByName, verification.id.value)
       } yield HasSucceeded
 

@@ -20,7 +20,7 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import scala.concurrent.Future
 
@@ -32,9 +32,9 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
 
     object Verification {
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewVerification(*[ApplicationId], *[Submission.Id], *)).thenAnswer(
-          (appId: ApplicationId, submissionId: Submission.Id, index: Int) => Future.successful(
-            ResponsibleIndividualVerification(verificationId, appId, submissionId, index)
+        when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer(
+          (appData: ApplicationData, submissionId: Submission.Id, index: Int) => Future.successful(
+            ResponsibleIndividualVerification(verificationId, appData.id, submissionId, index, appData.name)
           )
         )
       }

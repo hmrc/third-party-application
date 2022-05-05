@@ -34,6 +34,7 @@ case class ResponsibleIndividualVerification(
     applicationId: ApplicationId,
     submissionId: Submission.Id,
     submissionInstance: Int,
+    applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now()
 )
 
