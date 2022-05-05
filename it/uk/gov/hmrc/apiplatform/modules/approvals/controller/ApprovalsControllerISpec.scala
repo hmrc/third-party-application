@@ -16,25 +16,28 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controller
 
-import cats.data.NonEmptyList
+import com.github.tomakehurst.wiremock.client.WireMock._
 import org.scalatest.BeforeAndAfterEach
-import play.api.http.Status.{NOT_FOUND}
+import play.api.http.Status.{NOT_FOUND, OK}
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
+import play.api.test.Helpers.CONTENT_TYPE
 import uk.gov.hmrc.apiplatform.modules.approvals.utils.ServerBaseISpec
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ActualAnswer, Question, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDAO, SubmissionsRepository}
-import uk.gov.hmrc.apiplatform.modules.submissions.services.DeriveContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
-import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 
-class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with ApplicationTestData with BeforeAndAfterEach {
+class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with ApplicationTestData with SubmissionsTestData with BeforeAndAfterEach {
 
 
   protected override def appBuilder: GuiceApplicationBuilder =
@@ -45,7 +48,9 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
         "auditing.enabled" -> false,
         "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}",
         "auditing.consumer.baseUri.host" -> wireMockHost,
-        "auditing.consumer.baseUri.port" -> wireMockPort
+        "auditing.consumer.baseUri.port" -> wireMockPort,
+        "microservice.services.email.host" -> wireMockHost,
+        "microservice.services.email.port" -> wireMockPort
       )
 
   def grantUrl(id: String) = s"http://localhost:$port/approvals/application/$id/grant"
@@ -70,9 +75,24 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
       .post(body)
       .futureValue
 
+  def stubEmail(): Unit ={
+    stubFor(post(urlEqualTo("/hmrc/email"))
+      .willReturn(
+        aResponse()
+          .withStatus(OK)
+      )
+    )
+  }
+
 
  "ApprovalsController" should {
 
+   def primeData(appId: ApplicationId): Unit ={
+
+     val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+     await(applicationRepo.save(application))
+     await(submissionRepo.insert(submittedSubmission.copy(applicationId = appId)))
+   }
    "return 404 when application id does not exist" in {
      val bodyWontBeParsed = "{}"
      val randomAppId = UUID.randomUUID().toString
@@ -81,21 +101,28 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
      result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
    }
 
-   "return OK and application exists blah balh" in {
+   "parse date as millis from epoch" in {
      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
-     val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
-     await(applicationRepo.save(application))
-     val emptyAnswers = Map.empty[Question.Id,ActualAnswer]
-     val context = DeriveContext.deriveFor(application, List.empty)
-     val newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), "some person")))
-     val groups = await(questionaireDao.fetchActiveGroupsOfQuestionnaires())
-     val submission = Submission(Submission.Id.random, appId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
-     await(submissionRepo.insert(submission))
-    // val requestBody = """{"gatekeeperUserName":"Rob Dawson","responsibleIndividualVerificationDate":"2022-03-27T00:00:00.000Z"}"""
-     val requestBody = """{"gatekeeperUserName":"Rob Dawson"}"""
-     val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List.empty)
-    // result.status mustBe NOT_FOUND
-     result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application ${appId.value.toString} doesn't exist"}"""
+    primeData(appId)
+    stubEmail()
+    val requestBody = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate": 1651735542391}"""
+     val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
+     result.status mustBe OK
+     val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+     response must not be None
+
+   }
+
+   "parse date as String" in {
+     val appId: ApplicationId = ApplicationId(UUID.randomUUID())
+     primeData(appId)
+     stubEmail()
+     val requestBody = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate":"2022-03-27T00:00:00.000Z"}"""
+
+     val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
+     result.status mustBe OK
+     val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+     response must not be None
    }
  }
 

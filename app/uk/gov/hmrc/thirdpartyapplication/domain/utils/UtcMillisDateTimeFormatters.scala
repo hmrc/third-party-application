@@ -16,22 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
-import play.api.libs.json.EnvWrites
+import play.api.libs.json.{EnvReads, EnvWrites}
 
 import java.time.{Instant, LocalDateTime, ZoneOffset}
 
-trait UtcMillisDateTimeFormatters extends EnvWrites {
+trait UtcMillisDateTimeFormatters extends EnvWrites with EnvReads {
   import play.api.libs.json._
 
   implicit val dateTimeWriter: Writes[LocalDateTime] = LocalDateTimeEpochMilliWrites
 
-  implicit val dateTimeReader: Reads[LocalDateTime] = new Reads[LocalDateTime] {
-    def reads(json: JsValue): JsResult[LocalDateTime] = json match {
-      case JsNumber(n) => JsSuccess( Instant.ofEpochMilli(n.toLong).
-        atZone(ZoneOffset.UTC).toLocalDateTime)
-      case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.time"))))
-    }
-  }
+  implicit val dateTimeReader: Reads[LocalDateTime] = DefaultLocalDateTimeReads
+
   implicit val dateTimeFormat: Format[LocalDateTime] = Format(dateTimeReader, dateTimeWriter)
 }
 
