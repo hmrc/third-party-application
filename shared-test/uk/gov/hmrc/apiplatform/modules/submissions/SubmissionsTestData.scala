@@ -124,27 +124,28 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     val appId = ApplicationId.random
 
     val question1 = yesNoQuestion(1)
-    val questionRIName = textQuestion(2)
-    val questionRIEmail = textQuestion(3)
-    val questionName = textQuestion(4)
-    val questionPrivacyUrl = textQuestion(5)
-    val questionTermsUrl = textQuestion(6)
-    val questionWeb = textQuestion(7)
-    val question2 = acknowledgementOnly(8)
-    val question3 = multichoiceQuestion(9, "a1", "b", "c")
-    val questionIdentifyOrg = chooseOneOfQuestion(10, "a2", "b", "c")
-    val questionPrivacy = textQuestion(11)
-    val questionTerms = textQuestion(12)
-    val questionServerLocations = multichoiceQuestion(13, "In the UK", "Outside the EEA with adequacy agreements")
+    val questionRIRequester = yesNoQuestion(2)
+    val questionRIName = textQuestion(3)
+    val questionRIEmail = textQuestion(4)
+    val questionName = textQuestion(5)
+    val questionPrivacyUrl = textQuestion(6)
+    val questionTermsUrl = textQuestion(7)
+    val questionWeb = textQuestion(8)
+    val question2 = acknowledgementOnly(9)
+    val question3 = multichoiceQuestion(10, "a1", "b", "c")
+    val questionIdentifyOrg = chooseOneOfQuestion(11, "a2", "b", "c")
+    val questionPrivacy = textQuestion(12)
+    val questionTerms = textQuestion(13)
+    val questionServerLocations = multichoiceQuestion(14, "In the UK", "Outside the EEA with adequacy agreements")
 
     val questionnaire1 = Questionnaire(
         id = Questionnaire.Id.random,
         label = Questionnaire.Label("Questionnaire 1"),
         questions = NonEmptyList.of(
-          QuestionItem(question1), 
-          QuestionItem(question2), 
-          QuestionItem(question3), 
-          QuestionItem(questionName), 
+          QuestionItem(question1),
+          QuestionItem(question2),
+          QuestionItem(question3),
+          QuestionItem(questionName),
           QuestionItem(questionPrivacyUrl),
           QuestionItem(questionTermsUrl),
           QuestionItem(questionWeb),
@@ -157,11 +158,11 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
           heading = "Group 1",
           links = NonEmptyList.of(
             questionnaire1
-          )            
+          )
         )
     )
 
-    Submission.create("bob@example.com", subId, appId, LocalDateTime.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
+    Submission.create("bob@example.com", subId, appId, LocalDateTime.now, questionnaireGroups, QuestionIdsOfInterest(questionName.id, questionPrivacy.id, questionPrivacyUrl.id, questionTerms.id, questionTermsUrl.id, questionWeb.id, questionRIRequester.id, questionRIName.id, questionRIEmail.id, questionIdentifyOrg.id, questionServerLocations.id), standardContext)
   }
 
   private def buildAnsweredSubmission(fullyAnswered: Boolean)(submission: Submission): Submission = {

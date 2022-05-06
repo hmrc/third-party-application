@@ -67,7 +67,7 @@ class RequestApprovalsService @Inject()(
 
   import RequestApprovalsService._
 
-  def requestApproval(originalApp: ApplicationData, submission: Submission, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
+  def requestApproval(originalApp: ApplicationData, submission: Submission, requestedByName: String, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[RequestApprovalResult] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -82,7 +82,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
         appName                    = getApplicationName(submission).get // Safe at this point
         _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
-        importantSubmissionData    = getImportantSubmissionData(submission).get // Safe at this point
+        importantSubmissionData    = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
         updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, importantSubmissionData)
         savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))

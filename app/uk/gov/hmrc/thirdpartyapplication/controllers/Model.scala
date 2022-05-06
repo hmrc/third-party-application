@@ -36,8 +36,6 @@ case class DeleteClientSecretRequest(actorEmailAddress: String)
 
 case class DeleteClientSecretsRequest(actorEmailAddress: String, secrets: List[String])
 
-case class RequestApprovalRequest(requestedByEmailAddress: String)
-
 case class ApproveUpliftRequest(gatekeeperUserId: String)
 
 case class RejectUpliftRequest(gatekeeperUserId: String, reason: String)

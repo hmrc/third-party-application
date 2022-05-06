@@ -34,19 +34,19 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
 
     object RequestApproval {
       def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
       
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
       
       def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
       def thenRequestFailsWithIncorrectSubmissionErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(LocalDateTime.now, "Bob@fake.com"))))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectSubmissionState(Submission.Status.Created(LocalDateTime.now, "Bob@fake.com"))))
 
       def thenRequestFailsWithIllegalNameErrorFor(applicationId: ApplicationId, emailAddress: String) =
-        when(aMock.requestApproval(*, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
+        when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
     }
   }
   

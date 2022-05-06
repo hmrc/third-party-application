@@ -51,12 +51,6 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 
-object ApplicationController {
-  case class RequestApprovalRequest(requestedByEmailAddress: String)
-
-  implicit val requestApprovalRequest = Json.reads[RequestApprovalRequest]
-}
-
 @Singleton
 class ApplicationController @Inject()(val applicationService: ApplicationService,
                                       val authConnector: AuthConnector,

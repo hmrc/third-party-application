@@ -41,7 +41,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorRe
 import java.time.LocalDateTime
 
 object ApprovalsController {
-  case class RequestApprovalRequest(requestedByEmailAddress: String)
+  case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
 
   case class DeclinedRequest(gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime] = None)
@@ -71,7 +71,7 @@ class ApprovalsController @Inject()(
     import RequestApprovalsService._
 
     withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
-      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByEmailAddress).map( _ match {
+      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByName, requestApprovalRequest.requestedByEmailAddress).map( _ match {
         case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
         case ApprovalRejectedDueToIncorrectSubmissionState(state)             => PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
         case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 

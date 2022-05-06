@@ -45,48 +45,58 @@ object QuestionnaireDAO {
 
   // *** Note - change this if the application name question changes. ***
   val questionIdsOfInterest = QuestionIdsOfInterest(
-    applicationNameId             = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
-    privacyPolicyId               = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
-    privacyPolicyUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
-    termsAndConditionsId          = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
-    termsAndConditionsUrlId       = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
-    organisationUrlId             = Questionnaires.OrganisationDetails.question1.id,
-    responsibleIndividualNameId   = Questionnaires.OrganisationDetails.questionRI1.id,
-    responsibleIndividualEmailId  = Questionnaires.OrganisationDetails.questionRI2.id,
-    identifyYourOrganisationId    = Questionnaires.OrganisationDetails.question2.id,
-    serverLocationsId             = Questionnaires.CustomersAuthorisingYourSoftware.question3.id
+    applicationNameId                  = Questionnaires.CustomersAuthorisingYourSoftware.question2.id,
+    privacyPolicyId                    = Questionnaires.CustomersAuthorisingYourSoftware.question4.id,
+    privacyPolicyUrlId                 = Questionnaires.CustomersAuthorisingYourSoftware.question5.id,
+    termsAndConditionsId               = Questionnaires.CustomersAuthorisingYourSoftware.question6.id,
+    termsAndConditionsUrlId            = Questionnaires.CustomersAuthorisingYourSoftware.question7.id,
+    organisationUrlId                  = Questionnaires.OrganisationDetails.question1.id,
+    responsibleIndividualIsRequesterId = Questionnaires.OrganisationDetails.questionRI1.id,
+    responsibleIndividualNameId        = Questionnaires.OrganisationDetails.questionRI2.id,
+    responsibleIndividualEmailId       = Questionnaires.OrganisationDetails.questionRI3.id,
+    identifyYourOrganisationId         = Questionnaires.OrganisationDetails.question2.id,
+    serverLocationsId                  = Questionnaires.CustomersAuthorisingYourSoftware.question3.id
   )
 
   object Questionnaires {
 
     object OrganisationDetails {
-      val questionRI1 = TextQuestion(
-        Question.Id("36b7e670-83fc-4b31-8f85-4d3394908495"),
-        Wording("Provide details for a responsible individual in your organisation"),
+      val questionRI1 = YesNoQuestion(
+        Question.Id("99d9362d-e365-4af1-aa46-88e95f9858f7"),
+        Wording("Are you the individual responsible for the software in your organisation?"),
         statement = Statement(
-          StatementText("The responsible individual:"),
+          StatementText("As the responsible individual you:"),
           StatementBullets(
             CompoundFragment(
-              StatementText("ensures your software conforms to the "),
+              StatementText("ensure your software conforms to the "),
               StatementLink("terms of use (opens in new tab)", "/api-documentation/docs/terms-of-use")
             ),
             CompoundFragment(
-              StatementText("understands the "),
+              StatementText("understand the "),
               StatementLink("consequences of not conforming to the terms of use (opens in new tab)", "/api-documentation/docs/terms-of-use")
             )
           )
         ).some,
+        yesMarking = Pass,
+        noMarking = Pass,
+        errorInfo = ErrorInfo("Select Yes if you are the individual responsible for the software in your organisation").some
+      )
+
+      val questionRI2 = TextQuestion(
+        Question.Id("36b7e670-83fc-4b31-8f85-4d3394908495"),
+        Wording("Who is responsible for the software in your organisation?"),
+        statement = None,
         label = Question.Label("First and last name").some,
         errorInfo = ErrorInfo("Enter a first and last name","First and last name cannot be blank").some
       )
 
-      val questionRI2 = TextQuestion(
+      val questionRI3 = TextQuestion(
         Question.Id("fb9b8036-cc88-4f4e-ad84-c02caa4cebae"),
-        Wording("Provide an email address for the responsible individual"),
+        Wording("Give us the email address of the individual responsible for the software"),
         statement = None,
         afterStatement = Statement(
-            StatementText("We will send a verification email to the email address provided."),
-            StatementText("The responsible individual must verify within 10 days that they are responsible for ensuring your software conforms to our terms of use.")
+            StatementText("We will email a verification link to the responsible individual that expires in 10 working days."),
+            StatementText("The responsible individual must verify before we can process your request for production credentials.")
         ).some,
         label = Question.Label("Email address").some,
         hintText = StatementText("Cannot be a shared mailbox").some,
@@ -192,7 +202,8 @@ object QuestionnaireDAO {
         label = Questionnaire.Label("Organisation details"),
         questions = NonEmptyList.of(
           QuestionItem(questionRI1),
-          QuestionItem(questionRI2),
+          QuestionItem(questionRI2, AskWhenAnswer(questionRI1, "No")),
+          QuestionItem(questionRI3, AskWhenAnswer(questionRI1, "No")),
           QuestionItem(question1),
           QuestionItem(question2),
           QuestionItem(question2a, AskWhenAnswer(question2, "My organisation is in the UK and doesn't have any of these")),
