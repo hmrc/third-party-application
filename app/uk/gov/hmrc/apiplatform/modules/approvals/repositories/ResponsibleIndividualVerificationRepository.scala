@@ -20,6 +20,7 @@ import akka.stream.Materializer
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationJsonFormatters
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 
@@ -28,7 +29,7 @@ import scala.concurrent.ExecutionContext
 
 class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
     extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID]("responsibleIndividualVerification", mongo.mongoConnector.db,
-      ResponsibleIndividualVerification.format, ReactiveMongoFormats.objectIdFormats) {
+      ResponsibleIndividualVerificationJsonFormatters.responsibleIndividualVerificationFormat, ReactiveMongoFormats.objectIdFormats) {
 
     import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 

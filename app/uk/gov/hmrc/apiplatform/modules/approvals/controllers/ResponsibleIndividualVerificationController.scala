@@ -23,6 +23,7 @@ import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
 import play.api.libs.json.Json
 import play.api.mvc.Results
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -44,7 +45,7 @@ class ResponsibleIndividualVerificationController @Inject()(
   val responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
   cc: ControllerComponents
 )
-(implicit val ec: ExecutionContext) extends BackendController(cc)
+(implicit val ec: ExecutionContext) extends BackendController(cc) with ResponsibleIndividualVerificationFrontendJsonFormatters
     with JsonUtils
     with JsonErrorResponse {
 
