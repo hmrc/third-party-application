@@ -18,9 +18,9 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{SingleChoiceAnswer, Submission, TextAnswer}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.updateLatestAnswersTo
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.TextAnswer
 
 class SubmissionDataExtracterSpec extends HmrcSpec {
   
@@ -41,6 +41,20 @@ class SubmissionDataExtracterSpec extends HmrcSpec {
       "return None if answer not found" in new Setup {
         val actualAppName: Option[String] = SubmissionDataExtracter.getApplicationName(aSubmission)
         actualAppName shouldBe None
+      }
+    }
+
+    "isRequesterTheResponsibleIndividual" should {
+      "return true if the requester is the Responsible Individual" in new Setup {
+        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("Yes"))
+        val submission = updateLatestAnswersTo(answers)(answeringSubmission)
+
+        SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission) shouldBe true
+      }
+      "return false if the requester is not the Responsible Individual" in new Setup {
+        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("No"))
+        val submission = updateLatestAnswersTo(answers)(answeringSubmission)
+        SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission) shouldBe false
       }
     }
   }
