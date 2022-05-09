@@ -33,7 +33,10 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val submissionInstanceIndex = 0
     val dao = mock[ResponsibleIndividualVerificationDAO]
     val underTest = new ResponsibleIndividualVerificationService(dao)
+
+    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   }
+
   "createNewVerification" should {
     "create a new verification object and save it to the database" in new Setup {
       when(dao.save(*)).thenAnswer((details: ResponsibleIndividualVerification) => Future.successful(details))
