@@ -24,10 +24,11 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 class ResponsibleIndividualVerificationService @Inject()(
     responsibleIndividualVerificationDao: ResponsibleIndividualVerificationDAO
-  )(implicit ec: ExecutionContext) {
+  )(implicit ec: ExecutionContext) extends ApplicationLogger {
 
   def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int) = {
     val verification = ResponsibleIndividualVerification(
@@ -49,10 +50,12 @@ class ResponsibleIndividualVerificationService @Inject()(
 
     val ET = EitherTHelper.make[String]
 
-    // TODO: Change state of application to PENDING_GATEKEEPER_APPROVAL and save timestamp. Also delete verification record.
+    // TODO: Change state of application to PENDING_GATEKEEPER_APPROVAL and save timestamp. 
+    // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
         riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
+        _              =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
       } yield riVerification
     ).value
   }
@@ -63,10 +66,12 @@ class ResponsibleIndividualVerificationService @Inject()(
 
     val ET = EitherTHelper.make[String]
 
-    // TODO: Decline the request, with an appropriate reason. Also delete verification record.
+    // TODO: Decline the request, with an appropriate reason. 
+    // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
         riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
+        _              =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}")
       } yield riVerification
     ).value
   }
