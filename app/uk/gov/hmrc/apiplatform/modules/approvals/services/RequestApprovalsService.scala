@@ -93,7 +93,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
-        _                         <- ET.liftF(sendVerificationEmailIfNeeded(originalApp, submission, importantSubmissionData, requestedByName))
+        _                         <- ET.liftF(sendVerificationEmailIfNeeded(savedApp, submission, importantSubmissionData, requestedByName))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
