@@ -21,6 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import scala.concurrent.Future
 
@@ -30,11 +31,45 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
 
     def verifyZeroInteractions(): Unit = MockitoSugar.verifyZeroInteractions(aMock)
 
-    object Verification {
+    object CreateNewVerification {
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
         when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer(
           (appData: ApplicationData, submissionId: Submission.Id, index: Int) => Future.successful(
             ResponsibleIndividualVerification(verificationId, appData.id, submissionId, index, appData.name)
+          )
+        )
+      }
+    }
+
+    object GetVerification {
+      def thenGetVerification(code: String) = {
+        when(aMock.getVerification(*)).thenAnswer(
+          (code: String) => Future.successful(Some(
+            ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name"))
+          )
+        )
+      }
+
+      def thenReturnNone() = {
+        when(aMock.getVerification(*)).thenAnswer(Future.successful(None))
+      }
+    }
+
+    object Accept {
+      def thenAccept() = {
+        when(aMock.accept(*)).thenAnswer(
+          (code: String) => Future.successful(Right(
+            ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name"))
+          )
+        )
+      }
+    }
+
+    object Decline {
+      def thenDecline() = {
+        when(aMock.decline(*)).thenAnswer(
+          (code: String) => Future.successful(Right(
+            ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name"))
           )
         )
       }
