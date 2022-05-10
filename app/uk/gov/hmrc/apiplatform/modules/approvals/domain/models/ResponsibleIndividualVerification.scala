@@ -18,15 +18,10 @@ package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.LocalDateTime
 
 object ResponsibleIndividualVerification {
-  import play.api.libs.json.Json
-
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[ResponsibleIndividualVerification]
 }
 
 case class ResponsibleIndividualVerification(

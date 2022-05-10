@@ -79,7 +79,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
-        ResponsibleIndividualVerificationServiceMock.Verification.thenCreateNewVerification()
+        ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
 
         val questionsRiName = "andy pandy"
         val questionsRiEmail = "andy@pandy.com"

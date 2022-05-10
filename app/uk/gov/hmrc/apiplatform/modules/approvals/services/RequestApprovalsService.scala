@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -93,7 +91,7 @@ class RequestApprovalsService @Inject()(
         _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
         updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
-        _                         <- ET.liftF(sendVerificationEmailIfNeeded(originalApp, submission, importantSubmissionData, requestedByName))
+        _                         <- ET.liftF(sendVerificationEmailIfNeeded(savedApp, submission, importantSubmissionData, requestedByName))
         _                          = logCompletedApprovalRequest(savedApp)
         _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)

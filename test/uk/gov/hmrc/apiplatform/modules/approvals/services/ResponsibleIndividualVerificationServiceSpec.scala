@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -33,7 +34,17 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val submissionInstanceIndex = 0
     val dao = mock[ResponsibleIndividualVerificationDAO]
     val underTest = new ResponsibleIndividualVerificationService(dao)
+    val riVerificationId = ResponsibleIndividualVerificationId.random
+    val riVerification = ResponsibleIndividualVerification(
+          riVerificationId,
+          ApplicationId.random,
+          Submission.Id.random,
+          0,
+          appName)
+
+    implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
   }
+
   "createNewVerification" should {
     "create a new verification object and save it to the database" in new Setup {
       when(dao.save(*)).thenAnswer((details: ResponsibleIndividualVerification) => Future.successful(details))
@@ -46,6 +57,20 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       result.applicationName shouldBe appName
 
       verify(dao).save(result)
+    }
+  }
+
+  "getVerification" should {
+    "get a RI verification record" in new Setup {
+      when(dao.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
+
+      val result = await(underTest.getVerification(riVerificationId.value))
+
+      result.isDefined shouldBe true
+      result.get.id shouldBe riVerificationId
+      result.get.applicationName shouldBe appName
+
+      verify(dao).fetch(result.get.id)
     }
   }
 }
