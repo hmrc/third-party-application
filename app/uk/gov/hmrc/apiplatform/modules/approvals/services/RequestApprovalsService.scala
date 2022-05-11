@@ -80,20 +80,21 @@ class RequestApprovalsService @Inject()(
 
     (
       for {
-        _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                         <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
-        _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
-        appName                    = getApplicationName(submission).get // Safe at this point
-        _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
-        importantSubmissionData    = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
-        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, importantSubmissionData)
-        savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
-        _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
-        savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
-        _                         <- ET.liftF(sendVerificationEmailIfNeeded(savedApp, submission, importantSubmissionData, requestedByName))
-        _                          = logCompletedApprovalRequest(savedApp)
-        _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
+        _                                   <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
+        _                                   <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                                   <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
+        appName                              = getApplicationName(submission).get // Safe at this point
+        _                                   <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
+        isRequesterTheResponsibleIndividual  = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
+        importantSubmissionData              = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
+        updatedApp                           = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, importantSubmissionData)
+        savedApp                            <- ET.liftF(applicationRepository.save(updatedApp))
+        _                                   <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        updatedSubmission                    = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        savedSubmission                     <- ET.liftF(submissionService.store(updatedSubmission))
+        _                                   <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                    = logCompletedApprovalRequest(savedApp)
+        _                                   <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity, identity)
@@ -104,10 +105,10 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
 
-  private def sendVerificationEmailIfNeeded(application: ApplicationData, submission: Submission,
-                                            importantSubmissionData: ImportantSubmissionData,
+  private def sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual: Boolean, application: ApplicationData, 
+                                            submission: Submission, importantSubmissionData: ImportantSubmissionData,
                                             requestedByName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    if (! SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)) {
+    if (!isRequesterTheResponsibleIndividual) {
       val responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value
       val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
 
@@ -130,6 +131,7 @@ class RequestApprovalsService @Inject()(
  
   private def deriveNewAppDetails(
       existing: ApplicationData,
+      isRequesterTheResponsibleIndividual: Boolean,
       applicationName: String,
       requestedByEmailAddress: String,
       importantSubmissionData: ImportantSubmissionData
@@ -137,8 +139,11 @@ class RequestApprovalsService @Inject()(
     existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock),
-      access = updateStandardData(existing.access, importantSubmissionData)
+      access = updateStandardData(existing.access, importantSubmissionData),
+      state = if (isRequesterTheResponsibleIndividual) 
+                existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock) 
+              else 
+                existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, clock)
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 

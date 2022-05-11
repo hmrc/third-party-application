@@ -99,6 +99,7 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
 
 sealed trait StatusFilter extends ApplicationSearchFilter
 case object Created extends StatusFilter
+case object PendingResponsibleIndividualVerification extends StatusFilter
 case object PendingGatekeeperCheck extends StatusFilter
 case object PendingSubmitterVerification extends StatusFilter
 case object Active extends StatusFilter
@@ -107,6 +108,7 @@ case object ApplicationStatusFilter extends StatusFilter {
   def apply(value: String): Option[StatusFilter] = {
     value match {
       case "CREATED" => Some(Created)
+      case "PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION" => Some(PendingResponsibleIndividualVerification)
       case "PENDING_GATEKEEPER_CHECK" => Some(PendingGatekeeperCheck)
       case "PENDING_SUBMITTER_VERIFICATION" => Some(PendingSubmitterVerification)
       case "ACTIVE" => Some(Active)
