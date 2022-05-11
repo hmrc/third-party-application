@@ -22,11 +22,10 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
@@ -57,8 +56,6 @@ class ResponsibleIndividualVerificationService @Inject()(
 
     val ET = EitherTHelper.make[String]
 
-    // TODO: Change state of application to PENDING_GATEKEEPER_APPROVAL and save timestamp. 
-    // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
         riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
@@ -67,6 +64,7 @@ class ResponsibleIndividualVerificationService @Inject()(
         _              =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
       } yield riVerification
     ).value
+
   }
 
   private def addTermsOfUseAcceptance(verification: ResponsibleIndividualVerification, appResponse: ApplicationResponse) = {

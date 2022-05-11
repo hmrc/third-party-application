@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -38,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -48,6 +49,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     with SubmissionsServiceMockModule
     with EmailConnectorMockModule
     with ResponsibleIndividualVerificationServiceMockModule
+    with ApplicationServiceMockModule
     with SubmissionsTestData
     with ApplicationTestData
     with FixedClock {
@@ -64,7 +66,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     val underTest = new RequestApprovalsService(
       AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService,
-      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock, clock
+      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock,
+      ApplicationServiceMock.aMock, clock
     )
   }
 
@@ -94,6 +97,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.verifyNeverCalled()
         val savedAppData = ApplicationRepoMock.Save.verifyCalled()
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
@@ -112,6 +116,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(fakeSavedApplication)
 
         val answersWithoutRIDetails = answersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))

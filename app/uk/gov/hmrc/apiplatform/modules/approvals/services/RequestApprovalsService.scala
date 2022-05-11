@@ -117,7 +117,6 @@ class RequestApprovalsService @Inject()(
     }
   }
 
-
   private def sendVerificationEmailIfNeeded(application: ApplicationData, submission: Submission,
                                             importantSubmissionData: ImportantSubmissionData,
                                             requestedByName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
