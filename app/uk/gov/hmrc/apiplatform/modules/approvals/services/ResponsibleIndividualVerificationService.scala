@@ -56,6 +56,8 @@ class ResponsibleIndividualVerificationService @Inject()(
 
     val ET = EitherTHelper.make[String]
 
+    // TODO: Change state of application to PENDING_GATEKEEPER_APPROVAL and save timestamp.
+    // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
         riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")

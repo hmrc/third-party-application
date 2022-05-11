@@ -28,6 +28,7 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.implicits.catsStdInstancesForFuture
+import org.mockito.captor.ArgCaptor
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseApplicationServiceMock {
@@ -41,9 +42,15 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object AddTermsOfUseAcceptance {
-      def thenReturn(applicationData: ApplicationData) = {
+      def thenReturn(applicationData: ApplicationData) =
         when(aMock.addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
+
+      def verifyCalledWith(applicationId: ApplicationId) = {
+        val captor = ArgCaptor[TermsOfUseAcceptance]
+        verify(aMock).addTermsOfUseAcceptance(eqTo(applicationId), captor.capture)
+        captor.value
       }
+
       def verifyNeverCalled() = verify(aMock, never).addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])
     }
   }

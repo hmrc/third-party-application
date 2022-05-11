@@ -20,18 +20,23 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, Standard, TermsAndConditionsLocation}
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import scala.concurrent.ExecutionContext.Implicits.global
 
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup extends ApplicationTestData with ApplicationServiceMockModule {
     val applicationId = ApplicationId.random
     val appName = "my shiny app"
-    val appData = anApplicationData(applicationId, testingState()).copy(name = appName)
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val importantSubmissionData = ImportantSubmissionData(
+      None, responsibleIndividual, Set.empty, TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+    val stdAccess = Standard(importantSubmissionData = Some(importantSubmissionData))
+    val appData = anApplicationData(applicationId, testingState()).copy(name = appName, access = stdAccess)
     val submissionId = Submission.Id.random
     val submissionInstanceIndex = 0
     val dao = mock[ResponsibleIndividualVerificationDAO]
@@ -83,7 +88,11 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.accept(riVerificationId.value))
 
       result shouldBe Right(riVerification)
+      val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(riVerification.applicationId)
+      acceptance.responsibleIndividual shouldBe responsibleIndividual
+      acceptance.submissionId shouldBe riVerification.submissionId
     }
+
     "return correct error message if application is not found" in new Setup {
       when(dao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
       ApplicationServiceMock.Fetch.thenReturnNothing()
@@ -92,6 +101,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
       result shouldBe Left(s"Application with id ${riVerification.applicationId} not found")
     }
+
     "return correct error message if verification record is not found" in new Setup {
       when(dao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
 
