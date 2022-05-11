@@ -38,7 +38,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
