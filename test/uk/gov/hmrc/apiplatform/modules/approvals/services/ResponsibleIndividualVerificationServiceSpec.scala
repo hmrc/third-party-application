@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, Standard, TermsAndConditionsLocation}
@@ -48,6 +47,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           Submission.Id.random,
           0,
           appName)
+    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
   }
 
   "createNewVerification" should {
@@ -80,14 +80,14 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   }
 
   "accept" should {
-    "return verification record and add ToU acceptance if application is found" in new Setup {
+    "return verification record with details and add ToU acceptance if application is found" in new Setup {
       ApplicationServiceMock.Fetch.thenReturn(appData)
       ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(appData)
       when(dao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
 
       val result = await(underTest.accept(riVerificationId.value))
 
-      result shouldBe Right(riVerification)
+      result shouldBe Right(riVerificationWithDetails)
       val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(riVerification.applicationId)
       acceptance.responsibleIndividual shouldBe responsibleIndividual
       acceptance.submissionId shouldBe riVerification.submissionId

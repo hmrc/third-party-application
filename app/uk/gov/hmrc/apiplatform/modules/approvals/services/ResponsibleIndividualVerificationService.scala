@@ -17,11 +17,12 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import cats.data.OptionT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+
 import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -50,7 +51,7 @@ class ResponsibleIndividualVerificationService @Inject()(
     responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code))
   }
 
-  def accept(code: String): Future[Either[String, ResponsibleIndividualVerification]] = {
+  def accept(code: String): Future[Either[String, ResponsibleIndividualVerificationWithDetails]] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -60,11 +61,11 @@ class ResponsibleIndividualVerificationService @Inject()(
     // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
-        riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
-        appResponse    <- ET.fromOptionF(applicationService.fetch(riVerification.applicationId).value, s"Application with id ${riVerification.applicationId} not found")
-        _              <- ET.liftF(addTermsOfUseAcceptance(riVerification, appResponse).value)
-        _              =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
-      } yield riVerification
+        riVerification        <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
+        appResponse           <- ET.fromOptionF(applicationService.fetch(riVerification.applicationId).value, s"Application with id ${riVerification.applicationId} not found")
+        responsibleIndividual <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, appResponse).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
+        _                      =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
+      } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
     ).value
 
   }
@@ -75,7 +76,7 @@ class ResponsibleIndividualVerificationService @Inject()(
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
         val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId)
-        OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance))
+        OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
       case _ => OptionT.fromOption[Future](None)
     }

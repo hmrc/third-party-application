@@ -22,8 +22,8 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.{ResponsibleIndividualVerificationFrontendJsonFormatters, ResponsibleIndividualVerificationJsonFormatters}
 import play.api.libs.json.Json
 import play.api.mvc.Results
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -33,7 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualV
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
 
 object ResponsibleIndividualVerificationController {
-  case class ResponsibleIndividualVerificationRequest(code: String) 
+  case class ResponsibleIndividualVerificationRequest(code: String)
   implicit val readsResponsibleIndividualVerificationRequest = Json.reads[ResponsibleIndividualVerificationRequest]
 
   case class ErrorMessage(message: String)
@@ -62,7 +62,8 @@ class ResponsibleIndividualVerificationController @Inject()(
   def accept() = Action.async { implicit request =>
 
     val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
-    val success = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
+    val success = (responsibleIndividualVerificationWithDetails: ResponsibleIndividualVerificationWithDetails) =>
+      Ok(Json.toJson(responsibleIndividualVerificationWithDetails))
 
     withJsonBodyFromAnyContent[ResponsibleIndividualVerificationRequest] { riVerificationRequest =>
       responsibleIndividualVerificationService.accept(riVerificationRequest.code).map(_.fold(failed, success))
