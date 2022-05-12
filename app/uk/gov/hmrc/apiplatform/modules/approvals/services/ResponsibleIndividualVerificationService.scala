@@ -25,15 +25,11 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcceptance}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
 
@@ -43,8 +39,8 @@ class ResponsibleIndividualVerificationService @Inject()(
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     applicationService: ApplicationService,
-    val clock: Clock
- )(implicit ec: ExecutionContext) extends ApplicationLogger {
+    clock: Clock
+ )(implicit ec: ExecutionContext) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
   def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int) = {
     val verification = ResponsibleIndividualVerification(
@@ -63,7 +59,7 @@ class ResponsibleIndividualVerificationService @Inject()(
   def accept(code: String): Future[Either[String, ResponsibleIndividualVerification]] = {
 
     def getResponsibleIndividualEmailFromStdApp(std: Standard): Option[String] = {
-      std.importantSubmissionData.fold[Option[String]](None)(isd => Some(isd.responsibleIndividual.emailAddress.value))
+      std.importantSubmissionData.map(isd => isd.responsibleIndividual.emailAddress.value)
     }
 
     def getResponsibleIndividualEmail(app: ApplicationData): Option[String] = {
@@ -134,15 +130,4 @@ class ResponsibleIndividualVerificationService @Inject()(
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) = 
     insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), name, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
-    stateHistoryRepository.insert(stateHistory)
-    .andThen {
-      case e: Failure[_] =>
-        rollback(snapshotApp)
-    }
-  }
-
 }

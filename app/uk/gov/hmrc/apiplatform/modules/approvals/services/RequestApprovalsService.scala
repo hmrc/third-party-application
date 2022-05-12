@@ -18,7 +18,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -65,9 +64,10 @@ class RequestApprovalsService @Inject()(
   emailConnector: EmailConnector,
   responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
   applicationService: ApplicationService,
-  val clock: Clock
+  clock: Clock
 )(implicit ec: ExecutionContext)
-  extends ApplicationLogger {
+  extends BaseService(stateHistoryRepository, clock) 
+  with ApplicationLogger {
 
   import RequestApprovalsService._
 
@@ -174,14 +174,4 @@ class RequestApprovalsService @Inject()(
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) = 
     insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
-    stateHistoryRepository.insert(stateHistory)
-    .andThen {
-      case e: Failure[_] =>
-        rollback(snapshotApp)
-    }
-  }
 }
