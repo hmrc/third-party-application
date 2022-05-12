@@ -18,7 +18,6 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
@@ -65,9 +64,10 @@ class RequestApprovalsService @Inject()(
   emailConnector: EmailConnector,
   responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
   applicationService: ApplicationService,
-  val clock: Clock
+  clock: Clock
 )(implicit ec: ExecutionContext)
-  extends ApplicationLogger {
+  extends BaseService(stateHistoryRepository, clock) 
+  with ApplicationLogger {
 
   import RequestApprovalsService._
 
@@ -81,21 +81,22 @@ class RequestApprovalsService @Inject()(
 
     (
       for {
-        _                         <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
-        _                         <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
-        _                         <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
-        appName                    = getApplicationName(submission).get // Safe at this point
-        _                         <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
-        importantSubmissionData    = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
-        updatedApp                 = deriveNewAppDetails(originalApp, appName, requestedByEmailAddress, importantSubmissionData)
-        savedApp                  <- ET.liftF(applicationRepository.save(updatedApp))
-        _                         <- ET.liftF(addTouAcceptanceIfNeeded(updatedApp, submission, requestedByName, requestedByEmailAddress))
-        _                         <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
-        updatedSubmission          = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
-        savedSubmission           <- ET.liftF(submissionService.store(updatedSubmission))
-        _                         <- ET.liftF(sendVerificationEmailIfNeeded(savedApp, submission, importantSubmissionData, requestedByName))
-        _                          = logCompletedApprovalRequest(savedApp)
-        _                         <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
+        _                                   <- ET.liftF(logStartingApprovalRequestProcessing(originalApp.id))
+        _                                   <- ET.cond(originalApp.isInTesting, (), ApprovalRejectedDueToIncorrectApplicationState)
+        _                                   <- ET.cond(submission.status.isAnsweredCompletely, (), ApprovalRejectedDueToIncorrectSubmissionState(submission.status))
+        appName                              = getApplicationName(submission).get // Safe at this point
+        _                                   <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
+        isRequesterTheResponsibleIndividual  = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
+        importantSubmissionData              = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
+        updatedApp                           = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, importantSubmissionData)
+        savedApp                            <- ET.liftF(applicationRepository.save(updatedApp))
+        _                                   <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
+        _                                   <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        updatedSubmission                    = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
+        savedSubmission                     <- ET.liftF(submissionService.store(updatedSubmission))
+        _                                   <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
+        _                                    = logCompletedApprovalRequest(savedApp)
+        _                                   <- ET.liftF(auditCompletedApprovalRequest(originalApp.id, savedApp))
       } yield ApprovalAccepted(savedApp)
     )
     .fold[RequestApprovalResult](identity, identity)
@@ -106,9 +107,9 @@ class RequestApprovalsService @Inject()(
     successful(Unit)
   }
 
-  private def addTouAcceptanceIfNeeded(appWithoutTouAcceptance: ApplicationData, submission: Submission,
+  private def addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual: Boolean, appWithoutTouAcceptance: ApplicationData, submission: Submission,
                                        requestedByName: String, requestedByEmailAddress: String): Future[ApplicationData] = {
-    if (SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)) {
+    if (isRequesterTheResponsibleIndividual) {
       val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
       val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(), submission.id)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
@@ -117,10 +118,10 @@ class RequestApprovalsService @Inject()(
     }
   }
 
-  private def sendVerificationEmailIfNeeded(application: ApplicationData, submission: Submission,
-                                            importantSubmissionData: ImportantSubmissionData,
+  private def sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual: Boolean, application: ApplicationData, 
+                                            submission: Submission, importantSubmissionData: ImportantSubmissionData,
                                             requestedByName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    if (! SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)) {
+    if (!isRequesterTheResponsibleIndividual) {
       val responsibleIndividualName = importantSubmissionData.responsibleIndividual.fullName.value
       val responsibleIndividualEmail = importantSubmissionData.responsibleIndividual.emailAddress.value
 
@@ -143,6 +144,7 @@ class RequestApprovalsService @Inject()(
  
   private def deriveNewAppDetails(
       existing: ApplicationData,
+      isRequesterTheResponsibleIndividual: Boolean,
       applicationName: String,
       requestedByEmailAddress: String,
       importantSubmissionData: ImportantSubmissionData
@@ -150,8 +152,11 @@ class RequestApprovalsService @Inject()(
     existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock),
-      access = updateStandardData(existing.access, importantSubmissionData)
+      access = updateStandardData(existing.access, importantSubmissionData),
+      state = if (isRequesterTheResponsibleIndividual) 
+                existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock) 
+              else 
+                existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, clock)
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 
@@ -169,14 +174,4 @@ class RequestApprovalsService @Inject()(
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) = 
     insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
-    stateHistoryRepository.insert(stateHistory)
-    .andThen {
-      case e: Failure[_] =>
-        rollback(snapshotApp)
-    }
-  }
 }
