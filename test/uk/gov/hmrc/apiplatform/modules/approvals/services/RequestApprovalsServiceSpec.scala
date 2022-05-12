@@ -39,6 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{NoAnswer, SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionDataExtracter
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -95,10 +96,13 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.requestApproval(application, answeredSubmissionWithRIDetails, requestedByName, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
-        StateHistoryRepoMock.Insert.verifyCalled()
+        val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
+        savedStateHistory.state shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
         AuditServiceMock.Audit.verifyCalled()
         ApplicationServiceMock.AddTermsOfUseAcceptance.verifyNeverCalled()
         val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        savedStateHistory.previousState shouldBe Some(State.TESTING)
+        savedAppData.state.name shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
         responsibleIndividual.emailAddress.value shouldBe questionsRiEmail
@@ -112,7 +116,6 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       "update state, save and audit with RI details not in questionnaire answers" in new Setup {
         namingServiceReturns(ValidName)
         val fakeSavedApplication = application.copy(normalisedName = "somethingElse")
-        val termsOfUseAcceptanceCaptor = ArgCaptor[TermsOfUseAcceptance]
         ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
@@ -128,9 +131,12 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.requestApproval(application, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
-        StateHistoryRepoMock.Insert.verifyCalled()
+        val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
+        savedStateHistory.previousState shouldBe Some(State.TESTING)
+        savedStateHistory.state shouldBe State.PENDING_GATEKEEPER_APPROVAL
         AuditServiceMock.Audit.verifyCalled()
         val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe requestedByName
         responsibleIndividual.emailAddress.value shouldBe requestedByEmailAddress

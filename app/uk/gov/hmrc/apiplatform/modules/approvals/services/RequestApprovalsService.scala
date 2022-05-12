@@ -91,7 +91,7 @@ class RequestApprovalsService @Inject()(
         updatedApp                           = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, importantSubmissionData)
         savedApp                            <- ET.liftF(applicationRepository.save(updatedApp))
         _                                   <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
-        _                                   <- ET.liftF(writeStateHistory(originalApp, requestedByEmailAddress))
+        _                                   <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
         updatedSubmission                    = Submission.submit(LocalDateTime.now(clock), requestedByEmailAddress)(submission)
         savedSubmission                     <- ET.liftF(submissionService.store(updatedSubmission))
         _                                   <- ET.liftF(sendVerificationEmailIfNeeded(isRequesterTheResponsibleIndividual, savedApp, submission, importantSubmissionData, requestedByName))
@@ -173,5 +173,5 @@ class RequestApprovalsService @Inject()(
     auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ Map("newApplicationName" -> updatedApp.name))
 
   private def writeStateHistory(snapshotApp: ApplicationData, requestedByEmailAddress: String) = 
-    insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(snapshotApp, snapshotApp.state.name, Some(TESTING), requestedByEmailAddress, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
 }
