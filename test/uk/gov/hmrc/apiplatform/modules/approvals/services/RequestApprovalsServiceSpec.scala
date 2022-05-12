@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
+import org.mockito.captor.{ArgCaptor, Captor}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, AuditServiceMockModule}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -28,7 +29,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Standard}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Standard, TermsOfUseAcceptance}
 
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName
@@ -48,6 +49,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     with SubmissionsServiceMockModule
     with EmailConnectorMockModule
     with ResponsibleIndividualVerificationServiceMockModule
+    with ApplicationServiceMockModule
     with SubmissionsTestData
     with ApplicationTestData
     with FixedClock {
@@ -64,7 +66,8 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
     val underTest = new RequestApprovalsService(
       AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService,
-      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock, clock
+      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock,
+      ApplicationServiceMock.aMock, clock
     )
   }
 
@@ -94,6 +97,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
         StateHistoryRepoMock.Insert.verifyCalled()
         AuditServiceMock.Audit.verifyCalled()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.verifyNeverCalled()
         val savedAppData = ApplicationRepoMock.Save.verifyCalled()
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe questionsRiName
@@ -108,10 +112,12 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
       "update state, save and audit with RI details not in questionnaire answers" in new Setup {
         namingServiceReturns(ValidName)
         val fakeSavedApplication = application.copy(normalisedName = "somethingElse")
+        val termsOfUseAcceptanceCaptor = ArgCaptor[TermsOfUseAcceptance]
         ApplicationRepoMock.Save.thenReturn(fakeSavedApplication)
         StateHistoryRepoMock.Insert.thenAnswer()
         AuditServiceMock.Audit.thenReturnSuccess()
         SubmissionsServiceMock.Store.thenReturn()
+        ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(fakeSavedApplication)
 
         val answersWithoutRIDetails = answersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
@@ -135,6 +141,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         }
         EmailConnectorMock.verifyZeroInteractions()
         ResponsibleIndividualVerificationServiceMock.verifyZeroInteractions()
+        val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(application.id)
+        acceptance.responsibleIndividual shouldBe responsibleIndividual
+        acceptance.submissionId shouldBe answeredSubmission.id
       }
 
       "return duplicate application name if duplicate" in new Setup {

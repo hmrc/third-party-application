@@ -16,20 +16,21 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import cats.data.OptionT
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
@@ -41,6 +42,7 @@ class ResponsibleIndividualVerificationService @Inject()(
     responsibleIndividualVerificationDao: ResponsibleIndividualVerificationDAO,
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
+    applicationService: ApplicationService,
     val clock: Clock
  )(implicit ec: ExecutionContext) extends ApplicationLogger {
 
@@ -87,16 +89,30 @@ class ResponsibleIndividualVerificationService @Inject()(
     (
       for {
         riVerification                     <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(riVerificationId), "responsibleIndividualVerification not found")
-        originalApp                        <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), "application not found")
+        originalApp                        <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
         _                                  <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
         responsibleIndividualEmailAddress  <- ET.fromOption(getResponsibleIndividualEmail(originalApp), "unable to get responsible individual email address from application")
         updatedApp                         =  deriveNewAppDetails(originalApp)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
+        _                                  <- ET.liftF(addTermsOfUseAcceptance(riVerification, updatedApp).value)
         _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividualEmailAddress))
         _                                  <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
         _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
       } yield riVerification
     ).value
+
+  }
+
+  private def addTermsOfUseAcceptance(verification: ResponsibleIndividualVerification, appResponse: ApplicationData) = {
+    import cats.implicits._
+    appResponse.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+        val responsibleIndividual = importantSubmissionData.responsibleIndividual
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId)
+        OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance))
+      }
+      case _ => OptionT.fromOption[Future](None)
+    }
   }
 
 
