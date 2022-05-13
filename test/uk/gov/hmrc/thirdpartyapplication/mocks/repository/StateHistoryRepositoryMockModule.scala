@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
+import org.mockito.captor.ArgCaptor
 import org.mockito.verification.VerificationMode
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
@@ -49,8 +50,11 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
       def verifyNeverCalled() =
         verify(never).insert(*)
 
-      def verifyCalled() =
-        verify.insert(*)
+      def verifyCalled(): StateHistory = {
+        val stateHistoryArgumentCaptor = ArgCaptor[StateHistory]
+        verify.insert(stateHistoryArgumentCaptor)
+        stateHistoryArgumentCaptor.value
+      }
     }
 
     object Delete {

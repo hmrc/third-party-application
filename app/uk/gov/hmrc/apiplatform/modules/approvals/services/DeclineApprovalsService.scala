@@ -18,11 +18,10 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import scala.util.Failure
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -57,9 +56,10 @@ class DeclineApprovalsService @Inject()(
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
   submissionService: SubmissionsService,
-  val clock: Clock
+  clock: Clock
 )(implicit ec: ExecutionContext)
-  extends ApplicationLogger {
+  extends BaseService(stateHistoryRepository, clock) 
+  with ApplicationLogger {
 
   import DeclineApprovalsService._
 
@@ -130,14 +130,4 @@ class DeclineApprovalsService @Inject()(
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
     insertStateHistory(snapshotApp, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
-
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
-    stateHistoryRepository.insert(stateHistory)
-    .andThen {
-      case e: Failure[_] =>
-        rollback(snapshotApp)
-    }
-  }
 }

@@ -282,6 +282,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
       // Application Status
       case Created => applicationStatusMatch(State.TESTING)
+      case PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
       case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
       case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
       case Active => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)

@@ -41,6 +41,7 @@ case class ApplicationState(
   }
 
   def isInTesting = name == State.TESTING
+  def isPendingResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
   def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
   def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
@@ -61,6 +62,21 @@ case class ApplicationState(
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
     copy(name = State.PENDING_GATEKEEPER_APPROVAL,
+      updatedOn = LocalDateTime.now(clock),
+      requestedByEmailAddress = Some(requestedByEmailAddress))
+  }
+
+  def toPendingGatekeeperApproval(clock: Clock) = {
+    requireState(requirement = PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
+
+    copy(name = State.PENDING_GATEKEEPER_APPROVAL,
+      updatedOn = LocalDateTime.now(clock))
+  }
+
+  def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, clock: Clock) = {
+    requireState(requirement = TESTING, transitionTo = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
+
+    copy(name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
       updatedOn = LocalDateTime.now(clock),
       requestedByEmailAddress = Some(requestedByEmailAddress))
   }

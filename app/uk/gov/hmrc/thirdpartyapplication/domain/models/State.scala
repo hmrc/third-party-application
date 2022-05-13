@@ -23,7 +23,7 @@ object State extends Enumeration {
 
   /* The order of the following declarations is important since it defines the ordering of the enumeration.
    * Be very careful when changing this, code may be relying on certain values being larger/smaller than others. */
-  val TESTING, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRE_PRODUCTION, PRODUCTION = Value
+  val TESTING, PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, PENDING_GATEKEEPER_APPROVAL, PENDING_REQUESTER_VERIFICATION, PRE_PRODUCTION, PRODUCTION = Value
 
   implicit val format = EnumJson.enumFormat(State)
 }

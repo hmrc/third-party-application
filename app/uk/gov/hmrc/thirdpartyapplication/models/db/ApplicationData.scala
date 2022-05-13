@@ -64,6 +64,7 @@ case class ApplicationData(
   }
 
   def isInTesting = state.isInTesting
+  def isPendingResponsibleIndividualVerification = state.isPendingResponsibleIndividualVerification
   def isPendingGatekeeperApproval = state.isPendingGatekeeperApproval
   def isPendingRequesterVerification = state.isPendingRequesterVerification
   def isInPreProductionOrProduction = state.isInPreProductionOrProduction
