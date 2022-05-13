@@ -17,11 +17,13 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import cats.data.OptionT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.Inject
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcceptance}
@@ -56,25 +58,13 @@ class ResponsibleIndividualVerificationService @Inject()(
     responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code))
   }
 
-  def accept(code: String): Future[Either[String, ResponsibleIndividualVerification]] = {
-
-    def getResponsibleIndividualEmailFromStdApp(std: Standard): Option[String] = {
-      std.importantSubmissionData.map(isd => isd.responsibleIndividual.emailAddress.value)
-    }
-
-    def getResponsibleIndividualEmail(app: ApplicationData): Option[String] = {
-      app.access match {
-        case std: Standard => getResponsibleIndividualEmailFromStdApp(std)
-        case _ => None
-      }
-    }
+  def accept(code: String): Future[Either[String, ResponsibleIndividualVerificationWithDetails]] = {
 
     def deriveNewAppDetails(existing: ApplicationData): ApplicationData = {
       existing.copy(
-        state = existing.state.toPendingGatekeeperApproval(clock) 
+        state = existing.state.toPendingGatekeeperApproval(clock)
       )
     }
-
 
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
@@ -87,25 +77,24 @@ class ResponsibleIndividualVerificationService @Inject()(
         riVerification                     <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(riVerificationId), "responsibleIndividualVerification not found")
         originalApp                        <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
         _                                  <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
-        responsibleIndividualEmailAddress  <- ET.fromOption(getResponsibleIndividualEmail(originalApp), "unable to get responsible individual email address from application")
         updatedApp                         =  deriveNewAppDetails(originalApp)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
-        _                                  <- ET.liftF(addTermsOfUseAcceptance(riVerification, updatedApp).value)
-        _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividualEmailAddress))
+        responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, savedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
+        _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
         _                                  <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
         _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
-      } yield riVerification
+      } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
     ).value
 
   }
 
-  private def addTermsOfUseAcceptance(verification: ResponsibleIndividualVerification, appResponse: ApplicationData) = {
+  private def addTermsOfUseAcceptance(verification: ResponsibleIndividualVerification, appData: ApplicationData) = {
     import cats.implicits._
-    appResponse.access match {
+    appData.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
         val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId)
-        OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance))
+        OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
       case _ => OptionT.fromOption[Future](None)
     }
@@ -128,6 +117,6 @@ class ResponsibleIndividualVerificationService @Inject()(
     ).value
   }
 
-  private def writeStateHistory(snapshotApp: ApplicationData, name: String) = 
+  private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
     insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), name, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
 }

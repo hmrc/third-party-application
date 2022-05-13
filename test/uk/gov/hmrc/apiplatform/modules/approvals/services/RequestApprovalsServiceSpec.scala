@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import org.mockito.captor.{ArgCaptor, Captor}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -29,7 +28,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Standard, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Standard}
 
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.models.ValidName

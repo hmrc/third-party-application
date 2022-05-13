@@ -16,8 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
@@ -32,8 +31,8 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
-  trait Setup 
-    extends ApplicationTestData 
+  trait Setup
+    extends ApplicationTestData
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
     with ApplicationServiceMockModule
@@ -53,12 +52,12 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               PrivacyPolicyLocation.InDesktopSoftware,
                               List.empty)
     val application: ApplicationData = anApplicationData(
-                              applicationId, 
+                              applicationId,
                               pendingResponsibleIndividualVerificationState("bob@fastshow.com"),
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(responsibleIndividualVerificationDao, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ApplicationServiceMock.aMock, clock)
-  
+
     val riVerificationId = ResponsibleIndividualVerificationId.random
     val riVerification = ResponsibleIndividualVerification(
           riVerificationId,
@@ -66,6 +65,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           Submission.Id.random,
           0,
           appName)
+    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
   }
 
   "createNewVerification" should {
@@ -98,7 +98,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   }
 
   "accept" should {
-    "successfully accept the ToU if application is found" in new Setup {
+    "return verification record with details and add ToU acceptance if application is found" in new Setup {
       when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenReturn(application)
@@ -109,9 +109,9 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.accept(riVerificationId.value))
 
       result shouldBe 'Right
-      result shouldBe Right(riVerification)
-      result.right.value.id shouldBe riVerificationId
-      result.right.value.applicationName shouldBe appName
+      result shouldBe Right(riVerificationWithDetails)
+      result.right.value.verification.id shouldBe riVerificationId
+      result.right.value.verification.applicationName shouldBe appName
 
       val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(riVerification.applicationId)
       acceptance.responsibleIndividual shouldBe responsibleIndividual

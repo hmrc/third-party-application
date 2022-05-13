@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 import play.api.libs.json._
 
@@ -34,6 +34,7 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
   implicit val utcReads = DefaultLocalDateTimeReads
 
   implicit val responsibleIndividualVerificationFormat = Json.format[ResponsibleIndividualVerification]
+  implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 
 object ResponsibleIndividualVerificationFrontendJsonFormatters extends ResponsibleIndividualVerificationFrontendJsonFormatters
