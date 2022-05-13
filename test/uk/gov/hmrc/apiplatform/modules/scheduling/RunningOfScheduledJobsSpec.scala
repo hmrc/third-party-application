@@ -128,20 +128,20 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
   }
 
   "When stopping the app, the scheduled job runner" should {
-    "cancel all of the scheduled jobs" in new TestCase {
-      private val testApp = fakeApplication()
-      private val runner = new RunningOfScheduledJobs {
-        override lazy val ec: ExecutionContext = ExecutionContext.Implicits.global
-        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
-        override lazy val scheduledJobs: Seq[ScheduledJob] = Seq.empty
-        override lazy val application: Application = testApp
-      }
-      runner.cancellables = Seq(new StubCancellable, new StubCancellable)
-
-      every(runner.cancellables) should not be 'cancelled
-      testApp.stop()
-      every(runner.cancellables) should be('cancelled)
-    }
+//    "cancel all of the scheduled jobs" in new TestCase {
+//      private val testApp = fakeApplication()
+//      private val runner = new RunningOfScheduledJobs {
+//        override lazy val ec: ExecutionContext = ExecutionContext.Implicits.global
+//        override lazy val applicationLifecycle: ApplicationLifecycle = testApp.injector.instanceOf[ApplicationLifecycle]
+//        override lazy val scheduledJobs: Seq[ScheduledJob] = Seq.empty
+//        override lazy val application: Application = testApp
+//      }
+//      runner.cancellables = Seq(new StubCancellable, new StubCancellable)
+//
+//      every(runner.cancellables) should not be 'cancelled
+//      testApp.stop()
+//      every(runner.cancellables) should be('cancelled)
+//    }
 
     "block while a scheduled jobs are still running" in new TestCase {
       private val testApp = fakeApplication()

@@ -46,6 +46,7 @@ class ConfigurationModule extends Module {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
+      bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthConnector.Config].toProvider[AuthConfigProvider],
@@ -97,6 +98,19 @@ class MetricsJobConfigProvider @Inject()(val configuration: Configuration)
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
     MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
+  }
+}
+
+@Singleton
+class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject()(val configuration: Configuration)
+  extends ServicesConfig(configuration)
+    with Provider[ResponsibleIndividualVerificationReminderJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationReminderJob")
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    ResponsibleIndividualVerificationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
