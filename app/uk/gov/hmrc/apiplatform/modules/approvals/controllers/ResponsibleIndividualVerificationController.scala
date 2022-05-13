@@ -23,10 +23,9 @@ import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.{ResponsibleIndividualVerificationFrontendJsonFormatters, ResponsibleIndividualVerificationJsonFormatters}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.{ResponsibleIndividualVerificationFrontendJsonFormatters}
 import play.api.libs.json.Json
 import play.api.mvc.Results
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService

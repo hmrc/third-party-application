@@ -60,23 +60,11 @@ class ResponsibleIndividualVerificationService @Inject()(
 
   def accept(code: String): Future[Either[String, ResponsibleIndividualVerificationWithDetails]] = {
 
-    def getResponsibleIndividualEmailFromStdApp(std: Standard): Option[String] = {
-      std.importantSubmissionData.map(isd => isd.responsibleIndividual.emailAddress.value)
-    }
-
-    def getResponsibleIndividualEmail(app: ApplicationData): Option[String] = {
-      app.access match {
-        case std: Standard => getResponsibleIndividualEmailFromStdApp(std)
-        case _ => None
-      }
-    }
-
     def deriveNewAppDetails(existing: ApplicationData): ApplicationData = {
       existing.copy(
         state = existing.state.toPendingGatekeeperApproval(clock)
       )
     }
-
 
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
@@ -91,7 +79,7 @@ class ResponsibleIndividualVerificationService @Inject()(
         _                                  <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
         updatedApp                         =  deriveNewAppDetails(originalApp)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
-        responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, updatedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
+        responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, savedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
         _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
         _                                  <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
         _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")

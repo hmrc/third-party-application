@@ -109,9 +109,9 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.accept(riVerificationId.value))
 
       result shouldBe 'Right
-      result shouldBe Right(riVerification)
-      result.right.value.id shouldBe riVerificationId
-      result.right.value.applicationName shouldBe appName
+      result shouldBe Right(riVerificationWithDetails)
+      result.right.value.verification.id shouldBe riVerificationId
+      result.right.value.verification.applicationName shouldBe appName
 
       val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(riVerification.applicationId)
       acceptance.responsibleIndividual shouldBe responsibleIndividual
