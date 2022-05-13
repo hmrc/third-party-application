@@ -16,30 +16,33 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import org.mongodb.scala.model.Filters.equal
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class ResponsibleIndividualVerificationDAO @Inject()(repo: ResponsibleIndividualVerificationRepository)(implicit ec: ExecutionContext) {
 
-  private def byResponsibleIndividualVerificationId(id: ResponsibleIndividualVerificationId): (String, Json.JsValueWrapper) = ("id", id.value)
+  private lazy val collection = repo.collection
 
   def save(verification: ResponsibleIndividualVerification): Future[ResponsibleIndividualVerification] = {
-    repo.insert(verification).map(_ => verification)
+    collection
+      .insertOne(verification)
+      .toFuture()
+      .map(_ => verification)
   }
 
   def fetch(id: ResponsibleIndividualVerificationId): Future[Option[ResponsibleIndividualVerification]] = {
-    repo
-    .find( byResponsibleIndividualVerificationId(id) )
-    .map(_.headOption)
+    collection
+      .find(equal("id", id.value))
+      .headOption()
   }
 
-  def delete(id: ResponsibleIndividualVerificationId): Future[Unit] = 
-    repo
-    .remove(byResponsibleIndividualVerificationId(id))
-    .map(_ => ())
+  def delete(id: ResponsibleIndividualVerificationId): Future[Long] = {
+    collection
+      .deleteOne(equal("id", id.value))
+      .toFuture()
+      .map(x => x.getDeletedCount)
+  }
 }

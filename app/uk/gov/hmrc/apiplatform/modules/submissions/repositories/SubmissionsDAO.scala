@@ -16,57 +16,56 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Sorts.descending
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
-import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json
-import play.api.libs.json.Json._
+import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import play.api.libs.json.JsObject
-import reactivemongo.api.ReadPreference
-import reactivemongo.api.Cursor
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJsonFormatters._
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: ExecutionContext) {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJsonFormatters._
-  
-  private val DESCENDING = -1
+class SubmissionsDAO @Inject()(repo: SubmissionsRepository)(implicit ec: ExecutionContext){
 
-  private def bySubmissionId(id: Submission.Id): (String, Json.JsValueWrapper) = ("id", id.value)
-  private def byApplicationId(id: ApplicationId): (String, Json.JsValueWrapper) = ("applictionId", id.value)
+  private lazy val collection = repo.collection
 
   def save(submission: Submission): Future[Submission] = {
-    repo.insert(submission)
-    .map(_ => submission)
+    collection.insertOne(submission)
+      .toFuture()
+      .map(_ => submission)
   }
 
   def update(submission: Submission): Future[Submission] = {
-    repo.findAndUpdate(
-      Json.obj( "id" -> submission.id.value),
-      Json.toJson(submission).as[JsObject],
-      true
-    )
-    .map(_.result[Submission].get)
+    val query = equal("id", Codecs.toBson(submission.id))
+
+    collection.find(query).headOption flatMap {
+      case Some(_: Submission) =>
+        collection.replaceOne(
+          filter = query,
+          replacement = submission
+        ).toFuture().map(_ => submission)
+
+      case None => collection.insertOne(submission).toFuture().map(_ => submission)
+    }
   }
 
   def fetchLatest(id: ApplicationId): Future[Option[Submission]] = {
-    repo
-    .collection
-    .find[JsObject,JsObject](selector = Json.obj("applicationId" -> id.value), None)
-    .sort(Json.obj("startedOn" -> DESCENDING))
-    .cursor[Submission](ReadPreference.primary)
-    .collect[List](1, Cursor.FailOnError[List[Submission]]())
-    .map(_.headOption)
+    collection
+      .withReadPreference(com.mongodb.ReadPreference.primary())
+      .find(equal("applicationId", Codecs.toBson(id)))
+      .sort(descending("startedOn"))
+      .headOption()
   }
 
   def fetch(id: Submission.Id): Future[Option[Submission]] = {
-    repo
-    .find( bySubmissionId(id) )
-    .map(_.headOption)
+    collection.find(equal("id", Codecs.toBson(id)))
+      .headOption()
   }
 
-  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
-    repo.remove(byApplicationId(applicationId))
-    .map(_ => ())
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Long] = {
+    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(x => x.getDeletedCount)
+  }
 }

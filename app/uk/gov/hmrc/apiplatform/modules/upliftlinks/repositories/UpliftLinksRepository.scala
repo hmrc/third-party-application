@@ -14,36 +14,35 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.submissions.repositories
+package uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories
 
-import uk.gov.hmrc.mongo.ReactiveRepository
-import com.google.inject.{Singleton, Inject}
-import scala.concurrent.ExecutionContext
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import reactivemongo.bson.BSONObjectID
 import akka.stream.Materializer
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
+import com.google.inject.{Inject, Singleton}
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class UpliftLinksRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
-extends ReactiveRepository[UpliftLink, BSONObjectID]("upliftlinks", mongo.mongoConnector.db,
-UpliftLinkJsonFormatter.jsonFormatUpliftLink, ReactiveMongoFormats.objectIdFormats) {
-  
-  import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "productionApplicationId",
-      isUnique = true,
-      isBackground = true,
-      indexName = Some("productionApplicationIdIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "sandboxApplicationId",
-      isUnique = false,
-      isBackground = true,
-      indexName = Some("sandboxApplicationIdIndex")
-    )
-  )
-}
+class UpliftLinksRepository @Inject() (mongo: MongoComponent)
+                                      (implicit val mat: Materializer, val ec: ExecutionContext
+) extends PlayMongoRepository[UpliftLink](
+      collectionName = "upliftlinks",
+      mongoComponent = mongo,
+      domainFormat = UpliftLinkJsonFormatter.jsonFormatUpliftLink,
+      indexes = Seq(IndexModel(ascending("productionApplicationId"), IndexOptions()
+            .name("productionApplicationIdIndex")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(ascending("sandboxApplicationId"), IndexOptions()
+            .name("sandboxApplicationIdIndex")
+            .background(true)
+        )
+      )
+    ) {}

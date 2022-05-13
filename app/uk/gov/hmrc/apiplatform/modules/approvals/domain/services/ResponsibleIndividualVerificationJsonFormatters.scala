@@ -22,12 +22,12 @@ import play.api.libs.json._
 
 trait ResponsibleIndividualVerificationJsonFormatters {
 
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-
-  implicit val responsibleIndividualVerificationFormat = Json.format[ResponsibleIndividualVerification]
+//  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+//
+//  implicit val format = Json.format[ResponsibleIndividualVerification]
 }
 
-object ResponsibleIndividualVerificationJsonFormatters extends ResponsibleIndividualVerificationJsonFormatters
+//object ResponsibleIndividualVerificationJsonFormatters extends ResponsibleIndividualVerificationJsonFormatters
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 

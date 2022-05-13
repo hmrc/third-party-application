@@ -16,6 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
+import org.mongodb.scala.model.Indexes.ascending
+
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, JsString, Json}
@@ -23,7 +28,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.Cursor
 import reactivemongo.bson.{BSONObjectID, BSONRegex}
 import reactivemongo.play.json.ImplicitBSONHandlers._
-import uk.gov.hmrc.mongo.ReactiveRepository
+import uk.gov.hmrc.mongo.{MongoComponent, ReactiveRepository}
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -31,12 +36,32 @@ import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.api.ReadConcern
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 @Singleton
-class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-  extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
-    SubscriptionData.format, ReactiveMongoFormats.objectIdFormats
-  ) {
+class SubscriptionRepository @Inject()(mongo: MongoComponent)
+                                      (implicit val ec: ExecutionContext)
+  extends PlayMongoRepository[SubscriptionData](
+    collectionName = "subscription",
+    mongoComponent = mongo,
+    domainFormat = SubscriptionData.format,
+    indexes = Seq(
+      IndexModel(ascending("apiIdentifier.context"), IndexOptions()
+        .name("context")
+        .background(true)
+      ),
+      IndexModel(ascending("applications"),IndexOptions()
+        .name("applications")
+        .background(true)
+      ),
+      IndexModel(ascending("apiIdentifier.context", "apiIdentifier.version"), IndexOptions()
+        .name("context_version")
+        .unique(true)
+        .background(true)
+      )
+    )
+  ) with MongoJavatimeFormats.Implicits {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
@@ -76,25 +101,6 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     }
   }
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "apiIdentifier.context",
-      indexName = Some("context")
-    ),
-    createAscendingIndex(
-      indexName = Some("context_version"),
-      isUnique = true,
-      isBackground = true,
-      indexFieldsKey = List("apiIdentifier.context", "apiIdentifier.version"): _*
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "applications",
-      indexName = Some("applications")
-    )
-  )
-
   def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     val selector = Some(Json.obj("$and" -> Json.arr(
         Json.obj("applications" -> applicationId.value.toString),
@@ -110,7 +116,9 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
-    find("applications" -> applicationId.value.toString).map(_.map(_.apiIdentifier))
+    collection.find(equal("applications", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(_.map(_.apiIdentifier).toList)
   }
 
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
@@ -135,32 +143,33 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   }
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
-    val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
-    collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
-      case Some(subscriptionData) => subscriptionData.applications.toSet
-      case _ => Set()
-    }
+    collection.find(equal("apiIdentifier", Codecs.toBson(apiIdentifier)))
+      .head()
+      .map(_.applications)
   }
 
-  private def makeSelector(apiIdentifier: ApiIdentifier) = {
-    Json.obj("$and" -> Json.arr(
-      Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version))
+  private def queryFilter(apiIdentifier: ApiIdentifier): Bson = {
+    and(
+      equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
     )
   }
 
-  def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    collection.update.one(
-      makeSelector(apiIdentifier),
-      Json.obj("$addToSet" -> Json.obj("applications" -> applicationId.value)),
-      upsert = true
-    ).map(_ => HasSucceeded)
+  def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
+    collection.updateOne(
+      filter = queryFilter(apiIdentifier),
+      update = Updates.addToSet("applications", Codecs.toBson(applicationId)),
+      options = new UpdateOptions().upsert(true)
+    ).toFuture()
+      .map(_ => HasSucceeded)
   }
 
-  def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    collection.update.one(
-      makeSelector(apiIdentifier),
-      Json.obj("$pull" -> Json.obj("applications" -> applicationId.value))
-    ).map(_ => HasSucceeded)
+  def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
+    collection.updateOne(
+      filter = queryFilter(apiIdentifier),
+      update = Updates.pull("applications", Codecs.toBson(applicationId)),
+      options = new UpdateOptions().upsert(true)
+    ).toFuture()
+     .map(_ => HasSucceeded)
   }
 }

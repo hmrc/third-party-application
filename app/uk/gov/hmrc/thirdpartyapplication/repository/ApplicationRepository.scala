@@ -18,35 +18,79 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Indexes.ascending
 
 import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json._
 import play.api.libs.json.{JsObject, _}
-import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.ReadConcern.Available
 import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
-import reactivemongo.bson.{BSONObjectID}
 import reactivemongo.play.json._
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
-import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
-  extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
-    ApplicationData.format, ReactiveMongoFormats.objectIdFormats)
-    with MetricsHelper {
+class ApplicationRepository @Inject()(mongo: MongoComponent)
+                                     (implicit val mat: Materializer, val ec: ExecutionContext)
+  extends PlayMongoRepository[ApplicationData](
+    collectionName = "application",
+    mongoComponent = mongo,
+    domainFormat = ApplicationData.format,
+    indexes = Seq(
+      IndexModel(ascending("state.verificationCode"), IndexOptions()
+      .name("verificationCodeIndex")
+      .background(true)
+      ),
+      IndexModel(ascending("state.name", "state.updatedOn"), IndexOptions()
+        .name("stateName_stateUpdatedOn_Index")
+        .background(true)
+      ),
+      IndexModel(ascending("id"), IndexOptions()
+        .name("applicationIdIndex")
+        .unique(true)
+        .background(true)
+      ),
+      IndexModel(ascending("normalisedName"), IndexOptions()
+        .name("applicationNormalisedNameIndex")
+        .background(true)
+      ),
+      IndexModel(ascending("lastAccess"), IndexOptions()
+        .name("lastAccessIndex")
+        .background(true)
+      ),
+      IndexModel(ascending("tokens.production.clientId"), IndexOptions()
+        .name("productionTokenClientIdIndex")
+        .unique(true)
+        .background(true)
+      ),
+      IndexModel(ascending("access.overrides"), IndexOptions()
+        .name("accessOverridesIndex")
+        .background(true)
+      ),
+      IndexModel(ascending("access.accessType"), IndexOptions()
+        .name("accessTypeIndex")
+        .background(true)
+      ),
+      IndexModel(ascending("collaborators.emailAddress"), IndexOptions()
+        .name("collaboratorsEmailAddressIndex")
+        .background(true)
+      ),
+    )
+  ) with MetricsHelper
+    with MongoJavatimeFormats.Implicits {
 
   import MongoJsonFormatterOverrides._
 
@@ -71,49 +115,6 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     "lastAccess" -> true,
     "rateLimitTier" -> true,
     "environment" -> true))
-
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "state.verificationCode",
-      indexName = Some("verificationCodeIndex")
-    ),
-    createAscendingIndex(
-      indexName = Some("stateName_stateUpdatedOn_Index"),
-      isUnique = false,
-      isBackground = true,
-      indexFieldsKey = List("state.name", "state.updatedOn"): _*
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "id",
-      indexName = Some("applicationIdIndex"),
-      isUnique = true
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "normalisedName",
-      indexName = Some("applicationNormalisedNameIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "lastAccess",
-      indexName = Some("lastAccessIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "tokens.production.clientId",
-      indexName = Some("productionTokenClientIdIndex"),
-      isUnique = true
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "access.overrides",
-      indexName = Some("accessOverridesIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "access.accessType",
-      indexName = Some("accessTypeIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "collaborators.emailAddress",
-      indexName = Some("collaboratorsEmailAddressIndex")
-    )
-  )
 
   def save(application: ApplicationData): Future[ApplicationData] = {
     findAndUpdate(Json.obj("id" -> application.id.value.toString), Json.toJson(application).as[JsObject], upsert = true, fetchNewObject = true)
@@ -143,8 +144,8 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
     val qry = Json.obj("$and" -> Json.arr(
                   Json.obj("id" -> applicationId.value.toString),
-                  Json.obj("collaborators" -> 
-                    Json.obj("$elemMatch" -> 
+                  Json.obj("collaborators" ->
+                    Json.obj("$elemMatch" ->
                       Json.obj(
                         "emailAddress" -> collaboratorEmailAddress,
                         "userId" -> Json.obj("$exists" -> false)
@@ -334,7 +335,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject], hasSubscriptionsQuery: Boolean): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
-    
+
     val subscriptionsLookupFilter = if (hasSubscriptionsQuery) {
       Seq(subscriptionsLookup)
     } else Seq.empty

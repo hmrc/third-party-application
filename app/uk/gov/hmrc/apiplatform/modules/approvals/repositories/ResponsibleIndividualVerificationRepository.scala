@@ -17,38 +17,37 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
 import akka.stream.Materializer
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationJsonFormatters
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import org.mongodb.scala.model.Filters.equal
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
-class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
-    extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID]("responsibleIndividualVerification", mongo.mongoConnector.db,
-      ResponsibleIndividualVerificationJsonFormatters.responsibleIndividualVerificationFormat, ReactiveMongoFormats.objectIdFormats) {
-
-    import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
-
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "id",
-      isUnique = true,
-      indexName = Some("responsibleIndividualVerificationIdIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "createdOn",
-      indexName = Some("responsibleIndividualVerificationCreatedOnIndex")
-    ),
-    createAscendingIndex(
-      indexName = Some("responsibleIndividualVerificationAppSubmissionIdIndex"),
-      isUnique = true,
-      isBackground = true,
-      "applicationId", "submissionId", "submissionInstance"
-    )
-  )
-
-}
+class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)
+                                                            (implicit val mat: Materializer, val ec: ExecutionContext)
+    extends PlayMongoRepository[ResponsibleIndividualVerification](
+      collectionName = "responsibleIndividualVerification",
+      mongoComponent = mongo,
+      domainFormat = ResponsibleIndividualVerification.format,
+      indexes = Seq(
+        IndexModel(ascending("id"), IndexOptions()
+          .name("responsibleIndividualVerificationIdIndex")
+          .unique(true)
+          .background(true)
+        ),
+        IndexModel(ascending("createdOn"),IndexOptions()
+            .name("responsibleIndividualVerificationCreatedOnIndex")
+            .background(true)
+        ),
+        IndexModel(ascending("applicationId", "submissionId", "submissionInstance"), IndexOptions()
+            .name("responsibleIndividualVerificationAppSubmissionIdIndex")
+            .unique(true)
+            .background(true)
+        )
+      )
+    ) with MongoJavatimeFormats.Implicits {}

@@ -16,34 +16,34 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
-import uk.gov.hmrc.mongo.ReactiveRepository
-import com.google.inject.{Singleton, Inject}
-import scala.concurrent.ExecutionContext
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import reactivemongo.bson.BSONObjectID
 import akka.stream.Materializer
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJsonFormatters
+import com.google.inject.{Inject, Singleton}
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJsonFormatters
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import scala.concurrent.ExecutionContext
 
 @Singleton
-class SubmissionsRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
-extends ReactiveRepository[Submission, BSONObjectID]("submissions", mongo.mongoConnector.db,
-SubmissionsJsonFormatters.submissionFormat, ReactiveMongoFormats.objectIdFormats) {
-  
-  import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "id",
-      isUnique = true,
-      isBackground = true,
-      indexName = Some("submissionIdIndex")
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "applicationId",
-      isUnique = false,
-      isBackground = true,
-      indexName = Some("applicationIdIndex")
+class SubmissionsRepository @Inject() (mongo: MongoComponent)
+                                      (implicit val mat: Materializer, val ec: ExecutionContext)
+  extends PlayMongoRepository[Submission](
+      collectionName = "submissions",
+      mongoComponent = mongo,
+      domainFormat = SubmissionsJsonFormatters.submissionFormat,
+      indexes = Seq(IndexModel(ascending("id"), IndexOptions()
+            .name("submissionIdIndex")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(ascending("applicationId"), IndexOptions()
+            .name("applicationIdIndex")
+            .background(true)
+        )
+      )
     )
-  )
-}
+    with MongoJavatimeFormats.Implicits {}

@@ -16,61 +16,72 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions}
+import org.mongodb.scala.model.Indexes.{ascending, descending}
+
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json._
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
-import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
-class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-  extends ReactiveRepository[StateHistory, BSONObjectID]("stateHistory", mongo.mongoConnector.db, StateHistory.format, ReactiveMongoFormats.objectIdFormats) {
-
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "applicationId",
-      indexName = Some("applicationId")
+class StateHistoryRepository @Inject()(mongo: MongoComponent)
+                                      (implicit val ec: ExecutionContext)
+  extends PlayMongoRepository[StateHistory](
+    collectionName = "stateHistory",
+    mongoComponent = mongo,
+    domainFormat = StateHistory.format,
+    indexes = Seq(IndexModel(ascending("applicationId"), IndexOptions()
+      .name("applicationId")
+      .background(true)
     ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "state",
-      indexName = Some("state")
-    ),
-    createAscendingIndex(
-      indexName = Some("applicationId_state"),
-      isUnique = false,
-      isBackground = true,
-      indexFieldsKey = List("applicationId", "state"): _*
-    )
-  )
+      IndexModel(ascending("state"), IndexOptions()
+        .name("state")
+        .background(true)
+      ),
+      IndexModel(ascending("applicationId", "state"), IndexOptions()
+        .name("applicationId_state")
+        .background(true)
+      )
+    )) with MongoJavatimeFormats.Implicits {
 
   def insert(stateHistory: StateHistory): Future[StateHistory] = {
-    collection.insert.one(stateHistory).map(_ => stateHistory)
+    collection.insertOne(stateHistory)
+      .toFuture()
+      .map(_ => stateHistory)
   }
 
   def fetchByState(state: State): Future[List[StateHistory]] = {
-    find("state" -> state)
+    collection.find(equal("state", Codecs.toBson(state)))
+      .toFuture()
+      .map(x => x.toList)
   }
 
   def fetchByApplicationId(applicationId: ApplicationId): Future[List[StateHistory]] = {
-    find("applicationId" -> applicationId.value)
+    collection.find(equal("applicationId", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(x => x.toList)
   }
 
   def fetchLatestByStateForApplication(applicationId: ApplicationId, state: State): Future[Option[StateHistory]] = {
-    find("applicationId" -> applicationId.value, "state" -> state).map(_.sortBy(_.changedAt).lastOption)
+    collection.find(and(
+      equal("applicationId", Codecs.toBson(applicationId)),
+      equal("state", Codecs.toBson(state)))
+    )
+      .sort(descending("changedAt"))
+      .headOption
   }
 
   def deleteByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {
-    remove("applicationId" -> applicationId.value).map(_ => HasSucceeded)
+    collection.deleteOne(equal("applicationId", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(_ => HasSucceeded)
   }
 }

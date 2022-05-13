@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.services
 
-
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -34,38 +33,39 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.AbstractApplicationNamingService
 
 @Singleton
-class UpliftNamingService @Inject()(
-  auditService: AuditService,
-  applicationRepository: ApplicationRepository,
-  nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
-)(implicit ec: ExecutionContext) 
-    extends AbstractApplicationNamingService(auditService, applicationRepository, nameValidationConfig) {
+class UpliftNamingService @Inject() (auditService: AuditService,
+                                     applicationRepository: ApplicationRepository,
+                                     nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig)
+                                    (implicit ec: ExecutionContext)
+    extends AbstractApplicationNamingService(
+      auditService,
+      applicationRepository,
+      nameValidationConfig
+    ) {
 
   import ApplicationNamingService._
 
   val excludeNothing: ExclusionCondition = (x: ApplicationData) => false
 
-  def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition = 
+  def upliftFilter(selfApplicationId: Option[ApplicationId]): ExclusionCondition =
     selfApplicationId.fold(excludeNothing)(appId => excludeThisAppId(appId))
 
   def isDuplicateName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[Boolean] =
     isDuplicateName(applicationName, upliftFilter(selfApplicationId))
 
-  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]) : Future[ApplicationNameValidationResult] =
-     validateApplicationName(applicationName, upliftFilter(selfApplicationId))
+  def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] =
+    validateApplicationName(applicationName, upliftFilter(selfApplicationId))
 
-  def assertAppHasUniqueNameAndAudit(
-    submittedAppName: String,
-    accessType: AccessType,
-    existingApp: Option[ApplicationData] = None
-  )(implicit hc: HeaderCarrier) = {
-    
+  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
+                                    (implicit hc: HeaderCarrier) = {
+
     for {
       duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _ = if (duplicate) {
-            auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
-            throw ApplicationAlreadyExists(submittedAppName)
-          } else { Unit }
+      _ =
+        if (duplicate) {
+          auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
+          throw ApplicationAlreadyExists(submittedAppName)
+        } else { Unit }
     } yield ()
   }
 }
