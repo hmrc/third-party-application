@@ -117,6 +117,13 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       acceptance.responsibleIndividual shouldBe responsibleIndividual
       acceptance.submissionId shouldBe riVerification.submissionId
 
+      val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
+      savedStateHistory.previousState shouldBe Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
+      savedStateHistory.state shouldBe State.PENDING_GATEKEEPER_APPROVAL
+
+      val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+      savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
+
       verify(responsibleIndividualVerificationDao).fetch(riVerificationId)
     }
 
