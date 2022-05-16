@@ -17,27 +17,20 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Filters.{and, equal}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
+import org.mongodb.scala.model.Aggregates.{`match`, filter, group, lookup, project, unwind}
+import org.mongodb.scala.model.Filters.{and, equal, regex}
 import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
+import org.mongodb.scala.model.{Aggregates, Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json._
-import play.api.libs.json.{JsObject, JsString, Json}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor
-import reactivemongo.bson.{BSONObjectID, BSONRegex}
-import reactivemongo.play.json.ImplicitBSONHandlers._
-import uk.gov.hmrc.mongo.{MongoComponent, ReactiveRepository}
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
-
 import scala.concurrent.{ExecutionContext, Future}
-import reactivemongo.api.ReadConcern
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import play.api.libs.json._
 
 @Singleton
 class SubscriptionRepository @Inject()(mongo: MongoComponent)
@@ -64,55 +57,59 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
   ) with MongoJavatimeFormats.Implicits {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
-    val builder = collection.BatchCommands.AggregationFramework
-
-    val pipeline = List(
-      builder.Match(Json.obj("apiIdentifier.version" -> version, "apiIdentifier.context" -> context)),
-      builder.Project(Json.obj("applications" -> 1, "_id" -> 0)),
-      builder.UnwindField("applications"),
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Project(Json.obj("collaborators" -> "$applications.collaborators.emailAddress")),
-      builder.UnwindField("collaborators"),
-      builder.UnwindField("collaborators"),
-      builder.Group(JsString("$collaborators"))()
+    val pipelineStepOne = Seq(
+      filter(and
+        (equal("apiIdentifier.version", Codecs.toBson(version)),
+         equal("apiIdentifier.context", Codecs.toBson(context)))
+      ),
+      project(fields(excludeId(), include("applications"))),
+      unwind("applications")
     )
+
+    val pipelineStepSecond = Seq(
+      lookup(from ="application", localField ="applications", foreignField = "id", as = "applications"),
+      project(fields(computed("collaborators", "$applications.collaborators.emailAddress"))),
+      unwind("collaborators"),
+      unwind("collaborators"),
+      group("$collaborators")
+    )
+
+    val pipeline = pipelineStepOne ++ pipelineStepSecond
 
     def partialEmailMatch(email: String) = {
       val caseInsensitiveRegExOption = "i"
-      builder.Match(Json.obj("_id" -> BSONRegex(email, caseInsensitiveRegExOption)))
+      `match`(equal("_id", regex(email, caseInsensitiveRegExOption)))
     }
 
     val pipelineWithOptionalEmailFilter =
       partialEmail match {
-        case Some(email) => pipeline ++ List(partialEmailMatch(email))
+        case Some(email) => pipeline ++ Seq(partialEmailMatch(email))
         case None => pipeline
       }
 
-    val query = collection.aggregateWith[JsObject]()(_ => (pipelineWithOptionalEmailFilter.head, pipelineWithOptionalEmailFilter.tail))
-
-    val fList = query.collect(Int.MaxValue, Cursor.FailOnError[List[JsObject]]())
-    fList.map {
-      _.map {
-        result => {
-          val email = (result \ "_id").as[String]
-          email
+    collection.aggregate(pipelineWithOptionalEmailFilter)
+      .toFuture()
+      .map {
+        _.map {
+          result => {
+            val email = (result \ "_id").as[String]
+          }
         }
       }
-    }
   }
 
-  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    val selector = Some(Json.obj("$and" -> Json.arr(
-        Json.obj("applications" -> applicationId.value.toString),
-        Json.obj("apiIdentifier.context" -> apiIdentifier.context.value),
-        Json.obj("apiIdentifier.version" -> apiIdentifier.version.value))
-      ))
-
-    collection.count(selector, None, 0, None, ReadConcern.Available)
-    .map {
-      case 1 => true
-      case _ => false
-    }
+  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Any = {
+    val filter = and(
+      equal("applications", Codecs.toBson(applicationId)),
+      equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
+    )
+   collection.countDocuments(filter)
+     .toFuture()
+     .map {
+        case 1 => true
+        case _ => false
+     }
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
@@ -122,24 +119,24 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
   }
 
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    val builder = collection.BatchCommands.AggregationFramework
-    val pipeline = List(
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Match(Json.obj("applications.collaborators.userId" -> userId.value)),
-      builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
+    val pipeline = Seq(
+      lookup(from ="application", localField ="applications", foreignField = "id", as = "applications"),
+      filter(equal("applications.collaborators.userId", Codecs.toBson(userId))),
+      project(
+        fields(
+          excludeId(),
+          computed("context","$apiIdentifier.context"),
+          computed("version","$apiIdentifier.version")
+         )
+       )
     )
-    collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
-  }
-  
-  @Deprecated
-  def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
-    val builder = collection.BatchCommands.AggregationFramework
-    val pipeline = List(
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Match(Json.obj("applications.collaborators.emailAddress" -> email)),
-      builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
-    )
-    collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
+
+    collection.aggregate(pipeline)
+      .toFuture()
+      .map {
+        _.map(_.apiIdentifier)
+         .toSet
+      }
   }
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
@@ -148,7 +145,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       .map(_.applications)
   }
 
-  private def queryFilter(apiIdentifier: ApiIdentifier): Bson = {
+  private def contextAndVersionFilter(apiIdentifier: ApiIdentifier): Bson = {
     and(
       equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
       equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
@@ -157,7 +154,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
 
   def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
     collection.updateOne(
-      filter = queryFilter(apiIdentifier),
+      filter = contextAndVersionFilter(apiIdentifier),
       update = Updates.addToSet("applications", Codecs.toBson(applicationId)),
       options = new UpdateOptions().upsert(true)
     ).toFuture()
@@ -166,7 +163,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
 
   def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
     collection.updateOne(
-      filter = queryFilter(apiIdentifier),
+      filter = contextAndVersionFilter(apiIdentifier),
       update = Updates.pull("applications", Codecs.toBson(applicationId)),
       options = new UpdateOptions().upsert(true)
     ).toFuture()

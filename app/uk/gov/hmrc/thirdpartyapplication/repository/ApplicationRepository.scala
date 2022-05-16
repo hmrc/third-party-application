@@ -18,7 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
 import akka.stream.scaladsl.{Sink, Source}
-import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Filters.{and, elemMatch, equal, exists}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, Updates}
 import org.mongodb.scala.model.Indexes.ascending
 
 import javax.inject.{Inject, Singleton}
@@ -29,7 +32,7 @@ import reactivemongo.api.commands.Command.CommandWithPackRunner
 import reactivemongo.api.{FailoverStrategy, ReadPreference}
 import reactivemongo.play.json._
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
@@ -52,42 +55,33 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     indexes = Seq(
       IndexModel(ascending("state.verificationCode"), IndexOptions()
       .name("verificationCodeIndex")
-      .background(true)
-      ),
+      .background(true)),
       IndexModel(ascending("state.name", "state.updatedOn"), IndexOptions()
         .name("stateName_stateUpdatedOn_Index")
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("id"), IndexOptions()
         .name("applicationIdIndex")
         .unique(true)
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("normalisedName"), IndexOptions()
         .name("applicationNormalisedNameIndex")
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("lastAccess"), IndexOptions()
         .name("lastAccessIndex")
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("tokens.production.clientId"), IndexOptions()
         .name("productionTokenClientIdIndex")
         .unique(true)
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("access.overrides"), IndexOptions()
         .name("accessOverridesIndex")
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("access.accessType"), IndexOptions()
         .name("accessTypeIndex")
-        .background(true)
-      ),
+        .background(true)),
       IndexModel(ascending("collaborators.emailAddress"), IndexOptions()
         .name("collaboratorsEmailAddressIndex")
-        .background(true)
-      ),
+        .background(true))
     )
   ) with MetricsHelper
     with MongoJavatimeFormats.Implicits {
@@ -117,53 +111,63 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     "environment" -> true))
 
   def save(application: ApplicationData): Future[ApplicationData] = {
-    findAndUpdate(Json.obj("id" -> application.id.value.toString), Json.toJson(application).as[JsObject], upsert = true, fetchNewObject = true)
-      .map(_.result[ApplicationData].head)
+    val query = equal("id", Codecs.toBson(application.id))
+    collection.find(query).headOption flatMap {
+      case Some(_: ApplicationData) =>
+        collection.replaceOne(
+          filter = query,
+          replacement = application
+        ).toFuture().map(_ => application)
+
+      case None => collection.insertOne(application).toFuture().map(_ => application)
+    }
   }
 
   def updateApplicationRateLimit(applicationId: ApplicationId, rateLimit: RateLimitTier): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("rateLimitTier" -> rateLimit.toString)))
+    updateApplication(applicationId, Updates.set("rateLimitTier", Codecs.toBson(rateLimit)))
 
   def updateApplicationIpAllowlist(applicationId: ApplicationId, ipAllowlist: IpAllowlist): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("ipAllowlist" -> ipAllowlist)))
+    updateApplication(applicationId, Updates.set("ipAllowlist", Codecs.toBson(ipAllowlist)))) // Remove last ) please.
 
   def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("grantLength" -> grantLength)))
+    updateApplication(applicationId, Updates.set("grantLength", grantLength))
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$push" -> Json.obj("access.importantSubmissionData.termsOfUseAcceptances" -> Json.toJson(acceptance))))
+    updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
 
   def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
+    updateApplication(applicationId, Updates.currentDate("lastAccess"))
 
   def recordServerTokenUsage(applicationId: ApplicationId): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj(
-      "lastAccess" -> Json.obj("$type" -> "date"),
-      "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
+    updateApplication(applicationId, Updates.combine(Updates.currentDate("lastAccess"), Updates.currentDate("tokens.production.lastAccessTokenUsage")))
 
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
-    val qry = Json.obj("$and" -> Json.arr(
-                  Json.obj("id" -> applicationId.value.toString),
-                  Json.obj("collaborators" ->
-                    Json.obj("$elemMatch" ->
-                      Json.obj(
-                        "emailAddress" -> collaboratorEmailAddress,
-                        "userId" -> Json.obj("$exists" -> false)
-                      )
-                    )
-                  )
-              ))
-    val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.userId" -> collaboratorUser))
+    val query = and(
+      equal("id", Codecs.toBson(applicationId)),
+      elemMatch("collaborators",
+        and(
+          equal("emailAddress", collaboratorEmailAddress),
+          exists("userId", exists = false)
+        )
+      )
+    )
 
-    findAndUpdate(qry, updateStatement, fetchNewObject = true) map {
-      _.result[ApplicationData]
-    }
+    collection.findOneAndUpdate(
+      filter = query,
+      update = Updates.set("collaborators.$.userId", Codecs.toBson(collaboratorUser)),
+      options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+    ).toFutureOption()
   }
 
-  def updateApplication(applicationId: ApplicationId, updateStatement: JsObject): Future[ApplicationData] =
-    findAndUpdate(Json.obj("id" -> applicationId.value.toString), updateStatement, fetchNewObject = true) map {
-      _.result[ApplicationData].head
-    }
+  def updateApplication(applicationId: ApplicationId, updateStatement: Bson): Future[ApplicationData] = {
+    val query = equal("id", Codecs.toBson(applicationId))
+
+    collection.findOneAndUpdate(
+      filter = query,
+      update = updateStatement,
+      options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
+    ).toFuture()
+  }
 
   def updateClientSecretField(applicationId: ApplicationId, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] =
     findAndUpdate(
