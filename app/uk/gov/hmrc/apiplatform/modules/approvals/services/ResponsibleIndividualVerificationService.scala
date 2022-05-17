@@ -93,7 +93,7 @@ class ResponsibleIndividualVerificationService @Inject()(
     appData.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId, verification.submissionInstance)
         OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
       case _ => OptionT.fromOption[Future](None)

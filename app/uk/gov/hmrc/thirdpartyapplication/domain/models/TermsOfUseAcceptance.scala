@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.LocalDateTime
 
-case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id)
+case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id, submissionInstance: Int)
 
 object TermsOfUseAcceptance {
   implicit val dateformat = MongoJavaTimeFormats.localDateTimeFormat

@@ -90,6 +90,7 @@ class ApprovalsController @Inject()(
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
+        case RejectedDueToIncorrectApplicationData                            => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data")) 
       })
     }
     .recover(recovery)
@@ -104,6 +105,7 @@ class ApprovalsController @Inject()(
         case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
         case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
         case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
+        case RejectedDueToIncorrectApplicationData                            => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data")) 
       })
     }
     .recover(recovery)

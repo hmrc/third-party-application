@@ -48,12 +48,19 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val acceptanceDate = LocalDateTime.now(clock)
+    val acceptance = TermsOfUseAcceptance(
+      responsibleIndividual,
+      acceptanceDate,
+      submissionId,
+      0
+    )
     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
                               responsibleIndividual,
                               Set(ServerLocation.InUK),
                               TermsAndConditionsLocation.InDesktopSoftware,
                               PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
+                              List(acceptance))
     val applicationPendingGKApproval: ApplicationData = anApplicationData(
                               applicationId,
                               pendingGatekeeperApprovalState("bob@fastshow.com"),

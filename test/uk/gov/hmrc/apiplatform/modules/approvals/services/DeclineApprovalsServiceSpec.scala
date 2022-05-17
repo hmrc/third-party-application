@@ -44,13 +44,20 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
+    val acceptanceDate = LocalDateTime.now(clock)
+    val acceptance = TermsOfUseAcceptance(
+      responsibleIndividual,
+      acceptanceDate,
+      submissionId,
+      0
+    )
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
                               responsibleIndividual,
                               Set(ServerLocation.InUK),
                               TermsAndConditionsLocation.InDesktopSoftware,
                               PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
+                              List(acceptance))
     val application: ApplicationData = anApplicationData(
                               applicationId,
                               pendingGatekeeperApprovalState("bob@fastshow.com"),

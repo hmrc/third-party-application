@@ -50,6 +50,7 @@ object GrantApprovalsService {
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
+  case object RejectedDueToIncorrectApplicationData extends Rejected
 }
 
 @Singleton
@@ -95,7 +96,7 @@ class GrantApprovalsService @Inject()(
         // Set application state to user verification
         updatedApp              =  grantApp(originalApp)
         savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
-        importantSubmissionData =  savedApp.importantSubmissionData.get
+        importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
         _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission       =  grantSubmission(gatekeeperUserName, warnings, escalatedTo)(submission)
         savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
@@ -137,7 +138,7 @@ class GrantApprovalsService @Inject()(
     val escalatedData = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
     val submittedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val grantedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => t.submissionId == submission.id).map(_.dateTime)
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
     val dates = Map(
       "submission.started.date" -> submission.startedOn.format(fmt),
       "submission.submitted.date" -> submittedOn.format(fmt),

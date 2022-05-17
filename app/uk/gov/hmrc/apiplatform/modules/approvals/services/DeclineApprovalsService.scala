@@ -49,6 +49,7 @@ object DeclineApprovalsService {
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
+  case object RejectedDueToIncorrectApplicationData extends Rejected
 }
 
 @Singleton
@@ -87,7 +88,7 @@ class DeclineApprovalsService @Inject()(
         // Set application state to user verification
         updatedApp              =  declineApp(originalApp)
         savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
-        importantSubmissionData =  savedApp.importantSubmissionData.get
+        importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
         _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission       =  Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
@@ -111,7 +112,7 @@ class DeclineApprovalsService @Inject()(
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
     val submittedOn: LocalDateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val declinedOn: LocalDateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => t.submissionId == submission.id).map(_.dateTime)
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
     val dates = Map(
       "submission.started.date" -> submission.startedOn.format(fmt),
       "submission.submitted.date" -> submittedOn.format(fmt),
