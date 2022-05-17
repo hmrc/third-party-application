@@ -31,6 +31,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
+import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
@@ -46,6 +47,8 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
+
+    val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val acceptanceDate = LocalDateTime.now(clock)
@@ -95,6 +98,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
+      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe acceptanceDate.format(fmt)
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
     }
 

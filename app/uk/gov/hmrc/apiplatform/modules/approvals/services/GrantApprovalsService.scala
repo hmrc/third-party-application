@@ -120,7 +120,7 @@ class GrantApprovalsService @Inject()(
     application.copy(state = application.state.toPendingRequesterVerification(clock))
   }
 
-  private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
+  private val fmt = DateTimeFormatter.ISO_DATE_TIME
 
   private def auditGrantedApprovalRequest(
       applicationId: ApplicationId,
@@ -143,7 +143,7 @@ class GrantApprovalsService @Inject()(
       "submission.started.date" -> submission.startedOn.format(fmt),
       "submission.submitted.date" -> submittedOn.format(fmt),
       "submission.granted.date" -> grantedOn.format(fmt)
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.format(fmt)))
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
     
     val markedAnswers =  MarkAnswer.markSubmission(submission)
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size

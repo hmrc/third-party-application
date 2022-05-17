@@ -29,6 +29,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndA
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+
+import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
@@ -44,6 +46,9 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
+    val fmt = DateTimeFormatter.ISO_DATE_TIME
+
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val acceptanceDate = LocalDateTime.now(clock)
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,
@@ -51,7 +56,6 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       submissionId,
       0
     )
-    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
                               responsibleIndividual,
                               Set(ServerLocation.InUK),
@@ -92,6 +96,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalDeclined
+      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe acceptanceDate.format(fmt)
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
     }
 
