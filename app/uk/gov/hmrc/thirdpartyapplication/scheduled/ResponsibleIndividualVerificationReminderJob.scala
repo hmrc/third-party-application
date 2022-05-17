@@ -16,28 +16,34 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import cats.data.OptionT
 import com.google.inject.Singleton
 
 import javax.inject.Inject
 import org.joda.time.Duration
 import play.modules.reactivemongo.ReactiveMongoComponent
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
+import cats.implicits._
+import uk.gov.hmrc.http.HeaderCarrier
+import java.time.temporal.ChronoUnit.SECONDS
+
 
 @Singleton
 class ResponsibleIndividualVerificationReminderJob @Inject()(val lockKeeper: ResponsibleIndividualVerificationReminderJobLockKeeper,
                                                              repository: ResponsibleIndividualVerificationRepository,
+                                                             emailConnector: EmailConnector,
+                                                             applicationService: ApplicationService,
                                                              val clock: Clock,
                                                              jobConfig: ResponsibleIndividualVerificationReminderJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
 
@@ -45,14 +51,43 @@ class ResponsibleIndividualVerificationReminderJob @Inject()(val lockKeeper: Res
   override def interval: FiniteDuration = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean = jobConfig.enabled
+  implicit val hc: HeaderCarrier = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
+    val remindIfCreatedBeforeNow = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      expiredApps <- repository.findAll().map(_.foreach(r => println(r)))
+      remindersDue <- repository.fetchByStateAndAge(ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
+      _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
       case e: Throwable => Future.failed(RunningOfJobFailed(name, e))
     }
+  }
+
+  private def sendReminderEmailsAndUpdateStatus(verificationDueForReminder: ResponsibleIndividualVerification) = {
+    (for {
+      app <- applicationService.fetch(verificationDueForReminder.applicationId)
+      ri  <- OptionT.fromOption[Future](getResponsibleIndividual(app))
+      requesterName <- OptionT.fromOption[Future](getRequesterName(app))
+      requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
+      _   <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(ri.fullName.value, ri.emailAddress.value, app.name, requesterName, verificationDueForReminder.id.value))
+      _   <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualReminderToAdmin(ri.fullName.value, requesterEmail, app.name, requesterName))
+      _   <- OptionT.liftF(repository.updateState(verificationDueForReminder.id, ResponsibleIndividualVerificationState.REMINDERS_SENT))
+    } yield HasSucceeded).value
+  }
+
+  private def getResponsibleIndividual(app: ApplicationResponse): Option[ResponsibleIndividual] = {
+    app.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
+      case _ => None
+    }
+  }
+
+  private def getRequesterName(app: ApplicationResponse): Option[String] = {
+    app.state.requestedByName
+  }
+  private def getRequesterEmail(app: ApplicationResponse): Option[String] = {
+    app.state.requestedByEmailAddress
   }
 }
 
@@ -64,4 +99,4 @@ class ResponsibleIndividualVerificationReminderJobLockKeeper @Inject()(mongo: Re
   override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
 }
 
-case class ResponsibleIndividualVerificationReminderJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)
+case class ResponsibleIndividualVerificationReminderJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, reminderInterval: FiniteDuration, enabled: Boolean)

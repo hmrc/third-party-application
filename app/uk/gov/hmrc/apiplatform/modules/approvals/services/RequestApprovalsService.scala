@@ -88,7 +88,7 @@ class RequestApprovalsService @Inject()(
         _                                   <- ET.fromEitherF(validateApplicationName(appName, originalApp.id, originalApp.access.accessType))
         isRequesterTheResponsibleIndividual  = SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission)
         importantSubmissionData              = getImportantSubmissionData(submission, requestedByName, requestedByEmailAddress).get // Safe at this point
-        updatedApp                           = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, importantSubmissionData)
+        updatedApp                           = deriveNewAppDetails(originalApp, isRequesterTheResponsibleIndividual, appName, requestedByEmailAddress, requestedByName, importantSubmissionData)
         savedApp                            <- ET.liftF(applicationRepository.save(updatedApp))
         _                                   <- ET.liftF(addTouAcceptanceIfNeeded(isRequesterTheResponsibleIndividual, updatedApp, submission, requestedByName, requestedByEmailAddress))
         _                                   <- ET.liftF(writeStateHistory(updatedApp, requestedByEmailAddress))
@@ -147,6 +147,7 @@ class RequestApprovalsService @Inject()(
       isRequesterTheResponsibleIndividual: Boolean,
       applicationName: String,
       requestedByEmailAddress: String,
+      requestedByName: String,
       importantSubmissionData: ImportantSubmissionData
   ): ApplicationData =
     existing.copy(
@@ -156,7 +157,7 @@ class RequestApprovalsService @Inject()(
       state = if (isRequesterTheResponsibleIndividual) 
                 existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock) 
               else 
-                existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, clock)
+                existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] = 

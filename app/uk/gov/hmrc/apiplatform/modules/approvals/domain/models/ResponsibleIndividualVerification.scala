@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
@@ -30,7 +31,8 @@ case class ResponsibleIndividualVerification(
     submissionId: Submission.Id,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime = LocalDateTime.now()
+    createdOn: LocalDateTime = LocalDateTime.now(),
+    state: ResponsibleIndividualVerificationState = INITIAL
 )
 
 
