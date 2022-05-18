@@ -60,7 +60,10 @@ class ResponsibleIndividualVerificationReminderJob @Inject()(val lockKeeper: Res
       _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
-      case e: Throwable => Future.failed(RunningOfJobFailed(name, e))
+      case e: Throwable => {
+        logger.error(s"Scheduled job $name failed with an exception", e)
+        Future.failed(RunningOfJobFailed(name, e))
+      }
     }
   }
 

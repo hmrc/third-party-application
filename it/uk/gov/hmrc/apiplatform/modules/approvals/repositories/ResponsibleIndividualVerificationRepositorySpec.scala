@@ -23,10 +23,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.repository.IndexVerification
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import java.time.LocalDateTime
 import java.util.UUID
@@ -35,12 +33,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
   with GuiceOneAppPerSuite
   with MongoSpecSupport
-  with BeforeAndAfterEach with BeforeAndAfterAll
-  with ApplicationStateUtil
-  with IndexVerification
-  with MetricsHelper
-  with JavaDateTimeTestUtils
-  with FixedClock {
+  with BeforeAndAfterEach with BeforeAndAfterAll {
 
   implicit val mat = app.materializer
 
@@ -69,14 +62,18 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
     doc
   }
 
+  val MANY_DAYS_AGO = 10
+  val UPDATE_THRESHOLD = 5
+  val FEW_DAYS_AGO = 1
+
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildDoc(INITIAL, LocalDateTime.now.minusDays(10))
-      buildDoc(INITIAL, LocalDateTime.now.minusDays(1))
-      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(10))
-      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(1))
+      val initialWithOldDate = buildDoc(INITIAL, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
+      buildDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
+      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
 
-      val results = await(repo.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(5)))
+      val results = await(repo.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
 
       results shouldEqual List(initialWithOldDate)
     }
