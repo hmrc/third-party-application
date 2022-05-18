@@ -20,7 +20,6 @@ import java.util.UUID
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
-import play.api.inject
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json

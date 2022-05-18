@@ -73,6 +73,7 @@ case class ApplicationData(
   def isPendingGatekeeperApproval = state.isPendingGatekeeperApproval
   def isPendingRequesterVerification = state.isPendingRequesterVerification
   def isInPreProductionOrProduction = state.isInPreProductionOrProduction
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = state.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification
 }
 
 object ApplicationData {

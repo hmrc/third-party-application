@@ -16,22 +16,23 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import cats.data.OptionT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import scala.concurrent.{ExecutionContext, Future}
-import javax.inject.Inject
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
+import cats.data.OptionT
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
 
@@ -41,6 +42,8 @@ class ResponsibleIndividualVerificationService @Inject()(
     applicationRepository: ApplicationRepository,
     stateHistoryRepository: StateHistoryRepository,
     applicationService: ApplicationService,
+    submissionService: SubmissionsService, 
+    declineApprovalsService: DeclineApprovalsService,
     clock: Clock
  )(implicit ec: ExecutionContext) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
@@ -85,7 +88,6 @@ class ResponsibleIndividualVerificationService @Inject()(
         _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
       } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
     ).value
-
   }
 
   private def addTermsOfUseAcceptance(verification: ResponsibleIndividualVerification, appData: ApplicationData) = {
@@ -100,19 +102,30 @@ class ResponsibleIndividualVerificationService @Inject()(
     }
   }
 
-
   def decline(code: String): Future[Either[String, ResponsibleIndividualVerification]] = {
+
+    def getResponsibleIndividualEmail(importantSubmissionData: ImportantSubmissionData) = 
+      importantSubmissionData.responsibleIndividual.emailAddress.value
+ 
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val ET = EitherTHelper.make[String]
+    val riVerificationId = ResponsibleIndividualVerificationId(code)
 
-    // TODO: Decline the request, with an appropriate reason. 
-    // Also delete verification record.  To be done as part of a seperate story.
     (
       for {
-        riVerification <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(ResponsibleIndividualVerificationId(code)), "responsibleIndividualVerification not found")
-        _              =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}")
+        riVerification             <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(riVerificationId), "responsibleIndividualVerification not found")
+        originalApp                <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
+        _                          <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
+        submission                 <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
+        importantSubmissionData    <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
+        responsibleIndividualEmail =  getResponsibleIndividualEmail(importantSubmissionData)
+        reason                     =  "The responsible individual has declined the Terms of Use"
+        _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
+        _                          <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
+        _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}")
       } yield riVerification
     ).value
   }

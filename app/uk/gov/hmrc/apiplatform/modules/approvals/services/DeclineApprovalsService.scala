@@ -82,7 +82,7 @@ class DeclineApprovalsService @Inject()(
     (
       for {
         _                       <- ET.liftF(logStart(appId))
-        _                       <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
+        _                       <- ET.cond(originalApp.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification, (), RejectedDueToIncorrectApplicationState)
         _                       <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
@@ -132,5 +132,5 @@ class DeclineApprovalsService @Inject()(
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
-    insertStateHistory(snapshotApp, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(snapshotApp, TESTING, Some(snapshotApp.state.name), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
 }
