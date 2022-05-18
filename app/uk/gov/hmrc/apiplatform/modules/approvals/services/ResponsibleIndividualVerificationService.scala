@@ -75,6 +75,8 @@ class ResponsibleIndividualVerificationService @Inject()(
     val ET = EitherTHelper.make[String]
     val riVerificationId = ResponsibleIndividualVerificationId(code)
 
+    logger.info(s"Start responsible individual accept ToU for code:${code}")
+
     (
       for {
         riVerification                     <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(riVerificationId), "responsibleIndividualVerification not found")
@@ -85,7 +87,7 @@ class ResponsibleIndividualVerificationService @Inject()(
         responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, savedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
         _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
         _                                  <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
-        _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}")
+        _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
     ).value
   }
@@ -114,6 +116,8 @@ class ResponsibleIndividualVerificationService @Inject()(
     val ET = EitherTHelper.make[String]
     val riVerificationId = ResponsibleIndividualVerificationId(code)
 
+    logger.info(s"Start responsible individual decline ToU for code:${code}")
+
     (
       for {
         riVerification             <- ET.fromOptionF(responsibleIndividualVerificationDao.fetch(riVerificationId), "responsibleIndividualVerification not found")
@@ -122,10 +126,10 @@ class ResponsibleIndividualVerificationService @Inject()(
         submission                 <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
         importantSubmissionData    <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
         responsibleIndividualEmail =  getResponsibleIndividualEmail(importantSubmissionData)
-        reason                     =  "The responsible individual has declined the Terms of Use"
+        reason                     =  "Responsible individual did not accept the responsibility of the ToU - Application declined"
         _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
         _                          <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
-        _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}")
+        _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield riVerification
     ).value
   }
