@@ -111,9 +111,9 @@ class SubmissionsService @Inject()(
   /*
   * When you delete an application
   */
-  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Long] =
     submissionsDAO.deleteAllAnswersForApplication(applicationId)
 
-  def store(submission: Submission): Future[Submission] = 
+  def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
 }

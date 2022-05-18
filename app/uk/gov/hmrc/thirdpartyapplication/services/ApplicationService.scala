@@ -326,16 +326,16 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   }
 
   def fetchAllForCollaborator(userId: UserId): Future[List[ExtendedApplicationResponse]] = {
-    applicationRepository.fetchAllForUserId(userId).flatMap(asExtendedResponses)
+    applicationRepository.fetchAllForUserId(userId).flatMap(x => asExtendedResponses(x.toList))
   }
 
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
     applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
-    .flatMap(asExtendedResponses)
+    .flatMap(x => asExtendedResponses(x.toList))
   }
 
   def fetchAll(): Future[List[ApplicationResponse]] = {
-    applicationRepository.findAll().map {
+    applicationRepository.fetchAll().map {
       _.map(application => ApplicationResponse(data = application))
     }
   }

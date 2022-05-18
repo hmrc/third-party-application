@@ -40,7 +40,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
     subscriptionRepository.searchCollaborators(context, version, partialEmailMatch)
   }
 
-  def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll()
+  def fetchAllSubscriptions(): Future[List[SubscriptionData]] = subscriptionRepository.findAll
 
   def fetchAllSubscriptionsForApplication(applicationId: ApplicationId): Future[Set[ApiIdentifier]] = {
     for {

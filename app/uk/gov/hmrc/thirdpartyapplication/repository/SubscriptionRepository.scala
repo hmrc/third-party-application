@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Aggregates.{`match`, filter, group, lookup, project, unwind}
+import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters.{and, equal, regex}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
-import org.mongodb.scala.model.{Aggregates, Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
+import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
@@ -30,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import play.api.libs.json._
 
 @Singleton
 class SubscriptionRepository @Inject()(mongo: MongoComponent)
@@ -87,18 +87,16 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
         case None => pipeline
       }
 
-    collection.aggregate(pipelineWithOptionalEmailFilter)
+    collection.aggregate[BsonValue](pipelineWithOptionalEmailFilter)
       .toFuture()
       .map {
         _.map {
-          result => {
-            val email = (result \ "_id").as[String]
-          }
+          result => result.asDocument().get("_id").asString().toString
         }
-      }
+      }.map(_.toList)
   }
 
-  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Any = {
+  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[Boolean] = {
     val filter = and(
       equal("applications", Codecs.toBson(applicationId)),
       equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
@@ -106,10 +104,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
     )
    collection.countDocuments(filter)
      .toFuture()
-     .map {
-        case 1 => true
-        case _ => false
-     }
+     .map(x => x > 0)
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
@@ -143,6 +138,12 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
     collection.find(equal("apiIdentifier", Codecs.toBson(apiIdentifier)))
       .head()
       .map(_.applications)
+  }
+
+  def findAll = {
+    collection.find()
+      .toFuture()
+      .map(x => x.toList)
   }
 
   private def contextAndVersionFilter(apiIdentifier: ApiIdentifier): Bson = {

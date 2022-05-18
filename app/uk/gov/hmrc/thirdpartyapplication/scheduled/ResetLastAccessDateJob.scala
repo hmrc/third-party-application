@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
 import org.joda.time.{DateTime, Duration}
+import org.mongodb.scala.model.Updates
 import play.api.libs.json.{Format, Json}
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
@@ -26,6 +27,8 @@ import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, MongoJavaTimeFormats}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
@@ -36,14 +39,14 @@ import java.time.LocalDate
 class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLockKeeper,
                                        applicationRepository: ApplicationRepository,
                                        jobConfig: ResetLastAccessDateJobConfig)
-                                      (implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+                                      (implicit val ec: ExecutionContext) extends ScheduledMongoJob
+                                       with ApplicationLogger
+                                       with MongoJavatimeFormats.Implicits {
 
   override def name: String = "ResetLastAccessDateJob"
   override def isEnabled: Boolean = jobConfig.enabled
   override def initialDelay: FiniteDuration = FiniteDuration(5, TimeUnit.MINUTES)
   override def interval: FiniteDuration = FiniteDuration(24, TimeUnit.HOURS)
-
-  implicit val mongoDateTimeFormats: Format[DateTime] = ReactiveMongoFormats.dateTimeFormats
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     applicationRepository.processAll(updateLastAccessDate(jobConfig.noLastAccessDateBefore, jobConfig.dryRun))
@@ -56,8 +59,7 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
         logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
         logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
-         implicit val dateFormats = MongoJavaTimeFormats.localDateTimeFormat
-        applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj("lastAccess" -> earliestLastAccessDate.atStartOfDay())))
+        applicationRepository.updateApplication(applicationId, Updates.set("lastAccess", Codecs.toBson(earliestLastAccessDate.atStartOfDay())))
       }
     }
 

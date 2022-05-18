@@ -28,28 +28,40 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApisWithSubscriptionCount @Inject()(val subscriptionRepository: SubscriptionRepository) extends MetricSource with MetricsHelper with ApplicationLogger {
+class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: SubscriptionRepository)
+                                           extends MetricSource
+                                           with MetricsHelper
+                                           with ApplicationLogger {
+
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     logger.info("Starting - ApisWithSubscriptionCount.metrics() about to calculate subscriptionCount map")
+
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
-    val result = numberOfSubscriptionsByApi.map(subscriptionCounts => subscriptionCounts.map(count => subscriptionCountKey(count._1) -> count._2))
-    result.onComplete({
-        case Success(v) =>
-          logger.info(s"Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}" )
+    val result = numberOfSubscriptionsByApi
+      .map(subscriptionCounts => subscriptionCounts
+        .map(count => subscriptionCountKey(count._1) -> count._2))
 
-        case Failure(e) =>
-          logger.info(s"Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}" )
+    result.onComplete({
+      case Success(v) => logger.info(s"Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}")
+      case Failure(e) => logger.info(s"Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}")
     })
+
     logger.info("Finish - ApisWithSubscriptionCount.metrics()")
     result
   }
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
 
-    def apiName(apiIdentifier: ApiIdentifier): String = s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
+    def apiName(apiIdentifier: ApiIdentifier): String =
+      s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
 
-    subscriptionRepository.findAll()
-      .map(subscriptions => subscriptions.map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size).toMap)
+    /*subscriptionRepository.findAll()
+      .map(subscriptions =>
+        subscriptions
+          .map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size)
+          .toMap
+      )*/
+    Future { Map() }
   }
 }

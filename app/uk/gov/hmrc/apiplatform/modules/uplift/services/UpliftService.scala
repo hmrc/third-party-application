@@ -30,8 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApiGatewayStore, AuditHelper, AuditService}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 
 import java.time.{Clock, LocalDateTime}
 

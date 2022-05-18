@@ -62,8 +62,8 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
 
   override def beforeEach() ={
     super.beforeEach()
-    applicationRepo.drop
-    submissionRepo.drop
+    applicationRepo.collection.drop
+    submissionRepo.collection.drop
   }
 
 
@@ -91,7 +91,7 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
 
      val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
      await(applicationRepo.save(application))
-     await(submissionRepo.insert(submittedSubmission.copy(applicationId = appId)))
+     await(submissionRepo.collection.insertOne(submittedSubmission.copy(applicationId = appId)).toFuture())
    }
    "return 404 when application id does not exist" in {
      val bodyWontBeParsed = "{}"
