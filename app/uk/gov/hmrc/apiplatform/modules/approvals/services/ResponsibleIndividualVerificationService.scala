@@ -127,7 +127,7 @@ class ResponsibleIndividualVerificationService @Inject()(
         submission                 <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
         importantSubmissionData    <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
         responsibleIndividualEmail =  getResponsibleIndividualEmail(importantSubmissionData)
-        reason                     =  "Responsible individual did not accept the responsibility of the ToU - Application declined"
+        reason                     =  "Responsible individual declined the terms of use."
         _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
         _                          <- ET.liftF(responsibleIndividualVerificationDao.delete(riVerificationId))
         _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
