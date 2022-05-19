@@ -22,6 +22,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -48,6 +49,7 @@ object DeclineApprovalsService {
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
+  case object RejectedDueToIncorrectApplicationData extends Rejected
 }
 
 @Singleton
@@ -63,7 +65,7 @@ class DeclineApprovalsService @Inject()(
 
   import DeclineApprovalsService._
 
-  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime])(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
+  def decline(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[DeclineApprovalsService.Result] = {
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
@@ -79,18 +81,19 @@ class DeclineApprovalsService @Inject()(
     val appId = originalApp.id
     (
       for {
-        _                     <- ET.liftF(logStart(appId))
-        _                     <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
-        _                     <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
+        _                       <- ET.liftF(logStart(appId))
+        _                       <- ET.cond(originalApp.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification, (), RejectedDueToIncorrectApplicationState)
+        _                       <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
-        updatedApp            = declineApp(originalApp)
-        savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
-        _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
-        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, gatekeeperUserName, reasons, responsibleIndividualVerificationDate))
-        _                     = logDone(savedApp, savedSubmission)
+        updatedApp              =  declineApp(originalApp)
+        savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
+        importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
+        _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
+        updatedSubmission       =  Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
+        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        _                       <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, importantSubmissionData, gatekeeperUserName, reasons))
+        _                       =  logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
     )
     .fold[Result](identity, identity)
@@ -101,19 +104,19 @@ class DeclineApprovalsService @Inject()(
   }
   private val fmt = DateTimeFormatter.ISO_DATE_TIME
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, gatekeeperUserName: String, reasons: String, responsibleIndividualVerificationDate: Option[LocalDateTime])(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, importantSubmissionData: ImportantSubmissionData, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
 
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
     
-
     val declinedData = Map("status" -> "declined", "reasons" -> reasons)
     val submittedOn: LocalDateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val declinedOn: LocalDateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submissionBeforeDeclined.id && t.submissionInstance == submissionBeforeDeclined.latestInstance.index)).map(_.dateTime)
     val dates = Map(
       "submission.started.date" -> submission.startedOn.format(fmt),
       "submission.submitted.date" -> submittedOn.format(fmt),
       "submission.declined.date" -> declinedOn.format(fmt)
-      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.format(fmt)))
+      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
 
     val markedAnswers =  MarkAnswer.markSubmission(submissionBeforeDeclined)
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
@@ -129,5 +132,5 @@ class DeclineApprovalsService @Inject()(
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
-    insertStateHistory(snapshotApp, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(snapshotApp, TESTING, Some(snapshotApp.state.name), name, GATEKEEPER, (a: ApplicationData) => applicationRepository.save(a))
 }

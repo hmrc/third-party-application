@@ -25,23 +25,25 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup
     extends ApplicationTestData
+    with SubmissionsTestData
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
     with ApplicationServiceMockModule
+    with DeclineApprovalsServiceMockModule
+    with SubmissionsServiceMockModule
     with FixedClock {
 
-    val applicationId = ApplicationId.random
     val appName = "my shiny app"
-    val submissionId = Submission.Id.random
     val submissionInstanceIndex = 0
 
     val responsibleIndividualVerificationDao = mock[ResponsibleIndividualVerificationDAO]
@@ -57,7 +59,14 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               pendingResponsibleIndividualVerificationState("bob@fastshow.com"),
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
 
-    val underTest = new ResponsibleIndividualVerificationService(responsibleIndividualVerificationDao, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ApplicationServiceMock.aMock, clock)
+    val underTest = new ResponsibleIndividualVerificationService(
+                              responsibleIndividualVerificationDao, 
+                              ApplicationRepoMock.aMock, 
+                              StateHistoryRepoMock.aMock, 
+                              ApplicationServiceMock.aMock, 
+                              SubmissionsServiceMock.aMock,
+                              DeclineApprovalsServiceMock.aMock,
+                              clock)
 
     val riVerificationId = ResponsibleIndividualVerificationId.random
     val riVerification = ResponsibleIndividualVerification(
@@ -150,11 +159,16 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   "decline" should {
     "return verification record if verification record is found" in new Setup {
       when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
+      ApplicationRepoMock.Fetch.thenReturn(application)
+      SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
+      DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
+      when(responsibleIndividualVerificationDao.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
 
       val result = await(underTest.decline(riVerificationId.value))
 
       result shouldBe Right(riVerification)
     }
+
     "return correct error message if verification record is not found" in new Setup {
       when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
 

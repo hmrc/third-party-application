@@ -1352,7 +1352,8 @@ class ApplicationRepositorySpec
       val acceptance = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
-        submissionId
+        submissionId,
+        0
       )
       val applicationId = ApplicationId.random
       val importantSubmissionData = ImportantSubmissionData(None, responsibleIndividual, Set.empty, TermsAndConditionsLocation.InDesktopSoftware,
@@ -1368,6 +1369,7 @@ class ApplicationRepositorySpec
       termsOfUseAcceptance.responsibleIndividual shouldBe responsibleIndividual
       termsOfUseAcceptance.dateTime.toInstant(ZoneOffset.UTC).toEpochMilli shouldBe acceptanceDate.toInstant(ZoneOffset.UTC).toEpochMilli
       termsOfUseAcceptance.submissionId shouldBe submissionId
+      termsOfUseAcceptance.submissionInstance shouldBe 0
     }
   }
 

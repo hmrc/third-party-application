@@ -30,16 +30,17 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-
-import scala.concurrent.Future.successful
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 
+import scala.concurrent.Future.successful
 import java.time.format.DateTimeFormatter
 import java.time.{Clock, LocalDateTime}
+
 
 object GrantApprovalsService {
   sealed trait Result
@@ -49,6 +50,7 @@ object GrantApprovalsService {
   sealed trait Rejected extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
   case object RejectedDueToIncorrectSubmissionState extends Rejected
+  case object RejectedDueToIncorrectApplicationData extends Rejected
 }
 
 @Singleton
@@ -70,7 +72,6 @@ class GrantApprovalsService @Inject()(
       submission: Submission,
       gatekeeperUserName: String,
       warnings: Option[String],
-      responsibleIndividualVerificationDate: Option[LocalDateTime],
       escalatedTo: Option[String]
   )(implicit hc: HeaderCarrier): Future[GrantApprovalsService.Result] = {
     import cats.implicits._
@@ -88,19 +89,20 @@ class GrantApprovalsService @Inject()(
     val appId = originalApp.id
     (
       for {
-        _                     <- ET.liftF(logStart(appId))
-        _                     <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
-        _                     <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
+        _                       <- ET.liftF(logStart(appId))
+        _                       <- ET.cond(originalApp.isPendingGatekeeperApproval, (), RejectedDueToIncorrectApplicationState)
+        _                       <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
-        updatedApp            = grantApp(originalApp)
-        savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
-        _                     <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission     = grantSubmission(gatekeeperUserName, warnings, escalatedTo)(submission)
-        savedSubmission       <- ET.liftF(submissionService.store(updatedSubmission))
-        _                     <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, savedSubmission, gatekeeperUserName, warnings, responsibleIndividualVerificationDate, escalatedTo))
-        _                     <- ET.liftF(sendEmails(savedApp))
-        _                     = logDone(savedApp, savedSubmission)
+        updatedApp              =  grantApp(originalApp)
+        savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
+        importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
+        _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
+        updatedSubmission       =  grantSubmission(gatekeeperUserName, warnings, escalatedTo)(submission)
+        savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        _                       <- ET.liftF(auditGrantedApprovalRequest(appId, savedApp, savedSubmission, gatekeeperUserName, warnings, importantSubmissionData, escalatedTo))
+        _                       <- ET.liftF(sendEmails(savedApp))
+        _                       =  logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
     )
     .fold[Result](identity, identity)
@@ -118,7 +120,7 @@ class GrantApprovalsService @Inject()(
     application.copy(state = application.state.toPendingRequesterVerification(clock))
   }
 
-  private val fmt = DateTimeFormatter.ISO_LOCAL_DATE
+  private val fmt = DateTimeFormatter.ISO_DATE_TIME
 
   private def auditGrantedApprovalRequest(
       applicationId: ApplicationId,
@@ -126,7 +128,7 @@ class GrantApprovalsService @Inject()(
       submission: Submission,
       gatekeeperUserName: String,
       warnings: Option[String],
-      responsibleIndividualVerificationDate: Option[LocalDateTime],
+      importantSubmissionData: ImportantSubmissionData,
       escalatedTo: Option[String]
   )(implicit hc: HeaderCarrier): Future[AuditResult] = {
 
@@ -136,11 +138,12 @@ class GrantApprovalsService @Inject()(
     val escalatedData = escalatedTo.fold(Map.empty[String, String])(escalatedTo => Map("escalatedTo" -> escalatedTo))
     val submittedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
     val grantedOn: LocalDateTime = submission.latestInstance.statusHistory.find(s => s.isGrantedWithOrWithoutWarnings).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submission.id && t.submissionInstance == submission.latestInstance.index)).map(_.dateTime)
     val dates = Map(
       "submission.started.date" -> submission.startedOn.format(fmt),
       "submission.submitted.date" -> submittedOn.format(fmt),
       "submission.granted.date" -> grantedOn.format(fmt)
-    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividiual.verification.date" -> rivd.format(fmt)))
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
     
     val markedAnswers =  MarkAnswer.markSubmission(submission)
     val nbrOfFails = markedAnswers.filter(_._2 == Fail).size

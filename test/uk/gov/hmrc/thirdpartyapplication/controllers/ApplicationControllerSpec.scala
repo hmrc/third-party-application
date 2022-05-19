@@ -40,7 +40,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{TermsOfUseAcceptance, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
@@ -57,8 +57,6 @@ import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
-import org.mockito.captor.ArgCaptor
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -256,34 +254,6 @@ class ApplicationControllerSpec
       status(result) shouldBe INTERNAL_SERVER_ERROR
     }
 
-  }
-
-  "addTermsOfUseAcceptance" should {
-    "call applicationService correctly" in new Setup {
-      val applicationId = ApplicationId.random
-      val name = "bob"
-      val emailAddress = "bob@example.com"
-      val acceptanceDate = LocalDateTime.now(ZoneOffset.UTC)
-      val submissionId = Submission.Id.random
-      val captor = ArgCaptor[TermsOfUseAcceptance]
-      val addTermsOfUseAcceptanceRequest = AddTermsOfUseAcceptanceRequest(name, emailAddress, acceptanceDate, submissionId)
-
-      when(mockApplicationService.addTermsOfUseAcceptance(eqTo(applicationId), *)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.addTermsOfUseAcceptance(applicationId)(request.withBody(Json.toJson(addTermsOfUseAcceptanceRequest)))
-
-      status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).addTermsOfUseAcceptance(eqTo(applicationId), captor.capture)
-
-      /* Unfortunately we need to do all this rather than simply comparing the 2 objects because the DateTime instances
-      * before and after serialization are not considered equal even though they have the same value
-      * (known JodaTime bug) */
-      val termsOfUseAcceptance = captor.value
-      termsOfUseAcceptance.dateTime.toInstant(ZoneOffset.UTC).toEpochMilli shouldBe acceptanceDate.toInstant(ZoneOffset.UTC).toEpochMilli
-      termsOfUseAcceptance.submissionId shouldBe submissionId
-      termsOfUseAcceptance.responsibleIndividual.fullName.value shouldBe name
-      termsOfUseAcceptance.responsibleIndividual.emailAddress.value shouldBe emailAddress
-    }
   }
 
   "confirmSetupComplete" should {

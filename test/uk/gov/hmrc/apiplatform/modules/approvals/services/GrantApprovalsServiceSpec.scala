@@ -28,8 +28,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ActualAnswers
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import cats.implicits._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
+import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
@@ -46,10 +48,28 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationPendingGKApproval = anApplicationData(applicationId, pendingGatekeeperApprovalState("bob"))
-    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
+    val fmt = DateTimeFormatter.ISO_DATE_TIME
 
-    val responsibleIndividualVerificationDate = LocalDateTime.now
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val acceptanceDate = LocalDateTime.now(clock)
+    val acceptance = TermsOfUseAcceptance(
+      responsibleIndividual,
+      acceptanceDate,
+      submissionId,
+      0
+    )
+    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+                              responsibleIndividual,
+                              Set(ServerLocation.InUK),
+                              TermsAndConditionsLocation.InDesktopSoftware,
+                              PrivacyPolicyLocation.InDesktopSoftware,
+                              List(acceptance))
+    val applicationPendingGKApproval: ApplicationData = anApplicationData(
+                              applicationId,
+                              pendingGatekeeperApprovalState("bob@fastshow.com"),
+                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+
+    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
   }
 
   "GrantApprovalsService" should {
@@ -62,7 +82,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
 
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, None))
 
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
@@ -78,6 +98,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
+      AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe acceptanceDate.format(fmt)
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
     }
 
@@ -92,7 +113,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
       val warning = Some("Here are some warnings")
       val escalatedTo = Some("Marty McFly")
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, responsibleIndividualVerificationDate.some, escalatedTo))
+      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
       
       result should matchPattern {
         case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
@@ -112,13 +133,13 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     }
 
     "fail to grant the specified application if the application is in the incorrect state" in new Setup {
-      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some, None))
+      val result = await(underTest.grant(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, None, None))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectApplicationState
     }
 
     "fail to grant the specified application if the submission is not in the submitted state" in new Setup {
-      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, responsibleIndividualVerificationDate.some, None))
+      val result = await(underTest.grant(applicationPendingGKApproval, answeredSubmission, gatekeeperUserName, None, None))
 
       result shouldBe GrantApprovalsService.RejectedDueToIncorrectSubmissionState
     }

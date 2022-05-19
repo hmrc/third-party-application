@@ -46,6 +46,8 @@ case class ApplicationState(
   def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
   def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
+
 
   def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
