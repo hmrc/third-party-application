@@ -54,6 +54,14 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
     )
   )
 
+  def save(verification: ResponsibleIndividualVerification): Future[ResponsibleIndividualVerification] = {
+    insert(verification).map(_ => verification)
+  }
+
+  def fetch(id: ResponsibleIndividualVerificationId): Future[Option[ResponsibleIndividualVerification]] = {
+    find( "id" -> id.value).map(_.headOption)
+  }
+
   def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
     implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
     find("state" -> state, "createdOn" -> Json.obj("$lte" -> minimumCreatedOn))
@@ -63,4 +71,7 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
     collection.update.one(Json.obj("id" -> id), Json.obj("$set" -> Json.obj("state" -> newState))).map(_ => HasSucceeded)
   }
 
+  def delete(id: ResponsibleIndividualVerificationId): Future[HasSucceeded] = {
+    collection.delete.one(Json.obj("id" -> id)).map(_ => HasSucceeded)
+  }
 }
