@@ -52,7 +52,8 @@ class ResponsibleIndividualVerificationService @Inject()(
       applicationId = applicationData.id,
       submissionId = submissionId,
       submissionInstance = submissionInstance,
-      applicationName = applicationData.name
+      applicationName = applicationData.name,
+      createdOn = LocalDateTime.now(clock)
     )
     responsibleIndividualVerificationDao.save(verification)
   }
@@ -97,7 +98,7 @@ class ResponsibleIndividualVerificationService @Inject()(
     appData.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId, verification.submissionInstance)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), verification.submissionId, verification.submissionInstance)
         OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
       case _ => OptionT.fromOption[Future](None)

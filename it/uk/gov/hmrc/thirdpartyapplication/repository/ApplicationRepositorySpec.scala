@@ -1428,7 +1428,7 @@ class ApplicationRepositorySpec
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime) = anApplicationData(
     id = ApplicationId.random,
     prodClientId = generateClientId,
-    state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
+    state = ApplicationState(state, Some("requestorEmail@example.com"), Some("requestorName"), Some("aVerificationCode"), updatedOn)
   )
 
   def aSubscriptionData(context: String, version: String, applicationIds: ApplicationId*) = {

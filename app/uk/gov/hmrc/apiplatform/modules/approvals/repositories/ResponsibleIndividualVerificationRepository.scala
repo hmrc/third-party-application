@@ -17,21 +17,24 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
 import akka.stream.Materializer
+import play.api.libs.json.Json
 import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
+import java.time.LocalDateTime
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
     extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID]("responsibleIndividualVerification", mongo.mongoConnector.db,
-      ResponsibleIndividualVerificationJsonFormatters.responsibleIndividualVerificationFormat, ReactiveMongoFormats.objectIdFormats) {
-
-    import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+      ResponsibleIndividualVerification.format, ReactiveMongoFormats.objectIdFormats) {
 
   override def indexes = List(
     createSingleFieldAscendingIndex(
@@ -50,5 +53,14 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
       "applicationId", "submissionId", "submissionInstance"
     )
   )
+
+  def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
+    implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+    find("state" -> state, "createdOn" -> Json.obj("$lte" -> minimumCreatedOn))
+  }
+
+  def updateState(id: ResponsibleIndividualVerificationId, newState: ResponsibleIndividualVerificationState): Future[HasSucceeded] = {
+    collection.update.one(Json.obj("id" -> id), Json.obj("$set" -> Json.obj("state" -> newState))).map(_ => HasSucceeded)
+  }
 
 }

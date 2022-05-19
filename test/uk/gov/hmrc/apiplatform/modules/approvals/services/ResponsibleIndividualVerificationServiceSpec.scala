@@ -28,10 +28,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
-
-import scala.concurrent.Future
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup
@@ -75,7 +74,8 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           application.id,
           Submission.Id.random,
           0,
-          appName)
+          appName,
+          LocalDateTime.now(clock))
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
   }
 
