@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -89,10 +90,22 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
 
    def primeData(appId: ApplicationId): Unit ={
 
-     val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+                              responsibleIndividual,
+                              Set(ServerLocation.InUK),
+                              TermsAndConditionsLocation.InDesktopSoftware,
+                              PrivacyPolicyLocation.InDesktopSoftware,
+                              List.empty)
+     val application: ApplicationData = anApplicationData(
+                              appId,
+                              pendingGatekeeperApprovalState("bob@fastshow.com"),
+                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+
      await(applicationRepo.save(application))
      await(submissionRepo.insert(submittedSubmission.copy(applicationId = appId)))
    }
+
    "return 404 when application id does not exist" in {
      val bodyWontBeParsed = "{}"
      val randomAppId = UUID.randomUUID().toString
@@ -101,31 +114,16 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
      result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
    }
 
-   "parse date as millis from epoch" in {
-     val appId: ApplicationId = ApplicationId(UUID.randomUUID())
-    primeData(appId)
-    stubEmail()
-    val requestBody = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate": 1651735542391}"""
-     val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
-     result.status mustBe OK
-     val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
-     response must not be None
-
-   }
-
-   "parse date as String" in {
+   "return 200 when successful" in {
      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
      primeData(appId)
      stubEmail()
-     val requestBody = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate":"2022-03-27T00:00:00.000Z"}"""
-
+     val requestBody = """{"gatekeeperUserName":"Bob Hope"}"""
      val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
      result.status mustBe OK
      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
      response must not be None
+
    }
  }
-
-
-
 }

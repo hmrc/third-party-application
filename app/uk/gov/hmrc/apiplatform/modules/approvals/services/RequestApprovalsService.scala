@@ -111,7 +111,7 @@ class RequestApprovalsService @Inject()(
                                        requestedByName: String, requestedByEmailAddress: String): Future[ApplicationData] = {
     if (isRequesterTheResponsibleIndividual) {
       val responsibleIndividual = ResponsibleIndividual.build(requestedByName, requestedByEmailAddress)
-      val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(), submission.id)
+      val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(), submission.id, submission.latestInstance.index)
       applicationService.addTermsOfUseAcceptance(appWithoutTouAcceptance.id, acceptance)
     } else {
       Future.successful(appWithoutTouAcceptance)
