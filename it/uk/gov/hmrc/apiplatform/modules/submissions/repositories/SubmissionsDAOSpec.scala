@@ -1,51 +1,33 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.mongo.MongoSpecSupport
-import org.scalatest.BeforeAndAfterEach
-import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.thirdpartyapplication.repository.IndexVerification
-import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import akka.actor.ActorSystem
 import akka.stream.Materializer
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.mongo.MongoConnector
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import scala.concurrent.ExecutionContext
+import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import reactivemongo.core.errors.DatabaseException
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
+
+import scala.concurrent.ExecutionContext.Implicits.global
 
 class SubmissionsDAOSpec
   extends AsyncHmrcSpec
-    with MongoSpecSupport
+    with MongoSupport
+    with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll
-    with IndexVerification
     with MetricsHelper
     with SubmissionsTestData {
 
   implicit var s : ActorSystem = ActorSystem("test")
   implicit var m : Materializer = Materializer(s)
 
-  private val reactiveMongoComponent = new ReactiveMongoComponent {
-    override def mongoConnector: MongoConnector = mongoConnectorForTest
-  }
-
-  private val repo = new SubmissionsRepository(reactiveMongoComponent)
+  private val repo = new SubmissionsRepository(mongoComponent)
   private val dao = new SubmissionsDAO(repo)
 
-  override def beforeEach() {
-    List(repo).foreach { db =>
-      await(db.drop)
-      await(db.ensureIndexes)
-    }
-  }
-
-  override protected def afterAll() {
-    List(repo).foreach { db =>
-      await(db.drop)
-      await(s.terminate)
-    }
+  override protected def afterAll(): Unit = {
+    super.afterAll()
+    await(s.terminate())
   }
 
   "save and retrieved" should {
@@ -63,13 +45,13 @@ class SubmissionsDAOSpec
       intercept[DatabaseException] {
         await(dao.save(aSubmission))
       }
-      await(repo.count(implicitly[ExecutionContext])) shouldBe 1
+      await(repo.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
     }
   }
 
-  "fetchLastest" should {
+  "fetchLatest" should {
     "find the only one" in {
-      await(dao.save(aSubmission)) 
+      await(dao.save(aSubmission))
       await(dao.fetchLatest(applicationId)).value shouldBe aSubmission
     }
 

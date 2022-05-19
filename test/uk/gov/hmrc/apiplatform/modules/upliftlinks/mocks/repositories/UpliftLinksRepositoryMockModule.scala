@@ -16,29 +16,33 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import scala.concurrent.Future.successful
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
-import reactivemongo.api.commands.WriteResult
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import org.mockito.stubbing.ScalaOngoingStubbing
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseUpliftLinksRepositoryRepoMock {
     def aMock: UpliftLinksRepository
 
     object Insert {
-      def thenReturn() =
-        when(aMock.insert(*)(*)).thenReturn(successful(mock[WriteResult]))
+      def thenReturn(): ScalaOngoingStubbing[Future[UpliftLink]] =
+        when(aMock.insert(*)).thenReturn(mock[Future[UpliftLink]])
 
-      def verifyCalled() = 
-          verify(aMock, atLeast(1)).insert(*[UpliftLink])(*)
+      def verifyCalled(): Future[UpliftLink] = verify(aMock, atLeast(1)).insert(*[UpliftLink])
 
     }
 
     object Find {
-      def thenReturn(upliftLink : UpliftLink) = when(aMock.find(*)(*)).thenReturn(successful(List(upliftLink)))
-      def thenReturnNothing = when(aMock.find(*)(*)).thenReturn(successful(List()))
+      def thenReturn(upliftLink : UpliftLink): ScalaOngoingStubbing[Future[Option[ApplicationId]]] =
+        when(aMock.find(*[ApplicationId])).thenReturn(Future.successful(Some(upliftLink.sandboxApplicationId)))
+
+      def thenReturnNothing: ScalaOngoingStubbing[Future[Option[ApplicationId]]] =
+        when(aMock.find(*[ApplicationId])).thenReturn(successful(None))
     }
   }
   

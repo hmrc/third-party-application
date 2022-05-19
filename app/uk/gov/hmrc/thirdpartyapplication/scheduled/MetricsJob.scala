@@ -17,12 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import javax.inject.{Inject, Singleton}
-import org.joda.time.Duration
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.metrix.MetricOrchestrator
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
 
+import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -36,6 +35,7 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
   override def interval: FiniteDuration = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean = jobConfig.enabled
+  override val lockProvider: LockProvider = lockKeeper
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     logger.info(s"Running Metrics Collection Process")
@@ -52,14 +52,12 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
         }
       }
   }
+
+
 }
 
-class MetricsJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-
-  override def lockId: String = "MetricsJob"
-
-  override val forceLockReleaseAfter: Duration = Duration.standardHours(2)
+class MetricsJobLockKeeper @Inject()(mongoLockRepository: MongoLockRepository) extends LockProvider {
+  override def lockService: LockService = LockService(mongoLockRepository, "MetricsJob", FiniteDuration(2, TimeUnit.HOURS))
 }
 
 case class MetricsJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)

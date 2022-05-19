@@ -4,6 +4,7 @@ import play.api.Logger
 
 import java.net.ServerSocket
 import scala.annotation.tailrec
+import scala.language.postfixOps
 
 
 object PortHelper {

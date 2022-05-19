@@ -16,37 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
-
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
 import cats.data.OptionT
-import cats.implicits._
-import org.mongodb.scala.model.Filters.equal
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
-import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UpliftLinkService @Inject()(repo: UpliftLinksRepository)
                                  (implicit ec: ExecutionContext) {
 
-  private lazy val collection = repo.collection
-
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
     val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
 
-    collection.insertOne(upliftLink)
-      .toFuture()
-      .map(_ => upliftLink)
+    repo.insert(upliftLink)
   }
 
   def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] = {
-    OptionT(
-      collection.find(equal("productionApplicationId", Codecs.toBson(productionAppId)))
-        .map(_.sandboxApplicationId)
-        .headOption()
-    )
+    OptionT(repo.find(productionAppId))
   }
 }

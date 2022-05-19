@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import org.mongodb.scala.model.Filters.{and, equal}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions}
+import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import org.mongodb.scala.model.Indexes.{ascending, descending}
 
 import javax.inject.{Inject, Singleton}
@@ -60,6 +60,12 @@ class StateHistoryRepository @Inject()(mongo: MongoComponent)
 
   def fetchByState(state: State): Future[List[StateHistory]] = {
     collection.find(equal("state", Codecs.toBson(state)))
+      .toFuture()
+      .map(x => x.toList)
+  }
+
+  def findAll: Future[List[StateHistory]] = {
+    collection.find()
       .toFuture()
       .map(x => x.toList)
   }

@@ -18,15 +18,16 @@ package uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories
 
 import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
+import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJsonFormatter
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UpliftLinksRepository @Inject() (mongo: MongoComponent)
@@ -45,4 +46,17 @@ class UpliftLinksRepository @Inject() (mongo: MongoComponent)
             .background(true)
         )
       )
-    ) {}
+    ) {
+
+  def insert(upliftLink: UpliftLink): Future[UpliftLink] = {
+    collection.insertOne(upliftLink)
+      .toFuture()
+      .map(_ => upliftLink)
+  }
+
+  def find(productionAppId: ApplicationId): Future[Option[ApplicationId]] = {
+    collection.find(equal("productionApplicationId", Codecs.toBson(productionAppId)))
+    .map(_.sandboxApplicationId)
+    .headOption()
+  }
+}

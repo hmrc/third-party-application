@@ -31,7 +31,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     def verify = MockitoSugar.verify(aMock)
 
     object Create {
-      def thenReturn(submission: Submission) = 
+      def thenReturn(submission: Submission) =
         when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(submission)))
 
       def thenFails(error: String) =
@@ -80,7 +80,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object DeleteAll {
       def thenReturn() =
-        when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(()))
+        when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(1))
     }
 
     object Store {

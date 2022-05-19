@@ -19,9 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import com.google.inject.Singleton
 
 import javax.inject.Inject
-import org.joda.time.Duration
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
@@ -29,13 +26,15 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
 
 import java.time.{Clock, LocalDateTime}
-import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit
+import scala.concurrent.duration.{Duration, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationExpiryJobLockKeeper,
+class UpliftVerificationExpiryJob @Inject()(lockKeeper: UpliftVerificationExpiryJobLockKeeper,
                                             applicationRepository: ApplicationRepository,
                                             stateHistoryRepository: StateHistoryRepository,
                                             val clock: Clock,
@@ -47,6 +46,7 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
   override def interval: FiniteDuration = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean = jobConfig.enabled
+  override val lockProvider: LockProvider = lockKeeper
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
@@ -72,12 +72,9 @@ class UpliftVerificationExpiryJob @Inject()(val lockKeeper: UpliftVerificationEx
   }
 }
 
-class UpliftVerificationExpiryJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-
-  override def lockId: String = "UpliftVerificationExpiryScheduler"
-
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
+class UpliftVerificationExpiryJobLockKeeper @Inject()(lockReleaseTtl: Duration = FiniteDuration(60, TimeUnit.MINUTES))
+                                                     (mongoLockRepository: MongoLockRepository) extends LockProvider {
+  override def lockService: LockService = LockService(mongoLockRepository, "UpliftVerificationExpiryScheduler", lockReleaseTtl)
 }
 
 case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)

@@ -38,7 +38,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLink
 import java.time.LocalDateTime
 
 class UpliftServiceSpec extends AsyncHmrcSpec {
-  trait Setup 
+  trait Setup
     extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
@@ -51,11 +51,13 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
     val applicationId: ApplicationId = ApplicationId.random
 
-    val mockAppNamingService = mock[UpliftNamingService]
+    val mockAppNamingService: UpliftNamingService = mock[UpliftNamingService]
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
-        
-    val underTest = new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, UpliftLinksRepositoryMock.aMock, UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
+
+    val underTest: UpliftService =
+      new UpliftService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock,
+                        UpliftNamingServiceMock.aMock, ApiGatewayStoreMock.aMock, clock)
   }
 
   "requestUplift" should {

@@ -30,15 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
-
 import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
-
 
 class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with ApplicationTestData with SubmissionsTestData with BeforeAndAfterEach {
-
 
   protected override def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()

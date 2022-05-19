@@ -17,26 +17,22 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import org.joda.time.{DateTime, Duration}
+import javax.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Updates
-import play.api.libs.json.{Format, Json}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, MongoJavaTimeFormats}
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.LocalDate
 
-class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLockKeeper,
+class ResetLastAccessDateJob @Inject()(lockKeeper: ResetLastAccessDateJobLockKeeper,
                                        applicationRepository: ApplicationRepository,
                                        jobConfig: ResetLastAccessDateJobConfig)
                                       (implicit val ec: ExecutionContext) extends ScheduledMongoJob
@@ -45,8 +41,10 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
 
   override def name: String = "ResetLastAccessDateJob"
   override def isEnabled: Boolean = jobConfig.enabled
-  override def initialDelay: FiniteDuration = FiniteDuration(5, TimeUnit.MINUTES)
-  override def interval: FiniteDuration = FiniteDuration(24, TimeUnit.HOURS)
+  override def initialDelay: FiniteDuration = 5.minutes
+  override def interval: FiniteDuration = 24.hours
+
+  override val lockProvider: LockProvider = lockKeeper
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     applicationRepository.processAll(updateLastAccessDate(jobConfig.noLastAccessDateBefore, jobConfig.dryRun))
@@ -72,10 +70,9 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
   }
 }
 
-class ResetLastAccessDateJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-  override def lockId: String = "ResetLastAccessDate"
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
+class ResetLastAccessDateJobLockKeeper @Inject()(lockReleaseTtl: Duration = FiniteDuration(60, TimeUnit.MINUTES))
+                                                (mongoLockRepository: MongoLockRepository) extends LockProvider {
+  override def lockService: LockService = LockService(mongoLockRepository, lockId = "ResetLastAccessDate", ttl = lockReleaseTtl)
 }
 
 case class ResetLastAccessDateJobConfig(noLastAccessDateBefore: LocalDate, enabled: Boolean, dryRun: Boolean)

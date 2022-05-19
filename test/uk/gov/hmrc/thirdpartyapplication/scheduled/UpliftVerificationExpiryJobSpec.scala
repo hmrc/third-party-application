@@ -16,66 +16,55 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.joda.time.{DateTime, Duration}
+import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
-import play.modules.reactivemongo.ReactiveMongoComponent
-import uk.gov.hmrc.lock.LockRepository
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
+import uk.gov.hmrc.mongo.lock.MongoLockRepository
+import uk.gov.hmrc.mongo.test.MongoSupport
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.PENDING_REQUESTER_VERIFICATION
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import scala.concurrent.Future._
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 
 import java.time.LocalDateTime
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
+import scala.concurrent.Future
+import scala.concurrent.Future._
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.ExecutionContext.Implicits.global
 
-class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class UpliftVerificationExpiryJobSpec
+  extends AsyncHmrcSpec
+    with MongoSupport
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with NoMetricsGuiceOneAppPerSuite {
 
-  private val reactiveMongoComponent = new ReactiveMongoComponent {
-    override def mongoConnector: MongoConnector = mongoConnectorForTest
-  }
-
-  val FixedTimeNow: DateTime = HmrcTime.now
-  val expiryTimeInDays = 90
+  final val FixedTimeNow: DateTime = HmrcTime.now
+  final val expiryTimeInDays = 90
 
   trait Setup {
-    val mockApplicationRepository = mock[ApplicationRepository]
-    val mockStateHistoryRepository = mock[StateHistoryRepository]
-
+    val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
+    val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
+    val mongoLockRepository: MongoLockRepository = app.injector.instanceOf[MongoLockRepository]
     val lockKeeperSuccess: () => Boolean = () => true
 
-    val mockLockKeeper = new UpliftVerificationExpiryJobLockKeeper(reactiveMongoComponent) {
+    val mockLockKeeper = new UpliftVerificationExpiryJobLockKeeper(FiniteDuration(5, TimeUnit.MINUTES))(mongoLockRepository)
 
-      //noinspection ScalaStyle
-      override def lockId: String = null
-
-      //noinspection ScalaStyle
-      override def repo: LockRepository = null
-
-      override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
-
-      override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
+    /*{
+      def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
         if (lockKeeperSuccess()) body.map(value => Some(value))
         else Future.successful(None)
-    }
+    }*/
 
     val upliftVerificationValidity = FiniteDuration(expiryTimeInDays, TimeUnit.DAYS)
     val initialDelay = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
     val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
     val config = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
 
-
-    import scala.concurrent.ExecutionContext.Implicits.global
     val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, clock, config)
 
     def whenSaveCalledWork =
@@ -105,7 +94,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     }
 
     "not execute if the job is already running" in new Setup {
-      override val lockKeeperSuccess: () => Boolean = () => false
+//      override val lockKeeperSuccess: () => Boolean = () => false
 
       await(underTest.execute)
     }

@@ -20,7 +20,6 @@ import java.util.UUID
 import org.joda.time.DateTimeUtils
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
-import play.api.inject
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
@@ -94,11 +93,9 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   override protected def afterEach(): Unit = {
-    val ec = scala.concurrent.ExecutionContext.Implicits.global
-
     DateTimeUtils.setCurrentMillisSystem()
-    result(subscriptionRepository.removeAll()(ec), timeout)
-    result(applicationRepository.removeAll()(ec), timeout)
+    result(subscriptionRepository.collection.drop.toFuture(), timeout)
+    result(applicationRepository.collection.drop.toFuture(), timeout)
     super.afterEach()
   }
 
@@ -489,7 +486,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
 
       Then("The API subscription is returned")
       val actualApiSubscription = Json.parse(response.body).as[Set[ApiIdentifier]]
-      actualApiSubscription shouldBe Set(ApiIdentifier(context, version)) 
+      actualApiSubscription shouldBe Set(ApiIdentifier(context, version))
     }
 
     Scenario("Fetch All API Subscriptions") {
@@ -605,7 +602,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   private def emptyApplicationRepository() = {
-    ready(applicationRepository.removeAll(), timeout)
+    ready(applicationRepository.collection.drop().toFuture(), timeout)
   }
 
   private def createApplication(appName: String = applicationName1, access: Access = standardAccess): ApplicationResponse = {

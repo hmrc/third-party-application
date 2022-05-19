@@ -104,7 +104,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(application)
       ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
-      when(responsibleIndividualVerificationDao.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Unit))
+      when(responsibleIndividualVerificationDao.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(1))
 
       val result = await(underTest.accept(riVerificationId.value))
 

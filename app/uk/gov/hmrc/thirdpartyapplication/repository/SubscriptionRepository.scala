@@ -140,7 +140,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       .map(_.applications)
   }
 
-  def findAll = {
+  def findAll: Future[List[SubscriptionData]] = {
     collection.find()
       .toFuture()
       .map(x => x.toList)
