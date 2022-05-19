@@ -30,9 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcce
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-
-import scala.concurrent.{ExecutionContext, Future}
-import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
 
 
@@ -49,7 +46,8 @@ class ResponsibleIndividualVerificationService @Inject()(
       applicationId = applicationData.id,
       submissionId = submissionId,
       submissionInstance = submissionInstance,
-      applicationName = applicationData.name
+      applicationName = applicationData.name,
+      createdOn = LocalDateTime.now(clock)
     )
     responsibleIndividualVerificationDao.save(verification)
   }
@@ -93,7 +91,7 @@ class ResponsibleIndividualVerificationService @Inject()(
     appData.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now, verification.submissionId)
+        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), verification.submissionId)
         OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
       case _ => OptionT.fromOption[Future](None)

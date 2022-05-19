@@ -22,7 +22,6 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationJsonFormatters
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -31,12 +30,11 @@ import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 import java.time.LocalDateTime
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
 class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
     extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID]("responsibleIndividualVerification", mongo.mongoConnector.db,
-      ResponsibleIndividualVerificationJsonFormatters.responsibleIndividualVerificationFormat, ReactiveMongoFormats.objectIdFormats) {
-
-    import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+      ResponsibleIndividualVerification.format, ReactiveMongoFormats.objectIdFormats) {
 
   override def indexes = List(
     createSingleFieldAscendingIndex(

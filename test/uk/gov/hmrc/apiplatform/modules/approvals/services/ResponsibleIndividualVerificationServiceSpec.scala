@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -64,7 +65,8 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           application.id,
           Submission.Id.random,
           0,
-          appName)
+          appName,
+          LocalDateTime.now(clock))
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
   }
 

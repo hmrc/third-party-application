@@ -110,7 +110,7 @@ class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject()(val c
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationReminderJob")
       .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
 
-    val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("reminderInterval")
+    val reminderInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationReminderJob.reminderInterval")
       .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
 
     ResponsibleIndividualVerificationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, reminderInterval, jobConfig.enabled)
