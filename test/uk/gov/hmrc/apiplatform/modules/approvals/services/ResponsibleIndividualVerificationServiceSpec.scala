@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -26,8 +25,11 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -46,7 +48,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val appName = "my shiny app"
     val submissionInstanceIndex = 0
 
-    val responsibleIndividualVerificationDao = mock[ResponsibleIndividualVerificationDAO]
+    val responsibleIndividualVerificationRepo = mock[ResponsibleIndividualVerificationRepository]
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
                               responsibleIndividual,
@@ -60,7 +62,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(
-                              responsibleIndividualVerificationDao, 
+                              responsibleIndividualVerificationRepo,
                               ApplicationRepoMock.aMock, 
                               StateHistoryRepoMock.aMock, 
                               ApplicationServiceMock.aMock, 
@@ -81,7 +83,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
   "createNewVerification" should {
     "create a new verification object and save it to the database" in new Setup {
-      when(responsibleIndividualVerificationDao.save(*)).thenAnswer((details: ResponsibleIndividualVerification) => Future.successful(details))
+      when(responsibleIndividualVerificationRepo.save(*)).thenAnswer((details: ResponsibleIndividualVerification) => Future.successful(details))
 
       val result = await(underTest.createNewVerification(application, submissionId, submissionInstanceIndex))
 
@@ -90,13 +92,13 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       result.submissionInstance shouldBe submissionInstanceIndex
       result.applicationName shouldBe appName
 
-      verify(responsibleIndividualVerificationDao).save(result)
+      verify(responsibleIndividualVerificationRepo).save(result)
     }
   }
 
   "getVerification" should {
     "get a RI verification record" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
 
       val result = await(underTest.getVerification(riVerificationId.value))
 
@@ -104,18 +106,18 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       result.get.id shouldBe riVerificationId
       result.get.applicationName shouldBe appName
 
-      verify(responsibleIndividualVerificationDao).fetch(riVerificationId)
+      verify(responsibleIndividualVerificationRepo).fetch(riVerificationId)
     }
   }
 
   "accept" should {
     "return verification record with details and add ToU acceptance if application is found" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenAnswer(Future.successful(Some(riVerification)))
       ApplicationRepoMock.Fetch.thenReturn(application)
       ApplicationRepoMock.Save.thenReturn(application)
       ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
-      when(responsibleIndividualVerificationDao.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Unit))
+      when(responsibleIndividualVerificationRepo.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(HasSucceeded))
 
       val result = await(underTest.accept(riVerificationId.value))
 
@@ -135,11 +137,11 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       val savedAppData = ApplicationRepoMock.Save.verifyCalled()
       savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
 
-      verify(responsibleIndividualVerificationDao).fetch(riVerificationId)
+      verify(responsibleIndividualVerificationRepo).fetch(riVerificationId)
     }
 
     "return correct error message if application is not found" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
       ApplicationRepoMock.Fetch.thenReturnNone()
 
       val result = await(underTest.accept(riVerificationId.value))
@@ -148,7 +150,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return correct error message if verification record is not found" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
 
       val result = await(underTest.accept(riVerificationId.value))
 
@@ -158,11 +160,11 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
   "decline" should {
     "return verification record if verification record is found" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
       ApplicationRepoMock.Fetch.thenReturn(application)
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
-      when(responsibleIndividualVerificationDao.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(Some(riVerification)))
+      when(responsibleIndividualVerificationRepo.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(HasSucceeded))
 
       val result = await(underTest.decline(riVerificationId.value))
 
@@ -170,7 +172,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
 
     "return correct error message if verification record is not found" in new Setup {
-      when(responsibleIndividualVerificationDao.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
+      when(responsibleIndividualVerificationRepo.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(None))
 
       val result = await(underTest.decline(riVerificationId.value))
 

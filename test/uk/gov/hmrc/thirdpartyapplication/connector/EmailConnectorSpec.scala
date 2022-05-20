@@ -272,7 +272,22 @@ class EmailConnectorSpec extends ConnectorSpec {
       emailWillReturn(expectedRequest)
 
       await(connector.sendVerifyResponsibleIndividualReminderToAdmin(responsibleIndividualName, adminEmail, appName, adminName))
+    }
 
+    "send responsible individual did not verify" in new Setup {
+      val responsibleIndividualName = "Bob Example"
+      val adminEmail = "admin@example.com"
+      val adminName = "John Admin"
+      val appName = "my app"
+      val expectedParameters: Map[String, String] = Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> appName,
+        "requesterName" -> adminName
+      )
+      val expectedRequest: SendEmailRequest = SendEmailRequest(Set(adminEmail), "apiResponsibleIndividualDidNotVerify", expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendResponsibleIndividualDidNotVerify(responsibleIndividualName, adminEmail, appName, adminName))
     }
   }
 }

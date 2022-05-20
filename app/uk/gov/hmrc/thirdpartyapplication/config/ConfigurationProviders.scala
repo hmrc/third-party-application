@@ -47,6 +47,7 @@ class ConfigurationModule extends Module {
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
       bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
+      bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
       bind[AuthConnector.Config].toProvider[AuthConfigProvider],
@@ -114,6 +115,22 @@ class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject()(val c
       .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
 
     ResponsibleIndividualVerificationReminderJobConfig(jobConfig.initialDelay, jobConfig.interval, reminderInterval, jobConfig.enabled)
+  }
+}
+
+@Singleton
+class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject()(val configuration: Configuration)
+  extends ServicesConfig(configuration)
+    with Provider[ResponsibleIndividualVerificationRemovalJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualVerificationRemovalJob")
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualVerificationRemovalJob.removalInterval")
+      .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
+
+    ResponsibleIndividualVerificationRemovalJobConfig(jobConfig.initialDelay, jobConfig.interval, removalInterval, jobConfig.enabled)
   }
 }
 
