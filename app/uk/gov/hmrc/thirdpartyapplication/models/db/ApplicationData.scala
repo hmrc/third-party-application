@@ -126,7 +126,7 @@ object ApplicationData {
     (JsPath \ "state").read[ApplicationState] and
     (JsPath \ "access").read[Access] and
     (JsPath \ "createdOn").read[LocalDateTime] and
-    (JsPath \\ "lastAccess").readNullable[LocalDateTime] and
+    (JsPath \ "lastAccess").readNullable[LocalDateTime] and
     ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig) ) and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and
