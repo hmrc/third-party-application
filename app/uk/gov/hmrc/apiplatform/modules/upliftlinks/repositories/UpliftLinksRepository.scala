@@ -31,8 +31,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class UpliftLinksRepository @Inject() (mongo: MongoComponent)
-                                      (implicit val mat: Materializer, val ec: ExecutionContext
-) extends PlayMongoRepository[UpliftLink](
+                                      (implicit val ec: ExecutionContext)
+  extends PlayMongoRepository[UpliftLink](
       collectionName = "upliftlinks",
       mongoComponent = mongo,
       domainFormat = UpliftLinkJsonFormatter.jsonFormatUpliftLink,

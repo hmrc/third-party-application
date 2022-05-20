@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import akka.stream.Materializer
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
+import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
@@ -27,11 +28,11 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
 
-import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
+import java.time.{LocalDate, LocalDateTime}
+import java.util.concurrent.TimeUnit.MINUTES
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 class ResetLastAccessDateJobSpec
   extends AsyncHmrcSpec
@@ -43,36 +44,34 @@ class ResetLastAccessDateJobSpec
     with NoMetricsGuiceOneAppPerSuite {
 
   implicit val m : Materializer = app.materializer
-
-  implicit val dateFormatters = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
   trait Setup {
     val lockKeeperSuccess: () => Boolean = () => true
-    val mongoLockRepository = app.injector.instanceOf[MongoLockRepository]
-    val mockLockKeeper = new ResetLastAccessDateJobLockKeeper(FiniteDuration(5, TimeUnit.MINUTES))(mongoLockRepository)
-    /* {
-      override def tryLock[T](body: => Future[T])(implicit ec : ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Some(value))
-        else Future.successful(None)
-    }*/
+    val mongoLockRepository: MongoLockRepository = app.injector.instanceOf[MongoLockRepository]
+    val mockResetLastAccessDateJobLockService: ResetLastAccessDateJobLockService =
+      new ResetLastAccessDateJobLockService(FiniteDuration(1, MINUTES), mongoLockRepository) {
+        override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
+          if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
+      }
   }
 
   val applicationRepository = new ApplicationRepository(mongoComponent)
 
   trait DryRunSetup extends Setup {
-    val dateToSet = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
-    val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
-    val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
+    val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
+    val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
+    val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-    val dateToSet = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
+    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
 
-    val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
-    val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
+    val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
+    val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
-/*
-  override def beforeEach() {
+
+/*  override def beforeEach() {
     applicationRepository.drop
   }
 
@@ -82,7 +81,6 @@ class ResetLastAccessDateJobSpec
 
   "ResetLastAccessDateJob" should {
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
-
       val bulkInsert = List(
         anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay()),
         anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay()),

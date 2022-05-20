@@ -17,6 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
+import akka.stream.scaladsl.Source
+import com.mongodb.CursorType
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
@@ -372,13 +374,15 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
     /*import reactivemongo.akkastream.{State, cursorProducer}
-
     val sourceOfApps: Source[ApplicationData, Future[State]] =
-      collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
-
+//      collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
     sourceOfApps.runWith(Sink.foreach(function)).map(_ => ())*/
-    Future {()}
-  }
+
+    collection.find()
+      .map(function)
+      .toFuture()
+      .map(_ => ())
+ }
 
   def delete(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteOne(equal("id", Codecs.toBson(id)))
@@ -399,13 +403,11 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   }
 
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
-
     /*val pipeline = Seq(
       lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
       unwind("subscribedApis"),
       group("$id", Accumulators.sum("id", "$id"), Accumulators.sum("name", "$name"))
     )
-
 
     collection.aggregateWith[ApplicationWithSubscriptionCount]()(_ => {
       import collection.BatchCommands.AggregationFramework._

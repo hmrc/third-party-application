@@ -29,7 +29,6 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
   trait Setup {
     val mockSubscriptionsRepository: SubscriptionRepository = mock[SubscriptionRepository]
-
     val metricUnderTest: ApisWithSubscriptionCount = new ApisWithSubscriptionCount(mockSubscriptionsRepository)
   }
 

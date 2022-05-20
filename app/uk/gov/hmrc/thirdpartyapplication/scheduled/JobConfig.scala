@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, ScheduledJob}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.lock.LockService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.FiniteDuration
@@ -28,14 +29,14 @@ case class JobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, ena
 
 trait ScheduledMongoJob extends ExclusiveScheduledJob with ScheduledJobState with ApplicationLogger {
 
-  val lockProvider: LockProvider
+  val lockService: LockService
   def isEnabled: Boolean
 
   def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful]
 
   override def executeInMutex(implicit ec: ExecutionContext): Future[Result] = {
 
-    lockProvider.lockService.withLock {
+    lockService.withLock {
       runJob
     } map {
       case Some(_) => Result(s"$name Job ran successfully.")

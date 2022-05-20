@@ -29,12 +29,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneA
 import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
 import java.time.LocalDateTime
-import java.util.concurrent.TimeUnit
-import java.util.concurrent.TimeUnit.{HOURS, SECONDS}
-import scala.concurrent.Future
-import scala.concurrent.Future._
-import scala.concurrent.duration.FiniteDuration
+import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.successful
+import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.{ExecutionContext, Future}
 
 class UpliftVerificationExpiryJobSpec
   extends AsyncHmrcSpec
@@ -45,6 +44,8 @@ class UpliftVerificationExpiryJobSpec
 
   final val FixedTimeNow: DateTime = HmrcTime.now
   final val expiryTimeInDays = 90
+  final val sixty = 60
+  final val twentyFour = 24
 
   trait Setup {
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
@@ -52,36 +53,31 @@ class UpliftVerificationExpiryJobSpec
     val mongoLockRepository: MongoLockRepository = app.injector.instanceOf[MongoLockRepository]
     val lockKeeperSuccess: () => Boolean = () => true
 
-    val mockLockKeeper = new UpliftVerificationExpiryJobLockKeeper(FiniteDuration(5, TimeUnit.MINUTES))(mongoLockRepository)
+    val mockUpliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService =
+      new UpliftVerificationExpiryJobLockService(FiniteDuration(sixty, SECONDS), mongoLockRepository) {
+        override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
+        if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
+    }
 
-    /*{
-      def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Some(value))
-        else Future.successful(None)
-    }*/
-
-    val upliftVerificationValidity = FiniteDuration(expiryTimeInDays, TimeUnit.DAYS)
-    val initialDelay = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
-    val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
-    val config = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
-
-    val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, clock, config)
-
-    def whenSaveCalledWork =
-      when(mockApplicationRepository.save(any[ApplicationData])).thenAnswer((a: ApplicationData) => successful(a))
+    val upliftVerificationValidity: FiniteDuration = FiniteDuration(expiryTimeInDays, DAYS)
+    val initialDelay: FiniteDuration = FiniteDuration(sixty, SECONDS)
+    val interval: FiniteDuration = FiniteDuration(twentyFour, HOURS)
+    val config: UpliftVerificationExpiryJobConfig = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
+    val underTest =
+      new UpliftVerificationExpiryJob(mockUpliftVerificationExpiryJobLockService, mockApplicationRepository, mockStateHistoryRepository, clock, config)
   }
 
-  import scala.concurrent.ExecutionContext.Implicits.global
-
   "uplift verification expiry job execution" should {
+
     "expire all application uplifts having expiry date before the expiry time" in new Setup {
-      val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
-        .thenReturn(Future.successful(List(app1, app2)))
+        .thenReturn(successful(List(app1, app2)))
 
-      whenSaveCalledWork
+      when(mockApplicationRepository.save(*[ApplicationData]))
+        .thenAnswer((a: ApplicationData) => successful(a))
 
       await(underTest.execute)
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
@@ -94,7 +90,7 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "not execute if the job is already running" in new Setup {
-//      override val lockKeeperSuccess: () => Boolean = () => false
+      override val lockKeeperSuccess: () => Boolean = () => false
 
       await(underTest.execute)
     }
@@ -103,7 +99,7 @@ class UpliftVerificationExpiryJobSpec
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime])).thenReturn(
         Future.failed(new RuntimeException("A failure on executing fetchAllByStatusDetails db query"))
       )
-      val result = await(underTest.execute)
+      val result: underTest.Result = await(underTest.execute)
 
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing fetchAllByStatusDetails db query'." +
@@ -111,8 +107,8 @@ class UpliftVerificationExpiryJobSpec
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
-      val app1 = anApplicationData(ApplicationId.random, ClientId("aaa"))
-      val app2 = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app1: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
+      val app2: ApplicationData = anApplicationData(ApplicationId.random, ClientId("aaa"))
 
       when(mockApplicationRepository.fetchAllByStatusDetails(refEq(PENDING_REQUESTER_VERIFICATION), any[LocalDateTime]))
         .thenReturn(Future.successful(List(app1, app2)))
@@ -120,14 +116,13 @@ class UpliftVerificationExpiryJobSpec
         Future.failed(new RuntimeException("A failure on executing save db query"))
       )
 
-      val result = await(underTest.execute)
+      val result: underTest.Result = await(underTest.execute)
 
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
           " The next execution of the job will do retry."
     }
-
   }
 
   def anApplicationData(id: ApplicationId, prodClientId: ClientId, state: ApplicationState = testingState()): ApplicationData = {

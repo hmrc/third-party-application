@@ -28,13 +28,11 @@ import scala.concurrent.{ExecutionContext, Future}
 class UpliftLinkService @Inject()(repo: UpliftLinksRepository)
                                  (implicit ec: ExecutionContext) {
 
-  def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
-    val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
+  def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] =
+    repo.insert(UpliftLink(sandboxApplicationId, productionApplicationId))
 
-    repo.insert(upliftLink)
-  }
 
-  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] = {
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] =
     OptionT(repo.find(productionAppId))
-  }
+
 }

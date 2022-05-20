@@ -30,8 +30,8 @@ trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     def aMock: UpliftLinksRepository
 
     object Insert {
-      def thenReturn(): ScalaOngoingStubbing[Future[UpliftLink]] =
-        when(aMock.insert(*)).thenReturn(mock[Future[UpliftLink]])
+      def thenReturn(upliftLink : UpliftLink): ScalaOngoingStubbing[Future[UpliftLink]] =
+        when(aMock.insert(*)).thenReturn(Future.successful(upliftLink))
 
       def verifyCalled(): Future[UpliftLink] = verify(aMock, atLeast(1)).insert(*[UpliftLink])
 

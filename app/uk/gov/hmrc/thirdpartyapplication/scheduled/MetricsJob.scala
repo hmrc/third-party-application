@@ -19,14 +19,14 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.metrix.MetricOrchestrator
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.mongo.lock.{LockService, MongoLockRepository}
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService, MongoLockRepository}
 
 import java.util.concurrent.TimeUnit
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration, HOURS}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
+class MetricsJob @Inject()(metricsJobLockService: MetricsJobLockService,
                            metricOrchestrator: MetricOrchestrator,
                            jobConfig: MetricsJobConfig)
                           (implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
@@ -35,7 +35,7 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
   override def interval: FiniteDuration = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean = jobConfig.enabled
-  override val lockProvider: LockProvider = lockKeeper
+  override val lockService: LockService = metricsJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     logger.info(s"Running Metrics Collection Process")
@@ -52,12 +52,14 @@ class MetricsJob @Inject()(val lockKeeper: MetricsJobLockKeeper,
         }
       }
   }
-
-
 }
 
-class MetricsJobLockKeeper @Inject()(mongoLockRepository: MongoLockRepository) extends LockProvider {
-  override def lockService: LockService = LockService(mongoLockRepository, "MetricsJob", FiniteDuration(2, TimeUnit.HOURS))
+class MetricsJobLockService @Inject()(holdLockFor: FiniteDuration = FiniteDuration(2, TimeUnit.HOURS),
+                                     mongoLockRepository: MongoLockRepository)
+  extends LockService {
+  override val lockId: String = "MetricsJob"
+  override val lockRepository: LockRepository = mongoLockRepository
+  override val ttl: Duration = holdLockFor
 }
 
 case class MetricsJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean)

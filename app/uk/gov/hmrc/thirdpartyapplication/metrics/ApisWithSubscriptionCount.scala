@@ -52,16 +52,14 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
   }
 
   def numberOfSubscriptionsByApi(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-
     def apiName(apiIdentifier: ApiIdentifier): String =
       s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
 
-    /*subscriptionRepository.findAll()
+    subscriptionRepository.findAll
       .map(subscriptions =>
         subscriptions
           .map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size)
           .toMap
-      )*/
-    Future { Map() }
+      )
   }
 }

@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import org.apache.commons.codec.binary.Base64
+import play.api.libs.json.{Format, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 
-import java.security.MessageDigest
-import org.apache.commons.codec.binary.Base64
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
-
 import java.nio.charset.StandardCharsets
+import java.security.MessageDigest
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
@@ -96,10 +96,10 @@ case class ApplicationState(
 
 object ApplicationState {
   import play.api.libs.json.Json
-  implicit val dateTimeFormats = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val formatApplicationState = Json.format[ApplicationState]
+  implicit val dateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
 
-  val testing = ApplicationState(State.TESTING, None)
+  val testing: ApplicationState = ApplicationState(State.TESTING, None)
 
   def pendingGatekeeperApproval(requestedBy: String) =
     ApplicationState(State.PENDING_GATEKEEPER_APPROVAL, Some(requestedBy))
