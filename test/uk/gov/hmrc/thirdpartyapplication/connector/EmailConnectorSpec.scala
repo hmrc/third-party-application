@@ -288,7 +288,6 @@ class EmailConnectorSpec extends ConnectorSpec {
       emailWillReturn(expectedRequest)
 
       await(connector.sendResponsibleIndividualDidNotVerify(responsibleIndividualName, adminEmail, appName, adminName))
-
     }
   }
 }

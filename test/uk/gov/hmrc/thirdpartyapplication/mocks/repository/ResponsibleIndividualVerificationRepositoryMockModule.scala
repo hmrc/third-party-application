@@ -45,11 +45,9 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
       def thenReturnSuccess() = when(aMock.updateState(*[ResponsibleIndividualVerificationId], *[ResponsibleIndividualVerificationState])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId, state: ResponsibleIndividualVerificationState) = verify(aMock).updateState(id, state)
     }
-
   }
 
   object ResponsibleIndividualVerificationRepositoryMock extends BaseResponsibleIndividualVerificationRepositoryMock {
-
     val aMock = mock[ResponsibleIndividualVerificationRepository]
   }
 }

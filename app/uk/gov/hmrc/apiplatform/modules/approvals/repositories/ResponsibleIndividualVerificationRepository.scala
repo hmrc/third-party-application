@@ -59,7 +59,7 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
   }
 
   def fetch(id: ResponsibleIndividualVerificationId): Future[Option[ResponsibleIndividualVerification]] = {
-    find( "id" -> id.value).map(_.headOption)
+    find("id" -> id.value).map(_.headOption)
   }
 
   def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
