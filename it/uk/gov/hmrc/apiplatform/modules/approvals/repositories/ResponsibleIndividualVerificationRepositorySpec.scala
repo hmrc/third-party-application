@@ -56,8 +56,11 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
     }
   }
 
-  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now) = {
-    val doc = ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, UUID.randomUUID().toString, createdOn, state)
+  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now) =
+    ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, UUID.randomUUID().toString, createdOn, state)
+
+  def buildAndSaveDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now) = {
+    val doc = buildDoc(state, createdOn)
     await(repo.insert(doc))
     doc
   }
@@ -66,12 +69,40 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
   val UPDATE_THRESHOLD = 5
   val FEW_DAYS_AGO = 1
 
+  "save" should {
+    "save document to the database" in {
+      val doc = buildDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      await(repo.save(doc))
+
+      val allDocs = await(repo.findAll())
+      allDocs shouldEqual List(doc)
+    }
+  }
+
+  "fetch" should {
+    "retrieve a document by id" in {
+      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val fetchedDoc = await(repo.fetch(savedDoc.id))
+
+      Some(savedDoc) shouldEqual fetchedDoc
+    }
+  }
+
+  "delete" should {
+    "remove a document by id" in {
+      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      await(repo.delete(savedDoc.id))
+
+      await(repo.findAll()) shouldBe List()
+    }
+  }
+
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildDoc(INITIAL, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
-      buildDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
-      buildDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val initialWithOldDate = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
+      buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
 
       val results = await(repo.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
 
@@ -81,8 +112,8 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
 
   "updateState" should {
     "change state correctly" in {
-      val stateInitial = buildDoc(INITIAL)
-      val stateReminderSent = buildDoc(REMINDERS_SENT)
+      val stateInitial = buildAndSaveDoc(INITIAL)
+      val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
 
       await(repo.updateState(stateInitial.id, REMINDERS_SENT))
       await(repo.updateState(stateReminderSent.id, REMINDERS_SENT))

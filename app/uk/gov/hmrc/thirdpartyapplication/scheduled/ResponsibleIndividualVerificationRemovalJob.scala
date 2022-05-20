@@ -69,12 +69,12 @@ class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: Resp
 
   private def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
     (for {
-      app <- applicationService.fetch(verificationDueForRemoval.applicationId)
-      ri  <- OptionT.fromOption[Future](getResponsibleIndividual(app))
-      requesterName <- OptionT.fromOption[Future](getRequesterName(app))
+      app            <- applicationService.fetch(verificationDueForRemoval.applicationId)
+      ri             <- OptionT.fromOption[Future](getResponsibleIndividual(app))
+      requesterName  <- OptionT.fromOption[Future](getRequesterName(app))
       requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
-      _   <- OptionT.liftF(emailConnector.sendResponsibleIndividualDidNotVerify(ri.fullName.value, requesterEmail, app.name, requesterName))
-      _   <- OptionT.liftF(repository.delete(verificationDueForRemoval.id))
+      _              <- OptionT.liftF(emailConnector.sendResponsibleIndividualDidNotVerify(ri.fullName.value, requesterEmail, app.name, requesterName))
+      _              <- OptionT.liftF(repository.delete(verificationDueForRemoval.id))
     } yield HasSucceeded).value
   }
 
