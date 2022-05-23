@@ -17,16 +17,14 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
-import akka.stream.scaladsl.Source
-import com.mongodb.CursorType
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
-import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.bson.{BsonValue, Document}
 import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
 import org.mongodb.scala.model.Indexes.ascending
-import org.mongodb.scala.model.Projections.include
+import org.mongodb.scala.model.Projections.{excludeId, fields, include}
 import org.mongodb.scala.model._
 import play.api.libs.json.Json._
 import play.api.libs.json._
@@ -315,19 +313,19 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       // Last Use Date
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
       case lastUsedAfter: LastUseAfterDate => lastUsedAfter.toMongoMatch
-      case _  => Aggregates.count // Only here to complete the match
+      case _  => Document() // Only here to complete the match
     }
   }
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
-    case NameAscending => List(Sorts.ascending("name"))
-    case NameDescending => List(Sorts.descending("name"))
-    case SubmittedAscending => List(Sorts.ascending("createdOn"))
-    case SubmittedDescending => List(Sorts.descending("createdOn"))
-    case LastUseDateAscending => List(Sorts.ascending("lastAccess"))
-    case LastUseDateDescending => List(Sorts.descending("lastAccess"))
-    case NoSorting => List()
-    case _ => List(Sorts.ascending("name"))
+    case NameAscending => List(Aggregates.sort(Sorts.ascending("name")))
+    case NameDescending => List(Aggregates.sort(Sorts.descending("name")))
+    case SubmittedAscending => List(Aggregates.sort(Sorts.ascending("createdOn")))
+    case SubmittedDescending => List(Aggregates.sort(Sorts.descending("createdOn")))
+    case LastUseDateAscending => List(Aggregates.sort(Sorts.ascending("lastAccess")))
+    case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
+    case NoSorting => List(Aggregates.sort(Document()))
+    case _ => List(Aggregates.sort(Sorts.ascending("name")))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
@@ -336,28 +334,35 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
   private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean) = {
     lazy val subscriptionsLookup: Bson = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
-    val applicationProjection = project(
-      include(
+    val applicationProjection: Bson = project(fields(
+        excludeId(),
+        include(
           "id", "name", "normalisedName", "collaborators", "description", "wso2ApplicationName",
           "tokens", "state", "access", "createdOn", "lastAccess", "rateLimitTier", "environment"
+        )
       )
     )
 
     val totalCount = Aggregates.count("total")
     val subscriptionsLookupFilter = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
     val filteredPipelineCount = subscriptionsLookupFilter ++ filters :+ totalCount
-    val paginatedFilteredAndSortedPipeline = subscriptionsLookupFilter ++ filters ++ sort ++ pagination :+ applicationProjection
+    val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupFilter ++ filters ++ sort ++ pagination :+ applicationProjection
 
-    collection.aggregate[BsonValue](
-      Seq(
-        facet(
-          model.Facet("applications", filteredPipelineCount: _*),
-          model.Facet("totals", totalCount),
-          model.Facet("matching", paginatedFilteredAndSortedPipeline: _*),
-        )
+    val facets: Seq[Bson] = Seq(
+      facet(
+        model.Facet("applications", paginatedFilteredAndSortedPipeline: _*),
+        model.Facet("totals", totalCount),
+        model.Facet("matching", filteredPipelineCount: _*),
       )
-    ).head()
-     .map(x => x.asInstanceOf[PaginatedApplicationData])
+    )
+
+    collection.aggregate[BsonValue](facets)
+      .head()
+     .map(x => {
+       println(s"###### RESULT #######\n ${x.toString}")
+       x.asInstanceOf[PaginatedApplicationData]
+      }
+     )
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =
@@ -370,14 +375,13 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   def fetchAllWithNoSubscriptions(): Future[List[ApplicationData]] =
     searchApplications(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
 
-  def fetchAll(): Future[List[ApplicationData]] = searchApplications(new ApplicationSearch()).map(_.applications)
+  def fetchAll(): Future[List[ApplicationData]] = {
+    val result = searchApplications(new ApplicationSearch())
+
+    result.map(_.applications)
+  }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    /*import reactivemongo.akkastream.{State, cursorProducer}
-    val sourceOfApps: Source[ApplicationData, Future[State]] =
-//      collection.find(Json.obj(), Option.empty[ApplicationData]).cursor[ApplicationData]().documentSource()
-    sourceOfApps.runWith(Sink.foreach(function)).map(_ => ())*/
-
     collection.find()
       .map(function)
       .toFuture()

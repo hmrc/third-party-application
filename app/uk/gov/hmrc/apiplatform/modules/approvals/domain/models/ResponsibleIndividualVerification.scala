@@ -18,13 +18,13 @@ package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.LocalDateTime
 
 object ResponsibleIndividualVerification {
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
   implicit val format = Json.format[ResponsibleIndividualVerification]
 }
 

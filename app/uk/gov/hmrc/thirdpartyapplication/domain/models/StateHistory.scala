@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.LocalDateTime
 
@@ -33,6 +33,6 @@ object StateHistory {
   
   implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isBefore _)
 
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
   implicit val format = Json.format[StateHistory]
 }

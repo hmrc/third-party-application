@@ -18,13 +18,13 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.LocalDateTime
 
 case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id)
 
 object TermsOfUseAcceptance {
-  implicit val dateformat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
   implicit val format = Json.format[TermsOfUseAcceptance]
 }

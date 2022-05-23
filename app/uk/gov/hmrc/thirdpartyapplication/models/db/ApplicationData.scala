@@ -17,15 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 
+import com.typesafe.config.ConfigFactory
+import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
-import com.typesafe.config.ConfigFactory
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.{LocalDateTime, ZoneOffset}
@@ -71,7 +71,8 @@ case class ApplicationData(
 }
 
 object ApplicationData {
-  val grantLengthConfig: Int = ConfigFactory.load().getInt("grantLengthInDays")
+//  val grantLengthConfig: Int = Some(ConfigFactory.load().getInt("grantLengthInDays")).getOrElse(547)
+  val grantLengthConfig: Int = 547
 
   def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token, createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): ApplicationData = {
     import createApplicationRequest._
@@ -112,7 +113,7 @@ object ApplicationData {
 
   import play.api.libs.functional.syntax._
   import play.api.libs.json._
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[LocalDateTime] = MongoJavaTimeFormats.localDateTimeFormat
 
   val applicationDataReads: Reads[ApplicationData] = (
     (JsPath \ "id").read[ApplicationId] and
@@ -134,6 +135,6 @@ object ApplicationData {
     ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
-  implicit val format: OFormat[ApplicationData] = OFormat(applicationDataReads, Json.writes[ApplicationData])
+  implicit val format: Format[ApplicationData] = Format(applicationDataReads, Json.writes[ApplicationData])
 
 }

@@ -18,21 +18,26 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import play.api.libs.json.{Format, Reads, Writes, __}
 
-import java.time.{Instant, LocalDateTime, ZoneOffset}
+import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
 
 
 trait MongoJavaTimeFormats {
   outer =>
 
-
   final val localDateTimeReads: Reads[LocalDateTime] =
-    Reads.at[Long](__ \ "$date" )
+    /*Reads.at[Long](__ \ "$date" )
       .map(dateTime =>
-        Instant.ofEpochMilli(dateTime).atZone(ZoneOffset.UTC).toLocalDateTime)
+        Instant.ofEpochMilli(dateTime).atZone(ZoneOffset.UTC).toLocalDateTime)*/
+
+    Reads.at[String](__ \ "$date" )
+      .map(dateTime =>ZonedDateTime.parse(dateTime).toLocalDateTime.atZone(ZoneOffset.UTC).toLocalDateTime)
 
   final val localDateTimeWrites: Writes[LocalDateTime] =
-    Writes.at[Long](__ \ "$date" )
-      .contramap(x => x.toInstant(ZoneOffset.UTC).toEpochMilli)
+    /*Writes.at[Long](__ \ "$date" )
+      .contramap(x => x.toInstant(ZoneOffset.UTC).toEpochMilli)*/
+
+    Writes.at[String](__ \ "$date" )
+      .contramap(dateTime => dateTime.atZone(ZoneOffset.UTC).toString)
 
   final val localDateTimeFormat: Format[LocalDateTime] =
     Format(localDateTimeReads, localDateTimeWrites)

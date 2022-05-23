@@ -18,16 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.model.Filters.{and, exists, gte, lte, or}
-import org.mongodb.scala.model.{Aggregates, Filters}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import play.api.libs.json.Json
+import org.mongodb.scala.model.Aggregates
+import org.mongodb.scala.model.Filters._
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 
 case class ApplicationSearch(pageNumber: Int = 1,
                              pageSize: Int = Int.MaxValue,

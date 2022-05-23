@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import java.time.{LocalDateTime, ZoneOffset}
 import java.{util => ju}
@@ -32,6 +32,6 @@ case class ClientSecret(
 object ClientSecret {
   import play.api.libs.json.Json
 
-  implicit val dateformat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
   implicit val format = Json.format[ClientSecret]
 }

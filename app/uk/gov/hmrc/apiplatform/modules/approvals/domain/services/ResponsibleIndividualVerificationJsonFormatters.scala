@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 
 trait ResponsibleIndividualVerificationJsonFormatters {
 

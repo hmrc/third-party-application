@@ -91,6 +91,7 @@ class ResetLastAccessDateJobSpec
       await(underTest.runJob)
 
       val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
+
       retrievedApplications.size should be (3)
       retrievedApplications.foreach(app => {
         app.lastAccess.isDefined should be (true)
