@@ -35,17 +35,24 @@ import java.time.{Clock, LocalDateTime}
 import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 import cats.implicits._
+import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+
 import java.time.temporal.ChronoUnit.SECONDS
 
 
 @Singleton
 class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: ResponsibleIndividualVerificationRemovalJobLockKeeper,
-                                                             repository: ResponsibleIndividualVerificationRepository,
-                                                             emailConnector: EmailConnector,
-                                                             applicationService: ApplicationService,
-                                                             val clock: Clock,
-                                                             jobConfig: ResponsibleIndividualVerificationRemovalJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+                                                            repository: ResponsibleIndividualVerificationRepository,
+                                                            submissionsService: SubmissionsService,
+                                                            emailConnector: EmailConnector,
+                                                            applicationRepository: ApplicationRepository,
+                                                            declineApprovalsService: DeclineApprovalsService,
+                                                            val clock: Clock,
+                                                            jobConfig: ResponsibleIndividualVerificationRemovalJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
 
   override def name: String = "ResponsibleIndividualVerificationRemovalJob"
   override def interval: FiniteDuration = jobConfig.interval
@@ -68,27 +75,30 @@ class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: Resp
   }
 
   private def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
+    val declineReason = "The Responsible Individual has not accepted the Terms of Use."
     (for {
-      app            <- applicationService.fetch(verificationDueForRemoval.applicationId)
+      app            <- OptionT(applicationRepository.fetch(verificationDueForRemoval.applicationId))
       ri             <- OptionT.fromOption[Future](getResponsibleIndividual(app))
       requesterName  <- OptionT.fromOption[Future](getRequesterName(app))
       requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
+      extSubmission  <- OptionT(submissionsService.fetch(verificationDueForRemoval.submissionId))
+      _              <- OptionT.liftF(declineApprovalsService.decline(app, extSubmission.submission, ri.emailAddress.value, declineReason))
       _              <- OptionT.liftF(emailConnector.sendResponsibleIndividualDidNotVerify(ri.fullName.value, requesterEmail, app.name, requesterName))
       _              <- OptionT.liftF(repository.delete(verificationDueForRemoval.id))
     } yield HasSucceeded).value
   }
 
-  private def getResponsibleIndividual(app: ApplicationResponse): Option[ResponsibleIndividual] = {
+  private def getResponsibleIndividual(app: ApplicationData): Option[ResponsibleIndividual] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
       case _ => None
     }
   }
 
-  private def getRequesterName(app: ApplicationResponse): Option[String] = {
+  private def getRequesterName(app: ApplicationData): Option[String] = {
     app.state.requestedByName
   }
-  private def getRequesterEmail(app: ApplicationResponse): Option[String] = {
+  private def getRequesterEmail(app: ApplicationData): Option[String] = {
     app.state.requestedByEmailAddress
   }
 }

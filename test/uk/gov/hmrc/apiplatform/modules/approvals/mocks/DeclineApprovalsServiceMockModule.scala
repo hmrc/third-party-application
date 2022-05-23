@@ -18,8 +18,11 @@ package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
+
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
@@ -28,6 +31,8 @@ trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
 
     object Decline {
       def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*, *, *, *)(*)).thenReturn(successful(result))
+      def verifyCalledWith(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String) =
+        verify(aMock).decline(eqTo(originalApp), eqTo(submission), eqTo(gatekeeperUserName), eqTo(reasons))(*)
     }
   }
   

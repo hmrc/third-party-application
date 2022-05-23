@@ -39,6 +39,7 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     object Delete {
       def thenReturnSuccess() = when(aMock.delete(*[ResponsibleIndividualVerificationId])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId) = verify(aMock).delete(id)
+      def verifyNeverCalledWith(id: ResponsibleIndividualVerificationId) = verify(aMock, never).delete(id)
     }
 
     object UpdateState {
