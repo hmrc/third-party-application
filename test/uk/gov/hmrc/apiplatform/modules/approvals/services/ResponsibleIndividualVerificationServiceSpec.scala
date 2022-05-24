@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup
@@ -43,6 +44,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     with ApplicationServiceMockModule
     with DeclineApprovalsServiceMockModule
     with SubmissionsServiceMockModule
+    with EmailConnectorMockModule
     with FixedClock {
 
     val appName = "my shiny app"
@@ -67,6 +69,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               StateHistoryRepoMock.aMock, 
                               ApplicationServiceMock.aMock, 
                               SubmissionsServiceMock.aMock,
+                              EmailConnectorMock.aMock,
                               DeclineApprovalsServiceMock.aMock,
                               clock)
 
@@ -164,6 +167,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Fetch.thenReturn(application)
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
+      EmailConnectorMock.SendResponsibleIndividualDeclined.thenReturnSuccess()
       when(responsibleIndividualVerificationRepo.delete(*[ResponsibleIndividualVerificationId])).thenReturn(Future.successful(HasSucceeded))
 
       val result = await(underTest.decline(riVerificationId.value))
