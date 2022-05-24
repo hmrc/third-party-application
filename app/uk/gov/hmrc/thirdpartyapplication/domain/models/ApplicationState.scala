@@ -21,7 +21,6 @@ import play.api.libs.json.{Format, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
@@ -97,7 +96,7 @@ case class ApplicationState(
 
 object ApplicationState {
   import play.api.libs.json.Json
-  implicit val dateTimeFormats: Format[LocalDateTime] = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
   implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
 
   val testing: ApplicationState = ApplicationState(State.TESTING, None)

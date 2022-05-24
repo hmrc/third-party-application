@@ -16,60 +16,58 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
-import com.github.nscala_time.time.StaticDateTimeZone.UTC
-import play.api.libs.json.{Format, Json}
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-import java.time.{Instant, LocalDateTime, ZoneOffset, ZonedDateTime}
-
-object Example  {
+object Example {
   def main(args: Array[String]): Unit = {
 
-  import MongoJavatimeFormats.Implicits
-
-    val json = """{
-                 |      "id": "b16e9e3c-2aab-43c2-a484-9ea1b46015c2",
-                 |      "name": "myApp-b16e9e3c-2aab-43c2-a484-9ea1b46015c2",
-                 |      "normalisedName": "myapp-b16e9e3c-2aab-43c2-a484-9ea1b46015c2",
-                 |      "collaborators": [
-                 |        {
-                 |          "emailAddress": "user@example.com",
-                 |          "role": "ADMINISTRATOR",
-                 |          "userId": "ff14699d-5cc5-4c22-8b99-633e4cad2f9a"
-                 |        }
-                 |      ],
-                 |      "description": "description",
-                 |      "wso2ApplicationName": "myapplication",
-                 |      "tokens": {
-                 |        "production": {
-                 |          "clientId": "MEpAvhdC8bgztlJFjpw5xKXeKbCM",
-                 |          "accessToken": "ccc",
-                 |          "clientSecrets": []
-                 |        }
-                 |      },
-                 |      "state": {
-                 |        "name": "PRODUCTION",
-                 |        "updatedOn": {
-                 |          "$date": "2022-05-23T11:46:09.48Z"
-                 |        }
-                 |      },
-                 |      "access": {
-                 |        "redirectUris": [],
-                 |        "overrides": [],
-                 |        "accessType": "STANDARD"
-                 |      },
-                 |      "createdOn": {
-                 |        "$date": "2019-07-08T00:00:00Z"
-                 |      },
-                 |      "lastAccess": {
-                 |        "$date": "2019-07-10T00:00:00Z"
-                 |      },
-                 |      "rateLimitTier": "BRONZE",
-                 |      "environment": "PRODUCTION",
-                 |      "blocked": false,
-                 |      "ipAllowlist": []
-                 |}""".stripMargin
+    val json = """ {
+                 |         "id":"17626696-1511-4278-b33c-b96ce7b8afb2",
+                 |         "name":"myApp-17626696-1511-4278-b33c-b96ce7b8afb2",
+                 |         "normalisedName":"myapp-17626696-1511-4278-b33c-b96ce7b8afb2",
+                 |         "collaborators":[
+                 |            {
+                 |               "emailAddress":"user@example.com",
+                 |               "role":"ADMINISTRATOR",
+                 |               "userId":"da3f8772-18e9-4965-8666-d4bf7cc9ddec"
+                 |            }
+                 |         ],
+                 |         "description":"description",
+                 |         "wso2ApplicationName":"myapplication",
+                 |         "tokens":{
+                 |            "production":{
+                 |               "clientId":"gmvbkp94v9Ah74yvqY2r7yOFvig9",
+                 |               "accessToken":"ccc",
+                 |               "clientSecrets":[
+                 |                  
+                 |               ]
+                 |            }
+                 |         },
+                 |         "state":{
+                 |            "name":"PRODUCTION",
+                 |            "updatedOn":{
+                 |               "$date":"2022-05-24T09:11:40.916Z"
+                 |            }
+                 |         },
+                 |         "access":{
+                 |            "redirectUris":[
+                 |               
+                 |            ],
+                 |            "overrides":[
+                 |               
+                 |            ],
+                 |            "accessType":"STANDARD"
+                 |         },
+                 |         "createdOn":{
+                 |            "$date":"2019-07-08T00:00:00Z"
+                 |         },
+                 |         "lastAccess":{
+                 |            "$date":"2019-07-10T00:00:00Z"
+                 |         },
+                 |         "rateLimitTier":"BRONZE",
+                 |         "environment":"PRODUCTION"
+                 |      }""".stripMargin
 
     val obj = Json.parse(json).validate[ApplicationData]
     println(obj)

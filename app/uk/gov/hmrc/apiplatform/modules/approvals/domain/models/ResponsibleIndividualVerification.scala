@@ -21,7 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 
 object ResponsibleIndividualVerification {
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
@@ -34,5 +34,5 @@ case class ResponsibleIndividualVerification(
     submissionId: Submission.Id,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime = LocalDateTime.now()
+    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
 )

@@ -44,7 +44,8 @@ class ResetLastAccessDateJobSpec
     with NoMetricsGuiceOneAppPerSuite {
 
   implicit val m : Materializer = app.materializer
-  implicit val dateFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormatters: Format[LocalDate] = MongoJavatimeFormats.localDateFormat
 
   trait Setup {
     val lockKeeperSuccess: () => Boolean = () => true
@@ -59,13 +60,15 @@ class ResetLastAccessDateJobSpec
   val applicationRepository = new ApplicationRepository(mongoComponent)
 
   trait DryRunSetup extends Setup {
-    val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
+//    val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
+    val dateToSet: LocalDate = LocalDate.of(2019, 6, 1)
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
     val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
+//    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10,0,0)
+    val dateToSet: LocalDate =  LocalDate.now(clock)
 
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
@@ -81,6 +84,7 @@ class ResetLastAccessDateJobSpec
 
   "ResetLastAccessDateJob" should {
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
+
       val bulkInsert = List(
         anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay()),
         anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay()),
@@ -127,7 +131,7 @@ class ResetLastAccessDateJobSpec
       ApplicationTokens(
         Token(ClientId.random, "ccc")
       ),
-      ApplicationState(State.PRODUCTION),
+      testingState(),
       Standard(),
       lastAccessDate,
       lastAccess = Some(lastAccessDate)

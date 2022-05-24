@@ -356,13 +356,9 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       )
     )
 
-    collection.aggregate[BsonValue](facets)
+    collection.aggregate[PaginatedApplicationData](facets)
       .head()
-     .map(x => {
-       println(s"###### RESULT #######\n ${x.toString}")
-       x.asInstanceOf[PaginatedApplicationData]
-      }
-     )
+      .map(x => x)
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =

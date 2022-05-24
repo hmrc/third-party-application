@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
 
-import com.typesafe.config.ConfigFactory
 import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
@@ -26,7 +25,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTIN
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData.grantLengthConfig
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -113,7 +111,7 @@ object ApplicationData {
 
   import play.api.libs.functional.syntax._
   import play.api.libs.json._
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
 
   val applicationDataReads: Reads[ApplicationData] = (
     (JsPath \ "id").read[ApplicationId] and
@@ -126,7 +124,7 @@ object ApplicationData {
     (JsPath \ "state").read[ApplicationState] and
     (JsPath \ "access").read[Access] and
     (JsPath \ "createdOn").read[LocalDateTime] and
-    (JsPath \\ "lastAccess").readNullable[LocalDateTime] and
+    (JsPath \ "lastAccess").readNullable[LocalDateTime] and
     ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig) ) and
     (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
     (JsPath \ "environment").read[String] and
