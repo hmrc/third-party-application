@@ -60,15 +60,13 @@ class ResetLastAccessDateJobSpec
   val applicationRepository = new ApplicationRepository(mongoComponent)
 
   trait DryRunSetup extends Setup {
-//    val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
-    val dateToSet: LocalDate = LocalDate.of(2019, 6, 1)
+    val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
     val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-//    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10,0,0)
-    val dateToSet: LocalDate =  LocalDate.now(clock)
+    val dateToSet: LocalDate = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
 
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
@@ -86,9 +84,9 @@ class ResetLastAccessDateJobSpec
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
 
       val bulkInsert = List(
-        anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay()),
-        anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay()),
-        anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay())
+        anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay()),
+        anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay()),
+        anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay())
       )
       await(Future.sequence(bulkInsert.map(i => applicationRepository.save(i))))
 
@@ -120,7 +118,7 @@ class ResetLastAccessDateJobSpec
     }*/
   }
 
-  def anApplicationData(id: ApplicationId = ApplicationId.random, lastAccessDate: LocalDateTime): ApplicationData = {
+  def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: LocalDateTime): ApplicationData = {
     ApplicationData(
       id,
       s"myApp-${id.value}",
@@ -133,8 +131,8 @@ class ResetLastAccessDateJobSpec
       ),
       testingState(),
       Standard(),
-      lastAccessDate,
-      lastAccess = Some(lastAccessDate)
+      localDateTime,
+      lastAccess = Some(localDateTime)
     )
   }
 }

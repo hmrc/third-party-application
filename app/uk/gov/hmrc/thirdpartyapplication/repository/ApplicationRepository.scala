@@ -356,9 +356,11 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       )
     )
 
-    collection.aggregate[PaginatedApplicationData](facets)
+    collection.aggregate[BsonValue](facets)
       .head()
-      .map(x => x)
+      .map(Codecs.fromBson[PaginatedApplicationData] _)
+      .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching)
+      )
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =

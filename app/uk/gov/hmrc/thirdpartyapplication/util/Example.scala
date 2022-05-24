@@ -14,10 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication
+package uk.gov.hmrc.thirdpartyapplication.util
 
-import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import java.time.LocalDate
+
 
 object Example {
   def main(args: Array[String]): Unit = {
@@ -32,7 +32,7 @@ object Example {
                  |               "role":"ADMINISTRATOR",
                  |               "userId":"da3f8772-18e9-4965-8666-d4bf7cc9ddec"
                  |            }
-                 |         ],
+                 case class Example|         ],
                  |         "description":"description",
                  |         "wso2ApplicationName":"myapplication",
                  |         "tokens":{
@@ -69,8 +69,11 @@ object Example {
                  |         "environment":"PRODUCTION"
                  |      }""".stripMargin
 
-    val obj = Json.parse(json).validate[ApplicationData]
-    println(obj)
+    /*val obj = Json.parse(json).validate[ApplicationData]
+    println(obj)*/
+
+    val dt = LocalDate.parse("2022-12-01")
+    println(s"LocalDate: $dt" )
   }
 
 }

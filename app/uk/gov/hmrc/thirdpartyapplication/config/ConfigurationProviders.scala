@@ -37,7 +37,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
 import scala.concurrent.duration.{Duration, FiniteDuration}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 
-import java.time.LocalDate
+import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
 class ConfigurationModule extends Module {
@@ -251,12 +251,10 @@ class ResetLastAccessDateJobConfigProvider @Inject()(configuration: Configuratio
     with Provider[ResetLastAccessDateJobConfig] {
 
   override def get(): ResetLastAccessDateJobConfig = {
-    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
     val enabled = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
     val dryRun = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
-    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString, dateFormatter), enabled, dryRun)
+    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString), enabled, dryRun)
   }
 }
