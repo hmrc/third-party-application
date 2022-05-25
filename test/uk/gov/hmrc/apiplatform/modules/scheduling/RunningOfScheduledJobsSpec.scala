@@ -31,6 +31,7 @@ import java.util.concurrent.{CountDownLatch, TimeUnit}
 import org.scalatest.time.{Minute, Span}
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.test.Helpers.{await, defaultAwaitTimeout}
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -81,7 +82,7 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       Captured should have('initialDelay (testScheduledJob.initialDelay))
       Captured should have('interval (testScheduledJob.interval))
 
-      testApp.stop()
+      await(testApp.stop())
     }
 
     "set up the scheduled job to run the execute method" in new TestCase {
@@ -123,7 +124,7 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       capturedRunnable.run()
       testScheduledJob.isExecuted should be(true)
 
-      testApp.stop()
+      await(testApp.stop())
     }
   }
 
@@ -139,7 +140,7 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
       runner.cancellables = Seq(new StubCancellable, new StubCancellable)
 
       every(runner.cancellables) should not be 'cancelled
-      testApp.stop()
+      await(testApp.stop())
       every(runner.cancellables) should be('cancelled)
     }
 
