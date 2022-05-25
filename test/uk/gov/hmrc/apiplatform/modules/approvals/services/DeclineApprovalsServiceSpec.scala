@@ -17,8 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -37,6 +36,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
   trait Setup extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
     with StateHistoryRepositoryMockModule
+    with ResponsibleIndividualVerificationRepositoryMockModule
     with SubmissionsServiceMockModule
     with ApplicationTestData
     with SubmissionsTestData
@@ -67,7 +67,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
                               pendingGatekeeperApprovalState("bob@fastshow.com"),
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, clock)
+    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, SubmissionsServiceMock.aMock, clock)
 
     val responsibleIndividualVerificationDate = LocalDateTime.now(clock)
   }
@@ -79,6 +79,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(application)
       StateHistoryRepoMock.Insert.thenAnswer()
       SubmissionsServiceMock.Store.thenReturn()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteBySubmission.thenReturnSuccess()
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
 
       val result = await(underTest.decline(application, submittedSubmission, gatekeeperUserName, reasons))
@@ -98,18 +99,23 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalDeclined
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get("responsibleIndividual.verification.date").value shouldBe acceptanceDate.format(fmt)
       AuditServiceMock.AuditGatekeeperAction.verifyExtras().get(someQuestionWording).value shouldBe ActualAnswersAsText(expectedAnswer)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteBySubmission.verifyCalledWith(submittedSubmission)
     }
 
     "fail to decline the specified application if the application is in the incorrect state" in new Setup {
       val result = await(underTest.decline(anApplicationData(applicationId, testingState()), answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectApplicationState
+
+      ResponsibleIndividualVerificationRepositoryMock.DeleteBySubmission.verifyNeverCalledWith(submittedSubmission)
     }
  
     "fail to decline the specified application if the submission is not in the submitted state" in new Setup {
       val result = await(underTest.decline(application, answeredSubmission, gatekeeperUserName, reasons))
 
       result shouldBe DeclineApprovalsService.RejectedDueToIncorrectSubmissionState
+
+      ResponsibleIndividualVerificationRepositoryMock.DeleteBySubmission.verifyNeverCalledWith(submittedSubmission)
     }
   }
 }

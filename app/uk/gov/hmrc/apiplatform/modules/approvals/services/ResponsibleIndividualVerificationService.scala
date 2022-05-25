@@ -130,7 +130,6 @@ class ResponsibleIndividualVerificationService @Inject()(
         responsibleIndividualEmail =  getResponsibleIndividualEmail(importantSubmissionData)
         reason                     =  "Responsible individual declined the terms of use."
         _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
-        _                          <- ET.liftF(responsibleIndividualVerificationRepository.delete(riVerificationId))
         _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield riVerification
     ).value
