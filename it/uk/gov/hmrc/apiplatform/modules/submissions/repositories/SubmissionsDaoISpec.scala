@@ -2,93 +2,91 @@ package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
 import com.mongodb.MongoException
 import org.scalatest.BeforeAndAfterEach
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apiplatform.modules.approvals.utils.ServerBaseISpec
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{SingleChoiceAnswer, Submission}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
-import java.time.{Clock, Instant, ZoneId}
+import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class SubmissionsDaoISpec
-  extends AsyncHmrcSpec
-    with MongoSupport
-    with CleanMongoCollectionSupport
+    extends ServerBaseISpec
+    with FixedClock
+    with ApplicationTestData
     with SubmissionsTestData
-    with GuiceOneAppPerSuite {
+    with BeforeAndAfterEach {
 
-  override def fakeApplication(): Application = {
-    new GuiceApplicationBuilder()
+  protected override def appBuilder: GuiceApplicationBuilder =
+    GuiceApplicationBuilder()
       .configure(
-        "metrics.enabled" -> true,
         "metrics.jvm" -> false,
-        "Test.auditing.enabled" -> true,
-        "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}"
+        "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
       )
+      .overrides(bind[Clock].toInstance(clock))
       .disable(classOf[SchedulerModule])
-      .overrides(bind[Clock].toInstance(Clock.fixed(Instant.now(), ZoneId.systemDefault())))
-      .build()
-  }
 
-  override lazy val app: Application = fakeApplication()
+  val submissionsRepository: SubmissionsRepository = app.injector.instanceOf[SubmissionsRepository]
+  val submissionsDao: SubmissionsDao = app.injector.instanceOf[SubmissionsDao]
 
-  val repo: SubmissionsRepository = new SubmissionsRepository(mongoComponent)
-  val dao = new SubmissionsDao(repo)
-
-  protected override def beforeEach(): Unit = {
-    await(mongoDatabase.drop().toFuture())
+  override def beforeEach(): Unit = {
+    await(submissionsRepository.collection.drop().toFuture())
+    await(submissionsRepository.ensureIndexes)
   }
 
   "save and retrieved" should {
-    /*"not find a record that is not there" in {
-      await(dao.fetch(Submission.Id.random)) shouldBe None
+
+    "not find a record that is not there" in {
+      await(submissionsDao.fetch(Submission.Id.random)) mustBe None
     }
 
     "store a record and retrieve it" in {
-      await(dao.save(aSubmission)) shouldBe aSubmission
-      await(dao.fetch(aSubmission.id)).value shouldBe aSubmission
+      await(submissionsDao.save(aSubmission)) mustBe aSubmission
+      await(submissionsDao.fetch(aSubmission.id)).value mustBe aSubmission
     }
-*/
+
     "not store multiple records of the same submission id" in {
-      await(dao.save(aSubmission)) shouldBe aSubmission
+      await(submissionsDao.save(aSubmission))
 
       intercept[MongoException] {
-        await(repo.collection.insertOne(aSubmission).toFuture())
+        await(submissionsDao.save(aSubmission))
       }
 
-//      println(s"******* ${exception}")
-
-      await(repo.collection.countDocuments().toFuture().map(x => x.toInt)) shouldBe 1
+      await(
+        submissionsRepository.collection
+          .countDocuments()
+          .toFuture()
+          .map(x => x.toInt)
+      ) mustBe 1
     }
   }
 
-  /*"fetchLatest" should {
+  "fetchLatest" should {
     "find the only one" in {
-      await(dao.save(aSubmission))
-      await(dao.fetchLatest(applicationId)).value shouldBe aSubmission
+      await(submissionsDao.save(aSubmission))
+      await(submissionsDao.fetchLatest(applicationId)).value mustBe aSubmission
     }
 
     "find the latest one" in {
-      await(dao.save(aSubmission))
-      await(dao.save(altSubmission))
-      await(dao.fetchLatest(applicationId)).value shouldBe altSubmission
+      await(submissionsDao.save(aSubmission))
+      await(submissionsDao.save(altSubmission))
+      await(submissionsDao.fetchLatest(applicationId)).value mustBe altSubmission
     }
   }
 
   "update" should {
     "replace the existing record" in {
-      await(dao.save(aSubmission))
+      await(submissionsDao.save(aSubmission))
+
       val oldAnswers = aSubmission.latestInstance.answersToQuestions
       val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
       val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
-      await(dao.update(updatedSubmission)) shouldBe updatedSubmission
-      await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission
+
+      await(submissionsDao.update(updatedSubmission)) mustBe updatedSubmission
+      await(submissionsDao.fetchLatest(applicationId)).value mustBe updatedSubmission
     }
-  }*/
-
-
+  }
 }

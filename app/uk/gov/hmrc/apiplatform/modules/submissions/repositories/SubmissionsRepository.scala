@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
-import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
@@ -35,15 +34,16 @@ class SubmissionsRepository @Inject() (mongo: MongoComponent)
       collectionName = "submissions",
       mongoComponent = mongo,
       domainFormat = SubmissionsJsonFormatters.submissionFormat,
-      indexes = Seq(IndexModel(ascending("id"), IndexOptions()
+      indexes = Seq(
+        IndexModel(ascending("applicationId"), IndexOptions()
+            .name("applicationIdIndex")
+            .background(true)
+        ),
+        IndexModel(ascending("id"), IndexOptions()
             .name("submissionIdIndex")
             .unique(true)
             .background(true)
         ),
-        IndexModel(ascending("applicationId"), IndexOptions()
-            .name("applicationIdIndex")
-            .background(true)
-        )
       ),
     replaceIndexes = true
     )
