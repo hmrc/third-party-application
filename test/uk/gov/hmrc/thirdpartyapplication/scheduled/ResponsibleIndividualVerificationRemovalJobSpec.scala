@@ -69,17 +69,17 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       SubmissionsServiceMock.Fetch.thenReturn(completelyAnswerExtendedSubmission)
       DeclineApprovalsServiceMock.Decline.thenReturn(Actioned(app))
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.Delete.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       val verification = ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification)
-      ResponsibleIndividualVerificationRepositoryMock.Delete.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(riName, requesterEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      ResponsibleIndividualVerificationRepositoryMock.Delete.verifyCalledWith(verification.id)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification.id)
       DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The responsible individual did not accept the terms of use in 20 days.")
     }
 
@@ -90,19 +90,19 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       SubmissionsServiceMock.Fetch.thenReturn(completelyAnswerExtendedSubmission)
       DeclineApprovalsServiceMock.Decline.thenReturn(Actioned(app))
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.Delete.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       val verification1 = ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
       val verification2 = ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification1, verification2)
-      ResponsibleIndividualVerificationRepositoryMock.Delete.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(riName, requesterEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      ResponsibleIndividualVerificationRepositoryMock.Delete.verifyNeverCalledWith(verification1.id)
-      ResponsibleIndividualVerificationRepositoryMock.Delete.verifyCalledWith(verification2.id)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyNeverCalledWith(verification1.id)
+      ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification2.id)
       DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The responsible individual did not accept the terms of use in 20 days.")
     }
   }

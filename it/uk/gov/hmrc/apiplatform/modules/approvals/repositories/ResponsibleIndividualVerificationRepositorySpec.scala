@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
+import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -33,6 +35,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
   with GuiceOneAppPerSuite
   with MongoSpecSupport
+  with SubmissionsTestData
   with BeforeAndAfterEach with BeforeAndAfterAll {
 
   implicit val mat = app.materializer
@@ -56,11 +59,11 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
     }
   }
 
-  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now) =
-    ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0, UUID.randomUUID().toString, createdOn, state)
+  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) =
+    ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
 
-  def buildAndSaveDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now) = {
-    val doc = buildDoc(state, createdOn)
+  def buildAndSaveDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) = {
+    val doc = buildDoc(state, createdOn, submissionId, submissionIndex)
     await(repo.insert(doc))
     doc
   }
@@ -94,6 +97,16 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
       await(repo.delete(savedDoc.id))
 
       await(repo.findAll()) shouldBe List()
+    }
+
+    "remove the record matching the latest submission instance only" in {
+      val submissionId = Submission.Id.random
+      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
+      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
+      val submissionWithTwoInstances = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
+      await(repo.delete(submissionWithTwoInstances))
+
+      await(repo.findAll()) shouldBe List(savedDocForSubmissionInstance0)
     }
   }
 

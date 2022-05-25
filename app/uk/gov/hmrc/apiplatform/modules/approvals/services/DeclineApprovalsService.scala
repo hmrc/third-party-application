@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.http.HeaderCarrier
@@ -57,6 +59,7 @@ class DeclineApprovalsService @Inject()(
   auditService: AuditService,
   applicationRepository: ApplicationRepository,
   stateHistoryRepository: StateHistoryRepository,
+  responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
   submissionService: SubmissionsService,
   clock: Clock
 )(implicit ec: ExecutionContext)
@@ -92,6 +95,7 @@ class DeclineApprovalsService @Inject()(
         _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
         updatedSubmission       =  Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
+        _                       <- ET.liftF(responsibleIndividualVerificationRepository.delete(submission))
         _                       <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, importantSubmissionData, gatekeeperUserName, reasons))
         _                       =  logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)

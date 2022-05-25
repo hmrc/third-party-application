@@ -20,7 +20,9 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
 import java.time.LocalDateTime
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -36,15 +38,32 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
         verify(aMock).fetchByStateAndAge(state, dateTime)
     }
 
-    object Delete {
+    object DeleteById {
       def thenReturnSuccess() = when(aMock.delete(*[ResponsibleIndividualVerificationId])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId) = verify(aMock).delete(id)
       def verifyNeverCalledWith(id: ResponsibleIndividualVerificationId) = verify(aMock, never).delete(id)
     }
 
+    object DeleteBySubmission {
+      def thenReturnSuccess() = when(aMock.delete(*[Submission])).thenReturn(successful(HasSucceeded))
+      def verifyCalledWith(submission: Submission) = verify(aMock).delete(submission)
+      def verifyNeverCalledWith(submission: Submission) = verify(aMock, never).delete(submission)
+    }
+
     object UpdateState {
       def thenReturnSuccess() = when(aMock.updateState(*[ResponsibleIndividualVerificationId], *[ResponsibleIndividualVerificationState])).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(id: ResponsibleIndividualVerificationId, state: ResponsibleIndividualVerificationState) = verify(aMock).updateState(id, state)
+    }
+
+    object Save {
+      def thenReturnSuccess() = when(aMock.save(*[ResponsibleIndividualVerification])).thenAnswer((riv: ResponsibleIndividualVerification) => successful(riv))
+      def verifyCalledWith(verification: ResponsibleIndividualVerification) = verify(aMock).save(verification)
+    }
+
+    object Fetch {
+      def thenReturn(verification: ResponsibleIndividualVerification) = when(aMock.fetch(verification.id)).thenReturn(successful(Some(verification)))
+      def verifyCalledWith(id: ResponsibleIndividualVerificationId) = verify(aMock).fetch(id)
+      def thenReturnNothing = when(aMock.fetch(*[ResponsibleIndividualVerificationId])).thenReturn(successful(None))
     }
   }
 

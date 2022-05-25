@@ -22,6 +22,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -73,5 +74,9 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
 
   def delete(id: ResponsibleIndividualVerificationId): Future[HasSucceeded] = {
     collection.delete.one(Json.obj("id" -> id)).map(_ => HasSucceeded)
+  }
+
+  def delete(submission: Submission): Future[HasSucceeded] = {
+    collection.delete.one(Json.obj("submissionId" -> submission.id, "submissionInstance" -> submission.latestInstance.index)).map(_ => HasSucceeded)
   }
 }

@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcce
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.http.HeaderCarrier
@@ -132,7 +133,6 @@ class ResponsibleIndividualVerificationService @Inject()(
         reason                     =  "Responsible individual declined the terms of use."
         _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
         _                          <- ET.liftF(emailConnector.sendResponsibleIndividualDeclined(ri.fullName.value, requesterEmail, originalApp.name, requesterName))
-        _                          <- ET.liftF(responsibleIndividualVerificationRepository.delete(riVerificationId))
         _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield riVerification
     ).value
