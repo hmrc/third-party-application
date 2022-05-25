@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import akka.stream.Materializer
-import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import play.api.libs.json.Format
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
@@ -38,14 +37,18 @@ class ResetLastAccessDateJobSpec
   extends AsyncHmrcSpec
     with MongoSupport
     with CleanMongoCollectionSupport
-    with BeforeAndAfterEach
-    with BeforeAndAfterAll
     with ApplicationStateUtil
     with NoMetricsGuiceOneAppPerSuite {
 
   implicit val m : Materializer = app.materializer
   implicit val dateTimeFormatters: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
   implicit val dateFormatters: Format[LocalDate] = MongoJavatimeFormats.localDateFormat
+
+  val applicationRepository = new ApplicationRepository(mongoComponent)
+
+  override protected def beforeEach(): Unit = {
+    await(mongoDatabase.drop().toFuture())
+  }
 
   trait Setup {
     val lockKeeperSuccess: () => Boolean = () => true
@@ -56,8 +59,6 @@ class ResetLastAccessDateJobSpec
           if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
       }
   }
-
-  val applicationRepository = new ApplicationRepository(mongoComponent)
 
   trait DryRunSetup extends Setup {
     val dateToSet: LocalDate = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
@@ -71,14 +72,6 @@ class ResetLastAccessDateJobSpec
     val jobConfig: ResetLastAccessDateJobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest = new ResetLastAccessDateJob(mockResetLastAccessDateJobLockService, applicationRepository, jobConfig)
   }
-
-/*  override def beforeEach() {
-    applicationRepository.drop
-  }
-
-  override protected def afterAll() {
-    applicationRepository.drop
-  }*/
 
   "ResetLastAccessDateJob" should {
     "update lastAccess fields in database so that none pre-date the specified date" in new ModifyDatesSetup {
@@ -100,11 +93,11 @@ class ResetLastAccessDateJobSpec
         app.lastAccess.get.isBefore(dateToSet.atStartOfDay()) should be (false)
       })
     }
-/*
+
     "not update the database if dryRun option is specified" in new DryRunSetup {
-      val application1: ApplicationData = anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay())
-      val application2: ApplicationData = anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay())
-      val application3: ApplicationData = anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay())
+      val application1: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay())
+      val application2: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(2).atStartOfDay())
+      val application3: ApplicationData = anApplicationData(localDateTime = dateToSet.plusDays(3).atStartOfDay())
 
       await(Future.sequence(List(application1, application2, application3).map(applicationRepository.save)))
 
@@ -115,7 +108,7 @@ class ResetLastAccessDateJobSpec
       retrievedApplications.find(_.id == application1.id).get.lastAccess.get.isEqual(application1.lastAccess.get) should be (true)
       retrievedApplications.find(_.id == application2.id).get.lastAccess.get.isEqual(application2.lastAccess.get) should be (true)
       retrievedApplications.find(_.id == application3.id).get.lastAccess.get.isEqual(application3.lastAccess.get) should be (true)
-    }*/
+    }
   }
 
   def anApplicationData(id: ApplicationId = ApplicationId.random, localDateTime: LocalDateTime): ApplicationData = {

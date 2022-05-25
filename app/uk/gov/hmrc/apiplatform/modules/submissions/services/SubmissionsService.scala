@@ -31,10 +31,10 @@ import java.time.{Clock, LocalDateTime}
 
 @Singleton
 class SubmissionsService @Inject()(
-  questionnaireDAO: QuestionnaireDAO,
-  submissionsDAO: SubmissionsDAO,
-  contextService: ContextService,
-  val clock: Clock
+                                    questionnaireDAO: QuestionnaireDAO,
+                                    submissionsDAO: SubmissionsDao,
+                                    contextService: ContextService,
+                                    val clock: Clock
 )(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 

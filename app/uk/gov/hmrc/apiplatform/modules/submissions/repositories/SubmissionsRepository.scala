@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 
 @Singleton
 class SubmissionsRepository @Inject() (mongo: MongoComponent)
-                                      (implicit val mat: Materializer, val ec: ExecutionContext)
+                                      (implicit val ec: ExecutionContext)
   extends PlayMongoRepository[Submission](
       collectionName = "submissions",
       mongoComponent = mongo,
@@ -44,6 +44,7 @@ class SubmissionsRepository @Inject() (mongo: MongoComponent)
             .name("applicationIdIndex")
             .background(true)
         )
-      )
+      ),
+    replaceIndexes = true
     )
     with MongoJavatimeFormats.Implicits {}
