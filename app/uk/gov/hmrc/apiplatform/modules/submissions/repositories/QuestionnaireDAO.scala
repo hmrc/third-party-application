@@ -221,7 +221,7 @@ object QuestionnaireDAO {
         Wording("Do your development practices follow our guidance?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("You must develop your software following our"),
+            StatementText("You must develop your software following our "),
             StatementLink("development practices (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/development-practices"),
             StatementText(".")
           )
@@ -236,7 +236,7 @@ object QuestionnaireDAO {
         wording = Wording("Does your error handling meet our specification?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("We will check for evidence that you comply with our"),
+            StatementText("We will check for evidence that you comply with our "),
             StatementLink("error handling specification (opens in new tab)", "https://developer.service.hmrc.gov.uk/api-documentation/docs/reference-guide#errors"),
             StatementText(".")
           )
@@ -251,7 +251,7 @@ object QuestionnaireDAO {
         Wording("Does your software meet accessibility standards?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("Web-based software must meet level AA of the"),
+            StatementText("Web-based software must meet level AA of the "),
             StatementLink("Web Content Accessibility Guidelines (WCAG) (opens in new tab)", "https://www.w3.org/WAI/standards-guidelines/wcag/"),
             StatementText(". Desktop software should follow equivalent offline standards.")
           )
@@ -292,7 +292,7 @@ object QuestionnaireDAO {
           CompoundFragment(
             StatementText("You must also "),
             StatementLink("notify the ICO about personal data breaches (opens in new tab)", "https://ico.org.uk/for-organisations/guide-to-data-protection/guide-to-the-general-data-protection-regulation-gdpr/personal-data-breaches"),
-            StatementText("within 72 hours of becoming aware of it.")
+            StatementText(" within 72 hours of becoming aware of it.")
           )
         ).some,
         yesMarking = Pass,
@@ -354,7 +354,7 @@ object QuestionnaireDAO {
           CompoundFragment(
             StatementText("Read the National Cyber Security Centre’s guidance on "),
             StatementLink("keeping user data separate (opens in new tab)", "https://www.ncsc.gov.uk/collection/cloud-security/implementing-the-cloud-security-principles/separation-between-users"),
-            StatementText("and best practice for "),
+            StatementText(" and best practice for "),
             StatementLink("username and password security (opens in new tab)", "https://www.ncsc.gov.uk/collection/passwords/updating-your-approach"),
             StatementText(".")
           )
@@ -364,7 +364,7 @@ object QuestionnaireDAO {
           (PossibleAnswer("No") -> Fail),
           (PossibleAnswer("We only have one customer") -> Pass)
         ),
-        errorInfo = ErrorInfo("Select yes if you ensure that each customer’s data cannot be accessed by unauthorised users").some
+        errorInfo = ErrorInfo("Select yes if you ensure that unauthorised users cannot access each customer's data").some
       )
 
       val question4 = ChooseOneOfQuestion(
@@ -554,7 +554,7 @@ object QuestionnaireDAO {
         Wording("Has your application passed software penetration testing?"),
         statement = Statement(
           CompoundFragment(
-            StatementText("Use either penetration test tools or an independant third party supplier. For penetration testing methodologies read the "),
+            StatementText("Use either penetration test tools or an independent third party supplier. For penetration testing methodologies read the "),
             StatementLink("Open Web Application Security Project (OWASP) guide (opens in new tab)", "https://wiki.owasp.org/index.php/Penetration_testing_methodologies"),
             StatementText(".")
           )
@@ -675,7 +675,7 @@ object QuestionnaireDAO {
 
       val question4 = ChooseOneOfQuestion(
         Question.Id("1dd933ee-7f89-4eb4-a54e-bc54396afa55"),
-        Wording("Do you get your customers’ consent before sharing their personal data for marketing?"),
+        Wording("Do you get customers’ consent before sharing their personal data for marketing?"),
         statement = Statement(
           CompoundFragment(
             StatementText("You must not share customers’ personal data without their consent. Read the "),

@@ -28,8 +28,7 @@ import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceeded}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.duration.FiniteDuration
