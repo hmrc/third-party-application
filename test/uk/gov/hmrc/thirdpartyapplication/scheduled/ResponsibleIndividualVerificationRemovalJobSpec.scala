@@ -80,7 +80,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(riName, requesterEmail, appName, requesterName)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification.id)
-      DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The Responsible Individual has not accepted the Terms of Use.")
+      DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The responsible individual did not accept the terms of use in 20 days.")
     }
 
     "continue after invalid records" in new Setup {
@@ -103,7 +103,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyNeverCalledWith(verification1.id)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification2.id)
-      DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The Responsible Individual has not accepted the Terms of Use.")
+      DeclineApprovalsServiceMock.Decline.verifyCalledWith(app, completelyAnswerExtendedSubmission.submission, riEmail, "The responsible individual did not accept the terms of use in 20 days.")
     }
   }
 }

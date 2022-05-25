@@ -74,7 +74,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: Resp
   }
 
   private def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val declineReason = "The Responsible Individual has not accepted the Terms of Use."
+    val declineReason = "The responsible individual did not accept the terms of use in 20 days."
     (for {
       app            <- OptionT(applicationRepository.fetch(verificationDueForRemoval.applicationId))
       ri             <- OptionT.fromOption[Future](getResponsibleIndividual(app))
