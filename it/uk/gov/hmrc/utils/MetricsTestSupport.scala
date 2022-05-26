@@ -1,4 +1,4 @@
-package uk.gov.hmrc.apiplatform.modules.approvals.utils
+package uk.gov.hmrc.utils
 
 import com.kenshoo.play.metrics.Metrics
 import org.scalatest.Suite

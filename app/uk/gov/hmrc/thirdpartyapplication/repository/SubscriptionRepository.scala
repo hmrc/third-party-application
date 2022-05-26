@@ -40,17 +40,17 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
     mongoComponent = mongo,
     domainFormat = SubscriptionData.format,
     indexes = Seq(
+      IndexModel(ascending("apiIdentifier.context", "apiIdentifier.version"), IndexOptions()
+        .name("context_version")
+        .unique(true)
+        .background(true)
+      ),
       IndexModel(ascending("apiIdentifier.context"), IndexOptions()
         .name("context")
         .background(true)
       ),
       IndexModel(ascending("applications"),IndexOptions()
         .name("applications")
-        .background(true)
-      ),
-      IndexModel(ascending("apiIdentifier.context", "apiIdentifier.version"), IndexOptions()
-        .name("context_version")
-        .unique(true)
         .background(true)
       )
     )

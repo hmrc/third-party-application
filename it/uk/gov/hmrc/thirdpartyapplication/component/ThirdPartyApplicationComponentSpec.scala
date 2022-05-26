@@ -16,27 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import java.util.UUID
 import org.joda.time.DateTimeUtils
+import play.api.Application
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.libs.json.Json
 import scalaj.http.{Http, HttpResponse}
-import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorResponse, DeleteCollaboratorRequest}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 
+import java.time.ZoneOffset
+import java.util.UUID
 import scala.concurrent.Await.{ready, result}
 import scala.util.Random
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteCollaboratorRequest
-
-import java.time. ZoneOffset
 
 class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
@@ -55,11 +55,13 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
     "mongodb.uri" -> "mongodb://localhost:27017/third-party-application-test"
   )
 
-  override def fakeApplication =
+  override def fakeApplication: Application = {
     GuiceApplicationBuilder()
-        .configure(configOverrides)
+        .configure(configOverrides + ("metrics.jvm" -> false))
         .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
+        .disable(classOf[SchedulerModule])
         .build()
+  }
 
   val applicationName1 = "My 1st Application"
   val applicationName2 = "My 2nd Application"

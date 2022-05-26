@@ -1,4 +1,4 @@
-package uk.gov.hmrc.apiplatform.modules.approvals.utils
+package uk.gov.hmrc.utils
 
 import akka.stream.Materializer
 import org.scalatest.matchers.must.Matchers

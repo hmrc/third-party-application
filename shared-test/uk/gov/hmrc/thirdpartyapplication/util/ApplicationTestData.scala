@@ -42,7 +42,6 @@ trait ApplicationTestData extends ApplicationStateUtil  {
   val serverTokenLastAccess = LocalDateTime.now(clock)
   val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
-  
   val requestedByEmail = "john.smith@example.com"
   val grantLength = 547
 

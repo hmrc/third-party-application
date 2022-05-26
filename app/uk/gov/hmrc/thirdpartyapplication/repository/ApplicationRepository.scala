@@ -215,7 +215,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   def fetchAllByStatusDetails(state: State.State, updatedBefore: LocalDateTime): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("state.name", Codecs.toBson(state)),
-      lt("state.updatedOn", updatedBefore)
+      lte("state.updatedOn", updatedBefore)
     )
 
     collection.find(query).toFuture()
@@ -278,15 +278,15 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
-      apiVersion.fold(
-        matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext))))(value =>
-          matches(
-            and(
-              equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)),
-              equal("subscribedApis.apiIdentifier.version", Codecs.toBson(value))
-            )
+      val defaultQuery = matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)))
+      apiVersion.fold(defaultQuery)(version =>
+        matches(
+          Document(
+            "subscribedApis.apiIdentifier.context" -> Codecs.toBson(apiContext),
+            "subscribedApis.apiIdentifier.version" -> Codecs.toBson(version)
           )
         )
+      )
     }
 
     applicationSearchFilter match {
@@ -334,6 +334,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
   private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean) = {
     lazy val subscriptionsLookup: Bson = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
+    val unwindSubscribedApis: Bson = unwind("$subscribedApis")
     val applicationProjection: Bson = project(fields(
         excludeId(),
         include(
@@ -345,20 +346,30 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
     val totalCount = Aggregates.count("total")
     val subscriptionsLookupFilter = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
-    val filteredPipelineCount = subscriptionsLookupFilter ++ filters :+ totalCount
-    val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupFilter ++ filters ++ sort ++ pagination :+ applicationProjection
+    val filteredPipelineCount = subscriptionsLookupFilter ++ Seq(unwindSubscribedApis) ++ filters :+ totalCount
+    val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupFilter ++ Seq(unwindSubscribedApis) ++ filters ++ sort ++ pagination :+ applicationProjection
+
+    val result =
+      collection.aggregate[BsonValue](paginatedFilteredAndSortedPipeline)
+        .toFuture()
+        .map(x =>
+        x.map(e => {
+          println(s"e.asDocument(): ${e.asDocument().toString}")
+          e.asDocument()
+        })
+    )
 
     val facets: Seq[Bson] = Seq(
       facet(
-        model.Facet("applications", paginatedFilteredAndSortedPipeline: _*),
         model.Facet("totals", totalCount),
         model.Facet("matching", filteredPipelineCount: _*),
+        model.Facet("applications", paginatedFilteredAndSortedPipeline: _*)
       )
     )
 
     collection.aggregate[BsonValue](facets)
       .head()
-      .map(Codecs.fromBson[PaginatedApplicationData] _)
+      .map(Codecs.fromBson[PaginatedApplicationData])
       .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching)
       )
   }
@@ -367,8 +378,13 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
-      apiVersion = Some(apiIdentifier.version))).map(_.applications)
+    searchApplications(
+      ApplicationSearch(
+        filters = List(SpecificAPISubscription),
+        apiContext = Some(apiIdentifier.context),
+        apiVersion = Some(apiIdentifier.version)
+      )
+    ).map(_.applications)
 
   def fetchAllWithNoSubscriptions(): Future[List[ApplicationData]] =
     searchApplications(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)

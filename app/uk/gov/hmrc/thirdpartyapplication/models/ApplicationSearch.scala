@@ -76,7 +76,7 @@ case object ApplicationTextSearch extends TextSearchFilter
 case object TextSearchFilter extends TextSearchFilter {
   def apply(value: String): Option[TextSearchFilter] = {
     value match {
-      case _ if !value.isEmpty => Some(ApplicationTextSearch)
+      case _ if value.nonEmpty => Some(ApplicationTextSearch)
       case _ => None
     }
   }
@@ -93,7 +93,7 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
     value match {
       case "ANY" => Some(OneOrMoreAPISubscriptions)
       case "NONE" => Some(NoAPISubscriptions)
-      case _ if !value.isEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
+      case _ if value.nonEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
       case _ => None
     }
   }

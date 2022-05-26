@@ -27,10 +27,10 @@ import cats.data.NonEmptyList
 import scala.collection.immutable.ListMap
 
 @Singleton
-class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
+class QuestionnaireDao @Inject()(implicit ec: ExecutionContext) {
   private val store: mutable.Map[Questionnaire.Id, Questionnaire] = mutable.Map()
 
-  import QuestionnaireDAO.Questionnaires._
+  import QuestionnaireDao.Questionnaires._
   
   allIndividualQuestionnaires.map(q => store.put(q.id, q))
   
@@ -41,7 +41,7 @@ class QuestionnaireDAO @Inject()(implicit ec: ExecutionContext) {
   def fetchActiveGroupsOfQuestionnaires() : Future[NonEmptyList[GroupOfQuestionnaires]] = activeQuestionnaireGroupings.pure[Future]
 }
 
-object QuestionnaireDAO {
+object QuestionnaireDao {
 
   // *** Note - change this if the application name question changes. ***
   val questionIdsOfInterest = QuestionIdsOfInterest(

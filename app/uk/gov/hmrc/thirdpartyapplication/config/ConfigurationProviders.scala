@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import java.util.concurrent.TimeUnit._
-import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.inject.{Binding, Module}
@@ -26,19 +24,12 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretServiceConfig, CredentialConfig}
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
 
+import java.time.LocalDate
+import java.util.concurrent.TimeUnit._
+import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
-
-import java.time.{LocalDate, LocalDateTime}
-import java.time.format.DateTimeFormatter
 
 class ConfigurationModule extends Module {
 

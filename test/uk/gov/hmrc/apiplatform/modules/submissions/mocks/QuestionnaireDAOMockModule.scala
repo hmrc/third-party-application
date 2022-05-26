@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDao
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
 
 import scala.concurrent.Future.successful
@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.QuestionnaireTestData
 
 trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar with QuestionnaireTestData {
   protected trait BaseQuestionnaireDAOMock {
-    def aMock: QuestionnaireDAO
+    def aMock: QuestionnaireDao
 
     object Fetch {
       def thenReturn(questionnaire: Option[Questionnaire]) =
@@ -42,6 +42,6 @@ trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar
   }
 
   object QuestionnaireDAOMock extends BaseQuestionnaireDAOMock {
-    val aMock = mock[QuestionnaireDAO]
+    val aMock = mock[QuestionnaireDao]
   }
 }

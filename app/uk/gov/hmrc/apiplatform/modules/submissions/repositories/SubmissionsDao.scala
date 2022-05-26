@@ -26,7 +26,8 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubmissionsDao @Inject()(submissionsRepository: SubmissionsRepository)(implicit val ec: ExecutionContext){
+class SubmissionsDao @Inject()(submissionsRepository: SubmissionsRepository)
+                              (implicit val ec: ExecutionContext) {
 
   private lazy val collection = submissionsRepository.collection
 
