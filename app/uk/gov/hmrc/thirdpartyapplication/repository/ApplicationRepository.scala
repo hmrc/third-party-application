@@ -36,7 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{SpecificAPISubscription, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
@@ -264,7 +264,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       limit(applicationSearch.pageSize)
     )
 
-    runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter())
+    runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
   }
 
   private def matches(predicates: Bson): Bson = filter(predicates)
@@ -278,9 +278,11 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
-      val defaultQuery = matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)))
-      apiVersion.fold(defaultQuery)(version =>
-        matches(
+      apiVersion.fold(
+        matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)))
+      )(
+        version =>
+          matches(
           Document(
             "subscribedApis.apiIdentifier.context" -> Codecs.toBson(apiContext),
             "subscribedApis.apiIdentifier.version" -> Codecs.toBson(version)
@@ -292,7 +294,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     applicationSearchFilter match {
       // API Subscriptions
       case NoAPISubscriptions => matches(size("subscribedApis", 0))
-      case OneOrMoreAPISubscriptions => matches(expr("$gt : { $size : $subscribedApis}, 0"))
+      case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
       case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
@@ -332,9 +334,9 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     matches(or(fields.map(field => regex(field, searchText,"i")): _*))
   }
 
-  private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean) = {
+  private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean) = {
     lazy val subscriptionsLookup: Bson = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
-    val unwindSubscribedApis: Bson = unwind("$subscribedApis")
+    lazy val unwindSubscribedApis: Bson = unwind("$subscribedApis")
     val applicationProjection: Bson = project(fields(
         excludeId(),
         include(
@@ -346,18 +348,9 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
     val totalCount = Aggregates.count("total")
     val subscriptionsLookupFilter = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
-    val filteredPipelineCount = subscriptionsLookupFilter ++ Seq(unwindSubscribedApis) ++ filters :+ totalCount
-    val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupFilter ++ Seq(unwindSubscribedApis) ++ filters ++ sort ++ pagination :+ applicationProjection
-
-    val result =
-      collection.aggregate[BsonValue](paginatedFilteredAndSortedPipeline)
-        .toFuture()
-        .map(x =>
-        x.map(e => {
-          println(s"e.asDocument(): ${e.asDocument().toString}")
-          e.asDocument()
-        })
-    )
+    val subscriptionsLookupExtendedFilter = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
+    val filteredPipelineCount = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
+    val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
 
     val facets: Seq[Bson] = Seq(
       facet(
@@ -370,12 +363,15 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     collection.aggregate[BsonValue](facets)
       .head()
       .map(Codecs.fromBson[PaginatedApplicationData])
-      .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching)
-      )
+      .map(d => PaginatedApplicationData(d.applications, d.totals, d.matching))
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
+    searchApplications(
+      ApplicationSearch(
+        filters = List(SpecificAPISubscription),
+        apiContext = Some(apiContext))
+    ).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =
     searchApplications(
@@ -421,36 +417,22 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   }
 
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
-    /*val pipeline = Seq(
+    val pipeline = Seq(
       lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
-      unwind("subscribedApis"),
-      group("$id", Accumulators.sum("id", "$id"), Accumulators.sum("name", "$name"))
+      unwind("$subscribedApis"),
+      group(Document(s"""{ _id : { id : "$$id", name: "$$name"}, count: {"$$count": {}}} }""")),
+
     )
 
-    collection.aggregateWith[ApplicationWithSubscriptionCount]()(_ => {
-      import collection.BatchCommands.AggregationFramework._
-
-      val lookup = Lookup(
-        from = "subscription",
-        localField = "id",
-        foreignField = "applications",
-        as = "subscribedApis"
-      )
-
-      val unwind = UnwindField("subscribedApis")
-
-      val group: PipelineOperator = this.collection.BatchCommands.AggregationFramework.Group(
-        Json.parse("""{
-                     |      "id" : "$id",
-                     |      "name": "$name"
-                     |    }""".stripMargin))(
-        "count" -> SumAll
-      )
-      (lookup, List[PipelineOperator](unwind, group))
-    }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
-      .map(_.map(r=>s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
-  }*/
-  Future { Map() }
+    collection.aggregate[BsonValue](pipeline)
+      .map(x => {
+        println(s"### BSON DOCUMENT: ${x.asDocument().get("_id").toString} ")
+        x.asDocument().get("_id")
+      })
+      .map(Codecs.fromBson[ApplicationWithSubscriptionCount])
+      .toFuture()
+      .map(
+        _.map(r => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
 }
 

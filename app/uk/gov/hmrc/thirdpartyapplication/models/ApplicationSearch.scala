@@ -35,6 +35,7 @@ case class ApplicationSearch(pageNumber: Int = 1,
                              apiVersion: Option[ApiVersion] = None,
                              sort: ApplicationSort = SubmittedAscending){
                                def hasSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
+                               def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
                              }
 
 object ApplicationSearch {

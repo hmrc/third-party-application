@@ -17,20 +17,24 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
+import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.{Active, ApplicationSearch, ApplicationTextSearch, LastUseAfterDate, LastUseBeforeDate, LastUseDateAscending, LastUseDateDescending, NameAscending, NameDescending, NoAPISubscriptions, OneOrMoreAPISubscriptions, ROPCAccess, SpecificAPISubscription, SubmittedAscending, SubmittedDescending}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import java.time.{Clock, LocalDateTime}
+import java.time.{Clock, LocalDateTime, ZoneOffset}
+import java.util.UUID
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec
@@ -569,7 +573,6 @@ class ApplicationRepositoryISpec
       result mustBe List(application1, application2)
     }
   }
-*/
 
   "fetchAllForApiIdentifier" should {
 
@@ -623,7 +626,6 @@ class ApplicationRepositoryISpec
       result mustBe List.empty
     }
   }
-/*
 
   "Search" should {
     def applicationWithLastAccessDate(applicationId: ApplicationId, lastAccessDate: LocalDateTime): ApplicationData =
@@ -707,6 +709,7 @@ class ApplicationRepositoryISpec
     "return applications with any API subscriptions" in {
       val applicationWithSubscriptions = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
       val applicationWithoutSubscriptions = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+
       await(applicationRepository.save(applicationWithSubscriptions))
       await(applicationRepository.save(applicationWithoutSubscriptions))
       await(subscriptionRepository.collection.insertOne(aSubscriptionData("context", "version-1", applicationWithSubscriptions.id)).toFuture())
@@ -714,7 +717,6 @@ class ApplicationRepositoryISpec
       val applicationSearch = ApplicationSearch(filters = List(OneOrMoreAPISubscriptions))
 
       val result = await(applicationRepository.searchApplications(applicationSearch))
-
       result.totals.size mustBe 1
       result.totals.head.total mustBe 2
       result.matching.size mustBe 1
@@ -1171,6 +1173,7 @@ class ApplicationRepositoryISpec
       verifyNoMoreInteractions(mockTestService)
     }
   }
+*/
 
   "ApplicationWithSubscriptionCount" should {
     "return Applications with a count of subscriptions" in {
@@ -1203,7 +1206,7 @@ class ApplicationRepositoryISpec
       result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp2Name}") mustBe Some(1)
       result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp3Name}") mustBe None
     }
-
+/*
     "return Applications when more than 100 results bug" in {
       (1 to 200).foreach(i => {
         val api = s"api-$i"
@@ -1218,9 +1221,9 @@ class ApplicationRepositoryISpec
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
       result.keys.count(_ => true) mustBe 200
-    }
+    }*/
   }
-
+/*
   "addClientSecret" should {
     "append client secrets to an existing application" in {
       val applicationId = ApplicationId.random
@@ -1376,7 +1379,6 @@ class ApplicationRepositoryISpec
     }
   }
 */
-
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime): ApplicationData =
     anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId,
       state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
