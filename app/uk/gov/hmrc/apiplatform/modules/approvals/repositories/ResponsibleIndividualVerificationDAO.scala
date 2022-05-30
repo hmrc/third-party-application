@@ -22,7 +22,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class ResponsibleIndividualVerificationDAO @Inject()(repo: ResponsibleIndividualVerificationRepository)(implicit ec: ExecutionContext) {
+class ResponsibleIndividualVerificationDAO @Inject()(repo: ResponsibleIndividualVerificationRepository)
+                                                    (implicit val ec: ExecutionContext) {
 
   private lazy val collection = repo.collection
 

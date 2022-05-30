@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneA
 import java.time.{LocalDate, LocalDateTime}
 import java.util.concurrent.TimeUnit.MINUTES
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, FiniteDuration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ResetLastAccessDateJobSpec
@@ -54,7 +54,8 @@ class ResetLastAccessDateJobSpec
     val lockKeeperSuccess: () => Boolean = () => true
     val mongoLockRepository: MongoLockRepository = app.injector.instanceOf[MongoLockRepository]
     val mockResetLastAccessDateJobLockService: ResetLastAccessDateJobLockService =
-      new ResetLastAccessDateJobLockService(FiniteDuration(1, MINUTES), mongoLockRepository) {
+      new ResetLastAccessDateJobLockService(mongoLockRepository) {
+        override val ttl: Duration = 1.minutes
         override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
           if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
       }

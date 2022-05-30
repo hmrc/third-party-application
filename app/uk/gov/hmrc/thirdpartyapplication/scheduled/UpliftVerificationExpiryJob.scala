@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import java.time.{Clock, LocalDateTime}
 import java.util.concurrent.TimeUnit.HOURS
 import javax.inject.Inject
-import scala.concurrent.duration.{Duration, FiniteDuration}
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -73,12 +73,12 @@ class UpliftVerificationExpiryJob @Inject()(upliftVerificationExpiryJobLockServi
   }
 }
 
-class UpliftVerificationExpiryJobLockService @Inject()(holdLockFor: Duration = FiniteDuration(1, HOURS),
-                                                       mongoLockRepository: MongoLockRepository)
+class UpliftVerificationExpiryJobLockService @Inject()(mongoLockRepository: MongoLockRepository)
   extends LockService {
+
   override val lockId: String = "UpliftVerificationExpiryScheduler"
   override val lockRepository: LockRepository = mongoLockRepository
-  override val ttl: Duration = holdLockFor
+  override val ttl: Duration = 1.hours
 }
 
 case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)

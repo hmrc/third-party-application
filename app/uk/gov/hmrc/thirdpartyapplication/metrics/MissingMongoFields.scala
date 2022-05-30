@@ -16,15 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import javax.inject.{Singleton, Inject}
-import uk.gov.hmrc.metrix.domain.MetricSource
+import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository)
+                                   extends MetricSource
+                                   with ApplicationLogger {
+
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val counts: Future[(Int, Int)] = for {
       missingRateLimit <- applicationRepository.documentsWithFieldMissing("rateLimitTier")

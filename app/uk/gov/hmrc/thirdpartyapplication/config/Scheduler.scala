@@ -17,24 +17,25 @@
 package uk.gov.hmrc.thirdpartyapplication.config
 
 import com.google.inject.AbstractModule
-import javax.inject.{Inject, Singleton}
+import play.api.inject.ApplicationLifecycle
 import play.api.{Application, LoggerLike}
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import play.api.inject.ApplicationLifecycle
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
   override def configure(): Unit = {
     bind(classOf[Scheduler]).asEagerSingleton()
+    bind(classOf[MetricsScheduler]).asEagerSingleton()
     bind(classOf[LoggerLike]).toInstance(logger)
   }
 }
 
 @Singleton
 class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
-                          metricsJob: MetricsJob,
                           bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
                           resetLastAccessDateJob: ResetLastAccessDateJob,
                           override val applicationLifecycle: ApplicationLifecycle,
@@ -43,8 +44,7 @@ class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJ
                           extends RunningOfScheduledJobs {
 
   override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
-    // TODO : MetricsJob optional?
-    Seq(upliftVerificationExpiryJob, metricsJob, resetLastAccessDateJob)
+    Seq(upliftVerificationExpiryJob, resetLastAccessDateJob)
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 }

@@ -25,9 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-import java.time.{Clock, LocalDate, LocalDateTime}
+import java.time.LocalDate
 import java.util.concurrent.TimeUnit.HOURS
-import javax.inject.Inject
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -69,12 +69,12 @@ class ResetLastAccessDateJob @Inject()(resetLastAccessDateJobLockService: ResetL
   }
 }
 
-class ResetLastAccessDateJobLockService @Inject()(holdLockFor: FiniteDuration = FiniteDuration(1, HOURS),
-                                                  mongoLockRepository: MongoLockRepository)
+class ResetLastAccessDateJobLockService @Inject()(mongoLockRepository: MongoLockRepository)
   extends LockService {
+
   override val lockId: String = "ResetLastAccessDate"
   override val lockRepository: LockRepository = mongoLockRepository
-  override val ttl: Duration = holdLockFor
+  override val ttl: Duration = 1.hours
 }
 
 case class ResetLastAccessDateJobConfig(noLastAccessDateBefore: LocalDate, enabled: Boolean, dryRun: Boolean)

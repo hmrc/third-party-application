@@ -12,15 +12,12 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.HeaderCarrierConverter
 
 
-abstract class BaseISpec
-  extends PlaySpec with WireMockSupport with MetricsTestSupport with Matchers {
+abstract class BaseISpec extends PlaySpec with WireMockSupport with Matchers {
 
   def app: Application
   protected def appBuilder: GuiceApplicationBuilder
 
-  override def commonStubs(): Unit = {
-    givenCleanMetricRegistry()
-  }
+  override def commonStubs(): Unit = {}
 
   protected implicit def materializer: Materializer = app.materializer
 

@@ -32,7 +32,7 @@ import java.time.LocalDateTime
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UpliftVerificationExpiryJobSpec
@@ -54,7 +54,8 @@ class UpliftVerificationExpiryJobSpec
     val lockKeeperSuccess: () => Boolean = () => true
 
     val mockUpliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService =
-      new UpliftVerificationExpiryJobLockService(FiniteDuration(sixty, SECONDS), mongoLockRepository) {
+      new UpliftVerificationExpiryJobLockService(mongoLockRepository) {
+        override val ttl: Duration = 1.minutes
         override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
         if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
     }

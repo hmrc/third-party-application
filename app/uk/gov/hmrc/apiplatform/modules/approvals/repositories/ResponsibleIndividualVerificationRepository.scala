@@ -29,7 +29,7 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)
-                                                            (implicit val mat: Materializer, val ec: ExecutionContext)
+                                                            (implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,
