@@ -16,30 +16,49 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import akka.stream.Materializer
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.concurrent.Eventually
 import org.scalatest.prop.TableDrivenPropertyChecks
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import play.api.inject.bind
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock, JavaDateTimeTestUtils, MetricsHelper}
+import uk.gov.hmrc.utils.ServerBaseISpec
 
-import scala.concurrent.ExecutionContext.Implicits.global
+import java.time.{Clock, LocalDateTime}
 import scala.util.Random.nextString
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
-import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
-import java.time.LocalDateTime
+class SubscriptionRepositoryISpec
+  extends ServerBaseISpec
+    with JavaDateTimeTestUtils
+    with BeforeAndAfterEach
+    with MetricsHelper
+    with CleanMongoCollectionSupport
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with Eventually
+    with TableDrivenPropertyChecks
+    with FixedClock {
 
-class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
-  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks with FixedClock {
+  protected override def appBuilder: GuiceApplicationBuilder = {
+    GuiceApplicationBuilder()
+      .configure(
+        "metrics.jvm" -> false,
+        "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
+      )
+      .overrides(bind[Clock].toInstance(clock))
+      .disable(classOf[SchedulerModule])
+  }
 
-  private val subscriptionRepository: SubscriptionRepository = new SubscriptionRepository(mongoComponent)
-  private val applicationRepository: ApplicationRepository = new ApplicationRepository(mongoComponent)
+  private val subscriptionRepository: SubscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
+  private val applicationRepository: ApplicationRepository = app.injector.instanceOf[ApplicationRepository]
 
   protected override def beforeEach(): Unit = {
     super.beforeEach()
@@ -58,7 +77,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.add(applicationId, apiIdentifier))
 
-      result shouldBe HasSucceeded
+      result mustBe HasSucceeded
     }
 
     "create multiple subscriptions" in {
@@ -69,7 +88,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.add(application2, apiIdentifier))
 
-      result shouldBe HasSucceeded
+      result mustBe HasSucceeded
     }
   }
 
@@ -83,9 +102,9 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.remove(application1, apiIdentifier))
 
-      result shouldBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe false
-      await(subscriptionRepository.isSubscribed(application2, apiIdentifier)) shouldBe true
+      result mustBe HasSucceeded
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) mustBe false
+      await(subscriptionRepository.isSubscribed(application2, apiIdentifier)) mustBe true
     }
 
     "not fail when deleting a non-existing subscription" in {
@@ -96,8 +115,8 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.remove(application2, apiIdentifier))
 
-      result shouldBe HasSucceeded
-      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe true
+      result mustBe HasSucceeded
+      await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) mustBe true
     }
   }
 
@@ -111,7 +130,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       await(subscriptionRepository.add(application2, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierB))
       val retrieved = await(subscriptionRepository.findAll)
-      retrieved shouldBe List(
+      retrieved mustBe List(
         subscriptionData("some-context-a".asContext, "1.0.0".asVersion, application1, application2),
         subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2))
     }
@@ -126,7 +145,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
-      isSubscribed shouldBe true
+      isSubscribed mustBe true
     }
 
     "return false when the application is not subscribed" in {
@@ -135,7 +154,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val isSubscribed = await(subscriptionRepository.isSubscribed(applicationId, apiIdentifier))
 
-      isSubscribed shouldBe false
+      isSubscribed mustBe false
     }
   }
 
@@ -153,13 +172,13 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result shouldBe List(api1, api2)
+      result mustBe List(api1, api2)
     }
 
     "return empty when the application is not subscribed to any API" in {
       val result = await(subscriptionRepository.getSubscriptions(application1))
 
-      result shouldBe List.empty
+      result mustBe List.empty
     }
   }
 
@@ -188,7 +207,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       val developerId = app1.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
-      result shouldBe Set(helloWorldApi1, helloVatApi)
+      result mustBe Set(helloWorldApi1, helloVatApi)
     }
 
     "return empty when the user is not a collaborator of any apps" in {
@@ -204,7 +223,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       val developerId = app2.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
-      result shouldBe Set.empty
+      result mustBe Set.empty
     }
 
     "return empty when the user's apps are not subscribed to any API" in {
@@ -214,7 +233,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       val developerId = app.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
-      result shouldBe Set.empty
+      result mustBe Set.empty
     }
   }
 
@@ -237,7 +256,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers("some-context".asIdentifier("4.0")))
 
-      applications should have size 0
+      applications must have size 0
     }
 
     "return the IDs of the applications subscribed to the given API" in {
@@ -251,7 +270,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       forAll(scenarios) { (apiIdentifier, expectedApplications) =>
         val applications: Set[ApplicationId] = await(subscriptionRepository.getSubscribers(apiIdentifier))
-        applications should contain only (expectedApplications: _*)
+        applications must contain only (expectedApplications: _*)
       }
     }
   }
@@ -278,7 +297,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, None))
 
       val expectedEmails = app1.collaborators.map(c => c.emailAddress) ++ app2.collaborators.map(c => c.emailAddress)
-      result.toSet shouldBe expectedEmails
+      result.toSet mustBe expectedEmails
     }
 
     "filter by collaborators and api version" in {
@@ -297,7 +316,7 @@ class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, Some(partialEmailToMatch)))
 
-      result.toSet shouldBe Set(emailToMatch)
+      result.toSet mustBe Set(emailToMatch)
     }
   }
 
