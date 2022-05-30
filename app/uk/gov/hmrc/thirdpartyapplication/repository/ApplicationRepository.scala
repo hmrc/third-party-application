@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import akka.stream.Materializer
+import com.mongodb.client.model.Accumulators.{addToSet, sum}
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonValue, Document}
@@ -46,7 +47,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApplicationRepository @Inject()(mongo: MongoComponent)
-                                     (implicit val mat: Materializer, val ec: ExecutionContext)
+                                     (implicit val ec: ExecutionContext)
   extends PlayMongoRepository[ApplicationData](
     collectionName = "application",
     mongoComponent = mongo,
@@ -420,19 +421,15 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     val pipeline = Seq(
       lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
       unwind("$subscribedApis"),
-      group(Document(s"""{ _id : { id : "$$id", name: "$$name"}, count: {"$$count": {}}} }""")),
-
+      group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))
     )
 
     collection.aggregate[BsonValue](pipeline)
-      .map(x => {
-        println(s"### BSON DOCUMENT: ${x.asDocument().get("_id").toString} ")
-        x.asDocument().get("_id")
-      })
       .map(Codecs.fromBson[ApplicationWithSubscriptionCount])
       .toFuture()
-      .map(
-        _.map(r => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
+      .map(_.map(x => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(x._id.name)}" -> x.count)
+        .toMap
+      )
   }
 }
 

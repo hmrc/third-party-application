@@ -55,8 +55,6 @@ class ApplicationRepositoryISpec
       .disable(classOf[SchedulerModule])
   }
 
-  implicit val mat: Materializer = app.materializer
-
   private val applicationRepository = app.injector.instanceOf[ApplicationRepository]
   private val subscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
 
@@ -78,7 +76,6 @@ class ApplicationRepositoryISpec
     val lengthOfRandomToken = 5
     nextString(lengthOfRandomToken)
   }
-/*
 
   "save" should {
 
@@ -1173,7 +1170,6 @@ class ApplicationRepositoryISpec
       verifyNoMoreInteractions(mockTestService)
     }
   }
-*/
 
   "ApplicationWithSubscriptionCount" should {
     "return Applications with a count of subscriptions" in {
@@ -1206,7 +1202,7 @@ class ApplicationRepositoryISpec
       result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp2Name}") mustBe Some(1)
       result.get(s"applicationsWithSubscriptionCountV1.${sanitisedApp3Name}") mustBe None
     }
-/*
+
     "return Applications when more than 100 results bug" in {
       (1 to 200).foreach(i => {
         val api = s"api-$i"
@@ -1221,9 +1217,9 @@ class ApplicationRepositoryISpec
       val result = await(applicationRepository.getApplicationWithSubscriptionCount())
 
       result.keys.count(_ => true) mustBe 200
-    }*/
+    }
   }
-/*
+
   "addClientSecret" should {
     "append client secrets to an existing application" in {
       val applicationId = ApplicationId.random
@@ -1378,7 +1374,7 @@ class ApplicationRepositoryISpec
       updatedClientSecrets.find(_.id == clientSecret3.id) mustBe (Some(clientSecret3))
     }
   }
-*/
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime): ApplicationData =
     anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId,
       state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)

@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.LocalDateTime
 
-class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport with IndexVerification
+class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
   with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
@@ -122,18 +122,4 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
       await(repository.findAll) shouldBe List(anotherAppStateHistory)
     }
   }
-/*
-
-  "The 'stateHistory' collection" should {
-    "have all the indexes" in {
-      val expectedIndexes = Set(
-        Index(key = Seq("state" -> Ascending), name = Some("state"), unique = false, background = true),
-        Index(key = Seq("applicationId" -> Ascending), name = Some("applicationId"), unique = false, background = true),
-        Index(key = Seq("applicationId" -> Ascending, "state" -> Ascending), name = Some("applicationId_state"), unique = false, background = true),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
-
-      verifyIndexesVersionAgnostic(repository, expectedIndexes)
-    }
-  }
-*/
 }

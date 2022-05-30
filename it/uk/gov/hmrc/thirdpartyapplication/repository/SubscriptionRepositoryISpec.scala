@@ -35,26 +35,20 @@ import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
 
 import java.time.LocalDateTime
 
-class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
+class SubscriptionRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
   with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks with FixedClock {
-
-  implicit val m : Materializer = NoMaterializer
 
   private val subscriptionRepository: SubscriptionRepository = new SubscriptionRepository(mongoComponent)
   private val applicationRepository: ApplicationRepository = new ApplicationRepository(mongoComponent)
 
-  /*override def beforeEach() {
-    List(applicationRepository, subscriptionRepository).foreach { db =>
-      await(db.drop)
-      await(db.ensureIndexes)
-    }
-  }
+  protected override def beforeEach(): Unit = {
+    super.beforeEach()
+    await(applicationRepository.collection.drop().toFuture())
+    await(subscriptionRepository.collection.drop().toFuture())
 
-  override protected def afterAll() {
-    List(applicationRepository, subscriptionRepository).foreach { db =>
-      await(db.drop)
-    }
-  }*/
+    await(applicationRepository.ensureIndexes)
+    await(subscriptionRepository.ensureIndexes)
+  }
 
   "add" should {
 
@@ -106,7 +100,6 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
       await(subscriptionRepository.isSubscribed(application1, apiIdentifier)) shouldBe true
     }
   }
-
 
   "find all" should {
     "retrieve all versions subscriptions" in {
@@ -185,6 +178,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
       val helloWorldApi2 = "hello-world".asIdentifier("2.0")
       val helloVatApi = "hello-vat".asIdentifier("1.0")
       val helloAgentsApi = "hello-agents".asIdentifier("1.0")
+
       await(subscriptionRepository.add(app1.id, helloWorldApi1))
       await(subscriptionRepository.add(app1.id, helloVatApi))
       await(subscriptionRepository.add(app2.id, helloWorldApi2))
@@ -194,24 +188,28 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
       val developerId = app1.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
-      result shouldBe Set(helloWorldApi1, helloWorldApi2, helloVatApi)
+      result shouldBe Set(helloWorldApi1, helloVatApi)
     }
 
-    "return empty when the user's apps are not subscribed to any API" in {
-      val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app))
+    "return empty when the user is not a collaborator of any apps" in {
+      val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
+      val app2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
 
-      val developerId = app.collaborators.head.userId
+      await(applicationRepository.save(app1))
+      await(applicationRepository.save(app2))
+
+      val api = "hello-world".asIdentifier("1.0")
+      await(subscriptionRepository.add(app1.id, api))
+
+      val developerId = app2.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
       result shouldBe Set.empty
     }
 
-    "return empty when the user is not a collaborator of any apps" in {
-      val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
+    "return empty when the user's apps are not subscribed to any API" in {
+      val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app))
-      val api = "hello-world".asIdentifier("1.0")
-      await(subscriptionRepository.add(app.id, api))
 
       val developerId = app.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
@@ -258,22 +256,9 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
     }
   }
 
-  /*"The 'subscription' collection" should {
-    "have all the indexes" in {
-      val expectedIndexes = Set(
-        Index(key = Seq("applications" -> Ascending), name = Some("applications"), unique = false, background = true),
-        Index(key = Seq("apiIdentifier.context" -> Ascending), name = Some("context"), unique = false, background = true),
-        Index(key =
-          Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
-
-      verifyIndexesVersionAgnostic(subscriptionRepository, expectedIndexes)
-    }
-  }*/
-
   "Get API Version Collaborators" should {
-    "return email addresses" in {
 
+    "return email addresses" in {
       val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("match1@example.com", "match2@example.com"))
       await(applicationRepository.save(app1))
 
@@ -297,13 +282,13 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
     }
 
     "filter by collaborators and api version" in {
+      val emailToMatch = "match@example.com"
 
-      val matchEmail = "match@example.com"
       val partialEmailToMatch = "match"
       val app1 = anApplicationData(
         id = ApplicationId.random,
         clientId = generateClientId,
-        user = List(matchEmail, "donot@example.com"))
+        user = List(emailToMatch, "donot@example.com"))
 
       await(applicationRepository.save(app1))
 
@@ -312,7 +297,7 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSupport with Cl
 
       val result = await(subscriptionRepository.searchCollaborators(api1.context, api1.version, Some(partialEmailToMatch)))
 
-      result.toSet shouldBe Set(matchEmail)
+      result.toSet shouldBe Set(emailToMatch)
     }
   }
 

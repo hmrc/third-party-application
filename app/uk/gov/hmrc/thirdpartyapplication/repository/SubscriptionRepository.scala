@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.repository
 
 import org.mongodb.scala.bson.BsonValue
+import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters.{and, equal, regex}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
-import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
+import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
@@ -57,43 +58,37 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
   ) with MongoJavatimeFormats.Implicits {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
-    val pipelineStepOne = Seq(
-      filter(and
-        (equal("apiIdentifier.version", Codecs.toBson(version)),
-         equal("apiIdentifier.context", Codecs.toBson(context)))
+    val pipeline = Seq(
+      filter(
+        Document(
+          "apiIdentifier.context" -> Codecs.toBson(context),
+          "apiIdentifier.version" -> Codecs.toBson(version)
+        )
       ),
       project(fields(excludeId(), include("applications"))),
-      unwind("applications")
-    )
-
-    val pipelineStepSecond = Seq(
+      unwind("$applications"),
       lookup(from ="application", localField ="applications", foreignField = "id", as = "applications"),
       project(fields(computed("collaborators", "$applications.collaborators.emailAddress"))),
-      unwind("collaborators"),
-      unwind("collaborators"),
+      unwind("$collaborators"),
+      unwind("$collaborators"),
       group("$collaborators")
     )
 
-    val pipeline = pipelineStepOne ++ pipelineStepSecond
-
     def partialEmailMatch(email: String) = {
-      val caseInsensitiveRegExOption = "i"
-      `match`(equal("_id", regex(email, caseInsensitiveRegExOption)))
+      filter(Document(s"""{_id: {$$regex: "$email", $$options: "i"} }"""))
     }
 
-    val pipelineWithOptionalEmailFilter =
+    val pipelineWithOptionalEmailFilter = {
       partialEmail match {
         case Some(email) => pipeline ++ Seq(partialEmailMatch(email))
         case None => pipeline
       }
+    }
 
     collection.aggregate[BsonValue](pipelineWithOptionalEmailFilter)
       .toFuture()
-      .map {
-        _.map {
-          result => result.asDocument().get("_id").asString().toString
-        }
-      }.map(_.toList)
+      .map(_.map(_.asDocument().get("_id").asString().getValue))
+      .map(_.toList)
   }
 
   def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[Boolean] = {
@@ -102,7 +97,8 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
       equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
     )
-   collection.countDocuments(filter)
+
+    collection.countDocuments(filter)
      .toFuture()
      .map(x => x > 0)
   }
@@ -126,18 +122,19 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
        )
     )
 
-    collection.aggregate(pipeline)
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApiIdentifier])
       .toFuture()
-      .map {
-        _.map(_.apiIdentifier)
-         .toSet
-      }
+      .map(_.toSet)
   }
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
-    collection.find(equal("apiIdentifier", Codecs.toBson(apiIdentifier)))
-      .head()
-      .map(_.applications)
+    collection.find(contextAndVersionFilter(apiIdentifier))
+      .headOption
+      .map {
+        case Some(data) => data.applications
+        case _ => Set.empty
+      }
   }
 
   def findAll: Future[List[SubscriptionData]] = {
