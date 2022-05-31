@@ -20,6 +20,7 @@ import cats.data.OptionT
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
+import uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.ErrorMessage
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -145,6 +146,15 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       applicationService.updateGrantLength(applicationId, toGrantLength(updatedGrantLengthRequest)) map { _ =>
         NoContent
       } recover recovery
+    }
+  }
+
+  def updateName(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[UpdateApplicationNameRequest] { updateApplicationNameRequest =>
+      applicationService.updateApplicationName(applicationId, updateApplicationNameRequest.name).value.map(_ match {
+        case Right(_) => NoContent
+        case Left(err) => BadRequest(Json.toJson(ErrorMessage(err)))
+      }) recover recovery
     }
   }
 

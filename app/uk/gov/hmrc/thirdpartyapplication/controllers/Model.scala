@@ -56,6 +56,8 @@ case class OverridesResponse(overrides: Set[OverrideFlag])
 
 case class UpdateRateLimitTierRequest(rateLimitTier: String)
 
+case class UpdateApplicationNameRequest(name: String)
+
 case class UpdateGrantLengthRequest(grantLengthInDays: Int )
 object UpdateGrantLengthRequest {
   def toGrantLength(updateGrantLengthRequest: UpdateGrantLengthRequest): Int = {

@@ -17,6 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
+import cats.data.EitherT
+import cats.implicits._
 import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -47,7 +49,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject
@@ -197,6 +199,24 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     for {
       updatedApp <- applicationRepository.updateApplicationGrantLength(applicationId, newGrantLength)
     } yield updatedApp
+  }
+
+  def updateApplicationName(applicationId: ApplicationId, newName: String): EitherT[Future, String, ApplicationData] = {
+    logger.info(s"Trying to update the Application Name to $newName for application ${applicationId.value}")
+
+    val ET = EitherTHelper.make[String]
+    for {
+      _          <- ET.fromEitherF(validateApplicationName(newName))
+      updatedApp <- ET.liftF(applicationRepository.updateApplicationName(applicationId, newName))
+    } yield updatedApp
+  }
+
+  private def validateApplicationName(name: String) = {
+    upliftNamingService.validateApplicationName(name, None).map(_ match {
+      case ValidName => Right()
+      case InvalidName => Left("Invalid name")
+      case DuplicateName => Left("Duplicate name")
+    })
   }
 
   def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
