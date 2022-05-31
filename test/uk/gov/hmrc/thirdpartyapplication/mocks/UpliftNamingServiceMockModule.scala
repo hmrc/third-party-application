@@ -20,8 +20,8 @@ import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.verification.VerificationMode
 
-import scala.concurrent.Future.{successful,failed}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
+import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, DuplicateName, InvalidName, ValidName}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -44,6 +44,12 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
       def thenFailsWithApplicationAlreadyExists() = {
         when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer( (appName: String, _: AccessType, _: Option[ApplicationData]) => failed(ApplicationAlreadyExists(appName)))
       }
+    }
+
+    object ValidateApplicationName {
+      def succeeds() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(ValidName))
+      def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(DuplicateName))
+      def failsWithInvalidName() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(InvalidName))
     }
   }
   

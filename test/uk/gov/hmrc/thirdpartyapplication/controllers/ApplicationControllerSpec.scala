@@ -17,12 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import akka.stream.Materializer
-import cats.data.OptionT
+import cats.data.{EitherT, OptionT}
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
@@ -1285,6 +1284,30 @@ class ApplicationControllerSpec
       }
 
       error.getMessage shouldBe "Grant Length in Days cannot be less than or equal to zero"
+    }
+  }
+
+  "updateName" should {
+    "return success if application name is updated" in new Setup {
+      val applicationId = ApplicationId.random
+      val newName = "newName"
+      val app = anApplicationData(applicationId)
+      when(mockApplicationService.updateApplicationName(applicationId, newName)).thenReturn(EitherT.rightT(app))
+
+      val result = underTest.updateName(applicationId)(request.withBody(Json.obj("name" -> newName)))
+
+      status(result) shouldBe NO_CONTENT
+    }
+    "return bad request if application name is not updated" in new Setup {
+      val applicationId = ApplicationId.random
+      val newName = "newName"
+      val errorMsg = "nope"
+      when(mockApplicationService.updateApplicationName(applicationId, newName)).thenReturn(EitherT.leftT(errorMsg))
+
+      val result = underTest.updateName(applicationId)(request.withBody(Json.obj("name" -> newName)))
+
+      status(result) shouldBe BAD_REQUEST
+      contentAsJson(result) shouldBe Json.obj("message" -> errorMsg)
     }
   }
 

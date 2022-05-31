@@ -1425,6 +1425,20 @@ class ApplicationRepositorySpec
 
   }
 
+  "updateApplicationName" should {
+    "update the name and normalised name for the application" in {
+      val applicationId = ApplicationId.random
+      val oldName = "oldName"
+      val newName = "newName"
+      val app = anApplicationData(applicationId).copy(name = oldName)
+      await(applicationRepository.save(app))
+
+      val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
+      appWithUpdatedName.name shouldBe newName
+      appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
+    }
+  }
+
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime) = anApplicationData(
     id = ApplicationId.random,
     prodClientId = generateClientId,

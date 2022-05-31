@@ -305,6 +305,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addApplicationTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
     }
+
+    object UpdateApplicationName {
+      def thenReturn(applicationData: ApplicationData) = {
+        when(aMock.updateApplicationName(*[ApplicationId], *[String])).thenReturn(successful(applicationData))
+      }
+
+      def verifyNeverCalled() = {
+        ApplicationRepoMock.verify(never).updateApplicationName(*[ApplicationId], *[String])
+      }
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {
