@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import cats.data.OptionT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDao
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -35,11 +35,11 @@ import java.time.{Clock, LocalDateTime}
 
 
 class ResponsibleIndividualVerificationService @Inject()(
-    responsibleIndividualVerificationDao: ResponsibleIndividualVerificationDAO,
-    applicationRepository: ApplicationRepository,
-    stateHistoryRepository: StateHistoryRepository,
-    applicationService: ApplicationService,
-    clock: Clock
+                                                          responsibleIndividualVerificationDao: ResponsibleIndividualVerificationDao,
+                                                          applicationRepository: ApplicationRepository,
+                                                          stateHistoryRepository: StateHistoryRepository,
+                                                          applicationService: ApplicationService,
+                                                          clock: Clock
  )(implicit ec: ExecutionContext) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
   def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int) = {

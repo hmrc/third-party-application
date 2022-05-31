@@ -88,5 +88,11 @@ class SubmissionsDaoISpec
       await(submissionsDao.update(updatedSubmission)) mustBe updatedSubmission
       await(submissionsDao.fetchLatest(applicationId)).value mustBe updatedSubmission
     }
+
+    "upsert submission if it doesn't exist " in {
+      await(submissionsDao.update(aSubmission))
+
+      await(submissionsDao.fetchLatest(applicationId)).value mustBe aSubmission
+    }
   }
 }

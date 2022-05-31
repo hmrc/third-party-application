@@ -28,9 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
 
 import java.time.{LocalDate, LocalDateTime}
-import java.util.concurrent.TimeUnit.MINUTES
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.duration.{Duration, FiniteDuration, DurationInt}
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.concurrent.{ExecutionContext, Future}
 
 class ResetLastAccessDateJobSpec
@@ -93,6 +92,19 @@ class ResetLastAccessDateJobSpec
         app.lastAccess.isDefined should be (true)
         app.lastAccess.get.isBefore(dateToSet.atStartOfDay()) should be (false)
       })
+    }
+
+    "update lastAccess field on application when it does not have a lastAccessDate" in new ModifyDatesSetup {
+      val applicationData: ApplicationData = anApplicationData(localDateTime = dateToSet.minusDays(1).atStartOfDay()).copy(lastAccess = None)
+
+      await(applicationRepository.save(applicationData))
+      await(underTest.runJob)
+
+      val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
+
+      retrievedApplications.size shouldBe 1
+      retrievedApplications.head.lastAccess should not be None
+
     }
 
     "not update the database if dryRun option is specified" in new DryRunSetup {

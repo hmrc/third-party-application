@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories
 
-import akka.stream.Materializer
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending

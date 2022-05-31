@@ -18,7 +18,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDAO
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationDao
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
@@ -44,7 +44,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val submissionId = Submission.Id.random
     val submissionInstanceIndex = 0
 
-    val responsibleIndividualVerificationDao = mock[ResponsibleIndividualVerificationDAO]
+    val responsibleIndividualVerificationDao = mock[ResponsibleIndividualVerificationDao]
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
                               responsibleIndividual,
