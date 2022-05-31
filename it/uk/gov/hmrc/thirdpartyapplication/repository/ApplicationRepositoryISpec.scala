@@ -22,6 +22,7 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -35,6 +36,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
+import scala.reflect.ClassManifestFactory.{Nothing, Null}
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec
@@ -1372,6 +1374,26 @@ class ApplicationRepositoryISpec
       updatedClientSecrets.find(_.id == clientSecret2.id) mustBe (Some(clientSecret2))
       updatedClientSecrets.find(_.id == clientSecretToRemove.id) mustBe (None)
       updatedClientSecrets.find(_.id == clientSecret3.id) mustBe (Some(clientSecret3))
+    }
+  }
+
+  "fetchAllForUserId" should {
+    "should return two applications when both have the same userId" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val userId = UserId.random
+
+      val collaborator = Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val testApplication1 = anApplicationDataForTest(applicationId1).copy(collaborators = Set(collaborator))
+      val testApplication2 = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb")).copy(collaborators = Set(collaborator))
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+
+      val result = await(applicationRepository.fetchAllForUserId(userId))
+
+      result.size mustBe 2
+      result.map(_.collaborators.map(collaborator => collaborator.userId mustBe userId))
     }
   }
 
