@@ -82,7 +82,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       IndexModel(ascending("collaborators.emailAddress"), IndexOptions()
         .name("collaboratorsEmailAddressIndex")
         .background(true))
-    )
+    ), replaceIndexes = true
   ) with MetricsHelper
     with MongoJavatimeFormats.Implicits {
 

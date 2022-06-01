@@ -44,7 +44,7 @@ class UpliftLinksRepository @Inject() (mongo: MongoComponent)
             .name("sandboxApplicationIdIndex")
             .background(true)
         )
-      )
+      ), replaceIndexes = true
     ) {
 
   def insert(upliftLink: UpliftLink): Future[UpliftLink] = {

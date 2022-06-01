@@ -50,7 +50,8 @@ class StateHistoryRepository @Inject()(mongo: MongoComponent)
         .name("applicationId_state")
         .background(true)
       )
-    )) with MongoJavatimeFormats.Implicits {
+    ), replaceIndexes = true
+  ) with MongoJavatimeFormats.Implicits {
 
   def insert(stateHistory: StateHistory): Future[StateHistory] = {
     collection.insertOne(stateHistory)

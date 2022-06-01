@@ -54,7 +54,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
         .name("applications")
         .background(true)
       )
-    )
+    ), replaceIndexes = true
   ) with MongoJavatimeFormats.Implicits {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
