@@ -28,23 +28,22 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class SubmissionsRepository @Inject() (mongo: MongoComponent)
-                                      (implicit val ec: ExecutionContext)
+class SubmissionsRepository @Inject()(mongo: MongoComponent)
+                                     (implicit val ec: ExecutionContext)
   extends PlayMongoRepository[Submission](
-      collectionName = "submissions",
-      mongoComponent = mongo,
-      domainFormat = SubmissionsJsonFormatters.submissionFormat,
-      indexes = Seq(
-        IndexModel(ascending("applicationId"), IndexOptions()
-            .name("applicationIdIndex")
-            .background(true)
-        ),
-        IndexModel(ascending("id"), IndexOptions()
-            .name("submissionIdIndex")
-            .unique(true)
-            .background(true)
-        ),
+    collectionName = "submissions",
+    mongoComponent = mongo,
+    domainFormat = SubmissionsJsonFormatters.submissionFormat,
+    indexes = Seq(
+      IndexModel(ascending("applicationId"), IndexOptions()
+        .name("applicationIdIndex")
+        .background(true)
       ),
+      IndexModel(ascending("id"), IndexOptions()
+        .name("submissionIdIndex")
+        .unique(true)
+        .background(true)
+      )
+    ),
     replaceIndexes = true
-    )
-    with MongoJavatimeFormats.Implicits {}
+  ) with MongoJavatimeFormats.Implicits {}
