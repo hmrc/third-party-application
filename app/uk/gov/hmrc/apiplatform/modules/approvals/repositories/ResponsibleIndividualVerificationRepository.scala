@@ -36,18 +36,19 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       domainFormat = ResponsibleIndividualVerification.format,
       indexes = Seq(
         IndexModel(ascending("id"), IndexOptions()
-          .name("responsibleIndividualVerificationIdIndex")
+          .name("idIndex")
           .unique(true)
           .background(true)
         ),
         IndexModel(ascending("createdOn"),IndexOptions()
-            .name("responsibleIndividualVerificationCreatedOnIndex")
+            .name("createdOnIndex")
             .background(true)
         ),
         IndexModel(ascending("applicationId", "submissionId", "submissionInstance"), IndexOptions()
-            .name("responsibleIndividualVerificationAppSubmissionIdIndex")
+            .name("appSubmissionIdIndex")
             .unique(true)
             .background(true)
         )
-      )
+      ),
+      replaceIndexes = true
     ) with MongoJavatimeFormats.Implicits {}

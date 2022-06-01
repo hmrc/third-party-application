@@ -1378,7 +1378,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForUserId" should {
-    "should return two applications when both have the same userId" in {
+    "return two applications when both have the same userId" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
       val userId = UserId.random
@@ -1394,6 +1394,86 @@ class ApplicationRepositoryISpec
 
       result.size mustBe 2
       result.map(_.collaborators.map(collaborator => collaborator.userId mustBe userId))
+    }
+  }
+
+  "fetchAllForUserIdAndEnvironment" should {
+    "return one application when both apps have the same userId but only one is in Production" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val userId = UserId.random
+      val productionEnv = Environment.PRODUCTION.toString
+
+      val collaborator = Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+
+      val prodApplication = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val sandboxApplication = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        .copy(environment = Environment.SANDBOX.toString, collaborators = Set(collaborator))
+
+      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(sandboxApplication))
+
+      val result = await(applicationRepository.fetchAllForUserIdAndEnvironment(userId,  productionEnv))
+
+      result.size mustBe 1
+      result.head.environment mustBe productionEnv
+      result.map(_.collaborators.map(collaborator => collaborator.userId mustBe userId))
+    }
+  }
+
+  "fetchAllForEmailAddressAndEnvironment" should {
+    "return one application when both apps have the same user email but only one is in Production" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val userId = UserId.random
+      val productionEnv = Environment.PRODUCTION.toString
+
+      val collaborator = Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+
+      val prodApplication = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val sandboxApplication = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        .copy(environment = Environment.SANDBOX.toString, collaborators = Set(collaborator))
+
+      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(sandboxApplication))
+
+      val result = await(applicationRepository.fetchAllForEmailAddressAndEnvironment(collaborator.emailAddress,  productionEnv))
+
+      result.size mustBe 1
+      result.head.environment mustBe productionEnv
+      result.map(_.collaborators.map(x => x.emailAddress mustBe collaborator.emailAddress))
+    }
+  }
+
+  "documentsWithFieldMissing" should {
+    "return count of documents with missing description" in {
+      val appWithNoDescription = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+        .copy(description = None)
+      val appWithDescription = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+.       copy(description = Some("A description"))
+
+      await(applicationRepository.save(appWithNoDescription))
+      await(applicationRepository.save(appWithDescription))
+
+      val numberRetrieved = await(applicationRepository.documentsWithFieldMissing("description"))
+
+      numberRetrieved mustBe 1
+    }
+  }
+
+  "count" should {
+    "return count of documents in the collection" in {
+      val application1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+      val application2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+
+      val numberRetrieved = await(applicationRepository.count)
+
+      numberRetrieved mustBe 2
     }
   }
 

@@ -119,6 +119,10 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   def recordServerTokenUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Updates.combine(Updates.currentDate("lastAccess"), Updates.currentDate("tokens.production.lastAccessTokenUsage")))
 
+  // Historically emailAddress was the unique identifier for User and it didn't have a userId.
+  // So this method was to back fix any records without the userId.
+  // This is not possible to test as the model does not allow a User without a userId.
+  // $COVERAGE-OFF$
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
@@ -136,6 +140,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       options = new FindOneAndUpdateOptions().returnDocument(ReturnDocument.AFTER)
     ).toFutureOption()
   }
+  // $COVERAGE-ON$
 
   def updateApplication(applicationId: ApplicationId, updateStatement: Bson): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
@@ -244,7 +249,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   }
 
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
-    collection.find(equal("collaborators.emailAddress", Codecs.toBson(emailAddress))).toFuture()
+    collection.find(equal("collaborators.emailAddress", emailAddress)).toFuture()
   }
 
   def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationData]] = {
