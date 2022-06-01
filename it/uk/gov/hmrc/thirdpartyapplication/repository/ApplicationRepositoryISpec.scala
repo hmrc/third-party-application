@@ -16,27 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import akka.stream.Materializer
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{Active, ApplicationSearch, ApplicationTextSearch, LastUseAfterDate, LastUseBeforeDate, LastUseDateAscending, LastUseDateDescending, NameAscending, NameDescending, NoAPISubscriptions, OneOrMoreAPISubscriptions, ROPCAccess, SpecificAPISubscription, SubmittedAscending, SubmittedDescending}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
-import scala.reflect.ClassManifestFactory.{Nothing, Null}
 import scala.util.Random.nextString
 
 class ApplicationRepositoryISpec

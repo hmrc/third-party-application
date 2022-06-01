@@ -21,7 +21,7 @@ import org.mongodb.scala.model.Sorts.descending
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsJsonFormatters._
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 

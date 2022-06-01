@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import akka.stream.Materializer
-import com.mongodb.client.model.Accumulators.{addToSet, sum}
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonValue, Document}
@@ -37,8 +35,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{SpecificAPISubscription, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 
 import java.time.LocalDateTime

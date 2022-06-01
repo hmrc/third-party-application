@@ -18,11 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import akka.actor.ActorSystem
 import com.kenshoo.play.metrics.Metrics
-import play.api.{Configuration, Logging}
+import play.api.Configuration
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.mongo.metrix.{MetricOrchestrator, MetricRepository}
-import uk.gov.hmrc.thirdpartyapplication.metrics.{ApisWithSubscriptionCount, ApplicationCount, ApplicationsWithSubscriptionCount, MissingMongoFields, RateLimitMetrics}
+import uk.gov.hmrc.thirdpartyapplication.metrics._
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext

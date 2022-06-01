@@ -20,10 +20,10 @@ import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{and, equal, regex}
+import org.mongodb.scala.model.Filters.{and, equal}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
-import org.mongodb.scala.model.{Filters, IndexModel, IndexOptions, UpdateOptions, Updates}
+import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
