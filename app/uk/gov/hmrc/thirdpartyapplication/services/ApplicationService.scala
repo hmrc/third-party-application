@@ -201,21 +201,20 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApp
   }
 
-  def updateApplicationName(applicationId: ApplicationId, newName: String): EitherT[Future, String, ApplicationData] = {
+  def updateApplicationName(applicationId: ApplicationId, newName: String): EitherT[Future, ApplicationNameValidationResult, ApplicationData] = {
     logger.info(s"Trying to update the Application Name to $newName for application ${applicationId.value}")
 
-    val ET = EitherTHelper.make[String]
+    val ET = EitherTHelper.make[ApplicationNameValidationResult]
     for {
       _          <- ET.fromEitherF(validateApplicationName(newName))
       updatedApp <- ET.liftF(applicationRepository.updateApplicationName(applicationId, newName))
     } yield updatedApp
   }
 
-  private def validateApplicationName(name: String) = {
+  private def validateApplicationName(name: String): Future[Either[ApplicationNameValidationResult, Unit]] = {
     upliftNamingService.validateApplicationName(name, None).map(_ match {
       case ValidName => Right()
-      case InvalidName => Left("Invalid name")
-      case DuplicateName => Left("Duplicate name")
+      case errResult => Left(errResult)
     })
   }
 

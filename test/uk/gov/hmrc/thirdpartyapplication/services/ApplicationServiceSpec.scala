@@ -179,7 +179,7 @@ class ApplicationServiceSpec
       val newName = "newName"
       val result = await(underTest.updateApplicationName(applicationId, newName).value)
 
-      result shouldBe Left("Invalid name")
+      result shouldBe Left(InvalidName)
       ApplicationRepoMock.UpdateApplicationName.verifyNeverCalled
     }
     "should not update the repository if name is duplicate" in new Setup {
@@ -188,7 +188,7 @@ class ApplicationServiceSpec
       val newName = "newName"
       val result = await(underTest.updateApplicationName(applicationId, newName).value)
 
-      result shouldBe Left("Duplicate name")
+      result shouldBe Left(DuplicateName)
       ApplicationRepoMock.UpdateApplicationName.verifyNeverCalled
     }
   }
