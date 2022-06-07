@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.component
 
-import org.joda.time.DateTimeUtils
 import play.api.Application
 import play.api.http.HeaderNames.AUTHORIZATION
 import play.api.http.Status._
@@ -42,7 +41,7 @@ class DummyCredentialGenerator extends CredentialGenerator {
   override def generate() = "a" * 10
 }
 
-class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
+class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
   val configOverrides = Map[String,Any](
     "microservice.services.api-subscription-fields.port" -> 19650,
@@ -95,7 +94,7 @@ class ThirdPartyApplicationComponentSpec extends BaseFeatureSpec {
   }
 
   override protected def afterEach(): Unit = {
-    DateTimeUtils.setCurrentMillisSystem()
+//    DateTimeUtils.setCurrentMillisSystem()
     result(subscriptionRepository.collection.drop.toFuture(), timeout)
     result(applicationRepository.collection.drop.toFuture(), timeout)
     super.afterEach()

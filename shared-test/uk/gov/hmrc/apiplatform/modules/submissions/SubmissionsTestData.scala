@@ -16,17 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
+import cats.data.NonEmptyList
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.time.DateTimeUtils
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
-import cats.data.NonEmptyList
 
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.util.Random
-import org.joda.time.DateTime
-
-import java.time.LocalDateTime
 
 trait StatusTestDataHelper {
   implicit class StatusHistorySyntax(submission: Submission) {
@@ -287,7 +283,7 @@ trait MarkedSubmissionsTestData extends SubmissionsTestData with AnsweringQuesti
 
   val markedSubmission = MarkedSubmission(submittedSubmission, markedAnswers)
 
-  def markAsPass(now: DateTime = DateTimeUtils.now, requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
+  def markAsPass(now: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC), requestedBy: String = "bob@example.com")(submission: Submission): MarkedSubmission = {
     val answers = answersForGroups(Pass)(submission.groups)
     val marks = answers.map { case (q,a) => q -> Pass }
 

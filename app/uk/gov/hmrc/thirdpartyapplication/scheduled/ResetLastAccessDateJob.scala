@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import org.mongodb.scala.model.Updates
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService, MongoLockRepository}
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId

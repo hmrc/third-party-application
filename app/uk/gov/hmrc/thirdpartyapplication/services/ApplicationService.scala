@@ -18,14 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
 import org.apache.commons.net.util.SubnetUtils
-import org.joda.time.Duration.standardMinutes
-import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.http.ForbiddenException
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.lock.LockKeeper
-import uk.gov.hmrc.lock.LockMongoRepository
-import uk.gov.hmrc.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
@@ -55,11 +50,12 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _, _}
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.{Duration, DurationInt}
 import scala.util.Failure
 import scala.util.Try
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import java.time.{Clock, LocalDateTime}
 
@@ -72,7 +68,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
                                    emailConnector: EmailConnector,
                                    totpConnector: TotpConnector,
                                    system: ActorSystem,
-                                   lockKeeper: ApplicationLockKeeper,
+                                   lockService: ApplicationLockService,
                                    apiGatewayStore: ApiGatewayStore,
                                    applicationResponseCreator: ApplicationResponseCreator,
                                    credentialGenerator: CredentialGenerator,
@@ -86,7 +82,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
-    lockKeeper.tryLock {
+    lockService.withLock {
       createApp(application)
     } flatMap {
       case Some(x) =>
@@ -519,18 +515,16 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) = 
+  private def loggedInUser(implicit hc: HeaderCarrier) =
     hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
     .getOrElse("")
 }
 
 @Singleton
-class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = {
-    LockMongoRepository(reactiveMongoComponent.mongoConnector.db)
-  }
+class ApplicationLockService @Inject()(repository: LockRepository)
+  extends LockService {
 
-  override def lockId: String = "create-third-party-application"
-
-  override val forceLockReleaseAfter = standardMinutes(1)
+  override val lockRepository: LockRepository = repository
+  override val lockId: String = "create-third-party-application"
+  override val ttl: Duration = 1.minutes
 }

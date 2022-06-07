@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import org.joda.time.DateTime
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.mongo.lock.MongoLockRepository
 import uk.gov.hmrc.mongo.test.MongoSupport
@@ -26,9 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, NoMetricsGuiceOneAppPerSuite}
-import uk.gov.hmrc.time.{DateTimeUtils => HmrcTime}
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.concurrent.TimeUnit.{DAYS, HOURS, SECONDS}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
@@ -42,7 +40,7 @@ class UpliftVerificationExpiryJobSpec
     with ApplicationStateUtil
     with NoMetricsGuiceOneAppPerSuite {
 
-  final val FixedTimeNow: DateTime = HmrcTime.now
+  final val FixedTimeNow = LocalDateTime.now(ZoneOffset.UTC)
   final val expiryTimeInDays = 90
   final val sixty = 60
   final val twentyFour = 24
