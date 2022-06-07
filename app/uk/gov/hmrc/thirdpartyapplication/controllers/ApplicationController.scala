@@ -149,15 +149,15 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
   }
 
-  def updateName(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[UpdateApplicationNameRequest] { updateApplicationNameRequest =>
-      applicationService.updateApplicationName(applicationId, updateApplicationNameRequest.name).value.map(_ match {
-        case Right(_) => NoContent
-        case Left(InvalidName) => BadRequest(Json.toJson(ErrorMessage("Invalid name")))
-        case Left(DuplicateName) => Conflict(Json.toJson(ErrorMessage("Duplicate name")))
-      }) recover recovery
-    }
-  }
+//  def updateName(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+//    withJsonBody[UpdateApplicationNameRequest] { updateApplicationNameRequest =>
+//      applicationService.updateApplicationName(applicationId, updateApplicationNameRequest.name).value.map(_ match {
+//        case Right(_) => NoContent
+//        case Left(InvalidName) => BadRequest(Json.toJson(ErrorMessage("Invalid name")))
+//        case Left(DuplicateName) => Conflict(Json.toJson(ErrorMessage("Duplicate name")))
+//      }) recover recovery
+//    }
+//  }
 
   def updateCheck(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
     implicit request =>
