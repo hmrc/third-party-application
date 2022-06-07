@@ -32,6 +32,8 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 import uk.gov.hmrc.utils.ServerBaseISpec
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.util.UUID
 
@@ -95,8 +97,18 @@ class ApprovalsControllerISpec
   "ApprovalsController" should {
 
     def primeData(appId: ApplicationId): Unit = {
+      val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+      val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+        responsibleIndividual,
+        Set(ServerLocation.InUK),
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
+        List.empty)
+      val application: ApplicationData = anApplicationData(
+        appId,
+        pendingGatekeeperApprovalState("bob@fastshow.com"),
+        access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
-      val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
       await(applicationRepo.save(application))
       await(submissionRepo.collection
           .insertOne(submittedSubmission.copy(applicationId = appId))
@@ -151,6 +163,17 @@ class ApprovalsControllerISpec
       val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
       response must not be None
     }
-  }
 
+    "return 200 when successful" in {
+      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
+      primeData(appId)
+      stubEmail()
+      val requestBody = """{"gatekeeperUserName":"Bob Hope"}"""
+      val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
+      result.status mustBe OK
+      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      response must not be None
+
+    }
+  }
 }

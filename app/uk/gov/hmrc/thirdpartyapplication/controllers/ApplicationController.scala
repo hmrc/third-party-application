@@ -424,22 +424,6 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     } recover recovery
   }
 
-  def addTermsOfUseAcceptance(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[AddTermsOfUseAcceptanceRequest] { request =>
-      val acceptance = TermsOfUseAcceptance(
-        ResponsibleIndividual(
-          ResponsibleIndividual.Name(request.name),
-          ResponsibleIndividual.EmailAddress(request.emailAddress)
-        ),
-        request.acceptanceDate,
-        request.submissionId
-      )
-      applicationService.addTermsOfUseAcceptance(applicationId, acceptance) map { _ =>
-          NoContent
-      } recover recovery
-    }
-  }
-
   def confirmSetupComplete(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[ConfirmSetupCompleteRequest] {request =>
       applicationService.confirmSetupComplete(applicationId, request.requesterEmailAddress) map { _ =>

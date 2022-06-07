@@ -30,6 +30,7 @@ import java.{util => ju}
 case class ApplicationState(
   name: State = TESTING,
   requestedByEmailAddress: Option[String] = None,
+  requestedByName: Option[String] = None,
   verificationCode: Option[String] = None,
   updatedOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
 ) {
@@ -45,6 +46,8 @@ case class ApplicationState(
   def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
   def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
+
 
   def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
@@ -73,12 +76,13 @@ case class ApplicationState(
       updatedOn = LocalDateTime.now(clock))
   }
 
-  def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, clock: Clock) = {
+  def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
 
     copy(name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
       updatedOn = LocalDateTime.now(clock),
-      requestedByEmailAddress = Some(requestedByEmailAddress))
+      requestedByEmailAddress = Some(requestedByEmailAddress),
+      requestedByName = Some(requestedByName))
   }
 
   def toPendingRequesterVerification(clock: Clock) = {

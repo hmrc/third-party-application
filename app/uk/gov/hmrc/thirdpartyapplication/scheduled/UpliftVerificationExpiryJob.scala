@@ -72,11 +72,11 @@ class UpliftVerificationExpiryJob @Inject()(upliftVerificationExpiryJobLockServi
   }
 }
 
-class UpliftVerificationExpiryJobLockService @Inject()(mongoLockRepository: MongoLockRepository)
+class UpliftVerificationExpiryJobLockService @Inject()(repository: LockRepository)
   extends LockService {
 
   override val lockId: String = "UpliftVerificationExpiryScheduler"
-  override val lockRepository: LockRepository = mongoLockRepository
+  override val lockRepository: LockRepository = repository
   override val ttl: Duration = 1.hours
 }
 

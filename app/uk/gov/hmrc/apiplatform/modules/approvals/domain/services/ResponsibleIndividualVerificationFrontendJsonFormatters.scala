@@ -16,23 +16,16 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
-
-trait ResponsibleIndividualVerificationJsonFormatters {
-
-//  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-//
-//  implicit val format = Json.format[ResponsibleIndividualVerification]
-}
-
-//object ResponsibleIndividualVerificationJsonFormatters extends ResponsibleIndividualVerificationJsonFormatters
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
-  implicit val utcReads = DefaultLocalDateTimeReads
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
 
   implicit val responsibleIndividualVerificationFormat = Json.format[ResponsibleIndividualVerification]
+  implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 
 object ResponsibleIndividualVerificationFrontendJsonFormatters extends ResponsibleIndividualVerificationFrontendJsonFormatters

@@ -1304,7 +1304,8 @@ class ApplicationRepositoryISpec
       val acceptance = TermsOfUseAcceptance(
         responsibleIndividual,
         acceptanceDate,
-        submissionId
+        submissionId,
+        0
       )
       val applicationId = ApplicationId.random
       val importantSubmissionData = ImportantSubmissionData(None, responsibleIndividual, Set.empty, TermsAndConditionsLocation.InDesktopSoftware,
@@ -1320,6 +1321,7 @@ class ApplicationRepositoryISpec
       termsOfUseAcceptance.responsibleIndividual mustBe responsibleIndividual
       termsOfUseAcceptance.dateTime.toInstant(ZoneOffset.UTC).toEpochMilli mustBe acceptanceDate.toInstant(ZoneOffset.UTC).toEpochMilli
       termsOfUseAcceptance.submissionId mustBe submissionId
+      termsOfUseAcceptance.submissionInstance mustBe 0
     }
   }
 
@@ -1476,7 +1478,7 @@ class ApplicationRepositoryISpec
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime): ApplicationData =
     anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId,
-      state = ApplicationState(state, Some("requestorEmail@example.com"), Some("aVerificationCode"), updatedOn)
+      state = ApplicationState(state, Some("requestorEmail@example.com"), Some("requesterName"), Some("aVerificationCode"), updatedOn)
   )
 
   def aSubscriptionData(context: String, version: String, applicationIds: ApplicationId*) = {

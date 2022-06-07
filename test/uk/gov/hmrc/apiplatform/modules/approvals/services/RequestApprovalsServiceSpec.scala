@@ -52,12 +52,13 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     val requestedByName = "bob example"
     val application: ApplicationData = anApplicationData(applicationId, testingState())
 
-    val mockApprovalsNamingService = mock[ApprovalsNamingService]
+    val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
 
     def namingServiceReturns(result: ApplicationNameValidationResult) =
       when(mockApprovalsNamingService.validateApplicationNameAndAudit(*, *[ApplicationId], *)(*)).thenReturn(successful(result))
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+
     val underTest = new RequestApprovalsService(
       AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService,
       SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock,

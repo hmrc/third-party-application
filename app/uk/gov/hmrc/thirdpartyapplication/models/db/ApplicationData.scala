@@ -61,11 +61,17 @@ case class ApplicationData(
     case _ => None
   }
 
+  lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
+    case Standard(_, _, _, _, _, Some(submissionData)) => Some(submissionData)
+    case _                                             => None
+  }
+
   def isInTesting = state.isInTesting
   def isPendingResponsibleIndividualVerification = state.isPendingResponsibleIndividualVerification
   def isPendingGatekeeperApproval = state.isPendingGatekeeperApproval
   def isPendingRequesterVerification = state.isPendingRequesterVerification
   def isInPreProductionOrProduction = state.isInPreProductionOrProduction
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = state.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification
 }
 
 object ApplicationData {

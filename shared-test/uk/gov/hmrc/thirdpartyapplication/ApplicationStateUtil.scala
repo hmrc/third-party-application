@@ -53,6 +53,7 @@ trait ApplicationStateUtil extends FixedClock {
   def pendingResponsibleIndividualVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
+    requestedByName = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
     updatedOn = LocalDateTime.now(clock))
 }

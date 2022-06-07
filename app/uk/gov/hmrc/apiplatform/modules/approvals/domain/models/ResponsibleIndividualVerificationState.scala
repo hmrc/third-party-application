@@ -14,17 +14,15 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.domain.models
+package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
-import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
-import java.time.LocalDateTime
+object ResponsibleIndividualVerificationState extends Enumeration {
+  type ResponsibleIndividualVerificationState = Value
 
-case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, dateTime: LocalDateTime, submissionId: Submission.Id, submissionInstance: Int = 0)
+  val INITIAL, REMINDERS_SENT = Value
 
-object TermsOfUseAcceptance {
-  implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format = Json.format[TermsOfUseAcceptance]
+  implicit val format = EnumJson.enumFormat(ResponsibleIndividualVerificationState)
 }
+

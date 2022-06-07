@@ -68,11 +68,11 @@ class ResetLastAccessDateJob @Inject()(resetLastAccessDateJobLockService: ResetL
   }
 }
 
-class ResetLastAccessDateJobLockService @Inject()(mongoLockRepository: MongoLockRepository)
+class ResetLastAccessDateJobLockService @Inject()(repository: LockRepository)
   extends LockService {
 
   override val lockId: String = "ResetLastAccessDate"
-  override val lockRepository: LockRepository = mongoLockRepository
+  override val lockRepository: LockRepository = repository
   override val ttl: Duration = 1.hours
 }
 

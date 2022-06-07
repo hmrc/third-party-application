@@ -70,6 +70,9 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
   val addedClientSecretNotification = "apiAddedClientSecretNotification"
   val removedClientSecretNotification = "apiRemovedClientSecretNotification"
   val verifyResponsibleIndividual = "apiVerifyResponsibleIndividual"
+  val responsibleIndividualReminderToAdmin = "apiResponsibleIndividualReminderToAdmin"
+  val responsibleIndividualDidNotVerify = "apiResponsibleIndividualDidNotVerify"
+  val responsibleIndividualDeclined = "apiResponsibleIndividualDeclined"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val article = if(role == "admin") "an" else "a"
@@ -169,9 +172,48 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
         "responsibleIndividualName" -> responsibleIndividualName,
         "applicationName" -> applicationName,
         "requesterName" -> requesterName,
-        "developerHubLink" -> s"$devHubBaseUrl/developer/submissions/responsible-individual-verification?code=$verifyResponsibleIndividualUniqueId")
+        "developerHubLink" -> s"$devHubBaseUrl/developer/submissions/responsible-individual-verification?code=$verifyResponsibleIndividualUniqueId"
       )
-    )
+    ))
+  }
+
+  def sendVerifyResponsibleIndividualReminderToAdmin(responsibleIndividualName: String,
+                                                     adminEmailAddress: String,
+                                                     applicationName: String,
+                                                     requesterName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(Set(adminEmailAddress), responsibleIndividualReminderToAdmin,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> applicationName,
+        "requesterName" -> requesterName
+      )
+    ))
+  }
+
+  def sendResponsibleIndividualDidNotVerify(responsibleIndividualName: String,
+                                            adminEmailAddress: String,
+                                            applicationName: String,
+                                            requesterName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(Set(adminEmailAddress), responsibleIndividualDidNotVerify,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> applicationName,
+        "requesterName" -> requesterName
+      )
+    ))
+  }
+
+    def sendResponsibleIndividualDeclined(responsibleIndividualName: String,
+                                            adminEmailAddress: String,
+                                            applicationName: String,
+                                            requesterName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(Set(adminEmailAddress), responsibleIndividualDeclined,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> applicationName,
+        "requesterName" -> requesterName
+      )
+    ))
   }
 
   private def post(payload: SendEmailRequest)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {

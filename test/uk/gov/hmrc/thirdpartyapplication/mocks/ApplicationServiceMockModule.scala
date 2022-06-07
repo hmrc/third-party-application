@@ -29,14 +29,19 @@ import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext.Implicits.global
 import cats.implicits.catsStdInstancesForFuture
 import org.mockito.captor.ArgCaptor
+import cats.data.OptionT
+import scala.concurrent.Future
+import cats.implicits._
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
   protected trait BaseApplicationServiceMock {
+
     def aMock: ApplicationService
 
     object Fetch {
       def thenReturn(applicationData: ApplicationData) = {
-        when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.fromOption[Future](Some(ApplicationResponse(data=applicationData))))
+        val r: OptionT[Future,ApplicationResponse] = OptionT.pure[Future](ApplicationResponse(data=applicationData))
+        when(aMock.fetch(*[ApplicationId])).thenReturn(r)
       }
       def thenReturnNothing() = when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.fromOption[Future](None))
     }
