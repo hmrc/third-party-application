@@ -163,36 +163,6 @@ class ApplicationServiceSpec
     }
   }
 
-  "updateApplicationName" should {
-    "update the repository if name is valid" in new Setup{
-      UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      ApplicationRepoMock.UpdateApplicationName.thenReturn(applicationData)
-
-      val newName = "newName"
-      val result = await(underTest.updateApplicationName(applicationId, newName).value)
-
-      result shouldBe Right(applicationData)
-    }
-    "should not update the repository if name is invalid" in new Setup {
-      UpliftNamingServiceMock.ValidateApplicationName.failsWithInvalidName()
-
-      val newName = "newName"
-      val result = await(underTest.updateApplicationName(applicationId, newName).value)
-
-      result shouldBe Left(InvalidName)
-      ApplicationRepoMock.UpdateApplicationName.verifyNeverCalled
-    }
-    "should not update the repository if name is duplicate" in new Setup {
-      UpliftNamingServiceMock.ValidateApplicationName.failsWithDuplicateName()
-
-      val newName = "newName"
-      val result = await(underTest.updateApplicationName(applicationId, newName).value)
-
-      result shouldBe Left(DuplicateName)
-      ApplicationRepoMock.UpdateApplicationName.verifyNeverCalled
-    }
-  }
-
   "Create with Colloborator userId" should {
 
     "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {

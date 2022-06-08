@@ -1287,39 +1287,6 @@ class ApplicationControllerSpec
     }
   }
 
-  "updateName" should {
-    "return success if application name is updated" in new Setup {
-      val applicationId = ApplicationId.random
-      val newName = "newName"
-      val app = anApplicationData(applicationId)
-      when(mockApplicationService.updateApplicationName(applicationId, newName)).thenReturn(EitherT.rightT(app))
-
-      val result = underTest.updateName(applicationId)(request.withBody(Json.obj("name" -> newName)))
-
-      status(result) shouldBe NO_CONTENT
-    }
-    "return bad request if application name is invalid" in new Setup {
-      val applicationId = ApplicationId.random
-      val newName = "newName"
-      when(mockApplicationService.updateApplicationName(applicationId, newName)).thenReturn(EitherT.leftT(InvalidName))
-
-      val result = underTest.updateName(applicationId)(request.withBody(Json.obj("name" -> newName)))
-
-      status(result) shouldBe BAD_REQUEST
-      contentAsJson(result) shouldBe Json.obj("message" -> "Invalid name")
-    }
-    "return conflict if application name is a duplicate" in new Setup {
-      val applicationId = ApplicationId.random
-      val newName = "newName"
-      when(mockApplicationService.updateApplicationName(applicationId, newName)).thenReturn(EitherT.leftT(DuplicateName))
-
-      val result = underTest.updateName(applicationId)(request.withBody(Json.obj("name" -> newName)))
-
-      status(result) shouldBe CONFLICT
-      contentAsJson(result) shouldBe Json.obj("message" -> "Duplicate name")
-    }
-  }
-
   "Search" should {
     "pass an ApplicationSearch object to applicationService" in new Setup {
       val req: FakeRequest[AnyContentAsEmpty.type] =

@@ -45,7 +45,6 @@ class ApplicationUpdateController @Inject()(val applicationUpdateService: Applic
 
   import cats.implicits._
 
-  //TODO auth?
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def fails(e: NonEmptyChain[String]) = {
       logger.warn(s"Command Process failed because ${e.toList.mkString("[",",","]")}")

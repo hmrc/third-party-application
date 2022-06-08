@@ -35,20 +35,18 @@ class ApplicationUpdateService @Inject()(
 (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
-  // private type U = EitherT[Future, NonEmptyChain[String], ApplicationData]
 
   def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
     for {
-      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain("No application found"))
+      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
-
     } yield savedApp
   }
 
-  def processUpdate(app: ApplicationData, uac: ApplicationUpdate): CommandHandler.Result = {
-    uac match {
-      case cmd : ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
+    applicationUpdate match {
+      case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
     }
   }
 }
