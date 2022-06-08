@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.metrics._
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{FiniteDuration, DurationInt}
 
 class MetricsScheduler @Inject() (actorSystem: ActorSystem,
                                   configuration: Configuration,
@@ -41,8 +41,9 @@ class MetricsScheduler @Inject() (actorSystem: ActorSystem,
                                  (implicit val ec: ExecutionContext)
                                   extends ApplicationLogger {
 
-  lazy val refreshInterval: FiniteDuration = configuration.get[FiniteDuration]("queue.metricsGauges.interval")
-  lazy val initialDelay: FiniteDuration = configuration.get[FiniteDuration]("queue.initialDelay")
+  lazy val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
+  lazy val initialDelay: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(10.seconds)
+  lazy val isEnabled: Boolean = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
 
   val lockService: LockService = LockService(lockRepository = lockRepository, lockId = "queue", ttl = refreshInterval)
 
@@ -53,14 +54,16 @@ class MetricsScheduler @Inject() (actorSystem: ActorSystem,
     metricRegistry = metrics.defaultRegistry
   )
 
-  actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, refreshInterval)(
-    () => {
-      metricOrchestrator
-        .attemptMetricRefresh()
-        .map(_.log)
-        .recover({ case e: RuntimeException =>
-          logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
-        })
-    }
-  )
+  if (isEnabled) {
+    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, refreshInterval)(
+      () => {
+        metricOrchestrator
+          .attemptMetricRefresh()
+          .map(_.log)
+          .recover({ case e: RuntimeException =>
+            logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
+          })
+      }
+    )
+  }
 }
