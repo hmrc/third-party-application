@@ -40,14 +40,28 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class ApplicationCount @Inject()(applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    applicationRepository.count.map(applicationCount => {
-      logger.info(s"[METRIC] Application Count: $applicationCount")
-      Map("applicationCount" -> applicationCount)
+    logger.info(s"[METRIC]: Start - ApplicationCount")
+    val result = applicationRepository.count
+
+    result.onComplete({
+      case Success(v) =>
+        logger.info(s"[METRIC] Future.success - ApplicationCount.metrics() - number of applications are: $v")
+
+      case Failure(e) =>
+        logger.info(s"[METRIC] Future.failure - ApplicationCount.metrics() - error is: ${e.toString}")
     })
+    logger.info(s"[METRIC]: Finish - ApplicationCount")
+    result.map(applicationCount => Map("applicationCount" -> applicationCount))
+
+//    applicationRepository.count.map(applicationCount => {
+//      logger.info(s"[METRIC] Application Count: $applicationCount")
+//      Map("applicationCount" -> applicationCount)
+//    })
   }
 }

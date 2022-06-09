@@ -22,6 +22,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
 class MissingMongoFields @Inject()(applicationRepository: ApplicationRepository)
@@ -29,16 +30,27 @@ class MissingMongoFields @Inject()(applicationRepository: ApplicationRepository)
                                    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
+    logger.info(s"[METRIC]: Start - MissingMongoFields")
     val counts: Future[(Int, Int)] = for {
-      missingRateLimit <- applicationRepository.documentsWithFieldMissing("rateLimitTier")
-      missingLastAccessDate <- applicationRepository.documentsWithFieldMissing("lastAccess")
+      missingRateLimit <- missingDocumentsWithField("rateLimitTier")
+      missingLastAccessDate <- missingDocumentsWithField("lastAccess")
     } yield (missingRateLimit, missingLastAccessDate)
 
     counts.map(a => {
       logger.info(s"[METRIC]: Applications Missing Rate Limit Field: ${a._1}")
       logger.info(s"[METRIC]: Applications Missing Last Access Date Field: ${a._2}")
 
+      logger.info(s"[METRIC]: Finish - MissingMongoFields")
       Map("applicationsMissingRateLimitField" -> a._1, "applicationsMissingLastAccessDateField" -> a._2)
     })
+  }
+
+  private def missingDocumentsWithField(field: String)(implicit ec: ExecutionContext) = {
+    val result = applicationRepository.documentsWithFieldMissing(field)
+    result.onComplete({
+      case Success(v) => logger.info(s"[METRIC] Future.success - MissingMongoFields - Number of documents with missing $field is: $v")
+      case Failure(e) => logger.info(s"[METRIC]: Error occurred whilst processing MissingMongoFields for field $field: ${e.getMessage}")
+    })
+    result
   }
 }
