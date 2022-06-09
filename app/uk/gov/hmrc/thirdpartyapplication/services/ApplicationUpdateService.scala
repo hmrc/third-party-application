@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.{EitherT, NonEmptyChain}
+import cats.data.{EitherT, NonEmptyChain, Validated}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -31,8 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
-)
-(implicit val ec: ExecutionContext) extends ApplicationLogger {
+) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
@@ -41,12 +40,13 @@ class ApplicationUpdateService @Inject()(
       app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
-    } yield savedApp
+    } yield savedApp    
   }
 
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+      case _ => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }
 }

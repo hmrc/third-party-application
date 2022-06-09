@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.joda.time.DateTime
+import java.time.LocalDateTime
+
 
 trait UpdateApplicationEvent {
   def applicationId: ApplicationId
-  def timestamp: DateTime
+  def timestamp: LocalDateTime
   def instigator: UserId
 }
 
 object UpdateApplicationEvent {
 
-  case class NameChanged(applicationId: ApplicationId, timestamp: DateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationEvent
+  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationEvent
 
 }

@@ -17,8 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
-import cats.data.EitherT
-import cats.implicits._
 import org.apache.commons.net.util.SubnetUtils
 import org.joda.time.Duration.standardMinutes
 import play.modules.reactivemongo.ReactiveMongoComponent
@@ -49,7 +47,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import java.util.concurrent.TimeUnit
 import javax.inject.Inject

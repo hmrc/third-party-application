@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, Dupli
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     
@@ -47,9 +48,9 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     }
 
     object ValidateApplicationName {
-      def succeeds() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(ValidName))
-      def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(DuplicateName))
-      def failsWithInvalidName() = when(aMock.validateApplicationName(*, *)).thenReturn(successful(InvalidName))
+      def succeeds() = when(aMock.validateApplicationName(*[String], *[ExclusionCondition])).thenReturn(successful(ValidName))
+      def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(DuplicateName))
+      def failsWithInvalidName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidName))
     }
   }
   

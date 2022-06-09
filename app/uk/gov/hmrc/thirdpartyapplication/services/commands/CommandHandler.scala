@@ -21,7 +21,6 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State

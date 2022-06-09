@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
@@ -27,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import org.joda.time.DateTime
 import cats.data.NonEmptyList
 
 @Singleton
@@ -49,7 +49,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: Upl
     NonEmptyList.of(
       UpdateApplicationEvent.NameChanged(
         applicationId = app.id,
-        timestamp = DateTime.now,
+        timestamp = cmd.timestamp,
         instigator = cmd.instigator,
         oldName = app.name,
         newName = cmd.newName
