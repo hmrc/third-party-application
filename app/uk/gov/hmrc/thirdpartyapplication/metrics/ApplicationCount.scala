@@ -42,7 +42,7 @@ import uk.gov.hmrc.mongo.metrix.MetricSource
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class ApplicationCount @Inject()(applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     applicationRepository.count.map(applicationCount => {

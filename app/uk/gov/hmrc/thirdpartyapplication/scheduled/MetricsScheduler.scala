@@ -42,7 +42,7 @@ class MetricsScheduler @Inject() (actorSystem: ActorSystem,
                                   extends ApplicationLogger {
 
   lazy val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
-  lazy val initialDelay: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(10.seconds)
+  lazy val initialDelay: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
   lazy val isEnabled: Boolean = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
 
   val lockService: LockService = LockService(lockRepository = lockRepository, lockId = "queue", ttl = refreshInterval)
@@ -61,7 +61,7 @@ class MetricsScheduler @Inject() (actorSystem: ActorSystem,
           .attemptMetricRefresh()
           .map(_.log)
           .recover({ case e: RuntimeException =>
-            logger.error(s"An error occurred processing metrics: ${e.getMessage}", e)
+            logger.error(s"[METRIC] An error occurred processing metrics: ${e.getMessage}", e)
           })
       }
     )

@@ -27,7 +27,7 @@ import uk.gov.hmrc.mongo.metrix.MetricSource
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RateLimitMetrics @Inject()(val applicationRepository: ApplicationRepository)
+class RateLimitMetrics @Inject()(applicationRepository: ApplicationRepository)
                                  extends MetricSource
                                  with ApplicationLogger {
 

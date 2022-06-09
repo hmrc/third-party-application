@@ -24,7 +24,7 @@ import uk.gov.hmrc.mongo.metrix.MetricSource
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class MissingMongoFields @Inject()(val applicationRepository: ApplicationRepository)
+class MissingMongoFields @Inject()(applicationRepository: ApplicationRepository)
                                    extends MetricSource
                                    with ApplicationLogger {
 
