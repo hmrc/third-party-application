@@ -37,9 +37,6 @@ class ApplicationsWithSubscriptionCount @Inject()(applicationRepository: Applica
     result.map(v =>
       logger.info(s"[METRIC] Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
     )
-
-
-
     result
   }
 }
