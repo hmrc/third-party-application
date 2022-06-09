@@ -47,7 +47,7 @@ class ApplicationUpdateController @Inject()(val applicationUpdateService: Applic
 
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def fails(e: NonEmptyChain[String]) = {
-      logger.warn(s"Command Process failed because ${e.toList.mkString("[",",","]")}")
+      logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[",",","]")}")
       BadRequest("Failed to process command")
     }
 
