@@ -18,7 +18,6 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.time.LocalDateTime
 
-
 trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def timestamp: LocalDateTime

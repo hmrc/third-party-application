@@ -29,6 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.{ExclusionCondition, noExclusions}
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: UpliftNamingService)(implicit val ec: ExecutionContext) extends CommandHandler {
@@ -58,8 +59,8 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: Upl
   }
 
   def process(app: ApplicationData, cmd: ChangeProductionApplicationName): CommandHandler.Result = {
-    namingService.validateApplicationName(cmd.newName, _ => false) map { nameValidationResult =>
-      validate(app, cmd, nameValidationResult) map { v =>
+    namingService.validateApplicationName(cmd.newName, noExclusions) map { nameValidationResult =>
+      validate(app, cmd, nameValidationResult) map { _ =>
         asEvents(app, cmd)
       }
     }

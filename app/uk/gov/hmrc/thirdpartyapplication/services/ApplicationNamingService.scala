@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
 object ApplicationNamingService {
   type ExclusionCondition = (ApplicationData) => Boolean
+  def noExclusions: ExclusionCondition = _ => false
   def excludeThisAppId(appId: ApplicationId): ExclusionCondition = (x: ApplicationData) => x.id == appId
 
   case class ApplicationNameValidationConfig(nameDenyList: List[String], validateForDuplicateAppNames: Boolean)

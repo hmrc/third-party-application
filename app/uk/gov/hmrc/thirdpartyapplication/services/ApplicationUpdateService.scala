@@ -40,7 +40,7 @@ class ApplicationUpdateService @Inject()(
       app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
-    } yield savedApp    
+    } yield savedApp
   }
 
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
