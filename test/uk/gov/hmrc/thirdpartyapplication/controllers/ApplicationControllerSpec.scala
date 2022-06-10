@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import akka.stream.Materializer
-import cats.data.{EitherT, OptionT}
+import cats.data.{OptionT}
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
