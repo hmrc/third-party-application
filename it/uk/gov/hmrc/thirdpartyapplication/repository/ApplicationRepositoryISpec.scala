@@ -21,6 +21,7 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -544,6 +545,7 @@ class ApplicationRepositoryISpec
     "fetch all existing applications" in {
       val application1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
       val application2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId)
+
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
 
@@ -1492,7 +1494,7 @@ class ApplicationRepositoryISpec
                                grantLength: Int = defaultGrantLength,
                                users: Set[Collaborator] = Set(Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)),
                                checkInformation: Option[CheckInformation] = None,
-                               clientSecrets: List[ClientSecret] = List(ClientSecret("", hashedSecret = "hashed-secret"))): ApplicationData = {
+                               clientSecrets: List[ClientSecret] = List(ClientSecret("", createdOn = LocalDateTime.now(clock), hashedSecret = "hashed-secret"))): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", prodClientId, state, access, users, checkInformation, clientSecrets, grantLength)
   }
