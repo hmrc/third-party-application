@@ -33,12 +33,9 @@ class RateLimitMetrics @Inject()(applicationRepository: ApplicationRepository)
                                  with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    logger.info(s"[METRIC]: Start - RateLimitMetrics")
     numberOfApplicationsByRateLimit.map(
       applicationCounts =>
         applicationCounts.map(rateLimit => {
-          logger.info(s"[METRIC] Number of Applications for Rate Limit ${rateLimit._1}: ${rateLimit._2}")
-          logger.info(s"[METRIC]: Finish - RateLimitMetrics")
           applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
         }))
   }
@@ -50,7 +47,6 @@ class RateLimitMetrics @Inject()(applicationRepository: ApplicationRepository)
       case Success(v) => logger.info(s"[METRIC]: RateLimitMetrics: ${v}")
       case Failure(e) => logger.info(s"[METRIC]: Error occurred whilst processing RateLimitMetrics: ${e.getMessage}")
       })
-//    applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).mapValues(_.size))
     result
   }
 

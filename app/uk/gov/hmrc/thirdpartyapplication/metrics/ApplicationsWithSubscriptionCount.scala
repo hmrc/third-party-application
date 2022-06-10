@@ -33,7 +33,6 @@ class ApplicationsWithSubscriptionCount @Inject()(applicationRepository: Applica
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     // TODO Need to handle Application with zero subscriptions
-    logger.info(s"[METRIC]: Start - ApplicationsWithSubscriptionCount")
     val result = applicationRepository.getApplicationWithSubscriptionCount()
     result.onComplete({
         case Success(v) =>
@@ -42,7 +41,6 @@ class ApplicationsWithSubscriptionCount @Inject()(applicationRepository: Applica
         case Failure(e) =>
           logger.info(s"[METRIC] Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
       })
-    logger.info(s"[METRIC]: Finish - ApplicationsWithSubscriptionCount")
     result
   }
 }

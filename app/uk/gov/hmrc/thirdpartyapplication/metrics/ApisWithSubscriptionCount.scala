@@ -35,7 +35,6 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
                                            with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    logger.info(s"[METRIC]: Start - ApisWithSubscriptionCount")
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
     val result = numberOfSubscriptionsByApi
@@ -46,7 +45,6 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
       case Success(v) => logger.info(s"[METRIC] Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}")
       case Failure(e) => logger.info(s"[METRIC] Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}")
     })
-    logger.info(s"[METRIC]: Finish - ApisWithSubscriptionCount")
     result
   }
 
