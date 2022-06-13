@@ -86,13 +86,15 @@ class ResponsibleIndividualVerificationService @Inject()(
         riVerification                     <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
         originalApp                        <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
         _                                  <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
+        submitterEmail                     <- ET.fromOption(originalApp.state.requestedByEmailAddress, "requestedByEmailAddress not found")
+        submitterName                      <- ET.fromOption(originalApp.state.requestedByName, "requestedByName not found")
         updatedApp                         =  deriveNewAppDetails(originalApp)
         savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
         responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, savedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
         _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
         _                                  <- ET.liftF(responsibleIndividualVerificationRepository.delete(riVerificationId))
         _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}, code:{$code}")
-      } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
+      } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, submitterName, submitterEmail)
     ).value
   }
 
