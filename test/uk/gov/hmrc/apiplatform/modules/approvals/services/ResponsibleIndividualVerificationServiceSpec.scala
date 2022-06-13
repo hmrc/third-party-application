@@ -56,7 +56,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               List.empty)
     val application: ApplicationData = anApplicationData(
                               applicationId,
-                              pendingResponsibleIndividualVerificationState("bob@fastshow.com"),
+                              pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(
@@ -77,7 +77,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           0,
           appName,
           LocalDateTime.now(clock))
-    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
+    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
 
   "createNewVerification" should {

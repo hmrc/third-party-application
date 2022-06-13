@@ -20,7 +20,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 
 case class ResponsibleIndividualVerificationWithDetails(
     verification: ResponsibleIndividualVerification,
-    responsibleIndividual: ResponsibleIndividual
+    responsibleIndividual: ResponsibleIndividual,
+    submitterName: String,
+    submitterEmail: String
 )
 
 
