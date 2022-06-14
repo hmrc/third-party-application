@@ -27,7 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, TermsOfUseAcce
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.http.HeaderCarrier

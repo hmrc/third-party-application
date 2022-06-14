@@ -35,6 +35,9 @@ lazy val microservice = (project in file("."))
       "uk.gov.hmrc.apiplatform.modules.submissions.domain.models._"
     )
   )
+  .settings(
+    addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
+  )
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
