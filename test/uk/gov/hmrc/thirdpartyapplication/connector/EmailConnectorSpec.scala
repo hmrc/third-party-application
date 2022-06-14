@@ -23,6 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import EmailConnector.SendEmailRequest
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class EmailConnectorSpec extends ConnectorSpec {
 
@@ -54,7 +55,8 @@ class EmailConnectorSpec extends ConnectorSpec {
     val adminEmail2 = "admin2@example.com"
     val gatekeeperEmail = "gatekeeper@example.com"
     val role = "admin"
-    val application = "Test Application"
+    val applicationName = "Test Application"
+    val applicationId = ApplicationId.random
 
     "send added collaborator confirmation email" in new Setup {
       val role = "admin"
@@ -63,13 +65,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedParameters: Map[String, String] = Map(
         "article"           -> "an",
         "role"              -> role,
-        "applicationName"   -> application,
+        "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(role, application, expectedToEmails))
+      await(connector.sendAddedCollaboratorConfirmation(role, applicationName, expectedToEmails))
     }
 
     "send added collaborator confirmation email with article for developer" in new Setup {
@@ -79,13 +81,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedParameters: Map[String, String] = Map(
         "article"           -> "a",
         "role"              -> role,
-        "applicationName"   -> application,
+        "applicationName"   -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(role, application, expectedToEmails))
+      await(connector.sendAddedCollaboratorConfirmation(role, applicationName, expectedToEmails))
     }
 
     "send added collaborator notification email" in new Setup {
@@ -95,13 +97,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedParameters: Map[String, String] = Map(
         "email" -> collaboratorEmail,
         "role" -> role,
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, application, expectedToEmails))
+      await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, applicationName, expectedToEmails))
     }
 
     "send removed collaborator confirmation email" in new Setup {
@@ -109,13 +111,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId = "apiRemovedCollaboratorConfirmation"
       val expectedToEmails = Set(collaboratorEmail)
       val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendRemovedCollaboratorConfirmation(application, Set(collaboratorEmail)))
+      await(connector.sendRemovedCollaboratorConfirmation(applicationName, Set(collaboratorEmail)))
     }
 
     "send removed collaborator notification email" in new Setup {
@@ -124,13 +126,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedToEmails = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
         "email" -> collaboratorEmail,
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendRemovedCollaboratorNotification(collaboratorEmail, application, expectedToEmails))
+      await(connector.sendRemovedCollaboratorNotification(collaboratorEmail, applicationName, expectedToEmails))
     }
 
     "send application approved gatekeeper confirmation email" in new Setup {
@@ -139,12 +141,12 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedToEmails = Set(gatekeeperEmail)
       val expectedParameters: Map[String, String] = Map(
         "email" -> adminEmail1,
-        "applicationName" -> application
+        "applicationName" -> applicationName
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendApplicationApprovedGatekeeperConfirmation(adminEmail1, application, expectedToEmails))
+      await(connector.sendApplicationApprovedGatekeeperConfirmation(adminEmail1, applicationName, expectedToEmails))
     }
 
     "send application approved admin confirmation email" in new Setup {
@@ -153,13 +155,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId = "apiApplicationApprovedAdminConfirmation"
       val expectedToEmails = Set(adminEmail1)
       val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "developerHubLink" -> s"${connector.devHubBaseUrl}/developer/application-verification?code=$code"
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendApplicationApprovedAdminConfirmation(application, code, expectedToEmails))
+      await(connector.sendApplicationApprovedAdminConfirmation(applicationName, code, expectedToEmails))
     }
 
     "send application approved notification email" in new Setup {
@@ -167,12 +169,12 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId = "apiApplicationApprovedNotification"
       val expectedToEmails = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> application
+        "applicationName" -> applicationName
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendApplicationApprovedNotification(application, Set(adminEmail1, adminEmail2)))
+      await(connector.sendApplicationApprovedNotification(applicationName, Set(adminEmail1, adminEmail2)))
     }
 
     "send application rejected notification email" in new Setup {
@@ -181,7 +183,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId = "apiApplicationRejectedNotification"
       val expectedToEmails = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "guidelinesUrl" -> s"${connector.devHubBaseUrl}/api-documentation/docs/using-the-hub/name-guidelines",
         "supportUrl" -> s"${connector.devHubBaseUrl}/developer/support",
         "reason" -> s"$reason"
@@ -189,7 +191,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendApplicationRejectedNotification(application, expectedToEmails, reason))
+      await(connector.sendApplicationRejectedNotification(applicationName, expectedToEmails, reason))
     }
 
     "send application deleted notification email" in new Setup {
@@ -197,13 +199,14 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedTemplateId = "apiApplicationDeletedNotification"
       val expectedToEmails = Set(adminEmail1, adminEmail2)
       val expectedParameters: Map[String, String] = Map(
-        "applicationName" -> application,
-        "requestor" -> s"$adminEmail1"
+        "applicationName" -> applicationName,
+        "requestor" -> s"$adminEmail1",
+        "applicationId" -> applicationId.value.toString()
       )
       val expectedRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendApplicationDeletedNotification(application, adminEmail1, expectedToEmails))
+      await(connector.sendApplicationDeletedNotification(applicationName, applicationId, adminEmail1, expectedToEmails))
     }
 
     "send added client secret notification email" in new Setup {
@@ -213,14 +216,14 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedParameters: Map[String, String] = Map(
         "actorEmailAddress" -> adminEmail1,
         "clientSecretEnding" -> "cret",
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "environmentName" -> environmentName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
+      await(connector.sendAddedClientSecretNotification(adminEmail1, clientSecretName, applicationName, expectedToEmails))
     }
 
     "send removed client secret notification email" in new Setup {
@@ -230,14 +233,14 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedParameters: Map[String, String] = Map(
         "actorEmailAddress" -> adminEmail1,
         "clientSecretEnding" -> "cret",
-        "applicationName" -> application,
+        "applicationName" -> applicationName,
         "environmentName" -> environmentName,
         "developerHubTitle" -> hubTestTitle
       )
       val expectedRequest: SendEmailRequest = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecretName, application, expectedToEmails))
+      await(connector.sendRemovedClientSecretNotification(adminEmail1, clientSecretName, applicationName, expectedToEmails))
     }
 
     "send verify responsible individual notification email" in new Setup {

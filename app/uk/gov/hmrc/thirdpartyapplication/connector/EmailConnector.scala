@@ -31,6 +31,7 @@ import scala.concurrent.Future
 import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -128,9 +129,14 @@ class EmailConnector @Inject()(httpClient: HttpClient, config: EmailConnector.Co
         "reason" -> reason)))
   }
 
-  def sendApplicationDeletedNotification(application: String, requesterEmail: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, applicationDeletedNotification,
-      Map("applicationName" -> application, "requestor" -> requesterEmail)))
+  def sendApplicationDeletedNotification(applicationName: String, applicationId: ApplicationId, requesterEmail: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(
+      SendEmailRequest(
+        recipients,
+        applicationDeletedNotification,
+        Map("applicationName" -> applicationName, "requestor" -> requesterEmail, "applicationId" -> applicationId.value.toString)
+      )
+    )
   }
 
   def sendAddedClientSecretNotification(actorEmailAddress: String,
