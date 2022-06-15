@@ -136,6 +136,8 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
                            recipients: Set[String]) =
         verify.sendChangeOfApplicationName(eqTo(requester), eqTo(previousAppName), eqTo(newAppName),
           eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationName(*, *, *, *)(*)
     }
   }
 }

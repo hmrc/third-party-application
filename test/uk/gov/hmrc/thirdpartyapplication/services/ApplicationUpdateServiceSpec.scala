@@ -52,7 +52,17 @@ class ApplicationUpdateServiceSpec
     val actorSystem: ActorSystem = ActorSystem("System")
 
     val applicationId = ApplicationId.random
-    val applicationData = anApplicationData(applicationId)
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+                              responsibleIndividual,
+                              Set(ServerLocation.InUK),
+                              TermsAndConditionsLocation.InDesktopSoftware,
+                              PrivacyPolicyLocation.InDesktopSoftware,
+                              List.empty)
+    val applicationData: ApplicationData = anApplicationData(
+                              applicationId,
+                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+
     val instigator = applicationData.collaborators.head.userId
     val newName = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
@@ -76,13 +86,12 @@ class ApplicationUpdateServiceSpec
   "update with ChangeProductionApplicationName" should {
 
     "return the updated application if the application exists" in new Setup {
-      val appBefore = anApplicationData(applicationId).copy(name = "old name")
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      val appAfter = anApplicationData(applicationId).copy(name = "new name")
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
 
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, appBefore.name, appAfter.name)
+      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
@@ -90,6 +99,7 @@ class ApplicationUpdateServiceSpec
       val result = await(underTest.update(applicationId, changeName).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
+      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(loggedInUser, applicationData.name, appAfter.name, Set(loggedInUser, responsibleIndividual.emailAddress.value))
       result shouldBe Right(appAfter)
     }
 
@@ -99,6 +109,24 @@ class ApplicationUpdateServiceSpec
 
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+      EmailConnectorMock.SendChangeOfApplicationName.verifyNeverCalled()
+    }
+
+    "return the error if instigator does not exist in application collaborators" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      val appAfter = applicationData.copy(name = newName)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+
+      val instigator2 = UserId.random
+      val changeName2 = ChangeProductionApplicationName(instigator2, timestamp, gatekeeperUser, newName)
+      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator2, applicationData.name, appAfter.name)
+
+      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
+      )
+
+      val ex: RuntimeException = intercept[RuntimeException](await(underTest.update(applicationId, changeName2).value))
+      ex.getMessage shouldBe s"no collaborator found with instigator's userid: $instigator2"
     }
 
     "return error for unknown update types" in new Setup {
@@ -112,6 +140,7 @@ class ApplicationUpdateServiceSpec
 
       result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationUpdate type $unknownUpdate"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+      EmailConnectorMock.SendChangeOfApplicationName.verifyNeverCalled()
     }
 
   }

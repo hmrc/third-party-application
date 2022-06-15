@@ -57,16 +57,16 @@ class ApplicationUpdateService @Inject()(
 
   private def sendAdviceEmail(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent], applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     if (applicationUpdate.emailAdvice) {
-      (applicationUpdate, events.head) match {
-        case (cmd: ChangeProductionApplicationName, evt: UpdateApplicationEvent.NameChanged) => sendChangeOfApplicationNameEmail(app, evt, cmd)
-        case (_, _) => throw new RuntimeException(s"Unexpected event type for email ${events.head}")
+      events.head match {
+        case evt: UpdateApplicationEvent.NameChanged => sendChangeOfApplicationNameEmail(app, evt)
+        case _ => throw new RuntimeException(s"Unexpected event type for email ${events.head}")
       }
     } else {
       Future.successful(HasSucceeded)
     }
   }
 
-  private def sendChangeOfApplicationNameEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChanged, cmd: ChangeProductionApplicationName)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  private def sendChangeOfApplicationNameEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     val requesterEmail = getRequester(app, event.instigator)
     emailConnector.sendChangeOfApplicationName(requesterEmail, event.oldName, event.newName, recipients)
