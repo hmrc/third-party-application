@@ -28,11 +28,12 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
-import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ApplicationUpdateServiceSpec
   extends AsyncHmrcSpec
@@ -43,12 +44,18 @@ class ApplicationUpdateServiceSpec
   with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule {
+    with ApplicationRepositoryMockModule
+    with EmailConnectorMockModule {
+
+    implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
     val applicationId = ApplicationId.random
     val applicationData = anApplicationData(applicationId)
+    val instigator = applicationData.collaborators.head.userId
+    val newName = "robs new app"
+    val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
 
     lazy val locked = false
     protected val mockitoTimeout = 1000
@@ -58,23 +65,22 @@ class ApplicationUpdateServiceSpec
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
-      mockChangeProductionApplicationNameCommandHandler
+      mockChangeProductionApplicationNameCommandHandler,
+      EmailConnectorMock.aMock
     )
   }
 
-  val instigator = UserId(UUID.randomUUID)
   val timestamp = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
 
   "update with ChangeProductionApplicationName" should {
-    val newName = "rob"
-    val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = anApplicationData(applicationId).copy(name = "old name")
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       val appAfter = anApplicationData(applicationId).copy(name = "new name")
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
 
       val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, appBefore.name, appAfter.name)
 

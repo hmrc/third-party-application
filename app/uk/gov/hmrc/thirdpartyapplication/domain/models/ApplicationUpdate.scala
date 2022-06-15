@@ -23,6 +23,7 @@ import java.time.LocalDateTime
 trait ApplicationUpdate {
   def instigator: UserId
   def timestamp: LocalDateTime
+  def emailAdvice: Boolean = true
 }
 
 trait GatekeeperApplicationUpdate extends ApplicationUpdate {
