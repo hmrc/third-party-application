@@ -43,7 +43,7 @@ object CommandHandler {
     cond(app.collaborators.find(c => c.role == Role.ADMINISTRATOR && c.userId == userId).nonEmpty, "User must be an ADMIN")
 
   def isNotInProcessOfBeingApproved(app: ApplicationData) =
-    cond(app.state.name == State.PRODUCTION || app.state.name == State.TESTING, "App is not in TESTING or in PRODUCTION")
+    cond(app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING, "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION")
 
   def isStandardAccess(app: ApplicationData) =
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")

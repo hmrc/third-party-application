@@ -66,7 +66,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val result = await(underTest.process(app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
 
-      result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING or in PRODUCTION"))
+      result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
     }
     "return an error if application is non-standard" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
