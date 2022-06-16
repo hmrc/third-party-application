@@ -28,12 +28,12 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryM
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ApplicationUpdateServiceSpec
   extends AsyncHmrcSpec
@@ -44,8 +44,7 @@ class ApplicationUpdateServiceSpec
   with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule
-    with EmailConnectorMockModule {
+    with ApplicationRepositoryMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -75,8 +74,7 @@ class ApplicationUpdateServiceSpec
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
-      mockChangeProductionApplicationNameCommandHandler,
-      EmailConnectorMock.aMock
+      mockChangeProductionApplicationNameCommandHandler
     )
   }
 
@@ -89,17 +87,18 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
 
       val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
       )
+      when(mockChangeProductionApplicationNameCommandHandler.sendAdviceEmail(*[ApplicationData], *[NameChanged])(*)).thenReturn(
+        Future.successful(HasSucceeded)
+      )
       val result = await(underTest.update(applicationId, changeName).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(loggedInUser, applicationData.name, appAfter.name, Set(loggedInUser, responsibleIndividual.emailAddress.value))
       result shouldBe Right(appAfter)
     }
 
@@ -109,24 +108,6 @@ class ApplicationUpdateServiceSpec
 
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-      EmailConnectorMock.SendChangeOfApplicationName.verifyNeverCalled()
-    }
-
-    "return the error if instigator does not exist in application collaborators" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      val appAfter = applicationData.copy(name = newName)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-
-      val instigator2 = UserId.random
-      val changeName2 = ChangeProductionApplicationName(instigator2, timestamp, gatekeeperUser, newName)
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator2, applicationData.name, appAfter.name)
-
-      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
-      )
-
-      val ex: RuntimeException = intercept[RuntimeException](await(underTest.update(applicationId, changeName2).value))
-      ex.getMessage shouldBe s"no collaborator found with instigator's userid: $instigator2"
     }
 
     "return error for unknown update types" in new Setup {
@@ -140,7 +121,6 @@ class ApplicationUpdateServiceSpec
 
       result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationUpdate type $unknownUpdate"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-      EmailConnectorMock.SendChangeOfApplicationName.verifyNeverCalled()
     }
 
   }

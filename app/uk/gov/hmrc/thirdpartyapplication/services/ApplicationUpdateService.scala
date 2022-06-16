@@ -22,7 +22,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -33,8 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
-  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-  emailConnector: EmailConnector
+  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -58,32 +56,11 @@ class ApplicationUpdateService @Inject()(
   private def sendAdviceEmail(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent], applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     if (applicationUpdate.emailAdvice) {
       (applicationUpdate, events.head) match {
-        case (cmd: ChangeProductionApplicationName, evt: UpdateApplicationEvent.NameChanged) => sendChangeOfApplicationNameEmail(app, evt)
+        case (cmd: ChangeProductionApplicationName, evt: UpdateApplicationEvent.NameChanged) => changeProductionApplicationNameCmdHdlr.sendAdviceEmail(app, evt)
         case (_, _) => throw new RuntimeException(s"Unexpected ApplicationUpdate and Event type for email ${events.head}")
       }
     } else {
       Future.successful(HasSucceeded)
-    }
-  }
-
-  private def sendChangeOfApplicationNameEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    val requesterEmail = getRequester(app, event.instigator)
-    emailConnector.sendChangeOfApplicationName(requesterEmail, event.oldName, event.newName, recipients)
-  }
-
-  private def getRequester(app: ApplicationData, instigator: UserId) = {
-    app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
-  }
-
-  private def getRecipients(app: ApplicationData): Set[String] = {
-    app.collaborators.map(_.emailAddress)
-  }
-
-  private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
-    app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
     }
   }
 }

@@ -16,23 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import scala.concurrent.ExecutionContext
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
-import cats.Apply
-import cats.data.ValidatedNec
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.http.HeaderCarrier
+
+import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
+import cats.Apply
+import cats.data.ValidatedNec
+import cats.data.NonEmptyList
 
 @Singleton
-class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: UpliftNamingService)(implicit val ec: ExecutionContext) extends CommandHandler {
+class ChangeProductionApplicationNameCommandHandler @Inject()(
+  namingService: UpliftNamingService, 
+  emailConnector: EmailConnector
+)(implicit val ec: ExecutionContext) extends CommandHandler {
+  
   import CommandHandler._
   
   private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
@@ -64,5 +71,11 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: Upl
         asEvents(app, cmd)
       }
     }
+  }
+
+  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
+    val requesterEmail = getRequester(app, event.instigator)
+    emailConnector.sendChangeOfApplicationName(requesterEmail, event.oldName, event.newName, recipients)
   }
 }
