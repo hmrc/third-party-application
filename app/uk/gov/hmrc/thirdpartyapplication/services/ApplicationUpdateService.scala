@@ -57,9 +57,9 @@ class ApplicationUpdateService @Inject()(
 
   private def sendAdviceEmail(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent], applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     if (applicationUpdate.emailAdvice) {
-      events.head match {
-        case evt: UpdateApplicationEvent.NameChanged => sendChangeOfApplicationNameEmail(app, evt)
-        case _ => throw new RuntimeException(s"Unexpected event type for email ${events.head}")
+      (applicationUpdate, events.head) match {
+        case (cmd: ChangeProductionApplicationName, evt: UpdateApplicationEvent.NameChanged) => sendChangeOfApplicationNameEmail(app, evt)
+        case (_, _) => throw new RuntimeException(s"Unexpected ApplicationUpdate and Event type for email ${events.head}")
       }
     } else {
       Future.successful(HasSucceeded)
