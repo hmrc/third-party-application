@@ -126,6 +126,23 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
 
+    "return error for unknown event types" in new Setup {
+      val app = anApplicationData(applicationId)
+      ApplicationRepoMock.Fetch.thenReturn(app)
+      val appAfter = applicationData.copy(name = newName)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+
+      case class UnknownEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId) extends UpdateApplicationEvent
+      val unknownEvent = UnknownEvent(applicationId, timestamp, instigator)
+      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.one(unknownEvent)).toValidatedNec)
+      )
+
+      val ex: RuntimeException = intercept[RuntimeException](await(underTest.update(applicationId, changeName).value))
+
+      ex.getMessage shouldBe s"UnexpectedEvent type for emailAdvice $unknownEvent"
+    }
+
   }
 
 }
