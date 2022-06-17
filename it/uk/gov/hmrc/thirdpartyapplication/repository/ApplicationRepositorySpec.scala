@@ -1449,7 +1449,7 @@ class ApplicationRepositorySpec
       val app = anApplicationData(applicationId).copy(name = oldName)
       await(applicationRepository.save(app))
 
-      val events = List("name1", "name2", newestName).map(NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, _))
+      val events = List("name1", "name2", newestName).map(NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, _, "admin@example.com", Set("admin@example.com", "ri@example.com")))
       val appWithUpdatedName = await(applicationRepository.applyEvents(NonEmptyList.fromList(events).get))
       appWithUpdatedName.name shouldBe newestName
       appWithUpdatedName.normalisedName shouldBe newestName.toLowerCase
@@ -1462,7 +1462,7 @@ class ApplicationRepositorySpec
       val app = anApplicationData(applicationId).copy(name = oldName)
       await(applicationRepository.save(app))
 
-      val event = NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, newName)
+      val event = NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, newName, "admin@example.com", Set("admin@example.com", "ri@example.com"))
       val appWithUpdatedName = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedName.name shouldBe newName
       appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
@@ -1471,7 +1471,7 @@ class ApplicationRepositorySpec
     "throw an error if events relate to different applications" in {
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random
-      val events = List(appId1, appId2).map(NameChanged(_, LocalDateTime.now, UserId.random, "old name", "new name"))
+      val events = List(appId1, appId2).map(NameChanged(_, LocalDateTime.now, UserId.random, "old name", "new name", "admin@example.com", Set("admin@example.com", "ri@example.com")))
       await(applicationRepository.save(anApplicationData(appId1, ClientId.random)))
       await(applicationRepository.save(anApplicationData(appId2, ClientId.random)))
 

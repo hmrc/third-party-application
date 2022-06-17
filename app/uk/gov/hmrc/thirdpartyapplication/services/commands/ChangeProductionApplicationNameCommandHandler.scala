@@ -21,14 +21,12 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
 import cats.Apply
 import cats.data.ValidatedNec
@@ -60,7 +58,9 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(
         timestamp = cmd.timestamp,
         instigator = cmd.instigator,
         oldName = app.name,
-        newName = cmd.newName
+        newName = cmd.newName,
+        requester = getRequester(app, cmd.instigator),
+        recipients = getRecipients(app) ++ getResponsibleIndividual(app)
       )
     )
   }
@@ -71,11 +71,5 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(
         asEvents(app, cmd)
       }
     }
-  }
-
-  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    val requesterEmail = getRequester(app, event.instigator)
-    emailConnector.sendChangeOfApplicationName(requesterEmail, event.oldName, event.newName, recipients)
   }
 }

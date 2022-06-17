@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.thirdpartyapplication.services.events._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -32,7 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
-  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
+  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+  nameChangeEventHdlr: NameChangeEventHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -42,7 +44,7 @@ class ApplicationUpdateService @Inject()(
       app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp <- E.liftF(applicationRepository.applyEvents(events))
-      _        <- E.liftF(sendAdviceEmail(savedApp, events, applicationUpdate))
+      _        <- E.liftF(sendAdviceEmail(events))
     } yield savedApp
   }
 
@@ -53,14 +55,20 @@ class ApplicationUpdateService @Inject()(
     }
   }
 
-  private def sendAdviceEmail(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent], applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    if (applicationUpdate.emailAdvice) {
-      (applicationUpdate, events.head) match {
-        case (cmd: ChangeProductionApplicationName, evt: UpdateApplicationEvent.NameChanged) => changeProductionApplicationNameCmdHdlr.sendAdviceEmail(app, evt)
-        case (_, _) => throw new RuntimeException(s"Unexpected ApplicationUpdate and Event type for email ${events.head}")
+  private def sendAdviceEmail(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    def sendEmail(event: UpdateApplicationEvent) = {
+      if (event.emailAdvice) {
+        event match {
+          case evt: UpdateApplicationEvent.NameChanged => nameChangeEventHdlr.sendAdviceEmail(evt)
+          case _ => throw new RuntimeException(s"UnexpectedEvent type for emailAdvice ${event}")
+        }
+      } else {
+        Future.successful(HasSucceeded)
       }
-    } else {
-      Future.successful(HasSucceeded)
+    }
+    events match {
+      case NonEmptyList(e, Nil) => sendEmail(e)
+      case NonEmptyList(e, tail) => sendEmail(e).flatMap(_ => sendAdviceEmail(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 }

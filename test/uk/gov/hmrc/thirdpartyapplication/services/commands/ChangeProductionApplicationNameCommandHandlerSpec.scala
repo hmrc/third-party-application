@@ -22,7 +22,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Na
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -58,7 +57,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val userId = idsByEmail(adminEmail)
     val timestamp = LocalDateTime.now
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName)
+    val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock, EmailConnectorMock.aMock)
   }
@@ -107,23 +106,6 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       UpliftNamingServiceMock.ValidateApplicationName.failsWithInvalidName()
       val result = await(underTest.process(app, update))
       result shouldBe Invalid(NonEmptyChain.one("New name is invalid"))
-    }
-  }
-
-  "sendAdviceEmail" should {
-    "successfully send email" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
-      val result = await(underTest.sendAdviceEmail(app, nameChangedEvent))
-      result shouldBe HasSucceeded
-      EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
-    }
-
-    "fail if instigator doesn't exist in list of collaborators" in new Setup {
-      val instigator2 = UserId.random
-      val nameChangedEvent2 = NameChanged(applicationId, timestamp, instigator2, oldName, newName)
-
-      val ex: RuntimeException = intercept[RuntimeException](await(underTest.sendAdviceEmail(app, nameChangedEvent2)))
-      ex.getMessage shouldBe s"no collaborator found with instigator's userid: $instigator2"
     }
   }
 }

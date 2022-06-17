@@ -27,6 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
+import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangeEventHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
@@ -71,10 +72,12 @@ class ApplicationUpdateServiceSpec
     val response = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
+    val mockNameChangeEventHandler: NameChangeEventHandler = mock[NameChangeEventHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
-      mockChangeProductionApplicationNameCommandHandler
+      mockChangeProductionApplicationNameCommandHandler,
+      mockNameChangeEventHandler
     )
   }
 
@@ -88,12 +91,12 @@ class ApplicationUpdateServiceSpec
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
+      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
       )
-      when(mockChangeProductionApplicationNameCommandHandler.sendAdviceEmail(*[ApplicationData], *[NameChanged])(*)).thenReturn(
+      when(mockNameChangeEventHandler.sendAdviceEmail(*[NameChanged])(*)).thenReturn(
         Future.successful(HasSucceeded)
       )
       val result = await(underTest.update(applicationId, changeName).value)

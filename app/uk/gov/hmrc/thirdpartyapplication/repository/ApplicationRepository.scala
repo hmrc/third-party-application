@@ -422,7 +422,7 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
   }
 
   def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = event match {
-    case NameChanged(id, _, _, _, newName) => updateApplicationName(id, newName)
+    case NameChanged(id, _, _, _, newName, _, _) => updateApplicationName(id, newName)
   }
 }
 
