@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import cats.data.NonEmptyList
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.bson.{BsonValue, Document}
@@ -109,7 +110,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     updateApplication(applicationId, Updates.set("grantLength", grantLength))
 
   def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("name" -> name, "normalisedName" -> name.toLowerCase)))
+    updateApplication(applicationId, Updates.combine(Updates.set("name", name), Updates.set("normalisedName", name.toLowerCase)))
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
