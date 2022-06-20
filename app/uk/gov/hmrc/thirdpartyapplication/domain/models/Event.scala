@@ -14,15 +14,18 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
+package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import java.time.LocalDateTime
 
-case class ResponsibleIndividualVerificationWithDetails(
-    verification: ResponsibleIndividualVerification,
-    responsibleIndividual: ResponsibleIndividual,
-    submitterName: String,
-    submitterEmail: String
-)
+trait UpdateApplicationEvent {
+  def applicationId: ApplicationId
+  def timestamp: LocalDateTime
+  def instigator: UserId
+}
 
+object UpdateApplicationEvent {
 
+  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationEvent
+
+}

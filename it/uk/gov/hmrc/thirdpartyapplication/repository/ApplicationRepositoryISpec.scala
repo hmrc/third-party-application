@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
+import cats.data.NonEmptyList
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
@@ -27,6 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -1477,6 +1479,61 @@ class ApplicationRepositoryISpec
       numberRetrieved mustBe 2
     }
   }
+
+  "updateApplicationName" should {
+    "update the name and normalised name for the application" in {
+      val applicationId = ApplicationId.random
+      val oldName = "oldName"
+      val newName = "newName"
+      val app = anApplicationData(applicationId).copy(name = oldName)
+      await(applicationRepository.save(app))
+
+      val appWithUpdatedName = await(applicationRepository.updateApplicationName(applicationId, newName))
+      appWithUpdatedName.name shouldBe newName
+      appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
+    }
+  }
+
+  "applyEvents" should {
+    "handle multiple events correctly" in {
+      val applicationId = ApplicationId.random
+      val oldName = "oldName"
+      val newestName = "name3"
+      val app = anApplicationData(applicationId).copy(name = oldName)
+      await(applicationRepository.save(app))
+
+      val events = List("name1", "name2", newestName).map(NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, _))
+      val appWithUpdatedName = await(applicationRepository.applyEvents(NonEmptyList.fromList(events).get))
+      appWithUpdatedName.name shouldBe newestName
+      appWithUpdatedName.normalisedName shouldBe newestName.toLowerCase
+    }
+
+    "handle NameChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldName = "oldName"
+      val newName = "newName"
+      val app = anApplicationData(applicationId).copy(name = oldName)
+      await(applicationRepository.save(app))
+
+      val event = NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, newName)
+      val appWithUpdatedName = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedName.name shouldBe newName
+      appWithUpdatedName.normalisedName shouldBe newName.toLowerCase
+    }
+
+    "throw an error if events relate to different applications" in {
+      val appId1 = ApplicationId.random
+      val appId2 = ApplicationId.random
+      val events = List(appId1, appId2).map(NameChanged(_, LocalDateTime.now, UserId.random, "old name", "new name"))
+      await(applicationRepository.save(anApplicationData(appId1, ClientId.random)))
+      await(applicationRepository.save(anApplicationData(appId2, ClientId.random)))
+
+      intercept[IllegalArgumentException] {
+        await(applicationRepository.applyEvents(NonEmptyList.fromList(events).get))
+      }
+    }
+  }
+
 
   def createAppWithStatusUpdatedOn(state: State.State, updatedOn: LocalDateTime): ApplicationData =
     anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId,

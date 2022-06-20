@@ -33,6 +33,7 @@ import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
@@ -106,6 +107,9 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
   def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("grantLength", grantLength))
+
+  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("name" -> name, "normalisedName" -> name.toLowerCase)))
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
@@ -432,6 +436,19 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       .map(_.map(x => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(x._id.name)}" -> x.count)
         .toMap
       )
+  }
+
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
+    require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
+
+    events match {
+      case NonEmptyList(e, Nil) => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = event match {
+    case NameChanged(id, _, _, _, newName) => updateApplicationName(id, newName)
   }
 }
 

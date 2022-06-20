@@ -26,10 +26,17 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule, StateHistoryRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
   trait Setup
@@ -55,7 +62,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
                               List.empty)
     val application: ApplicationData = anApplicationData(
                               applicationId,
-                              pendingResponsibleIndividualVerificationState("bob@fastshow.com"),
+                              pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
                               access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(
@@ -76,7 +83,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
           0,
           appName,
           LocalDateTime.now(clock))
-    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual)
+    val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
 
   "createNewVerification" should {

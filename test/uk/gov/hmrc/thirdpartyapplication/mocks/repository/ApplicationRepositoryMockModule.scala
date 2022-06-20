@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
+import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
@@ -28,7 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
   protected trait BaseApplicationRepoMock {
@@ -304,6 +304,30 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object AddApplicationTermsOfUseAcceptance {
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addApplicationTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
+    }
+
+    object UpdateApplicationName {
+      def thenReturn(applicationData: ApplicationData) = {
+        when(aMock.updateApplicationName(*[ApplicationId], *[String])).thenReturn(successful(applicationData))
+      }
+
+      def verifyNeverCalled() = {
+        ApplicationRepoMock.verify(never).updateApplicationName(*[ApplicationId], *[String])
+      }
+    }
+
+    object ApplyEvents {
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(successful(applicationData))
+
+      def failsWith(ex: Throwable) =
+        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(failed(ex))
+
+      def verifyCalledWith(events: UpdateApplicationEvent*) =
+        verify.applyEvents(NonEmptyList.fromList(events.toList).get)
+
+      def verifyNeverCalled =
+        ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationEvent]])
     }
   }
 

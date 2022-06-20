@@ -17,12 +17,11 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import akka.stream.Materializer
-import cats.data.OptionT
+import cats.data.{OptionT}
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.JsValue
-import play.api.libs.json.Json
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames

@@ -124,7 +124,7 @@ class ApplicationServiceSpec
     when(mockEmailConnector.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockEmailConnector.sendApplicationDeletedNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+    when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockApiPlatformEventService.sendTeamMemberAddedEvent(*,*,*)(*)).thenReturn(successful(true))
     when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
     when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
@@ -1253,7 +1253,7 @@ class ApplicationServiceSpec
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
       verify(mockEmailConnector).sendApplicationDeletedNotification(
-        applicationData.name, deleteRequestedBy, applicationData.admins.map(_.emailAddress))
+        applicationData.name, applicationData.id, deleteRequestedBy, applicationData.admins.map(_.emailAddress))
     }
 
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {

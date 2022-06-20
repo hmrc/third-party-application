@@ -62,7 +62,9 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
           (code: String) => Future.successful(Right(
             ResponsibleIndividualVerificationWithDetails(
               ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name", LocalDateTime.now(Clock.systemUTC())),
-              ResponsibleIndividual.build("bob example", "bob@example.com")
+              ResponsibleIndividual.build("bob example", "bob@example.com"),
+              "Rick Deckard",
+              "rick@submitter.com"
             ))
           )
         )
