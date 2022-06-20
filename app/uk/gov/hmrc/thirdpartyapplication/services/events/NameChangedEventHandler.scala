@@ -25,7 +25,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class NameChangeEventHandler @Inject()(
+class NameChangedEventHandler @Inject()(
   emailConnector: EmailConnector
 )(implicit val ec: ExecutionContext) {
 

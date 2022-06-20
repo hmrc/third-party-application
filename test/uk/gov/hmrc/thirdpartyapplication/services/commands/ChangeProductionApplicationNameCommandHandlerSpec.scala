@@ -26,10 +26,9 @@ import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
-  trait Setup extends UpliftNamingServiceMockModule with EmailConnectorMockModule {
+  trait Setup extends UpliftNamingServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -59,7 +58,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
     val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
 
-    val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock, EmailConnectorMock.aMock)
+    val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }
   "process" should {
     "create correct events for a valid request" in new Setup {

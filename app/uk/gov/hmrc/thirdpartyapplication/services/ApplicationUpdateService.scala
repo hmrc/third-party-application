@@ -34,7 +34,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-  nameChangeEventHdlr: NameChangeEventHandler
+  nameChangedEventHdlr: NameChangedEventHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -59,7 +59,7 @@ class ApplicationUpdateService @Inject()(
     def sendEmail(event: UpdateApplicationEvent) = {
       if (event.emailAdvice) {
         event match {
-          case evt: UpdateApplicationEvent.NameChanged => nameChangeEventHdlr.sendAdviceEmail(evt)
+          case evt: UpdateApplicationEvent.NameChanged => nameChangedEventHdlr.sendAdviceEmail(evt)
           case _ => throw new RuntimeException(s"UnexpectedEvent type for emailAdvice ${event}")
         }
       } else {

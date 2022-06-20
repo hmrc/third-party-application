@@ -24,7 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 
 import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
@@ -34,8 +33,7 @@ import cats.data.NonEmptyList
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject()(
-  namingService: UpliftNamingService, 
-  emailConnector: EmailConnector
+  namingService: UpliftNamingService
 )(implicit val ec: ExecutionContext) extends CommandHandler {
   
   import CommandHandler._

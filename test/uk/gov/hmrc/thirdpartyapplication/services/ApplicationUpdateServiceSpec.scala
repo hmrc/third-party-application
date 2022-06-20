@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangeEventHandler
+import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangedEventHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
@@ -72,12 +72,12 @@ class ApplicationUpdateServiceSpec
     val response = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockNameChangeEventHandler: NameChangeEventHandler = mock[NameChangeEventHandler]
+    val mockNameChangedEventHandler: NameChangedEventHandler = mock[NameChangedEventHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
-      mockNameChangeEventHandler
+      mockNameChangedEventHandler
     )
   }
 
@@ -96,7 +96,7 @@ class ApplicationUpdateServiceSpec
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
       )
-      when(mockNameChangeEventHandler.sendAdviceEmail(*[NameChanged])(*)).thenReturn(
+      when(mockNameChangedEventHandler.sendAdviceEmail(*[NameChanged])(*)).thenReturn(
         Future.successful(HasSucceeded)
       )
       val result = await(underTest.update(applicationId, changeName).value)

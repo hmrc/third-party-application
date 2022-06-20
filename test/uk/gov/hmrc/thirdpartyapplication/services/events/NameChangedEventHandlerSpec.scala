@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
-class NameChangeEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class NameChangedEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -42,7 +42,7 @@ class NameChangeEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData 
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
     val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
 
-    val underTest = new NameChangeEventHandler(EmailConnectorMock.aMock)
+    val underTest = new NameChangedEventHandler(EmailConnectorMock.aMock)
   }
 
   "sendAdviceEmail" should {
