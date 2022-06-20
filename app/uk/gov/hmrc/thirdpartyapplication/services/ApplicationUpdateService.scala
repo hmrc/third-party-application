@@ -55,7 +55,7 @@ class ApplicationUpdateService @Inject()(
     }
   }
 
-  private def sendAdviceEmail(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  private def sendAdviceEmail(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendEmail(event: UpdateApplicationEvent) = {
       if (event.emailAdvice) {
         event match {
@@ -66,9 +66,7 @@ class ApplicationUpdateService @Inject()(
         Future.successful(HasSucceeded)
       }
     }
-    events match {
-      case NonEmptyList(e, Nil) => sendEmail(e)
-      case NonEmptyList(e, tail) => sendEmail(e).flatMap(_ => sendAdviceEmail(NonEmptyList.fromListUnsafe(tail)))
-    }
+    
+    Future.sequence(events.map(evt => sendEmail(evt)).toList)
   }
 }
