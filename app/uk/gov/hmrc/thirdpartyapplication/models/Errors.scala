@@ -26,14 +26,14 @@ class ApplicationNeedsAdmin extends RuntimeException
 class ClientSecretsLimitExceeded extends RuntimeException
 
 class InvalidStateTransition(invalidFrom: State, to: State, expectedFrom: State)
-  extends RuntimeException(s"Transition to '$to' state requires the application to be in '$expectedFrom' state, but it was in '$invalidFrom'")
+    extends RuntimeException(s"Transition to '$to' state requires the application to be in '$expectedFrom' state, but it was in '$invalidFrom'")
 
 class InconsistentDataState(message: String) extends RuntimeException(message)
 
 case class ApplicationAlreadyExists(applicationName: String) extends RuntimeException
 
 case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
-  extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
+    extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
 
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 

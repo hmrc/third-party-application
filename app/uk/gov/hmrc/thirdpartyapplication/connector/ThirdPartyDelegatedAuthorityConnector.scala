@@ -32,7 +32,8 @@ object ThirdPartyDelegatedAuthorityConnector {
 }
 
 @Singleton
-class ThirdPartyDelegatedAuthorityConnector @Inject()(httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConnector.Config)(implicit val ec: ExecutionContext)  {
+class ThirdPartyDelegatedAuthorityConnector @Inject() (httpClient: HttpClient, config: ThirdPartyDelegatedAuthorityConnector.Config)(implicit val ec: ExecutionContext) {
+
   def revokeApplicationAuthorities(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     httpClient.DELETE[Option[Unit]](s"${config.baseUrl}/authority/${clientId.value}") map (_ => HasSucceeded)
   }

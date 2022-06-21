@@ -45,34 +45,36 @@ import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
-  extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db,
-    ApplicationData.format, ReactiveMongoFormats.objectIdFormats)
+class ApplicationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
+    extends ReactiveRepository[ApplicationData, BSONObjectID]("application", mongo.mongoConnector.db, ApplicationData.format, ReactiveMongoFormats.objectIdFormats)
     with MetricsHelper {
 
   import MongoJsonFormatterOverrides._
 
   private val subscriptionsLookup: JsObject = Json.obj(
     f"$$lookup" -> Json.obj(
-      "from" -> "subscription",
-      "localField" -> "id",
+      "from"         -> "subscription",
+      "localField"   -> "id",
       "foreignField" -> "applications",
-      "as" -> "subscribedApis"))
+      "as"           -> "subscribedApis"
+    )
+  )
 
   private val applicationProjection = Json.obj(f"$$project" -> Json.obj(
-    "id" -> true,
-    "name" -> true,
-    "normalisedName" -> true,
-    "collaborators" -> true,
-    "description" -> true,
+    "id"                  -> true,
+    "name"                -> true,
+    "normalisedName"      -> true,
+    "collaborators"       -> true,
+    "description"         -> true,
     "wso2ApplicationName" -> true,
-    "tokens" -> true,
-    "state" -> true,
-    "access" -> true,
-    "createdOn" -> true,
-    "lastAccess" -> true,
-    "rateLimitTier" -> true,
-    "environment" -> true))
+    "tokens"              -> true,
+    "state"               -> true,
+    "access"              -> true,
+    "createdOn"           -> true,
+    "lastAccess"          -> true,
+    "rateLimitTier"       -> true,
+    "environment"         -> true
+  ))
 
   override def indexes = List(
     createSingleFieldAscendingIndex(
@@ -141,22 +143,24 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj("lastAccess" -> Json.obj("$type" -> "date"))))
 
   def recordServerTokenUsage(applicationId: ApplicationId): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$currentDate" -> Json.obj(
-      "lastAccess" -> Json.obj("$type" -> "date"),
-      "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date"))))
+    updateApplication(
+      applicationId,
+      Json.obj("$currentDate" -> Json.obj(
+        "lastAccess"                             -> Json.obj("$type" -> "date"),
+        "tokens.production.lastAccessTokenUsage" -> Json.obj("$type" -> "date")
+      ))
+    )
 
-  def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
-    val qry = Json.obj("$and" -> Json.arr(
-                  Json.obj("id" -> applicationId.value.toString),
-                  Json.obj("collaborators" -> 
-                    Json.obj("$elemMatch" -> 
-                      Json.obj(
-                        "emailAddress" -> collaboratorEmailAddress,
-                        "userId" -> Json.obj("$exists" -> false)
-                      )
-                    )
-                  )
-              ))
+  def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] = {
+    val qry             = Json.obj("$and" -> Json.arr(
+      Json.obj("id"            -> applicationId.value.toString),
+      Json.obj("collaborators" ->
+        Json.obj("$elemMatch" ->
+          Json.obj(
+            "emailAddress" -> collaboratorEmailAddress,
+            "userId"       -> Json.obj("$exists" -> false)
+          )))
+    ))
     val updateStatement = Json.obj("$set" -> Json.obj("collaborators.$.userId" -> collaboratorUser))
 
     findAndUpdate(qry, updateStatement, fetchNewObject = true) map {
@@ -171,9 +175,10 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def updateClientSecretField(applicationId: ApplicationId, clientSecretId: String, fieldName: String, fieldValue: String): Future[ApplicationData] =
     findAndUpdate(
-      Json.obj("id" -> applicationId.value.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
+      Json.obj("id"   -> applicationId.value.toString, "tokens.production.clientSecrets.id" -> clientSecretId),
       Json.obj("$set" -> Json.obj(s"tokens.production.clientSecrets.$$.$fieldName" -> fieldValue)),
-      fetchNewObject = true)
+      fetchNewObject = true
+    )
       .map(_.result[ApplicationData].head)
 
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
@@ -187,22 +192,24 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def recordClientSecretUsage(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] =
     findAndUpdate(
-      Json.obj("id" -> applicationId, "tokens.production.clientSecrets.id" -> clientSecretId),
+      Json.obj("id"           -> applicationId, "tokens.production.clientSecrets.id" -> clientSecretId),
       Json.obj("$currentDate" -> Json.obj("tokens.production.clientSecrets.$.lastAccess" -> Json.obj("$type" -> "date"))),
-      fetchNewObject = true)
+      fetchNewObject = true
+    )
       .map(_.result[ApplicationData].head)
 
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
     findAndUpdate(
-      Json.obj("id" -> applicationId.value.toString),
+      Json.obj("id"    -> applicationId.value.toString),
       Json.obj("$pull" -> Json.obj("tokens.production.clientSecrets" -> Json.obj("id" -> clientSecretId))),
-      fetchNewObject = true)
+      fetchNewObject = true
+    )
       .map(_.result[ApplicationData].head)
   }
 
   def fetchStandardNonTestingApps(): Future[List[ApplicationData]] = {
     find(s"$$and" -> Json.arr(
-      Json.obj("state.name" -> Json.obj(f"$$ne" -> State.TESTING)),
+      Json.obj("state.name"        -> Json.obj(f"$$ne" -> State.TESTING)),
       Json.obj("access.accessType" -> Json.obj(f"$$eq" -> AccessType.STANDARD))
     ))
   }
@@ -252,17 +259,18 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
-    val sort = convertToSortClause(applicationSearch.sort)
+    val sort    = convertToSortClause(applicationSearch.sort)
 
     val pagination = List(
-      Json.obj(f"$$skip" -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
-      Json.obj(f"$$limit" -> applicationSearch.pageSize))
+      Json.obj(f"$$skip"  -> (applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
+      Json.obj(f"$$limit" -> applicationSearch.pageSize)
+    )
 
     runApplicationQueryAggregation(commandQueryDocument(filters, pagination, sort, applicationSearch.hasSubscriptionFilter()))
   }
 
   private def matches(predicates: (String, JsValueWrapper)): JsObject = Json.obj(f"$$match" -> Json.obj(predicates))
-  private def in(fieldName: String, values: Seq[String]): JsObject = matches(fieldName -> Json.obj(f"$$in"-> values))
+  private def in(fieldName: String, values: Seq[String]): JsObject    = matches(fieldName -> Json.obj(f"$$in" -> values))
 
   private def sorting(clause: (String, JsValueWrapper)): JsObject = Json.obj(f"$$sort" -> Json.obj(clause))
 
@@ -274,27 +282,27 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
       apiVersion.fold(
         matches("subscribedApis.apiIdentifier.context" -> apiContext)
-      )( value =>
+      )(value =>
         matches("subscribedApis.apiIdentifier" -> Json.obj("context" -> apiContext, "version" -> value))
       )
     }
 
     applicationSearchFilter match {
       // API Subscriptions
-      case NoAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$size" -> 0))
+      case NoAPISubscriptions        => matches("subscribedApis" -> Json.obj(f"$$size" -> 0))
       case OneOrMoreAPISubscriptions => matches("subscribedApis" -> Json.obj(f"$$gt" -> Json.obj(f"$$size" -> 0)))
-      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
+      case SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
-      case Created => applicationStatusMatch(State.TESTING)
+      case Created                                  => applicationStatusMatch(State.TESTING)
       case PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
-      case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
-      case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
 
       // Access Type
-      case StandardAccess => accessTypeMatch(AccessType.STANDARD)
-      case ROPCAccess => accessTypeMatch(AccessType.ROPC)
+      case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
+      case ROPCAccess       => accessTypeMatch(AccessType.ROPC)
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
@@ -302,20 +310,20 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
 
       // Last Use Date
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
-      case lastUsedAfter: LastUseAfterDate => lastUsedAfter.toMongoMatch
-      case _  => Json.obj() // Only here to complete the match
+      case lastUsedAfter: LastUseAfterDate   => lastUsedAfter.toMongoMatch
+      case _                                 => Json.obj() // Only here to complete the match
     }
   }
 
   private def convertToSortClause(sort: ApplicationSort): List[JsObject] = sort match {
-    case NameAscending => List(sorting("name" -> 1))
-    case NameDescending => List(sorting("name" -> -1))
-    case SubmittedAscending => List(sorting("createdOn" -> 1))
-    case SubmittedDescending => List(sorting("createdOn" -> -1))
-    case LastUseDateAscending => List(sorting("lastAccess" -> 1))
+    case NameAscending         => List(sorting("name" -> 1))
+    case NameDescending        => List(sorting("name" -> -1))
+    case SubmittedAscending    => List(sorting("createdOn" -> 1))
+    case SubmittedDescending   => List(sorting("createdOn" -> -1))
+    case LastUseDateAscending  => List(sorting("lastAccess" -> 1))
     case LastUseDateDescending => List(sorting("lastAccess" -> -1))
-    case NoSorting => List()
-    case _ => List(sorting("name" -> 1))
+    case NoSorting             => List()
+    case _                     => List(sorting("name" -> 1))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): JsObject =
@@ -333,36 +341,40 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
     // TODO: I don't think this is returning more than 1 batch (~100?) worth of data.
     (json \ "cursor" \ "firstBatch" \ 0).validate[T] match {
       case JsSuccess(result, _) => Future.successful(result)
-      case JsError(errors) => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
+      case JsError(errors)      => Future.failed(new RuntimeException((json \ "errmsg").asOpt[String].getOrElse(errors.mkString(","))))
     }
   }
 
   private def commandQueryDocument(filters: List[JsObject], pagination: List[JsObject], sort: List[JsObject], hasSubscriptionsQuery: Boolean): JsObject = {
     val totalCount = Json.arr(Json.obj(f"$$count" -> "total"))
-    
+
     val subscriptionsLookupFilter = if (hasSubscriptionsQuery) {
       Seq(subscriptionsLookup)
     } else Seq.empty
 
-    val filteredPipelineCount = Json.toJson(subscriptionsLookupFilter ++ filters :+ Json.obj(f"$$count" -> "total"))
+    val filteredPipelineCount              = Json.toJson(subscriptionsLookupFilter ++ filters :+ Json.obj(f"$$count" -> "total"))
     val paginatedFilteredAndSortedPipeline = Json.toJson((subscriptionsLookupFilter ++ filters) ++ sort ++ pagination :+ applicationProjection)
 
     Json.obj(
       "aggregate" -> "application",
-      "cursor" -> Json.obj(),
-      "pipeline" -> Json.arr(Json.obj(
+      "cursor"    -> Json.obj(),
+      "pipeline"  -> Json.arr(Json.obj(
         f"$$facet" -> Json.obj(
-          "totals" -> totalCount,
-          "matching" -> filteredPipelineCount,
-          "applications" -> paginatedFilteredAndSortedPipeline))))
+          "totals"       -> totalCount,
+          "matching"     -> filteredPipelineCount,
+          "applications" -> paginatedFilteredAndSortedPipeline
+        )
+      ))
+    )
   }
 
   def fetchAllForContext(apiContext: ApiContext): Future[List[ApplicationData]] =
     searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiContext))).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =
-    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiIdentifier.context),
-      apiVersion = Some(apiIdentifier.version))).map(_.applications)
+    searchApplications(ApplicationSearch(1, Int.MaxValue, List(SpecificAPISubscription), apiContext = Some(apiIdentifier.context), apiVersion = Some(apiIdentifier.version))).map(
+      _.applications
+    )
 
   def fetchAllWithNoSubscriptions(): Future[List[ApplicationData]] =
     searchApplications(new ApplicationSearch(filters = List(NoAPISubscriptions))).map(_.applications)
@@ -404,19 +416,20 @@ class ApplicationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit va
         Json.parse("""{
                      |      "id" : "$id",
                      |      "name": "$name"
-                     |    }""".stripMargin))(
+                     |    }""".stripMargin)
+      )(
         "count" -> SumAll
       )
       (lookup, List[PipelineOperator](unwind, group))
     }).fold(Nil: List[ApplicationWithSubscriptionCount])((acc, cur) => cur :: acc)
-      .map(_.map(r=>s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
+      .map(_.map(r => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
 
   def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
     require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
 
     events match {
-      case NonEmptyList(e, Nil) => applyEvent(e)
+      case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }

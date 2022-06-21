@@ -24,22 +24,21 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 
 object DeriveContext {
 
-  def yesNoFromBoolean(b: Boolean) = if(b) "Yes" else "No"
+  def yesNoFromBoolean(b: Boolean) = if (b) "Yes" else "No"
 
-  def deriveFraudPrevention(subscriptions: List[ApiIdentifier]): String =  {
+  def deriveFraudPrevention(subscriptions: List[ApiIdentifier]): String = {
     val appContexts = subscriptions.map(_.context.value).toSet
     yesNoFromBoolean(appContexts.intersect(FraudPrevention.contexts).nonEmpty)
   }
 
   def deriveFor(application: ApplicationData, subscriptions: List[ApiIdentifier]): Context = {
-    
-    val resell = application.sellResellOrDistribute.fold("No")(s => s.answer)
-    val inHouse = if(resell == "Yes") "No" else "Yes"
+
+    val resell  = application.sellResellOrDistribute.fold("No")(s => s.answer)
+    val inHouse = if (resell == "Yes") "No" else "Yes"
 
     Map(
-      Keys.VAT_OR_ITSA -> deriveFraudPrevention(subscriptions),
+      Keys.VAT_OR_ITSA       -> deriveFraudPrevention(subscriptions),
       Keys.IN_HOUSE_SOFTWARE -> inHouse
     )
   }
 }
-

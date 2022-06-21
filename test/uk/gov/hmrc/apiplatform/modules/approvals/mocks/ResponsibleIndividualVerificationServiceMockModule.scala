@@ -27,15 +27,17 @@ import java.time.{Clock, LocalDateTime}
 import scala.concurrent.Future
 
 trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseResponsibleIndividualVerificationServiceMock {
     def aMock: ResponsibleIndividualVerificationService
 
     def verifyZeroInteractions(): Unit = MockitoSugar.verifyZeroInteractions(aMock)
 
     object CreateNewVerification {
+
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer(
-          (appData: ApplicationData, submissionId: Submission.Id, index: Int) => Future.successful(
+        when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
+          Future.successful(
             ResponsibleIndividualVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
           )
         )
@@ -43,11 +45,19 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     }
 
     object GetVerification {
+
       def thenGetVerification(code: String) = {
-        when(aMock.getVerification(*)).thenAnswer(
-          (code: String) => Future.successful(Some(
-            ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name", LocalDateTime.now(Clock.systemUTC())))
-          )
+        when(aMock.getVerification(*)).thenAnswer((code: String) =>
+          Future.successful(Some(
+            ResponsibleIndividualVerification(
+              ResponsibleIndividualVerificationId(code),
+              ApplicationId.random,
+              Submission.Id.random,
+              0,
+              "App name",
+              LocalDateTime.now(Clock.systemUTC())
+            )
+          ))
         )
       }
 
@@ -57,26 +67,42 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     }
 
     object Accept {
+
       def thenAccept() = {
-        when(aMock.accept(*)).thenAnswer(
-          (code: String) => Future.successful(Right(
+        when(aMock.accept(*)).thenAnswer((code: String) =>
+          Future.successful(Right(
             ResponsibleIndividualVerificationWithDetails(
-              ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name", LocalDateTime.now(Clock.systemUTC())),
+              ResponsibleIndividualVerification(
+                ResponsibleIndividualVerificationId(code),
+                ApplicationId.random,
+                Submission.Id.random,
+                0,
+                "App name",
+                LocalDateTime.now(Clock.systemUTC())
+              ),
               ResponsibleIndividual.build("bob example", "bob@example.com"),
               "Rick Deckard",
               "rick@submitter.com"
-            ))
-          )
+            )
+          ))
         )
       }
     }
 
     object Decline {
+
       def thenDecline() = {
-        when(aMock.decline(*)).thenAnswer(
-          (code: String) => Future.successful(Right(
-            ResponsibleIndividualVerification(ResponsibleIndividualVerificationId(code), ApplicationId.random, Submission.Id.random, 0, "App name", LocalDateTime.now(Clock.systemUTC())))
-          )
+        when(aMock.decline(*)).thenAnswer((code: String) =>
+          Future.successful(Right(
+            ResponsibleIndividualVerification(
+              ResponsibleIndividualVerificationId(code),
+              ApplicationId.random,
+              Submission.Id.random,
+              0,
+              "App name",
+              LocalDateTime.now(Clock.systemUTC())
+            )
+          ))
         )
       }
     }
@@ -86,4 +112,3 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     val aMock = mock[ResponsibleIndividualVerificationService]
   }
 }
-

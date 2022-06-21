@@ -26,8 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector,
-                                  applicationRepository: ApplicationRepository) extends ApplicationLogger {
+class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository) extends ApplicationLogger {
 
   implicit val executionContext: ExecutionContext = ExecutionContext.global
 
@@ -39,7 +38,10 @@ class AwsRestoreService @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector
     applicationRepository.processAll(application => {
       logger.debug(s"Republishing Application [${application.wso2ApplicationName}]")
       awsApiGatewayConnector.createOrUpdateApplication(
-        application.wso2ApplicationName, application.tokens.production.accessToken, application.rateLimitTier.getOrElse(DefaultRateLimitTier))(hc)
+        application.wso2ApplicationName,
+        application.tokens.production.accessToken,
+        application.rateLimitTier.getOrElse(DefaultRateLimitTier)
+      )(hc)
     })
   }
 }

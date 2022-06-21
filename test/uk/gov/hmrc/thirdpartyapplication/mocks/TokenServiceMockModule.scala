@@ -33,6 +33,7 @@ trait TokenServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object CreateEnvironmentToken {
+
       def thenReturn(environmentToken: Token) = {
         when(aMock.createEnvironmentToken()).thenReturn(environmentToken)
       }

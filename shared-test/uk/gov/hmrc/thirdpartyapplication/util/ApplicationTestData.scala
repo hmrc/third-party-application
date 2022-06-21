@@ -27,9 +27,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.LocalDateTime
 
-trait ApplicationTestData extends ApplicationStateUtil  {
+trait ApplicationTestData extends ApplicationStateUtil {
 
   val idsByEmail = Map[String, UserId]()
+
   def idOf(email: String) = {
     idsByEmail.getOrElseUpdate(email, UserId.random)
   }
@@ -37,23 +38,24 @@ trait ApplicationTestData extends ApplicationStateUtil  {
   def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
 
   val loggedInUser = "loggedin@example.com"
-  val devEmail = "dev@example.com"
+  val devEmail     = "dev@example.com"
 
   val serverTokenLastAccess = LocalDateTime.now(clock)
-  val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+  val productionToken       = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
-  
   val requestedByEmail = "john.smith@example.com"
-  val grantLength = 547
+  val grantLength      = 547
 
-  def anApplicationData(applicationId: ApplicationId,
-                                state: ApplicationState = productionState(requestedByEmail),
-                                collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Role.ADMINISTRATOR, idOf(loggedInUser))),
-                                access: Access = Standard(),
-                                rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-                                environment: Environment = Environment.PRODUCTION,
-                                ipAllowlist: IpAllowlist = IpAllowlist(),
-                                grantLength: Int = grantLength) = {
+  def anApplicationData(
+      applicationId: ApplicationId,
+      state: ApplicationState = productionState(requestedByEmail),
+      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, Role.ADMINISTRATOR, idOf(loggedInUser))),
+      access: Access = Standard(),
+      rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
+      environment: Environment = Environment.PRODUCTION,
+      ipAllowlist: IpAllowlist = IpAllowlist(),
+      grantLength: Int = grantLength
+    ) = {
     ApplicationData(
       applicationId,
       "MyApp",
@@ -69,7 +71,8 @@ trait ApplicationTestData extends ApplicationStateUtil  {
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
-      ipAllowlist = ipAllowlist)
+      ipAllowlist = ipAllowlist
+    )
   }
 
 }

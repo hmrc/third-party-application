@@ -36,6 +36,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     def verifyZeroInteractions(): Unit = MockitoSugar.verifyZeroInteractions(aMock)
 
     object SendAddedClientSecretNotification {
+
       def thenReturnOk() = {
         when(aMock.sendAddedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
@@ -44,15 +45,13 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         verify.sendAddedClientSecretNotification(*, *, *, *)(*)
       }
 
-      def verifyCalledWith(actorEmailAddress: String,
-                           clientSecret: String,
-                           applicationName: String,
-                           recipients: Set[String]): Future[HasSucceeded] = {
+      def verifyCalledWith(actorEmailAddress: String, clientSecret: String, applicationName: String, recipients: Set[String]): Future[HasSucceeded] = {
         verify.sendAddedClientSecretNotification(eqTo(actorEmailAddress), eqTo(clientSecret), eqTo(applicationName), eqTo(recipients))(*)
       }
     }
 
     object SendRemovedClientSecretNotification {
+
       def thenReturnOk() = {
         when(aMock.sendRemovedClientSecretNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
@@ -61,10 +60,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         verify.sendRemovedClientSecretNotification(*, *, *, *)(*)
       }
 
-      def verifyCalledWith(actorEmailAddress: String,
-                           clientSecret: String,
-                           applicationName: String,
-                           recipients: Set[String]): Future[HasSucceeded] = {
+      def verifyCalledWith(actorEmailAddress: String, clientSecret: String, applicationName: String, recipients: Set[String]): Future[HasSucceeded] = {
         verify.sendRemovedClientSecretNotification(eqTo(actorEmailAddress), eqTo(clientSecret), eqTo(applicationName), eqTo(recipients))(*)
       }
 
@@ -72,58 +68,62 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     }
 
     object SendApplicationApprovedAdminConfirmation {
+
       def thenReturnSuccess() = {
-        when(aMock.sendApplicationApprovedAdminConfirmation(*,*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
     }
 
     object SendVerifyResponsibleIndividualNotification {
+
       def thenReturnSuccess() = {
-        when(aMock.sendVerifyResponsibleIndividualNotification(*,*,*,*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendVerifyResponsibleIndividualNotification(*, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
-      def verifyCalledWith(responsibleIndividualName: String,
-                           responsibleIndividualEmailAddress: String,
-                           applicationName: String,
-                           requesterName: String,
-                           verifyResponsibleIndividualUniqueId: String) =
-        verify.sendVerifyResponsibleIndividualNotification(eqTo(responsibleIndividualName), eqTo(responsibleIndividualEmailAddress), eqTo(applicationName),
-          eqTo(requesterName), eqTo(verifyResponsibleIndividualUniqueId))(*)
+
+      def verifyCalledWith(
+          responsibleIndividualName: String,
+          responsibleIndividualEmailAddress: String,
+          applicationName: String,
+          requesterName: String,
+          verifyResponsibleIndividualUniqueId: String
+        ) =
+        verify.sendVerifyResponsibleIndividualNotification(
+          eqTo(responsibleIndividualName),
+          eqTo(responsibleIndividualEmailAddress),
+          eqTo(applicationName),
+          eqTo(requesterName),
+          eqTo(verifyResponsibleIndividualUniqueId)
+        )(*)
     }
 
     object SendVerifyResponsibleIndividualReminderToAdmin {
+
       def thenReturnSuccess() = {
-        when(aMock.sendVerifyResponsibleIndividualReminderToAdmin(*,*,*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendVerifyResponsibleIndividualReminderToAdmin(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
-      def verifyCalledWith(responsibleIndividualName: String,
-                           adminEmailAddress: String,
-                           applicationName: String,
-                           requesterName: String) =
-        verify.sendVerifyResponsibleIndividualReminderToAdmin(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName),
-          eqTo(requesterName))(*)
+
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: String, applicationName: String, requesterName: String) =
+        verify.sendVerifyResponsibleIndividualReminderToAdmin(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
 
     object SendResponsibleIndividualDidNotVerify {
+
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualDidNotVerify(*,*,*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDidNotVerify(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
-      def verifyCalledWith(responsibleIndividualName: String,
-                           adminEmailAddress: String,
-                           applicationName: String,
-                           requesterName: String) =
-        verify.sendResponsibleIndividualDidNotVerify(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName),
-          eqTo(requesterName))(*)
+
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: String, applicationName: String, requesterName: String) =
+        verify.sendResponsibleIndividualDidNotVerify(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
 
     object SendResponsibleIndividualDeclined {
+
       def thenReturnSuccess() = {
-        when(aMock.sendResponsibleIndividualDeclined(*,*,*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendResponsibleIndividualDeclined(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
-      def verifyCalledWith(responsibleIndividualName: String,
-                           adminEmailAddress: String,
-                           applicationName: String,
-                           requesterName: String) =
-        verify.sendResponsibleIndividualDeclined(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName),
-          eqTo(requesterName))(*)
+
+      def verifyCalledWith(responsibleIndividualName: String, adminEmailAddress: String, applicationName: String, requesterName: String) =
+        verify.sendResponsibleIndividualDeclined(eqTo(responsibleIndividualName), eqTo(adminEmailAddress), eqTo(applicationName), eqTo(requesterName))(*)
     }
   }
 }

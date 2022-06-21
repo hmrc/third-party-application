@@ -52,17 +52,18 @@ class SuppressedLogFilter(val messagesContaining: String) extends Filter[ILoggin
 }
 
 trait LogSuppressing {
+
   def withSuppressedLoggingFrom(logger: Logger, messagesContaining: String)(body: (=> SuppressedLogFilter) => Unit) {
 
-    val appenders = logger.iteratorForAppenders().asScala
-    val appendersWithFilters = appenders.map(appender => appender->appender.getCopyOfAttachedFiltersList)
+    val appenders            = logger.iteratorForAppenders().asScala
+    val appendersWithFilters = appenders.map(appender => appender -> appender.getCopyOfAttachedFiltersList)
 
     val filter = new SuppressedLogFilter(messagesContaining)
     appenders.foreach(_.addFilter(filter))
 
     try body(filter)
     finally {
-      appendersWithFilters.foreach { case(appender, filters) =>
+      appendersWithFilters.foreach { case (appender, filters) =>
         appender.clearAllFilters
         filters.asScala.foreach(appender.addFilter(_))
       }
@@ -73,5 +74,3 @@ trait LogSuppressing {
     withSuppressedLoggingFrom(logger.logger.asInstanceOf[Logger], messagesContaining)(body)
   }
 }
-
-

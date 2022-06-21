@@ -27,19 +27,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.LocalDateTime
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+
   trait Setup extends UpliftNamingServiceMockModule {
     val applicationId = ApplicationId.random
-    val devEmail = "dev@example.com"
-    val adminEmail = "admin@example.com"
-    val oldName = "old app name"
-    val newName = "new app name"
-    val app = anApplicationData(applicationId).copy(collaborators = Set(
-      Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
-      Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-    ), name = oldName)
-    val userId = idsByEmail(adminEmail)
+    val devEmail      = "dev@example.com"
+    val adminEmail    = "admin@example.com"
+    val oldName       = "old app name"
+    val newName       = "new app name"
+
+    val app       = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
+        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+      ),
+      name = oldName
+    )
+    val userId    = idsByEmail(adminEmail)
     val timestamp = LocalDateTime.now
-    val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
+    val update    = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }

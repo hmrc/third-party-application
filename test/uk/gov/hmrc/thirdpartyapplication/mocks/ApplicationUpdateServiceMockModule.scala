@@ -27,11 +27,13 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseApplicationUpdateServiceMock {
 
     def aMock: ApplicationUpdateService
 
     object Update {
+
       def thenReturnSuccess(applicationData: ApplicationData) =
         when(aMock.update(*[ApplicationId], *[ApplicationUpdate])).thenReturn(EitherT.rightT(applicationData))
 
@@ -42,7 +44,7 @@ trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatch
         verify(aMock, never).update(*[ApplicationId], *[ApplicationUpdate])
     }
   }
-  
+
   object ApplicationUpdateServiceMock extends BaseApplicationUpdateServiceMock {
     val aMock = mock[ApplicationUpdateService]
   }

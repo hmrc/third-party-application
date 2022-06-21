@@ -36,12 +36,13 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
-    implicit val hc: HeaderCarrier = HeaderCarrier()
+    implicit val hc: HeaderCarrier                         = HeaderCarrier()
     val mockAwsApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]
-    val underTest = new AwsApiGatewayStore(mockAwsApiGatewayConnector)
+    val underTest                                          = new AwsApiGatewayStore(mockAwsApiGatewayConnector)
 
-    val applicationName = "myapplication"
+    val applicationName     = "myapplication"
     val serverToken: String = nextString(2)
+
     val app = ApplicationData(
       ApplicationId.random,
       "MyApp",
@@ -50,10 +51,12 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       Some("description"),
       applicationName,
       ApplicationTokens(
-      Token(ClientId.random, serverToken)),
+        Token(ClientId.random, serverToken)
+      ),
       testingState(),
       createdOn = LocalDateTime.now,
-      lastAccess = Some(LocalDateTime.now))
+      lastAccess = Some(LocalDateTime.now)
+    )
   }
 
   "createApplication" should {
@@ -71,7 +74,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     "update rate limiting tier in AWS" in new Setup {
       when(mockAwsApiGatewayConnector.createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)).thenReturn(successful(HasSucceeded))
 
-      await(underTest updateApplication(app, SILVER))
+      await(underTest updateApplication (app, SILVER))
 
       verify(mockAwsApiGatewayConnector).createOrUpdateApplication(applicationName, serverToken, SILVER)(hc)
     }

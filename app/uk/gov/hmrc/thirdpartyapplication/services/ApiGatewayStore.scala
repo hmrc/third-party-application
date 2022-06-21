@@ -45,8 +45,7 @@ trait ApiGatewayStore {
 }
 
 @Singleton
-class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnector)
-                                  (implicit val actorSystem: ActorSystem, val ec: ExecutionContext) extends ApiGatewayStore {
+class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector)(implicit val actorSystem: ActorSystem, val ec: ExecutionContext) extends ApiGatewayStore {
 
   override def createApplication(wso2ApplicationName: String, accessToken: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
@@ -63,7 +62,7 @@ class AwsApiGatewayStore @Inject()(awsApiGatewayConnector: AwsApiGatewayConnecto
 }
 
 @Singleton
-class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
+class StubApiGatewayStore @Inject() () extends ApiGatewayStore {
 
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[ApiIdentifier]] = concurrent.TrieMap()
 
@@ -77,8 +76,7 @@ class StubApiGatewayStore @Inject()() extends ApiGatewayStore {
     HasSucceeded
   }
 
-  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)
-                                (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  override def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     Future.successful(HasSucceeded)
   }
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{PRODUCTION, TESTING}
@@ -34,33 +33,33 @@ case class ApplicationTokens(production: Token)
 
 object ApplicationTokens {
   implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[ApplicationTokens]
+  implicit val format     = Json.format[ApplicationTokens]
 }
 
 case class ApplicationData(
-  id: ApplicationId,
-  name: String,
-  normalisedName: String,
-  collaborators: Set[Collaborator],
-  description: Option[String] = None,
-  wso2ApplicationName: String,
-  tokens: ApplicationTokens,
-  state: ApplicationState,
-  access: Access = Standard(),
-  createdOn: LocalDateTime,
-  lastAccess: Option[LocalDateTime],
-  grantLength: Int = grantLengthConfig,
-  rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
-  environment: String = Environment.PRODUCTION.toString,
-  checkInformation: Option[CheckInformation] = None,
-  blocked: Boolean = false,
-  ipAllowlist: IpAllowlist = IpAllowlist()
-) {
+    id: ApplicationId,
+    name: String,
+    normalisedName: String,
+    collaborators: Set[Collaborator],
+    description: Option[String] = None,
+    wso2ApplicationName: String,
+    tokens: ApplicationTokens,
+    state: ApplicationState,
+    access: Access = Standard(),
+    createdOn: LocalDateTime,
+    lastAccess: Option[LocalDateTime],
+    grantLength: Int = grantLengthConfig,
+    rateLimitTier: Option[RateLimitTier] = Some(BRONZE),
+    environment: String = Environment.PRODUCTION.toString,
+    checkInformation: Option[CheckInformation] = None,
+    blocked: Boolean = false,
+    ipAllowlist: IpAllowlist = IpAllowlist()
+  ) {
   lazy val admins = collaborators.filter(_.role == Role.ADMINISTRATOR)
 
   lazy val sellResellOrDistribute = access match {
     case Standard(_, _, _, _, sellResellOrDistribute, _) => sellResellOrDistribute
-    case _ => None
+    case _                                               => None
   }
 
   lazy val importantSubmissionData: Option[ImportantSubmissionData] = access match {
@@ -68,11 +67,11 @@ case class ApplicationData(
     case _                                             => None
   }
 
-  def isInTesting = state.isInTesting
-  def isPendingResponsibleIndividualVerification = state.isPendingResponsibleIndividualVerification
-  def isPendingGatekeeperApproval = state.isPendingGatekeeperApproval
-  def isPendingRequesterVerification = state.isPendingRequesterVerification
-  def isInPreProductionOrProduction = state.isInPreProductionOrProduction
+  def isInTesting                                                      = state.isInTesting
+  def isPendingResponsibleIndividualVerification                       = state.isPendingResponsibleIndividualVerification
+  def isPendingGatekeeperApproval                                      = state.isPendingGatekeeperApproval
+  def isPendingRequesterVerification                                   = state.isPendingRequesterVerification
+  def isInPreProductionOrProduction                                    = state.isInPreProductionOrProduction
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = state.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification
 }
 
@@ -80,26 +79,32 @@ object ApplicationData {
 
   val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
-  def create(createApplicationRequest: CreateApplicationRequest, wso2ApplicationName: String, environmentToken: Token, createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)): ApplicationData = {
+  def create(
+      createApplicationRequest: CreateApplicationRequest,
+      wso2ApplicationName: String,
+      environmentToken: Token,
+      createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
+    ): ApplicationData = {
     import createApplicationRequest._
 
     val applicationState = (environment, accessType) match {
       case (Environment.SANDBOX, _) => ApplicationState(PRODUCTION, updatedOn = createdOn)
-      case (_, PRIVILEGED | ROPC) => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress), updatedOn = createdOn)
-      case _ => ApplicationState(TESTING, updatedOn = createdOn)
+      case (_, PRIVILEGED | ROPC)   => ApplicationState(PRODUCTION, collaborators.headOption.map(_.emailAddress), updatedOn = createdOn)
+      case _                        => ApplicationState(TESTING, updatedOn = createdOn)
     }
 
     val checkInfo = createApplicationRequest match {
-      case v1: CreateApplicationRequestV1 if(v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
-      case v2: CreateApplicationRequestV2 => None
-      case _ => None
+      case v1: CreateApplicationRequestV1 if (v1.anySubscriptions.nonEmpty) => Some(CheckInformation(apiSubscriptionsConfirmed = true))
+      case v2: CreateApplicationRequestV2                                   => None
+      case _                                                                => None
     }
 
     val applicationAccess = createApplicationRequest match {
       case v1: CreateApplicationRequestV1 => v1.access
-      case v2: CreateApplicationRequestV2 => Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
+      case v2: CreateApplicationRequestV2 =>
+        Standard().copy(redirectUris = v2.access.redirectUris, overrides = v2.access.overrides, sellResellOrDistribute = Some(v2.upliftRequest.sellResellOrDistribute))
     }
-    
+
     ApplicationData(
       ApplicationId.random,
       name,
@@ -123,22 +128,22 @@ object ApplicationData {
 
   val applicationDataReads: Reads[ApplicationData] = (
     (JsPath \ "id").read[ApplicationId] and
-    (JsPath \ "name").read[String] and
-    (JsPath \ "normalisedName").read[String] and
-    (JsPath \ "collaborators").read[Set[Collaborator]] and
-    (JsPath \ "description").readNullable[String] and
-    (JsPath \ "wso2ApplicationName").read[String] and
-    (JsPath \ "tokens").read[ApplicationTokens] and
-    (JsPath \ "state").read[ApplicationState] and
-    (JsPath \ "access").read[Access] and
-    (JsPath \ "createdOn").read[LocalDateTime] and
-    (JsPath \ "lastAccess").readNullable[LocalDateTime] and
-    ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig) ) and
-    (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
-    (JsPath \ "environment").read[String] and
-    (JsPath \ "checkInformation").readNullable[CheckInformation] and
-    ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
+      (JsPath \ "name").read[String] and
+      (JsPath \ "normalisedName").read[String] and
+      (JsPath \ "collaborators").read[Set[Collaborator]] and
+      (JsPath \ "description").readNullable[String] and
+      (JsPath \ "wso2ApplicationName").read[String] and
+      (JsPath \ "tokens").read[ApplicationTokens] and
+      (JsPath \ "state").read[ApplicationState] and
+      (JsPath \ "access").read[Access] and
+      (JsPath \ "createdOn").read[LocalDateTime] and
+      (JsPath \ "lastAccess").readNullable[LocalDateTime] and
+      ((JsPath \ "grantLength").read[Int] or Reads.pure(grantLengthConfig)) and
+      (JsPath \ "rateLimitTier").readNullable[RateLimitTier] and
+      (JsPath \ "environment").read[String] and
+      (JsPath \ "checkInformation").readNullable[CheckInformation] and
+      ((JsPath \ "blocked").read[Boolean] or Reads.pure(false)) and
+      ((JsPath \ "ipAllowlist").read[IpAllowlist] or Reads.pure(IpAllowlist()))
   )(ApplicationData.apply _)
 
   implicit val format = OFormat(applicationDataReads, Json.writes[ApplicationData])

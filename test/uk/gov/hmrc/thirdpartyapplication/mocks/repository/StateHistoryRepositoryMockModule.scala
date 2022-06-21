@@ -28,18 +28,20 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 
 trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseStateHistoryRepoMock {
     def aMock: StateHistoryRepository
 
     def verify = MockitoSugar.verify(aMock)
 
-    def verify(mode: VerificationMode) = MockitoSugar.verify(aMock,mode)
+    def verify(mode: VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object Insert {
+
       def thenAnswer() =
-        when(aMock.insert(*)).thenAnswer( (sh: StateHistory) => successful(sh))
+        when(aMock.insert(*)).thenAnswer((sh: StateHistory) => successful(sh))
 
       def thenFailsWith(ex: Exception) =
         when(aMock.insert(*)).thenReturn(failed(ex))
@@ -62,26 +64,27 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object FetchLatestByStateForApplication {
+
       def thenReturnWhen(id: ApplicationId, state: State.State)(value: StateHistory) =
         when(aMock.fetchLatestByStateForApplication(eqTo(id), eqTo(state))).thenReturn(successful(Some(value)))
     }
 
     object FetchLatestByState {
+
       def thenReturnWhen(state: State.State)(values: StateHistory*) =
         when(aMock.fetchByState(eqTo(state))).thenReturn(successful(values.toList))
     }
 
     object FetchByApplicationId {
+
       def thenReturnWhen(id: ApplicationId)(values: StateHistory*) =
         when(aMock.fetchByApplicationId(eqTo(id))).thenReturn(successful(values.toList))
-        
+
       def thenFailWith(ex: Exception) =
         when(aMock.fetchByApplicationId(*[ApplicationId])).thenReturn(failed(ex))
     }
   }
 
-
-  
   object StateHistoryRepoMock extends BaseStateHistoryRepoMock {
 
     val aMock = mock[StateHistoryRepository]

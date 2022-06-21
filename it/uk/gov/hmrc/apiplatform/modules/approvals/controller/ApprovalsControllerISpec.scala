@@ -37,19 +37,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
-
 class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with ApplicationTestData with SubmissionsTestData with BeforeAndAfterEach {
-
 
   protected override def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
-        "microservice.services.auth.port" -> wireMockPort,
-        "metrics.enabled" -> true,
-        "auditing.enabled" -> false,
-        "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}",
-        "auditing.consumer.baseUri.host" -> wireMockHost,
-        "auditing.consumer.baseUri.port" -> wireMockPort,
+        "microservice.services.auth.port"  -> wireMockPort,
+        "metrics.enabled"                  -> true,
+        "auditing.enabled"                 -> false,
+        "mongodb.uri"                      -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}",
+        "auditing.consumer.baseUri.host"   -> wireMockHost,
+        "auditing.consumer.baseUri.port"   -> wireMockPort,
         "microservice.services.email.host" -> wireMockHost,
         "microservice.services.email.port" -> wireMockPort
       )
@@ -57,16 +55,15 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
   def grantUrl(id: String) = s"http://localhost:$port/approvals/application/$id/grant"
 
   val wsClient: WSClient = app.injector.instanceOf[WSClient]
-  val applicationRepo = app.injector.instanceOf[ApplicationRepository]
-  val submissionRepo = app.injector.instanceOf[SubmissionsRepository]
-  val questionaireDao = app.injector.instanceOf[QuestionnaireDAO]
+  val applicationRepo    = app.injector.instanceOf[ApplicationRepository]
+  val submissionRepo     = app.injector.instanceOf[SubmissionsRepository]
+  val questionaireDao    = app.injector.instanceOf[QuestionnaireDAO]
 
-  override def beforeEach() ={
+  override def beforeEach() = {
     super.beforeEach()
     applicationRepo.drop
     submissionRepo.drop
   }
-
 
   def callPostEndpoint(url: String, body: String, headers: List[(String, String)]): WSResponse =
     wsClient
@@ -76,54 +73,55 @@ class ApprovalsControllerISpec extends ServerBaseISpec with FixedClock with Appl
       .post(body)
       .futureValue
 
-  def stubEmail(): Unit ={
+  def stubEmail(): Unit = {
     stubFor(post(urlEqualTo("/hmrc/email"))
       .willReturn(
         aResponse()
           .withStatus(OK)
-      )
-    )
+      ))
   }
 
+  "ApprovalsController" should {
 
- "ApprovalsController" should {
+    def primeData(appId: ApplicationId): Unit = {
 
-   def primeData(appId: ApplicationId): Unit ={
+      val responsibleIndividual        = ResponsibleIndividual.build("bob example", "bob@example.com")
+      val testImportantSubmissionData  = ImportantSubmissionData(
+        Some("organisationUrl.com"),
+        responsibleIndividual,
+        Set(ServerLocation.InUK),
+        TermsAndConditionsLocation.InDesktopSoftware,
+        PrivacyPolicyLocation.InDesktopSoftware,
+        List.empty
+      )
+      val application: ApplicationData = anApplicationData(
+        appId,
+        pendingGatekeeperApprovalState("bob@fastshow.com"),
+        access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      )
 
-     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-     val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
-     val application: ApplicationData = anApplicationData(
-                              appId,
-                              pendingGatekeeperApprovalState("bob@fastshow.com"),
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+      await(applicationRepo.save(application))
+      await(submissionRepo.insert(submittedSubmission.copy(applicationId = appId)))
+    }
 
-     await(applicationRepo.save(application))
-     await(submissionRepo.insert(submittedSubmission.copy(applicationId = appId)))
-   }
+    "return 404 when application id does not exist" in {
+      val bodyWontBeParsed = "{}"
+      val randomAppId      = UUID.randomUUID().toString
+      val result           = callPostEndpoint(grantUrl(randomAppId), bodyWontBeParsed, headers = List.empty)
+      result.status mustBe NOT_FOUND
+      result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
+    }
 
-   "return 404 when application id does not exist" in {
-     val bodyWontBeParsed = "{}"
-     val randomAppId = UUID.randomUUID().toString
-     val result = callPostEndpoint(grantUrl(randomAppId), bodyWontBeParsed, headers = List.empty)
-     result.status mustBe NOT_FOUND
-     result.body mustBe s"""{"code":"APPLICATION_NOT_FOUND","message":"Application $randomAppId doesn't exist"}"""
-   }
+    "return 200 when successful" in {
+      val appId: ApplicationId = ApplicationId(UUID.randomUUID())
+      primeData(appId)
+      stubEmail()
+      val requestBody          = """{"gatekeeperUserName":"Bob Hope"}"""
+      val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
+      result.status mustBe OK
+      val response             = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      response must not be None
 
-   "return 200 when successful" in {
-     val appId: ApplicationId = ApplicationId(UUID.randomUUID())
-     primeData(appId)
-     stubEmail()
-     val requestBody = """{"gatekeeperUserName":"Bob Hope"}"""
-     val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
-     result.status mustBe OK
-     val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
-     response must not be None
-
-   }
- }
+    }
+  }
 }

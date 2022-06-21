@@ -23,12 +23,13 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 
 class UpliftLinkServiceSpec extends AsyncHmrcSpec {
+
   trait Setup extends UpliftLinksRepositoryMockModule {
     val upliftLinksRepository = UpliftLinksRepositoryMock.aMock
 
-    val sandboxApplicationId = ApplicationId.random
+    val sandboxApplicationId    = ApplicationId.random
     val productionApplicationId = ApplicationId.random
-    val repoUpliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
+    val repoUpliftLink          = UpliftLink(sandboxApplicationId, productionApplicationId)
 
     val service = new UpliftLinkService(upliftLinksRepository)
   }

@@ -37,15 +37,14 @@ class ApiSubscriptionFieldsConnectorSpec extends ConnectorSpec {
 
     val underTest = new ApiSubscriptionFieldsConnector(http, config)
 
-
     def apiSubscriptionFieldsWillReturn(status: Int) =
       stubFor(
         delete(urlEqualTo(s"/field/application/${clientId.value}"))
-        .willReturn(
-          aResponse()
-          .withStatus(status)
-        )
-      ) 
+          .willReturn(
+            aResponse()
+              .withStatus(status)
+          )
+      )
   }
 
   "ApiSubscriptionFieldsConnector" should {

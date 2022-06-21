@@ -24,24 +24,26 @@ import reactivemongo.api.commands.WriteResult
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseUpliftLinksRepositoryRepoMock {
     def aMock: UpliftLinksRepository
 
     object Insert {
+
       def thenReturn() =
         when(aMock.insert(*)(*)).thenReturn(successful(mock[WriteResult]))
 
-      def verifyCalled() = 
-          verify(aMock, atLeast(1)).insert(*[UpliftLink])(*)
+      def verifyCalled() =
+        verify(aMock, atLeast(1)).insert(*[UpliftLink])(*)
 
     }
 
     object Find {
-      def thenReturn(upliftLink : UpliftLink) = when(aMock.find(*)(*)).thenReturn(successful(List(upliftLink)))
-      def thenReturnNothing = when(aMock.find(*)(*)).thenReturn(successful(List()))
+      def thenReturn(upliftLink: UpliftLink) = when(aMock.find(*)(*)).thenReturn(successful(List(upliftLink)))
+      def thenReturnNothing                  = when(aMock.find(*)(*)).thenReturn(successful(List()))
     }
   }
-  
+
   object UpliftLinksRepositoryMock extends BaseUpliftLinksRepositoryRepoMock {
     val aMock = mock[UpliftLinksRepository]
   }

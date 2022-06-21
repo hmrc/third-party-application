@@ -73,9 +73,9 @@ object ConfigHelper {
 }
 
 @Singleton
-class UpliftVerificationExpiryJobConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[UpliftVerificationExpiryJobConfig] {
+class UpliftVerificationExpiryJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[UpliftVerificationExpiryJobConfig] {
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("upliftVerificationExpiryJob")
@@ -88,11 +88,10 @@ class UpliftVerificationExpiryJobConfigProvider @Inject()(val configuration: Con
   }
 }
 
-
 @Singleton
-class MetricsJobConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[MetricsJobConfig] {
+class MetricsJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[MetricsJobConfig] {
 
   override def get() = {
     val jobConfig = configuration.underlying.as[Option[JobConfig]]("metricsJob")
@@ -103,8 +102,8 @@ class MetricsJobConfigProvider @Inject()(val configuration: Configuration)
 }
 
 @Singleton
-class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
+class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationReminderJobConfig] {
 
   override def get() = {
@@ -119,8 +118,8 @@ class ResponsibleIndividualVerificationReminderJobConfigProvider @Inject()(val c
 }
 
 @Singleton
-class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
+class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationRemovalJobConfig] {
 
   override def get() = {
@@ -135,8 +134,8 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject()(val co
 }
 
 @Singleton
-class ApiSubscriptionFieldsConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration) with Provider[ApiSubscriptionFieldsConnector.Config] {
+class ApiSubscriptionFieldsConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration) with Provider[ApiSubscriptionFieldsConnector.Config] {
 
   override def get() = {
     val url = baseUrl("api-subscription-fields")
@@ -145,8 +144,8 @@ class ApiSubscriptionFieldsConfigProvider @Inject()(val configuration: Configura
 }
 
 @Singleton
-class ApiStorageConfigProvider @Inject()(val configuration: Configuration)
-  extends Provider[ApiStorageConfig] {
+class ApiStorageConfigProvider @Inject() (val configuration: Configuration)
+    extends Provider[ApiStorageConfig] {
 
   override def get() = {
     val disableAwsCalls = configuration.getOptional[Boolean]("disableAwsCalls").getOrElse(false)
@@ -155,41 +154,41 @@ class ApiStorageConfigProvider @Inject()(val configuration: Configuration)
 }
 
 @Singleton
-class AuthConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[AuthConnector.Config] {
+class AuthConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[AuthConnector.Config] {
 
   override def get() = {
-    val url = baseUrl("auth")
-    val userRole = getString("roles.user")
-    val superUserRole = getString("roles.super-user")
-    val adminRole = getString("roles.admin")
-    val enabled = getConfBool("auth.enabled", true)
+    val url                            = baseUrl("auth")
+    val userRole                       = getString("roles.user")
+    val superUserRole                  = getString("roles.super-user")
+    val adminRole                      = getString("roles.admin")
+    val enabled                        = getConfBool("auth.enabled", true)
     val canDeleteApplications: Boolean = ConfigHelper.getConfig("canDeleteApplications", configuration.getOptional[Boolean])
-    val authorisationKey = getString("authorisationKey")
+    val authorisationKey               = getString("authorisationKey")
 
     AuthConnector.Config(url, userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
   }
 }
 
 @Singleton
-class EmailConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[EmailConnector.Config] {
+class EmailConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[EmailConnector.Config] {
 
   override def get() = {
-    val url = baseUrl("email")
-    val devHubBaseUrl = ConfigHelper.getConfig("devHubBaseUrl", configuration.getOptional[String](_))
-    val devHubTitle: String = "Developer Hub"
+    val url                     = baseUrl("email")
+    val devHubBaseUrl           = ConfigHelper.getConfig("devHubBaseUrl", configuration.getOptional[String](_))
+    val devHubTitle: String     = "Developer Hub"
     val environmentName: String = configuration.getOptional[String]("environmentName").getOrElse("unknown")
     EmailConnector.Config(url, devHubBaseUrl, devHubTitle, environmentName)
   }
 }
 
 @Singleton
-class TotpConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[TotpConnector.Config] {
+class TotpConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[TotpConnector.Config] {
 
   override def get() = {
     val url = baseUrl("totp")
@@ -198,21 +197,21 @@ class TotpConfigProvider @Inject()(val configuration: Configuration)
 }
 
 @Singleton
-class AwsApiGatewayConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[AwsApiGatewayConnector.Config] {
+class AwsApiGatewayConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[AwsApiGatewayConnector.Config] {
 
   override def get() = {
-    val url = baseUrl("aws-gateway")
+    val url       = baseUrl("aws-gateway")
     val awsApiKey = getString("awsApiKey")
     AwsApiGatewayConnector.Config(url, awsApiKey)
   }
 }
 
 @Singleton
-class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[ThirdPartyDelegatedAuthorityConnector.Config] {
+class ThirdPartyDelegatedAuthorityConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ThirdPartyDelegatedAuthorityConnector.Config] {
 
   override def get() = {
     val url = baseUrl("third-party-delegated-authority")
@@ -221,21 +220,21 @@ class ThirdPartyDelegatedAuthorityConfigProvider @Inject()(val configuration: Co
 }
 
 @Singleton
-class ApplicationControllerConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[ApplicationControllerConfig] {
+class ApplicationControllerConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ApplicationControllerConfig] {
 
   override def get() = {
-    val fetchApplicationTtlInSecs: Int = ConfigHelper.getConfig("fetchApplicationTtlInSeconds", configuration.getOptional[Int])
+    val fetchApplicationTtlInSecs: Int  = ConfigHelper.getConfig("fetchApplicationTtlInSeconds", configuration.getOptional[Int])
     val fetchSubscriptionTtlInSecs: Int = ConfigHelper.getConfig("fetchSubscriptionTtlInSeconds", configuration.getOptional[Int])
     ApplicationControllerConfig(fetchApplicationTtlInSecs, fetchSubscriptionTtlInSecs)
   }
 }
 
 @Singleton
-class CredentialConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[CredentialConfig] {
+class CredentialConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[CredentialConfig] {
 
   override def get() = {
     val clientSecretLimit: Int = ConfigHelper.getConfig("clientSecretLimit", configuration.getOptional[Int])
@@ -244,9 +243,9 @@ class CredentialConfigProvider @Inject()(val configuration: Configuration)
 }
 
 @Singleton
-class ClientSecretServiceConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[ClientSecretServiceConfig] {
+class ClientSecretServiceConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ClientSecretServiceConfig] {
 
   override def get(): ClientSecretServiceConfig = {
     val hashFunctionWorkFactor: Int = ConfigHelper.getConfig("hashFunctionWorkFactor", configuration.getOptional[Int])
@@ -255,12 +254,12 @@ class ClientSecretServiceConfigProvider @Inject()(val configuration: Configurati
 }
 
 @Singleton
-class ApplicationNameValidationConfigConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[ApplicationNamingService.ApplicationNameValidationConfig] {
+class ApplicationNameValidationConfigConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ApplicationNamingService.ApplicationNameValidationConfig] {
 
   override def get() = {
-    val nameDenyList: List[String] = ConfigHelper.getConfig("applicationNameDenyList", configuration.getOptional[Seq[String]]).toList
+    val nameDenyList: List[String]   = ConfigHelper.getConfig("applicationNameDenyList", configuration.getOptional[Seq[String]]).toList
     val validateForDuplicateAppNames = ConfigHelper.getConfig("validateForDuplicateAppNames", configuration.getOptional[Boolean])
 
     ApplicationNamingService.ApplicationNameValidationConfig(nameDenyList, validateForDuplicateAppNames)
@@ -268,27 +267,27 @@ class ApplicationNameValidationConfigConfigProvider @Inject()(val configuration:
 }
 
 @Singleton
-class ApiPlatformEventsConfigProvider @Inject()(val configuration: Configuration)
-  extends ServicesConfig(configuration)
-  with Provider[ApiPlatformEventsConnector.Config] {
+class ApiPlatformEventsConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ApiPlatformEventsConnector.Config] {
 
-    override def get(): ApiPlatformEventsConnector.Config = {
-    val url = baseUrl("api-platform-events")
+  override def get(): ApiPlatformEventsConnector.Config = {
+    val url     = baseUrl("api-platform-events")
     val enabled = getConfBool("api-platform-events.enabled", true)
     ApiPlatformEventsConnector.Config(url, enabled)
   }
 }
 
 @Singleton
-class ResetLastAccessDateJobConfigProvider @Inject()(configuration: Configuration)
-  extends ServicesConfig(configuration)
+class ResetLastAccessDateJobConfigProvider @Inject() (configuration: Configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResetLastAccessDateJobConfig] {
 
   override def get(): ResetLastAccessDateJobConfig = {
     val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
 
-    val enabled = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
-    val dryRun = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
+    val enabled                        = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
+    val dryRun                         = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
     ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString, dateFormatter), enabled, dryRun)

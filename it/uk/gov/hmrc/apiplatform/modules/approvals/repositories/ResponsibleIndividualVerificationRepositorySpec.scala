@@ -33,10 +33,10 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
-  with GuiceOneAppPerSuite
-  with MongoSpecSupport
-  with SubmissionsTestData
-  with BeforeAndAfterEach with BeforeAndAfterAll {
+    with GuiceOneAppPerSuite
+    with MongoSpecSupport
+    with SubmissionsTestData
+    with BeforeAndAfterEach with BeforeAndAfterAll {
 
   implicit val mat = app.materializer
 
@@ -59,18 +59,28 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
     }
   }
 
-  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) =
+  def buildDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = LocalDateTime.now,
+      submissionId: Submission.Id = Submission.Id.random,
+      submissionIndex: Int = 0
+    ) =
     ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
 
-  def buildAndSaveDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) = {
+  def buildAndSaveDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = LocalDateTime.now,
+      submissionId: Submission.Id = Submission.Id.random,
+      submissionIndex: Int = 0
+    ) = {
     val doc = buildDoc(state, createdOn, submissionId, submissionIndex)
     await(repo.insert(doc))
     doc
   }
 
-  val MANY_DAYS_AGO = 10
+  val MANY_DAYS_AGO    = 10
   val UPDATE_THRESHOLD = 5
-  val FEW_DAYS_AGO = 1
+  val FEW_DAYS_AGO     = 1
 
   "save" should {
     "save document to the database" in {
@@ -84,7 +94,7 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
 
   "fetch" should {
     "retrieve a document by id" in {
-      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc   = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
       val fetchedDoc = await(repo.fetch(savedDoc.id))
 
       Some(savedDoc) shouldEqual fetchedDoc
@@ -100,10 +110,10 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
     }
 
     "remove the record matching the latest submission instance only" in {
-      val submissionId = Submission.Id.random
+      val submissionId                   = Submission.Id.random
       val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
       buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
-      val submissionWithTwoInstances = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
+      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
       await(repo.delete(submissionWithTwoInstances))
 
       await(repo.findAll()) shouldBe List(savedDocForSubmissionInstance0)
@@ -125,7 +135,7 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
 
   "updateState" should {
     "change state correctly" in {
-      val stateInitial = buildAndSaveDoc(INITIAL)
+      val stateInitial      = buildAndSaveDoc(INITIAL)
       val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
 
       await(repo.updateState(stateInitial.id, REMINDERS_SENT))

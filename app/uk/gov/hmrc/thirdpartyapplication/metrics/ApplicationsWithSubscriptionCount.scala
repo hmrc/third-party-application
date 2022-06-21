@@ -26,7 +26,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class ApplicationsWithSubscriptionCount @Inject() (val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     logger.info("Starting - ApplicationsWithSubscriptionCount.metrics()")
     // TODO Need to handle Application with zero subscriptions
@@ -42,6 +43,5 @@ class ApplicationsWithSubscriptionCount @Inject()(val applicationRepository: App
     logger.info("Finish - ApplicationsWithSubscriptionCount.metrics()")
     result
   }
-
 
 }

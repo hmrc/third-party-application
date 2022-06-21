@@ -17,21 +17,21 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 case class CheckInformation(
-  contactDetails: Option[ContactDetails] = None,
-  confirmedName: Boolean = false,
-  apiSubscriptionsConfirmed: Boolean = false,
-  apiSubscriptionConfigurationsConfirmed: Boolean = false,
-  providedPrivacyPolicyURL: Boolean = false,
-  providedTermsAndConditionsURL: Boolean = false,
-  applicationDetails: Option[String] = None,
-  teamConfirmed: Boolean = false,
-  termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty
-)
-  
+    contactDetails: Option[ContactDetails] = None,
+    confirmedName: Boolean = false,
+    apiSubscriptionsConfirmed: Boolean = false,
+    apiSubscriptionConfigurationsConfirmed: Boolean = false,
+    providedPrivacyPolicyURL: Boolean = false,
+    providedTermsAndConditionsURL: Boolean = false,
+    applicationDetails: Option[String] = None,
+    teamConfirmed: Boolean = false,
+    termsOfUseAgreements: List[TermsOfUseAgreement] = List.empty
+  )
+
 object CheckInformation {
   import play.api.libs.json._
   import play.api.libs.functional.syntax._
-  
+
   private val reads: Reads[CheckInformation] = (
     (JsPath \ "contactDetails").readNullable[ContactDetails] and
       (JsPath \ "confirmedName").read[Boolean] and
@@ -42,7 +42,7 @@ object CheckInformation {
       (JsPath \ "applicationDetails").readNullable[String] and
       ((JsPath \ "teamConfirmed").read[Boolean] or Reads.pure(false)) and
       ((JsPath \ "termsOfUseAgreements").read[List[TermsOfUseAgreement]] or Reads.pure(List.empty[TermsOfUseAgreement]))
-    )(CheckInformation.apply _)
+  )(CheckInformation.apply _)
 
   implicit val format: Format[CheckInformation] = Format(reads, Json.writes[CheckInformation])
 }

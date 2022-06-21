@@ -26,14 +26,14 @@ import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{Future, blocking}
+import scala.concurrent.{blocking, Future}
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.{Instant, ZoneOffset}
 
 @Singleton
-class ClientSecretService @Inject()(applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) extends ApplicationLogger {
+class ClientSecretService @Inject() (applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) extends ApplicationLogger {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
@@ -48,12 +48,13 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
      * Measure the time it takes to perform the hashing process - need to ensure we tune the work factor so that we don't introduce too much delay for
      * legitimate users.
      */
-    val startTime = DateTimeUtils.now
+    val startTime   = DateTimeUtils.now
     val hashedValue = secret.bcrypt(config.hashFunctionWorkFactor)
-    val endTime = DateTimeUtils.now
+    val endTime     = DateTimeUtils.now
 
     logger.info(
-      s"[ClientSecretService] Hashing Secret with Work Factor of [${config.hashFunctionWorkFactor}] took [${endTime.getMillis - startTime.getMillis}ms]")
+      s"[ClientSecretService] Hashing Secret with Work Factor of [${config.hashFunctionWorkFactor}] took [${endTime.getMillis - startTime.getMillis}ms]"
+    )
 
     hashedValue
   }
@@ -76,16 +77,16 @@ class ClientSecretService @Inject()(applicationRepository: ApplicationRepository
       blocking {
         for {
           matchingClientSecret <- candidateClientSecrets
-            .sortWith(lastUsedOrdering) // Assuming most clients use the same secret every time, we should match on the first comparison most of the time
-            .find(clientSecret => {
-              secret.isBcryptedSafe(clientSecret.hashedSecret) match {
-                case Success(result) => result
-                case Failure(_) => false
-              }
-            })
-          _ = if (requiresRehash(matchingClientSecret.hashedSecret)) {
-            applicationRepository.updateClientSecretHash(applicationId, matchingClientSecret.id, hashSecret(secret))
-          }
+                                    .sortWith(lastUsedOrdering) // Assuming most clients use the same secret every time, we should match on the first comparison most of the time
+                                    .find(clientSecret => {
+                                      secret.isBcryptedSafe(clientSecret.hashedSecret) match {
+                                        case Success(result) => result
+                                        case Failure(_)      => false
+                                      }
+                                    })
+          _                     = if (requiresRehash(matchingClientSecret.hashedSecret)) {
+                                    applicationRepository.updateClientSecretHash(applicationId, matchingClientSecret.id, hashSecret(secret))
+                                  }
         } yield matchingClientSecret
       }
     }

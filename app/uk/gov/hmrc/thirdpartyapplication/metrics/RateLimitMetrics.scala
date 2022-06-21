@@ -26,20 +26,21 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RateLimitMetrics @Inject()(val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class RateLimitMetrics @Inject() (val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] =
-    numberOfApplicationsByRateLimit.map(
-      applicationCounts =>
-        applicationCounts.map(rateLimit => {
-          logger.info(s"[METRIC] Number of Applications for Rate Limit ${rateLimit._1}: ${rateLimit._2}")
-          applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
-        }))
+    numberOfApplicationsByRateLimit.map(applicationCounts =>
+      applicationCounts.map(rateLimit => {
+        logger.info(s"[METRIC] Number of Applications for Rate Limit ${rateLimit._1}: ${rateLimit._2}")
+        applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
+      })
+    )
 
   def numberOfApplicationsByRateLimit(implicit ec: ExecutionContext): Future[Map[Option[RateLimitTier], Int]] =
     applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).mapValues(_.size))
 
   private def applicationsByRateLimitKey(rateLimit: Option[RateLimitTier]): String = {
-    val rateLimitString = if(rateLimit.isDefined) rateLimit.get.toString else "UNKNOWN"
+    val rateLimitString = if (rateLimit.isDefined) rateLimit.get.toString else "UNKNOWN"
     s"applicationsByRateLimit.$rateLimitString"
   }
 }

@@ -35,9 +35,10 @@ import akka.stream.Materializer
 
 import java.time.LocalDateTime
 
-class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with NoMetricsGuiceOneAppPerSuite {
+class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil
+    with NoMetricsGuiceOneAppPerSuite {
 
-  implicit val m : Materializer = app.materializer
+  implicit val m: Materializer = app.materializer
 
   implicit val dateFormatters = MongoJavaTimeFormats.localDateTimeFormat
 
@@ -47,33 +48,34 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
   trait Setup {
     val lockKeeperSuccess: () => Boolean = () => true
+
     val mockLockKeeper = new ResetLastAccessDateJobLockKeeper(reactiveMongoComponent) {
 
-      //noinspection ScalaStyle
+      // noinspection ScalaStyle
       override def lockId: String = null
 
-      //noinspection ScalaStyle
+      // noinspection ScalaStyle
       override def repo: LockRepository = null
 
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
 
-      override def tryLock[T](body: => Future[T])(implicit ec : ExecutionContext): Future[Option[T]] =
+      override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
         if (lockKeeperSuccess()) body.map(value => Some(value))
         else Future.successful(None)
     }
   }
-  
+
   import scala.concurrent.ExecutionContext.Implicits.global
   val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
 
   trait DryRunSetup extends Setup {
-    val dateToSet = LocalDateTime.of(2019, 6, 1,0,0).toLocalDate
+    val dateToSet = LocalDateTime.of(2019, 6, 1, 0, 0).toLocalDate
     val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = true)
     val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
   }
 
   trait ModifyDatesSetup extends Setup {
-    val dateToSet = LocalDateTime.of(2019, 7, 10,0,0).toLocalDate
+    val dateToSet = LocalDateTime.of(2019, 7, 10, 0, 0).toLocalDate
 
     val jobConfig = ResetLastAccessDateJobConfig(dateToSet, enabled = true, dryRun = false)
     val underTest = new ResetLastAccessDateJob(mockLockKeeper, applicationRepository, jobConfig)
@@ -93,15 +95,17 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
         Seq(
           anApplicationData(lastAccessDate = dateToSet.minusDays(1).atStartOfDay()),
           anApplicationData(lastAccessDate = dateToSet.minusDays(2).atStartOfDay()),
-          anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay()))))
+          anApplicationData(lastAccessDate = dateToSet.plusDays(3).atStartOfDay())
+        )
+      ))
 
       await(underTest.runJob)
 
       val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
-      retrievedApplications.size should be (3)
+      retrievedApplications.size should be(3)
       retrievedApplications.foreach(app => {
-        app.lastAccess.isDefined should be (true)
-        app.lastAccess.get.isBefore(dateToSet.atStartOfDay()) should be (false)
+        app.lastAccess.isDefined should be(true)
+        app.lastAccess.get.isBefore(dateToSet.atStartOfDay()) should be(false)
       })
     }
 
@@ -115,10 +119,10 @@ class ResetLastAccessDateJobSpec extends AsyncHmrcSpec with MongoSpecSupport wit
       await(underTest.runJob)
 
       val retrievedApplications: List[ApplicationData] = await(applicationRepository.fetchAll())
-      retrievedApplications.size should be (3)
-      retrievedApplications.find(_.id == application1.id).get.lastAccess.get.isEqual(application1.lastAccess.get) should be (true)
-      retrievedApplications.find(_.id == application2.id).get.lastAccess.get.isEqual(application2.lastAccess.get) should be (true)
-      retrievedApplications.find(_.id == application3.id).get.lastAccess.get.isEqual(application3.lastAccess.get) should be (true)
+      retrievedApplications.size should be(3)
+      retrievedApplications.find(_.id == application1.id).get.lastAccess.get.isEqual(application1.lastAccess.get) should be(true)
+      retrievedApplications.find(_.id == application2.id).get.lastAccess.get.isEqual(application2.lastAccess.get) should be(true)
+      retrievedApplications.find(_.id == application3.id).get.lastAccess.get.isEqual(application3.lastAccess.get) should be(true)
     }
   }
 

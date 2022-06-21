@@ -21,9 +21,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 
-class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples{
+class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples {
   import ApiIdentifierSyntax._
-  
+
   "ApplicationData" should {
     "for version 1 requests" should {
       "do not set the check information when app is created without subs" in {
@@ -78,7 +78,7 @@ class ApplicationDataSpec extends HmrcSpec with UpliftRequestSamples{
         requestedBy = "user@example.com",
         sandboxApplicationId = ApplicationId.random
       )
-      
+
       "not set the check information at all" in {
         ApplicationData.create(request, "bob", token).checkInformation shouldBe None
       }

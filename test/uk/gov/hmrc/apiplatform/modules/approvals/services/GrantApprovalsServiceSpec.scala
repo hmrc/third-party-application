@@ -35,14 +35,15 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
-  trait Setup extends AuditServiceMockModule 
-    with ApplicationRepositoryMockModule 
-    with StateHistoryRepositoryMockModule 
-    with SubmissionsServiceMockModule
-    with EmailConnectorMockModule
-    with ApplicationTestData 
-    with SubmissionsTestData
-    with FixedClock {
+
+  trait Setup extends AuditServiceMockModule
+      with ApplicationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with SubmissionsServiceMockModule
+      with EmailConnectorMockModule
+      with ApplicationTestData
+      with SubmissionsTestData
+      with FixedClock {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -51,25 +52,32 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate = LocalDateTime.now(clock)
+    val acceptanceDate        = LocalDateTime.now(clock)
+
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,
       acceptanceDate,
       submissionId,
       0
     )
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List(acceptance))
-    val applicationPendingGKApproval: ApplicationData = anApplicationData(
-                              applicationId,
-                              pendingGatekeeperApprovalState("bob@fastshow.com"),
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
-    val underTest = new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List(acceptance)
+    )
+
+    val applicationPendingGKApproval: ApplicationData = anApplicationData(
+      applicationId,
+      pendingGatekeeperApprovalState("bob@fastshow.com"),
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
+
+    val underTest =
+      new GrantApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, clock)
   }
 
   "GrantApprovalsService" should {
@@ -85,7 +93,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, None, None))
 
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
+        case GrantApprovalsService.Actioned(app) if (app.state.name == PENDING_REQUESTER_VERIFICATION) =>
       }
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGranted shouldBe true
@@ -94,7 +102,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      val someQuestionWording = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
+      val someQuestionWording              = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted
@@ -111,12 +119,12 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       AuditServiceMock.AuditGatekeeperAction.thenReturnSuccess()
       EmailConnectorMock.SendApplicationApprovedAdminConfirmation.thenReturnSuccess()
 
-      val warning = Some("Here are some warnings")
+      val warning     = Some("Here are some warnings")
       val escalatedTo = Some("Marty McFly")
-      val result = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
-      
+      val result      = await(underTest.grant(applicationPendingGKApproval, submittedSubmission, gatekeeperUserName, warning, escalatedTo))
+
       result should matchPattern {
-        case GrantApprovalsService.Actioned(app) if(app.state.name == PENDING_REQUESTER_VERIFICATION) =>
+        case GrantApprovalsService.Actioned(app) if (app.state.name == PENDING_REQUESTER_VERIFICATION) =>
       }
       ApplicationRepoMock.Save.verifyCalled().state.name shouldBe PENDING_REQUESTER_VERIFICATION
       SubmissionsServiceMock.Store.verifyCalledWith().status.isGrantedWithWarnings shouldBe true
@@ -125,7 +133,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      val someQuestionWording = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
+      val someQuestionWording              = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalGranted

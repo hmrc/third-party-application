@@ -33,14 +33,15 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
+
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule
-    with StateHistoryRepositoryMockModule
-    with ResponsibleIndividualVerificationRepositoryMockModule
-    with SubmissionsServiceMockModule
-    with ApplicationTestData
-    with SubmissionsTestData
-    with FixedClock {
+      with ApplicationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
+      with SubmissionsServiceMockModule
+      with ApplicationTestData
+      with SubmissionsTestData
+      with FixedClock {
 
     implicit val ec: scala.concurrent.ExecutionContext = scala.concurrent.ExecutionContext.global
 
@@ -49,25 +50,38 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate = LocalDateTime.now(clock)
+    val acceptanceDate        = LocalDateTime.now(clock)
+
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,
       acceptanceDate,
       submissionId,
       0
     )
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List(acceptance))
-    val application: ApplicationData = anApplicationData(
-                              applicationId,
-                              pendingGatekeeperApprovalState("bob@fastshow.com"),
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
-    val underTest = new DeclineApprovalsService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, ResponsibleIndividualVerificationRepositoryMock.aMock, SubmissionsServiceMock.aMock, clock)
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List(acceptance)
+    )
+
+    val application: ApplicationData = anApplicationData(
+      applicationId,
+      pendingGatekeeperApprovalState("bob@fastshow.com"),
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
+
+    val underTest = new DeclineApprovalsService(
+      AuditServiceMock.aMock,
+      ApplicationRepoMock.aMock,
+      StateHistoryRepoMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      SubmissionsServiceMock.aMock,
+      clock
+    )
 
     val responsibleIndividualVerificationDate = LocalDateTime.now(clock)
   }
@@ -93,7 +107,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
       }
 
       val (someQuestionId, expectedAnswer) = submittedSubmission.latestInstance.answersToQuestions.head
-      val someQuestionWording = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
+      val someQuestionWording              = QuestionsAndAnswersToMap.stripSpacesAndCapitalise(submittedSubmission.findQuestion(someQuestionId).get.wording.value)
 
       AuditServiceMock.AuditGatekeeperAction.verifyUserName() shouldBe gatekeeperUserName
       AuditServiceMock.AuditGatekeeperAction.verifyAction() shouldBe AuditAction.ApplicationApprovalDeclined
@@ -109,7 +123,7 @@ class DeclineApprovalsServiceSpec extends AsyncHmrcSpec {
 
       ResponsibleIndividualVerificationRepositoryMock.DeleteBySubmission.verifyNeverCalledWith(submittedSubmission)
     }
- 
+
     "fail to decline the specified application if the submission is not in the submitted state" in new Setup {
       val result = await(underTest.decline(application, answeredSubmission, gatekeeperUserName, reasons))
 

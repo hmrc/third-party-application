@@ -48,28 +48,29 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 import java.time.LocalDateTime
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock{
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock {
 
   import play.api.test.Helpers._
 
-  val authTokenHeader = "authorization" -> "authorizationToken"
+  val authTokenHeader                          = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer = NoMaterializer
-  implicit lazy val request = FakeRequest()
+  implicit lazy val request                    = FakeRequest()
 
-  private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess = Ropc()
+  private val ropcAccess       = Ropc()
 
   val collaborators: Set[Collaborator] = Set(
     Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random))
+    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+  )
 
   trait Setup extends ApplicationLogger {
-    val mockGatekeeperService = mock[GatekeeperService]
-    val mockAuthConnector = mock[AuthConnector]
-    val mockApplicationService = mock[ApplicationService]
+    val mockGatekeeperService   = mock[GatekeeperService]
+    val mockAuthConnector       = mock[AuthConnector]
+    val mockApplicationService  = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
-    implicit val headers = HeaderCarrier()
+    implicit val headers        = HeaderCarrier()
 
     val mockAuthConfig = mock[AuthConnector.Config](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(true)
@@ -77,12 +78,14 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
     when(mockAuthConfig.adminRole).thenReturn("ADMIN")
 
-    val underTest = new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, mockAuthConfig, Helpers.stubControllerComponents()) {
-      override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
-    }
+    val underTest =
+      new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, mockAuthConfig, Helpers.stubControllerComponents()) {
+        override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
+      }
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
+
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
       givenUserIsAuthenticated(underTest)
 
@@ -131,7 +134,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   def verifyForbidden(result: Future[Result]): Unit = {
     status(result) shouldBe 403
     contentAsJson(result) shouldBe Json.obj(
-      "code" -> ErrorCode.FORBIDDEN.toString, "message" -> "Insufficient enrolments"
+      "code"    -> ErrorCode.FORBIDDEN.toString,
+      "message" -> "Insufficient enrolments"
     )
   }
 
@@ -141,7 +145,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "createSubscriptionForApplication" should {
     val applicationId = ApplicationId.random
-    val body = anAPIJson()
+    val body          = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
       when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
@@ -166,20 +170,24 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
         givenUserIsAuthenticated(underTest)
 
-        testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId, {
-          when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-            .thenReturn(successful(HasSucceeded))
+        testWithPrivilegedAndRopcGatekeeperLoggedIn(
+          applicationId, {
+            when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
+              .thenReturn(successful(HasSucceeded))
 
-          status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
-        })
+            status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
+          }
+        )
       }
 
     "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
 
-        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId, {
-          assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
-        })
+        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
+          applicationId, {
+            assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
+          }
+        )
       }
 
     "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
@@ -279,8 +287,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "approveUplift" should {
-    val applicationId = ApplicationId.random
-    val gatekeeperUserId = "big.boss.gatekeeper"
+    val applicationId        = ApplicationId.random
+    val gatekeeperUserId     = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
@@ -340,10 +348,10 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "reject Uplift" should {
-    val applicationId = ApplicationId.random
-    val gatekeeperUserId = "big.boss.gatekeeper"
+    val applicationId       = ApplicationId.random
+    val gatekeeperUserId    = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
-    val testReq = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
+    val testReq             = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
       givenUserIsNotAuthenticated(underTest)
 
@@ -399,8 +407,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "resendVerification" should {
-    val applicationId = ApplicationId.random
-    val gatekeeperUserId = "big.boss.gatekeeper"
+    val applicationId             = ApplicationId.random
+    val gatekeeperUserId          = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
@@ -440,7 +448,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)))
 
-      verifyErrorResult(result,  412, ErrorCode.INVALID_STATE_TRANSITION)
+      verifyErrorResult(result, 412, ErrorCode.INVALID_STATE_TRANSITION)
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
@@ -491,9 +499,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, LocalDateTime.now)
   }
 
-  private def anAppResult(id: ApplicationId = ApplicationId.random,
-                          submittedOn: LocalDateTime = LocalDateTime.now,
-                          state: ApplicationState = testingState()) = {
+  private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = LocalDateTime.now, state: ApplicationState = testingState()) = {
     ApplicationWithUpliftRequest(id, "app 1", submittedOn, state.name)
   }
 

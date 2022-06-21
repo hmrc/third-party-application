@@ -26,14 +26,15 @@ import cats.data.OptionT
 import cats.implicits._
 
 @Singleton
-class UpliftLinkService @Inject()(upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
+
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
     val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
     upliftLinksRepository.insert(upliftLink)
     Future.successful(upliftLink)
   }
 
-  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] = {
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future, ApplicationId] = {
     OptionT(upliftLinksRepository.find("productionApplicationId" -> productionAppId).map(_.headOption)).map(_.sandboxApplicationId)
   }
 }

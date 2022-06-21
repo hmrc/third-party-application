@@ -39,16 +39,16 @@ import akka.stream.testkit.NoMaterializer
 import java.time.LocalDateTime
 
 class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks with FixedClock {
+    with BeforeAndAfterEach with BeforeAndAfterAll with ApplicationStateUtil with Eventually with TableDrivenPropertyChecks with FixedClock {
 
-  implicit val m : Materializer = NoMaterializer
+  implicit val m: Materializer = NoMaterializer
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }
 
   private val subscriptionRepository = new SubscriptionRepository(reactiveMongoComponent)
-  private val applicationRepository = new ApplicationRepository(reactiveMongoComponent)
+  private val applicationRepository  = new ApplicationRepository(reactiveMongoComponent)
 
   override def beforeEach() {
     List(applicationRepository, subscriptionRepository).foreach { db =>
@@ -75,8 +75,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
 
     "create multiple subscriptions" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
 
@@ -88,8 +88,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
   "remove" should {
     "delete the subscription" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
       await(subscriptionRepository.add(application2, apiIdentifier))
@@ -102,8 +102,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
 
     "not fail when deleting a non-existing subscription" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
 
@@ -114,20 +114,20 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     }
   }
 
-
   "find all" should {
     "retrieve all versions subscriptions" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1   = ApplicationId.random
+      val application2   = ApplicationId.random
       val apiIdentifierA = "some-context-a".asIdentifier("1.0.0")
       val apiIdentifierB = "some-context-b".asIdentifier("1.0.2")
       await(subscriptionRepository.add(application1, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierB))
-      val retrieved = await(subscriptionRepository.findAll())
+      val retrieved      = await(subscriptionRepository.findAll())
       retrieved shouldBe List(
         subscriptionData("some-context-a".asContext, "1.0.0".asVersion, application1, application2),
-        subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2))
+        subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2)
+      )
     }
   }
 
@@ -156,9 +156,9 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   "getSubscriptions" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random
-    val api1 = "some-context".asIdentifier("1.0")
-    val api2 = "some-context".asIdentifier("2.0")
-    val api3 = "some-context".asIdentifier("3.0")
+    val api1         = "some-context".asIdentifier("1.0")
+    val api2         = "some-context".asIdentifier("2.0")
+    val api3         = "some-context".asIdentifier("3.0")
 
     "return the subscribed APIs" in {
       await(subscriptionRepository.add(application1, api1))
@@ -181,16 +181,16 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     val developerEmail = "john.doe@example.com"
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
+      val app1            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app1))
-      val app2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
+      val app2            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app2))
       val someoneElsesApp = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
       await(applicationRepository.save(someoneElsesApp))
 
       val helloWorldApi1 = "hello-world".asIdentifier("1.0")
       val helloWorldApi2 = "hello-world".asIdentifier("2.0")
-      val helloVatApi = "hello-vat".asIdentifier("1.0")
+      val helloVatApi    = "hello-vat".asIdentifier("1.0")
       val helloAgentsApi = "hello-agents".asIdentifier("1.0")
       await(subscriptionRepository.add(app1.id, helloWorldApi1))
       await(subscriptionRepository.add(app1.id, helloVatApi))
@@ -227,9 +227,9 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   "getSubscribers" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random
-    val api1 = "some-context".asIdentifier("1.0")
-    val api2 = "some-context".asIdentifier("2.0")
-    val api3 = "some-context".asIdentifier("3.0")
+    val api1         = "some-context".asIdentifier("1.0")
+    val api2         = "some-context".asIdentifier("2.0")
+    val api3         = "some-context".asIdentifier("3.0")
 
     def saveSubscriptions(): HasSucceeded = {
       await(subscriptionRepository.add(application1, api1))
@@ -267,9 +267,15 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       val expectedIndexes = Set(
         Index(key = Seq("applications" -> Ascending), name = Some("applications"), unique = false, background = true),
         Index(key = Seq("apiIdentifier.context" -> Ascending), name = Some("context"), unique = false, background = true),
-        Index(key =
-          Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending), name = Some("context_version"), unique = true, background = true),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
+        Index(
+          key =
+            Seq("apiIdentifier.context" -> Ascending, "apiIdentifier.version" -> Ascending),
+          name = Some("context_version"),
+          unique = true,
+          background = true
+        ),
+        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false)
+      )
 
       verifyIndexesVersionAgnostic(subscriptionRepository, expectedIndexes)
     }
@@ -302,12 +308,13 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "filter by collaborators and api version" in {
 
-      val matchEmail = "match@example.com"
+      val matchEmail          = "match@example.com"
       val partialEmailToMatch = "match"
-      val app1 = anApplicationData(
+      val app1                = anApplicationData(
         id = ApplicationId.random,
         clientId = generateClientId,
-        user = List(matchEmail, "donot@example.com"))
+        user = List(matchEmail, "donot@example.com")
+      )
 
       await(applicationRepository.save(app1))
 
@@ -323,26 +330,31 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
   def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*) = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
-      Set(applicationIds: _*))
+      Set(applicationIds: _*)
+    )
   }
 
-  def anApplicationData(id: ApplicationId,
-                        clientId: ClientId = ClientId("aaa"),
-                        state: ApplicationState = testingState(),
-                        access: Access = Standard(),
-                        user: List[String] = List("user@example.com"),
-                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
+  def anApplicationData(
+      id: ApplicationId,
+      clientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Standard(),
+      user: List[String] = List("user@example.com"),
+      checkInformation: Option[CheckInformation] = None
+    ): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
 
-  def aNamedApplicationData(id: ApplicationId,
-                            name: String,
-                            clientId: ClientId = ClientId("aaa"),
-                            state: ApplicationState = testingState(),
-                            access: Access = Standard(),
-                            user: List[String] = List("user@example.com"),
-                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
+  def aNamedApplicationData(
+      id: ApplicationId,
+      name: String,
+      clientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Standard(),
+      user: List[String] = List("user@example.com"),
+      checkInformation: Option[CheckInformation] = None
+    ): ApplicationData = {
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
 
@@ -358,7 +370,8 @@ class SubscriptionRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       access,
       LocalDateTime.now(clock),
       Some(LocalDateTime.now(clock)),
-      checkInformation = checkInformation)
+      checkInformation = checkInformation
+    )
   }
 
   private def generateClientId = {

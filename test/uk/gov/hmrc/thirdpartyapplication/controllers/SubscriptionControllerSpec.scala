@@ -37,19 +37,19 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
 
   import play.api.test.Helpers._
 
-  override def builder() : GuiceApplicationBuilder = 
-      super.builder()
+  override def builder(): GuiceApplicationBuilder =
+    super.builder()
       .overrides(bind[SubscriptionRepository].to(SubscriptionRepoMock.aMock))
 
   trait Setup {
-    implicit lazy val materializer: Materializer = NoMaterializer
+    implicit lazy val materializer: Materializer                            = NoMaterializer
     def callEndpointWith[A: Writeable](request: Request[A]): Future[Result] = route(app, request).get
   }
 
   "getSubscribers" should {
-      val apiIdentifier = "hello/world".asIdentifier
+    val apiIdentifier = "hello/world".asIdentifier
 
-      def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.version.value}/subscribers"
+    def asUrl(apiIdentifier: ApiIdentifier): String = s"/apis/${apiIdentifier.context.value}/versions/${apiIdentifier.version.value}/subscribers"
 
     "return the subscribers from the repository" in new Setup {
       implicit val readsSubscribersResponse = Json.reads[SubscribersResponse]

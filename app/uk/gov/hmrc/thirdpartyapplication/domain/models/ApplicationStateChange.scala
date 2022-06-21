@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-
 sealed trait ApplicationStateChange
 
 case object UpliftRequested extends ApplicationStateChange

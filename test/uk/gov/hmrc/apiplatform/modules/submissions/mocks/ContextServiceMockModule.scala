@@ -25,14 +25,15 @@ import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 
 trait ContextServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with EitherTHelper[String] {
   implicit val ec = scala.concurrent.ExecutionContext.Implicits.global
-  
+
   protected trait BaseContextServiceMock {
     def aMock: ContextService
-    
+
     object DeriveContext {
+
       def willReturn(context: Context) =
         when(aMock.deriveContext(*[ApplicationId])).thenReturn(pure(context))
-        
+
       def willNotFindApp() =
         when(aMock.deriveContext(*[ApplicationId])).thenReturn(fromEither(Left("Bang")))
     }

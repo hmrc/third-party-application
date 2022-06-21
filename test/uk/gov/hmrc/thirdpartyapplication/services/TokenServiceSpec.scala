@@ -35,7 +35,7 @@ class TokenServiceSpec extends AsyncHmrcSpec {
     }
 
     "generate different values each time it is called" in new Setup {
-      val firstResult: Token = underTest.createEnvironmentToken()
+      val firstResult: Token  = underTest.createEnvironmentToken()
       val secondResult: Token = underTest.createEnvironmentToken()
 
       firstResult.clientId should not equal secondResult.clientId

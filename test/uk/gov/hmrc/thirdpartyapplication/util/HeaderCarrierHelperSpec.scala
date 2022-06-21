@@ -25,13 +25,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_E
 class HeaderCarrierHelperSpec extends AnyWordSpec with Matchers {
 
   val userEmail = "bob@bob.com"
-  val userName = "bobbyBobBob"
+  val userName  = "bobbyBobBob"
 
   "HeaderCarrierHelper" should {
 
     "convert headers  logged in user email and user name headers to user context correctly" in {
       val hc: HeaderCarrier = HeaderCarrier(extraHeaders =
-        Seq(LOGGED_IN_USER_EMAIL_HEADER -> userEmail, LOGGED_IN_USER_NAME_HEADER -> userName))
+        Seq(LOGGED_IN_USER_EMAIL_HEADER -> userEmail, LOGGED_IN_USER_NAME_HEADER -> userName)
+      )
 
       val result = headersToUserContext(hc)
       result.get(DEVELOPER_EMAIL_KEY) shouldBe Some(userEmail)

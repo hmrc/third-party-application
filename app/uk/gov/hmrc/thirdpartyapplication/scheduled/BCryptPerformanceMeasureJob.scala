@@ -30,11 +30,11 @@ import scala.concurrent.duration.FiniteDuration
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class BCryptPerformanceMeasureJob @Inject()(logger: LoggerLike) extends ExclusiveScheduledJob {
+class BCryptPerformanceMeasureJob @Inject() (logger: LoggerLike) extends ExclusiveScheduledJob {
 
-  override def name: String = "bcrypt Performance Measurement"
+  override def name: String                 = "bcrypt Performance Measurement"
   override def initialDelay: FiniteDuration = FiniteDuration(10, TimeUnit.MINUTES)
-  override def interval: FiniteDuration = FiniteDuration(4, TimeUnit.HOURS)
+  override def interval: FiniteDuration     = FiniteDuration(4, TimeUnit.HOURS)
 
   val workFactorRangeToTest: Seq[Int] = 5 to 15
 
@@ -46,7 +46,7 @@ class BCryptPerformanceMeasureJob @Inject()(logger: LoggerLike) extends Exclusiv
     val timings = workFactorRangeToTest.map(workFactor => {
       val startTime = DateTimeUtils.now.getMillis
       stringToHash.bcrypt(workFactor)
-      val endTime = DateTimeUtils.now.getMillis
+      val endTime   = DateTimeUtils.now.getMillis
 
       s"Hashing with Work Factor [$workFactor] took [${endTime - startTime}ms]"
     }).mkString("\n")

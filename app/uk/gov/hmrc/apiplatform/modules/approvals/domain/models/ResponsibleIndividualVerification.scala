@@ -27,7 +27,7 @@ object ResponsibleIndividualVerification {
   import play.api.libs.json.Json
 
   implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[ResponsibleIndividualVerification]
+  implicit val format     = Json.format[ResponsibleIndividualVerification]
 }
 
 case class ResponsibleIndividualVerification(
@@ -38,6 +38,4 @@ case class ResponsibleIndividualVerification(
     applicationName: String,
     createdOn: LocalDateTime,
     state: ResponsibleIndividualVerificationState = INITIAL
-)
-
-
+  )

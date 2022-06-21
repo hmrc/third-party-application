@@ -21,17 +21,17 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import play.api.libs.json._
 
 class AnswerQuestionsJsonFormatterSpec extends HmrcSpec {
-  
+
   import AnswersJsonFormatters._
 
   "Can format" should {
     "work for text answers" in {
       val answer: ActualAnswer = TextAnswer("Bobby")
-      val text = Json.prettyPrint(Json.toJson(answer)) 
+      val text                 = Json.prettyPrint(Json.toJson(answer))
       text shouldBe """{
-      |  "value" : "Bobby",
-      |  "answerType" : "text"
-      |}""".stripMargin
+                      |  "value" : "Bobby",
+                      |  "answerType" : "text"
+                      |}""".stripMargin
 
       val obj = Json.parse(text).as[ActualAnswer]
       answer shouldBe obj
@@ -39,34 +39,34 @@ class AnswerQuestionsJsonFormatterSpec extends HmrcSpec {
 
     "work for single choice answers" in {
       val answer: ActualAnswer = SingleChoiceAnswer("Bobby")
-      val text = Json.prettyPrint(Json.toJson(answer))
+      val text                 = Json.prettyPrint(Json.toJson(answer))
       text shouldBe """{
-      |  "value" : "Bobby",
-      |  "answerType" : "singleChoice"
-      |}""".stripMargin
+                      |  "value" : "Bobby",
+                      |  "answerType" : "singleChoice"
+                      |}""".stripMargin
     }
 
     "work for multiple choice answers" in {
       val answer: ActualAnswer = MultipleChoiceAnswer(Set("Bobby", "Freddy"))
-      val text = Json.prettyPrint(Json.toJson(answer))
+      val text                 = Json.prettyPrint(Json.toJson(answer))
       text shouldBe """{
-      |  "values" : [ "Bobby", "Freddy" ],
-      |  "answerType" : "multipleChoice"
-      |}""".stripMargin
+                      |  "values" : [ "Bobby", "Freddy" ],
+                      |  "answerType" : "multipleChoice"
+                      |}""".stripMargin
     }
 
     "work for AcknowledgedAnswer" in {
       val answer: ActualAnswer = AcknowledgedAnswer
       Json.prettyPrint(Json.toJson(answer)) shouldBe """{
-      |  "answerType" : "acknowledged"
-      |}""".stripMargin
+                                                       |  "answerType" : "acknowledged"
+                                                       |}""".stripMargin
     }
 
     "work for NoAnswers" in {
       val answer: ActualAnswer = NoAnswer
       Json.prettyPrint(Json.toJson(answer)) shouldBe """{
-      |  "answerType" : "noAnswer"
-      |}""".stripMargin
+                                                       |  "answerType" : "noAnswer"
+                                                       |}""".stripMargin
     }
   }
 }

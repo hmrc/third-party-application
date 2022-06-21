@@ -27,15 +27,17 @@ import play.api.mvc.ControllerComponents
 import play.api.libs.json.Json
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
 
- @Singleton
- class UpliftLinksController @Inject() (
-      upliftLinkService: UpliftLinkService,
-      cc: ControllerComponents
-  )(implicit ec: ExecutionContext) extends ExtraHeadersController(cc) with JsonFormatters {
-    def getSandboxAppIdForProductionApp(productionAppId: ApplicationId) = Action.async {
-      val failure = NotFound(s"No sandbox application found for productionAppId ${productionAppId.value}")
-      val success = (sandboxAppId: ApplicationId) => Ok(Json.toJson(sandboxAppId))
+@Singleton
+class UpliftLinksController @Inject() (
+    upliftLinkService: UpliftLinkService,
+    cc: ControllerComponents
+  )(implicit ec: ExecutionContext
+  ) extends ExtraHeadersController(cc) with JsonFormatters {
 
-      upliftLinkService.getSandboxAppForProductionAppId(productionAppId).fold(failure)(success)
-    }
- }
+  def getSandboxAppIdForProductionApp(productionAppId: ApplicationId) = Action.async {
+    val failure = NotFound(s"No sandbox application found for productionAppId ${productionAppId.value}")
+    val success = (sandboxAppId: ApplicationId) => Ok(Json.toJson(sandboxAppId))
+
+    upliftLinkService.getSandboxAppForProductionAppId(productionAppId).fold(failure)(success)
+  }
+}

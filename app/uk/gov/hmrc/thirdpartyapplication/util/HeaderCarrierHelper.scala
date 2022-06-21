@@ -24,20 +24,20 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_E
 
 object HeaderCarrierHelper {
 
-  val DEVELOPER_EMAIL_KEY = "developerEmail"
+  val DEVELOPER_EMAIL_KEY    = "developerEmail"
   val DEVELOPER_FULLNAME_KEY = "developerFullName"
 
   def headersToUserContext(hc: HeaderCarrier) =
     userContextFromHeaders(hc.extraHeaders.filter(pair => Seq(LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER).contains(pair._1)).toMap)
 
   private def userContextFromHeaders(headers: Map[String, String]) = {
-    def mapHeader(oldKey: String, newKey: String): Option[(String, String)] = 
+    def mapHeader(oldKey: String, newKey: String): Option[(String, String)] =
       headers
         .get(oldKey)
         .map(value => newKey -> URLDecoder.decode(value, StandardCharsets.UTF_8.toString))
 
     val email = mapHeader(LOGGED_IN_USER_EMAIL_HEADER, DEVELOPER_EMAIL_KEY)
-    val name = mapHeader(LOGGED_IN_USER_NAME_HEADER, DEVELOPER_FULLNAME_KEY)
+    val name  = mapHeader(LOGGED_IN_USER_NAME_HEADER, DEVELOPER_FULLNAME_KEY)
 
     List(email, name).flatten.toMap
   }

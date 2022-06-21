@@ -30,30 +30,35 @@ trait ApplicationStateUtil extends FixedClock {
     name = State.PRE_PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock))
+    updatedOn = LocalDateTime.now(clock)
+  )
 
   def productionState(requestedBy: String) = ApplicationState(
     name = State.PRODUCTION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock))
+    updatedOn = LocalDateTime.now(clock)
+  )
 
   def pendingRequesterVerificationState(requestedBy: String) = ApplicationState(
     name = State.PENDING_REQUESTER_VERIFICATION,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock))
+    updatedOn = LocalDateTime.now(clock)
+  )
 
   def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
     name = State.PENDING_GATEKEEPER_APPROVAL,
     requestedByEmailAddress = Some(requestedBy),
     verificationCode = None,
-    updatedOn = LocalDateTime.now(clock))
+    updatedOn = LocalDateTime.now(clock)
+  )
 
   def pendingResponsibleIndividualVerificationState(requestedBy: String, requestedByEmail: String) = ApplicationState(
     name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
     requestedByEmailAddress = Some(requestedByEmail),
     requestedByName = Some(requestedBy),
     verificationCode = Some(generatedVerificationCode),
-    updatedOn = LocalDateTime.now(clock))
+    updatedOn = LocalDateTime.now(clock)
+  )
 }

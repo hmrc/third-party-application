@@ -24,12 +24,12 @@ object ApiPlatformEventsStub extends Stub {
 
   override val stub: MockHost = MockHost(16700)
 
-  private val clientSecretAddedEventURL: String = "/application-events/clientSecretAdded"
+  private val clientSecretAddedEventURL: String   = "/application-events/clientSecretAdded"
   private val clientSecretRemovedEventURL: String = "/application-events/clientSecretRemoved"
-  private val apiSubscribedEventURL: String = "/application-events/apiSubscribed"
-  private val apiUnsubscribedEventURL: String = "/application-events/apiUnsubscribed"
-  private val teamMemberAddedEventURL: String = "/application-events/teamMemberAdded"
-  private val teamMemberRemovedEventURL: String = "/application-events/teamMemberRemoved"
+  private val apiSubscribedEventURL: String       = "/application-events/apiSubscribed"
+  private val apiUnsubscribedEventURL: String     = "/application-events/apiUnsubscribed"
+  private val teamMemberAddedEventURL: String     = "/application-events/teamMemberAdded"
+  private val teamMemberRemovedEventURL: String   = "/application-events/teamMemberRemoved"
 
   def verifyClientSecretAddedEventSent(): Unit = {
     verifyStubCalled(clientSecretAddedEventURL)
@@ -59,14 +59,12 @@ object ApiPlatformEventsStub extends Stub {
     stub.mock.verifyThat(postRequestedFor(urlEqualTo(urlString)))
   }
 
-
   def willReceiveClientSecretAddedEvent() = {
     stub.mock.register(post(urlEqualTo(clientSecretAddedEventURL))
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 
   def willReceiveClientRemovedEvent() = {
@@ -74,8 +72,7 @@ object ApiPlatformEventsStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 
   def willReceiveApiSubscribedEvent() = {
@@ -83,8 +80,7 @@ object ApiPlatformEventsStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 
   def willReceiveApiUnsubscribedEvent() = {
@@ -92,8 +88,7 @@ object ApiPlatformEventsStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 
   def willReceiveTeamMemberAddedEvent() = {
@@ -101,8 +96,7 @@ object ApiPlatformEventsStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 
   def willReceiveTeamMemberRemovedEvent() = {
@@ -110,7 +104,6 @@ object ApiPlatformEventsStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(CREATED)
-      )
-    )
+      ))
   }
 }

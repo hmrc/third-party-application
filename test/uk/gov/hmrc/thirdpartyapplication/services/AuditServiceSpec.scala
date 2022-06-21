@@ -37,21 +37,21 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
-    val auditService = new AuditService(mockAuditConnector)
+    val auditService       = new AuditService(mockAuditConnector)
   }
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
+
       override def matches(de: DataEvent): Boolean =
         de.auditSource == expected.auditSource &&
           de.auditType == expected.auditType &&
           de.tags == expected.tags &&
           de.detail == expected.detail
-    }
-;
+    };
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
-      val data = Map("some-header" -> "la-di-dah")
+      val data                       = Map("some-header" -> "la-di-dah")
       implicit val hc: HeaderCarrier = HeaderCarrier()
 
       val event = DataEvent(
@@ -66,12 +66,12 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "add user context where it exists in the header carrier" in new Setup {
-      val data = Map("some-header" -> "la-di-dah")
-      val email = "test@example.com"
-      val name = "John Smith"
+      val data                       = Map("some-header" -> "la-di-dah")
+      val email                      = "test@example.com"
+      val name                       = "John Smith"
       implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
         LOGGED_IN_USER_EMAIL_HEADER -> email,
-        LOGGED_IN_USER_NAME_HEADER -> name
+        LOGGED_IN_USER_NAME_HEADER  -> name
       )
 
       val event = DataEvent(
@@ -83,7 +83,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       val expected = event.copy(
         tags = event.tags ++ Map(
-          "developerEmail" -> email,
+          "developerEmail"    -> email,
           "developerFullName" -> name
         )
       )
@@ -93,8 +93,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
 
     "add as much user context as possible where only partial data exists" in new Setup {
-      val data = Map("some-header" -> "la-di-dah")
-      val email = "test@example.com"
+      val data                            = Map("some-header" -> "la-di-dah")
+      val email                           = "test@example.com"
       implicit val emailHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> email)
 
       val event = DataEvent(
@@ -117,9 +117,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   "AuditHelper calculateAppChanges" should {
 
-    val id = ApplicationId.random
-    val admin = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
-    val tokens = ApplicationTokens(
+    val id          = ApplicationId.random
+    val admin       = Collaborator("test@example.com", ADMINISTRATOR, UserId.random)
+    val tokens      = ApplicationTokens(
       Token(ClientId("prodId"), "prodToken")
     )
     val previousApp = ApplicationData(

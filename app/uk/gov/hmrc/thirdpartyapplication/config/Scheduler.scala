@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
+
   override def configure(): Unit = {
     bind(classOf[Scheduler]).asEagerSingleton()
     bind(classOf[LoggerLike]).toInstance(logger)
@@ -33,21 +34,27 @@ class SchedulerModule extends AbstractModule with ApplicationLogger {
 }
 
 @Singleton
-class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
-                          metricsJob: MetricsJob,
-                          bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
-                          resetLastAccessDateJob: ResetLastAccessDateJob,
-                          responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
-                          responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
-                          override val applicationLifecycle: ApplicationLifecycle,
-                          override val application: Application)
-                          (implicit val ec: ExecutionContext)
-                          extends RunningOfScheduledJobs {
+class Scheduler @Inject() (
+    upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
+    metricsJob: MetricsJob,
+    bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
+    resetLastAccessDateJob: ResetLastAccessDateJob,
+    responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
+    responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
+    override val applicationLifecycle: ApplicationLifecycle,
+    override val application: Application
+  )(implicit val ec: ExecutionContext
+  ) extends RunningOfScheduledJobs {
 
-  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
+  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] = {
     // TODO : MetricsJob optional?
-    Seq(upliftVerificationExpiryJob, metricsJob, resetLastAccessDateJob,
-      responsibleIndividualVerificationReminderJob, responsibleIndividualVerificationRemovalJob)
+    Seq(
+      upliftVerificationExpiryJob,
+      metricsJob,
+      resetLastAccessDateJob,
+      responsibleIndividualVerificationReminderJob,
+      responsibleIndividualVerificationRemovalJob
+    )
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 }

@@ -26,12 +26,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class ApplicationUpdateService @Inject()(
-  applicationRepository: ApplicationRepository,
-  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
-) (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class ApplicationUpdateService @Inject() (
+    applicationRepository: ApplicationRepository,
+    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
@@ -46,7 +46,7 @@ class ApplicationUpdateService @Inject()(
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case _ => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
+      case _                                    => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }
 }

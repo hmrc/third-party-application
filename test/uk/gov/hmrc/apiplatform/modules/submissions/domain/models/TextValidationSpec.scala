@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class TextValidationSpec extends HmrcSpec {
-  
+
   "TextValidation" should {
     "find a good email valid" in {
       TextValidation.Email.isValid("bob@exmaple.com") shouldBe true
@@ -45,7 +45,7 @@ class TextValidationSpec extends HmrcSpec {
       TextValidation.MatchRegex("[0-9][0-9]").isValid("12") shouldBe true
       TextValidation.MatchRegex("[0-9][A-Z]").isValid("1A") shouldBe true
     }
-    
+
     "find a bad regex" in {
       TextValidation.MatchRegex("[0-9][0-9]").isValid("1A") shouldBe false
       TextValidation.MatchRegex("[0-9][A-Z]").isValid("12") shouldBe false

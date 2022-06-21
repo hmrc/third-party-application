@@ -34,20 +34,20 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.MarkedSubmissio
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
   implicit val mat = NoMaterializer
- 
+
   implicit val readsExtendedSubmission = Json.reads[Submission]
-  
+
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())
   }
-  
+
   "create new submission" should {
     implicit val writer = Json.writes[SubmissionsController.CreateSubmissionRequest]
-    val fakeRequest = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
+    val fakeRequest     = FakeRequest(POST, "/").withBody(Json.toJson(SubmissionsController.CreateSubmissionRequest("bob@example.com")))
 
     "return an ok response" in new Setup {
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
-      
+
       val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
 
       status(result) shouldBe OK
@@ -55,14 +55,14 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       contentAsJson(result).validate[Submission] match {
         case JsSuccess(submission, _) =>
           submission shouldBe aSubmission
-        case JsError(f) => fail(s"Not parsed as a response $f")        
+        case JsError(f)               => fail(s"Not parsed as a response $f")
       }
     }
 
     "return a bad request response" in new Setup {
       SubmissionsServiceMock.Create.thenFails("Test Error")
-      
-     val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
+
+      val result = underTest.createSubmissionFor(applicationId)(fakeRequest)
 
       status(result) shouldBe BAD_REQUEST
     }
@@ -78,7 +78,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[Submission] match {
         case JsSuccess(_, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -100,7 +100,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
         case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)                       => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -123,7 +123,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[ExtendedSubmission] match {
         case JsSuccess(extendedSubmission, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)                       => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -146,7 +146,7 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[MarkedSubmission] match {
         case JsSuccess(markedSubmission, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)                     => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -162,8 +162,8 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
   "recordAnswers" should {
     "return an OK response" in new Setup {
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
-      
-      SubmissionsServiceMock.RecordAnswers.thenReturn( ExtendedSubmission(answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress) )
+
+      SubmissionsServiceMock.RecordAnswers.thenReturn(ExtendedSubmission(answeringSubmission, answeringSubmission.withIncompleteProgress().questionnaireProgress))
 
       val answerJsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
 
@@ -174,11 +174,11 @@ class SubmissionsControllerSpec extends AsyncHmrcSpec {
 
     "return an bad request response when something goes wrong" in new Setup {
       implicit val writes = Json.writes[SubmissionsController.RecordAnswersRequest]
-      
+
       SubmissionsServiceMock.RecordAnswers.thenFails("bang")
 
       val answerJsonBody = Json.toJson(SubmissionsController.RecordAnswersRequest(List("Yes")))
-      val result = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(answerJsonBody))
+      val result         = underTest.recordAnswers(submissionId, questionId)(FakeRequest(PUT, "/").withBody(answerJsonBody))
 
       status(result) shouldBe BAD_REQUEST
     }

@@ -15,17 +15,18 @@
  */
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.models
+
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class MarkSpec extends HmrcSpec {
 
-  import Mark._ 
+  import Mark._
 
   "Monoid of mark" should {
     "on empty collection should be a pass" in {
       markMonoid.combineAll(List.empty) shouldBe Pass
     }
-    
+
     "work for single value of pass" in {
       markMonoid.combineAll(List[Mark](Pass)) shouldBe Pass
     }
@@ -37,19 +38,19 @@ class MarkSpec extends HmrcSpec {
     }
 
     "combine all to be a fail" in {
-      List(Pass, Warn, Fail).permutations.foreach( list =>
+      List(Pass, Warn, Fail).permutations.foreach(list =>
         markMonoid.combineAll(list) shouldBe Fail
       )
     }
 
     "combine all to be a warn" in {
-      List(Pass, Warn).permutations.foreach( list =>
+      List(Pass, Warn).permutations.foreach(list =>
         markMonoid.combineAll(list) shouldBe Warn
       )
     }
 
     "combine all to be a pass" in {
       markMonoid.combineAll(List[Mark](Pass, Pass)) shouldBe Pass
-    }   
+    }
   }
 }

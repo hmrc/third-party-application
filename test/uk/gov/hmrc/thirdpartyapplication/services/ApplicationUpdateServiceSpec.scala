@@ -35,24 +35,24 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ApplicationUpdateServiceSpec
-  extends AsyncHmrcSpec
-  with BeforeAndAfterAll
-  with ApplicationStateUtil
-  with ApplicationTestData
-  with UpliftRequestSamples
-  with FixedClock {
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with ApplicationTestData
+    with UpliftRequestSamples
+    with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule {
+      with ApplicationRepositoryMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId = ApplicationId.random
+    val applicationId   = ApplicationId.random
     val applicationData = anApplicationData(applicationId)
 
-    lazy val locked = false
+    lazy val locked              = false
     protected val mockitoTimeout = 1000
-    val response = mock[HttpResponse]
+    val response                 = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
 
@@ -62,18 +62,18 @@ class ApplicationUpdateServiceSpec
     )
   }
 
-  val instigator = UserId(UUID.randomUUID)
-  val timestamp = LocalDateTime.now
+  val instigator     = UserId(UUID.randomUUID)
+  val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
 
   "update with ChangeProductionApplicationName" should {
-    val newName = "rob"
+    val newName    = "rob"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = anApplicationData(applicationId).copy(name = "old name")
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      val appAfter = anApplicationData(applicationId).copy(name = "new name")
+      val appAfter  = anApplicationData(applicationId).copy(name = "new name")
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
       val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, appBefore.name, appAfter.name)

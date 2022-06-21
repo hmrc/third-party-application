@@ -42,25 +42,27 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import java.time.temporal.ChronoUnit.SECONDS
 
-
 @Singleton
-class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: ResponsibleIndividualVerificationRemovalJobLockKeeper,
-                                                            repository: ResponsibleIndividualVerificationRepository,
-                                                            submissionsService: SubmissionsService,
-                                                            emailConnector: EmailConnector,
-                                                            applicationRepository: ApplicationRepository,
-                                                            declineApprovalsService: DeclineApprovalsService,
-                                                            val clock: Clock,
-                                                            jobConfig: ResponsibleIndividualVerificationRemovalJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+class ResponsibleIndividualVerificationRemovalJob @Inject() (
+    val lockKeeper: ResponsibleIndividualVerificationRemovalJobLockKeeper,
+    repository: ResponsibleIndividualVerificationRepository,
+    submissionsService: SubmissionsService,
+    emailConnector: EmailConnector,
+    applicationRepository: ApplicationRepository,
+    declineApprovalsService: DeclineApprovalsService,
+    val clock: Clock,
+    jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob with ApplicationLogger {
 
-  override def name: String = "ResponsibleIndividualVerificationRemovalJob"
-  override def interval: FiniteDuration = jobConfig.interval
+  override def name: String                 = "ResponsibleIndividualVerificationRemovalJob"
+  override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
-  override val isEnabled: Boolean = jobConfig.enabled
-  implicit val hc: HeaderCarrier = HeaderCarrier()
+  override val isEnabled: Boolean           = jobConfig.enabled
+  implicit val hc: HeaderCarrier            = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val removeIfCreatedBeforeNow = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
+    val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <- repository.fetchByStateAndAge(ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
@@ -90,19 +92,20 @@ class ResponsibleIndividualVerificationRemovalJob @Inject()(val lockKeeper: Resp
   private def getResponsibleIndividual(app: ApplicationData): Option[ResponsibleIndividual] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
-      case _ => None
+      case _                                                      => None
     }
   }
 
   private def getRequesterName(app: ApplicationData): Option[String] = {
     app.state.requestedByName
   }
+
   private def getRequesterEmail(app: ApplicationData): Option[String] = {
     app.state.requestedByEmailAddress
   }
 }
 
-class ResponsibleIndividualVerificationRemovalJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
+class ResponsibleIndividualVerificationRemovalJobLockKeeper @Inject() (mongo: ReactiveMongoComponent) extends LockKeeper {
   override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
 
   override def lockId: String = "ResponsibleIndividualVerificationRemovalScheduler"

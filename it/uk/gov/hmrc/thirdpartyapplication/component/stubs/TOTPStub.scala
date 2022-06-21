@@ -26,12 +26,12 @@ object TOTPStub extends Stub {
   override val stub = MockHost(19988)
 
   private val productionState = "productionState"
-  private val sandboxState = "sandboxState"
+  private val sandboxState    = "sandboxState"
 
   private val totpUrl = "/time-based-one-time-password/secret"
 
   private val productionTotpJson = Json.obj("secret" -> "prod-secret", "id" -> "prod-id").toString()
-  private val sandboxTotpJson = Json.obj("secret" -> "sandbox-secret", "id" -> "sandbox-id").toString()
+  private val sandboxTotpJson    = Json.obj("secret" -> "sandbox-secret", "id" -> "sandbox-id").toString()
 
   def willReturnTOTP(scenarioName: String) = {
 

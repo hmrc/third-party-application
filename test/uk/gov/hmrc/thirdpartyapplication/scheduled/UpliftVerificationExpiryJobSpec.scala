@@ -46,20 +46,20 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
   }
 
   val FixedTimeNow: DateTime = HmrcTime.now
-  val expiryTimeInDays = 90
+  val expiryTimeInDays       = 90
 
   trait Setup {
-    val mockApplicationRepository = mock[ApplicationRepository]
+    val mockApplicationRepository  = mock[ApplicationRepository]
     val mockStateHistoryRepository = mock[StateHistoryRepository]
 
     val lockKeeperSuccess: () => Boolean = () => true
 
     val mockLockKeeper = new UpliftVerificationExpiryJobLockKeeper(reactiveMongoComponent) {
 
-      //noinspection ScalaStyle
+      // noinspection ScalaStyle
       override def lockId: String = null
 
-      //noinspection ScalaStyle
+      // noinspection ScalaStyle
       override def repo: LockRepository = null
 
       override val forceLockReleaseAfter: Duration = Duration.standardMinutes(5) // scalastyle:off magic.number
@@ -70,10 +70,9 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
     }
 
     val upliftVerificationValidity = FiniteDuration(expiryTimeInDays, TimeUnit.DAYS)
-    val initialDelay = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
-    val interval = FiniteDuration(24, HOURS) // scalastyle:off magic.number
-    val config = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
-
+    val initialDelay               = FiniteDuration(60, SECONDS) // scalastyle:off magic.number
+    val interval                   = FiniteDuration(24, HOURS)   // scalastyle:off magic.number
+    val config                     = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
 
     import scala.concurrent.ExecutionContext.Implicits.global
     val underTest = new UpliftVerificationExpiryJob(mockLockKeeper, mockApplicationRepository, mockStateHistoryRepository, clock, config)
@@ -98,10 +97,20 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
-      verify(mockStateHistoryRepository).insert(StateHistory(app1.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
-      verify(mockStateHistoryRepository).insert(StateHistory(app2.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
+      verify(mockStateHistoryRepository).insert(StateHistory(
+        app1.id,
+        State.TESTING,
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Some(PENDING_REQUESTER_VERIFICATION),
+        changedAt = LocalDateTime.now(clock)
+      ))
+      verify(mockStateHistoryRepository).insert(StateHistory(
+        app2.id,
+        State.TESTING,
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Some(PENDING_REQUESTER_VERIFICATION),
+        changedAt = LocalDateTime.now(clock)
+      ))
     }
 
     "not execute if the job is already running" in new Setup {
@@ -118,7 +127,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
 
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing fetchAllByStatusDetails db query'." +
-          " The next execution of the job will do retry."
+        " The next execution of the job will do retry."
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
@@ -136,7 +145,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
-          " The next execution of the job will do retry."
+        " The next execution of the job will do retry."
     }
 
   }
@@ -155,6 +164,7 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       state,
       Standard(),
       LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)))
+      Some(LocalDateTime.now(clock))
+    )
   }
 }

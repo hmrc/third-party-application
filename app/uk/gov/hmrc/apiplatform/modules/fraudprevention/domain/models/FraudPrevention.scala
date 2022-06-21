@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models
 
 object FraudPrevention {
+
   def contexts = Set(
     "accounts/self-assessment",
     "individuals/business/details",

@@ -28,13 +28,20 @@ import scala.util.Failure
 import java.time.{Clock, LocalDateTime}
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
-  def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                         requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any): Future[StateHistory] = {
+
+  def insertStateHistory(
+      snapshotApp: ApplicationData,
+      newState: State,
+      oldState: Option[State],
+      requestedBy: String,
+      actorType: ActorType.ActorType,
+      rollback: ApplicationData => Any
+    ): Future[StateHistory] = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
-    .andThen {
-      case e: Failure[_] =>
-        rollback(snapshotApp)
-    }
+      .andThen {
+        case e: Failure[_] =>
+          rollback(snapshotApp)
+      }
   }
 }

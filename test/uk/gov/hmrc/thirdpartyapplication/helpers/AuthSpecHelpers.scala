@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
 import scala.concurrent.Future
 
 object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
+
   def givenUserIsAuthenticated(underTest: AuthorisationWrapper) = {
     when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
   }

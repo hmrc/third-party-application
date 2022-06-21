@@ -33,17 +33,15 @@ private[controllers] object SubscribersResponse {
 }
 
 @Singleton
-class SubscriptionController @Inject()(subscriptionRepository: SubscriptionRepository, cc: ControllerComponents)
-                                     (implicit val ec: ExecutionContext)
-                                     extends BackendController(cc) with JsonUtils {
+class SubscriptionController @Inject() (subscriptionRepository: SubscriptionRepository, cc: ControllerComponents)(implicit val ec: ExecutionContext)
+    extends BackendController(cc) with JsonUtils {
 
-  def getSubscribers(context: ApiContext, version: ApiVersion): Action[AnyContent] = Action.async {_ =>
+  def getSubscribers(context: ApiContext, version: ApiVersion): Action[AnyContent] = Action.async { _ =>
     subscriptionRepository.getSubscribers(ApiIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery
   }
 
-  def getSubscriptionsForDeveloper(developerId: UserId): Action[AnyContent] = Action.async {_ =>
+  def getSubscriptionsForDeveloper(developerId: UserId): Action[AnyContent] = Action.async { _ =>
     subscriptionRepository.getSubscriptionsForDeveloper(developerId)
-    .map(subscriptions => Ok(toJson(subscriptions))) recover recovery
+      .map(subscriptions => Ok(toJson(subscriptions))) recover recovery
   }
 }
-

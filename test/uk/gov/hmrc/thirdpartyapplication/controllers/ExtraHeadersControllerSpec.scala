@@ -21,25 +21,25 @@ import play.api.mvc.AnyContentAsEmpty
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class ExtraHeadersControllerSpec
-  extends ControllerSpec {
-  
-    import play.api.test.Helpers
-    
-    trait Setup {
-      val underTest = new ExtraHeadersController(Helpers.stubControllerComponents()) {}
+    extends ControllerSpec {
 
-      implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
-        FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+  import play.api.test.Helpers
 
-    }
+  trait Setup {
+    val underTest = new ExtraHeadersController(Helpers.stubControllerComponents()) {}
 
-    "hc" should {
+    implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
+      FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
+
+  }
+
+  "hc" should {
 
     "take the X-email-address and X-name fields from the incoming headers" in new Setup {
       val req: FakeRequest[AnyContentAsEmpty.type] = request.withHeaders(
-        LOGGED_IN_USER_NAME_HEADER -> "John Smith",
+        LOGGED_IN_USER_NAME_HEADER  -> "John Smith",
         LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com",
-        X_REQUEST_ID_HEADER -> "requestId"
+        X_REQUEST_ID_HEADER         -> "requestId"
       )
 
       underTest.hc(req).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(LOGGED_IN_USER_NAME_HEADER -> "John Smith")
@@ -48,7 +48,7 @@ class ExtraHeadersControllerSpec
     }
 
     "contain each header if only one exists" in new Setup {
-      val nameHeader: (String, String) = LOGGED_IN_USER_NAME_HEADER -> "John Smith"
+      val nameHeader: (String, String)  = LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
       val emailHeader: (String, String) = LOGGED_IN_USER_EMAIL_HEADER -> "test@example.com"
 
       underTest.hc(request.withHeaders(nameHeader)).headers(Seq(LOGGED_IN_USER_NAME_HEADER)) should contain(nameHeader)

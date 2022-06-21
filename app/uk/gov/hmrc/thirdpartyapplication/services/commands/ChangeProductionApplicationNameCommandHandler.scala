@@ -32,9 +32,9 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 
 @Singleton
-class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: UpliftNamingService)(implicit val ec: ExecutionContext) extends CommandHandler {
+class ChangeProductionApplicationNameCommandHandler @Inject() (namingService: UpliftNamingService)(implicit val ec: ExecutionContext) extends CommandHandler {
   import CommandHandler._
-  
+
   private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map6(
       isAdminOnApp(cmd.instigator, app),

@@ -34,19 +34,22 @@ import scala.concurrent.Future
 import cats.implicits._
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseApplicationServiceMock {
 
     def aMock: ApplicationService
 
     object Fetch {
+
       def thenReturn(applicationData: ApplicationData) = {
-        val r: OptionT[Future,ApplicationResponse] = OptionT.pure[Future](ApplicationResponse(data=applicationData))
+        val r: OptionT[Future, ApplicationResponse] = OptionT.pure[Future](ApplicationResponse(data = applicationData))
         when(aMock.fetch(*[ApplicationId])).thenReturn(r)
       }
-      def thenReturnNothing() = when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.fromOption[Future](None))
+      def thenReturnNothing()                          = when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.fromOption[Future](None))
     }
 
     object AddTermsOfUseAcceptance {
+
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
 
@@ -59,7 +62,7 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       def verifyNeverCalled() = verify(aMock, never).addTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])
     }
   }
-  
+
   object ApplicationServiceMock extends BaseApplicationServiceMock {
     val aMock = mock[ApplicationService]
   }

@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-
 case class ContactDetails(
-  fullname: String,
-  email: String,
-  telephoneNumber: String
-)
+    fullname: String,
+    email: String,
+    telephoneNumber: String
+  )
 
 object ContactDetails {
   import play.api.libs.json.Json
-  
+
   implicit val format = Json.format[ContactDetails]
 }

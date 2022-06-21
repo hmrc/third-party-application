@@ -17,22 +17,22 @@ import reactivemongo.core.errors.DatabaseException
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 class SubmissionsDAOSpec
-  extends AsyncHmrcSpec
+    extends AsyncHmrcSpec
     with MongoSpecSupport
     with BeforeAndAfterEach with BeforeAndAfterAll
     with IndexVerification
     with MetricsHelper
     with SubmissionsTestData {
 
-  implicit var s : ActorSystem = ActorSystem("test")
-  implicit var m : Materializer = Materializer(s)
+  implicit var s: ActorSystem  = ActorSystem("test")
+  implicit var m: Materializer = Materializer(s)
 
   private val reactiveMongoComponent = new ReactiveMongoComponent {
     override def mongoConnector: MongoConnector = mongoConnectorForTest
   }
 
   private val repo = new SubmissionsRepository(reactiveMongoComponent)
-  private val dao = new SubmissionsDAO(repo)
+  private val dao  = new SubmissionsDAO(repo)
 
   override def beforeEach() {
     List(repo).foreach { db =>
@@ -69,7 +69,7 @@ class SubmissionsDAOSpec
 
   "fetchLastest" should {
     "find the only one" in {
-      await(dao.save(aSubmission)) 
+      await(dao.save(aSubmission))
       await(dao.fetchLatest(applicationId)).value shouldBe aSubmission
     }
 
@@ -83,8 +83,8 @@ class SubmissionsDAOSpec
   "update" should {
     "replace the existing record" in {
       await(dao.save(aSubmission))
-      val oldAnswers = aSubmission.latestInstance.answersToQuestions
-      val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
+      val oldAnswers        = aSubmission.latestInstance.answersToQuestions
+      val newAnswers        = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
       val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
       await(dao.update(updatedSubmission)) shouldBe updatedSubmission
       await(dao.fetchLatest(applicationId)).value shouldBe updatedSubmission

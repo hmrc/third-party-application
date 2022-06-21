@@ -24,4 +24,3 @@ object Environment extends Enumeration {
 
   implicit val formatEnvironment = EnumJson.enumFormat(Environment)
 }
-

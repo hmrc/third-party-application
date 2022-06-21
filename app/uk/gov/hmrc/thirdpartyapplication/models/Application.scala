@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
@@ -31,7 +30,7 @@ trait CreateApplicationRequest {
   def collaborators: Set[Collaborator]
   def environment: Environment
   def anySubscriptions: Set[ApiIdentifier]
-  
+
   def accessType: AccessType.AccessType
 
   protected def lowerCaseEmails(in: Set[Collaborator]): Set[Collaborator] = {
@@ -46,19 +45,19 @@ trait CreateApplicationRequest {
 }
 
 case class CreateApplicationRequestV1(
-  name: String,
-  access: Access = Standard(List.empty, None, None, Set.empty, None, None),
-  description: Option[String] = None,
-  environment: Environment,
-  collaborators: Set[Collaborator],
-  subscriptions: Option[Set[ApiIdentifier]]
-) extends CreateApplicationRequest {
+    name: String,
+    access: Access = Standard(List.empty, None, None, Set.empty, None, None),
+    description: Option[String] = None,
+    environment: Environment,
+    collaborators: Set[Collaborator],
+    subscriptions: Option[Set[ApiIdentifier]]
+  ) extends CreateApplicationRequest {
 
   private def validate(in: CreateApplicationRequestV1): Unit = {
     super.validate(in)
     in.access match {
       case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-      case _ =>
+      case _           =>
     }
   }
 
@@ -78,9 +77,9 @@ object CreateApplicationRequestV1 {
 }
 
 case class UpliftRequest(
-  sellResellOrDistribute: SellResellOrDistribute,
-  subscriptions: Set[ApiIdentifier]
-)
+    sellResellOrDistribute: SellResellOrDistribute,
+    subscriptions: Set[ApiIdentifier]
+  )
 
 object UpliftRequest {
   import play.api.libs.json.{Format, Json}
@@ -88,11 +87,10 @@ object UpliftRequest {
   implicit val format: Format[UpliftRequest] = Json.format[UpliftRequest]
 }
 
-
 case class StandardAccessDataToCopy(
     redirectUris: List[String] = List.empty,
     overrides: Set[OverrideFlag] = Set.empty
-)
+  )
 
 object StandardAccessDataToCopy {
   import play.api.libs.json.Json
@@ -102,17 +100,17 @@ object StandardAccessDataToCopy {
 
 /*
 ** This is only used for creating an app when uplifting a standard sandbox app to production
-*/
+ */
 case class CreateApplicationRequestV2(
-  name: String,
-  access: StandardAccessDataToCopy = StandardAccessDataToCopy(List.empty, Set.empty),   // TODO - rename field
-  description: Option[String] = None,
-  environment: Environment,
-  collaborators: Set[Collaborator],
-  upliftRequest: UpliftRequest,
-  requestedBy: String,
-  sandboxApplicationId: ApplicationId
-) extends CreateApplicationRequest {
+    name: String,
+    access: StandardAccessDataToCopy = StandardAccessDataToCopy(List.empty, Set.empty), // TODO - rename field
+    description: Option[String] = None,
+    environment: Environment,
+    collaborators: Set[Collaborator],
+    upliftRequest: UpliftRequest,
+    requestedBy: String,
+    sandboxApplicationId: ApplicationId
+  ) extends CreateApplicationRequest {
 
   validate(this)
 
@@ -131,57 +129,58 @@ object CreateApplicationRequestV2 {
 
 object CreateApplicationRequest {
   import play.api.libs.functional.syntax._
-  
-  implicit val reads = CreateApplicationRequestV2.reads.map(_.asInstanceOf[CreateApplicationRequest]) or CreateApplicationRequestV1.reads.map(_.asInstanceOf[CreateApplicationRequest])
+
+  implicit val reads =
+    CreateApplicationRequestV2.reads.map(_.asInstanceOf[CreateApplicationRequest]) or CreateApplicationRequestV1.reads.map(_.asInstanceOf[CreateApplicationRequest])
 }
 
-case class UpdateApplicationRequest(name: String,
-                                    access: Access = Standard(),
-                                    description: Option[String] = None) {
+case class UpdateApplicationRequest(name: String, access: Access = Standard(), description: Option[String] = None) {
   require(name.nonEmpty, "name is required")
   access match {
     case a: Standard => require(a.redirectUris.size <= 5, "maximum number of redirect URIs exceeded")
-    case _ =>
+    case _           =>
   }
 }
 
 case class ApplicationResponse(
-  id: ApplicationId,
-  clientId: ClientId,
-  gatewayId: String,
-  name: String,
-  deployedTo: String,
-  description: Option[String] = None,
-  collaborators: Set[Collaborator],
-  createdOn: LocalDateTime,
-  lastAccess: Option[LocalDateTime],
-  grantLength: Int,
-  lastAccessTokenUsage: Option[LocalDateTime] = None,  // API-4376: Temporary inclusion whilst Server Token functionality is retired
-  redirectUris: List[String] = List.empty,
-  termsAndConditionsUrl: Option[String] = None,
-  privacyPolicyUrl: Option[String] = None,
-  access: Access = Standard(),
-  state: ApplicationState = ApplicationState(name = State.TESTING),
-  rateLimitTier: RateLimitTier = BRONZE,
-  checkInformation: Option[CheckInformation] = None,
-  blocked: Boolean = false,
-  trusted: Boolean = false,
-  ipAllowlist: IpAllowlist = IpAllowlist()
-)
+    id: ApplicationId,
+    clientId: ClientId,
+    gatewayId: String,
+    name: String,
+    deployedTo: String,
+    description: Option[String] = None,
+    collaborators: Set[Collaborator],
+    createdOn: LocalDateTime,
+    lastAccess: Option[LocalDateTime],
+    grantLength: Int,
+    lastAccessTokenUsage: Option[LocalDateTime] = None, // API-4376: Temporary inclusion whilst Server Token functionality is retired
+    redirectUris: List[String] = List.empty,
+    termsAndConditionsUrl: Option[String] = None,
+    privacyPolicyUrl: Option[String] = None,
+    access: Access = Standard(),
+    state: ApplicationState = ApplicationState(name = State.TESTING),
+    rateLimitTier: RateLimitTier = BRONZE,
+    checkInformation: Option[CheckInformation] = None,
+    blocked: Boolean = false,
+    trusted: Boolean = false,
+    ipAllowlist: IpAllowlist = IpAllowlist()
+  )
 
 object ApplicationResponse {
 
   def redirectUris(data: ApplicationData): List[String] = data.access match {
     case a: Standard => a.redirectUris
-    case _ => List.empty
+    case _           => List.empty
   }
+
   def termsAndConditionsUrl(data: ApplicationData): Option[String] = data.access match {
     case a: Standard => a.termsAndConditionsUrl
-    case _ => None
+    case _           => None
   }
+
   def privacyPolicyUrl(data: ApplicationData): Option[String] = data.access match {
     case a: Standard => a.privacyPolicyUrl
-    case _ => None
+    case _           => None
   }
 
   def apply(data: ApplicationData): ApplicationResponse = {
@@ -205,35 +204,38 @@ object ApplicationResponse {
       data.rateLimitTier.getOrElse(BRONZE),
       data.checkInformation,
       data.blocked,
-      ipAllowlist= data.ipAllowlist
+      ipAllowlist = data.ipAllowlist
     )
   }
 }
 
-case class ExtendedApplicationResponse(id: ApplicationId,
-                                       clientId: ClientId,
-                                       gatewayId: String,
-                                       name: String,
-                                       deployedTo: String,
-                                       description: Option[String] = None,
-                                       collaborators: Set[Collaborator],
-                                       createdOn: LocalDateTime,
-                                       lastAccess: Option[LocalDateTime],
-                                       grantLength: Int,
-                                       redirectUris: List[String] = List.empty,
-                                       termsAndConditionsUrl: Option[String] = None,
-                                       privacyPolicyUrl: Option[String] = None,
-                                       access: Access = Standard(),
-                                       state: ApplicationState = ApplicationState(name = TESTING),
-                                       rateLimitTier: RateLimitTier = BRONZE,
-                                       checkInformation: Option[CheckInformation] = None,
-                                       blocked: Boolean = false,
-                                       trusted: Boolean = false,
-                                       serverToken: String,
-                                       subscriptions: List[ApiIdentifier],
-                                       ipAllowlist: IpAllowlist = IpAllowlist())
+case class ExtendedApplicationResponse(
+    id: ApplicationId,
+    clientId: ClientId,
+    gatewayId: String,
+    name: String,
+    deployedTo: String,
+    description: Option[String] = None,
+    collaborators: Set[Collaborator],
+    createdOn: LocalDateTime,
+    lastAccess: Option[LocalDateTime],
+    grantLength: Int,
+    redirectUris: List[String] = List.empty,
+    termsAndConditionsUrl: Option[String] = None,
+    privacyPolicyUrl: Option[String] = None,
+    access: Access = Standard(),
+    state: ApplicationState = ApplicationState(name = TESTING),
+    rateLimitTier: RateLimitTier = BRONZE,
+    checkInformation: Option[CheckInformation] = None,
+    blocked: Boolean = false,
+    trusted: Boolean = false,
+    serverToken: String,
+    subscriptions: List[ApiIdentifier],
+    ipAllowlist: IpAllowlist = IpAllowlist()
+  )
 
 object ExtendedApplicationResponse {
+
   def apply(data: ApplicationData, subscriptions: List[ApiIdentifier]): ExtendedApplicationResponse = {
     ExtendedApplicationResponse(
       data.id,
@@ -256,32 +258,27 @@ object ExtendedApplicationResponse {
       data.blocked,
       serverToken = data.tokens.production.accessToken,
       subscriptions = subscriptions,
-      ipAllowlist = data.ipAllowlist)
+      ipAllowlist = data.ipAllowlist
+    )
   }
 }
 
 case class PaginatedApplicationResponse(applications: List[ApplicationResponse], page: Int, pageSize: Int, total: Int, matching: Int)
 
-
 case class CreateApplicationResponse(application: ApplicationResponse, totp: Option[TotpSecret] = None)
 
-
-
-case class ApplicationWithUpliftRequest(id: ApplicationId,
-                                        name: String,
-                                        submittedOn: LocalDateTime,
-                                        state: State)
+case class ApplicationWithUpliftRequest(id: ApplicationId, name: String, submittedOn: LocalDateTime, state: State)
 
 case class ApplicationWithHistory(application: ApplicationResponse, history: List[StateHistoryResponse])
 
-
 case class ApplicationTokenResponse(
-   clientId: ClientId,
-   accessToken: String,
-   clientSecrets: List[ClientSecretResponse]
-)
+    clientId: ClientId,
+    accessToken: String,
+    clientSecrets: List[ClientSecretResponse]
+  )
 
 object ApplicationTokenResponse {
+
   def apply(token: Token): ApplicationTokenResponse =
     new ApplicationTokenResponse(
       clientId = token.clientId,
@@ -297,13 +294,10 @@ object ApplicationTokenResponse {
     )
 }
 
-case class ClientSecretResponse(id: String,
-                                name: String,
-                                secret: Option[String],
-                                createdOn: LocalDateTime,
-                                lastAccess: Option[LocalDateTime])
+case class ClientSecretResponse(id: String, name: String, secret: Option[String], createdOn: LocalDateTime, lastAccess: Option[LocalDateTime])
 
 object ClientSecretResponse {
+
   def apply(clientSecret: ClientSecret): ClientSecretResponse =
     ClientSecretResponse(clientSecret.id, clientSecret.name, None, clientSecret.createdOn, clientSecret.lastAccess)
 
@@ -313,7 +307,8 @@ object ClientSecretResponse {
       clientSecret.name,
       if (clientSecret.id == newClientSecretId) Some(newClientSecret) else None,
       clientSecret.createdOn,
-      clientSecret.lastAccess)
+      clientSecret.lastAccess
+    )
 }
 
 class ApplicationResponseCreator {
@@ -324,6 +319,7 @@ class ApplicationResponseCreator {
 }
 
 object ApplicationWithUpliftRequest {
+
   def create(app: ApplicationData, upliftRequest: StateHistory): ApplicationWithUpliftRequest = {
     if (upliftRequest.state != State.PENDING_GATEKEEPER_APPROVAL) {
       throw new InconsistentDataState(s"cannot create with invalid state: ${upliftRequest.state}")
@@ -332,4 +328,3 @@ object ApplicationWithUpliftRequest {
   }
 
 }
-

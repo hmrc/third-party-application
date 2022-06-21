@@ -33,9 +33,13 @@ import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
 
-class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
-    extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID]("responsibleIndividualVerification", mongo.mongoConnector.db,
-      ResponsibleIndividualVerification.format, ReactiveMongoFormats.objectIdFormats) {
+class ResponsibleIndividualVerificationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
+    extends ReactiveRepository[ResponsibleIndividualVerification, BSONObjectID](
+      "responsibleIndividualVerification",
+      mongo.mongoConnector.db,
+      ResponsibleIndividualVerification.format,
+      ReactiveMongoFormats.objectIdFormats
+    ) {
 
   override def indexes = List(
     createSingleFieldAscendingIndex(
@@ -51,7 +55,9 @@ class ResponsibleIndividualVerificationRepository @Inject()(mongo: ReactiveMongo
       indexName = Some("responsibleIndividualVerificationAppSubmissionIdIndex"),
       isUnique = true,
       isBackground = true,
-      "applicationId", "submissionId", "submissionInstance"
+      "applicationId",
+      "submissionId",
+      "submissionInstance"
     )
   )
 
