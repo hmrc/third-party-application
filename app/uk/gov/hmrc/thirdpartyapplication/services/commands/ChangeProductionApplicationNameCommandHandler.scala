@@ -56,6 +56,13 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(
         timestamp = cmd.timestamp,
         instigator = cmd.instigator,
         oldName = app.name,
+        newName = cmd.newName
+      ),
+      UpdateApplicationEvent.NameChangedEmailSent(
+        applicationId = app.id,
+        timestamp = cmd.timestamp,
+        instigator = cmd.instigator,
+        oldName = app.name,
         newName = cmd.newName,
         requester = getRequester(app, cmd.instigator),
         recipients = getRecipients(app) ++ getResponsibleIndividual(app)

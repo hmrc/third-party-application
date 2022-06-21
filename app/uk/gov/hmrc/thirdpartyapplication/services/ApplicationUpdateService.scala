@@ -34,17 +34,18 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-  nameChangedEventHdlr: NameChangedEventHandler
+  nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
   def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
     for {
-      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
-      events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-      savedApp <- E.liftF(applicationRepository.applyEvents(events))
-      _        <- E.liftF(sendAdviceEmail(events))
+      app              <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
+      repositoryEvents <- E.fromOption(NonEmptyList.fromList(events.collect{case e: UpdateApplicationRepositoryEvent => e}), NonEmptyChain(s"No repository events found for this command"))
+      savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
+      _                <- E.liftF(sendNotifications(events.collect{case e: UpdateApplicationNotificationEvent => e}))
     } yield savedApp
   }
 
@@ -55,18 +56,14 @@ class ApplicationUpdateService @Inject()(
     }
   }
 
-  private def sendAdviceEmail(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendEmail(event: UpdateApplicationEvent) = {
-      if (event.emailAdvice) {
-        event match {
-          case evt: UpdateApplicationEvent.NameChanged => nameChangedEventHdlr.sendAdviceEmail(evt)
-          case _ => throw new RuntimeException(s"UnexpectedEvent type for emailAdvice ${event}")
-        }
-      } else {
-        Future.successful(HasSucceeded)
+  private def sendNotifications(events: List[UpdateApplicationNotificationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
+    def sendNotification(event: UpdateApplicationEvent) = {
+      event match {
+        case evt: UpdateApplicationEvent.NameChangedEmailSent => nameChangedNotificationEventHdlr.sendAdviceEmail(evt)
+        case _  => throw new RuntimeException(s"UnexpectedEvent type for emailAdvice ${event}")
       }
     }
     
-    Future.sequence(events.map(evt => sendEmail(evt)).toList)
+    Future.sequence(events.map(evt => sendNotification(evt)).toList)
   }
 }

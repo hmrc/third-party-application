@@ -21,13 +21,13 @@ import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangedEventHandler
+import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangedNotificationEventHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
@@ -72,7 +72,7 @@ class ApplicationUpdateServiceSpec
     val response = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockNameChangedEventHandler: NameChangedEventHandler = mock[NameChangedEventHandler]
+    val mockNameChangedEventHandler: NameChangedNotificationEventHandler = mock[NameChangedNotificationEventHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
@@ -91,12 +91,13 @@ class ApplicationUpdateServiceSpec
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
+      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
+      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.one(nameChangedEvent)).toValidatedNec)
+        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent)).toValidatedNec)
       )
-      when(mockNameChangedEventHandler.sendAdviceEmail(*[NameChanged])(*)).thenReturn(
+      when(mockNameChangedEventHandler.sendAdviceEmail(*[NameChangedEmailSent])(*)).thenReturn(
         Future.successful(HasSucceeded)
       )
       val result = await(underTest.update(applicationId, changeName).value)
@@ -132,10 +133,11 @@ class ApplicationUpdateServiceSpec
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
-      case class UnknownEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId) extends UpdateApplicationEvent
-      val unknownEvent = UnknownEvent(applicationId, timestamp, instigator)
+      case class UnknownEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, requester: String) extends UpdateApplicationNotificationEvent
+      val unknownEvent = UnknownEvent(applicationId, timestamp, instigator, loggedInUser)
+      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.one(unknownEvent)).toValidatedNec)
+        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, unknownEvent)).toValidatedNec)
       )
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.update(applicationId, changeName).value))
@@ -143,6 +145,20 @@ class ApplicationUpdateServiceSpec
       ex.getMessage shouldBe s"UnexpectedEvent type for emailAdvice $unknownEvent"
     }
 
-  }
+    "return error for no repository event types" in new Setup {
+      val app = anApplicationData(applicationId)
+      ApplicationRepoMock.Fetch.thenReturn(app)
+      val appAfter = applicationData.copy(name = newName)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
+      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
+      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.one(nameChangedEmailEvent)).toValidatedNec)
+      )
+      val result = await(underTest.update(applicationId, changeName).value)
+
+      result shouldBe Left(NonEmptyChain.one(s"No repository events found for this command"))
+      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
+  }
 }

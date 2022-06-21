@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.events
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChangedEmailSent
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -26,7 +26,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
-class NameChangedEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -40,15 +40,15 @@ class NameChangedEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData
     val userId = UserId.random
     val timestamp = LocalDateTime.now
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
+    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
 
-    val underTest = new NameChangedEventHandler(EmailConnectorMock.aMock)
+    val underTest = new NameChangedNotificationEventHandler(EmailConnectorMock.aMock)
   }
 
   "sendAdviceEmail" should {
     "successfully send email" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
-      val result = await(underTest.sendAdviceEmail(nameChangedEvent))
+      val result = await(underTest.sendAdviceEmail(nameChangeEmailEvent))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
     }

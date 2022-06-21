@@ -22,11 +22,19 @@ trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def timestamp: LocalDateTime
   def instigator: UserId
-  def emailAdvice: Boolean = true
+}
+
+trait UpdateApplicationRepositoryEvent extends UpdateApplicationEvent {
+}
+
+trait UpdateApplicationNotificationEvent extends UpdateApplicationEvent {
+  def requester: String
 }
 
 object UpdateApplicationEvent {
 
-  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String, recipients: Set[String]) extends UpdateApplicationEvent
+  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationRepositoryEvent
+
+  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String, recipients: Set[String]) extends UpdateApplicationNotificationEvent
 
 }

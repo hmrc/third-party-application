@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{NonEmptyChain, NonEmptyList}
 import cats.data.Validated.{Invalid, Valid}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
@@ -56,7 +56,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val userId = idsByEmail(adminEmail)
     val timestamp = LocalDateTime.now
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
+    val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName)
+    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }
@@ -65,7 +66,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val result = await(underTest.process(app, update))
 
-      result shouldBe Valid(NonEmptyList.one(nameChangedEvent))
+      result shouldBe Valid(NonEmptyList.of(nameChangedEvent, nameChangeEmailEvent))
     }
     "return an error if instigator is not a collaborator on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()

@@ -25,11 +25,11 @@ import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class NameChangedEventHandler @Inject()(
+class NameChangedNotificationEventHandler @Inject()(
   emailConnector: EmailConnector
 )(implicit val ec: ExecutionContext) {
 
-  def sendAdviceEmail(event: UpdateApplicationEvent.NameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(event: UpdateApplicationEvent.NameChangedEmailSent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     emailConnector.sendChangeOfApplicationName(event.requester, event.oldName, event.newName, event.recipients)
   }
 }
