@@ -47,4 +47,8 @@ object CommandHandler {
 
   def isStandardAccess(app: ApplicationData) =
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
+
+  def getRequester(app: ApplicationData, instigator: UserId) = {
+    app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
+  }
 }

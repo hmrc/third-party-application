@@ -33,13 +33,13 @@ trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatch
 
     object Update {
       def thenReturnSuccess(applicationData: ApplicationData) =
-        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])).thenReturn(EitherT.rightT(applicationData))
+        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.rightT(applicationData))
 
       def thenReturnError(errorMsg: String) =
-        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
+        when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
 
       def verifyNeverCalled =
-        verify(aMock, never).update(*[ApplicationId], *[ApplicationUpdate])
+        verify(aMock, never).update(*[ApplicationId], *[ApplicationUpdate])(*)
     }
   }
   

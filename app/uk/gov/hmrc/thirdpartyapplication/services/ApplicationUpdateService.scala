@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.{EitherT, NonEmptyChain, Validated}
+import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
+import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -30,16 +31,19 @@ import scala.concurrent.{ExecutionContext, Future}
 @Singleton
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
-  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler
+  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+  notificationService: NotificationService
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
-  def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
+  def update(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
     for {
-      app      <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
-      events   <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-      savedApp <- E.liftF(applicationRepository.applyEvents(events))
+      app              <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
+      events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
+      repositoryEvents <- E.fromOption(NonEmptyList.fromList(events.collect{case e: UpdateApplicationRepositoryEvent => e}), NonEmptyChain(s"No repository events found for this command"))
+      savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
+      _                <- E.liftF(notificationService.sendNotifications(app, events.collect{case e: UpdateApplicationNotificationEvent => e}))
     } yield savedApp
   }
 
