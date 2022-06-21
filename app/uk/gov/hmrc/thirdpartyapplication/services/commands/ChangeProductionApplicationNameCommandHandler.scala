@@ -64,8 +64,7 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(
         instigator = cmd.instigator,
         oldName = app.name,
         newName = cmd.newName,
-        requester = getRequester(app, cmd.instigator),
-        recipients = getRecipients(app) ++ getResponsibleIndividual(app)
+        requester = getRequester(app, cmd.instigator)
       )
     )
   }

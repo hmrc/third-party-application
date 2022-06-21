@@ -35,6 +35,6 @@ object UpdateApplicationEvent {
 
   case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationRepositoryEvent
 
-  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String, recipients: Set[String]) extends UpdateApplicationNotificationEvent
+  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String) extends UpdateApplicationNotificationEvent
 
 }

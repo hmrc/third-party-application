@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -51,16 +50,5 @@ object CommandHandler {
 
   def getRequester(app: ApplicationData, instigator: UserId) = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
-  }
-
-  def getRecipients(app: ApplicationData): Set[String] = {
-    app.collaborators.map(_.emailAddress)
-  }
-
-  def getResponsibleIndividual(app: ApplicationData): Set[String] = {
-    app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
-    }
   }
 }

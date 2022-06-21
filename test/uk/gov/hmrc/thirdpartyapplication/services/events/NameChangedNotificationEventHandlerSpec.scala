@@ -37,10 +37,25 @@ class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with Applica
     val oldName = "old app name"
     val newName = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+                              responsibleIndividual,
+                              Set(ServerLocation.InUK),
+                              TermsAndConditionsLocation.InDesktopSoftware,
+                              PrivacyPolicyLocation.InDesktopSoftware,
+                              List.empty)
+
+    val app = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
+        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+      ), 
+      name = oldName, 
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
     val userId = UserId.random
     val timestamp = LocalDateTime.now
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
+    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
 
     val underTest = new NameChangedNotificationEventHandler(EmailConnectorMock.aMock)
   }
@@ -48,7 +63,7 @@ class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with Applica
   "sendAdviceEmail" should {
     "successfully send email" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
-      val result = await(underTest.sendAdviceEmail(nameChangeEmailEvent))
+      val result = await(underTest.sendAdviceEmail(app, nameChangeEmailEvent))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
     }

@@ -19,6 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.events
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -29,7 +31,19 @@ class NameChangedNotificationEventHandler @Inject()(
   emailConnector: EmailConnector
 )(implicit val ec: ExecutionContext) {
 
-  def sendAdviceEmail(event: UpdateApplicationEvent.NameChangedEmailSent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    emailConnector.sendChangeOfApplicationName(event.requester, event.oldName, event.newName, event.recipients)
+  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChangedEmailSent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
+    emailConnector.sendChangeOfApplicationName(event.requester, event.oldName, event.newName, recipients)
+  }
+
+  def getRecipients(app: ApplicationData): Set[String] = {
+    app.collaborators.map(_.emailAddress)
+  }
+
+  def getResponsibleIndividual(app: ApplicationData): Set[String] = {
+    app.access match {
+      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
+      case _ => Set()
+    }
   }
 }

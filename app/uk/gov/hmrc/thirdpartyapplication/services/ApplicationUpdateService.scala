@@ -19,11 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import cats.data.{EitherT, NonEmptyChain, NonEmptyList, Validated}
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.thirdpartyapplication.services.events._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
@@ -34,7 +32,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-  nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
+  notificationService: NotificationService
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -45,7 +43,7 @@ class ApplicationUpdateService @Inject()(
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       repositoryEvents <- E.fromOption(NonEmptyList.fromList(events.collect{case e: UpdateApplicationRepositoryEvent => e}), NonEmptyChain(s"No repository events found for this command"))
       savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
-      _                <- E.liftF(sendNotifications(events.collect{case e: UpdateApplicationNotificationEvent => e}))
+      _                <- E.liftF(notificationService.sendNotifications(app, events.collect{case e: UpdateApplicationNotificationEvent => e}))
     } yield savedApp
   }
 
@@ -54,16 +52,5 @@ class ApplicationUpdateService @Inject()(
       case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case _ => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
-  }
-
-  private def sendNotifications(events: List[UpdateApplicationNotificationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(event: UpdateApplicationEvent) = {
-      event match {
-        case evt: UpdateApplicationEvent.NameChangedEmailSent => nameChangedNotificationEventHdlr.sendAdviceEmail(evt)
-        case _  => throw new RuntimeException(s"UnexpectedEvent type for emailAdvice ${event}")
-      }
-    }
-    
-    Future.sequence(events.map(evt => sendNotification(evt)).toList)
   }
 }

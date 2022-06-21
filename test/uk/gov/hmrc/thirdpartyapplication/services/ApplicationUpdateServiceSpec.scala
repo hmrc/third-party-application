@@ -27,9 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.services.commands.ChangeProductionApplicationNameCommandHandler
-import uk.gov.hmrc.thirdpartyapplication.services.events.NameChangedNotificationEventHandler
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
@@ -45,7 +43,8 @@ class ApplicationUpdateServiceSpec
   with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule {
+    with ApplicationRepositoryMockModule
+    with NotificationServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -72,12 +71,11 @@ class ApplicationUpdateServiceSpec
     val response = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockNameChangedEventHandler: NameChangedNotificationEventHandler = mock[NameChangedNotificationEventHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
-      mockNameChangedEventHandler
+      NotificationServiceMock.aMock
     )
   }
 
@@ -92,14 +90,13 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
       val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
-      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
+      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent)).toValidatedNec)
       )
-      when(mockNameChangedEventHandler.sendAdviceEmail(*[NameChangedEmailSent])(*)).thenReturn(
-        Future.successful(HasSucceeded)
-      )
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      
       val result = await(underTest.update(applicationId, changeName).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
@@ -127,31 +124,13 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
 
-    "return error for unknown event types" in new Setup {
-      val app = anApplicationData(applicationId)
-      ApplicationRepoMock.Fetch.thenReturn(app)
-      val appAfter = applicationData.copy(name = newName)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-
-      case class UnknownEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, requester: String) extends UpdateApplicationNotificationEvent
-      val unknownEvent = UnknownEvent(applicationId, timestamp, instigator, loggedInUser)
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
-      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, unknownEvent)).toValidatedNec)
-      )
-
-      val ex: RuntimeException = intercept[RuntimeException](await(underTest.update(applicationId, changeName).value))
-
-      ex.getMessage shouldBe s"UnexpectedEvent type for emailAdvice $unknownEvent"
-    }
-
     "return error for no repository event types" in new Setup {
       val app = anApplicationData(applicationId)
       ApplicationRepoMock.Fetch.thenReturn(app)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
-      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, Set(loggedInUser, "bob@example.com"))
+      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEmailEvent)).toValidatedNec)
       )

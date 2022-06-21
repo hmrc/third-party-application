@@ -57,7 +57,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val timestamp = LocalDateTime.now
     val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
     val nameChangedEvent = NameChanged(applicationId, timestamp, userId, oldName, newName)
-    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com", Set("admin@example.com", "dev@example.com", "bob@example.com"))
+    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }
