@@ -16,23 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import scala.concurrent.ExecutionContext
-import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
-import cats.Apply
-import cats.data.ValidatedNec
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import cats.data.NonEmptyList
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 
+import scala.concurrent.ExecutionContext
+import javax.inject.{Inject, Singleton}
+import cats.Apply
+import cats.data.ValidatedNec
+import cats.data.NonEmptyList
+
 @Singleton
-class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: UpliftNamingService)(implicit val ec: ExecutionContext) extends CommandHandler {
+class ChangeProductionApplicationNameCommandHandler @Inject()(
+  namingService: UpliftNamingService
+)(implicit val ec: ExecutionContext) extends CommandHandler {
+  
   import CommandHandler._
   
   private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
@@ -54,6 +57,14 @@ class ChangeProductionApplicationNameCommandHandler @Inject()(namingService: Upl
         instigator = cmd.instigator,
         oldName = app.name,
         newName = cmd.newName
+      ),
+      UpdateApplicationEvent.NameChangedEmailSent(
+        applicationId = app.id,
+        timestamp = cmd.timestamp,
+        instigator = cmd.instigator,
+        oldName = app.name,
+        newName = cmd.newName,
+        requester = getRequester(app, cmd.instigator)
       )
     )
   }

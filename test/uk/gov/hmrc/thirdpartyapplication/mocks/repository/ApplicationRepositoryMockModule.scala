@@ -318,16 +318,16 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object ApplyEvents {
       def thenReturn(applicationData: ApplicationData) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(successful(applicationData))
+        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationRepositoryEvent]])).thenReturn(successful(applicationData))
 
       def failsWith(ex: Throwable) =
-        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationEvent]])).thenReturn(failed(ex))
+        when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationRepositoryEvent]])).thenReturn(failed(ex))
 
-      def verifyCalledWith(events: UpdateApplicationEvent*) =
+      def verifyCalledWith(events: UpdateApplicationRepositoryEvent*) =
         verify.applyEvents(NonEmptyList.fromList(events.toList).get)
 
       def verifyNeverCalled =
-        ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationEvent]])
+        ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationRepositoryEvent]])
     }
   }
 

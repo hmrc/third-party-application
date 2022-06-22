@@ -439,7 +439,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       )
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
+  def applyEvents(events: NonEmptyList[UpdateApplicationRepositoryEvent]): Future[ApplicationData] = {
     require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
 
     events match {
@@ -448,7 +448,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     }
   }
 
-  def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = event match {
+  def applyEvent(event: UpdateApplicationRepositoryEvent): Future[ApplicationData] = event match {
     case NameChanged(id, _, _, _, newName) => updateApplicationName(id, newName)
   }
 }

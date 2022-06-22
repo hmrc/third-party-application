@@ -24,8 +24,17 @@ trait UpdateApplicationEvent {
   def instigator: UserId
 }
 
+trait UpdateApplicationRepositoryEvent extends UpdateApplicationEvent {
+}
+
+trait UpdateApplicationNotificationEvent extends UpdateApplicationEvent {
+  def requester: String
+}
+
 object UpdateApplicationEvent {
 
-  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationEvent
+  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationRepositoryEvent
+
+  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String) extends UpdateApplicationNotificationEvent
 
 }
