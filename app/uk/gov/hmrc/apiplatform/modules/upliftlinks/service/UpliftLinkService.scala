@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
-import cats.data.OptionT
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import cats.data.OptionT
+import cats.implicits._
 
 @Singleton
 class UpliftLinkService @Inject() (repo: UpliftLinksRepository)(implicit ec: ExecutionContext) {

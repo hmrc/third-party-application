@@ -74,8 +74,8 @@ case class ApplicationData(
 }
 
 object ApplicationData {
-//  val grantLengthConfig: Int = Some(ConfigFactory.load().getInt("grantLengthInDays")).getOrElse(547)
-  val grantLengthConfig: Int = 547
+
+  val grantLengthConfig = ConfigFactory.load().getInt("grantLengthInDays")
 
   def create(
       createApplicationRequest: CreateApplicationRequest,
