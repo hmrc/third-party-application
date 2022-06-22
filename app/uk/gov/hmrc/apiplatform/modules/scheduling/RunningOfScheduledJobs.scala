@@ -26,10 +26,8 @@ import scala.concurrent.duration._
 import scala.concurrent.{Await, ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
-
-/**
- * All implementing classes must be singletons - see https://www.playframework.com/documentation/2.6.x/ScalaDependencyInjection#Stopping/cleaning-up
- */
+/** All implementing classes must be singletons - see https://www.playframework.com/documentation/2.6.x/ScalaDependencyInjection#Stopping/cleaning-up
+  */
 trait RunningOfScheduledJobs extends ApplicationLogger {
 
   implicit val ec: ExecutionContext
@@ -50,12 +48,12 @@ trait RunningOfScheduledJobs extends ApplicationLogger {
         val stopWatch = new StopWatch
         stopWatch.start()
         logger.info(s"Executing job ${job.name}")
-        
+
         job.execute.onComplete {
           case Success(job.Result(message)) =>
             stopWatch.stop()
             logger.info(s"Completed job ${job.name} in $stopWatch: $message")
-          case Failure(throwable) =>
+          case Failure(throwable)           =>
             stopWatch.stop()
             logger.error(s"Exception running job ${job.name} after $stopWatch", throwable)
         }
@@ -63,7 +61,7 @@ trait RunningOfScheduledJobs extends ApplicationLogger {
     })
   }
 
-  applicationLifecycle.addStopHook( () => {
+  applicationLifecycle.addStopHook(() => {
     logger.info(s"Cancelling all scheduled jobs.")
     cancellables.foreach(_.cancel())
     scheduledJobs.foreach { job =>

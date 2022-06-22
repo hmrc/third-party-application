@@ -16,12 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions
 
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.concurrent.ExecutionContext
 import play.api.mvc._
 import scala.concurrent.Future
-import play.api.libs.json.{Json, JsObject}
+import play.api.libs.json.{JsObject, Json}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -31,13 +30,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
 
-
 trait JsonErrorResponse {
   self: BackendController =>
 
   def asBody(errorCode: String, message: Json.JsValueWrapper): JsObject =
     Json.obj(
-      "code" -> errorCode.toString,
+      "code"    -> errorCode.toString,
       "message" -> message
     )
 
@@ -49,27 +47,26 @@ trait JsonErrorResponse {
 
   def applicationInIncorrectState(applicationId: ApplicationId, state: String) =
     PreconditionFailed(asBody("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state #'${state}'"))
-  
+
   def submissionInIncorrectState(applicationId: ApplicationId, state: String) =
     PreconditionFailed(asBody("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is not in state #'$state'"))
 }
 
-
 class ApplicationRequest[A](
     val application: ApplicationData,
     val request: Request[A]
-) extends WrappedRequest[A](request)
+  ) extends WrappedRequest[A](request)
 
 class ApplicationSubmissionRequest[A](
     val submission: Submission,
     val applicationRequest: ApplicationRequest[A]
-) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
+  ) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request)
 
 class ApplicationExtendedSubmissionRequest[A](
     val submission: Submission,
     val questionnaireProgress: Map[Questionnaire.Id, QuestionnaireProgress],
     val applicationRequest: ApplicationRequest[A]
-) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request) 
+  ) extends ApplicationRequest[A](applicationRequest.application, applicationRequest.request)
 
 trait ApprovalsActionBuilders extends JsonErrorResponse {
   self: BackendController =>
@@ -88,47 +85,57 @@ trait ApprovalsActionBuilders extends JsonErrorResponse {
 
       override def refine[A](request: Request[A]): Future[Either[Result, ApplicationRequest[A]]] = {
         E.fromOptionF(applicationDataService.fetchApp(applicationId), applicationNotFound(applicationId))
-        .map(ar => new ApplicationRequest[A](ar, request))
-        .value
+          .map(ar => new ApplicationRequest[A](ar, request))
+          .value
       }
     }
 
   private def submissionRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationSubmissionRequest] =
     new ActionRefiner[ApplicationRequest, ApplicationSubmissionRequest] {
       def executionContext = ec
-      
+
       override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationSubmissionRequest[A]]] = {
         E.fromOptionF(submissionService.fetchLatest(applicationId), submissionNotFound(applicationId))
-        .map(submission => new ApplicationSubmissionRequest[A](submission, input))
-        .value
+          .map(submission => new ApplicationSubmissionRequest[A](submission, input))
+          .value
       }
     }
 
   private def extendedSubmissionRefiner(applicationId: ApplicationId)(implicit ec: ExecutionContext): ActionRefiner[ApplicationRequest, ApplicationExtendedSubmissionRequest] =
     new ActionRefiner[ApplicationRequest, ApplicationExtendedSubmissionRequest] {
       def executionContext = ec
-      
+
       override def refine[A](input: ApplicationRequest[A]): Future[Either[Result, ApplicationExtendedSubmissionRequest[A]]] = {
         E.fromOptionF(submissionService.fetchLatestExtended(applicationId), submissionNotFound(applicationId))
-        .map(extSubmission => new ApplicationExtendedSubmissionRequest[A](extSubmission.submission, extSubmission.questionnaireProgress, input))
-        .value
+          .map(extSubmission => new ApplicationExtendedSubmissionRequest[A](extSubmission.submission, extSubmission.questionnaireProgress, input))
+          .value
       }
     }
 
-  def withApplicationAndSubmission(applicationId: ApplicationId)(block: ApplicationSubmissionRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
+  def withApplicationAndSubmission(
+      applicationId: ApplicationId
+    )(
+      block: ApplicationSubmissionRequest[AnyContent] => Future[Result]
+    )(implicit ec: ExecutionContext
+    ): Action[AnyContent] = {
     Action.async { implicit request =>
       (
         applicationRequestRefiner(applicationId) andThen
-        submissionRefiner(applicationId)
+          submissionRefiner(applicationId)
       ).invokeBlock(request, block)
     }
   }
 
-  def withApplicationAndExtendedSubmission(applicationId: ApplicationId)(block: ApplicationExtendedSubmissionRequest[AnyContent] => Future[Result])(implicit ec: ExecutionContext): Action[AnyContent] = {
+  def withApplicationAndExtendedSubmission(
+      applicationId: ApplicationId
+    )(
+      block: ApplicationExtendedSubmissionRequest[AnyContent] => Future[Result]
+    )(implicit ec: ExecutionContext
+    ): Action[AnyContent] = {
     Action.async { implicit request =>
       (
         applicationRequestRefiner(applicationId) andThen
-        extendedSubmissionRefiner(applicationId)
+          extendedSubmissionRefiner(applicationId)
       ).invokeBlock(request, block)
     }
   }

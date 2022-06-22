@@ -42,18 +42,18 @@ class AccessControllerSpec extends ControllerSpec {
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  private val overrides = Set[OverrideFlag](PersistLogin, GrantWithoutConsent(Set("scope1", "scope2")))
-  private val scopes = Set("scope")
-  private val scopeRequest = ScopeRequest(scopes)
+  private val overrides        = Set[OverrideFlag](PersistLogin, GrantWithoutConsent(Set("scope1", "scope2")))
+  private val scopes           = Set("scope")
+  private val scopeRequest     = ScopeRequest(scopes)
   private val overridesRequest = OverridesRequest(overrides)
-  private val applicationId = ApplicationId.random
+  private val applicationId    = ApplicationId.random
 
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
-  val mockApplicationService = mock[ApplicationService]
-  val mockAuthConnector = mock[AuthConnector]
-  val mockAccessService = mock[AccessService]
-  val mockAuthConfig = mock[AuthConnector.Config]
+  val mockApplicationService   = mock[ApplicationService]
+  val mockAuthConnector        = mock[AuthConnector]
+  val mockAccessService        = mock[AccessService]
+  val mockAuthConfig           = mock[AuthConnector.Config]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {
@@ -159,13 +159,11 @@ class AccessControllerSpec extends ControllerSpec {
 
   trait Fixture {
 
-
-
     def mockAccessServiceReadScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
       when(mockAccessService.readScopes(*[ApplicationId])).thenReturn(eventualScopeResponse)
 
     def mockAccessServiceUpdateScopesToReturn(eventualScopeResponse: Future[ScopeResponse]) =
-      when(mockAccessService.updateScopes(*[ApplicationId],*)(*)).thenReturn(eventualScopeResponse)
+      when(mockAccessService.updateScopes(*[ApplicationId], *)(*)).thenReturn(eventualScopeResponse)
 
     def mockAccessServiceReadOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
       when(mockAccessService.readOverrides(*[ApplicationId])).thenReturn(eventualOverridesResponse)
@@ -190,8 +188,6 @@ class AccessControllerSpec extends ControllerSpec {
       accessController.updateOverrides(applicationId)(fakeRequest.withBody(Json.toJson(overridesRequest)))
   }
 
-
-
   trait StandardFixture extends Fixture {
     val grantLengthInDays = 547
     when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](
@@ -206,12 +202,14 @@ class AccessControllerSpec extends ControllerSpec {
         LocalDateTime.now,
         Some(LocalDateTime.now),
         grantLengthInDays,
-        access = Standard())
+        access = Standard()
+      )
     ))
   }
 
   trait PrivilegedAndRopcFixture extends Fixture {
     val grantLengthInDays = 547
+
     def testWithPrivilegedAndRopc(testBlock: => Unit): Unit = {
       val applicationResponse =
         ApplicationResponse(applicationId, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set.empty, LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays)
@@ -219,7 +217,7 @@ class AccessControllerSpec extends ControllerSpec {
         OptionT.pure[Future](
           applicationResponse.copy(clientId = ClientId("privilegedClientId"), name = "privilegedName", access = Privileged(scopes = Set("scope:privilegedScopeKey")))
         ),
-      OptionT.pure[Future](applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
+        OptionT.pure[Future](applicationResponse.copy(clientId = ClientId("ropcClientId"), name = "ropcName", access = Ropc(Set("scope:ropcScopeKey"))))
       )
       testBlock
       testBlock

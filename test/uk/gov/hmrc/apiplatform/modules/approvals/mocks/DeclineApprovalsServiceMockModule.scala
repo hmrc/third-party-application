@@ -26,16 +26,18 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait DeclineApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseDeclineApprovalsServiceMock {
     def aMock: DeclineApprovalsService
 
     object Decline {
       def thenReturn(result: DeclineApprovalsService.Result) = when(aMock.decline(*, *, *, *)(*)).thenReturn(successful(result))
+
       def verifyCalledWith(originalApp: ApplicationData, submission: Submission, gatekeeperUserName: String, reasons: String) =
         verify(aMock).decline(eqTo(originalApp), eqTo(submission), eqTo(gatekeeperUserName), eqTo(reasons))(*)
     }
   }
-  
+
   object DeclineApprovalsServiceMock extends BaseDeclineApprovalsServiceMock {
     val aMock = mock[DeclineApprovalsService]
   }

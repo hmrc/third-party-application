@@ -33,19 +33,17 @@ import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
 
 object UpliftController {
   import play.api.libs.json.Json
-  
+
   case class UpliftApplicationRequest(applicationName: String, requestedByEmailAddress: String)
   implicit val formatUpliftApplicationRequest = Json.format[UpliftApplicationRequest]
 }
 
 @Singleton
-class UpliftController @Inject()(
-  upliftService: UpliftService,
-  cc: ControllerComponents
-)
-(
-  implicit val ec: ExecutionContext
-) extends ExtraHeadersController(cc)  
+class UpliftController @Inject() (
+    upliftService: UpliftService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends ExtraHeadersController(cc)
     with JsonUtils {
 
   import UpliftController._
@@ -55,14 +53,13 @@ class UpliftController @Inject()(
       upliftService.requestUplift(applicationId, upliftRequest.applicationName, upliftRequest.requestedByEmailAddress)
         .map(_ => NoContent)
     } recover {
-      case _: InvalidStateTransition =>
+      case _: InvalidStateTransition   =>
         PreconditionFailed(JsErrorResponse(INVALID_STATE_TRANSITION, s"Application is not in state '${State.TESTING}'"))
       case e: ApplicationAlreadyExists =>
         Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
     } recover recovery
   }
 
-  
   def verifyUplift(verificationCode: String) = Action.async { implicit request =>
     upliftService.verifyUplift(verificationCode) map (_ => NoContent) recover {
       case e: InvalidUpliftVerificationCode => BadRequest(e.getMessage)

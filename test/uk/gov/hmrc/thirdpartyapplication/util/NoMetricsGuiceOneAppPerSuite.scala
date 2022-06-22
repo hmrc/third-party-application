@@ -26,15 +26,15 @@ import play.api.inject.bind
 import java.time.Clock
 
 trait NoMetricsGuiceOneAppPerSuite extends GuiceOneAppPerSuite with FixedClock {
-  self : TestSuite =>
-  
+  self: TestSuite =>
+
   final override def fakeApplication(): Application =
-      builder().build
+    builder().build
 
   def builder(): GuiceApplicationBuilder = {
-        GuiceApplicationBuilder()
-        .configure("metrics.jvm" -> false)
-        .overrides(bind[Clock].toInstance(clock))
-        .disable(classOf[SchedulerModule])
+    GuiceApplicationBuilder()
+      .configure("metrics.jvm" -> false)
+      .overrides(bind[Clock].toInstance(clock))
+      .disable(classOf[SchedulerModule])
   }
 }

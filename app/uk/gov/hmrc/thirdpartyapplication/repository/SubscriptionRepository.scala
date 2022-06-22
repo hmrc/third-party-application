@@ -33,10 +33,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import reactivemongo.api.ReadConcern
 
 @Singleton
-class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-  extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db,
-    SubscriptionData.format, ReactiveMongoFormats.objectIdFormats
-  ) {
+class SubscriptionRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
+    extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db, SubscriptionData.format, ReactiveMongoFormats.objectIdFormats) {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
     val builder = collection.BatchCommands.AggregationFramework
@@ -60,7 +58,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     val pipelineWithOptionalEmailFilter =
       partialEmail match {
         case Some(email) => pipeline ++ List(partialEmailMatch(email))
-        case None => pipeline
+        case None        => pipeline
       }
 
     val query = collection.aggregateWith[JsObject]()(_ => (pipelineWithOptionalEmailFilter.head, pipelineWithOptionalEmailFilter.tail))
@@ -68,10 +66,11 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     val fList = query.collect(Int.MaxValue, Cursor.FailOnError[List[JsObject]]())
     fList.map {
       _.map {
-        result => {
-          val email = (result \ "_id").as[String]
-          email
-        }
+        result =>
+          {
+            val email = (result \ "_id").as[String]
+            email
+          }
       }
     }
   }
@@ -97,16 +96,16 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
 
   def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
     val selector = Some(Json.obj("$and" -> Json.arr(
-        Json.obj("applications" -> applicationId.value.toString),
-        Json.obj("apiIdentifier.context" -> apiIdentifier.context.value),
-        Json.obj("apiIdentifier.version" -> apiIdentifier.version.value))
-      ))
+      Json.obj("applications"          -> applicationId.value.toString),
+      Json.obj("apiIdentifier.context" -> apiIdentifier.context.value),
+      Json.obj("apiIdentifier.version" -> apiIdentifier.version.value)
+    )))
 
     collection.count(selector, None, 0, None, ReadConcern.Available)
-    .map {
-      case 1 => true
-      case _ => false
-    }
+      .map {
+        case 1 => true
+        case _ => false
+      }
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
@@ -114,7 +113,7 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
   }
 
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    val builder = collection.BatchCommands.AggregationFramework
+    val builder  = collection.BatchCommands.AggregationFramework
     val pipeline = List(
       builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
       builder.Match(Json.obj("applications.collaborators.userId" -> userId.value)),
@@ -122,10 +121,10 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     )
     collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
   }
-  
+
   @Deprecated
   def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
-    val builder = collection.BatchCommands.AggregationFramework
+    val builder  = collection.BatchCommands.AggregationFramework
     val pipeline = List(
       builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
       builder.Match(Json.obj("applications.collaborators.emailAddress" -> email)),
@@ -138,15 +137,15 @@ class SubscriptionRepository @Inject()(mongo: ReactiveMongoComponent)(implicit v
     val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
     collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
       case Some(subscriptionData) => subscriptionData.applications.toSet
-      case _ => Set()
+      case _                      => Set()
     }
   }
 
   private def makeSelector(apiIdentifier: ApiIdentifier) = {
     Json.obj("$and" -> Json.arr(
       Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version))
-    )
+      Json.obj("apiIdentifier.version" -> apiIdentifier.version)
+    ))
   }
 
   def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {

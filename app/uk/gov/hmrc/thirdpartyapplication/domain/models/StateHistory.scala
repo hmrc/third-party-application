@@ -21,18 +21,13 @@ import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
 import java.time.LocalDateTime
 
-case class StateHistory(applicationId: ApplicationId,
-state: State,
-actor: Actor,
-previousState: Option[State] = None,
-notes: Option[String] = None,
-changedAt: LocalDateTime)
+case class StateHistory(applicationId: ApplicationId, state: State, actor: Actor, previousState: Option[State] = None, notes: Option[String] = None, changedAt: LocalDateTime)
 
 object StateHistory {
   import play.api.libs.json.Json
-  
+
   implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isBefore _)
 
   implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format = Json.format[StateHistory]
+  implicit val format     = Json.format[StateHistory]
 }

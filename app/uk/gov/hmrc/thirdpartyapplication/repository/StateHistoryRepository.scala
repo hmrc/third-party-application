@@ -22,7 +22,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.bson.BSONObjectID
 import uk.gov.hmrc.mongo.ReactiveRepository
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models.{HasSucceeded}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
@@ -32,8 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
-class StateHistoryRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-  extends ReactiveRepository[StateHistory, BSONObjectID]("stateHistory", mongo.mongoConnector.db, StateHistory.format, ReactiveMongoFormats.objectIdFormats) {
+class StateHistoryRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
+    extends ReactiveRepository[StateHistory, BSONObjectID]("stateHistory", mongo.mongoConnector.db, StateHistory.format, ReactiveMongoFormats.objectIdFormats) {
 
   implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 

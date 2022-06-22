@@ -23,7 +23,7 @@ import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.{ResponsibleIndividualVerificationFrontendJsonFormatters}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
 import play.api.libs.json.Json
 import play.api.mvc.Results
 
@@ -40,27 +40,25 @@ object ResponsibleIndividualVerificationController {
 }
 
 @Singleton
-class ResponsibleIndividualVerificationController @Inject()(
-  val responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
-  cc: ControllerComponents
-)
-(implicit val ec: ExecutionContext) extends BackendController(cc) with ResponsibleIndividualVerificationFrontendJsonFormatters
+class ResponsibleIndividualVerificationController @Inject() (
+    val responsibleIndividualVerificationService: ResponsibleIndividualVerificationService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with ResponsibleIndividualVerificationFrontendJsonFormatters
     with JsonUtils
     with JsonErrorResponse {
 
   import ResponsibleIndividualVerificationController._
 
   def getVerification(code: String) = Action.async { implicit request =>
-
     lazy val failed = NotFound(Results.EmptyContent())
-    val success = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
+    val success     = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
 
     responsibleIndividualVerificationService.getVerification(code).map(_.fold(failed)(success))
   }
 
   def accept() = Action.async { implicit request =>
-
-    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
+    val failed  = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
     val success = (responsibleIndividualVerificationWithDetails: ResponsibleIndividualVerificationWithDetails) =>
       Ok(Json.toJson(responsibleIndividualVerificationWithDetails))
 
@@ -70,8 +68,7 @@ class ResponsibleIndividualVerificationController @Inject()(
   }
 
   def decline() = Action.async { implicit request =>
-
-    val failed = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
+    val failed  = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
     val success = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
 
     withJsonBodyFromAnyContent[ResponsibleIndividualVerificationRequest] { riVerificationRequest =>

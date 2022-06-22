@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 object SubmissionDataExtracter extends ApplicationLogger {
+
   private def getTextQuestionOfInterest(submission: Submission, questionId: Question.Id) = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
@@ -41,6 +42,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
       case _                          => None
     }
   }
+
   private def getMultiChoiceQuestionOfInterest(submission: Submission, questionId: Question.Id): Option[Set[String]] = {
     val actualAnswer: ActualAnswer = submission.latestInstance.answersToQuestions.getOrElse(questionId, NoAnswer)
     actualAnswer match {
@@ -67,47 +69,49 @@ object SubmissionDataExtracter extends ApplicationLogger {
   def getResponsibleIndividualName(submission: Submission, requestedByName: String): Option[ResponsibleIndividual.Name] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.Name(requestedByName))
-      case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualNameId).map(ResponsibleIndividual.Name)
     })
   }
 
   def getResponsibleIndividualEmail(submission: Submission, requestedByEmailAddress: String): Option[ResponsibleIndividual.EmailAddress] = {
     getAnswerForYesOrNoResponsibleIndividualIsRequester(submission).flatMap(_ match {
       case "Yes" => Some(ResponsibleIndividual.EmailAddress(requestedByEmailAddress))
-      case "No" => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
+      case "No"  => getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.responsibleIndividualEmailId).map(ResponsibleIndividual.EmailAddress)
     })
   }
 
   def getServerLocations(submission: Submission): Option[Set[ServerLocation]] =
     getMultiChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.serverLocationsId)
-    .map( _.map( text => text match {
-      case "In the UK" => ServerLocation.InUK
-      case "In the European Economic Area (EEA)" => ServerLocation.InEEA
-      case "Outside the EEA with adequacy agreements" => ServerLocation.OutsideEEAWithAdequacy
-      case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
-      case s => throw new RuntimeException(s)
-    }))
+      .map(_.map(text =>
+        text match {
+          case "In the UK"                                   => ServerLocation.InUK
+          case "In the European Economic Area (EEA)"         => ServerLocation.InEEA
+          case "Outside the EEA with adequacy agreements"    => ServerLocation.OutsideEEAWithAdequacy
+          case "Outside the EEA with no adequacy agreements" => ServerLocation.OutsideEEAWithoutAdequacy
+          case s                                             => throw new RuntimeException(s)
+        }
+      ))
 
   def getTermsAndConditionsLocation(submission: Submission): Option[TermsAndConditionsLocation] = {
     import cats.implicits._
-    val yesNoOrDesktop = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsId)
+    val yesNoOrDesktop   = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsId)
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.termsAndConditionsUrlId)
 
-    yesNoOrDesktop.flatMap( _ match {
-      case "Yes" => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
-      case "No" => TermsAndConditionsLocation.NoneProvided.some
+    yesNoOrDesktop.flatMap(_ match {
+      case "Yes"                                              => urlIfChosen.map(TermsAndConditionsLocation.Url(_))
+      case "No"                                               => TermsAndConditionsLocation.NoneProvided.some
       case "The terms and conditions are in desktop software" => TermsAndConditionsLocation.InDesktopSoftware.some
     })
   }
 
   def getPrivacyPolicyLocation(submission: Submission): Option[PrivacyPolicyLocation] = {
     import cats.implicits._
-    val yesNoOrDesktop = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyId)
+    val yesNoOrDesktop   = getSingleChoiceQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyId)
     lazy val urlIfChosen = getTextQuestionOfInterest(submission, submission.questionIdsOfInterest.privacyPolicyUrlId)
 
-    yesNoOrDesktop.flatMap( _ match {
-      case "Yes" => urlIfChosen.map(PrivacyPolicyLocation.Url(_))
-      case "No" => PrivacyPolicyLocation.NoneProvided.some
+    yesNoOrDesktop.flatMap(_ match {
+      case "Yes"                                       => urlIfChosen.map(PrivacyPolicyLocation.Url(_))
+      case "No"                                        => PrivacyPolicyLocation.NoneProvided.some
       case "The privacy policy is in desktop software" => PrivacyPolicyLocation.InDesktopSoftware.some
     })
   }
@@ -129,7 +133,7 @@ object SubmissionDataExtracter extends ApplicationLogger {
 
     import cats.implicits._
     Apply[Option].map4(responsibleIndividualName, responsibleIndividualEmail, termsAndConditionsLocation, privacyPolicyLocation) {
-      case (name, email, tnc, pp) => 
+      case (name, email, tnc, pp) =>
         ImportantSubmissionData(organisationUrl, ResponsibleIndividual(name, email), serverLocations, tnc, pp, List.empty)
     }
   }

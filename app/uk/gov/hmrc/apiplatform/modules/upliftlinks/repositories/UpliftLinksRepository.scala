@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.repositories
 
 import uk.gov.hmrc.mongo.ReactiveRepository
-import com.google.inject.{Singleton, Inject}
+import com.google.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
@@ -27,11 +27,11 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services.UpliftLinkJso
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 
 @Singleton
-class UpliftLinksRepository @Inject()(mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext) 
-extends ReactiveRepository[UpliftLink, BSONObjectID]("upliftlinks", mongo.mongoConnector.db,
-UpliftLinkJsonFormatter.jsonFormatUpliftLink, ReactiveMongoFormats.objectIdFormats) {
-  
+class UpliftLinksRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val mat: Materializer, val ec: ExecutionContext)
+    extends ReactiveRepository[UpliftLink, BSONObjectID]("upliftlinks", mongo.mongoConnector.db, UpliftLinkJsonFormatter.jsonFormatUpliftLink, ReactiveMongoFormats.objectIdFormats) {
+
   import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+
   override def indexes = List(
     createSingleFieldAscendingIndex(
       indexFieldKey = "productionApplicationId",

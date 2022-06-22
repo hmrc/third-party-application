@@ -33,15 +33,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.LocalDate
 
-class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLockKeeper,
-                                       applicationRepository: ApplicationRepository,
-                                       jobConfig: ResetLastAccessDateJobConfig)
-                                      (implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+class ResetLastAccessDateJob @Inject() (
+    val lockKeeper: ResetLastAccessDateJobLockKeeper,
+    applicationRepository: ApplicationRepository,
+    jobConfig: ResetLastAccessDateJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob with ApplicationLogger {
 
-  override def name: String = "ResetLastAccessDateJob"
-  override def isEnabled: Boolean = jobConfig.enabled
+  override def name: String                 = "ResetLastAccessDateJob"
+  override def isEnabled: Boolean           = jobConfig.enabled
   override def initialDelay: FiniteDuration = FiniteDuration(5, TimeUnit.MINUTES)
-  override def interval: FiniteDuration = FiniteDuration(24, TimeUnit.HOURS)
+  override def interval: FiniteDuration     = FiniteDuration(24, TimeUnit.HOURS)
 
   implicit val mongoDateTimeFormats: Format[DateTime] = ReactiveMongoFormats.dateTimeFormats
 
@@ -56,7 +58,7 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
         logger.info(s"[ResetLastAccessDateJob (Dry Run)]: Application [$applicationName (${applicationId.value})] would have had lastAccess set to [$earliestLastAccessDate]")
       } else {
         logger.info(s"[ResetLastAccessDateJob]: Setting lastAccess of application [$applicationName (${applicationId.value})] to [$earliestLastAccessDate]")
-         implicit val dateFormats = MongoJavaTimeFormats.localDateTimeFormat
+        implicit val dateFormats = MongoJavaTimeFormats.localDateTimeFormat
         applicationRepository.updateApplication(applicationId, Json.obj("$set" -> Json.obj("lastAccess" -> earliestLastAccessDate.atStartOfDay())))
       }
     }
@@ -64,15 +66,15 @@ class ResetLastAccessDateJob @Inject()(val lockKeeper: ResetLastAccessDateJobLoc
     application => {
       application.lastAccess match {
         case Some(lastAccessDate) => if (lastAccessDate.toLocalDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
-        case None => updateApplicationRecord(application.id, application.name)
+        case None                 => updateApplicationRecord(application.id, application.name)
       }
     }
   }
 }
 
-class ResetLastAccessDateJobLockKeeper @Inject()(mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-  override def lockId: String = "ResetLastAccessDate"
+class ResetLastAccessDateJobLockKeeper @Inject() (mongo: ReactiveMongoComponent) extends LockKeeper {
+  override def repo: LockRepository            = new LockRepository()(mongo.mongoConnector.db)
+  override def lockId: String                  = "ResetLastAccessDate"
   override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
 }
 

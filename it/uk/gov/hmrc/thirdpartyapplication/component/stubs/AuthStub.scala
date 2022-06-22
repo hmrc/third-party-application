@@ -27,7 +27,7 @@ object AuthStub extends Stub {
 
   val json = Json.obj(
     "authorise" -> Json.arr((Enrolment("user-role") or Enrolment("super-user-role") or Enrolment("admin-role")).toJson),
-    "retrieve" -> Json.arr()
+    "retrieve"  -> Json.arr()
   )
 
   def willValidateLoggedInUserHasGatekeeperRole() =
@@ -35,11 +35,11 @@ object AuthStub extends Stub {
       post(
         urlPathEqualTo("/auth/authorise")
       )
-      .withRequestBody(equalTo(json.toString))
-      .willReturn(
-        aResponse()
-        .withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
-        .withStatus(OK)
-      )
+        .withRequestBody(equalTo(json.toString))
+        .willReturn(
+          aResponse()
+            .withBody("""{"authorise":[{"identifiers":[],"state":"Activated","enrolment":"super-user-role"}],"retrieve":[]}""")
+            .withStatus(OK)
+        )
     )
 }

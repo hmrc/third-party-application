@@ -25,10 +25,12 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait ApplicationDataServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseApplicationDataServiceMock {
     def aMock: ApplicationDataService
 
     object FetchApp {
+
       def thenReturn(applicationData: ApplicationData) = {
         when(aMock.fetchApp(eqTo[ApplicationId](applicationData.id))).thenReturn(successful(Some(applicationData)))
       }
@@ -38,7 +40,7 @@ trait ApplicationDataServiceMockModule extends MockitoSugar with ArgumentMatcher
       }
     }
   }
-  
+
   object ApplicationDataServiceMock extends BaseApplicationDataServiceMock {
     val aMock = mock[ApplicationDataService]
   }

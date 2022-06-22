@@ -33,6 +33,7 @@ case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalD
 
 trait ApplicationUpdateFormatters {
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
+
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
     .format

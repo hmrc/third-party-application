@@ -31,10 +31,8 @@ class ApiStorageModule extends Module {
 }
 
 @Singleton
-class ApiStorageProvider @Inject()(config: ApiStorageConfig,
-                                   stubApiGatewayStore: StubApiGatewayStore,
-                                   awsApiGatewayStore: AwsApiGatewayStore)
-  extends Provider[ApiGatewayStore] {
+class ApiStorageProvider @Inject() (config: ApiStorageConfig, stubApiGatewayStore: StubApiGatewayStore, awsApiGatewayStore: AwsApiGatewayStore)
+    extends Provider[ApiGatewayStore] {
 
   override def get(): ApiGatewayStore = if (config.disableAwsCalls) stubApiGatewayStore else awsApiGatewayStore
 }

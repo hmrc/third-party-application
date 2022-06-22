@@ -28,19 +28,19 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 class TotpConnectorSpec extends ConnectorSpec {
 
   implicit val hc: HeaderCarrier = HeaderCarrier()
-  private val baseUrl = wireMockUrl
+  private val baseUrl            = wireMockUrl
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationName: String = "third-party-application"
-    val httpClient = app.injector.instanceOf[HttpClient]
-    val config = TotpConnector.Config(baseUrl)
-    val underTest = new TotpConnector(httpClient, config)
+    val httpClient              = app.injector.instanceOf[HttpClient]
+    val config                  = TotpConnector.Config(baseUrl)
+    val underTest               = new TotpConnector(httpClient, config)
   }
 
   "generateTotp" should {
-    val totpId = "clientId"
+    val totpId     = "clientId"
     val totpSecret = "aTotp"
 
     "return the Totp when it is successfully created" in new Setup {

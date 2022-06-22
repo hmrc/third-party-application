@@ -51,12 +51,10 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 
 import java.time.LocalDateTime
 
-
-
 class ApplicationControllerCreateSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks 
-  with UpliftRequestSamples
-  with SubmissionsTestData {
+    with ApplicationStateUtil with TableDrivenPropertyChecks
+    with UpliftRequestSamples
+    with SubmissionsTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -67,28 +65,30 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   implicit lazy val materializer: Materializer = NoMaterializer
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR,UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random))
+    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+  )
 
-  private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess = Ropc()
+  private val ropcAccess       = Ropc()
 
   trait Setup extends SubmissionsServiceMockModule with UpliftLinkServiceMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     def canDeleteApplications() = true
-    def enabled() = true
+    def enabled()               = true
 
-    val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
-    val mockEnrolment: Enrolment = mock[Enrolment]
-    val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector = mock[AuthConnector]
+    val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
+    val mockEnrolment: Enrolment                     = mock[Enrolment]
+    val mockCredentialService: CredentialService     = mock[CredentialService]
+    val mockApplicationService: ApplicationService   = mock[ApplicationService]
+    val mockAuthConnector: AuthConnector             = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockNamingService: UpliftNamingService = mock[UpliftNamingService]
+    val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
 
     val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
     when(mockAuthConfig.enabled).thenReturn(enabled())
@@ -97,9 +97,9 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     when(mockAuthConfig.adminRole).thenReturn("ADMIN")
     when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
 
-    val applicationTtlInSecs = 1234
+    val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
-    val config = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
+    val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
     val underTest = new ApplicationController(
       mockApplicationService,
@@ -112,19 +112,20 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       SubmissionsServiceMock.aMock,
       mockNamingService,
       UpliftLinkServiceMock.aMock,
-      Helpers.stubControllerComponents())
+      Helpers.stubControllerComponents()
+    )
   }
 
   "Create" should {
-    val standardApplicationRequest =  aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccess.redirectUris))
-    val standardApplicationRequestV1 =  aCreateApplicationRequestV1(standardAccess)
+    val standardApplicationRequest   = aCreateApplicationRequestV2(StandardAccessDataToCopy(standardAccess.redirectUris))
+    val standardApplicationRequestV1 = aCreateApplicationRequestV1(standardAccess)
     val privilegedApplicationRequest = aCreateApplicationRequestV1(privilegedAccess)
-    val ropcApplicationRequest = aCreateApplicationRequestV1(ropcAccess)
+    val ropcApplicationRequest       = aCreateApplicationRequestV1(ropcAccess)
 
-    val standardApplicationResponse = CreateApplicationResponse(aNewApplicationResponse())
-    val totp = TotpSecret("pTOTP")
+    val standardApplicationResponse   = CreateApplicationResponse(aNewApplicationResponse())
+    val totp                          = TotpSecret("pTOTP")
     val privilegedApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(privilegedAccess), Some(totp))
-    val ropcApplicationResponse = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
+    val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
@@ -138,11 +139,10 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       verify(underTest.applicationService).create(eqTo(standardApplicationRequest))(*)
     }
 
-    
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
       when(underTest.applicationService.create(eqTo(standardApplicationRequestV1))(*)).thenReturn(successful(standardApplicationResponse))
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
-      
+
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
 
       status(result) shouldBe CREATED
@@ -177,12 +177,14 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with one subscription when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier.random
-      val apis = Set(testApi)
+      val testApi                               = ApiIdentifier.random
+      val apis                                  = Set(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(
+        HasSucceeded
+      ))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -194,16 +196,16 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
-      val testApi = ApiIdentifier.random
-      val anotherTestApi = ApiIdentifier.random
-      val apis = Set(testApi, anotherTestApi)
+      val testApi                                = ApiIdentifier.random
+      val anotherTestApi                         = ApiIdentifier.random
+      val apis                                   = Set(testApi, anotherTestApi)
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
-      apis.map( api =>
+      apis.map(api =>
         when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))
       )
 
@@ -336,7 +338,6 @@ class ApplicationControllerCreateSpec extends ControllerSpec
            |"message": "Enumeration expected of type: 'Role$$', but it does not contain 'developer'"
            |}""".stripMargin.replaceAll("\n", "")
 
-
       status(result) shouldBe UNPROCESSABLE_ENTITY
       contentAsJson(result) shouldBe Json.toJson(Json.parse(expected))
     }
@@ -372,7 +373,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       access
     )
   }
-  
+
   private def aCreateApplicationRequestV1(access: Access) = CreateApplicationRequestV1(
     "My Application",
     access,

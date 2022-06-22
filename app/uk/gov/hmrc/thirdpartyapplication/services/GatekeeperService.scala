@@ -36,12 +36,15 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
 
 @Singleton
-class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
-                                  stateHistoryRepository: StateHistoryRepository,
-                                  auditService: AuditService,
-                                  emailConnector: EmailConnector,
-                                  applicationService: ApplicationService,
-                                  clock: Clock)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class GatekeeperService @Inject() (
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    auditService: AuditService,
+    emailConnector: EmailConnector,
+    applicationService: ApplicationService,
+    clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def fetchNonTestingAppsWithSubmittedDate(): Future[List[ApplicationWithUpliftRequest]] = {
     def appError(applicationId: ApplicationId) = new InconsistentDataState(s"App not found for id: ${applicationId.value}")
@@ -53,24 +56,23 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
         yield id -> history.maxBy(_.changedAt)
     }
 
-    val appsFuture = applicationRepository.fetchStandardNonTestingApps()
+    val appsFuture         = applicationRepository.fetchStandardNonTestingApps()
     val stateHistoryFuture = stateHistoryRepository.fetchByState(PENDING_GATEKEEPER_APPROVAL)
     for {
-      apps <- appsFuture
-      appIds = apps.map(_.id)
+      apps      <- appsFuture
+      appIds     = apps.map(_.id)
       histories <- stateHistoryFuture.map(_.filter(h => appIds.contains(h.applicationId)))
-      appsMap = apps.groupBy(_.id).mapValues(_.head)
+      appsMap    = apps.groupBy(_.id).mapValues(_.head)
       historyMap = latestUpliftRequestState(histories)
     } yield DataUtil.zipper(appsMap, historyMap, ApplicationWithUpliftRequest.create, appError, historyError)
   }
 
   def fetchAppWithHistory(applicationId: ApplicationId): Future[ApplicationWithHistory] = {
     for {
-      app <- fetchApp(applicationId)
+      app     <- fetchApp(applicationId)
       history <- stateHistoryRepository.fetchByApplicationId(applicationId)
     } yield {
-      ApplicationWithHistory(ApplicationResponse(data = app),
-        history.map(StateHistoryResponse.from))
+      ApplicationWithHistory(ApplicationResponse(data = app), history.map(StateHistoryResponse.from))
     }
   }
 
@@ -84,9 +86,9 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     def approve(existing: ApplicationData) = existing.copy(state = existing.state.toPendingRequesterVerification(clock))
 
     def sendEmails(app: ApplicationData) = {
-      val requesterEmail = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
+      val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
-      val recipients = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
+      val recipients       = app.admins.map(_.emailAddress).filterNot(email => email.equals(requesterEmail))
 
       if (recipients.nonEmpty) emailConnector.sendApplicationApprovedNotification(app.name, recipients)
 
@@ -94,14 +96,13 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     for {
-      app <- fetchApp(applicationId)
+      app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(approve(app))
-      _ <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL),
-        gatekeeperUserId, GATEKEEPER, applicationRepository.save)
-      _ = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
-        s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
-      _ = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
-      _ = recoverAll(sendEmails(newApp))
+      _      <- insertStateHistory(newApp, PENDING_REQUESTER_VERIFICATION, Some(PENDING_GATEKEEPER_APPROVAL), gatekeeperUserId, GATEKEEPER, applicationRepository.save)
+      _       = logger.info(s"UPLIFT04: Approved uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
+                  s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} gatekeeperUserId:$gatekeeperUserId")
+      _       = auditService.auditGatekeeperAction(gatekeeperUserId, newApp, ApplicationUpliftApproved)
+      _       = recoverAll(sendEmails(newApp))
     } yield UpliftApproved
 
   }
@@ -116,15 +117,14 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
       emailConnector.sendApplicationRejectedNotification(app.name, app.admins.map(_.emailAddress), reason)
 
     for {
-      app <- fetchApp(applicationId)
+      app    <- fetchApp(applicationId)
       newApp <- applicationRepository.save(reject(app))
-      _ <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL),
-        request.gatekeeperUserId, GATEKEEPER, applicationRepository.save, Some(request.reason))
-      _ = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
-        s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
-        s" gatekeeperUserId:${request.gatekeeperUserId}")
-      _ = auditService.auditGatekeeperAction(request.gatekeeperUserId, newApp, ApplicationUpliftRejected, Map("reason" -> request.reason))
-      _ = recoverAll(sendEmails(newApp, request.reason))
+      _      <- insertStateHistory(app, TESTING, Some(PENDING_GATEKEEPER_APPROVAL), request.gatekeeperUserId, GATEKEEPER, applicationRepository.save, Some(request.reason))
+      _       = logger.info(s"UPLIFT03: Rejected uplift application:${app.name} appId:${app.id} appState:${app.state.name}" +
+                  s" appRequestedByEmailAddress:${app.state.requestedByEmailAddress} reason:${request.reason}" +
+                  s" gatekeeperUserId:${request.gatekeeperUserId}")
+      _       = auditService.auditGatekeeperAction(request.gatekeeperUserId, newApp, ApplicationUpliftRejected, Map("reason" -> request.reason))
+      _       = recoverAll(sendEmails(newApp, request.reason))
     } yield UpliftRejected
   }
 
@@ -135,30 +135,29 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     def sendEmails(app: ApplicationData) = {
-      val requesterEmail = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
+      val requesterEmail   = app.state.requestedByEmailAddress.getOrElse(throw new RuntimeException("no requestedBy email found"))
       val verificationCode = app.state.verificationCode.getOrElse(throw new RuntimeException("no verification code found"))
       emailConnector.sendApplicationApprovedAdminConfirmation(app.name, verificationCode, Set(requesterEmail))
     }
 
     for {
       app <- fetchApp(applicationId)
-      _ = rejectIfNotPendingVerification(app)
-      _ = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerficationResent)
-      _ = recoverAll(sendEmails(app))
+      _    = rejectIfNotPendingVerification(app)
+      _    = auditService.auditGatekeeperAction(gatekeeperUserId, app, ApplicationVerficationResent)
+      _    = recoverAll(sendEmails(app))
     } yield UpliftApproved
 
   }
 
   def deleteApplication(applicationId: ApplicationId, request: DeleteApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
     def audit(app: ApplicationData): Future[AuditResult] = {
-        auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
+      auditService.auditGatekeeperAction(request.gatekeeperUserId, app, ApplicationDeleted, Map("requestedByEmailAddress" -> request.requestedByEmailAddress))
     }
     for {
       _ <- applicationService.deleteApplication(applicationId, Some(request), audit)
     } yield Deleted
 
   }
-
 
   def blockApplication(applicationId: ApplicationId): Future[Blocked] = {
     def block(application: ApplicationData): ApplicationData = {
@@ -167,7 +166,7 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
     for {
       app <- fetchApp(applicationId)
-      _ <- applicationRepository.save(block(app))
+      _   <- applicationRepository.save(block(app))
     } yield Blocked
   }
 
@@ -178,22 +177,27 @@ class GatekeeperService @Inject()(applicationRepository: ApplicationRepository,
 
     for {
       app <- fetchApp(applicationId)
-      _ <- applicationRepository.save(unblock(app))
+      _   <- applicationRepository.save(unblock(app))
     } yield Unblocked
   }
 
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] = {
     lazy val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
-      case None => Future.failed(notFoundException)
+      case None      => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)
     }
   }
 
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType,
-                                 rollback: ApplicationData => Any,
-                                 notes: Option[String] = None): Future[StateHistory] = {
+  private def insertStateHistory(
+      snapshotApp: ApplicationData,
+      newState: State,
+      oldState: Option[State],
+      requestedBy: String,
+      actorType: ActorType.ActorType,
+      rollback: ApplicationData => Any,
+      notes: Option[String] = None
+    ): Future[StateHistory] = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

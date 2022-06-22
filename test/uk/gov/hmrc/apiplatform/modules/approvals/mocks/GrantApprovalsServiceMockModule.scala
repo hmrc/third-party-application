@@ -23,6 +23,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseGrantApprovalsServiceMock {
     def aMock: GrantApprovalsService
 
@@ -30,7 +31,7 @@ trait GrantApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(result: GrantApprovalsService.Result) = when(aMock.grant(*, *, *, *, *)(*)).thenReturn(successful(result))
     }
   }
-  
+
   object GrantApprovalsServiceMock extends BaseGrantApprovalsServiceMock {
     val aMock = mock[GrantApprovalsService]
   }

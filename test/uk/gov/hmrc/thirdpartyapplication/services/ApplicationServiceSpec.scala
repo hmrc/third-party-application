@@ -58,42 +58,42 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepository
 import java.time.{LocalDateTime, ZoneOffset}
 
 class ApplicationServiceSpec
-  extends AsyncHmrcSpec
-  with BeforeAndAfterAll
-  with ApplicationStateUtil
-  with ApplicationTestData
-  with UpliftRequestSamples
-  with FixedClock {
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with ApplicationTestData
+    with UpliftRequestSamples
+    with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApiGatewayStoreMockModule
-    with ApiSubscriptionFieldsConnectorMockModule
-    with ApplicationRepositoryMockModule
-    with TokenServiceMockModule
-    with SubmissionsServiceMockModule
-    with UpliftNamingServiceMockModule
-    with StateHistoryRepositoryMockModule
-    with SubscriptionRepositoryMockModule {
+      with ApiGatewayStoreMockModule
+      with ApiSubscriptionFieldsConnectorMockModule
+      with ApplicationRepositoryMockModule
+      with TokenServiceMockModule
+      with SubmissionsServiceMockModule
+      with UpliftNamingServiceMockModule
+      with StateHistoryRepositoryMockModule
+      with SubscriptionRepositoryMockModule {
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId: ApplicationId = ApplicationId.random
+    val applicationId: ApplicationId     = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
-    lazy val locked = false
-    protected val mockitoTimeout = 1000
-    val mockEmailConnector: EmailConnector = mock[EmailConnector]
-    val mockTotpConnector: TotpConnector = mock[TotpConnector]
-    val mockLockKeeper = new MockLockKeeper(locked)
-    val response = mock[HttpResponse]
+    lazy val locked                               = false
+    protected val mockitoTimeout                  = 1000
+    val mockEmailConnector: EmailConnector        = mock[EmailConnector]
+    val mockTotpConnector: TotpConnector          = mock[TotpConnector]
+    val mockLockKeeper                            = new MockLockKeeper(locked)
+    val response                                  = mock[HttpResponse]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
-    val mockGatekeeperService = mock[GatekeeperService]
-    val mockApiPlatformEventService = mock[ApiPlatformEventService]
-    val applicationResponseCreator = new ApplicationResponseCreator()
+    val mockGatekeeperService                     = mock[GatekeeperService]
+    val mockApiPlatformEventService               = mock[ApiPlatformEventService]
+    val applicationResponseCreator                = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
-      LOGGED_IN_USER_NAME_HEADER -> "John Smith"
+      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
@@ -131,10 +131,10 @@ class ApplicationServiceSpec
     when(mockEmailConnector.sendApplicationApprovedAdminConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationApprovedNotification(*, *)(*)).thenReturn(successful(HasSucceeded))
     when(mockEmailConnector.sendApplicationDeletedNotification(*, *[ApplicationId], *, *)(*)).thenReturn(successful(HasSucceeded))
-    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(*,*,*)(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*,*,*)(*)).thenReturn(successful(true))
-    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*,*,*)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberAddedEvent(*, *, *)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*, *, *)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendTeamMemberRemovedEvent(*, *, *)(*)).thenReturn(successful(true))
+    when(mockApiPlatformEventService.sendRedirectUrisUpdatedEvent(*, *, *)(*)).thenReturn(successful(true))
 
     UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
     SubmissionsServiceMock.DeleteAll.thenReturn()
@@ -173,7 +173,8 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION)
+      val expectedApplicationData: ApplicationData =
+        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION)
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -181,8 +182,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -200,8 +201,13 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION, access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute)))
-      
+      val expectedApplicationData: ApplicationData = anApplicationData(
+        createdApp.application.id,
+        state = testingState(),
+        environment = Environment.PRODUCTION,
+        access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
+      )
+
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -209,8 +215,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -233,8 +239,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -249,8 +255,8 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION, updatedOn = LocalDateTime.now(clock)),
-        environment = Environment.SANDBOX)
+      val expectedApplicationData: ApplicationData =
+        anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION, updatedOn = LocalDateTime.now(clock)), environment = Environment.SANDBOX)
       createdApp.totp shouldBe None
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
@@ -259,8 +265,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -272,10 +278,10 @@ class ApplicationServiceSpec
       ApiGatewayStoreMock.CreateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.Save.thenAnswer(successful)
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest(access = Privileged())
-      
+
       ApplicationRepoMock.FetchByName.thenReturnEmptyWhen(applicationRequest.name)
 
-      val prodTOTP = Totp("prodTotp", "prodTotpId")
+      val prodTOTP                       = Totp("prodTotp", "prodTotpId")
       val totpQueue: mutable.Queue[Totp] = mutable.Queue(prodTOTP)
       when(mockTotpConnector.generateTotp()).thenAnswer(successful(totpQueue.dequeue()))
 
@@ -294,8 +300,8 @@ class ApplicationServiceSpec
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -313,15 +319,18 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData = anApplicationData(
-        createdApp.application.id, state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock) ), access = Ropc())
+        createdApp.application.id,
+        state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
+        access = Ropc()
+      )
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
-          "applicationId" -> createdApp.application.id.value.toString,
-          "newApplicationName" -> applicationRequest.name,
+          "applicationId"             -> createdApp.application.id.value.toString,
+          "newApplicationName"        -> applicationRequest.name,
           "newApplicationDescription" -> applicationRequest.description.get
         ),
         hc
@@ -352,7 +361,7 @@ class ApplicationServiceSpec
       }
     }
 
-    //See https://wso2.org/jira/browse/CAPIMGT-1
+    // See https://wso2.org/jira/browse/CAPIMGT-1
     "not create the application when there is already an application being published" in new LockedSetup {
       val applicationRequest: CreateApplicationRequest = aNewV1ApplicationRequest()
 
@@ -376,7 +385,6 @@ class ApplicationServiceSpec
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.create(applicationRequest)))
       ex.getMessage shouldBe exception.getMessage
 
-      
       ApplicationRepoMock.Save.verifyNeverCalled()
       ApiGatewayStoreMock.DeleteApplication.verifyCalled()
     }
@@ -402,11 +410,13 @@ class ApplicationServiceSpec
     "update the repository correctly" in new Setup {
       val termsOfUseAcceptance = TermsOfUseAcceptance(
         ResponsibleIndividual(ResponsibleIndividual.Name("bob"), ResponsibleIndividual.EmailAddress("bob@example.com")),
-        LocalDateTime.now(ZoneOffset.UTC), Submission.Id.random, 0
+        LocalDateTime.now(ZoneOffset.UTC),
+        Submission.Id.random,
+        0
       )
-      val appData = anApplicationData(ApplicationId.random)
+      val appData              = anApplicationData(ApplicationId.random)
       ApplicationRepoMock.AddApplicationTermsOfUseAcceptance.thenReturn(appData)
-      val result = await(underTest.addTermsOfUseAcceptance(applicationId, termsOfUseAcceptance))
+      val result               = await(underTest.addTermsOfUseAcceptance(applicationId, termsOfUseAcceptance))
       result shouldBe appData
     }
   }
@@ -415,7 +425,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordApplicationUsage.thenReturnWhen(applicationId)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordApplicationUsage(applicationId))
 
@@ -426,7 +436,7 @@ class ApplicationServiceSpec
 
   "confirmSetupComplete" should {
     "update pre-production application state and store state history" in new Setup {
-      val oldApplication = anApplicationData(applicationId, state = ApplicationState.preProduction("previous@example.com"))
+      val oldApplication     = anApplicationData(applicationId, state = ApplicationState.preProduction("previous@example.com"))
       ApplicationRepoMock.Fetch.thenReturn(oldApplication)
       ApplicationRepoMock.Save.thenAnswer()
       StateHistoryRepoMock.Insert.thenAnswer()
@@ -461,7 +471,7 @@ class ApplicationServiceSpec
     "update the Application and return an ExtendedApplicationResponse" in new Setup {
       val subscriptions: List[ApiIdentifier] = List("myContext".asIdentifier("myVersion"))
       ApplicationRepoMock.RecordServerTokenUsage.thenReturnWhen(applicationId)(applicationData)
-      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions:_*)
+      SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)(subscriptions: _*)
 
       val applicationResponse: ExtendedApplicationResponse = await(underTest.recordServerTokenUsage(applicationId))
 
@@ -567,17 +577,18 @@ class ApplicationServiceSpec
         privacyPolicyUrl = None,
         access = data.access,
         state = data.state,
-        rateLimitTier = SILVER))
+        rateLimitTier = SILVER
+      ))
     }
 
     "send an audit event for each type of change" in new Setup {
       val testUserEmail = "test@example.com"
-      val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
-      val tokens = ApplicationTokens(
+      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
+      val tokens        = ApplicationTokens(
         Token(ClientId("prodId"), "prodToken")
       )
 
-      val existingApplication = ApplicationData(
+      val existingApplication                 = ApplicationData(
         id = applicationId,
         name = "app name",
         normalisedName = "app name",
@@ -588,14 +599,15 @@ class ApplicationServiceSpec
         createdOn = LocalDateTime.now,
         lastAccess = Some(LocalDateTime.now)
       )
-      val newRedirectUris =   List("http://new-url.example.com")
+      val newRedirectUris                     = List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
         access = Standard(
           newRedirectUris,
           Some("http://new-url.example.com/terms-and-conditions"),
-          Some("http://new-url.example.com/privacy-policy"))
+          Some("http://new-url.example.com/privacy-policy")
+        )
       )
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
@@ -613,13 +625,10 @@ class ApplicationServiceSpec
 
   "add collaborator with userId" should {
     val admin2: String = "admin2@example.com"
-    val email: String = "test@example.com"
-    val adminsToEmail = Set(admin2)
-    
-    def collaboratorRequest(email: String = email,
-                            role: Role = DEVELOPER,
-                            isRegistered: Boolean = false,
-                            adminsToEmail: Set[String] = adminsToEmail) = {
+    val email: String  = "test@example.com"
+    val adminsToEmail  = Set(admin2)
+
+    def collaboratorRequest(email: String = email, role: Role = DEVELOPER, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
       AddCollaboratorRequest(Collaborator(email, role, idOf(email)), isRegistered, adminsToEmail)
     }
 
@@ -630,7 +639,7 @@ class ApplicationServiceSpec
       val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      private val addRequest = collaboratorRequest(isRegistered = true)
+      private val addRequest              = collaboratorRequest(isRegistered = true)
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
@@ -641,22 +650,19 @@ class ApplicationServiceSpec
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
-        eqTo(request.collaborator.emailAddress),
-        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+        any[HeaderCarrier]
+      )
     }
   }
 
   "add collaborator" should {
-    val admin: String = "admin@example.com"
+    val admin: String  = "admin@example.com"
     val admin2: String = "admin2@example.com"
-    val email: String = "test@example.com"
-    val adminsToEmail = Set(admin2)
-    
-    def collaboratorRequest(email: String = email,
-                            role: Role = DEVELOPER,
-                            isRegistered: Boolean = false,
-                            adminsToEmail: Set[String] = adminsToEmail) = {
+    val email: String  = "test@example.com"
+    val adminsToEmail  = Set(admin2)
+
+    def collaboratorRequest(email: String = email, role: Role = DEVELOPER, isRegistered: Boolean = false, adminsToEmail: Set[String] = adminsToEmail) = {
       AddCollaboratorRequest(Collaborator(email, role, idOf(email)), isRegistered, adminsToEmail)
     }
 
@@ -675,7 +681,7 @@ class ApplicationServiceSpec
       val expected = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      private val addRequest = collaboratorRequest(isRegistered = true)
+      private val addRequest              = collaboratorRequest(isRegistered = true)
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, addRequest))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
@@ -686,20 +692,21 @@ class ApplicationServiceSpec
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
-        eqTo(request.collaborator.emailAddress),
-        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+        any[HeaderCarrier]
+      )
     }
 
     "send confirmation and notification emails to the developer and all relevant administrators when adding a registered collaborator" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val collaborators: Set[Collaborator] = Set(
+      val collaborators: Set[Collaborator]          = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
         Collaborator(admin2, ADMINISTRATOR, idOf(admin2)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail)))
+        Collaborator(devEmail, DEVELOPER, idOf(devEmail))
+      )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
+      val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
@@ -708,9 +715,9 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
-        eqTo(request.collaborator.emailAddress),
-        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+        any[HeaderCarrier]
+      )
       verify(mockEmailConnector).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
       verify(mockEmailConnector).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -719,22 +726,22 @@ class ApplicationServiceSpec
     "send confirmation and notification emails to the developer and all relevant administrators when adding an unregistered collaborator" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val collaborators: Set[Collaborator] = Set(
+      val collaborators: Set[Collaborator]          = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
         Collaborator(admin2, ADMINISTRATOR, idOf(admin2)),
         Collaborator(devEmail, DEVELOPER, idOf(devEmail))
       )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
+      val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
 
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest()))
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
-        eqTo(request.collaborator.emailAddress),
-        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+        any[HeaderCarrier]
+      )
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
       verify(mockEmailConnector).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
@@ -744,12 +751,13 @@ class ApplicationServiceSpec
     "send email confirmation to the developer and no notifications when there are no admins to email" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val admin = "theonlyadmin@example.com"
-      val collaborators: Set[Collaborator] = Set(
+      val admin                                     = "theonlyadmin@example.com"
+      val collaborators: Set[Collaborator]          = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail)))
+        Collaborator(devEmail, DEVELOPER, idOf(devEmail))
+      )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
+      val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
@@ -757,10 +765,9 @@ class ApplicationServiceSpec
       val result: AddCollaboratorResponse =
         await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true, adminsToEmail = Set.empty[String])))
 
-      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData),
-        eqTo(request.collaborator.emailAddress),
-        eqTo(request.collaborator.role.toString()))(any[HeaderCarrier])
-
+      verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
+        any[HeaderCarrier]
+      )
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
@@ -771,11 +778,12 @@ class ApplicationServiceSpec
     "handle an unexpected failure when sending confirmation email" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
 
-      val collaborators: Set[Collaborator] = Set(
+      val collaborators: Set[Collaborator]          = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
-        Collaborator(devEmail, DEVELOPER, idOf(devEmail)))
+        Collaborator(devEmail, DEVELOPER, idOf(devEmail))
+      )
       override val applicationData: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val expected: ApplicationData = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
+      val expected: ApplicationData                 = applicationData.copy(collaborators = applicationData.collaborators + request.collaborator)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
@@ -816,17 +824,18 @@ class ApplicationServiceSpec
 
   "delete collaborator with userId" should {
     trait DeleteCollaboratorsSetup extends Setup {
-      val admin = "admin@example.com"
-      val admin2: String = "admin2@example.com"
-      val testEmail = "test@example.com"
-      val adminsToEmail = Set(admin2)
-      val notifyCollaborator = true
-      val collaborators = Set(
+      val admin                    = "admin@example.com"
+      val admin2: String           = "admin2@example.com"
+      val testEmail                = "test@example.com"
+      val adminsToEmail            = Set(admin2)
+      val notifyCollaborator       = true
+      val collaborators            = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
         Collaborator(admin2, ADMINISTRATOR, idOf(admin2)),
-        Collaborator(testEmail, DEVELOPER, idOf(testEmail)))
+        Collaborator(testEmail, DEVELOPER, idOf(testEmail))
+      )
       override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val updatedData = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(testEmail, DEVELOPER, idOf(testEmail)))
+      val updatedData              = applicationData.copy(collaborators = applicationData.collaborators - Collaborator(testEmail, DEVELOPER, idOf(testEmail)))
     }
 
     "remove collaborator and send confirmation and notification emails" in new DeleteCollaboratorsSetup {
@@ -843,28 +852,26 @@ class ApplicationServiceSpec
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(testEmail, DEVELOPER, idOf(testEmail))),
         hc
       )
-      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
-        eqTo(testEmail),
-        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(testEmail), eqTo("DEVELOPER"))(any[HeaderCarrier])
       result shouldBe updatedData.collaborators
     }
   }
 
   "delete collaborator" should {
     trait DeleteCollaboratorsSetup extends Setup {
-      val admin = "admin@example.com"
-      val admin2: String = "admin2@example.com"
-      val collaborator = "test@example.com"
-      val adminsToEmail = Set(admin2)
+      val admin              = "admin@example.com"
+      val admin2: String     = "admin2@example.com"
+      val collaborator       = "test@example.com"
+      val adminsToEmail      = Set(admin2)
       val notifyCollaborator = true
 
       val c1 = Collaborator(admin, ADMINISTRATOR, idOf(admin))
       val c2 = Collaborator(admin2, ADMINISTRATOR, idOf(admin2))
       val c3 = Collaborator(collaborator, DEVELOPER, idOf(collaborator))
 
-      val collaborators = Set(c1,c2,c3)
+      val collaborators            = Set(c1, c2, c3)
       override val applicationData = anApplicationData(applicationId = applicationId, collaborators = collaborators)
-      val updatedData = applicationData.copy(collaborators = Set(c1,c2))
+      val updatedData              = applicationData.copy(collaborators = Set(c1, c2))
     }
 
     "throw not found exception when no application exists in the repository for the given application id" in new DeleteCollaboratorsSetup {
@@ -889,9 +896,7 @@ class ApplicationServiceSpec
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
-      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
-        eqTo(collaborator),
-        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
       result shouldBe updatedData.collaborators
     }
 
@@ -909,9 +914,7 @@ class ApplicationServiceSpec
         AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
-      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
-        eqTo(collaborator),
-        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
       result shouldBe updatedData.collaborators
     }
 
@@ -928,16 +931,15 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       result shouldBe updatedData.collaborators
 
-      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData),
-        eqTo(collaborator),
-        eqTo("DEVELOPER"))(any[HeaderCarrier])
+      verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
 
     }
 
     "fail to delete last remaining admin user" in new DeleteCollaboratorsSetup {
-      val onlyOneAdmin: Set[Collaborator] = Set(
+      val onlyOneAdmin: Set[Collaborator]          = Set(
         Collaborator(admin, ADMINISTRATOR, idOf(admin)),
-        Collaborator(collaborator, DEVELOPER, idOf(collaborator)))
+        Collaborator(collaborator, DEVELOPER, idOf(collaborator))
+      )
       val applicationWithOneAdmin: ApplicationData = anApplicationData(applicationId = applicationId, collaborators = onlyOneAdmin)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationWithOneAdmin)
@@ -1005,10 +1007,10 @@ class ApplicationServiceSpec
   "fetchAllForCollaborator" should {
     "fetch all applications for a given collaborator user id" in new Setup {
       SubscriptionRepoMock.Fetch.thenReturnWhen(applicationId)("api1".asIdentifier, "api2".asIdentifier)
-      val userId = UserId.random
-      val standardApplicationData: ApplicationData = anApplicationData(applicationId, access = Standard())
+      val userId                                     = UserId.random
+      val standardApplicationData: ApplicationData   = anApplicationData(applicationId, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
-      val ropcApplicationData: ApplicationData = anApplicationData(applicationId, access = Ropc())
+      val ropcApplicationData: ApplicationData       = anApplicationData(applicationId, access = Ropc())
 
       ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
@@ -1084,7 +1086,7 @@ class ApplicationServiceSpec
 
     "update the application on AWS and in mongo" in new Setup {
       val originalApplicationData: ApplicationData = anApplicationData(applicationId)
-      val updatedApplicationData: ApplicationData = originalApplicationData copy (rateLimitTier = Some(SILVER))
+      val updatedApplicationData: ApplicationData  = originalApplicationData copy (rateLimitTier = Some(SILVER))
       ApplicationRepoMock.Fetch.thenReturn(originalApplicationData)
       ApiGatewayStoreMock.UpdateApplication.thenReturnHasSucceeded()
       ApplicationRepoMock.UpdateApplicationRateLimit.thenReturn(applicationId, SILVER)(updatedApplicationData)
@@ -1099,7 +1101,7 @@ class ApplicationServiceSpec
 
   "update IP allowlist" should {
     "update the IP allowlist in the application in Mongo" in new Setup {
-      val newIpAllowlist: IpAllowlist = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
+      val newIpAllowlist: IpAllowlist             = IpAllowlist(required = true, Set("192.168.100.0/22", "192.168.104.1/32"))
       val updatedApplicationData: ApplicationData = anApplicationData(applicationId, ipAllowlist = newIpAllowlist)
       ApplicationRepoMock.UpdateIpAllowlist.thenReturnWhen(applicationId, newIpAllowlist)(updatedApplicationData)
 
@@ -1136,7 +1138,7 @@ class ApplicationServiceSpec
 
   "update Grant Length" should {
     "update the Grant Length in the application in Mongo" in new Setup {
-      val newGrantLengthDays= 1000
+      val newGrantLengthDays                      = 1000
       val updatedApplicationData: ApplicationData = anApplicationData(applicationId, grantLength = newGrantLengthDays)
       ApplicationRepoMock.UpdateGrantLength.thenReturnWhen(applicationId, newGrantLengthDays)(updatedApplicationData)
 
@@ -1151,13 +1153,13 @@ class ApplicationServiceSpec
 
     trait DeleteApplicationSetup extends Setup {
       val deleteRequestedBy = "email@example.com"
-      val gatekeeperUserId = "big.boss.gatekeeper"
-      val request = DeleteApplicationRequest(gatekeeperUserId,deleteRequestedBy)
-      val api1 = "hello".asIdentifier
-      val api2 = "goodbye".asIdentifier
+      val gatekeeperUserId  = "big.boss.gatekeeper"
+      val request           = DeleteApplicationRequest(gatekeeperUserId, deleteRequestedBy)
+      val api1              = "hello".asIdentifier
+      val api2              = "goodbye".asIdentifier
 
       type T = ApplicationData => Future[AuditResult]
-      val mockAuditResult = mock[Future[AuditResult]]
+      val mockAuditResult  = mock[Future[AuditResult]]
       val auditFunction: T = mock[T]
 
       when(auditFunction.apply(*)).thenReturn(mockAuditResult)
@@ -1264,7 +1266,11 @@ class ApplicationServiceSpec
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction))
 
       verify(mockEmailConnector).sendApplicationDeletedNotification(
-        applicationData.name, applicationData.id, deleteRequestedBy, applicationData.admins.map(_.emailAddress))
+        applicationData.name,
+        applicationData.id,
+        deleteRequestedBy,
+        applicationData.admins.map(_.emailAddress)
+      )
     }
 
     "silently ignore the delete request if no application exists for the application id (to ensure idempotency)" in new DeleteApplicationSetup {
@@ -1273,16 +1279,23 @@ class ApplicationServiceSpec
       await(underTest.deleteApplication(applicationId, Some(request), auditFunction)) shouldBe Deleted
 
       ApplicationRepoMock.Fetch.verifyCalledWith(applicationId)
-      verifyNoMoreInteractions(ApiGatewayStoreMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock,
-        SubscriptionRepoMock.aMock, AuditServiceMock.aMock, mockEmailConnector, ApiSubscriptionFieldsConnectorMock.aMock)
+      verifyNoMoreInteractions(
+        ApiGatewayStoreMock.aMock,
+        ApplicationRepoMock.aMock,
+        StateHistoryRepoMock.aMock,
+        SubscriptionRepoMock.aMock,
+        AuditServiceMock.aMock,
+        mockEmailConnector,
+        ApiSubscriptionFieldsConnectorMock.aMock
+      )
     }
   }
 
   "Search" should {
     "return results based on provided ApplicationSearch" in new Setup {
-      val standardApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Standard())
+      val standardApplicationData: ApplicationData   = anApplicationData(ApplicationId.random, access = Standard())
       val privilegedApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Privileged())
-      val ropcApplicationData: ApplicationData = anApplicationData(ApplicationId.random, access = Ropc())
+      val ropcApplicationData: ApplicationData       = anApplicationData(ApplicationId.random, access = Ropc())
 
       val search = ApplicationSearch(
         pageNumber = 2,
@@ -1301,7 +1314,9 @@ class ApplicationServiceSpec
           ),
           List(
             PaginationTotal(3)
-          )))
+          )
+        )
+      )
 
       val result: PaginatedApplicationResponse = await(underTest.searchApplications(search))
 
@@ -1313,9 +1328,9 @@ class ApplicationServiceSpec
 
   private def aNewV1ApplicationRequestWithCollaboratorWithUserId(access: Access, environment: Environment) = {
     CreateApplicationRequestV1(
-      "MyApp", 
-      access, 
-      Some("description"), 
+      "MyApp",
+      access,
+      Some("description"),
       environment,
       Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
       None
@@ -1328,8 +1343,9 @@ class ApplicationServiceSpec
       collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
       access: Access = Standard(),
       rateLimitTier: Option[RateLimitTier] = Some(RateLimitTier.BRONZE),
-      environment: Environment) = {
-        
+      environment: Environment
+    ) = {
+
     ApplicationData(
       applicationId,
       "MyApp",
@@ -1343,17 +1359,25 @@ class ApplicationServiceSpec
       LocalDateTime.now(clock),
       Some(LocalDateTime.now(clock)),
       rateLimitTier = rateLimitTier,
-      environment = environment.toString)
+      environment = environment.toString
+    )
   }
 
   private def aNewV1ApplicationRequest(access: Access = Standard(), environment: Environment = Environment.PRODUCTION) = {
-    CreateApplicationRequestV1("MyApp", access, Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
+    CreateApplicationRequestV1("MyApp", access, Some("description"), environment, Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), None)
   }
-  
+
   private def aNewV2ApplicationRequest(environment: Environment) = {
-    CreateApplicationRequestV2("MyApp", StandardAccessDataToCopy(), Some("description"), environment,
-      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))), makeUpliftRequest(ApiIdentifier.random), loggedInUser, ApplicationId.random)
+    CreateApplicationRequestV2(
+      "MyApp",
+      StandardAccessDataToCopy(),
+      Some("description"),
+      environment,
+      Set(Collaborator(loggedInUser, ADMINISTRATOR, idOf(loggedInUser))),
+      makeUpliftRequest(ApiIdentifier.random),
+      loggedInUser,
+      ApplicationId.random
+    )
   }
 
   private def anUpdateRequest() = {

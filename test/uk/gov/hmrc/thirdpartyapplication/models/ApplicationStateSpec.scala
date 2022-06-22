@@ -75,7 +75,6 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
     }
   }
 
-
   "state transition from PENDING_REQUESTER_VERIFICATION " should {
     val startingState = pendingRequesterVerificationState(upliftRequestedBy).copy(updatedOn = LocalDateTime.now(clockMinusHours(24L)))
     "move application to PRE_PRODUCTION state" in {

@@ -29,37 +29,39 @@ import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.metrix.persistence.MongoMetricRepository
 
 class MetricsModule extends Module {
+
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[MetricOrchestrator].toProvider[MetricsOrchestratorProvider],
-      bind[MetricsSources].toProvider[MetricsSourcesProvider])
+      bind[MetricsSources].toProvider[MetricsSourcesProvider]
+    )
   }
 }
 
 @Singleton
-class MetricsOrchestratorProvider @Inject()(configuration: Configuration,
-                                            metricsSources: MetricsSources,
-                                            metrics: Metrics,
-                                            mongoComponent: ReactiveMongoComponent) extends Provider[MetricOrchestrator] {
+class MetricsOrchestratorProvider @Inject() (configuration: Configuration, metricsSources: MetricsSources, metrics: Metrics, mongoComponent: ReactiveMongoComponent)
+    extends Provider[MetricOrchestrator] {
 
   implicit val mongo: () => DB = mongoComponent.mongoConnector.db
 
   val Lock: ExclusiveTimePeriodLock = new ExclusiveTimePeriodLock {
-    override def repo: LockRepository = new LockRepository()
-    override def lockId: String = "MetricsLock"
-    override def holdLockFor: Duration =  Duration.standardMinutes(2)
+    override def repo: LockRepository  = new LockRepository()
+    override def lockId: String        = "MetricsLock"
+    override def holdLockFor: Duration = Duration.standardMinutes(2)
   }
 
   override def get(): MetricOrchestrator = {
-      new MetricOrchestrator(metricsSources.asList, Lock, new MongoMetricRepository(), metrics.defaultRegistry)
+    new MetricOrchestrator(metricsSources.asList, Lock, new MongoMetricRepository(), metrics.defaultRegistry)
   }
 }
 
 @Singleton
-class MetricsSourcesProvider @Inject()(rateLimitMetrics: RateLimitMetrics,
-                                       apisWithSubscriptionCount: ApisWithSubscriptionCount,
-                                       missingMongoFields: MissingMongoFields,
-                                       applicationsWithSubscriptionCount: ApplicationsWithSubscriptionCount) extends Provider[MetricsSources] {
+class MetricsSourcesProvider @Inject() (
+    rateLimitMetrics: RateLimitMetrics,
+    apisWithSubscriptionCount: ApisWithSubscriptionCount,
+    missingMongoFields: MissingMongoFields,
+    applicationsWithSubscriptionCount: ApplicationsWithSubscriptionCount
+  ) extends Provider[MetricsSources] {
   override def get(): MetricsSources = MetricsSources(apisWithSubscriptionCount, applicationsWithSubscriptionCount)
 }
 

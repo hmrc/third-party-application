@@ -37,6 +37,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object CreateApplication {
+
       def thenReturnHasSucceeded() = {
         when(aMock.createApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
       }
@@ -55,26 +56,28 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
     }
 
     object UpdateApplication {
+
       def thenReturnHasSucceeded() = {
-        when(aMock.updateApplication(*,*)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.updateApplication(*, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
       def thenFail(failsWith: Throwable) = {
-        when(aMock.updateApplication(*,*)(*)).thenReturn(failed(failsWith))
+        when(aMock.updateApplication(*, *)(*)).thenReturn(failed(failsWith))
       }
 
       def verifyCalledWith(applicationData: ApplicationData, tier: RateLimitTier.Value) =
-        verify.updateApplication(eqTo(applicationData),refEq(tier))(*)
+        verify.updateApplication(eqTo(applicationData), refEq(tier))(*)
 
       def verifyCalled() =
-        verify.updateApplication(*,*)(*)
+        verify.updateApplication(*, *)(*)
 
       def verifyNeverCalled() =
-        verify(never).updateApplication(*,*)(*)
+        verify(never).updateApplication(*, *)(*)
 
     }
 
     object DeleteApplication {
+
       def verifyCalledWith(application: ApplicationData) = {
         import application.wso2ApplicationName
         ApiGatewayStoreMock.verify.deleteApplication(eqTo(wso2ApplicationName))(*)

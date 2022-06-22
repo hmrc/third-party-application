@@ -41,13 +41,11 @@ object SubmissionsController {
 }
 
 @Singleton
-class SubmissionsController @Inject()(
-  service: SubmissionsService,
-  cc: ControllerComponents
-)(
-  implicit val ec: ExecutionContext
-) 
-extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
+class SubmissionsController @Inject() (
+    service: SubmissionsService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
   import SubmissionsController._
 
   def createSubmissionFor(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
@@ -64,13 +62,13 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
     lazy val failed = NotFound(Results.EmptyContent())
 
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
-   
+
     service.fetch(id).map(_.fold(failed)(success))
   }
 
   def fetchLatest(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
-    
+
     val success = (s: Submission) => Ok(Json.toJson(s))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))
@@ -78,7 +76,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
 
   def fetchLatestExtended(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
-    
+
     val success = (s: ExtendedSubmission) => Ok(Json.toJson(s))
 
     service.fetchLatestExtended(applicationId).map(_.fold(failed)(success))
@@ -86,7 +84,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
 
   def fetchLatestMarkedSubmission(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = (msg: String) => NotFound(Json.toJson(ErrorMessage(msg)))
-    
+
     val success = (s: MarkedSubmission) => Ok(Json.toJson(s))
 
     service.fetchLatestMarkedSubmission(applicationId).map(_.fold(failed, success))
@@ -104,7 +102,7 @@ extends BackendController(cc) with SubmissionsFrontendJsonFormatters {
 
   def latestSubmissionIsCompleted(applicationId: ApplicationId) = Action.async { _ =>
     lazy val failed = NotFound(Results.EmptyContent())
-    
+
     val success = (s: Submission) => Ok(Json.toJson(s.status.isAnsweredCompletely))
 
     service.fetchLatest(applicationId).map(_.fold(failed)(success))

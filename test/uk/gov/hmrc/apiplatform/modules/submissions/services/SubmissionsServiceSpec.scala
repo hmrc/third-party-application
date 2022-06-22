@@ -29,13 +29,14 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import cats.data.NonEmptyList
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
-  trait Setup 
-    extends SubmissionsDAOMockModule 
-    with ApplicationRepositoryMockModule
-    with ContextServiceMockModule
-    with ApplicationTestData
-    with SubmissionsTestData
-    with AsIdsHelpers {
+
+  trait Setup
+      extends SubmissionsDAOMockModule
+      with ApplicationRepositoryMockModule
+      with ContextServiceMockModule
+      with ApplicationTestData
+      with SubmissionsTestData
+      with AsIdsHelpers {
     val underTest = new SubmissionsService(new QuestionnaireDAO(), SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)
   }
 
@@ -44,39 +45,39 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       "store a submission for the application" in new Setup {
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
-        
+
         val result = await(underTest.create(applicationId, "bob@example.com"))
 
-        inside(result.right.value) { 
+        inside(result.right.value) {
           case s @ Submission(_, applicationId, _, groupings, testQuestionIdsOfInterest, instances, _) =>
             applicationId shouldBe applicationId
             instances.head.answersToQuestions.size shouldBe 0
-          }
+        }
       }
-      
+
       "take an effective snapshot of current active questionnaires so that if they change the submission is unnaffected" in new Setup with QuestionnaireDAOMockModule {
         SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
         SubmissionsDAOMock.Save.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
-        
+
         override val underTest = new SubmissionsService(QuestionnaireDAOMock.aMock, SubmissionsDAOMock.aMock, ContextServiceMock.aMock, clock)
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseStandardOnes()
         val result1 = await(underTest.create(applicationId, "bob@example.com"))
-        
+
         inside(result1.right.value) {
           case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
             applicationId shouldBe applicationId
             s.allQuestionnaires.size shouldBe allQuestionnaires.size
-          }
+        }
 
         QuestionnaireDAOMock.ActiveQuestionnaireGroupings.thenUseChangedOnes()
 
         val result2 = await(underTest.create(applicationId, "bob@example.com"))
-        inside(result2.right.value) { 
+        inside(result2.right.value) {
           case s @ Submission(_, applicationId, _, _, testQuestionIdsOfInterest, answersToQuestions, _) =>
             s.allQuestionnaires.size shouldBe allQuestionnaires.size - 1 // The number from the dropped group
-          }
+        }
       }
     }
 
@@ -100,7 +101,6 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
       }
     }
 
-  
     "fetch" should {
       "fetch latest submission for id" in new Setup {
         SubmissionsDAOMock.Fetch.thenReturn(aSubmission)
@@ -120,11 +120,11 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         result shouldBe None
       }
     }
-    
+
     "fetchLatestMarkedSubmission" should {
       "fetch latest marked submission for id" in new Setup {
         val completedAnswers: Submission.AnswersToQuestions = Map(Question.Id("q1") -> TextAnswer("ok"))
-        val completeSubmission = aSubmission.copy(
+        val completeSubmission                              = aSubmission.copy(
           groups = NonEmptyList.of(
             GroupOfQuestionnaires(
               heading = "About your processes",
@@ -135,23 +135,23 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
                   questions = NonEmptyList.of(
                     QuestionItem(
                       TextQuestion(
-                        Question.Id("q1"), 
+                        Question.Id("q1"),
                         Wording("Do you provide software as a service (SaaS)?"),
                         Some(Statement(
                           StatementText("SaaS is centrally hosted and is delivered on a subscription basis.")
                         )),
                         None,
                         None
-                      ) 
+                      )
                     )
                   )
                 )
-              )             
+              )
             )
           )
         )
-        .hasCompletelyAnsweredWith(completedAnswers)
-        
+          .hasCompletelyAnsweredWith(completedAnswers)
+
         SubmissionsDAOMock.FetchLatest.thenReturn(completeSubmission)
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
@@ -186,7 +186,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.recordAnswers(submissionId, questionId, List("Yes")))
-        
+
         val out = result.right.value
         out.submission.latestInstance.answersToQuestions.get(questionId).value shouldBe SingleChoiceAnswer("Yes")
         SubmissionsDAOMock.Update.verifyCalled()
@@ -198,9 +198,9 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
         val result = await(underTest.recordAnswers(submissionId, optionalQuestionId, List.empty))
-        
+
         val out = result.right.value
-        out.submission .latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
+        out.submission.latestInstance.answersToQuestions.get(optionalQuestionId).value shouldBe NoAnswer
         SubmissionsDAOMock.Update.verifyCalled()
       }
 
@@ -219,7 +219,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         SubmissionsDAOMock.Update.thenReturn()
         ContextServiceMock.DeriveContext.willReturn(simpleContext)
 
-        val result = await(underTest.recordAnswers(submissionId, questionId, List.empty)) 
+        val result = await(underTest.recordAnswers(submissionId, questionId, List.empty))
 
         result shouldBe 'left
       }

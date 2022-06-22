@@ -30,7 +30,7 @@ class ApplicationsWithSubscriptionCountSpec extends AsyncHmrcSpec {
 
     val metricUnderTest: ApplicationsWithSubscriptionCount = new ApplicationsWithSubscriptionCount(mockApplicationRepository)
   }
-  "metrics count" should{
+  "metrics count" should {
     val expectedResult = Map("applicationsWithSubscriptionCount.Test App 1" -> 2)
 
     "refresh application with subscription counts" in new Setup {

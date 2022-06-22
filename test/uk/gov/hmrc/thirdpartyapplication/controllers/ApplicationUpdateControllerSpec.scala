@@ -34,43 +34,45 @@ import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import java.time.LocalDateTime
 
 class ApplicationUpdateControllerSpec
-  extends ControllerSpec
-  with ApplicationStateUtil
-  with ControllerTestData
-  with TableDrivenPropertyChecks
-  with ApplicationTestData {
+    extends ControllerSpec
+    with ApplicationStateUtil
+    with ControllerTestData
+    with TableDrivenPropertyChecks
+    with ApplicationTestData {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  trait Setup extends ApplicationUpdateServiceMockModule{
+  trait Setup extends ApplicationUpdateServiceMockModule {
+
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector = mock[AuthConnector]
-    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
+    val mockAuthConnector: AuthConnector           = mock[AuthConnector]
+    val mockAuthConfig: AuthConnector.Config       = mock[AuthConnector.Config]
 
     val underTest = new ApplicationUpdateController(
       ApplicationUpdateServiceMock.aMock,
       mockApplicationService,
       mockAuthConnector,
       mockAuthConfig,
-      Helpers.stubControllerComponents())
+      Helpers.stubControllerComponents()
+    )
 
     val applicationId = ApplicationId.random
   }
 
   val instigatorUserId = UUID.randomUUID().toString
-  val gatekeeperUser = "gk_user_1"
+  val gatekeeperUser   = "gk_user_1"
 
   "updateName" should {
     val validUpdateNameRequestBody = Json.obj(
-      "updateType" -> "changeProductionApplicationName",
-      "instigator" -> instigatorUserId,
-      "timestamp" -> LocalDateTime.now(),
+      "updateType"     -> "changeProductionApplicationName",
+      "instigator"     -> instigatorUserId,
+      "timestamp"      -> LocalDateTime.now(),
       "gatekeeperUser" -> gatekeeperUser,
-      "newName" -> "bob"
+      "newName"        -> "bob"
     )
 
     "return success if application update request is valid" in new Setup {

@@ -34,14 +34,14 @@ object ApiSubscriptionFieldsConnector {
 }
 
 @Singleton
-class ApiSubscriptionFieldsConnector @Inject()(httpClient: HttpClient, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
+class ApiSubscriptionFieldsConnector @Inject() (httpClient: HttpClient, config: ApiSubscriptionFieldsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils {
 
   def deleteSubscriptions(clientId: ClientId)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     httpClient.DELETE[ErrorOr[Unit]](s"${config.baseUrl}/field/application/${clientId.value}")
-    .map {
-      case Right(_) => HasSucceeded
-      case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded
-      case Left(err) => throw err
-    }
+      .map {
+        case Right(_)                                        => HasSucceeded
+        case Left(UpstreamErrorResponse(_, NOT_FOUND, _, _)) => HasSucceeded
+        case Left(err)                                       => throw err
+      }
   }
 }

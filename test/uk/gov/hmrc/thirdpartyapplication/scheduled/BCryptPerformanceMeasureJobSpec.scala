@@ -25,7 +25,7 @@ class BCryptPerformanceMeasureJobSpec extends AsyncHmrcSpec {
 
   trait Setup {
     val testedWorkFactorRange: Seq[Int] = 5 to 10 // Only need to run faster hashes to as not to make test too slow
-    val stubLogger = new StubLogger()
+    val stubLogger                      = new StubLogger()
 
     val jobUnderTest: BCryptPerformanceMeasureJob = new BCryptPerformanceMeasureJob(stubLogger) {
       override val workFactorRangeToTest: Seq[Int] = testedWorkFactorRange
@@ -37,8 +37,8 @@ class BCryptPerformanceMeasureJobSpec extends AsyncHmrcSpec {
 
       await(jobUnderTest.executeInMutex)
 
-      stubLogger.infoMessages.size should be (2)
-      stubLogger.infoMessages.head should be ("[bcrypt Performance] Starting performance measurement")
+      stubLogger.infoMessages.size should be(2)
+      stubLogger.infoMessages.head should be("[bcrypt Performance] Starting performance measurement")
       testedWorkFactorRange.foreach { testedWorkFactor =>
         stubLogger.infoMessages.last contains s"Hashing with Work Factor [$testedWorkFactor]"
       }

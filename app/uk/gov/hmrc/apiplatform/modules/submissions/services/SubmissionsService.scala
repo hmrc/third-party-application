@@ -30,54 +30,54 @@ import cats.data.NonEmptyList
 import java.time.{Clock, LocalDateTime}
 
 @Singleton
-class SubmissionsService @Inject()(
-  questionnaireDAO: QuestionnaireDAO,
-  submissionsDAO: SubmissionsDAO,
-  contextService: ContextService,
-  val clock: Clock
-)(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+class SubmissionsService @Inject() (
+    questionnaireDAO: QuestionnaireDAO,
+    submissionsDAO: SubmissionsDAO,
+    contextService: ContextService,
+    val clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends EitherTHelper[String] {
   import cats.instances.future.catsStdInstancesForFuture
 
-  private val emptyAnswers = Map.empty[Question.Id,ActualAnswer]
+  private val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
 
   def extendSubmission(submission: Submission): ExtendedSubmission = {
-    val progress      =  AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, submission.context, submission.latestInstance.answersToQuestions)
+    val progress = AnswerQuestion.deriveProgressOfQuestionnaires(submission.allQuestionnaires, submission.context, submission.latestInstance.answersToQuestions)
     ExtendedSubmission(submission, progress)
   }
-  
+
   def fetchAndExtend(submissionFn: => Future[Option[Submission]]): Future[Option[ExtendedSubmission]] = {
     (
       for {
-        submission    <- fromOptionF(submissionFn, "ignored")
-      }
-      yield extendSubmission(submission)
+        submission <- fromOptionF(submissionFn, "ignored")
+      } yield extendSubmission(submission)
     )
-    .toOption
-    .value 
-  }  
-  
+      .toOption
+      .value
+  }
+
   /*
-  * a questionnaire needs answering for the application
-  */
+   * a questionnaire needs answering for the application
+   */
   def create(applicationId: ApplicationId, requestedBy: String): Future[Either[String, Submission]] = {
     (
       for {
-        groups                <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
-        allQuestionnaires     =  groups.flatMap(_.links)
-        submissionId          =  Submission.Id.random
-        context               <- contextService.deriveContext(applicationId)
-        newInstance           =  Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), requestedBy)))
-        submission            =  Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
-        savedSubmission       <- liftF(submissionsDAO.save(submission))
+        groups           <- liftF(questionnaireDAO.fetchActiveGroupsOfQuestionnaires())
+        allQuestionnaires = groups.flatMap(_.links)
+        submissionId      = Submission.Id.random
+        context          <- contextService.deriveContext(applicationId)
+        newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), requestedBy)))
+        submission        = Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        savedSubmission  <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )
-    .value
+      .value
   }
 
   def fetchLatest(applicationId: ApplicationId): Future[Option[Submission]] = {
     submissionsDAO.fetchLatest(applicationId)
   }
-  
+
   def fetchLatestExtended(applicationId: ApplicationId): Future[Option[ExtendedSubmission]] = {
     fetchAndExtend(fetchLatest(applicationId))
   }
@@ -89,31 +89,31 @@ class SubmissionsService @Inject()(
   def fetchLatestMarkedSubmission(applicationId: ApplicationId): Future[Either[String, MarkedSubmission]] = {
     (
       for {
-        submission    <- fromOptionF(fetchLatest(applicationId), "No such application submission")
-        _             <- cond(submission.status.canBeMarked, (), "Submission cannot be marked yet")
-        markedAnswers =  MarkAnswer.markSubmission(submission)
+        submission   <- fromOptionF(fetchLatest(applicationId), "No such application submission")
+        _            <- cond(submission.status.canBeMarked, (), "Submission cannot be marked yet")
+        markedAnswers = MarkAnswer.markSubmission(submission)
       } yield MarkedSubmission(submission, markedAnswers)
     )
-    .value
+      .value
   }
 
   def recordAnswers(submissionId: Submission.Id, questionId: Question.Id, rawAnswers: List[String]): Future[Either[String, ExtendedSubmission]] = {
     (
       for {
-        initialSubmission       <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
-        extSubmission           <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers))
-        savedSubmission         <- liftF(submissionsDAO.update(extSubmission.submission))
+        initialSubmission <- fromOptionF(submissionsDAO.fetch(submissionId), "No such submission")
+        extSubmission     <- fromEither(AnswerQuestion.recordAnswer(initialSubmission, questionId, rawAnswers))
+        savedSubmission   <- liftF(submissionsDAO.update(extSubmission.submission))
       } yield extSubmission.copy(submission = savedSubmission)
     )
-    .value
+      .value
   }
 
   /*
-  * When you delete an application
-  */
-  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] = 
+   * When you delete an application
+   */
+  def deleteAllAnswersForApplication(applicationId: ApplicationId): Future[Unit] =
     submissionsDAO.deleteAllAnswersForApplication(applicationId)
 
-  def store(submission: Submission): Future[Submission] = 
+  def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
 }

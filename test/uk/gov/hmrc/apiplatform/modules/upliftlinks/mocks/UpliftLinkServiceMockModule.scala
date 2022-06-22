@@ -29,19 +29,22 @@ import cats.implicits._
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait UpliftLinkServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseUpliftLinksServiceMock {
     def aMock: UpliftLinkService
 
     object CreateUpliftLink {
-      def thenReturn(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId) = 
+
+      def thenReturn(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId) =
         when(aMock.createUpliftLink(*[ApplicationId], *[ApplicationId])).thenReturn(successful(UpliftLink(sandboxApplicationId, productionApplicationId)))
     }
+
     object GetSandboxAppForProductionAppId {
       def thenReturn(appId: ApplicationId) = when(aMock.getSandboxAppForProductionAppId(*[ApplicationId])).thenReturn(OptionT.pure[Future](appId))
-      def thenReturnNothing = when(aMock.getSandboxAppForProductionAppId(*[ApplicationId])).thenReturn(OptionT.fromOption(None))
+      def thenReturnNothing                = when(aMock.getSandboxAppForProductionAppId(*[ApplicationId])).thenReturn(OptionT.fromOption(None))
     }
   }
-  
+
   object UpliftLinkServiceMock extends BaseUpliftLinksServiceMock {
     val aMock = mock[UpliftLinkService]
   }

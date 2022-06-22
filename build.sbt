@@ -9,7 +9,7 @@ import uk.gov.hmrc._
 
 lazy val appName = "third-party-application"
 
-lazy val plugins: Seq[Plugins] = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
+lazy val plugins: Seq[Plugins]         = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
 lazy val microservice = (project in file("."))
@@ -21,12 +21,12 @@ lazy val microservice = (project in file("."))
   .settings(defaultSettings(): _*)
   .settings(ScoverageSettings())
   .settings(
-    name := appName,
-    scalaVersion := "2.12.12",
+    name            := appName,
+    scalaVersion    := "2.12.12",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
-    majorVersion := 0,
+    majorVersion    := 0,
     routesImport ++= Seq(
       "uk.gov.hmrc.thirdpartyapplication.controllers.binders._",
       "uk.gov.hmrc.apiplatform.modules.submissions.controllers._",
@@ -41,7 +41,7 @@ lazy val microservice = (project in file("."))
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    Test / fork := false,
+    Test / fork              := false,
     Test / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "test", baseDirectory.value / "shared-test"),
     Test / parallelExecution := false
   )
@@ -49,12 +49,13 @@ lazy val microservice = (project in file("."))
   .settings(inConfig(IntegrationTest)(BloopDefaults.configSettings))
   .settings(
     Defaults.itSettings,
-    IntegrationTest / fork := false,
+    IntegrationTest / fork              := false,
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    IntegrationTest / testGrouping := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    IntegrationTest / testGrouping      := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
-    IntegrationTest / parallelExecution := false)
+    IntegrationTest / parallelExecution := false
+  )
   .settings(
     scalacOptions ++= Seq("-deprecation", "-feature", "-Ypartial-unification")
   )

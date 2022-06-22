@@ -43,11 +43,12 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
       private val api1v2 = ("api(One)", "2.0", 10)
-      private val api2 = ("route/apiTwo", "1.0", 100)
+      private val api2   = ("route/apiTwo", "1.0", 100)
 
       when(mockSubscriptionsRepository.findAll())
         .thenReturn(Future.successful(
-          List(subscriptionDetails(api1v1), subscriptionDetails(api1v2), subscriptionDetails(api2))))
+          List(subscriptionDetails(api1v1), subscriptionDetails(api1v2), subscriptionDetails(api2))
+        ))
 
       private val result = await(metricUnderTest.metrics)
 

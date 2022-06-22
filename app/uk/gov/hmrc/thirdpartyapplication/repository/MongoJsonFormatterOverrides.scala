@@ -26,9 +26,9 @@ object MongoJsonFormatterOverrides {
   // Non-standard format compared to companion object
   val ipAllowlistReads: Reads[IpAllowlist] = (
     ((JsPath \ "required").read[Boolean] or Reads.pure(false)) and
-    ((JsPath \ "allowlist").read[Set[String]]or Reads.pure(Set.empty[String]))
+      ((JsPath \ "allowlist").read[Set[String]] or Reads.pure(Set.empty[String]))
   )(IpAllowlist.apply _)
-  implicit val formatIpAllowlist = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
+  implicit val formatIpAllowlist           = OFormat(ipAllowlistReads, Json.writes[IpAllowlist])
 
   implicit val formatTermsOfUseAcceptance = Json.format[TermsOfUseAcceptance]
 }

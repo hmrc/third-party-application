@@ -21,14 +21,15 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 class QuestionsAndAnswersToMapSpec extends HmrcSpec {
+
   trait Setup extends SubmissionsTestData {
 
     val answersToQuestionsWithMissingIds: Map[Question.Id, ActualAnswer] = Map(
-      (Question.Id.random -> TextAnswer("bad question")),
+      (Question.Id.random                            -> TextAnswer("bad question")),
       (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
       (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
     )
-    val submissionWithMissingQuestionIds = Submission.updateLatestAnswersTo(answersToQuestionsWithMissingIds)(aSubmission)
+    val submissionWithMissingQuestionIds                                 = Submission.updateLatestAnswersTo(answersToQuestionsWithMissingIds)(aSubmission)
   }
 
   "QuestionsAndAnswersToMap" should {
@@ -40,21 +41,21 @@ class QuestionsAndAnswersToMapSpec extends HmrcSpec {
 
       val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))
       map.size shouldBe 2
-      map should contain ("CustomersAuthorisingYourSoftware" -> "question 1")
-      map should contain ("ConfirmTheNameOfYourSoftware" -> "question 2")
+      map should contain("CustomersAuthorisingYourSoftware" -> "question 1")
+      map should contain("ConfirmTheNameOfYourSoftware" -> "question 2")
     }
-    
+
     "return a map of questions to answers omitting missing question ids" in new Setup {
       val answers: Map[Question.Id, ActualAnswer] = Map(
-        (Question.Id.random -> TextAnswer("bad question")),
+        (Question.Id.random                            -> TextAnswer("bad question")),
         (CustomersAuthorisingYourSoftware.question1.id -> TextAnswer("question 1")),
         (CustomersAuthorisingYourSoftware.question2.id -> TextAnswer("question 2"))
       )
-        
+
       val map = QuestionsAndAnswersToMap(aSubmission.answeringWith(answers))
       map.size shouldBe 2
-      map should contain ("CustomersAuthorisingYourSoftware" -> "question 1")
-      map should contain ("ConfirmTheNameOfYourSoftware" -> "question 2")
+      map should contain("CustomersAuthorisingYourSoftware" -> "question 1")
+      map should contain("ConfirmTheNameOfYourSoftware" -> "question 2")
     }
   }
 }

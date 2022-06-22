@@ -27,12 +27,13 @@ abstract class ExtraHeadersController(cc: ControllerComponents) extends BackendC
   // This header is not expected to reach outside but is used to pass information further down the call stack.
   // TODO - tidy this up to use a better way to decorate calls with the knowledge they came from API Gateway (or not)
   val INTERNAL_USER_AGENT = "X-GATEWAY-USER-AGENT"
-  
+
   override implicit def hc(implicit request: RequestHeader): HeaderCarrier = {
-    def header(key: String) = request.headers.get(key) map (key -> _)
+    def header(key: String)                        = request.headers.get(key) map (key -> _)
     def renamedHeader(key: String, newKey: String) = request.headers.get(key) map (newKey -> _)
 
-    val extraHeaders = List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), renamedHeader(USER_AGENT, INTERNAL_USER_AGENT)).flatten
+    val extraHeaders =
+      List(header(LOGGED_IN_USER_NAME_HEADER), header(LOGGED_IN_USER_EMAIL_HEADER), header(SERVER_TOKEN_HEADER), renamedHeader(USER_AGENT, INTERNAL_USER_AGENT)).flatten
     super.hc.withExtraHeaders(extraHeaders: _*)
   }
 }

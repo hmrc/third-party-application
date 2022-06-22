@@ -28,7 +28,7 @@ object ActorType extends Enumeration {
 case class Actor(id: String, actorType: ActorType.ActorType)
 
 object Actor {
-  import play.api.libs.json.{OFormat, Json}
-  
+  import play.api.libs.json.{Json, OFormat}
+
   implicit val format: OFormat[Actor] = Json.format[Actor]
 }

@@ -23,6 +23,4 @@ case class ResponsibleIndividualVerificationWithDetails(
     responsibleIndividual: ResponsibleIndividual,
     submitterName: String,
     submitterEmail: String
-)
-
-
+  )

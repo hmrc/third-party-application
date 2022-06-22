@@ -34,18 +34,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
-class CredentialService @Inject()(applicationRepository: ApplicationRepository,
-                                  auditService: AuditService,
-                                  clientSecretService: ClientSecretService,
-                                  config: CredentialConfig,
-                                  apiPlatformEventService: ApiPlatformEventService,
-                                  emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class CredentialService @Inject() (
+    applicationRepository: ApplicationRepository,
+    auditService: AuditService,
+    clientSecretService: ClientSecretService,
+    config: CredentialConfig,
+    apiPlatformEventService: ApiPlatformEventService,
+    emailConnector: EmailConnector
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   val clientSecretLimit = config.clientSecretLimit
 
   def fetch(applicationId: ApplicationId): Future[Option[ApplicationResponse]] = {
-    applicationRepository.fetch(applicationId) map (_.map(
-      app => ApplicationResponse(data = app)))
+    applicationRepository.fetch(applicationId) map (_.map(app => ApplicationResponse(data = app)))
   }
 
   def fetchCredentials(applicationId: ApplicationId): Future[Option[ApplicationTokenResponse]] = {
@@ -57,24 +59,22 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
       existingApp <- fetchApp(applicationId)
-      _ = if(existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+      _            = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
 
       generatedSecret = clientSecretService.generateClientSecret()
-      newSecret = generatedSecret._1
-      newSecretValue = generatedSecret._2
+      newSecret       = generatedSecret._1
+      newSecretValue  = generatedSecret._2
 
-      updatedApplication <- applicationRepository.addClientSecret(applicationId, newSecret)
-      _ = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
-      _ = auditService.audit(ClientSecretAdded, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
+      _                      = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
+      _                      = auditService.audit(ClientSecretAdded, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
-  def deleteClientSecret(applicationId: ApplicationId,
-                         clientSecretId: String,
-                         actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+  def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 
@@ -88,12 +88,12 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
         .getOrElse(throw new NotFoundException(s"Client Secret Id [$clientSecretId] not found in Application [${applicationId.value}]"))
 
     for {
-      application <- fetchApp(applicationId)
+      application         <- fetchApp(applicationId)
       clientSecretToUpdate = findClientSecretToDelete(application, clientSecretId)
-      updatedApplication <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
-      _ <- audit(applicationId, clientSecretId)
-      _ <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication,clientSecretId)
-      _ <- sendNotification(clientSecretToUpdate, updatedApplication)
+      updatedApplication  <- applicationRepository.deleteClientSecret(applicationId, clientSecretId)
+      _                   <- audit(applicationId, clientSecretId)
+      _                   <- apiPlatformEventService.sendClientSecretRemovedEvent(updatedApplication, clientSecretId)
+      _                   <- sendNotification(clientSecretToUpdate, updatedApplication)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production)
 
   }
@@ -106,10 +106,10 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     for {
-      application <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
+      application         <- OptionT(applicationRepository.fetchByClientId(validation.clientId))
       matchedClientSecret <-
         OptionT(clientSecretService.clientSecretIsValid(application.id, validation.clientSecret, application.tokens.production.clientSecrets))
-      updatedApplication <-
+      updatedApplication  <-
         OptionT.liftF(applicationRepository.recordClientSecretUsage(application.id, matchedClientSecret.id)
           .recover(recoverFromFailedUsageDateUpdate(application)))
     } yield ApplicationResponse(data = updatedApplication)
@@ -119,7 +119,7 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
   private def fetchApp(applicationId: ApplicationId) = {
     val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
-      case None => Future.failed(notFoundException)
+      case None      => Future.failed(notFoundException)
       case Some(app) => Future.successful(app)
     }
   }
@@ -127,4 +127,3 @@ class CredentialService @Inject()(applicationRepository: ApplicationRepository,
 }
 
 case class CredentialConfig(clientSecretLimit: Int)
-

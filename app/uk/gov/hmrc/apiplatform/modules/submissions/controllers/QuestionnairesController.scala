@@ -30,13 +30,11 @@ object QuestionnairesController {
 }
 
 @Singleton
-class QuestionnairesController @Inject()(
-  dao: QuestionnaireDAO,
-  cc: ControllerComponents
-)(
-  implicit val ec: ExecutionContext
-) 
-extends BackendController(cc) {
+class QuestionnairesController @Inject() (
+    dao: QuestionnaireDAO,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) {
   import QuestionnairesController._
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._
 

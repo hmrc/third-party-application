@@ -20,14 +20,15 @@ import play.api.http.HeaderNames
 import uk.gov.hmrc.http.HeaderCarrier
 
 object HeaderCarrierUtils {
-    implicit class HeaderCarrierImprovements(val hc: HeaderCarrier) {
-        def valueOf(headerName: String): Option[String] = (hc.headers(Seq(headerName)) ++ hc.extraHeaders).find(_._1.toLowerCase == headerName.toLowerCase).map(_._2)
-    }
+
+  implicit class HeaderCarrierImprovements(val hc: HeaderCarrier) {
+    def valueOf(headerName: String): Option[String] = (hc.headers(Seq(headerName)) ++ hc.extraHeaders).find(_._1.toLowerCase == headerName.toLowerCase).map(_._2)
+  }
 }
 
 object HttpHeaders extends HeaderNames {
-  val X_REQUEST_ID_HEADER = "X-Request-ID"
+  val X_REQUEST_ID_HEADER         = "X-Request-ID"
   val LOGGED_IN_USER_EMAIL_HEADER = "X-email-address"
-  val LOGGED_IN_USER_NAME_HEADER = "X-name"
-  val SERVER_TOKEN_HEADER = "X-server-token"
+  val LOGGED_IN_USER_NAME_HEADER  = "X-name"
+  val SERVER_TOKEN_HEADER         = "X-server-token"
 }

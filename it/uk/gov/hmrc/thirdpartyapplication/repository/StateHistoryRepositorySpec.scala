@@ -33,8 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.LocalDateTime
 
 class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
-  with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
-
+    with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
 
@@ -69,8 +68,8 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
-      val stateHistory = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
+      val applicationId          = ApplicationId.random
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
@@ -85,7 +84,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
+      val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock).minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = LocalDateTime.now(clock))
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock))
@@ -106,7 +105,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
+      val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock).minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = LocalDateTime.now(clock))
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock))
@@ -127,8 +126,8 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
     "Delete the state histories of the application" in {
 
-      val applicationId = ApplicationId.random
-      val stateHistory = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
+      val applicationId          = ApplicationId.random
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
@@ -145,7 +144,8 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
         Index(key = Seq("state" -> Ascending), name = Some("state"), unique = false, background = true),
         Index(key = Seq("applicationId" -> Ascending), name = Some("applicationId"), unique = false, background = true),
         Index(key = Seq("applicationId" -> Ascending, "state" -> Ascending), name = Some("applicationId_state"), unique = false, background = true),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false))
+        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false)
+      )
 
       verifyIndexesVersionAgnostic(repository, expectedIndexes)
     }

@@ -23,8 +23,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import scala.concurrent.Future
 
 @Singleton
-class ApplicationDataService @Inject()(appRepo: ApplicationRepository) {
-  
+class ApplicationDataService @Inject() (appRepo: ApplicationRepository) {
+
   def fetchApp(applicationId: ApplicationId): Future[Option[ApplicationData]] =
     appRepo.fetch(applicationId)
 }

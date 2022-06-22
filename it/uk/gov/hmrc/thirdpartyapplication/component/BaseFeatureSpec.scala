@@ -36,29 +36,29 @@ import scala.concurrent.Await
 import scala.concurrent.ExecutionContext
 
 abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Matchers
-  with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {
+    with BeforeAndAfterEach with BeforeAndAfterAll with GuiceOneServerPerSuite {
 
   override lazy val runningServer: RunningServer = MyTestServerFactory.start(app)
 
   lazy val serviceUrl = s"http://localhost:$port"
-  val timeout = 10 seconds
+  val timeout         = 10 seconds
 
   def await[T](f: Future[T]): T = Await.result(f, timeout)
-  
-  val apiSubscriptionFieldsStub = ApiSubscriptionFieldsStub
+
+  val apiSubscriptionFieldsStub        = ApiSubscriptionFieldsStub
   val thirdPartyDelegatedAuthorityStub = ThirdPartyDelegatedAuthorityStub
-  val authStub = AuthStub
-  val totpStub = TOTPStub
-  val awsApiGatewayStub = AwsApiGatewayStub
-  val emailStub = EmailStub
-  val apiPlatformEventsStub = ApiPlatformEventsStub
+  val authStub                         = AuthStub
+  val totpStub                         = TOTPStub
+  val awsApiGatewayStub                = AwsApiGatewayStub
+  val emailStub                        = EmailStub
+  val apiPlatformEventsStub            = ApiPlatformEventsStub
+
   val mocks = {
-    Seq(apiSubscriptionFieldsStub, authStub, totpStub,
-      thirdPartyDelegatedAuthorityStub, awsApiGatewayStub, emailStub, apiPlatformEventsStub)
+    Seq(apiSubscriptionFieldsStub, authStub, totpStub, thirdPartyDelegatedAuthorityStub, awsApiGatewayStub, emailStub, apiPlatformEventsStub)
   }
 
   implicit lazy val mat = app.materializer
-  implicit lazy val ec = app.injector.instanceOf[ExecutionContext]
+  implicit lazy val ec  = app.injector.instanceOf[ExecutionContext]
 
   override protected def beforeAll(): Unit = {
     mocks.foreach(m => if (!m.stub.server.isRunning) m.stub.server.start())
@@ -74,6 +74,7 @@ abstract class BaseFeatureSpec extends AnyFeatureSpec with GivenWhenThen with Ma
 }
 
 case class MockHost(port: Int) {
+
   val server = new WireMockServer(
     WireMockConfiguration
       .wireMockConfig()

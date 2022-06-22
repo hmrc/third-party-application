@@ -27,10 +27,11 @@ trait MakeOptional[T <: Question] {
 }
 
 trait QuestionBuilder {
+
   implicit class TextQuestionSyntax(question: TextQuestion) extends MakeOptional[TextQuestion] {
     def makeOptional(text: String, mark: Mark): TextQuestion = question.copy(absence = Some((text, mark)))
   }
-  
+
   implicit class MultiChoiceQuestionSyntax(question: MultiChoiceQuestion) extends MakeOptional[MultiChoiceQuestion] {
     def makeOptional(text: String, mark: Mark): MultiChoiceQuestion = question.copy(absence = Some((text, mark)))
   }
@@ -49,7 +50,7 @@ trait QuestionBuilder {
       Wording(s"Wording$counter"),
       None
     )
-    
+
   def yesNoQuestion(counter: Int): YesNoQuestion = {
     YesNoQuestion(
       Question.Id.random,
@@ -72,7 +73,7 @@ trait QuestionBuilder {
       None,
       None,
       None,
-      choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])( (pair, acc) => acc + pair)
+      choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])((pair, acc) => acc + pair)
     )
   }
 
@@ -84,7 +85,7 @@ trait QuestionBuilder {
       None,
       None,
       None,
-      choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])( (pair, acc) => acc + pair)
+      choices.toList.map(c => (PossibleAnswer(c) -> Pass)).foldRight(ListMap.empty[PossibleAnswer, Mark])((pair, acc) => acc + pair)
     )
   }
 

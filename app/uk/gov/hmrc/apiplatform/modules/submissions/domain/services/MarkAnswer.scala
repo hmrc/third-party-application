@@ -21,7 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 object MarkAnswer {
   //
   // Assume answer is valid for question as it is only called for validated completed submissions
-  // 
+  //
 
   protected def markSingleChoiceAnswer(question: SingleChoiceQuestion, answer: SingleChoiceAnswer): Mark =
     question.marking.get(PossibleAnswer(answer.value)).get
@@ -32,28 +32,28 @@ object MarkAnswer {
 
     Monoid.combineAll(
       answer.values
-      .map(PossibleAnswer)
-      .map(question.marking.get(_).get)
+        .map(PossibleAnswer)
+        .map(question.marking.get(_).get)
     )
   }
 
   protected def markQuestion(question: Question, answer: ActualAnswer): Mark = {
     (question, answer) match {
-      case (_, NoAnswer) => question.absenceMark.getOrElse(throw new RuntimeException(s"Failed with $answer for $question"))
-      case (q: TextQuestion, a: TextAnswer) => Pass
+      case (_, NoAnswer)                                     => question.absenceMark.getOrElse(throw new RuntimeException(s"Failed with $answer for $question"))
+      case (q: TextQuestion, a: TextAnswer)                  => Pass
       case (q: MultiChoiceQuestion, a: MultipleChoiceAnswer) => markMultiChoiceAnswer(q, a)
-      case (q: SingleChoiceQuestion, a: SingleChoiceAnswer) => markSingleChoiceAnswer(q, a)
-      case (q: AcknowledgementOnly, AcknowledgedAnswer) => Pass
-      case _ => throw new IllegalArgumentException("Unexpectely the answer is not valid")
+      case (q: SingleChoiceQuestion, a: SingleChoiceAnswer)  => markSingleChoiceAnswer(q, a)
+      case (q: AcknowledgementOnly, AcknowledgedAnswer)      => Pass
+      case _                                                 => throw new IllegalArgumentException("Unexpectely the answer is not valid")
     }
   }
 
-  private def markInstanceInternal(submission: Submission, instance: Submission.Instance): Map[Question.Id,Mark] = {
+  private def markInstanceInternal(submission: Submission, instance: Submission.Instance): Map[Question.Id, Mark] = {
     // All questions should/must exist for these questionIds.
     def unsafeGetQuestion(id: Question.Id): Question = submission.findQuestion(id).get
 
     instance.answersToQuestions.map {
-        case (id: Question.Id, answer: ActualAnswer) => (id -> markQuestion(unsafeGetQuestion(id), answer))
+      case (id: Question.Id, answer: ActualAnswer) => (id -> markQuestion(unsafeGetQuestion(id), answer))
     }
   }
 
@@ -62,13 +62,13 @@ object MarkAnswer {
     require(submission.status.canBeMarked)
 
     submission.instances.find(_.index == index)
-    .fold(Map.empty[Question.Id, Mark])(i => markInstanceInternal(submission, i))
+      .fold(Map.empty[Question.Id, Mark])(i => markInstanceInternal(submission, i))
   }
 
   def markSubmission(submission: Submission): Map[Question.Id, Mark] = {
     // All answers must be valid to have got here
     require(submission.status.canBeMarked)
-  
+
     markInstanceInternal(submission, submission.latestInstance)
   }
 }

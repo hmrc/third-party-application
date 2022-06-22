@@ -25,12 +25,12 @@ object QuestionsAndAnswersToMap {
   }
 
   def apply(submission: Submission) = {
-     submission.latestInstance.answersToQuestions
-    .map{ 
-      case (questionId, answer) => (submission.findQuestion(questionId) -> answer)
-    }
-    .collect {
-      case (Some(question), answer) => (stripSpacesAndCapitalise(question.wording.value) -> ActualAnswersAsText(answer))  
-    }
+    submission.latestInstance.answersToQuestions
+      .map {
+        case (questionId, answer) => (submission.findQuestion(questionId) -> answer)
+      }
+      .collect {
+        case (Some(question), answer) => (stripSpacesAndCapitalise(question.wording.value) -> ActualAnswersAsText(answer))
+      }
   }
 }

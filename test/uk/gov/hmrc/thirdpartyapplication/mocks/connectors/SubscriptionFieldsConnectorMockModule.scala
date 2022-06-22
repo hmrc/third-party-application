@@ -36,6 +36,7 @@ trait ApiSubscriptionFieldsConnectorMockModule extends MockitoSugar with Argumen
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object DeleteSubscriptions {
+
       def thenReturnHasSucceeded() = {
         when(aMock.deleteSubscriptions(*[ClientId])(*)).thenReturn(successful(HasSucceeded))
       }

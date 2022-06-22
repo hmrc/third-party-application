@@ -52,7 +52,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import java.time.LocalDateTime
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
-  with ApplicationStateUtil with TableDrivenPropertyChecks {
+    with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -61,21 +61,22 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     def canDeleteApplications() = true
-    def enabled() = true
+    def enabled()               = true
 
-    val mockGatekeeperService: GatekeeperService = mock[GatekeeperService]
-    val mockEnrolment: Enrolment = mock[Enrolment]
-    val mockCredentialService: CredentialService = mock[CredentialService]
-    val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector = mock[AuthConnector]
+    val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
+    val mockEnrolment: Enrolment                     = mock[Enrolment]
+    val mockCredentialService: CredentialService     = mock[CredentialService]
+    val mockApplicationService: ApplicationService   = mock[ApplicationService]
+    val mockAuthConnector: AuthConnector             = mock[AuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockSubmissionService: SubmissionsService = mock[SubmissionsService]
-    val mockNamingService: UpliftNamingService = mock[UpliftNamingService]
-    val mockUpliftLinkService: UpliftLinkService = mock[UpliftLinkService]
+    val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
+    val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
+    val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
     val testAuthConfig: AuthConnector.Config =
       AuthConnector.Config(
@@ -88,9 +89,9 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
         authorisationKey = "12345"
       )
 
-    val applicationTtlInSecs = 1234
+    val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
-    val config = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
+    val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
     val underTest = new ApplicationController(
       mockApplicationService,
@@ -103,17 +104,18 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       mockSubmissionService,
       mockNamingService,
       mockUpliftLinkService,
-      Helpers.stubControllerComponents())
+      Helpers.stubControllerComponents()
+    )
   }
 
   trait SandboxDeleteApplications extends Setup {
     override def canDeleteApplications() = true
-    override def enabled() = false
+    override def enabled()               = false
   }
 
   trait ProductionDeleteApplications extends Setup {
     override def canDeleteApplications() = false
-    override def enabled() = true
+    override def enabled()               = true
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -147,17 +149,18 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR,UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random))
+    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
+    Collaborator("dev@example.com", DEVELOPER, UserId.random)
+  )
 
-  private val standardAccess = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
+  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess = Ropc()
+  private val ropcAccess       = Ropc()
 
   "Update" should {
-    val standardApplicationRequest = anUpdateApplicationRequest(standardAccess)
+    val standardApplicationRequest   = anUpdateApplicationRequest(standardAccess)
     val privilegedApplicationRequest = anUpdateApplicationRequest(privilegedAccess)
-    val id = ApplicationId.random
+    val id                           = ApplicationId.random
 
     "fail with a 404 (not found) when a valid Privileged application and gatekeeper is not logged in" in new Setup {
 
@@ -195,7 +198,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
             "overrides" : []
             }
           }"""
-      val result = underTest.update(id)(request.withBody(Json.parse(updateApplicationRequestJson)))
+      val result                               = underTest.update(id)(request.withBody(Json.parse(updateApplicationRequestJson)))
 
       status(result) shouldBe UNPROCESSABLE_ENTITY
       (contentAsJson(result) \ "message").as[String] shouldBe "requirement failed: maximum number of redirect URIs exceeded"

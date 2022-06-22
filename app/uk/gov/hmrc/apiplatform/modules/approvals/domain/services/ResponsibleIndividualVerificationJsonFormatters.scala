@@ -23,7 +23,7 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
   implicit val utcReads = DefaultLocalDateTimeReads
 
-  implicit val responsibleIndividualVerificationFormat = Json.format[ResponsibleIndividualVerification]
+  implicit val responsibleIndividualVerificationFormat            = Json.format[ResponsibleIndividualVerification]
   implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 

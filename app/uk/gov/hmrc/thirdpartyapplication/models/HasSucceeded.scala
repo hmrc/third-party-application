@@ -16,9 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-/**
- * Used instead of Unit where a method has nothing to return because Unit prevents
- * Scala's type checking from working on mappings of Future[Unit].
- */
+/** Used instead of Unit where a method has nothing to return because Unit prevents Scala's type checking from working on mappings of Future[Unit].
+  */
 trait HasSucceeded
 object HasSucceeded extends HasSucceeded

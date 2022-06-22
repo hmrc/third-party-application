@@ -29,14 +29,15 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   object ClientSecretServiceMock {
-    lazy val aMock: ClientSecretService =  mock[ClientSecretService]
+    lazy val aMock: ClientSecretService = mock[ClientSecretService]
 
-    def verify = MockitoSugar.verify(aMock)
-    def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock,mode)
+    def verify                                                  = MockitoSugar.verify(aMock)
+    def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     object GenerateClientSecret {
+
       def thenReturnWithSpecificSecret(id: String, secret: String) =
-        when(aMock.generateClientSecret()).thenReturn( (ClientSecret(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret) )
+        when(aMock.generateClientSecret()).thenReturn((ClientSecret(id = id, name = secret.takeRight(4), hashedSecret = secret.bcrypt(4)), secret))
 
       def thenReturnWithRandomSecret() = {
         val secret = UUID.randomUUID().toString
@@ -45,6 +46,7 @@ trait ClientSecretServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     }
 
     object ClientSecretIsValid {
+
       def thenReturnValidationResult(applicationId: ApplicationId, secret: String, candidateClientSecrets: Seq[ClientSecret])(matchingClientSecret: ClientSecret) =
         when(aMock.clientSecretIsValid(eqTo(applicationId), eqTo(secret), eqTo(candidateClientSecrets))).thenReturn(Future.successful(Some(matchingClientSecret)))
 

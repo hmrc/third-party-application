@@ -25,16 +25,17 @@ import org.mockito.MockitoSugar
 class StubLogger extends LoggerLike with MockitoSugar {
   override val logger: slf4j.Logger = mock[slf4j.Logger]
 
-  val infoMessages = new ListBuffer[String]()
-  val debugMessages = new ListBuffer[String]()
-  val warnMessages = new ListBuffer[String]()
-  val errorMessages = new ListBuffer[String]()
+  val infoMessages       = new ListBuffer[String]()
+  val debugMessages      = new ListBuffer[String]()
+  val warnMessages       = new ListBuffer[String]()
+  val errorMessages      = new ListBuffer[String]()
   val capturedExceptions = new ListBuffer[Throwable]()
 
-  override def info(message: => String)(implicit mc: MarkerContext): Unit = infoMessages += message
+  override def info(message: => String)(implicit mc: MarkerContext): Unit  = infoMessages += message
   override def debug(message: => String)(implicit mc: MarkerContext): Unit = debugMessages += message
-  override def warn(message: => String)(implicit mc: MarkerContext): Unit = warnMessages += message
+  override def warn(message: => String)(implicit mc: MarkerContext): Unit  = warnMessages += message
   override def error(message: => String)(implicit mc: MarkerContext): Unit = errorMessages += message
+
   override def error(message: => String, throwable: => Throwable)(implicit mc: MarkerContext): Unit = {
     errorMessages += message
     capturedExceptions += throwable

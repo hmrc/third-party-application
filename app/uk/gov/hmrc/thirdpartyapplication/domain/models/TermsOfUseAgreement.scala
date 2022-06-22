@@ -24,7 +24,7 @@ case class TermsOfUseAgreement(emailAddress: String, timeStamp: LocalDateTime, v
 
 object TermsOfUseAgreement {
   import play.api.libs.json.Json
-  
+
   implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
 
   implicit val format = Json.format[TermsOfUseAgreement]

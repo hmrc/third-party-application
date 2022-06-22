@@ -24,9 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 
 class UpliftLinksControllerSpec extends AsyncHmrcSpec {
+
   trait Setup extends UpliftLinkServiceMockModule {
     val sandboxAppId = ApplicationId.random
-    val prodAppId = ApplicationId.random
+    val prodAppId    = ApplicationId.random
 
     val controller = new UpliftLinksController(UpliftLinkServiceMock.aMock, stubControllerComponents())
   }

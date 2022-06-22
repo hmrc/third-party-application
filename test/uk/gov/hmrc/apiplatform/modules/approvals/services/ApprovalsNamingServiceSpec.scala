@@ -33,23 +33,23 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment
 
 class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
-  trait Setup 
-    extends AuditServiceMockModule 
-    with ApplicationRepositoryMockModule
-    with ApplicationNameValidationConfigMockModule
-    with ApplicationTestData {
+  trait Setup
+      extends AuditServiceMockModule
+      with ApplicationRepositoryMockModule
+      with ApplicationNameValidationConfigMockModule
+      with ApplicationTestData {
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val applicationId: ApplicationId = ApplicationId.random
-    val accessType: AccessType = STANDARD
-    val underTest = new ApprovalsNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, ApplicationNameValidationConfigMock.aMock)
+    val accessType: AccessType       = STANDARD
+    val underTest                    = new ApprovalsNamingService(AuditServiceMock.aMock, ApplicationRepoMock.aMock, ApplicationNameValidationConfigMock.aMock)
   }
 
   "ApplicationApprovalsNamingService" when {
     "validate application name" should {
 
-      "allow valid name" in new Setup { 
+      "allow valid name" in new Setup {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
         ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
@@ -60,7 +60,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
 
       "block a name with HMRC in" in new Setup {
         ApplicationRepoMock.FetchByName.thenReturnEmptyList()
-        ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))    
+        ApplicationNameValidationConfigMock.NameDenyList.thenReturns(List("HMRC"))
 
         val result = await(underTest.validateApplicationName("Invalid name HMRC", applicationId))
 
@@ -91,7 +91,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
         private val duplicateName = "duplicate name"
-        val result = await(underTest.validateApplicationName(duplicateName, applicationId))
+        val result                = await(underTest.validateApplicationName(duplicateName, applicationId))
 
         result shouldBe DuplicateName
 
@@ -104,7 +104,7 @@ class ApprovalsNamingServiceSpec extends AsyncHmrcSpec {
         ApplicationNameValidationConfigMock.ValidateForDuplicateAppNames.thenReturns(true)
 
         private val duplicateName = "duplicate name"
-        val result = await(underTest.validateApplicationName(duplicateName, applicationId))
+        val result                = await(underTest.validateApplicationName(duplicateName, applicationId))
 
         result shouldBe ValidName
 

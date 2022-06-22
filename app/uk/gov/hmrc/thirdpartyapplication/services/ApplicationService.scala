@@ -64,25 +64,27 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import java.time.{Clock, LocalDateTime}
 
 @Singleton
-class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
-                                   stateHistoryRepository: StateHistoryRepository,
-                                   subscriptionRepository: SubscriptionRepository,
-                                   auditService: AuditService,
-                                   apiPlatformEventService: ApiPlatformEventService,
-                                   emailConnector: EmailConnector,
-                                   totpConnector: TotpConnector,
-                                   system: ActorSystem,
-                                   lockKeeper: ApplicationLockKeeper,
-                                   apiGatewayStore: ApiGatewayStore,
-                                   applicationResponseCreator: ApplicationResponseCreator,
-                                   credentialGenerator: CredentialGenerator,
-                                   apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
-                                   thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
-                                   tokenService: TokenService,
-                                   submissionsService: SubmissionsService,
-                                   upliftNamingService: UpliftNamingService,
-                                   clock: Clock)
-                                   (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class ApplicationService @Inject() (
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    subscriptionRepository: SubscriptionRepository,
+    auditService: AuditService,
+    apiPlatformEventService: ApiPlatformEventService,
+    emailConnector: EmailConnector,
+    totpConnector: TotpConnector,
+    system: ActorSystem,
+    lockKeeper: ApplicationLockKeeper,
+    apiGatewayStore: ApiGatewayStore,
+    applicationResponseCreator: ApplicationResponseCreator,
+    credentialGenerator: CredentialGenerator,
+    apiSubscriptionFieldsConnector: ApiSubscriptionFieldsConnector,
+    thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector,
+    tokenService: TokenService,
+    submissionsService: SubmissionsService,
+    upliftNamingService: UpliftNamingService,
+    clock: Clock
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -92,7 +94,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       case Some(x) =>
         logger.info(s"Application ${application.name} has been created successfully")
         Future(x)
-      case None =>
+      case None    =>
         logger.warn(s"Application creation is locked. Retry scheduled for ${application.name}")
         akka.pattern.after(Duration(3, TimeUnit.SECONDS), using = system.scheduler) {
           create(application)
@@ -125,13 +127,18 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       applicationRepository.save(app.copy(collaborators = updated)) map (_.collaborators)
     }
 
-    def sendNotificationEmails(applicationName: String, collaborator: Collaborator, registeredUser: Boolean,
-                               adminsToEmail: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    def sendNotificationEmails(
+        applicationName: String,
+        collaborator: Collaborator,
+        registeredUser: Boolean,
+        adminsToEmail: Set[String]
+      )(implicit hc: HeaderCarrier
+      ): Future[HasSucceeded] = {
       def roleForEmail(role: Role) = {
         role match {
           case ADMINISTRATOR => "admin"
-          case DEVELOPER => "developer"
-          case _ => throw new RuntimeException(s"Unexpected role $role")
+          case DEVELOPER     => "developer"
+          case _             => throw new RuntimeException(s"Unexpected role $role")
         }
       }
 
@@ -145,12 +152,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
 
     for {
-      app <- fetchApp(applicationId)
+      app         <- fetchApp(applicationId)
       collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
-      _ <- addUser(app, collaborator)
-      _ = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
-      _ = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      _ = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
+      _           <- addUser(app, collaborator)
+      _            = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
+      _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
+      _            = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
 
@@ -162,13 +169,13 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def confirmSetupComplete(applicationId: ApplicationId, requesterEmailAddress: String): Future[ApplicationData] = {
     for {
-      app              <- fetchApp(applicationId)
-      oldState          = app.state
-      newState          = app.state.toProduction(clock)
-      appWithNewState   = app.copy(state = newState)
-      updatedApp       <- applicationRepository.save(appWithNewState)
-      stateHistory      = StateHistory(applicationId, newState.name, Actor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
-      _                <- stateHistoryRepository.insert(stateHistory)
+      app            <- fetchApp(applicationId)
+      oldState        = app.state
+      newState        = app.state.toProduction(clock)
+      appWithNewState = app.copy(state = newState)
+      updatedApp     <- applicationRepository.save(appWithNewState)
+      stateHistory    = StateHistory(applicationId, newState.name, Actor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
 
@@ -176,17 +183,17 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     logger.info(s"Trying to update the rate limit tier to $rateLimitTier for application ${applicationId.value}")
 
     for {
-      app <- fetchApp(applicationId)
-      _ <- apiGatewayStore.updateApplication(app, rateLimitTier)
+      app                <- fetchApp(applicationId)
+      _                  <- apiGatewayStore.updateApplication(app, rateLimitTier)
       updatedApplication <- applicationRepository.updateApplicationRateLimit(applicationId, rateLimitTier)
     } yield updatedApplication
   }
 
   def updateIpAllowlist(applicationId: ApplicationId, newIpAllowlist: IpAllowlist): Future[ApplicationData] = {
     for {
-      _ <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
-        case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
-      }
+      _          <- fromTry(Try(newIpAllowlist.allowlist.foreach(new SubnetUtils(_)))) recover {
+                      case e: IllegalArgumentException => throw InvalidIpAllowlistException(e.getMessage)
+                    }
       updatedApp <- applicationRepository.updateApplicationIpAllowlist(applicationId, newIpAllowlist)
     } yield updatedApp
   }
@@ -199,8 +206,12 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     } yield updatedApp
   }
 
-  def deleteApplication(applicationId: ApplicationId, request: Option[DeleteApplicationRequest], auditFunction: ApplicationData => Future[AuditResult])
-                       (implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def deleteApplication(
+      applicationId: ApplicationId,
+      request: Option[DeleteApplicationRequest],
+      auditFunction: ApplicationData => Future[AuditResult]
+    )(implicit hc: HeaderCarrier
+    ): Future[ApplicationStateChange] = {
     logger.info(s"Deleting application ${applicationId.value}")
 
     def deleteSubscriptions(app: ApplicationData): Future[HasSucceeded] = {
@@ -212,8 +223,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
       for {
         subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
-        _ <- traverse(subscriptions)(deleteSubscription)
-        _ <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
+        _             <- traverse(subscriptions)(deleteSubscription)
+        _             <- apiSubscriptionFieldsConnector.deleteSubscriptions(app.tokens.production.clientId)
       } yield HasSucceeded
     }
 
@@ -221,30 +232,35 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
       request match {
         case Some(r) => {
           val requesterEmail = r.requestedByEmailAddress
-          val recipients = app.admins.map(_.emailAddress)
+          val recipients     = app.admins.map(_.emailAddress)
           emailConnector.sendApplicationDeletedNotification(app.name, app.id, requesterEmail, recipients)
         }
-        case None => successful(())
+        case None    => successful(())
       }
     }
 
     (for {
       app <- fetchApp(applicationId)
-      _ <- deleteSubscriptions(app)
-      _ <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
-      _ <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
-      _ <- applicationRepository.delete(applicationId)
-      _ <- submissionsService.deleteAllAnswersForApplication(app.id)
-      _ <- stateHistoryRepository.deleteByApplicationId(applicationId)
-      _ = auditFunction(app)
-      _ = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
+      _   <- deleteSubscriptions(app)
+      _   <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
+      _   <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
+      _   <- applicationRepository.delete(applicationId)
+      _   <- submissionsService.deleteAllAnswersForApplication(app.id)
+      _   <- stateHistoryRepository.deleteByApplicationId(applicationId)
+      _    = auditFunction(app)
+      _    = recoverAll(sendEmailsIfRequestedByEmailAddressPresent(app))
     } yield Deleted).recover {
       case _: NotFoundException => Deleted
     }
   }
 
-  def deleteCollaborator(applicationId: ApplicationId, collaborator: String, adminsToEmail: Set[String], notifyCollaborator: Boolean)
-                        (implicit hc: HeaderCarrier): Future[Set[Collaborator]] = {
+  def deleteCollaborator(
+      applicationId: ApplicationId,
+      collaborator: String,
+      adminsToEmail: Set[String],
+      notifyCollaborator: Boolean
+    )(implicit hc: HeaderCarrier
+    ): Future[Set[Collaborator]] = {
     def deleteUser(app: ApplicationData): Future[ApplicationData] = {
       val updatedCollaborators = app.collaborators.filterNot(_.emailAddress equalsIgnoreCase collaborator)
       if (!hasAdmin(updatedCollaborators)) failed(new ApplicationNeedsAdmin)
@@ -258,22 +274,22 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     def audit(collaborator: Option[Collaborator]) = collaborator match {
       case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
-      case None => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
+      case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 
     def findCollaborator(app: ApplicationData): Option[Collaborator] = app.collaborators.find(_.emailAddress == collaborator.toLowerCase)
 
     def sendEvent(app: ApplicationData, maybeColab: Option[Collaborator]) = maybeColab match {
       case Some(collaborator) => apiPlatformEventService.sendTeamMemberRemovedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      case None => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
+      case None               => logger.warn(s"Failed to send TeamMemberRemovedEvent for appId: ${app.id}")
     }
 
     for {
-      app <- fetchApp(applicationId)
+      app     <- fetchApp(applicationId)
       updated <- deleteUser(app)
-      _ = audit(findCollaborator(app))
-      _ = sendEvent(app, findCollaborator(app))
-      _ = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
+      _        = audit(findCollaborator(app))
+      _        = sendEvent(app, findCollaborator(app))
+      _        = recoverAll(sendEmails(app.name, collaborator.toLowerCase, adminsToEmail))
     } yield updated.collaborators
   }
 
@@ -293,14 +309,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def recordApplicationUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
     for {
-      app <- applicationRepository.recordApplicationUsage(applicationId)
+      app           <- applicationRepository.recordApplicationUsage(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(app.id)
     } yield ExtendedApplicationResponse(app, subscriptions)
   }
 
   def recordServerTokenUsage(applicationId: ApplicationId): Future[ExtendedApplicationResponse] = {
     for {
-      app <- applicationRepository.recordServerTokenUsage(applicationId)
+      app           <- applicationRepository.recordServerTokenUsage(applicationId)
       subscriptions <- subscriptionRepository.getSubscriptions(app.id)
     } yield ExtendedApplicationResponse(app, subscriptions)
   }
@@ -308,7 +324,8 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationResponse]] = {
     applicationRepository.fetchByServerToken(serverToken) map {
       _.map(application =>
-        ApplicationResponse(data = application))
+        ApplicationResponse(data = application)
+      )
     }
   }
 
@@ -331,7 +348,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[List[ExtendedApplicationResponse]] = {
     applicationRepository.fetchAllForUserIdAndEnvironment(userId, environment)
-    .flatMap(asExtendedResponses)
+      .flatMap(asExtendedResponses)
   }
 
   def fetchAll(): Future[List[ApplicationResponse]] = {
@@ -365,7 +382,6 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     OptionT(applicationRepository.fetch(applicationId))
       .map(application => ApplicationResponse(data = application))
 
-
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationResponse] = {
     applicationRepository.searchApplications(applicationSearch).map { data =>
       PaginatedApplicationResponse(
@@ -373,14 +389,15 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         pageSize = applicationSearch.pageSize,
         total = data.totals.foldLeft(0)(_ + _.total),
         matching = data.matching.foldLeft(0)(_ + _.total),
-        applications = data.applications.map(application => ApplicationResponse(data = application)))
+        applications = data.applications.map(application => ApplicationResponse(data = application))
+      )
     }
   }
 
   private def createApp(req: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
     val createApplicationRequest: CreateApplicationRequest = req match {
-      case v1 : CreateApplicationRequestV1 => v1.normaliseCollaborators
-      case v2 : CreateApplicationRequestV2 => v2.normaliseCollaborators
+      case v1: CreateApplicationRequestV1 => v1.normaliseCollaborators
+      case v2: CreateApplicationRequestV2 => v2.normaliseCollaborators
     }
 
     logger.info(s"Creating application ${createApplicationRequest.name}")
@@ -397,24 +414,24 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
 
     def applyTotpForPrivAppsOnly(totp: Option[Totp], request: CreateApplicationRequest): CreateApplicationRequest = {
       request match {
-        case v1 @ CreateApplicationRequestV1(_, priv: Privileged, _,_,_,_) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
-        case _ => request
+        case v1 @ CreateApplicationRequestV1(_, priv: Privileged, _, _, _, _) => v1.copy(access = priv.copy(totpIds = extractTotpId(totp)))
+        case _                                                                => request
       }
     }
 
     val f = for {
-      _ <- createApplicationRequest.accessType match {
-        case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
-        case ROPC => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
-        case _ => successful(Unit)
-      }
-      totp <- generateApplicationTotp(createApplicationRequest.accessType)
+      _              <- createApplicationRequest.accessType match {
+                          case PRIVILEGED => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, PRIVILEGED)
+                          case ROPC       => upliftNamingService.assertAppHasUniqueNameAndAudit(createApplicationRequest.name, ROPC)
+                          case _          => successful(Unit)
+                        }
+      totp           <- generateApplicationTotp(createApplicationRequest.accessType)
       modifiedRequest = applyTotpForPrivAppsOnly(totp, req)
-      appData = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
-      _ <- createInApiGateway(appData)
-      _ <- applicationRepository.save(appData)
-      _ <- createStateHistory(appData)
-      _ = auditAppCreated(appData)
+      appData         = ApplicationData.create(modifiedRequest, wso2ApplicationName, tokenService.createEnvironmentToken(), LocalDateTime.now(clock))
+      _              <- createInApiGateway(appData)
+      _              <- applicationRepository.save(appData)
+      _              <- createStateHistory(appData)
+      _               = auditAppCreated(appData)
     } yield applicationResponseCreator.createApplicationResponse(appData, extractTotpSecret(totp))
 
     f andThen {
@@ -427,7 +444,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   private def generateApplicationTotp(accessType: AccessType)(implicit hc: HeaderCarrier): Future[Option[Totp]] = {
     accessType match {
       case PRIVILEGED => totpConnector.generateTotp().map(Some(_))
-      case _ => Future(None)
+      case _          => Future(None)
     }
   }
 
@@ -442,17 +459,20 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
       case PRIVILEGED | ROPC => Actor("", GATEKEEPER)
-      case _ => Actor(loggedInUser, COLLABORATOR)
+      case _                 => Actor(loggedInUser, COLLABORATOR)
     }
     insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =
-    auditService.audit(AppCreated, Map(
-      "applicationId" -> app.id.value.toString,
-      "newApplicationName" -> app.name,
-      "newApplicationDescription" -> app.description.getOrElse("")
-    ))
+    auditService.audit(
+      AppCreated,
+      Map(
+        "applicationId"             -> app.id.value.toString,
+        "newApplicationName"        -> app.name,
+        "newApplicationDescription" -> app.description.getOrElse("")
+      )
+    )
 
   private def updateApp(applicationId: ApplicationId)(applicationRequest: UpdateApplicationRequest)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     logger.info(s"Updating application ${applicationRequest.name}")
@@ -460,7 +480,7 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     def updatedAccess(existing: ApplicationData): Access =
       (applicationRequest.access, existing.access) match {
         case (newAccess: Standard, oldAccess: Standard) => newAccess.copy(overrides = oldAccess.overrides)
-        case _ => applicationRequest.access
+        case _                                          => applicationRequest.access
       }
 
     def updatedApplication(existing: ApplicationData): ApplicationData =
@@ -491,21 +511,26 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
         if (previous.redirectUris != updated.redirectUris) {
           apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
         }
-      case _ => ()
+      case _                                       => ()
     }
   }
-
 
   private def fetchApp(applicationId: ApplicationId) = {
     val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
     applicationRepository.fetch(applicationId).flatMap {
-      case None => failed(notFoundException)
+      case None      => failed(notFoundException)
       case Some(app) => successful(app)
     }
   }
 
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
+  private def insertStateHistory(
+      snapshotApp: ApplicationData,
+      newState: State,
+      oldState: Option[State],
+      requestedBy: String,
+      actorType: ActorType.ActorType,
+      rollback: ApplicationData => Any
+    ) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
@@ -519,13 +544,14 @@ class ApplicationService @Inject()(applicationRepository: ApplicationRepository,
     }
   }
 
-  private def loggedInUser(implicit hc: HeaderCarrier) = 
+  private def loggedInUser(implicit hc: HeaderCarrier) =
     hc.valueOf(LOGGED_IN_USER_EMAIL_HEADER)
-    .getOrElse("")
+      .getOrElse("")
 }
 
 @Singleton
-class ApplicationLockKeeper @Inject()(reactiveMongoComponent: ReactiveMongoComponent) extends LockKeeper {
+class ApplicationLockKeeper @Inject() (reactiveMongoComponent: ReactiveMongoComponent) extends LockKeeper {
+
   override def repo: LockRepository = {
     LockMongoRepository(reactiveMongoComponent.mongoConnector.db)
   }

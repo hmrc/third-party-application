@@ -28,11 +28,14 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.{failed, successful}
 
 @Singleton
-class SubscriptionService @Inject()(applicationRepository: ApplicationRepository,
-                                    subscriptionRepository: SubscriptionRepository,
-                                    auditService: AuditService,
-                                    apiPlatformEventService: ApiPlatformEventService,
-                                    apiGatewayStore: ApiGatewayStore)(implicit val ec: ExecutionContext) {
+class SubscriptionService @Inject() (
+    applicationRepository: ApplicationRepository,
+    subscriptionRepository: SubscriptionRepository,
+    auditService: AuditService,
+    apiPlatformEventService: ApiPlatformEventService,
+    apiGatewayStore: ApiGatewayStore
+  )(implicit val ec: ExecutionContext
+  ) {
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
@@ -44,7 +47,7 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
 
   def fetchAllSubscriptionsForApplication(applicationId: ApplicationId): Future[Set[ApiIdentifier]] = {
     for {
-      _ <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
+      _             <- fetchApp(applicationId) // Determine whether application exists and fail if it doesn't
       subscriptions <- subscriptionRepository.getSubscriptions(applicationId)
     } yield subscriptions.toSet
   }
@@ -56,33 +59,36 @@ class SubscriptionService @Inject()(applicationRepository: ApplicationRepository
   def createSubscriptionForApplicationMinusChecks(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
-      _ <- subscriptionRepository.add(applicationId, apiIdentifier)
-      _ <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
-      _ <- auditSubscription(Subscribed, applicationId, apiIdentifier)
+      _   <- subscriptionRepository.add(applicationId, apiIdentifier)
+      _   <- apiPlatformEventService.sendApiSubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
+      _   <- auditSubscription(Subscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
   }
 
   def removeSubscriptionForApplication(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
-      _ <- subscriptionRepository.remove(applicationId, apiIdentifier)
-      _ <- apiPlatformEventService.sendApiUnsubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
-      _ <- auditSubscription(Unsubscribed, applicationId, apiIdentifier)
+      _   <- subscriptionRepository.remove(applicationId, apiIdentifier)
+      _   <- apiPlatformEventService.sendApiUnsubscribedEvent(app, apiIdentifier.context, apiIdentifier.version)
+      _   <- auditSubscription(Unsubscribed, applicationId, apiIdentifier)
     } yield HasSucceeded
   }
 
   private def auditSubscription(action: AuditAction, applicationId: ApplicationId, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
-    auditService.audit(action, Map(
-      "applicationId" -> applicationId.value.toString,
-      "apiVersion" -> api.version.value,
-      "apiContext" -> api.context.value
-    ))
+    auditService.audit(
+      action,
+      Map(
+        "applicationId" -> applicationId.value.toString,
+        "apiVersion"    -> api.version.value,
+        "apiContext"    -> api.context.value
+      )
+    )
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
     applicationRepository.fetch(applicationId).flatMap {
       case Some(app) => successful(app)
-      case _ => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
+      case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
     }
   }
 
