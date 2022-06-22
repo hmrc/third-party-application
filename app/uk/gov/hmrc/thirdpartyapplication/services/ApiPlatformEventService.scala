@@ -16,6 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import cats.data.NonEmptyList
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
@@ -40,6 +42,15 @@ import scala.concurrent.{ExecutionContext, Future}
 // TODO - context and version probably should be strings in the events??
 @Singleton
 class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+
+  def applyEvents(events: NonEmptyList[UpdateApplicationAuditEvent]): Future[Boolean] = {
+    require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
+
+    events match {
+      case NonEmptyList(e, Nil) => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
 
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString

@@ -28,12 +28,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationUpdateService @Inject() (
-    applicationRepository: ApplicationRepository,
-    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-    notificationService: NotificationService
-  )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+class ApplicationUpdateService @Inject()(
+  applicationRepository: ApplicationRepository,
+  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+  notificationService: NotificationService,
+  apiPlatformEventService: ApiPlatformEventService
+) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
@@ -44,6 +44,8 @@ class ApplicationUpdateService @Inject() (
       repositoryEvents <-
         E.fromOption(NonEmptyList.fromList(events.collect { case e: UpdateApplicationRepositoryEvent => e }), NonEmptyChain(s"No repository events found for this command"))
       savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
+      auditEvents      <- E.fromOption(NonEmptyList.fromList(events.collect{case e: UpdateApplicationAuditEvent => e}), NonEmptyChain(s"No audit events found for this command"))
+      _                <- E.liftF(apiPlatformEventService.applyEvents(auditEvents))
       _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case e: UpdateApplicationNotificationEvent => e }))
     } yield savedApp
   }

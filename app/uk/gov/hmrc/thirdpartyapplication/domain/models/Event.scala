@@ -24,12 +24,13 @@ trait UpdateApplicationEvent {
   def instigator: UserId
 }
 
-trait UpdateApplicationRepositoryEvent extends UpdateApplicationEvent {
-}
+trait UpdateApplicationRepositoryEvent extends UpdateApplicationEvent
 
 trait UpdateApplicationNotificationEvent extends UpdateApplicationEvent {
   def requester: String
 }
+
+trait UpdateApplicationAuditEvent extends UpdateApplicationEvent
 
 object UpdateApplicationEvent {
 
