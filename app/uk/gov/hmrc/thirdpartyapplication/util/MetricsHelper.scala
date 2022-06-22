@@ -18,9 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.util
 
 trait MetricsHelper {
 
-def sanitiseGrafanaNodeName(name: String) : String = {
+  def sanitiseGrafanaNodeName(name: String): String = {
 
-  name.replaceAll("(\\W){1}", "_")
-}
+    name.replaceAll("(\\W){1}", "_")
+  }
 
 }

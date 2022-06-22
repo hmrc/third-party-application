@@ -25,12 +25,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import org.mockito.captor.{ArgCaptor, Captor}
 
 trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseSubmissionsServiceMock {
     def aMock: SubmissionsService
 
     def verify = MockitoSugar.verify(aMock)
 
     object Create {
+
       def thenReturn(submission: Submission) =
         when(aMock.create(*[ApplicationId], *)).thenReturn(successful(Right(submission)))
 
@@ -39,6 +41,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object FetchLatest {
+
       def thenReturn(submission: Submission) =
         when(aMock.fetchLatest(*[ApplicationId])).thenReturn(successful(Some(submission)))
 
@@ -47,6 +50,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object FetchLatestExtended {
+
       def thenReturn(extSubmission: ExtendedSubmission) =
         when(aMock.fetchLatestExtended(*[ApplicationId])).thenReturn(successful(Some(extSubmission)))
 
@@ -55,6 +59,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object FetchLatestMarkedSubmission {
+
       def thenReturn(markedSubmission: MarkedSubmission) =
         when(aMock.fetchLatestMarkedSubmission(*[ApplicationId])).thenReturn(successful(Right(markedSubmission)))
 
@@ -63,6 +68,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object Fetch {
+
       def thenReturn(extSubmission: ExtendedSubmission) =
         when(aMock.fetch(*[Submission.Id])).thenReturn(successful(Some(extSubmission)))
 
@@ -71,21 +77,24 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object RecordAnswers {
-      def thenReturn( extSubmission: ExtendedSubmission ) =
+
+      def thenReturn(extSubmission: ExtendedSubmission) =
         when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Right(extSubmission)))
 
-      def thenFails(error: String) = 
+      def thenFails(error: String) =
         when(aMock.recordAnswers(*[Submission.Id], *[Question.Id], *[List[String]])).thenReturn(successful(Left(error)))
     }
 
     object DeleteAll {
+
       def thenReturn() =
         when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(1))
     }
 
     object Store {
+
       def thenReturn() =
-        when(aMock.store(*[Submission])).thenAnswer( (s: Submission) => (successful(s)) )
+        when(aMock.store(*[Submission])).thenAnswer((s: Submission) => (successful(s)))
 
       def verifyCalledWith() = {
         val capture: Captor[Submission] = ArgCaptor[Submission]

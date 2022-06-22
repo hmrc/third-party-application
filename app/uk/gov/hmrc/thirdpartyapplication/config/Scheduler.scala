@@ -27,6 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
+
   override def configure(): Unit = {
     bind(classOf[Scheduler]).asEagerSingleton()
     bind(classOf[MetricsScheduler]).asEagerSingleton()
@@ -35,21 +36,21 @@ class SchedulerModule extends AbstractModule with ApplicationLogger {
 }
 
 @Singleton
-class Scheduler @Inject()(upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
-                          bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
-                          resetLastAccessDateJob: ResetLastAccessDateJob,
-                          responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
-                          responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
-                          override val applicationLifecycle: ApplicationLifecycle,
-                          override val application: Application)
-                          (implicit val ec: ExecutionContext)
-                          extends RunningOfScheduledJobs {
+class Scheduler @Inject() (
+    upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
+    bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
+    resetLastAccessDateJob: ResetLastAccessDateJob,
+    responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
+    responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
+    override val applicationLifecycle: ApplicationLifecycle,
+    override val application: Application
+  )(implicit val ec: ExecutionContext
+  ) extends RunningOfScheduledJobs {
 
-  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] =  {
-    Seq(upliftVerificationExpiryJob, resetLastAccessDateJob,
-      responsibleIndividualVerificationReminderJob,
-      responsibleIndividualVerificationRemovalJob
-    ).filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
+  override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] = {
+    Seq(upliftVerificationExpiryJob, resetLastAccessDateJob, responsibleIndividualVerificationReminderJob, responsibleIndividualVerificationRemovalJob).filter(_.isEnabled) ++ Seq(
+      bcryptPerformanceMeasureJob
+    )
   }
 }
 

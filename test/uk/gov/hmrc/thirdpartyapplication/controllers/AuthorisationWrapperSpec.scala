@@ -45,10 +45,9 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
-  val mockAuthConfig = mock[AuthConnector.Config]
+  val mockAuthConfig                           = mock[AuthConnector.Config]
 
   when(mockAuthConfig.enabled).thenReturn(true)
-
 
   abstract class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AuthorisationWrapper {
     def applicationService: ApplicationService
@@ -59,13 +58,14 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
 
   trait Setup {
     val stubControllerComponents = Helpers.stubControllerComponents()
+
     val underTest = new TestAuthorisationWrapper(stubControllerComponents) {
-      implicit val headerCarrier: HeaderCarrier = HeaderCarrier()
-      override val authConnector: AuthConnector = mock[AuthConnector]
+      implicit val headerCarrier: HeaderCarrier           = HeaderCarrier()
+      override val authConnector: AuthConnector           = mock[AuthConnector]
       override val applicationService: ApplicationService = mock[ApplicationService]
-      override val authConfig: AuthConnector.Config = mockAuthConfig
+      override val authConfig: AuthConnector.Config       = mockAuthConfig
     }
-    val request = FakeRequest()
+    val request   = FakeRequest()
 
     val parse = stubControllerComponents.parsers
 
@@ -74,16 +74,17 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   }
 
   "Authenticate for Access Type and Role" should {
-    val ropcRequest = postRequestWithAccess(Ropc())
+    val ropcRequest       = postRequestWithAccess(Ropc())
     val privilegedRequest = postRequestWithAccess(Privileged())
-    val standardRequest = postRequestWithAccess(Standard())
+    val standardRequest   = postRequestWithAccess(Standard())
 
     "accept the request when access type in the payload is PRIVILEGED and gatekeeper authenticated" in new Setup {
 
       givenUserIsAuthenticated(underTest)
 
       val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
-        successful(Ok("")))(privilegedRequest)
+        successful(Ok(""))
+      )(privilegedRequest)
 
       status(result) shouldBe OK
     }
@@ -96,7 +97,8 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
     "skip gatekeeper authentication for payload with STANDARD applications if the method only requires auth for priviledged app" in new Setup {
 
       val result = underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
-        successful(Ok("")))(standardRequest)
+        successful(Ok(""))
+      )(standardRequest)
 
       status(result) shouldBe OK
       verifyZeroInteractions(underTest.authConnector)
@@ -107,8 +109,8 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       givenUserIsNotAuthenticated(underTest)
 
       assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(PRIVILEGED).async(parse.json)(_ =>
-        successful(Ok("")))(privilegedRequest))
-      )
+        successful(Ok(""))
+      )(privilegedRequest)))
     }
 
     "throws SessionRecordNotFound when access type in the payload is ROPC and gatekeeper is not logged in" in new Setup {
@@ -119,10 +121,10 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   }
 
   "Authenticate for Access Type, Role and Application ID" should {
-    val applicationId = ApplicationId.random
-    val ropcApplication = application(Ropc())
+    val applicationId         = ApplicationId.random
+    val ropcApplication       = application(Ropc())
     val privilegedApplication = application(Privileged())
-    val standardApplication = application(Standard())
+    val standardApplication   = application(Standard())
 
     "accept the request when access type of the application is PRIVILEGED and gatekeeper is logged in" in new Setup {
 
@@ -156,7 +158,6 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
       mockFetchApplicationToReturn(applicationId, Some(privilegedApplication))
 
       givenUserIsNotAuthenticated(underTest)
-
 
       assertThrows[SessionRecordNotFound](await(underTest.requiresAuthenticationFor(applicationId, PRIVILEGED).async(_ => successful(Ok("")))(request)))
     }
@@ -203,7 +204,18 @@ class AuthorisationWrapperSpec(implicit val executionContext: ExecutionContext) 
   private def application(access: Access) = {
     val grantLengthInDays = 547
     ApplicationResponse(
-      ApplicationId.random, ClientId("clientId"), "gatewayId", "name", "PRODUCTION", None, Set(), LocalDateTime.now, Some(LocalDateTime.now), grantLengthInDays, access = access)
+      ApplicationId.random,
+      ClientId("clientId"),
+      "gatewayId",
+      "name",
+      "PRODUCTION",
+      None,
+      Set(),
+      LocalDateTime.now,
+      Some(LocalDateTime.now),
+      grantLengthInDays,
+      access = access
+    )
   }
 
 }

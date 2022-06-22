@@ -29,22 +29,27 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UpliftLinksRepository @Inject() (mongo: MongoComponent)
-                                      (implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[UpliftLink](
+class UpliftLinksRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[UpliftLink](
       collectionName = "upliftlinks",
       mongoComponent = mongo,
       domainFormat = UpliftLinkJsonFormatter.jsonFormatUpliftLink,
-      indexes = Seq(IndexModel(ascending("productionApplicationId"), IndexOptions()
+      indexes = Seq(
+        IndexModel(
+          ascending("productionApplicationId"),
+          IndexOptions()
             .name("productionApplicationIdIndex")
             .unique(true)
             .background(true)
         ),
-        IndexModel(ascending("sandboxApplicationId"), IndexOptions()
+        IndexModel(
+          ascending("sandboxApplicationId"),
+          IndexOptions()
             .name("sandboxApplicationIdIndex")
             .background(true)
         )
-      ), replaceIndexes = true
+      ),
+      replaceIndexes = true
     ) {
 
   def insert(upliftLink: UpliftLink): Future[UpliftLink] = {
@@ -55,7 +60,7 @@ class UpliftLinksRepository @Inject() (mongo: MongoComponent)
 
   def find(productionAppId: ApplicationId): Future[Option[ApplicationId]] = {
     collection.find(equal("productionApplicationId", Codecs.toBson(productionAppId)))
-    .map(_.sandboxApplicationId)
-    .headOption()
+      .map(_.sandboxApplicationId)
+      .headOption()
   }
 }

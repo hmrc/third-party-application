@@ -22,15 +22,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 
 import java.time.{ZoneOffset, ZonedDateTime}
 
-
 class ApplicationSearchSpec extends HmrcSpec {
 
   "ApplicationSearch" should {
 
     "correctly parse page number and size" in {
       val expectedPageNumber: Int = 2
-      val expectedPageSize: Int = 50
-      val request = FakeRequest("GET", s"/applications?page=$expectedPageNumber&pageSize=$expectedPageSize")
+      val expectedPageSize: Int   = 50
+      val request                 = FakeRequest("GET", s"/applications?page=$expectedPageNumber&pageSize=$expectedPageSize")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
@@ -40,12 +39,12 @@ class ApplicationSearchSpec extends HmrcSpec {
 
     "correctly parse search text filter" in {
       val searchText = "foo"
-      val request = FakeRequest("GET", s"/applications?search=$searchText")
+      val request    = FakeRequest("GET", s"/applications?search=$searchText")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.filters.size shouldBe 1
-      searchObject.filters should contain (ApplicationTextSearch)
+      searchObject.filters should contain(ApplicationTextSearch)
       searchObject.textToSearch shouldBe Some(searchText)
     }
 
@@ -54,7 +53,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain (OneOrMoreAPISubscriptions)
+      searchObject.filters should contain(OneOrMoreAPISubscriptions)
     }
 
     "correctly parse Application Status filter" in {
@@ -62,7 +61,7 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain (PendingGatekeeperCheck)
+      searchObject.filters should contain(PendingGatekeeperCheck)
     }
 
     "correctly parse Access Type filter" in {
@@ -70,11 +69,11 @@ class ApplicationSearchSpec extends HmrcSpec {
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain (PrivilegedAccess)
+      searchObject.filters should contain(PrivilegedAccess)
     }
 
     "correctly parse lastUseBefore into LastUseBeforeDate filter" in {
-      val dateAsISOString = "2020-02-22T16:35:00Z"
+      val dateAsISOString  = "2020-02-22T16:35:00Z"
       val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
@@ -82,12 +81,12 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be (true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
+      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
     }
 
     "correctly parse date only into LastUseBeforeDate filter" in {
-      val dateAsISOString = "2020-02-22"
+      val dateAsISOString  = "2020-02-22"
       val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 0, 0, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseBefore=$dateAsISOString")
@@ -95,12 +94,12 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseBeforeDate] should be (true)
-      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+      parsedFilter.isInstanceOf[LastUseBeforeDate] should be(true)
+      parsedFilter.asInstanceOf[LastUseBeforeDate].lastUseDate.isEqual(expectedDateTime) should be(true)
     }
 
     "correctly parse lastUseAfter into LastUseAfterDate filter" in {
-      val dateAsISOString = "2020-02-22T16:35:00Z"
+      val dateAsISOString  = "2020-02-22T16:35:00Z"
       val expectedDateTime = ZonedDateTime.of(2020, 2, 22, 16, 35, 0, 0, ZoneOffset.UTC).toLocalDateTime
 
       val request = FakeRequest("GET", s"/applications?lastUseAfter=$dateAsISOString")
@@ -108,8 +107,8 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be (true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
+      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
     }
 
     "correctly parse date only into LastUseAfterDate filter" in {
@@ -122,16 +121,16 @@ class ApplicationSearchSpec extends HmrcSpec {
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       val parsedFilter = searchObject.filters.head
-      parsedFilter.isInstanceOf[LastUseAfterDate] should be (true)
-      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be (true)
+      parsedFilter.isInstanceOf[LastUseAfterDate] should be(true)
+      parsedFilter.asInstanceOf[LastUseAfterDate].lastUseDate.isEqual(expectedDateTime) should be(true)
     }
 
     "correctly parses multiple filters" in {
-      val expectedPageNumber: Int = 3
-      val expectedPageSize: Int = 250
+      val expectedPageNumber: Int    = 3
+      val expectedPageSize: Int      = 250
       val expectedSearchText: String = "foo"
-      val expectedAPIContext = "test-api"
-      val expectedAPIVersion = "v1"
+      val expectedAPIContext         = "test-api"
+      val expectedAPIVersion         = "v1"
 
       val request =
         FakeRequest(
@@ -143,12 +142,13 @@ class ApplicationSearchSpec extends HmrcSpec {
             s"&accessType=ROPC" +
             s"&search=$expectedSearchText" +
             s"&page=$expectedPageNumber" +
-            s"&pageSize=$expectedPageSize")
+            s"&pageSize=$expectedPageSize"
+        )
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain (SpecificAPISubscription)
-      searchObject.filters should contain (Created)
+      searchObject.filters should contain(SpecificAPISubscription)
+      searchObject.filters should contain(Created)
     }
 
     "not return a filter where apiSubscription is included with empty string" in {
@@ -160,57 +160,57 @@ class ApplicationSearchSpec extends HmrcSpec {
     }
 
     "populate apiContext if specific value is provided" in {
-      val api = "foo"
+      val api     = "foo"
       val request = FakeRequest("GET", s"/applications?apiSubscription=$api")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.apiContext shouldBe Some(api.asContext)
-      searchObject.filters should contain (SpecificAPISubscription)
+      searchObject.filters should contain(SpecificAPISubscription)
     }
 
     "populate apiContext and apiVersion if specific values are provided" in {
-      val api = "foo"
+      val api        = "foo"
       val apiVersion = "1.0"
-      val request = FakeRequest("GET", s"/applications?apiSubscription=$api--$apiVersion")
+      val request    = FakeRequest("GET", s"/applications?apiSubscription=$api--$apiVersion")
 
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
-      searchObject.filters should contain (SpecificAPISubscription)
+      searchObject.filters should contain(SpecificAPISubscription)
       searchObject.apiContext shouldBe Some(api.asContext)
       searchObject.apiVersion shouldBe Some(apiVersion.asVersion)
     }
 
     "populate sort as NameAscending when sort is NAME_ASC" in {
-      val request = FakeRequest("GET", "/applications?sort=NAME_ASC")
+      val request      = FakeRequest("GET", "/applications?sort=NAME_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe NameAscending
     }
 
     "populate sort as NameDescending when sort is NAME_DESC" in {
-      val request = FakeRequest("GET", "/applications?sort=NAME_DESC")
+      val request      = FakeRequest("GET", "/applications?sort=NAME_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe NameDescending
     }
 
     "populate sort as SubmittedAscending when sort is SUBMITTED_DESC" in {
-      val request = FakeRequest("GET", "/applications?sort=SUBMITTED_ASC")
+      val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_ASC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedAscending
     }
 
     "populate sort as SubmittedDescending when sort is SUBMITTED_DESC" in {
-      val request = FakeRequest("GET", "/applications?sort=SUBMITTED_DESC")
+      val request      = FakeRequest("GET", "/applications?sort=SUBMITTED_DESC")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedDescending
     }
 
     "populate sort as SubmittedAscending when sort is not specified" in {
-      val request = FakeRequest("GET", "/applications")
+      val request      = FakeRequest("GET", "/applications")
       val searchObject = ApplicationSearch.fromQueryString(request.queryString)
 
       searchObject.sort shouldBe SubmittedAscending

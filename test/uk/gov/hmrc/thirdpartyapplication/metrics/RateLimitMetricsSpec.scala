@@ -28,6 +28,7 @@ import scala.concurrent.Future
 class RateLimitMetricsSpec extends AsyncHmrcSpec {
 
   trait Setup {
+
     def applicationsWithRateLimit(rateLimit: Option[RateLimitTier], numberOfApplications: Int): List[ApplicationData] = {
       def mockedApplication: ApplicationData = {
         val application: ApplicationData = mock[ApplicationData]
@@ -46,9 +47,9 @@ class RateLimitMetricsSpec extends AsyncHmrcSpec {
 
   "metrics refresh" should {
     "update application by rate limit counts" in new Setup {
-      private val numberOfBronze = 10
-      private val numberOfSilver = 5
-      private val numberOfGold = 2
+      private val numberOfBronze  = 10
+      private val numberOfSilver  = 5
+      private val numberOfGold    = 2
       private val numberOfUnknown = 1
 
       private val applicationsToReturn: List[ApplicationData] =

@@ -22,16 +22,16 @@ import java.time.{LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
 case class ClientSecret(
-                         name: String,
-                         createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                         lastAccess: Option[LocalDateTime] = None,
-                         id: String = ju.UUID.randomUUID().toString,
-                         hashedSecret: String
+    name: String,
+    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    lastAccess: Option[LocalDateTime] = None,
+    id: String = ju.UUID.randomUUID().toString,
+    hashedSecret: String
   )
-  
+
 object ClientSecret {
   import play.api.libs.json.Json
 
   implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format = Json.format[ClientSecret]
+  implicit val format     = Json.format[ClientSecret]
 }

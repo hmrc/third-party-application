@@ -33,10 +33,10 @@ import java.time.LocalDateTime
 import java.util.UUID
 
 class ResponsibleIndividualVerificationRepositoryISpec
-  extends ServerBaseISpec
-  with SubmissionsTestData
-  with BeforeAndAfterEach
-  with FixedClock {
+    extends ServerBaseISpec
+    with SubmissionsTestData
+    with BeforeAndAfterEach
+    with FixedClock {
 
   protected override def appBuilder: GuiceApplicationBuilder = {
     GuiceApplicationBuilder()
@@ -44,7 +44,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         "metrics.jvm" -> false,
         "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
       ).overrides(inject.bind[Clock].toInstance(clock))
-       .disable(classOf[SchedulerModule])
+      .disable(classOf[SchedulerModule])
   }
 
   val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
@@ -54,16 +54,26 @@ class ResponsibleIndividualVerificationRepositoryISpec
     await(repository.ensureIndexes)
   }
 
-  def buildDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) =
+  def buildDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = LocalDateTime.now,
+      submissionId: Submission.Id = Submission.Id.random,
+      submissionIndex: Int = 0
+    ) =
     ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
 
-  def buildAndSaveDoc(state: ResponsibleIndividualVerificationState, createdOn: LocalDateTime = LocalDateTime.now, submissionId: Submission.Id = Submission.Id.random, submissionIndex: Int = 0) = {
+  def buildAndSaveDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = LocalDateTime.now,
+      submissionId: Submission.Id = Submission.Id.random,
+      submissionIndex: Int = 0
+    ) = {
     await(repository.save(buildDoc(state, createdOn, submissionId, submissionIndex)))
   }
 
-  val MANY_DAYS_AGO = 10
+  val MANY_DAYS_AGO    = 10
   val UPDATE_THRESHOLD = 5
-  val FEW_DAYS_AGO = 1
+  val FEW_DAYS_AGO     = 1
 
   "save" should {
     "save document to the database" in {
@@ -77,7 +87,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetch" should {
     "retrieve a document by id" in {
-      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc   = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
       val fetchedDoc = await(repository.fetch(savedDoc.id))
 
       Some(savedDoc) mustBe fetchedDoc
@@ -93,10 +103,10 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "remove the record matching the latest submission instance only" in {
-      val submissionId = Submission.Id.random
+      val submissionId                   = Submission.Id.random
       val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
       buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
-      val submissionWithTwoInstances = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
+      val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
       await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
@@ -118,7 +128,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "updateState" should {
     "change state correctly" in {
-      val stateInitial = buildAndSaveDoc(INITIAL)
+      val stateInitial      = buildAndSaveDoc(INITIAL)
       val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
 
       await(repository.updateState(stateInitial.id, REMINDERS_SENT))

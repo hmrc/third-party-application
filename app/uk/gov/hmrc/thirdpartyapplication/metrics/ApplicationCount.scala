@@ -43,7 +43,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApplicationCount @Inject()(applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class ApplicationCount @Inject() (applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val result = applicationRepository.count

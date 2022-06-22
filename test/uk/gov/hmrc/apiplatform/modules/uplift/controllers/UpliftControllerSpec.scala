@@ -40,27 +40,27 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-class UpliftControllerSpec 
-  extends ControllerSpec
-  with ApplicationStateUtil
-  with TableDrivenPropertyChecks
-  with UpliftServiceMockModule
-  with ControllerTestData
-  with FixedClock {
+class UpliftControllerSpec
+    extends ControllerSpec
+    with ApplicationStateUtil
+    with TableDrivenPropertyChecks
+    with UpliftServiceMockModule
+    with ControllerTestData
+    with FixedClock {
 
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-
   trait Setup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
+
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     def canDeleteApplications() = true
-    def enabled() = true
+    def enabled()               = true
 
     val underTest = new UpliftController(
       UpliftServiceMock.aMock,
@@ -69,10 +69,10 @@ class UpliftControllerSpec
   }
 
   "requestUplift" should {
-    val applicationId = ApplicationId.random
+    val applicationId           = ApplicationId.random
     val requestedByEmailAddress = "big.boss@example.com"
-    val requestedName = "Application Name"
-    val upliftRequest = UpliftApplicationRequest(requestedName, requestedByEmailAddress)
+    val requestedName           = "Application Name"
+    val upliftRequest           = UpliftApplicationRequest(requestedName, requestedByEmailAddress)
 
     "return updated application if successful" in new Setup {
       aNewApplicationResponse().copy(state = pendingGatekeeperApprovalState(requestedByEmailAddress))
@@ -139,6 +139,5 @@ class UpliftControllerSpec
       status(result) shouldBe BAD_REQUEST
     }
   }
-
 
 }

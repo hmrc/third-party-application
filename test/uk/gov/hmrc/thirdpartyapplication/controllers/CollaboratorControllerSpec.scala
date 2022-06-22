@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import akka.stream.Materializer
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.apache.http.HttpStatus._
-import play.api.test.{Helpers, FakeRequest}
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
@@ -41,28 +41,29 @@ class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUti
   trait Setup {
     implicit val hc = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
-    val mockApplicationService = mock[ApplicationService]
+    val mockApplicationService  = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
-    val mockAuthConnector = mock[AuthConnector]
-    val mockAuthConfig = mock[AuthConnector.Config]
+    val mockAuthConnector       = mock[AuthConnector]
+    val mockAuthConfig          = mock[AuthConnector.Config]
 
     val underTest = new CollaboratorController(
       mockApplicationService,
       mockAuthConnector,
       mockAuthConfig,
       mockSubscriptionService,
-      Helpers.stubControllerComponents())
+      Helpers.stubControllerComponents()
+    )
   }
 
   "searchCollaborators" should {
 
     "succeed with a 200 (ok) when collaborators are found for an Api context and version" in new Setup {
-      private val context="api1".asContext
-      private val version="1.0".asVersion
-      private val partialemail = "partialemail"
-      implicit val writes = Json.writes[SearchCollaboratorsRequest]
+      private val context       = "api1".asContext
+      private val version       = "1.0".asVersion
+      private val partialemail  = "partialemail"
+      implicit val writes       = Json.writes[SearchCollaboratorsRequest]
       implicit lazy val request = FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
-                                              .withBody(Json.toJson(SearchCollaboratorsRequest(context, version, Some(partialemail))))
+        .withBody(Json.toJson(SearchCollaboratorsRequest(context, version, Some(partialemail))))
 
       when(mockSubscriptionService.searchCollaborators(context, version, Some(partialemail))).thenReturn(Future.successful(List("user@example.com")))
 

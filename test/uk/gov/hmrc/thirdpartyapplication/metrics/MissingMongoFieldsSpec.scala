@@ -26,12 +26,12 @@ class MissingMongoFieldsSpec extends AsyncHmrcSpec {
 
   trait Setup {
     val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
-    val metricUnderTest: MissingMongoFields = new MissingMongoFields(mockApplicationRepository)
+    val metricUnderTest: MissingMongoFields              = new MissingMongoFields(mockApplicationRepository)
   }
 
   "refresh metrics" should {
     "update values for number of applications with missing fields" in new Setup {
-      private val numberOfMissingRateLimits = 10
+      private val numberOfMissingRateLimits       = 10
       private val numberOfMissingLastAccessedDate = 3
 
       when(mockApplicationRepository.documentsWithFieldMissing("rateLimitTier")).thenReturn(Future.successful(numberOfMissingRateLimits))

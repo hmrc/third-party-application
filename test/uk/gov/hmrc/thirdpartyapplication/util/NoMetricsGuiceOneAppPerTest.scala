@@ -23,14 +23,14 @@ import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
 
 trait NoMetricsGuiceOneAppPerTest extends GuiceOneAppPerTest {
-  self : TestSuite =>
-  
+  self: TestSuite =>
+
   final override def fakeApplication(): Application =
-      builder().build
+    builder().build
 
   def builder(): GuiceApplicationBuilder = {
-        GuiceApplicationBuilder()
-        .configure("metrics.jvm" -> false)
-        .disable(classOf[SchedulerModule])
+    GuiceApplicationBuilder()
+      .configure("metrics.jvm" -> false)
+      .disable(classOf[SchedulerModule])
   }
 }

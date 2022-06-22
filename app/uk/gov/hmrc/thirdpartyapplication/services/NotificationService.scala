@@ -26,20 +26,20 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class NotificationService @Inject()(
-  nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
-) (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class NotificationService @Inject() (
+    nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   def sendNotifications(app: ApplicationData, events: List[UpdateApplicationNotificationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent) = {
       event match {
         case evt: UpdateApplicationEvent.NameChangedEmailSent => nameChangedNotificationEventHdlr.sendAdviceEmail(app, evt)
-        case _  => throw new RuntimeException(s"UnexpectedEvent type for sendNotification ${event}")
+        case _                                                => throw new RuntimeException(s"UnexpectedEvent type for sendNotification ${event}")
       }
     }
-    
+
     Future.sequence(events.map(evt => sendNotification(app, evt)).toList)
   }
 }

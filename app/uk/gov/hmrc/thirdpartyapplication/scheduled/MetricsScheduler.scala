@@ -26,24 +26,25 @@ import uk.gov.hmrc.thirdpartyapplication.metrics._
 
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
-import scala.concurrent.duration.{FiniteDuration, DurationInt}
+import scala.concurrent.duration.{DurationInt, FiniteDuration}
 
-class MetricsScheduler @Inject() (actorSystem: ActorSystem,
-                                  configuration: Configuration,
-                                  metrics: Metrics,
-                                  apisWithSubscriptionCount: ApisWithSubscriptionCount,
-                                  applicationCount: ApplicationCount,
-                                  applicationWithSubscriptionCount: ApplicationsWithSubscriptionCount,
-                                  missingMongoFields: MissingMongoFields,
-                                  rateLimitMetrics: RateLimitMetrics,
-                                  lockRepository: LockRepository,
-                                  metricRepository: MetricRepository)
-                                 (implicit val ec: ExecutionContext)
-                                  extends ApplicationLogger {
+class MetricsScheduler @Inject() (
+    actorSystem: ActorSystem,
+    configuration: Configuration,
+    metrics: Metrics,
+    apisWithSubscriptionCount: ApisWithSubscriptionCount,
+    applicationCount: ApplicationCount,
+    applicationWithSubscriptionCount: ApplicationsWithSubscriptionCount,
+    missingMongoFields: MissingMongoFields,
+    rateLimitMetrics: RateLimitMetrics,
+    lockRepository: LockRepository,
+    metricRepository: MetricRepository
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
 
   lazy val refreshInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.metricsGauges.interval").getOrElse(10.minutes)
-  lazy val initialDelay: FiniteDuration = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
-  lazy val isEnabled: Boolean = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
+  lazy val initialDelay: FiniteDuration    = configuration.getOptional[FiniteDuration]("queue.initialDelay").getOrElse(2.minutes)
+  lazy val isEnabled: Boolean              = configuration.getOptional[Boolean]("metricsJob.enabled").getOrElse(false)
 
   val lockService: LockService = LockService(lockRepository = lockRepository, lockId = "queue", ttl = refreshInterval)
 
@@ -55,15 +56,13 @@ class MetricsScheduler @Inject() (actorSystem: ActorSystem,
   )
 
   if (isEnabled) {
-    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, refreshInterval)(
-      () => {
-        metricOrchestrator
-          .attemptMetricRefresh()
-          .map(_.log)
-          .recover({ case e: RuntimeException =>
-            logger.error(s"[METRIC] An error occurred processing metrics: ${e.getMessage}", e)
-          })
-      }
-    )
+    actorSystem.scheduler.scheduleWithFixedDelay(initialDelay, refreshInterval)(() => {
+      metricOrchestrator
+        .attemptMetricRefresh()
+        .map(_.log)
+        .recover({ case e: RuntimeException =>
+          logger.error(s"[METRIC] An error occurred processing metrics: ${e.getMessage}", e)
+        })
+    })
   }
 }

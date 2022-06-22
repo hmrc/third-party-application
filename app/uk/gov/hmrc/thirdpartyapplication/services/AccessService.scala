@@ -29,56 +29,56 @@ import scala.concurrent.Future.{failed, sequence, successful}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AccessService @Inject()(applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
+class AccessService @Inject() (applicationRepository: ApplicationRepository, auditService: AuditService)(implicit val ec: ExecutionContext) {
 
   def readScopes(applicationId: ApplicationId): Future[ScopeResponse] =
     fetchApp(applicationId) map getScopes map ScopeResponse
 
-  def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)
-                  (implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
+  def updateScopes(applicationId: ApplicationId, scopeRequest: ScopeRequest)(implicit headerCarrier: HeaderCarrier): Future[ScopeResponse] = {
 
     def updateWithScopes(applicationData: ApplicationData, newScopes: Set[String]): ApplicationData = {
-      val updatedAccess = privilegedOrRopc[Access](applicationData, {
-        getPrivilegedAccess(_).copy(scopes = newScopes)
-      }, {
-        getRopcAccess(_).copy(scopes = newScopes)
-      })
+      val updatedAccess = privilegedOrRopc[Access](
+        applicationData, {
+          getPrivilegedAccess(_).copy(scopes = newScopes)
+        }, {
+          getRopcAccess(_).copy(scopes = newScopes)
+        }
+      )
       applicationData.copy(access = updatedAccess)
     }
 
     for {
-      originalApplicationData <- fetchApp(applicationId)
-      oldScopes = getScopes(originalApplicationData)
-      newScopes = scopeRequest.scopes
+      originalApplicationData  <- fetchApp(applicationId)
+      oldScopes                 = getScopes(originalApplicationData)
+      newScopes                 = scopeRequest.scopes
       persistedApplicationData <- applicationRepository.save(updateWithScopes(originalApplicationData, newScopes))
-      _ = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
-      _ = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
+      _                         = sequence(oldScopes diff newScopes map ScopeRemoved.details map (auditService.audit(ScopeRemoved, _)))
+      _                         = sequence(newScopes diff oldScopes map ScopeAdded.details map (auditService.audit(ScopeAdded, _)))
     } yield ScopeResponse(getScopes(persistedApplicationData))
   }
 
   def readOverrides(applicationId: ApplicationId): Future[OverridesResponse] =
     fetchApp(applicationId) map getOverrides map OverridesResponse
 
-  def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)
-                     (implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
+  def updateOverrides(applicationId: ApplicationId, overridesRequest: OverridesRequest)(implicit headerCarrier: HeaderCarrier): Future[OverridesResponse] = {
 
     def updateWithOverrides(applicationData: ApplicationData, newOverrides: Set[OverrideFlag]): ApplicationData =
       applicationData.copy(access = getStandardAccess(applicationData).copy(overrides = newOverrides))
 
     for {
-      originalApplicationData <- fetchApp(applicationId)
-      oldOverrides = getOverrides(originalApplicationData)
-      newOverrides = overridesRequest.overrides
+      originalApplicationData  <- fetchApp(applicationId)
+      oldOverrides              = getOverrides(originalApplicationData)
+      newOverrides              = overridesRequest.overrides
       persistedApplicationData <- applicationRepository.save(updateWithOverrides(originalApplicationData, newOverrides))
-      _ = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
-      _ = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
+      _                         = sequence(oldOverrides diff newOverrides map OverrideRemoved.details map (auditService.audit(OverrideRemoved, _)))
+      _                         = sequence(newOverrides diff oldOverrides map OverrideAdded.details map (auditService.audit(OverrideAdded, _)))
     } yield OverridesResponse(getOverrides(persistedApplicationData))
   }
 
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] =
     applicationRepository.fetch(applicationId).flatMap {
       case Some(applicationData) => successful(applicationData)
-      case None => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
+      case None                  => failed(new NotFoundException(s"application not found for id: ${applicationId.value}"))
     }
 
   private def getPrivilegedAccess(applicationData: ApplicationData): Privileged =
@@ -88,16 +88,18 @@ class AccessService @Inject()(applicationRepository: ApplicationRepository, audi
     applicationData.access.asInstanceOf[Ropc]
 
   private def getScopes(applicationData: ApplicationData): Set[String] =
-    privilegedOrRopc[Set[String]](applicationData, {
-      getPrivilegedAccess(_).scopes
-    }, {
-      getRopcAccess(_).scopes
-    })
+    privilegedOrRopc[Set[String]](
+      applicationData, {
+        getPrivilegedAccess(_).scopes
+      }, {
+        getRopcAccess(_).scopes
+      }
+    )
 
   private def privilegedOrRopc[T](applicationData: ApplicationData, privilegedFunction: ApplicationData => T, ropcFunction: ApplicationData => T) =
     AccessType.withName(applicationData.access.accessType.toString) match {
       case PRIVILEGED => privilegedFunction(applicationData)
-      case ROPC => ropcFunction(applicationData)
+      case ROPC       => ropcFunction(applicationData)
     }
 
   private def getStandardAccess(applicationData: ApplicationData): Standard =

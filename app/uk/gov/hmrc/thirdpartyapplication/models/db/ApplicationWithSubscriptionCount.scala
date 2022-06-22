@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-
 import play.api.libs.json.Json
 
 case class ApplicationLabel(id: String, name: String)

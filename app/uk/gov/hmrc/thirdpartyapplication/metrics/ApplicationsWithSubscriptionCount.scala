@@ -27,20 +27,20 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class ApplicationsWithSubscriptionCount @Inject()(applicationRepository: ApplicationRepository)
-                                                  extends MetricSource
-                                                  with ApplicationLogger {
+class ApplicationsWithSubscriptionCount @Inject() (applicationRepository: ApplicationRepository)
+    extends MetricSource
+    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     // TODO Need to handle Application with zero subscriptions
     val result = applicationRepository.getApplicationWithSubscriptionCount()
     result.onComplete({
-        case Success(v) =>
-          logger.info(s"[METRIC] Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
+      case Success(v) =>
+        logger.info(s"[METRIC] Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
 
-        case Failure(e) =>
-          logger.info(s"[METRIC] Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
-      })
+      case Failure(e) =>
+        logger.info(s"[METRIC] Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
+    })
     result
   }
 }

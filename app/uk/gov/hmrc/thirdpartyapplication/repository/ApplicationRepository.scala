@@ -45,44 +45,71 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ApplicationRepository @Inject()(mongo: MongoComponent)
-                                     (implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[ApplicationData](
-    collectionName = "application",
-    mongoComponent = mongo,
-    domainFormat = ApplicationData.format,
-    indexes = Seq(
-      IndexModel(ascending("state.verificationCode"), IndexOptions()
-      .name("verificationCodeIndex")
-      .background(true)),
-      IndexModel(ascending("state.name", "state.updatedOn"), IndexOptions()
-        .name("stateName_stateUpdatedOn_Index")
-        .background(true)),
-      IndexModel(ascending("id"), IndexOptions()
-        .name("applicationIdIndex")
-        .unique(true)
-        .background(true)),
-      IndexModel(ascending("normalisedName"), IndexOptions()
-        .name("applicationNormalisedNameIndex")
-        .background(true)),
-      IndexModel(ascending("lastAccess"), IndexOptions()
-        .name("lastAccessIndex")
-        .background(true)),
-      IndexModel(ascending("tokens.production.clientId"), IndexOptions()
-        .name("productionTokenClientIdIndex")
-        .unique(true)
-        .background(true)),
-      IndexModel(ascending("access.overrides"), IndexOptions()
-        .name("accessOverridesIndex")
-        .background(true)),
-      IndexModel(ascending("access.accessType"), IndexOptions()
-        .name("accessTypeIndex")
-        .background(true)),
-      IndexModel(ascending("collaborators.emailAddress"), IndexOptions()
-        .name("collaboratorsEmailAddressIndex")
-        .background(true))
-    ), replaceIndexes = true
-  ) with MetricsHelper
+class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[ApplicationData](
+      collectionName = "application",
+      mongoComponent = mongo,
+      domainFormat = ApplicationData.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("state.verificationCode"),
+          IndexOptions()
+            .name("verificationCodeIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("state.name", "state.updatedOn"),
+          IndexOptions()
+            .name("stateName_stateUpdatedOn_Index")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("id"),
+          IndexOptions()
+            .name("applicationIdIndex")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(
+          ascending("normalisedName"),
+          IndexOptions()
+            .name("applicationNormalisedNameIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("lastAccess"),
+          IndexOptions()
+            .name("lastAccessIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("tokens.production.clientId"),
+          IndexOptions()
+            .name("productionTokenClientIdIndex")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(
+          ascending("access.overrides"),
+          IndexOptions()
+            .name("accessOverridesIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("access.accessType"),
+          IndexOptions()
+            .name("accessTypeIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("collaborators.emailAddress"),
+          IndexOptions()
+            .name("collaboratorsEmailAddressIndex")
+            .background(true)
+        )
+      ),
+      replaceIndexes = true
+    ) with MetricsHelper
     with MongoJavatimeFormats.Implicits {
 
   import MongoJsonFormatterOverrides._
@@ -125,10 +152,11 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
   // So this method was to back fix any records without the userId.
   // This is not possible to test as the model does not allow a User without a userId.
   // $COVERAGE-OFF$
-  def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] =  {
+  def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] = {
     val query = and(
       equal("id", Codecs.toBson(applicationId)),
-      elemMatch("collaborators",
+      elemMatch(
+        "collaborators",
         and(
           equal("emailAddress", collaboratorEmailAddress),
           exists("userId", exists = false)
@@ -265,7 +293,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
-    val sort = convertToSortClause(applicationSearch.sort)
+    val sort    = convertToSortClause(applicationSearch.sort)
 
     val pagination = List(
       skip((applicationSearch.pageNumber - 1) * applicationSearch.pageSize),
@@ -288,9 +316,8 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
       apiVersion.fold(
         matches(equal("subscribedApis.apiIdentifier.context", Codecs.toBson(apiContext)))
-      )(
-        version =>
-          matches(
+      )(version =>
+        matches(
           Document(
             "subscribedApis.apiIdentifier.context" -> Codecs.toBson(apiContext),
             "subscribedApis.apiIdentifier.version" -> Codecs.toBson(version)
@@ -301,20 +328,20 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
     applicationSearchFilter match {
       // API Subscriptions
-      case NoAPISubscriptions => matches(size("subscribedApis", 0))
+      case NoAPISubscriptions        => matches(size("subscribedApis", 0))
       case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
-      case SpecificAPISubscription => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
+      case SpecificAPISubscription   => specificAPISubscription(applicationSearch.apiContext.get, applicationSearch.apiVersion)
 
       // Application Status
-      case Created => applicationStatusMatch(State.TESTING)
+      case Created                                  => applicationStatusMatch(State.TESTING)
       case PendingResponsibleIndividualVerification => applicationStatusMatch(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
-      case PendingGatekeeperCheck => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
-      case PendingSubmitterVerification => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
-      case Active => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
+      case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
+      case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
 
       // Access Type
-      case StandardAccess => accessTypeMatch(AccessType.STANDARD)
-      case ROPCAccess => accessTypeMatch(AccessType.ROPC)
+      case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
+      case ROPCAccess       => accessTypeMatch(AccessType.ROPC)
       case PrivilegedAccess => accessTypeMatch(AccessType.PRIVILEGED)
 
       // Text Search
@@ -322,42 +349,52 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
 
       // Last Use Date
       case lastUsedBefore: LastUseBeforeDate => lastUsedBefore.toMongoMatch
-      case lastUsedAfter: LastUseAfterDate => lastUsedAfter.toMongoMatch
-      case _  => Document() // Only here to complete the match
+      case lastUsedAfter: LastUseAfterDate   => lastUsedAfter.toMongoMatch
+      case _                                 => Document() // Only here to complete the match
     }
   }
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
-    case NameAscending => List(Aggregates.sort(Sorts.ascending("name")))
-    case NameDescending => List(Aggregates.sort(Sorts.descending("name")))
-    case SubmittedAscending => List(Aggregates.sort(Sorts.ascending("createdOn")))
-    case SubmittedDescending => List(Aggregates.sort(Sorts.descending("createdOn")))
-    case LastUseDateAscending => List(Aggregates.sort(Sorts.ascending("lastAccess")))
+    case NameAscending         => List(Aggregates.sort(Sorts.ascending("name")))
+    case NameDescending        => List(Aggregates.sort(Sorts.descending("name")))
+    case SubmittedAscending    => List(Aggregates.sort(Sorts.ascending("createdOn")))
+    case SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
+    case LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
     case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
-    case NoSorting => List(Aggregates.sort(Document()))
-    case _ => List(Aggregates.sort(Sorts.ascending("name")))
+    case NoSorting             => List(Aggregates.sort(Document()))
+    case _                     => List(Aggregates.sort(Sorts.ascending("name")))
   }
 
   private def regexTextSearch(fields: List[String], searchText: String): Bson = {
-    matches(or(fields.map(field => regex(field, searchText,"i")): _*))
+    matches(or(fields.map(field => regex(field, searchText, "i")): _*))
   }
 
   private def runAggregationQuery(filters: List[Bson], pagination: List[Bson], sort: List[Bson], hasSubscriptionsQuery: Boolean, hasSpecificApiSubscription: Boolean) = {
-    lazy val subscriptionsLookup: Bson = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
+    lazy val subscriptionsLookup: Bson  = lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis")
     lazy val unwindSubscribedApis: Bson = unwind("$subscribedApis")
-    val applicationProjection: Bson = project(fields(
-        excludeId(),
-        include(
-          "id", "name", "normalisedName", "collaborators", "description", "wso2ApplicationName",
-          "tokens", "state", "access", "createdOn", "lastAccess", "rateLimitTier", "environment"
-        )
+    val applicationProjection: Bson     = project(fields(
+      excludeId(),
+      include(
+        "id",
+        "name",
+        "normalisedName",
+        "collaborators",
+        "description",
+        "wso2ApplicationName",
+        "tokens",
+        "state",
+        "access",
+        "createdOn",
+        "lastAccess",
+        "rateLimitTier",
+        "environment"
       )
-    )
+    ))
 
-    val totalCount = Aggregates.count("total")
-    val subscriptionsLookupFilter = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
-    val subscriptionsLookupExtendedFilter = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
-    val filteredPipelineCount = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
+    val totalCount                                    = Aggregates.count("total")
+    val subscriptionsLookupFilter                     = if (hasSubscriptionsQuery) Seq(subscriptionsLookup) else Seq.empty
+    val subscriptionsLookupExtendedFilter             = if (hasSpecificApiSubscription) subscriptionsLookupFilter :+ unwindSubscribedApis else subscriptionsLookupFilter
+    val filteredPipelineCount                         = subscriptionsLookupExtendedFilter ++ filters :+ totalCount
     val paginatedFilteredAndSortedPipeline: Seq[Bson] = subscriptionsLookupExtendedFilter ++ filters ++ sort ++ pagination :+ applicationProjection
 
     val facets: Seq[Bson] = Seq(
@@ -378,7 +415,8 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
     searchApplications(
       ApplicationSearch(
         filters = List(SpecificAPISubscription),
-        apiContext = Some(apiContext))
+        apiContext = Some(apiContext)
+      )
     ).map(_.applications)
 
   def fetchAllForApiIdentifier(apiIdentifier: ApiIdentifier): Future[List[ApplicationData]] =
@@ -404,7 +442,7 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       .map(function)
       .toFuture()
       .map(_ => ())
- }
+  }
 
   def delete(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteOne(equal("id", Codecs.toBson(id)))
@@ -435,15 +473,14 @@ class ApplicationRepository @Inject()(mongo: MongoComponent)
       .map(Codecs.fromBson[ApplicationWithSubscriptionCount])
       .toFuture()
       .map(_.map(x => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(x._id.name)}" -> x.count)
-        .toMap
-      )
+        .toMap)
   }
 
   def applyEvents(events: NonEmptyList[UpdateApplicationRepositoryEvent]): Future[ApplicationData] = {
     require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
 
     events match {
-      case NonEmptyList(e, Nil) => applyEvent(e)
+      case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }

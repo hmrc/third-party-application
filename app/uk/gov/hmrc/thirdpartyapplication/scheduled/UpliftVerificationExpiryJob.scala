@@ -30,29 +30,35 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UpliftVerificationExpiryJob @Inject()(upliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService,
-                                            applicationRepository: ApplicationRepository,
-                                            stateHistoryRepository: StateHistoryRepository,
-                                            clock: Clock,
-                                            jobConfig: UpliftVerificationExpiryJobConfig)
-                                           (implicit val ec: ExecutionContext)
-  extends ScheduledMongoJob with ApplicationLogger {
+class UpliftVerificationExpiryJob @Inject() (
+    upliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService,
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    clock: Clock,
+    jobConfig: UpliftVerificationExpiryJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob with ApplicationLogger {
 
   val upliftVerificationValidity: FiniteDuration = jobConfig.validity
-  val sixty = 60
-  override def name: String = "UpliftVerificationExpiryJob"
-  override def interval: FiniteDuration = jobConfig.interval
-  override def initialDelay: FiniteDuration = jobConfig.initialDelay
-  override val isEnabled: Boolean = jobConfig.enabled
-  override val lockService: LockService = upliftVerificationExpiryJobLockService
+  val sixty                                      = 60
+  override def name: String                      = "UpliftVerificationExpiryJob"
+  override def interval: FiniteDuration          = jobConfig.interval
+  override def initialDelay: FiniteDuration      = jobConfig.initialDelay
+  override val isEnabled: Boolean                = jobConfig.enabled
+  override val lockService: LockService          = upliftVerificationExpiryJobLockService
 
   private def transitionAppBackToTesting(app: ApplicationData): Future[ApplicationData] = {
     logger.info(s"Set status back to testing for app{id=${app.id.value},name=${app.name},state." +
       s"requestedByEmailAddress='${app.state.requestedByEmailAddress.getOrElse("")}',state.updatedOn='${app.state.updatedOn}}'")
     for {
       updatedApp <- applicationRepository.save(app.copy(state = app.state.toTesting(clock)))
-      _ <- stateHistoryRepository.insert(StateHistory(app.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", SCHEDULED_JOB), Some(State.PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
+      _          <- stateHistoryRepository.insert(StateHistory(
+                      app.id,
+                      State.TESTING,
+                      Actor("UpliftVerificationExpiryJob", SCHEDULED_JOB),
+                      Some(State.PENDING_REQUESTER_VERIFICATION),
+                      changedAt = LocalDateTime.now(clock)
+                    ))
     } yield updatedApp
   }
 
@@ -62,8 +68,8 @@ class UpliftVerificationExpiryJob @Inject()(upliftVerificationExpiryJobLockServi
 
     val result: Future[RunningOfJobSuccessful.type] = for {
       expiredApps <- applicationRepository.fetchAllByStatusDetails(state = State.PENDING_REQUESTER_VERIFICATION, updatedBefore = expiredTime)
-      _ = logger.info(s"Found ${expiredApps.size} applications")
-      _ <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
+      _            = logger.info(s"Found ${expiredApps.size} applications")
+      _           <- Future.sequence(expiredApps.map(transitionAppBackToTesting))
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
@@ -72,12 +78,12 @@ class UpliftVerificationExpiryJob @Inject()(upliftVerificationExpiryJobLockServi
   }
 }
 
-class UpliftVerificationExpiryJobLockService @Inject()(repository: LockRepository)
-  extends LockService {
+class UpliftVerificationExpiryJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
 
-  override val lockId: String = "UpliftVerificationExpiryScheduler"
+  override val lockId: String                 = "UpliftVerificationExpiryScheduler"
   override val lockRepository: LockRepository = repository
-  override val ttl: Duration = 1.hours
+  override val ttl: Duration                  = 1.hours
 }
 
 case class UpliftVerificationExpiryJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, enabled: Boolean, validity: FiniteDuration)

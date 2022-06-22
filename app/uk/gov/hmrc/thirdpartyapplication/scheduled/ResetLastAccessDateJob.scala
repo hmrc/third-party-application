@@ -30,18 +30,20 @@ import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
-class ResetLastAccessDateJob @Inject()(resetLastAccessDateJobLockService: ResetLastAccessDateJobLockService,
-                                       applicationRepository: ApplicationRepository,
-                                       jobConfig: ResetLastAccessDateJobConfig)
-                                      (implicit val ec: ExecutionContext) extends ScheduledMongoJob
-                                       with ApplicationLogger
-                                       with MongoJavatimeFormats.Implicits {
+class ResetLastAccessDateJob @Inject() (
+    resetLastAccessDateJobLockService: ResetLastAccessDateJobLockService,
+    applicationRepository: ApplicationRepository,
+    jobConfig: ResetLastAccessDateJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob
+    with ApplicationLogger
+    with MongoJavatimeFormats.Implicits {
 
-  override def name: String = "ResetLastAccessDateJob"
-  override def isEnabled: Boolean = jobConfig.enabled
+  override def name: String                 = "ResetLastAccessDateJob"
+  override def isEnabled: Boolean           = jobConfig.enabled
   override def initialDelay: FiniteDuration = 5.minutes
-  override def interval: FiniteDuration = 24.hours
-  override val lockService: LockService = resetLastAccessDateJobLockService
+  override def interval: FiniteDuration     = 24.hours
+  override val lockService: LockService     = resetLastAccessDateJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     applicationRepository.processAll(updateLastAccessDate(jobConfig.noLastAccessDateBefore, jobConfig.dryRun))
@@ -62,18 +64,18 @@ class ResetLastAccessDateJob @Inject()(resetLastAccessDateJobLockService: ResetL
     application => {
       application.lastAccess match {
         case Some(lastAccessDate) => if (lastAccessDate.toLocalDate.isBefore(earliestLastAccessDate)) updateApplicationRecord(application.id, application.name)
-        case None => updateApplicationRecord(application.id, application.name)
+        case None                 => updateApplicationRecord(application.id, application.name)
       }
     }
   }
 }
 
-class ResetLastAccessDateJobLockService @Inject()(repository: LockRepository)
-  extends LockService {
+class ResetLastAccessDateJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
 
-  override val lockId: String = "ResetLastAccessDate"
+  override val lockId: String                 = "ResetLastAccessDate"
   override val lockRepository: LockRepository = repository
-  override val ttl: Duration = 1.hours
+  override val ttl: Duration                  = 1.hours
 }
 
 case class ResetLastAccessDateJobConfig(noLastAccessDateBefore: LocalDate, enabled: Boolean, dryRun: Boolean)

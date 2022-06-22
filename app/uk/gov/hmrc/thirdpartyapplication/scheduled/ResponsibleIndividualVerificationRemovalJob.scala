@@ -38,26 +38,28 @@ import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class ResponsibleIndividualVerificationRemovalJob @Inject()(responsibleIndividualVerificationRemovalJobLockService: ResponsibleIndividualVerificationRemovalJobLockService,
-                                                            repository: ResponsibleIndividualVerificationRepository,
-                                                            submissionsService: SubmissionsService,
-                                                            emailConnector: EmailConnector,
-                                                            applicationRepository: ApplicationRepository,
-                                                            declineApprovalsService: DeclineApprovalsService,
-                                                            val clock: Clock,
-                                                            jobConfig: ResponsibleIndividualVerificationRemovalJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+class ResponsibleIndividualVerificationRemovalJob @Inject() (
+    responsibleIndividualVerificationRemovalJobLockService: ResponsibleIndividualVerificationRemovalJobLockService,
+    repository: ResponsibleIndividualVerificationRepository,
+    submissionsService: SubmissionsService,
+    emailConnector: EmailConnector,
+    applicationRepository: ApplicationRepository,
+    declineApprovalsService: DeclineApprovalsService,
+    val clock: Clock,
+    jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob with ApplicationLogger {
 
-  override def name: String = "ResponsibleIndividualVerificationRemovalJob"
-  override def interval: FiniteDuration = jobConfig.interval
+  override def name: String                 = "ResponsibleIndividualVerificationRemovalJob"
+  override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
-  override val isEnabled: Boolean = jobConfig.enabled
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-  override val lockService: LockService = responsibleIndividualVerificationRemovalJobLockService
+  override val isEnabled: Boolean           = jobConfig.enabled
+  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  override val lockService: LockService     = responsibleIndividualVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val removeIfCreatedBeforeNow = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
+    val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <- repository.fetchByStateAndAge(ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
@@ -87,23 +89,24 @@ class ResponsibleIndividualVerificationRemovalJob @Inject()(responsibleIndividua
   private def getResponsibleIndividual(app: ApplicationData): Option[ResponsibleIndividual] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
-      case _ => None
+      case _                                                      => None
     }
   }
 
   private def getRequesterName(app: ApplicationData): Option[String] = {
     app.state.requestedByName
   }
+
   private def getRequesterEmail(app: ApplicationData): Option[String] = {
     app.state.requestedByEmailAddress
   }
 }
 
-class ResponsibleIndividualVerificationRemovalJobLockService @Inject()(repository: LockRepository)
-  extends LockService {
+class ResponsibleIndividualVerificationRemovalJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
   override val lockRepository: LockRepository = repository
-  override val lockId: String = "ResponsibleIndividualVerificationRemovalScheduler"
-  override val ttl: Duration = 1.hours
+  override val lockId: String                 = "ResponsibleIndividualVerificationRemovalScheduler"
+  override val ttl: Duration                  = 1.hours
 }
 
 case class ResponsibleIndividualVerificationRemovalJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, removalInterval: FiniteDuration, enabled: Boolean)

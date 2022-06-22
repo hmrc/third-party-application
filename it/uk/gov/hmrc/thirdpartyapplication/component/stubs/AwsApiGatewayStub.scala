@@ -27,7 +27,7 @@ object AwsApiGatewayStub extends Stub {
   override val stub: MockHost = MockHost(19607)
 
   private def updateUsagePlanURL(rateLimitTier: RateLimitTier): String = s"/v1/usage-plans/$rateLimitTier/api-keys"
-  private def deleteAPIKeyURL(applicationName: String): String = s"/v1/api-keys/$applicationName"
+  private def deleteAPIKeyURL(applicationName: String): String         = s"/v1/api-keys/$applicationName"
 
   def willCreateOrUpdateApplication(applicationName: String, serverToken: String, usagePlan: RateLimitTier) = {
     stub.mock.register(post(urlEqualTo(updateUsagePlanURL(usagePlan)))
@@ -35,8 +35,7 @@ object AwsApiGatewayStub extends Stub {
         aResponse()
           .withStatus(OK)
           .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")
-      )
-    )
+      ))
   }
 
   def willDeleteApplication(applicationName: String) = {
@@ -45,7 +44,6 @@ object AwsApiGatewayStub extends Stub {
         aResponse()
           .withStatus(OK)
           .withBody(s"""{ "RequestId" : "${UUID.randomUUID().toString}" }""")
-      )
-    )
+      ))
   }
 }

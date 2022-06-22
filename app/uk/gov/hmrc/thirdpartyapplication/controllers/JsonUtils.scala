@@ -30,33 +30,32 @@ import scala.util.{Failure, Success, Try}
 // TODO : Sort these helper methods with plans to remove them - APIS-4766
 trait JsonUtils extends Results with ApplicationLogger {
   self: BackendController =>
-   override def withJsonBody[T]
-   (f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
-     withJson(request.body)(f)
-   }
 
-  def withJsonBodyFromAnyContent[T]
-  (f: T => Future[Result])(implicit request: Request[AnyContent], reads: Reads[T], d: DummyImplicit): Future[Result] = {
+  override def withJsonBody[T](f: T => Future[Result])(implicit request: Request[JsValue], m: Manifest[T], reads: Reads[T]): Future[Result] = {
+    withJson(request.body)(f)
+  }
+
+  def withJsonBodyFromAnyContent[T](f: T => Future[Result])(implicit request: Request[AnyContent], reads: Reads[T], d: DummyImplicit): Future[Result] = {
     request.body.asJson match {
       case Some(json) => withJson(json)(f)
-      case _ => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Payload")))
+      case _          => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Payload")))
     }
   }
 
   private def withJson[T](json: JsValue)(f: T => Future[Result])(implicit reads: Reads[T]): Future[Result] = {
     Try(json.validate[T]) match {
       case Success(JsSuccess(payload, _)) => f(payload)
-      case Success(JsError(errs)) => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
-      case Failure(e) => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, e.getMessage)))
+      case Success(JsError(errs))         => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, JsError.toJson(errs))))
+      case Failure(e)                     => Future.successful(UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, e.getMessage)))
     }
   }
 
   def recovery: PartialFunction[Throwable, Result] = {
-    case e: NotFoundException => handleNotFound(e.getMessage)
-    case e: ScopeNotFoundException => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
+    case e: NotFoundException           => handleNotFound(e.getMessage)
+    case e: ScopeNotFoundException      => NotFound(JsErrorResponse(SCOPE_NOT_FOUND, e.getMessage))
     case e: InvalidIpAllowlistException => BadRequest(JsErrorResponse(INVALID_IP_ALLOWLIST, e.getMessage))
     case e: InvalidGrantLengthException => BadRequest(JsErrorResponse(INVALID_GRANT_LENGTH, e.getMessage))
-    case e: Throwable =>
+    case e: Throwable                   =>
       logger.error(s"Error occurred: ${e.getMessage}", e)
       handleException(e)
   }

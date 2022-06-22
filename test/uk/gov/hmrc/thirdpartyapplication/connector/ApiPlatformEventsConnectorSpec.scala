@@ -35,33 +35,38 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
-    teamMemberRole = "ADMIN")
+    teamMemberRole = "ADMIN"
+  )
 
   val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
-    teamMemberRole = "ADMIN")
+    teamMemberRole = "ADMIN"
+  )
 
   val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    clientSecretId = "1234")
+    clientSecretId = "1234"
+  )
 
   val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
-    clientSecretId = "1234")
+    clientSecretId = "1234"
+  )
 
   val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(
     id = EventId.random,
     applicationId = "jkkh",
     actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
     oldRedirectUris = "originalUris",
-    newRedirectUris = "newRedirectUris")
+    newRedirectUris = "newRedirectUris"
+  )
 
   val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(
     id = EventId.random,
@@ -89,20 +94,20 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     def apiApplicationEventsWillReturnCreated(request: ApplicationEvent) =
       stubFor(
         post(urlMatching("/application-events/.*"))
-        .withJsonRequestBody(request)
-        .willReturn(
-          aResponse()
-          .withStatus(CREATED)
-        )
+          .withJsonRequestBody(request)
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+          )
       )
 
-    def apiApplicationEventsWillFailWith(status: Int) = 
+    def apiApplicationEventsWillFailWith(status: Int) =
       stubFor(
         post(urlMatching("/application-events/.*"))
-        .willReturn(
-          aResponse()
-          .withStatus(status)
-        )
+          .willReturn(
+            aResponse()
+              .withStatus(status)
+          )
       )
   }
 
@@ -151,7 +156,6 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
         result shouldBe false
       }
     }
-
 
     "ClientSecretAdded" should {
       "return true when httpclient receives CREATED status" in new Setup() {

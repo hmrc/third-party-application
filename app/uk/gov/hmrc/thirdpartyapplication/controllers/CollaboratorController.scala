@@ -30,7 +30,7 @@ import scala.concurrent.ExecutionContext
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import play.api.libs.json.Json
-  
+
 private[controllers] case class SearchCollaboratorsRequest(apiContext: ApiContext, apiVersion: ApiVersion, partialEmailMatch: Option[String])
 
 private[controllers] object SearchCollaboratorsRequest {
@@ -38,12 +38,14 @@ private[controllers] object SearchCollaboratorsRequest {
 }
 
 @Singleton
-class CollaboratorController @Inject()(val applicationService: ApplicationService,
-                                      val authConnector: AuthConnector,
-                                      val authConfig: AuthConnector.Config,
-                                      subscriptionService: SubscriptionService,
-                                      cc: ControllerComponents)(implicit val ec: ExecutionContext)
-    extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+class CollaboratorController @Inject() (
+    val applicationService: ApplicationService,
+    val authConnector: AuthConnector,
+    val authConfig: AuthConnector.Config,
+    subscriptionService: SubscriptionService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

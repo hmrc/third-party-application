@@ -35,7 +35,7 @@ import java.time.{Clock, LocalDateTime}
 import scala.util.Random.nextString
 
 class SubscriptionRepositoryISpec
-  extends ServerBaseISpec
+    extends ServerBaseISpec
     with JavaDateTimeTestUtils
     with BeforeAndAfterEach
     with MetricsHelper
@@ -57,7 +57,7 @@ class SubscriptionRepositoryISpec
   }
 
   private val subscriptionRepository: SubscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
-  private val applicationRepository: ApplicationRepository = app.injector.instanceOf[ApplicationRepository]
+  private val applicationRepository: ApplicationRepository   = app.injector.instanceOf[ApplicationRepository]
 
   protected override def beforeEach(): Unit = {
     super.beforeEach()
@@ -80,8 +80,8 @@ class SubscriptionRepositoryISpec
     }
 
     "create multiple subscriptions" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
 
@@ -93,8 +93,8 @@ class SubscriptionRepositoryISpec
 
   "remove" should {
     "delete the subscription" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
       await(subscriptionRepository.add(application2, apiIdentifier))
@@ -107,8 +107,8 @@ class SubscriptionRepositoryISpec
     }
 
     "not fail when deleting a non-existing subscription" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1  = ApplicationId.random
+      val application2  = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
       await(subscriptionRepository.add(application1, apiIdentifier))
 
@@ -121,17 +121,18 @@ class SubscriptionRepositoryISpec
 
   "find all" should {
     "retrieve all versions subscriptions" in {
-      val application1 = ApplicationId.random
-      val application2 = ApplicationId.random
+      val application1   = ApplicationId.random
+      val application2   = ApplicationId.random
       val apiIdentifierA = "some-context-a".asIdentifier("1.0.0")
       val apiIdentifierB = "some-context-b".asIdentifier("1.0.2")
       await(subscriptionRepository.add(application1, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierA))
       await(subscriptionRepository.add(application2, apiIdentifierB))
-      val retrieved = await(subscriptionRepository.findAll)
+      val retrieved      = await(subscriptionRepository.findAll)
       retrieved mustBe List(
         subscriptionData("some-context-a".asContext, "1.0.0".asVersion, application1, application2),
-        subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2))
+        subscriptionData("some-context-b".asContext, "1.0.2".asVersion, application2)
+      )
     }
   }
 
@@ -160,9 +161,9 @@ class SubscriptionRepositoryISpec
   "getSubscriptions" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random
-    val api1 = "some-context".asIdentifier("1.0")
-    val api2 = "some-context".asIdentifier("2.0")
-    val api3 = "some-context".asIdentifier("3.0")
+    val api1         = "some-context".asIdentifier("1.0")
+    val api2         = "some-context".asIdentifier("2.0")
+    val api3         = "some-context".asIdentifier("3.0")
 
     "return the subscribed APIs" in {
       await(subscriptionRepository.add(application1, api1))
@@ -185,16 +186,16 @@ class SubscriptionRepositoryISpec
     val developerEmail = "john.doe@example.com"
 
     "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
+      val app1            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app1))
-      val app2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
+      val app2            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app2))
       val someoneElsesApp = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
       await(applicationRepository.save(someoneElsesApp))
 
       val helloWorldApi1 = "hello-world".asIdentifier("1.0")
       val helloWorldApi2 = "hello-world".asIdentifier("2.0")
-      val helloVatApi = "hello-vat".asIdentifier("1.0")
+      val helloVatApi    = "hello-vat".asIdentifier("1.0")
       val helloAgentsApi = "hello-agents".asIdentifier("1.0")
 
       await(subscriptionRepository.add(app1.id, helloWorldApi1))
@@ -203,7 +204,7 @@ class SubscriptionRepositoryISpec
       await(subscriptionRepository.add(app2.id, helloVatApi))
       await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
 
-      val developerId = app1.collaborators.head.userId
+      val developerId                = app1.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
       result mustBe Set(helloWorldApi1, helloVatApi)
@@ -219,7 +220,7 @@ class SubscriptionRepositoryISpec
       val api = "hello-world".asIdentifier("1.0")
       await(subscriptionRepository.add(app1.id, api))
 
-      val developerId = app2.collaborators.head.userId
+      val developerId                = app2.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
       result mustBe Set.empty
@@ -229,7 +230,7 @@ class SubscriptionRepositoryISpec
       val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
       await(applicationRepository.save(app))
 
-      val developerId = app.collaborators.head.userId
+      val developerId                = app.collaborators.head.userId
       val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
 
       result mustBe Set.empty
@@ -239,9 +240,9 @@ class SubscriptionRepositoryISpec
   "getSubscribers" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random
-    val api1 = "some-context".asIdentifier("1.0")
-    val api2 = "some-context".asIdentifier("2.0")
-    val api3 = "some-context".asIdentifier("3.0")
+    val api1         = "some-context".asIdentifier("1.0")
+    val api2         = "some-context".asIdentifier("2.0")
+    val api3         = "some-context".asIdentifier("3.0")
 
     def saveSubscriptions(): HasSucceeded = {
       await(subscriptionRepository.add(application1, api1))
@@ -303,10 +304,11 @@ class SubscriptionRepositoryISpec
       val emailToMatch = "match@example.com"
 
       val partialEmailToMatch = "match"
-      val app1 = anApplicationData(
+      val app1                = anApplicationData(
         id = ApplicationId.random,
         clientId = generateClientId,
-        user = List(emailToMatch, "donot@example.com"))
+        user = List(emailToMatch, "donot@example.com")
+      )
 
       await(applicationRepository.save(app1))
 
@@ -322,26 +324,31 @@ class SubscriptionRepositoryISpec
   def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*): SubscriptionData = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
-      Set(applicationIds: _*))
+      Set(applicationIds: _*)
+    )
   }
 
-  def anApplicationData(id: ApplicationId,
-                        clientId: ClientId = ClientId("aaa"),
-                        state: ApplicationState = testingState(),
-                        access: Access = Standard(),
-                        user: List[String] = List("user@example.com"),
-                        checkInformation: Option[CheckInformation] = None): ApplicationData = {
+  def anApplicationData(
+      id: ApplicationId,
+      clientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Standard(),
+      user: List[String] = List("user@example.com"),
+      checkInformation: Option[CheckInformation] = None
+    ): ApplicationData = {
 
     aNamedApplicationData(id, s"myApp-${id.value}", clientId, state, access, user, checkInformation)
   }
 
-  def aNamedApplicationData(id: ApplicationId,
-                            name: String,
-                            clientId: ClientId = ClientId("aaa"),
-                            state: ApplicationState = testingState(),
-                            access: Access = Standard(),
-                            user: List[String] = List("user@example.com"),
-                            checkInformation: Option[CheckInformation] = None): ApplicationData = {
+  def aNamedApplicationData(
+      id: ApplicationId,
+      name: String,
+      clientId: ClientId = ClientId("aaa"),
+      state: ApplicationState = testingState(),
+      access: Access = Standard(),
+      user: List[String] = List("user@example.com"),
+      checkInformation: Option[CheckInformation] = None
+    ): ApplicationData = {
 
     val collaborators = user.map(email => Collaborator(email, Role.ADMINISTRATOR, UserId.random)).toSet
 
@@ -357,7 +364,8 @@ class SubscriptionRepositoryISpec
       access,
       LocalDateTime.now(clock),
       Some(LocalDateTime.now(clock)),
-      checkInformation = checkInformation)
+      checkInformation = checkInformation
+    )
   }
 
   private def generateClientId = {

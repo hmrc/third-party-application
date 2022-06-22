@@ -38,7 +38,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
 
-
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)
   implicit val readsRequestApprovalRequest = Json.reads[RequestApprovalRequest]
@@ -51,16 +50,16 @@ object ApprovalsController {
 }
 
 @Singleton
-class ApprovalsController @Inject()(
-  val applicationDataService: ApplicationDataService,
-  val submissionService: SubmissionsService,
-  requestApprovalsService: RequestApprovalsService,
-  declineApprovalService: DeclineApprovalsService,
-  grantApprovalService: GrantApprovalsService,
-  cc: ControllerComponents
-)
-(implicit val ec: ExecutionContext) extends ExtraHeadersController(cc)
-  with ApprovalsActionBuilders
+class ApprovalsController @Inject() (
+    val applicationDataService: ApplicationDataService,
+    val submissionService: SubmissionsService,
+    requestApprovalsService: RequestApprovalsService,
+    declineApprovalService: DeclineApprovalsService,
+    grantApprovalService: GrantApprovalsService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends ExtraHeadersController(cc)
+    with ApprovalsActionBuilders
     with JsonUtils
     with JsonErrorResponse {
 
@@ -70,51 +69,57 @@ class ApprovalsController @Inject()(
     import RequestApprovalsService._
 
     withJsonBodyFromAnyContent[RequestApprovalRequest] { requestApprovalRequest =>
-      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByName, requestApprovalRequest.requestedByEmailAddress).map( _ match {
-        case ApprovalAccepted(application)                                    => Ok(Json.toJson(ApplicationResponse(application)))
-        case ApprovalRejectedDueToIncorrectSubmissionState(state)             => PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
-        case ApprovalRejectedDueToDuplicateName(name)                         => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' ")) 
-        case ApprovalRejectedDueToIllegalName(name)                           => PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited")) 
-        case ApprovalRejectedDueToIncorrectApplicationState                   => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
-      })
-      .recover(recovery)
+      requestApprovalsService.requestApproval(request.application, request.submission, requestApprovalRequest.requestedByName, requestApprovalRequest.requestedByEmailAddress).map(
+        _ match {
+          case ApprovalAccepted(application)                        => Ok(Json.toJson(ApplicationResponse(application)))
+          case ApprovalRejectedDueToIncorrectSubmissionState(state) =>
+            PreconditionFailed(asJsonError("SUBMISSION_IN_INCORRECT_STATE", s"Submission for $applicationId is in an incorrect state of #'$state'"))
+          case ApprovalRejectedDueToDuplicateName(name)             => Conflict(asJsonError("APPLICATION_ALREADY_EXISTS", s"An application already exists for the name '$name' "))
+          case ApprovalRejectedDueToIllegalName(name)               =>
+            PreconditionFailed(asJsonError("INVALID_APPLICATION_NAME", s"The application name '$name' contains words that are prohibited"))
+          case ApprovalRejectedDueToIncorrectApplicationState       => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.TESTING}'"))
+        }
+      )
+        .recover(recovery)
     }
   }
 
-  def decline(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request => 
+  def decline(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import DeclineApprovalsService._
 
-    withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest => 
+    withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest =>
       declineApprovalService.decline(request.application, request.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
-      .map( _ match {
-        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
-        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
-        case RejectedDueToIncorrectApplicationData                            => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data")) 
-      })
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
     }
-    .recover(recovery)
+      .recover(recovery)
   }
 
   def grant(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
     import GrantApprovalsService._
 
-    withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest => 
+    withJsonBodyFromAnyContent[GrantedRequest] { grantedRequest =>
       grantApprovalService.grant(request.application, request.submission, grantedRequest.gatekeeperUserName, grantedRequest.warnings, grantedRequest.escalatedTo)
-      .map( _ match {
-        case Actioned(application)                                            => Ok(Json.toJson(ApplicationResponse(application)))
-        case RejectedDueToIncorrectSubmissionState                            => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
-        case RejectedDueToIncorrectApplicationState                           => PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'")) 
-        case RejectedDueToIncorrectApplicationData                            => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data")) 
-      })
+        .map(_ match {
+          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
+          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
+          case RejectedDueToIncorrectApplicationState =>
+            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
+          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
+        })
     }
-    .recover(recovery)
+      .recover(recovery)
   }
 
-  private def asJsonError(errorCode: String, message: String): JsValue = 
+  private def asJsonError(errorCode: String, message: String): JsValue =
     Json.toJson(
       Json.obj(
-        "code" -> errorCode,
+        "code"    -> errorCode,
         "message" -> message
       )
     )

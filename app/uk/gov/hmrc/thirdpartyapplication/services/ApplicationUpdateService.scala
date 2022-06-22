@@ -27,13 +27,13 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-
 @Singleton
-class ApplicationUpdateService @Inject()(
-  applicationRepository: ApplicationRepository,
-  changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
-  notificationService: NotificationService
-) (implicit val ec: ExecutionContext) extends ApplicationLogger {
+class ApplicationUpdateService @Inject() (
+    applicationRepository: ApplicationRepository,
+    changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+    notificationService: NotificationService
+  )(implicit val ec: ExecutionContext
+  ) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
 
@@ -41,16 +41,17 @@ class ApplicationUpdateService @Inject()(
     for {
       app              <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-      repositoryEvents <- E.fromOption(NonEmptyList.fromList(events.collect{case e: UpdateApplicationRepositoryEvent => e}), NonEmptyChain(s"No repository events found for this command"))
+      repositoryEvents <-
+        E.fromOption(NonEmptyList.fromList(events.collect { case e: UpdateApplicationRepositoryEvent => e }), NonEmptyChain(s"No repository events found for this command"))
       savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
-      _                <- E.liftF(notificationService.sendNotifications(app, events.collect{case e: UpdateApplicationNotificationEvent => e}))
+      _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case e: UpdateApplicationNotificationEvent => e }))
     } yield savedApp
   }
 
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case _ => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
+      case _                                    => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }
 }

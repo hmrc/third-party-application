@@ -43,42 +43,43 @@ class DummyCredentialGenerator extends CredentialGenerator {
 
 class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
-  val configOverrides = Map[String,Any](
-    "microservice.services.api-subscription-fields.port" -> 19650,
-    "microservice.services.api-platform-events.port" -> 16700,
-    "microservice.services.api-gateway-stub.port" -> 19607,
-    "microservice.services.auth.port" -> 18500,
-    "microservice.services.email.port" -> 18300,
+  val configOverrides = Map[String, Any](
+    "microservice.services.api-subscription-fields.port"         -> 19650,
+    "microservice.services.api-platform-events.port"             -> 16700,
+    "microservice.services.api-gateway-stub.port"                -> 19607,
+    "microservice.services.auth.port"                            -> 18500,
+    "microservice.services.email.port"                           -> 18300,
     "microservice.services.third-party-delegated-authority.port" -> 19606,
-    "microservice.services.totp.port" -> 19988,
-    "mongodb.uri" -> "mongodb://localhost:27017/third-party-application-test"
+    "microservice.services.totp.port"                            -> 19988,
+    "mongodb.uri"                                                -> "mongodb://localhost:27017/third-party-application-test"
   )
 
   override def fakeApplication: Application = {
     GuiceApplicationBuilder()
-        .configure(configOverrides + ("metrics.jvm" -> false))
-        .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
-        .disable(classOf[SchedulerModule])
-        .build()
+      .configure(configOverrides + ("metrics.jvm" -> false))
+      .overrides(bind[CredentialGenerator].to[DummyCredentialGenerator])
+      .disable(classOf[SchedulerModule])
+      .build()
   }
 
-  val applicationName1 = "My 1st Application"
-  val applicationName2 = "My 2nd Application"
-  val emailAddress = "user@example.com"
-  val userId = UserId.random
-  val adminUserId = UserId.random
-  val testUserId = UserId.random
-  val gatekeeperUserId = "gate.keeper"
-  val username = "a" * 10
-  val password = "a" * 10
+  val applicationName1             = "My 1st Application"
+  val applicationName2             = "My 2nd Application"
+  val emailAddress                 = "user@example.com"
+  val userId                       = UserId.random
+  val adminUserId                  = UserId.random
+  val testUserId                   = UserId.random
+  val gatekeeperUserId             = "gate.keeper"
+  val username                     = "a" * 10
+  val password                     = "a" * 10
   val awsApiGatewayApplicationName = "a" * 10
-  val testCookieLength = 10
-  val cookie = Random.alphanumeric.take(testCookieLength).mkString
-  val serviceName = "service"
-  val apiName = "apiName"
-  val context = "myapi".asContext
-  val version = "1.0".asVersion
-  val standardAccess = Standard(
+  val testCookieLength             = 10
+  val cookie                       = Random.alphanumeric.take(testCookieLength).mkString
+  val serviceName                  = "service"
+  val apiName                      = "apiName"
+  val context                      = "myapi".asContext
+  val version                      = "1.0".asVersion
+
+  val standardAccess   = Standard(
     redirectUris = List("http://example.com/redirect"),
     termsAndConditionsUrl = Some("http://example.com/terms"),
     privacyPolicyUrl = Some("http://example.com/privacy"),
@@ -87,7 +88,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
   val privilegedAccess = Privileged(totpIds = None, scopes = Set("ogdScope"))
 
   lazy val subscriptionRepository = app.injector.instanceOf[SubscriptionRepository]
-  lazy val applicationRepository = app.injector.instanceOf[ApplicationRepository]
+  lazy val applicationRepository  = app.injector.instanceOf[ApplicationRepository]
 
   override protected def beforeEach(): Unit = {
     super.beforeEach()
@@ -112,7 +113,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       When("We fetch all applications")
       val fetchResponse = Http(s"$serviceUrl/application").asString
       fetchResponse.code shouldBe OK
-      val result = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
+      val result        = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
 
       Then("The application is returned in the result")
       result.exists(r => r.id == application1.id) shouldBe true
@@ -131,7 +132,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       When("We fetch the application by its ID")
       val fetchResponse = Http(s"$serviceUrl/application/${application.id.value}").asString
       fetchResponse.code shouldBe OK
-      val result = Json.parse(fetchResponse.body).as[ApplicationResponse]
+      val result        = Json.parse(fetchResponse.body).as[ApplicationResponse]
 
       Then("The application is returned")
       result shouldBe application
@@ -148,7 +149,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       When("We fetch the application by the collaborator email address")
       val fetchResponse = Http(s"$serviceUrl/application?emailAddress=$emailAddress").asString
       fetchResponse.code shouldBe OK
-      val result = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
+      val result        = Json.parse(fetchResponse.body).as[Seq[ApplicationResponse]]
 
       Then("The applications are returned")
       result should contain theSameElementsAs Seq(application1, application2)
@@ -163,7 +164,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       Given("A third party application")
       val application: ApplicationResponse = createApplication(appName)
       postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
-      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val createdApp                       = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
 
       When("We fetch the application credentials")
       val response = Http(s"$serviceUrl/application/${application.id.value}/credentials").asString
@@ -201,14 +202,14 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
-      val clientSecretCreationResponse = postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
-      val applicationToken = Json.parse(clientSecretCreationResponse.body).as[ApplicationTokenResponse]
+      val clientSecretCreationResponse     = postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
+      val applicationToken                 = Json.parse(clientSecretCreationResponse.body).as[ApplicationTokenResponse]
 
       val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      val credentials = createdApplication.tokens.production
+      val credentials        = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest(credentials.clientId, applicationToken.clientSecrets.head.secret.get)
+      val requestBody        = validationRequest(credentials.clientId, applicationToken.clientSecrets.head.secret.get)
       val validationResponse = postData("/application/credentials/validate", requestBody)
 
       Then("We get a successful response")
@@ -227,7 +228,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       createApplication(awsApiGatewayApplicationName)
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest(ClientId("foo"), "bar")
+      val requestBody        = validationRequest(ClientId("foo"), "bar")
       val validationResponse = postData(s"/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
@@ -240,11 +241,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Given("A third party application")
       val application: ApplicationResponse = createApplication(awsApiGatewayApplicationName)
-      val createdApplication = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
-      val credentials = createdApplication.tokens.production
+      val createdApplication               = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val credentials                      = createdApplication.tokens.production
 
       When("We attempt to validate the credentials")
-      val requestBody = validationRequest(credentials.clientId, "bar")
+      val requestBody        = validationRequest(credentials.clientId, "bar")
       val validationResponse = postData("/application/credentials/validate", requestBody)
 
       Then("We get an UNAUTHORIZED response")
@@ -273,13 +274,13 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       createdResponse.code shouldBe CREATED
 
       Then("The application is returned with the Totp Ids and the Totp Secrets")
-      val totpIds = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
+      val totpIds     = (Json.parse(createdResponse.body) \ "access" \ "totpIds").as[TotpId]
       val totpSecrets = (Json.parse(createdResponse.body) \ "totp").as[TotpSecret]
 
       totpIds match {
-        case TotpId("prod-id") => totpSecrets shouldBe TotpSecret("prod-secret")
+        case TotpId("prod-id")    => totpSecrets shouldBe TotpSecret("prod-secret")
         case TotpId("sandbox-id") => totpSecrets shouldBe TotpSecret("sandbox-secret")
-        case _ => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
+        case _                    => throw new IllegalStateException(s"Unexpected result - totpIds: $totpIds, totpSecrets: $totpSecrets")
       }
     }
   }
@@ -295,19 +296,21 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveTeamMemberAddedEvent()
 
       When("We request to add the developer as a collaborator of the application")
-      val response = postData(s"/application/${application.id.value}/collaborator",
+      val response = postData(
+        s"/application/${application.id.value}/collaborator",
         s"""{
-          | "adminEmail":"admin@example.com",
-          | "collaborator": {
-          |   "emailAddress": "test@example.com",
-          |   "role":"ADMINISTRATOR",
-          |   "userId":"${testUserId.value}"
-          | },
-          | "isRegistered": true,
-          | "adminsToEmail": []
-          | }""".stripMargin)
+           | "adminEmail":"admin@example.com",
+           | "collaborator": {
+           |   "emailAddress": "test@example.com",
+           |   "role":"ADMINISTRATOR",
+           |   "userId":"${testUserId.value}"
+           | },
+           | "isRegistered": true,
+           | "adminsToEmail": []
+           | }""".stripMargin
+      )
       response.code shouldBe OK
-      val result = Json.parse(response.body).as[AddCollaboratorResponse]
+      val result   = Json.parse(response.body).as[AddCollaboratorResponse]
 
       Then("The collaborator is added")
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -329,7 +332,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       When("We request to remove a collaborator to the application")
       val deleteRequest = DeleteCollaboratorRequest(emailAddress, Set("admin@example.com"), false)
-      val response = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)) )
+      val response      = postData(s"/application/${application.id.value}/collaborator/delete", Json.prettyPrint(Json.toJson(deleteRequest)))
 
       response.code shouldBe NO_CONTENT
 
@@ -349,21 +352,27 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       emptyApplicationRepository()
 
       Given("A third party application")
-      val originalOverrides: Set[OverrideFlag] = Set(PersistLogin, GrantWithoutConsent(Set("scope")),
-        SuppressIvForAgents(Set("scope")), SuppressIvForOrganisations(Set("scope")), SuppressIvForIndividuals(Set("Scope")))
-      val application = createApplication(access = standardAccess.copy(overrides = originalOverrides))
+      val originalOverrides: Set[OverrideFlag] = Set(
+        PersistLogin,
+        GrantWithoutConsent(Set("scope")),
+        SuppressIvForAgents(Set("scope")),
+        SuppressIvForOrganisations(Set("scope")),
+        SuppressIvForIndividuals(Set("Scope"))
+      )
+      val application                          = createApplication(access = standardAccess.copy(overrides = originalOverrides))
 
       When("I request to update the application")
-      val newApplicationName = "My Renamed Application"
-      val updatedRedirectUris = List("http://example.com/redirect2", "http://example.com/redirect3")
+      val newApplicationName           = "My Renamed Application"
+      val updatedRedirectUris          = List("http://example.com/redirect2", "http://example.com/redirect3")
       val updatedTermsAndConditionsUrl = Some("http://example.com/terms2")
-      val updatedPrivacyPolicyUrl = Some("http://example.com/privacy2")
-      val updatedAccess = Standard(
+      val updatedPrivacyPolicyUrl      = Some("http://example.com/privacy2")
+      val updatedAccess                = Standard(
         redirectUris = updatedRedirectUris,
         termsAndConditionsUrl = updatedTermsAndConditionsUrl,
         privacyPolicyUrl = updatedPrivacyPolicyUrl,
-        overrides = Set.empty)
-      val updatedResponse = postData(s"/application/${application.id.value}", applicationRequest(name = newApplicationName, access = updatedAccess))
+        overrides = Set.empty
+      )
+      val updatedResponse              = postData(s"/application/${application.id.value}", applicationRequest(name = newApplicationName, access = updatedAccess))
       updatedResponse.code shouldBe OK
 
       Then("The application is updated but preserving the original access override flags")
@@ -372,7 +381,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       fetchedApplication.redirectUris shouldBe updatedRedirectUris
       fetchedApplication.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
       fetchedApplication.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl
-      val fetchedAccess = fetchedApplication.access.asInstanceOf[Standard]
+      val fetchedAccess      = fetchedApplication.access.asInstanceOf[Standard]
       fetchedAccess.redirectUris shouldBe updatedRedirectUris
       fetchedAccess.termsAndConditionsUrl shouldBe updatedTermsAndConditionsUrl
       fetchedAccess.privacyPolicyUrl shouldBe updatedPrivacyPolicyUrl
@@ -389,12 +398,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
       apiPlatformEventsStub.willReceiveClientRemovedEvent()
       emailStub.willPostEmailNotification()
-      val createdApp = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
+      val createdApp  = result(applicationRepository.fetch(application.id), timeout).getOrElse(fail())
       createdApp.tokens.production.clientSecrets should have size 0
 
       When("I request to add a production client secret")
-      val fetchResponse = postData(s"/application/${application.id.value}/client-secret",
-        s"""{"actorEmailAddress": "$emailAddress"}""")
+      val fetchResponse = postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
       fetchResponse.code shouldBe OK
 
       Then("The client secret is added to the production environment of the application")
@@ -404,20 +412,18 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       apiPlatformEventsStub.verifyClientSecretAddedEventSent()
 
       When("I request to add a second production client secret")
-      val secondfetchResponse = postData(s"/application/${application.id.value}/client-secret",
-        s"""{"actorEmailAddress": "$emailAddress"}""")
+      val secondfetchResponse = postData(s"/application/${application.id.value}/client-secret", s"""{"actorEmailAddress": "$emailAddress"}""")
       secondfetchResponse.code shouldBe OK
 
       Then("The client secret is added to the production environment of the application")
-      val secondFetchResponseJson = Json.parse(secondfetchResponse.body).as[ApplicationTokenResponse]
+      val secondFetchResponseJson                 = Json.parse(secondfetchResponse.body).as[ApplicationTokenResponse]
       val moreSecrets: List[ClientSecretResponse] = secondFetchResponseJson.clientSecrets
       moreSecrets should have size 2
 
       val clientSecretId = moreSecrets.last.id
 
       When("I request to remove a production client secret")
-      val removeClientSecretResponse = postData(s"/application/${application.id.value}/client-secret/$clientSecretId",
-        s"""{"actorEmailAddress": "$emailAddress"}""")
+      val removeClientSecretResponse = postData(s"/application/${application.id.value}/client-secret/$clientSecretId", s"""{"actorEmailAddress": "$emailAddress"}""")
       removeClientSecretResponse.code shouldBe NO_CONTENT
 
       apiPlatformEventsStub.verifyClientSecretRemovedEventSent()
@@ -439,9 +445,11 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       val application = createApplication()
 
       When("I request to delete the application")
-      val deleteResponse = postData(path = s"/application/${application.id.value}/delete",
+      val deleteResponse = postData(
+        path = s"/application/${application.id.value}/delete",
         data = s"""{"gatekeeperUserId": "$gatekeeperUserId", "requestedByEmailAddress": "$emailAddress"}""",
-        extraHeaders = Seq(AUTHORIZATION -> UUID.randomUUID.toString))
+        extraHeaders = Seq(AUTHORIZATION -> UUID.randomUUID.toString)
+      )
       deleteResponse.code shouldBe NO_CONTENT
 
       Then("The application is deleted")
@@ -453,7 +461,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Given("The gatekeeper is logged in")
       authStub.willValidateLoggedInUserHasGatekeeperRole()
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -472,7 +480,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
   Feature("Subscription") {
 
     Scenario("Fetch API Subscriptions") {
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -491,7 +499,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
     }
 
     Scenario("Fetch All API Subscriptions") {
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -500,8 +508,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       And("I subscribe the application to an API")
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
-      val subscribeResponse = postData(s"/application/${application.id.value}/subscription",
-        s"""{ "context" : "$context", "version" : "$version" }""")
+      val subscribeResponse = postData(s"/application/${application.id.value}/subscription", s"""{ "context" : "$context", "version" : "$version" }""")
       And("The subscription is created")
       subscribeResponse.code shouldBe NO_CONTENT
 
@@ -518,7 +525,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
     }
 
     Scenario("Subscribe to an api") {
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -527,8 +534,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveApiSubscribedEvent()
 
       When("I request to subscribe the application to the API")
-      val subscribeResponse = postData(s"/application/${application.id.value}/subscription",
-        s"""{ "context" : "$context", "version" : "$version" }""")
+      val subscribeResponse = postData(s"/application/${application.id.value}/subscription", s"""{ "context" : "$context", "version" : "$version" }""")
 
       Then("A 204 is returned")
       subscribeResponse.code shouldBe NO_CONTENT
@@ -537,7 +543,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
     }
 
     Scenario("Unsubscribe to an api") {
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -546,7 +552,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       apiPlatformEventsStub.willReceiveApiUnsubscribedEvent()
 
       When("I request to unsubscribe the application to an API")
-       val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
+      val unsubscribedResponse = Http(s"$serviceUrl/application/${application.id.value}/subscription?context=$context&version=$version")
         .method("DELETE").asString
 
       Then("A 204 is returned")
@@ -559,7 +565,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
   Feature("Uplift") {
 
     Scenario("Request uplift for an application") {
-      
+
       Given("No applications exist")
       emptyApplicationRepository()
 
@@ -567,8 +573,10 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       val application = createApplication()
 
       When("I request to uplift an application to production")
-      val result = postData(s"/application/${application.id.value}/request-uplift",
-        s"""{"requestedByEmailAddress":"admin@example.com", "applicationName": "Prod Application Name"}""")
+      val result = postData(
+        s"/application/${application.id.value}/request-uplift",
+        s"""{"requestedByEmailAddress":"admin@example.com", "applicationName": "Prod Application Name"}"""
+      )
 
       Then("The application is updated to PENDING_GATEKEEPER_APPROVAL")
       result.code shouldBe NO_CONTENT
@@ -585,7 +593,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
       val nameToCheck = "my invalid app name HMRC"
 
       val requestBody = Json.obj("applicationName" -> nameToCheck).toString
-      val result = postData("/application/name/validate", requestBody)
+      val result      = postData("/application/name/validate", requestBody)
 
       Then("The response should be OK")
       result.code shouldBe OK

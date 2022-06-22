@@ -32,12 +32,13 @@ import cats.data.ValidatedNec
 import cats.data.NonEmptyList
 
 @Singleton
-class ChangeProductionApplicationNameCommandHandler @Inject()(
-  namingService: UpliftNamingService
-)(implicit val ec: ExecutionContext) extends CommandHandler {
-  
+class ChangeProductionApplicationNameCommandHandler @Inject() (
+    namingService: UpliftNamingService
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler {
+
   import CommandHandler._
-  
+
   private def validate(app: ApplicationData, cmd: ChangeProductionApplicationName, nameValidationResult: ApplicationNameValidationResult): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map6(
       isAdminOnApp(cmd.instigator, app),

@@ -27,10 +27,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationTokens
 trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   // NOTE - these override the defaults in order to push dates in non-mongo format
-  implicit val formatTermsOfUserAgreement = Json.format[TermsOfUseAgreement]
-  implicit val formatTermsOfUseAcceptance = Json.format[TermsOfUseAcceptance]
+  implicit val formatTermsOfUserAgreement    = Json.format[TermsOfUseAgreement]
+  implicit val formatTermsOfUseAcceptance    = Json.format[TermsOfUseAcceptance]
   implicit val formatImportantSubmissionData = Json.format[ImportantSubmissionData]
-  implicit val formatStandard = Json.format[Standard]
+  implicit val formatStandard                = Json.format[Standard]
   import uk.gov.hmrc.play.json.Union
 
   implicit val formatAccess = Union.from[Access]("accessType")
@@ -41,51 +41,48 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
 
   implicit val formatCheckInformation = Json.format[CheckInformation]
 
-  implicit val formatApplicationState = Json.format[ApplicationState]
-  implicit val formatClientSecret = Json.format[ClientSecret]
-  implicit val formatEnvironmentToken = Json.format[Token]
+  implicit val formatApplicationState  = Json.format[ApplicationState]
+  implicit val formatClientSecret      = Json.format[ClientSecret]
+  implicit val formatEnvironmentToken  = Json.format[Token]
   implicit val formatApplicationTokens = Json.format[ApplicationTokens]
 
   // implicit val formatApplicationData = Json.format[ApplicationData]
 
-  implicit val formatUpdateApplicationRequest = Json.format[UpdateApplicationRequest]
-  implicit val formatApplicationResponse = Json.format[ApplicationResponse]
-  implicit val formatExtendedApplicationResponse = Json.format[ExtendedApplicationResponse]
+  implicit val formatUpdateApplicationRequest     = Json.format[UpdateApplicationRequest]
+  implicit val formatApplicationResponse          = Json.format[ApplicationResponse]
+  implicit val formatExtendedApplicationResponse  = Json.format[ExtendedApplicationResponse]
   implicit val formatPaginatedApplicationResponse = Json.format[PaginatedApplicationResponse]
-  implicit val formatUpdateRateLimitTierRequest = Json.format[UpdateRateLimitTierRequest]
-  implicit val formatUpdateIpAllowlistRequest = Json.format[UpdateIpAllowlistRequest]
-  implicit val formatGrantLengthRequest = Json.format[UpdateGrantLengthRequest]
-  implicit val formatApplicationWithHistory = Json.format[ApplicationWithHistory]
-  implicit val formatClientSecretResponse = Json.format[ClientSecretResponse]
-  implicit val formatApplicationTokensResponse = Json.format[ApplicationTokenResponse]
+  implicit val formatUpdateRateLimitTierRequest   = Json.format[UpdateRateLimitTierRequest]
+  implicit val formatUpdateIpAllowlistRequest     = Json.format[UpdateIpAllowlistRequest]
+  implicit val formatGrantLengthRequest           = Json.format[UpdateGrantLengthRequest]
+  implicit val formatApplicationWithHistory       = Json.format[ApplicationWithHistory]
+  implicit val formatClientSecretResponse         = Json.format[ClientSecretResponse]
+  implicit val formatApplicationTokensResponse    = Json.format[ApplicationTokenResponse]
 
-
-  implicit val formatValidationRequest = Json.format[ValidationRequest]
+  implicit val formatValidationRequest                = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
-  implicit val formatClientSecretRequest = Json.format[ClientSecretRequest]
-  implicit val formatApproveUpliftRequest = Json.format[ApproveUpliftRequest]
-  implicit val formatRejectUpliftRequest = Json.format[RejectUpliftRequest]
-  implicit val formatResendVerificationRequest = Json.format[ResendVerificationRequest]
-  implicit val formatAddCollaboratorRequest = Json.format[AddCollaboratorRequest]
-  implicit val formatAddTermsOfUseAcceptanceRequest = Json.format[AddTermsOfUseAcceptanceRequest]
-  implicit val formatConfirmSetupCompleteRequest = Json.format[ConfirmSetupCompleteRequest]
-  implicit val formatAddCollaboratorResponse = Json.format[AddCollaboratorResponse]
-  implicit val formatScopeRequest = Json.format[ScopeRequest]
-  implicit val formatScopeResponse = Json.format[ScopeResponse]
-  implicit val formatOverridesRequest = Json.format[OverridesRequest]
-  implicit val formatOverridesResponse = Json.format[OverridesResponse]
-  implicit val formatApplicationWithUpliftRequest = Json.format[ApplicationWithUpliftRequest]
-  implicit val formatDeleteApplicationRequest = Json.format[DeleteApplicationRequest]
-  implicit val formatDeleteClientSecretsRequest = Json.format[DeleteClientSecretsRequest]
-  implicit val formatDeleteClientSecretRequest = Json.format[DeleteClientSecretRequest]
-  implicit val formatFixCollaboratorRequest = Json.format[FixCollaboratorRequest]
-  implicit val formatDeleteCollaboratorRequest = Json.format[DeleteCollaboratorRequest]
+  implicit val formatClientSecretRequest              = Json.format[ClientSecretRequest]
+  implicit val formatApproveUpliftRequest             = Json.format[ApproveUpliftRequest]
+  implicit val formatRejectUpliftRequest              = Json.format[RejectUpliftRequest]
+  implicit val formatResendVerificationRequest        = Json.format[ResendVerificationRequest]
+  implicit val formatAddCollaboratorRequest           = Json.format[AddCollaboratorRequest]
+  implicit val formatAddTermsOfUseAcceptanceRequest   = Json.format[AddTermsOfUseAcceptanceRequest]
+  implicit val formatConfirmSetupCompleteRequest      = Json.format[ConfirmSetupCompleteRequest]
+  implicit val formatAddCollaboratorResponse          = Json.format[AddCollaboratorResponse]
+  implicit val formatScopeRequest                     = Json.format[ScopeRequest]
+  implicit val formatScopeResponse                    = Json.format[ScopeResponse]
+  implicit val formatOverridesRequest                 = Json.format[OverridesRequest]
+  implicit val formatOverridesResponse                = Json.format[OverridesResponse]
+  implicit val formatApplicationWithUpliftRequest     = Json.format[ApplicationWithUpliftRequest]
+  implicit val formatDeleteApplicationRequest         = Json.format[DeleteApplicationRequest]
+  implicit val formatDeleteClientSecretsRequest       = Json.format[DeleteClientSecretsRequest]
+  implicit val formatDeleteClientSecretRequest        = Json.format[DeleteClientSecretRequest]
+  implicit val formatFixCollaboratorRequest           = Json.format[FixCollaboratorRequest]
+  implicit val formatDeleteCollaboratorRequest        = Json.format[DeleteCollaboratorRequest]
 
   implicit val createApplicationResponseWrites: Writes[CreateApplicationResponse] = (
     JsPath.write[ApplicationResponse] and (JsPath \ "totp").write[Option[TotpSecret]]
-    )(unlift(CreateApplicationResponse.unapply))
+  )(unlift(CreateApplicationResponse.unapply))
 }
 
-
 object JsonFormatters extends JsonFormatters
-

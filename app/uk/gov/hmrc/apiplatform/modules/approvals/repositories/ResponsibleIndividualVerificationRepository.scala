@@ -31,23 +31,28 @@ import java.time.LocalDateTime
 import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
-class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)
-                                                            (implicit val ec: ExecutionContext)
+class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,
       domainFormat = ResponsibleIndividualVerification.format,
       indexes = Seq(
-        IndexModel(ascending("id"), IndexOptions()
-          .name("idIndex")
-          .unique(true)
-          .background(true)
+        IndexModel(
+          ascending("id"),
+          IndexOptions()
+            .name("idIndex")
+            .unique(true)
+            .background(true)
         ),
-        IndexModel(ascending("createdOn"),IndexOptions()
+        IndexModel(
+          ascending("createdOn"),
+          IndexOptions()
             .name("createdOnIndex")
             .background(true)
         ),
-        IndexModel(ascending("applicationId", "submissionId", "submissionInstance"), IndexOptions()
+        IndexModel(
+          ascending("applicationId", "submissionId", "submissionInstance"),
+          IndexOptions()
             .name("appSubmissionIdIndex")
             .unique(true)
             .background(true)
@@ -69,11 +74,10 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
     collection.find(and(
-        equal("state", Codecs.toBson(state)),
-        lte("createdOn", minimumCreatedOn)
-      )
-    ).toFuture()
-     .map(_.toList)
+      equal("state", Codecs.toBson(state)),
+      lte("createdOn", minimumCreatedOn)
+    )).toFuture()
+      .map(_.toList)
   }
 
   def updateState(id: ResponsibleIndividualVerificationId, newState: ResponsibleIndividualVerificationState): Future[HasSucceeded] = {
@@ -95,7 +99,8 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       and(
         equal("submissionId", Codecs.toBson(submission.id)),
         equal("submissionInstance", Codecs.toBson(submission.latestInstance.index))
-      ))
+      )
+    )
       .toFuture()
       .map(_ => HasSucceeded)
   }

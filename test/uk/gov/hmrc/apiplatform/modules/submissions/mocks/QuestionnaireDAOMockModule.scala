@@ -25,18 +25,22 @@ import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.QuestionnaireTestData
 
 trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar with QuestionnaireTestData {
+
   protected trait BaseQuestionnaireDAOMock {
     def aMock: QuestionnaireDao
 
     object Fetch {
+
       def thenReturn(questionnaire: Option[Questionnaire]) =
         when(aMock.fetch(*[Questionnaire.Id])).thenReturn(successful(questionnaire))
     }
 
     object ActiveQuestionnaireGroupings {
-      def thenUseStandardOnes() = 
+
+      def thenUseStandardOnes() =
         when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(testGroups))
-      def thenUseChangedOnes() = 
+
+      def thenUseChangedOnes() =
         when(aMock.fetchActiveGroupsOfQuestionnaires()).thenReturn(successful(NonEmptyList.fromListUnsafe(testGroups.tail)))
     }
   }

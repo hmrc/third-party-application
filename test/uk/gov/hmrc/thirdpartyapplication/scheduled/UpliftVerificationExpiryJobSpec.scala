@@ -34,34 +34,36 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 
 class UpliftVerificationExpiryJobSpec
-  extends AsyncHmrcSpec
+    extends AsyncHmrcSpec
     with MongoSupport
     with BeforeAndAfterAll
     with ApplicationStateUtil
     with NoMetricsGuiceOneAppPerSuite {
 
-  final val FixedTimeNow = LocalDateTime.now(ZoneOffset.UTC)
+  final val FixedTimeNow     = LocalDateTime.now(ZoneOffset.UTC)
   final val expiryTimeInDays = 90
-  final val sixty = 60
-  final val twentyFour = 24
+  final val sixty            = 60
+  final val twentyFour       = 24
 
   trait Setup {
-    val mockApplicationRepository: ApplicationRepository = mock[ApplicationRepository]
+    val mockApplicationRepository: ApplicationRepository   = mock[ApplicationRepository]
     val mockStateHistoryRepository: StateHistoryRepository = mock[StateHistoryRepository]
-    val mongoLockRepository: MongoLockRepository = app.injector.instanceOf[MongoLockRepository]
-    val lockKeeperSuccess: () => Boolean = () => true
+    val mongoLockRepository: MongoLockRepository           = app.injector.instanceOf[MongoLockRepository]
+    val lockKeeperSuccess: () => Boolean                   = () => true
 
     val mockUpliftVerificationExpiryJobLockService: UpliftVerificationExpiryJobLockService =
       new UpliftVerificationExpiryJobLockService(mongoLockRepository) {
         override val ttl: Duration = 1.minutes
+
         override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] =
-        if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
-    }
+          if (lockKeeperSuccess()) body.map(value => Some(value))(ec) else Future.successful(None)
+      }
 
     val upliftVerificationValidity: FiniteDuration = FiniteDuration(expiryTimeInDays, DAYS)
-    val initialDelay: FiniteDuration = FiniteDuration(sixty, SECONDS)
-    val interval: FiniteDuration = FiniteDuration(twentyFour, HOURS)
-    val config: UpliftVerificationExpiryJobConfig = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
+    val initialDelay: FiniteDuration               = FiniteDuration(sixty, SECONDS)
+    val interval: FiniteDuration                   = FiniteDuration(twentyFour, HOURS)
+    val config: UpliftVerificationExpiryJobConfig  = UpliftVerificationExpiryJobConfig(initialDelay, interval, enabled = true, upliftVerificationValidity)
+
     val underTest =
       new UpliftVerificationExpiryJob(mockUpliftVerificationExpiryJobLockService, mockApplicationRepository, mockStateHistoryRepository, clock, config)
   }
@@ -82,10 +84,20 @@ class UpliftVerificationExpiryJobSpec
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       verify(mockApplicationRepository).save(app1.copy(state = testingState()))
       verify(mockApplicationRepository).save(app2.copy(state = testingState()))
-      verify(mockStateHistoryRepository).insert(StateHistory(app1.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
-      verify(mockStateHistoryRepository).insert(StateHistory(app2.id, State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock)))
+      verify(mockStateHistoryRepository).insert(StateHistory(
+        app1.id,
+        State.TESTING,
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Some(PENDING_REQUESTER_VERIFICATION),
+        changedAt = LocalDateTime.now(clock)
+      ))
+      verify(mockStateHistoryRepository).insert(StateHistory(
+        app2.id,
+        State.TESTING,
+        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        Some(PENDING_REQUESTER_VERIFICATION),
+        changedAt = LocalDateTime.now(clock)
+      ))
     }
 
     "not execute if the job is already running" in new Setup {
@@ -102,7 +114,7 @@ class UpliftVerificationExpiryJobSpec
 
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing fetchAllByStatusDetails db query'." +
-          " The next execution of the job will do retry."
+        " The next execution of the job will do retry."
     }
 
     "handle error on subsequent database call to update an application" in new Setup {
@@ -120,7 +132,7 @@ class UpliftVerificationExpiryJobSpec
       verify(mockApplicationRepository).fetchAllByStatusDetails(PENDING_REQUESTER_VERIFICATION, LocalDateTime.now(clock).minusDays(expiryTimeInDays))
       result.message shouldBe
         "The execution of scheduled job UpliftVerificationExpiryJob failed with error 'A failure on executing save db query'." +
-          " The next execution of the job will do retry."
+        " The next execution of the job will do retry."
     }
   }
 
@@ -138,6 +150,7 @@ class UpliftVerificationExpiryJobSpec
       state,
       Standard(),
       LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)))
+      Some(LocalDateTime.now(clock))
+    )
   }
 }

@@ -37,19 +37,19 @@ import scala.concurrent.Future.successful
 class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
 
   trait Setup
-    extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule
-    with StateHistoryRepositoryMockModule
-    with SubmissionsServiceMockModule
-    with EmailConnectorMockModule
-    with ResponsibleIndividualVerificationServiceMockModule
-    with ApplicationServiceMockModule
-    with SubmissionsTestData
-    with ApplicationTestData
-    with FixedClock {
+      extends AuditServiceMockModule
+      with ApplicationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with SubmissionsServiceMockModule
+      with EmailConnectorMockModule
+      with ResponsibleIndividualVerificationServiceMockModule
+      with ApplicationServiceMockModule
+      with SubmissionsTestData
+      with ApplicationTestData
+      with FixedClock {
 
-    val requestedByEmailAddress = "email@example.com"
-    val requestedByName = "bob example"
+    val requestedByEmailAddress      = "email@example.com"
+    val requestedByName              = "bob example"
     val application: ApplicationData = anApplicationData(applicationId, testingState())
 
     val mockApprovalsNamingService: ApprovalsNamingService = mock[ApprovalsNamingService]
@@ -60,9 +60,15 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     val underTest = new RequestApprovalsService(
-      AuditServiceMock.aMock, ApplicationRepoMock.aMock, StateHistoryRepoMock.aMock, mockApprovalsNamingService,
-      SubmissionsServiceMock.aMock, EmailConnectorMock.aMock, ResponsibleIndividualVerificationServiceMock.aMock,
-      ApplicationServiceMock.aMock, clock
+      AuditServiceMock.aMock,
+      ApplicationRepoMock.aMock,
+      StateHistoryRepoMock.aMock,
+      mockApprovalsNamingService,
+      SubmissionsServiceMock.aMock,
+      EmailConnectorMock.aMock,
+      ResponsibleIndividualVerificationServiceMock.aMock,
+      ApplicationServiceMock.aMock,
+      clock
     )
   }
 
@@ -79,9 +85,9 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         EmailConnectorMock.SendVerifyResponsibleIndividualNotification.thenReturnSuccess()
         ResponsibleIndividualVerificationServiceMock.CreateNewVerification.thenCreateNewVerification()
 
-        val questionsRiName = "andy pandy"
-        val questionsRiEmail = "andy@pandy.com"
-        val answersWithRIDetails = answersToQuestions
+        val questionsRiName                 = "andy pandy"
+        val questionsRiEmail                = "andy@pandy.com"
+        val answersWithRIDetails            = answersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("No"))
           .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, TextAnswer(questionsRiEmail))
           .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, TextAnswer(questionsRiName))
@@ -90,11 +96,11 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.requestApproval(application, answeredSubmissionWithRIDetails, requestedByName, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
-        val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
+        val savedStateHistory     = StateHistoryRepoMock.Insert.verifyCalled()
         savedStateHistory.state shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
         AuditServiceMock.Audit.verifyCalled()
         ApplicationServiceMock.AddTermsOfUseAcceptance.verifyNeverCalled()
-        val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedStateHistory.previousState shouldBe Some(State.TESTING)
         savedAppData.state.name shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
@@ -116,7 +122,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         SubmissionsServiceMock.Store.thenReturn()
         ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(fakeSavedApplication)
 
-        val answersWithoutRIDetails = answersToQuestions
+        val answersWithoutRIDetails            = answersToQuestions
           .updated(testQuestionIdsOfInterest.responsibleIndividualIsRequesterId, SingleChoiceAnswer("Yes"))
           .updated(testQuestionIdsOfInterest.responsibleIndividualEmailId, NoAnswer)
           .updated(testQuestionIdsOfInterest.responsibleIndividualNameId, NoAnswer)
@@ -125,11 +131,11 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         val result = await(underTest.requestApproval(application, answeredSubmissionWithoutRIDetails, requestedByName, requestedByEmailAddress))
 
         result shouldBe RequestApprovalsService.ApprovalAccepted(fakeSavedApplication)
-        val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
+        val savedStateHistory     = StateHistoryRepoMock.Insert.verifyCalled()
         savedStateHistory.previousState shouldBe Some(State.TESTING)
         savedStateHistory.state shouldBe State.PENDING_GATEKEEPER_APPROVAL
         AuditServiceMock.Audit.verifyCalled()
-        val savedAppData = ApplicationRepoMock.Save.verifyCalled()
+        val savedAppData          = ApplicationRepoMock.Save.verifyCalled()
         savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
         val responsibleIndividual = savedAppData.access.asInstanceOf[Standard].importantSubmissionData.get.responsibleIndividual
         responsibleIndividual.fullName.value shouldBe requestedByName
@@ -141,7 +147,7 @@ class RequestApprovalsServiceSpec extends AsyncHmrcSpec {
         }
         EmailConnectorMock.verifyZeroInteractions()
         ResponsibleIndividualVerificationServiceMock.verifyZeroInteractions()
-        val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(application.id)
+        val acceptance        = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(application.id)
         acceptance.responsibleIndividual shouldBe responsibleIndividual
         acceptance.submissionId shouldBe answeredSubmission.id
       }

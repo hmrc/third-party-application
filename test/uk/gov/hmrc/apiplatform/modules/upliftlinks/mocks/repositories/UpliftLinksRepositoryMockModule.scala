@@ -26,11 +26,13 @@ import scala.concurrent.Future
 import scala.concurrent.Future.successful
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseUpliftLinksRepositoryRepoMock {
     def aMock: UpliftLinksRepository
 
     object Insert {
-      def thenReturn(upliftLink : UpliftLink): ScalaOngoingStubbing[Future[UpliftLink]] =
+
+      def thenReturn(upliftLink: UpliftLink): ScalaOngoingStubbing[Future[UpliftLink]] =
         when(aMock.insert(*)).thenReturn(Future.successful(upliftLink))
 
       def verifyCalled(): Future[UpliftLink] = verify(aMock, atLeast(1)).insert(*[UpliftLink])
@@ -38,14 +40,15 @@ trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object Find {
-      def thenReturn(upliftLink : UpliftLink): ScalaOngoingStubbing[Future[Option[ApplicationId]]] =
+
+      def thenReturn(upliftLink: UpliftLink): ScalaOngoingStubbing[Future[Option[ApplicationId]]] =
         when(aMock.find(*[ApplicationId])).thenReturn(Future.successful(Some(upliftLink.sandboxApplicationId)))
 
       def thenReturnNothing: ScalaOngoingStubbing[Future[Option[ApplicationId]]] =
         when(aMock.find(*[ApplicationId])).thenReturn(successful(None))
     }
   }
-  
+
   object UpliftLinksRepositoryMock extends BaseUpliftLinksRepositoryRepoMock {
     val aMock = mock[UpliftLinksRepository]
   }

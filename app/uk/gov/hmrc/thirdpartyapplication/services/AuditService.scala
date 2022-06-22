@@ -30,7 +30,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 @Singleton
-class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec: ExecutionContext) {
+class AuditService @Inject() (val auditConnector: AuditConnector)(implicit val ec: ExecutionContext) {
 
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     audit(action, data, Map.empty)
@@ -48,10 +48,11 @@ class AuditService @Inject()(val auditConnector: AuditConnector)(implicit val ec
       app: ApplicationData,
       action: AuditAction,
       extra: Map[String, String] = Map.empty
-  )(implicit hc: HeaderCarrier): Future[AuditResult] = {
+    )(implicit hc: HeaderCarrier
+    ): Future[AuditResult] = {
     val tags = Map("gatekeeperId" -> gatekeeperId)
     audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
-      
+
   }
 }
 
@@ -63,162 +64,165 @@ sealed trait AuditAction {
 object AuditAction {
 
   case object AppCreated extends AuditAction {
-    val name = "application has been created"
+    val name      = "application has been created"
     val auditType = "ApplicationCreated"
   }
 
   case object AppNameChanged extends AuditAction {
-    val name = "Application name changed"
+    val name      = "Application name changed"
     val auditType = "ApplicationNameChanged"
   }
 
   case object AppRedirectUrisChanged extends AuditAction {
-    val name = "Application redirect URIs changed"
+    val name      = "Application redirect URIs changed"
     val auditType = "ApplicationRedirectUrisChanged"
   }
 
   case object AppTermsAndConditionsUrlChanged extends AuditAction {
-    val name = "Application terms and conditions url changed"
+    val name      = "Application terms and conditions url changed"
     val auditType = "ApplicationTermsAndConditionsUrlChanged"
   }
 
   case object AppPrivacyPolicyUrlChanged extends AuditAction {
-    val name = "Application Privacy Policy url Changed"
+    val name      = "Application Privacy Policy url Changed"
     val auditType = "ApplicationPrivacyPolicyUrlChanged"
   }
 
   case object Subscribed extends AuditAction {
-    val name = "Application Subscribed to API"
+    val name      = "Application Subscribed to API"
     val auditType = "ApplicationSubscribedToAPI"
   }
 
   case object Unsubscribed extends AuditAction {
-    val name = "Application Unsubscribed From API"
+    val name      = "Application Unsubscribed From API"
     val auditType = "ApplicationUnsubscribedFromAPI"
   }
 
   case object ClientSecretAdded extends AuditAction {
-    val name = "Application Client Secret Added"
+    val name      = "Application Client Secret Added"
     val auditType = "ApplicationClientSecretAdded"
   }
 
   case object ClientSecretRemoved extends AuditAction {
-    val name = "Application Client Secret Removed"
+    val name      = "Application Client Secret Removed"
     val auditType = "ApplicationClientSecretRemoved"
   }
 
   case object ApplicationUpliftRequested extends AuditAction {
-    val name = "application uplift to production has been requested"
+    val name      = "application uplift to production has been requested"
     val auditType = "ApplicationUpliftRequested"
   }
 
   case object ApplicationUpliftRequestDeniedDueToNonUniqueName extends AuditAction {
-    val name = "application uplift to production request has been denied, due to non-unique name"
+    val name      = "application uplift to production request has been denied, due to non-unique name"
     val auditType = "ApplicationUpliftRequestDeniedDueToNonUniqueName"
   }
 
   case object CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
-    val name = "create privileged application request has been denied, due to non-unique name"
+    val name      = "create privileged application request has been denied, due to non-unique name"
     val auditType = "CreatePrivilegedApplicationRequestDeniedDueToNonUniqueName"
   }
 
   case object CreateRopcApplicationRequestDeniedDueToNonUniqueName extends AuditAction {
-    val name = "create ropc application request has been denied, due to non-unique name"
+    val name      = "create ropc application request has been denied, due to non-unique name"
     val auditType = "CreateRopcApplicationRequestDeniedDueToNonUniqueName"
   }
+
   case object ApplicationUpliftVerified extends AuditAction {
-    val name = "application uplift to production completed - the verification link sent to the uplift requester has been visited"
+    val name      = "application uplift to production completed - the verification link sent to the uplift requester has been visited"
     val auditType = "ApplicationUpliftedToProduction"
   }
 
   case object ApplicationUpliftApproved extends AuditAction {
-    val name = "application name approved - as part of the application uplift to production"
+    val name      = "application name approved - as part of the application uplift to production"
     val auditType = "ApplicationNameApprovedByGatekeeper"
   }
 
   case object ApplicationUpliftRejected extends AuditAction {
-    val name = "application name declined - as part of the application uplift production"
+    val name      = "application name declined - as part of the application uplift production"
     val auditType = "ApplicationNameDeclinedByGatekeeper"
   }
 
   case object ApplicationVerficationResent extends AuditAction {
-    val name = "verification email has been resent"
+    val name      = "verification email has been resent"
     val auditType = "VerificationEmailResentByGatekeeper"
   }
 
   case object ApplicationUpliftRequestDeniedDueToDenyListedName extends AuditAction {
-    val name = "application uplift to production request has been denied, due to a deny listed name"
+    val name      = "application uplift to production request has been denied, due to a deny listed name"
     val auditType = "ApplicationUpliftRequestDeniedDueToDenyListedName"
   }
 
   case object CreatePrivilegedApplicationRequestDeniedDueToDenyListedName extends AuditAction {
-    val name = "create privileged application request has been denied, due to a deny listed name"
+    val name      = "create privileged application request has been denied, due to a deny listed name"
     val auditType = "CreatePrivilegedApplicationRequestDeniedDueToDenyListedName"
   }
 
   case object CreateRopcApplicationRequestDeniedDueToDenyListedName extends AuditAction {
-    val name = "create ropc application request has been denied, due to a deny listed name"
+    val name      = "create ropc application request has been denied, due to a deny listed name"
     val auditType = "CreateRopcApplicationRequestDeniedDueToDenyListedName"
   }
 
   case object CollaboratorAdded extends AuditAction {
-    val name = "Collaborator added to an application"
+    val name      = "Collaborator added to an application"
     val auditType = "CollaboratorAddedToApplication"
 
     def details(collaborator: Collaborator) = Map(
       "newCollaboratorEmail" -> collaborator.emailAddress,
-      "newCollaboratorType" -> collaborator.role.toString)
+      "newCollaboratorType"  -> collaborator.role.toString
+    )
   }
 
   case object CollaboratorRemoved extends AuditAction {
-    val name = "Collaborator removed from an application"
+    val name      = "Collaborator removed from an application"
     val auditType = "CollaboratorRemovedFromApplication"
 
     def details(collaborator: Collaborator) = Map(
       "removedCollaboratorEmail" -> collaborator.emailAddress,
-      "removedCollaboratorType" -> collaborator.role.toString)
+      "removedCollaboratorType"  -> collaborator.role.toString
+    )
   }
 
   case object ScopeAdded extends AuditAction {
-    val name = "Scope added to an application"
+    val name      = "Scope added to an application"
     val auditType = "ScopeAddedToApplication"
 
     def details(scope: String) = Map("newScope" -> scope)
   }
 
   case object ScopeRemoved extends AuditAction {
-    val name = "Scope removed from an application"
+    val name      = "Scope removed from an application"
     val auditType = "ScopeRemovedFromApplication"
 
     def details(scope: String) = Map("removedScope" -> scope)
   }
 
   case object OverrideAdded extends AuditAction {
-    val name = "Override added to an application"
+    val name      = "Override added to an application"
     val auditType = "OverrideAddedToApplication"
 
     def details(anOverride: OverrideFlag) = Map("newOverride" -> anOverride.overrideType.toString)
   }
 
   case object OverrideRemoved extends AuditAction {
-    val name = "Override removed from an application"
+    val name      = "Override removed from an application"
     val auditType = "OverrideRemovedFromApplication"
 
     def details(anOverride: OverrideFlag) = Map("removedOverride" -> anOverride.overrideType.toString)
   }
 
   case object ApplicationDeleted extends AuditAction {
-    val name = "Application has been deleted"
+    val name      = "Application has been deleted"
     val auditType = "ApplicationDeleted"
   }
 
   case object ApplicationApprovalDeclined extends AuditAction {
-    val name = "Application approval has been declined"
+    val name      = "Application approval has been declined"
     val auditType = "ApplicationApprovalDeclined"
   }
 
   case object ApplicationApprovalGranted extends AuditAction {
-    val name = "Application approval has been granted"
+    val name      = "Application approval has been granted"
     val auditType = "ApplicationApprovalGranted"
   }
 }
@@ -233,10 +237,10 @@ object AuditHelper {
 
   def gatekeeperActionDetails(app: ApplicationData) =
     Map(
-      "applicationId" -> app.id.value.toString,
-      "applicationName" -> app.name,
+      "applicationId"          -> app.id.value.toString,
+      "applicationName"        -> app.name,
       "upliftRequestedByEmail" -> app.state.requestedByEmailAddress.getOrElse("-"),
-      "applicationAdmins" -> app.admins.map(_.emailAddress).mkString(", ")
+      "applicationAdmins"      -> app.admins.map(_.emailAddress).mkString(", ")
     )
 
   def calculateAppChanges(previous: ApplicationData, updated: ApplicationData) = {
@@ -246,10 +250,11 @@ object AuditHelper {
 
     val standardEvents = (previous.access, updated.access) match {
       case (p: Standard, u: Standard) => Set(
-        calcRedirectUriChange(p, u),
-        calcTermsAndConditionsChange(p, u),
-        calcPrivacyPolicyChange(p, u))
-      case _ => Set.empty
+          calcRedirectUriChange(p, u),
+          calcTermsAndConditionsChange(p, u),
+          calcPrivacyPolicyChange(p, u)
+        )
+      case _                          => Set.empty
     }
 
     (standardEvents ++ genericEvents)
@@ -266,14 +271,14 @@ object AuditHelper {
   }
 
   private def calcNameChange(a: ApplicationData, b: ApplicationData) =
-    when(a.name != b.name,
-      AppNameChanged -> Map("newApplicationName" -> b.name))
+    when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))
 
   private def calcTermsAndConditionsChange(a: Standard, b: Standard) =
-    when(a.termsAndConditionsUrl != b.termsAndConditionsUrl,
-      AppTermsAndConditionsUrlChanged -> Map("newTermsAndConditionsUrl" -> b.termsAndConditionsUrl.getOrElse("")))
+    when(
+      a.termsAndConditionsUrl != b.termsAndConditionsUrl,
+      AppTermsAndConditionsUrlChanged -> Map("newTermsAndConditionsUrl" -> b.termsAndConditionsUrl.getOrElse(""))
+    )
 
   private def calcPrivacyPolicyChange(a: Standard, b: Standard) =
-    when(a.privacyPolicyUrl != b.privacyPolicyUrl,
-      AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
+    when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
 }

@@ -28,7 +28,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import java.time.Clock
 
 class UpliftLinksRepositoryISpec
-  extends ServerBaseISpec
+    extends ServerBaseISpec
     with BeforeAndAfterEach
     with FixedClock {
 
@@ -52,9 +52,9 @@ class UpliftLinksRepositoryISpec
   }
 
   trait Setup {
-    val sandboxApplicationId = ApplicationId.random
+    val sandboxApplicationId    = ApplicationId.random
     val productionApplicationId = ApplicationId.random
-    val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
+    val upliftLink              = UpliftLink(sandboxApplicationId, productionApplicationId)
   }
 
   "insert" should {

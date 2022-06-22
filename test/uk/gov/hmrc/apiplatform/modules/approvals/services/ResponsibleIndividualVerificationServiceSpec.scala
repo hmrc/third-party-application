@@ -39,50 +39,59 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
-  trait Setup
-    extends ApplicationTestData
-    with SubmissionsTestData
-    with ApplicationRepositoryMockModule
-    with StateHistoryRepositoryMockModule
-    with ResponsibleIndividualVerificationRepositoryMockModule
-    with ApplicationServiceMockModule
-    with DeclineApprovalsServiceMockModule
-    with SubmissionsServiceMockModule
-    with EmailConnectorMockModule
-    with FixedClock {
 
-    val appName = "my shiny app"
+  trait Setup
+      extends ApplicationTestData
+      with SubmissionsTestData
+      with ApplicationRepositoryMockModule
+      with StateHistoryRepositoryMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
+      with ApplicationServiceMockModule
+      with DeclineApprovalsServiceMockModule
+      with SubmissionsServiceMockModule
+      with EmailConnectorMockModule
+      with FixedClock {
+
+    val appName                 = "my shiny app"
     val submissionInstanceIndex = 0
-    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
+    val responsibleIndividual   = ResponsibleIndividual.build("bob example", "bob@example.com")
+
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
     val application: ApplicationData = anApplicationData(
-                              applicationId,
-                              pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData))).copy(name = appName)
+      applicationId,
+      pendingResponsibleIndividualVerificationState("Rick Deckard", "rick@submitter.com"),
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    ).copy(name = appName)
 
     val underTest = new ResponsibleIndividualVerificationService(
-                              ResponsibleIndividualVerificationRepositoryMock.aMock,
-                              ApplicationRepoMock.aMock,
-                              StateHistoryRepoMock.aMock,
-                              ApplicationServiceMock.aMock,
-                              SubmissionsServiceMock.aMock,
-                              EmailConnectorMock.aMock,
-                              DeclineApprovalsServiceMock.aMock,
-                              clock)
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
+      ApplicationRepoMock.aMock,
+      StateHistoryRepoMock.aMock,
+      ApplicationServiceMock.aMock,
+      SubmissionsServiceMock.aMock,
+      EmailConnectorMock.aMock,
+      DeclineApprovalsServiceMock.aMock,
+      clock
+    )
 
     val riVerificationId = ResponsibleIndividualVerificationId.random
-    val riVerification = ResponsibleIndividualVerification(
-          riVerificationId,
-          application.id,
-          Submission.Id.random,
-          0,
-          appName,
-          LocalDateTime.now(clock))
+
+    val riVerification            = ResponsibleIndividualVerification(
+      riVerificationId,
+      application.id,
+      Submission.Id.random,
+      0,
+      appName,
+      LocalDateTime.now(clock)
+    )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
 

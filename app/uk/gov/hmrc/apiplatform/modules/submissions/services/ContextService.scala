@@ -27,19 +27,20 @@ import cats.data.EitherT
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen
 
 @Singleton
-class ContextService @Inject()(
-  applicationRepository: ApplicationRepository,
-  subscriptionRepository: SubscriptionRepository
-)(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+class ContextService @Inject() (
+    applicationRepository: ApplicationRepository,
+    subscriptionRepository: SubscriptionRepository
+  )(implicit val ec: ExecutionContext
+  ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture
 
   def deriveContext(applicationId: ApplicationId): EitherT[Future, String, AskWhen.Context] = {
     (
       for {
-        application           <- fromOptionF(applicationRepository.fetch(applicationId), "No such application")
-        subscriptions         <- liftF(subscriptionRepository.getSubscriptions(applicationId))
-        context               =  DeriveContext.deriveFor(application, subscriptions)
+        application   <- fromOptionF(applicationRepository.fetch(applicationId), "No such application")
+        subscriptions <- liftF(subscriptionRepository.getSubscriptions(applicationId))
+        context        = DeriveContext.deriveFor(application, subscriptions)
       } yield context
     )
   }

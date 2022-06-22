@@ -37,24 +37,26 @@ import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 
 import java.time.temporal.ChronoUnit.SECONDS
 
-
 @Singleton
-class ResponsibleIndividualVerificationReminderJob @Inject()(responsibleIndividualVerificationReminderJobLockService: ResponsibleIndividualVerificationReminderJobLockService,
-                                                             repository: ResponsibleIndividualVerificationRepository,
-                                                             emailConnector: EmailConnector,
-                                                             applicationService: ApplicationService,
-                                                             val clock: Clock,
-                                                             jobConfig: ResponsibleIndividualVerificationReminderJobConfig)(implicit val ec: ExecutionContext) extends ScheduledMongoJob with ApplicationLogger {
+class ResponsibleIndividualVerificationReminderJob @Inject() (
+    responsibleIndividualVerificationReminderJobLockService: ResponsibleIndividualVerificationReminderJobLockService,
+    repository: ResponsibleIndividualVerificationRepository,
+    emailConnector: EmailConnector,
+    applicationService: ApplicationService,
+    val clock: Clock,
+    jobConfig: ResponsibleIndividualVerificationReminderJobConfig
+  )(implicit val ec: ExecutionContext
+  ) extends ScheduledMongoJob with ApplicationLogger {
 
-  override def name: String = "ResponsibleIndividualVerificationReminderJob"
-  override def interval: FiniteDuration = jobConfig.interval
+  override def name: String                 = "ResponsibleIndividualVerificationReminderJob"
+  override def interval: FiniteDuration     = jobConfig.interval
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
-  override val isEnabled: Boolean = jobConfig.enabled
-  implicit val hc: HeaderCarrier = HeaderCarrier()
-  override val lockService: LockService = responsibleIndividualVerificationReminderJobLockService
+  override val isEnabled: Boolean           = jobConfig.enabled
+  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
-    val remindIfCreatedBeforeNow = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
+    val remindIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       remindersDue <- repository.fetchByStateAndAge(ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
       _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
@@ -69,36 +71,43 @@ class ResponsibleIndividualVerificationReminderJob @Inject()(responsibleIndividu
 
   private def sendReminderEmailsAndUpdateStatus(verificationDueForReminder: ResponsibleIndividualVerification) = {
     (for {
-      app <- applicationService.fetch(verificationDueForReminder.applicationId)
-      ri  <- OptionT.fromOption[Future](getResponsibleIndividual(app))
-      requesterName <- OptionT.fromOption[Future](getRequesterName(app))
+      app            <- applicationService.fetch(verificationDueForReminder.applicationId)
+      ri             <- OptionT.fromOption[Future](getResponsibleIndividual(app))
+      requesterName  <- OptionT.fromOption[Future](getRequesterName(app))
       requesterEmail <- OptionT.fromOption[Future](getRequesterEmail(app))
-      _   <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(ri.fullName.value, ri.emailAddress.value, app.name, requesterName, verificationDueForReminder.id.value))
-      _   <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualReminderToAdmin(ri.fullName.value, requesterEmail, app.name, requesterName))
-      _   <- OptionT.liftF(repository.updateState(verificationDueForReminder.id, ResponsibleIndividualVerificationState.REMINDERS_SENT))
+      _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualNotification(
+                          ri.fullName.value,
+                          ri.emailAddress.value,
+                          app.name,
+                          requesterName,
+                          verificationDueForReminder.id.value
+                        ))
+      _              <- OptionT.liftF(emailConnector.sendVerifyResponsibleIndividualReminderToAdmin(ri.fullName.value, requesterEmail, app.name, requesterName))
+      _              <- OptionT.liftF(repository.updateState(verificationDueForReminder.id, ResponsibleIndividualVerificationState.REMINDERS_SENT))
     } yield HasSucceeded).value
   }
 
   private def getResponsibleIndividual(app: ApplicationResponse): Option[ResponsibleIndividual] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Some(importantSubmissionData.responsibleIndividual)
-      case _ => None
+      case _                                                      => None
     }
   }
 
   private def getRequesterName(app: ApplicationResponse): Option[String] = {
     app.state.requestedByName
   }
+
   private def getRequesterEmail(app: ApplicationResponse): Option[String] = {
     app.state.requestedByEmailAddress
   }
 }
 
-class ResponsibleIndividualVerificationReminderJobLockService @Inject()(repository: LockRepository)
-  extends LockService {
-  override val lockId: String = "ResponsibleIndividualVerificationReminderScheduler"
+class ResponsibleIndividualVerificationReminderJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
+  override val lockId: String                 = "ResponsibleIndividualVerificationReminderScheduler"
   override val lockRepository: LockRepository = repository
-  override val ttl: Duration = 1.hours
+  override val ttl: Duration                  = 1.hours
 }
 
 case class ResponsibleIndividualVerificationReminderJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, reminderInterval: FiniteDuration, enabled: Boolean)

@@ -17,12 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 case class IpAllowlist(
-  required: Boolean = false,
-  allowlist: Set[String] = Set.empty
-)
+    required: Boolean = false,
+    allowlist: Set[String] = Set.empty
+  )
 
 object IpAllowlist {
   import play.api.libs.json.Json
-  
+
   implicit val formatIpAllowlist = Json.format[IpAllowlist]
 }

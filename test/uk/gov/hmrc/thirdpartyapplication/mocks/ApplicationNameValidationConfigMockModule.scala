@@ -21,24 +21,27 @@ import org.mockito.ArgumentMatchersSugar
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 
 trait ApplicationNameValidationConfigMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseApplicationNameValidationConfigMock {
     def aMock: ApplicationNamingService.ApplicationNameValidationConfig
 
     object NameDenyList {
-      def thenReturns(denyListedNames: List[String]) = 
+
+      def thenReturns(denyListedNames: List[String]) =
         when(aMock.nameDenyList).thenReturn(denyListedNames)
-      
-      def thenReturnsAnEmptyList() = 
+
+      def thenReturnsAnEmptyList() =
         thenReturns(List.empty[String])
-      
+
     }
 
     object ValidateForDuplicateAppNames {
-      def thenReturns(validateForDuplicates: Boolean) = 
+
+      def thenReturns(validateForDuplicates: Boolean) =
         when(aMock.validateForDuplicateAppNames).thenReturn(validateForDuplicates)
     }
   }
-  
+
   object ApplicationNameValidationConfigMock extends BaseApplicationNameValidationConfigMock {
     val aMock = mock[ApplicationNamingService.ApplicationNameValidationConfig](withSettings.lenient())
   }

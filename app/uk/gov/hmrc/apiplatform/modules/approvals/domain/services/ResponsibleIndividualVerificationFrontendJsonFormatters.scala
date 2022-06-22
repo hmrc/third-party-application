@@ -22,7 +22,7 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats._
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
-  implicit val responsibleIndividualVerificationFormat = Json.format[ResponsibleIndividualVerification]
+  implicit val responsibleIndividualVerificationFormat            = Json.format[ResponsibleIndividualVerification]
   implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 

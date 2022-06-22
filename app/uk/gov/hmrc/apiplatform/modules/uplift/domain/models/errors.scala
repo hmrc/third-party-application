@@ -16,5 +16,4 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.domain.models
 
-  
 case class InvalidUpliftVerificationCode(code: String) extends RuntimeException(s"Invalid verification code '$code'")

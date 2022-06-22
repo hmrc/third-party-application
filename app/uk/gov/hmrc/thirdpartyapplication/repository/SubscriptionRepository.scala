@@ -34,28 +34,34 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubscriptionRepository @Inject()(mongo: MongoComponent)
-                                      (implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[SubscriptionData](
-    collectionName = "subscription",
-    mongoComponent = mongo,
-    domainFormat = SubscriptionData.format,
-    indexes = Seq(
-      IndexModel(ascending("apiIdentifier.context", "apiIdentifier.version"), IndexOptions()
-        .name("context_version")
-        .unique(true)
-        .background(true)
+class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[SubscriptionData](
+      collectionName = "subscription",
+      mongoComponent = mongo,
+      domainFormat = SubscriptionData.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("apiIdentifier.context", "apiIdentifier.version"),
+          IndexOptions()
+            .name("context_version")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(
+          ascending("apiIdentifier.context"),
+          IndexOptions()
+            .name("context")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("applications"),
+          IndexOptions()
+            .name("applications")
+            .background(true)
+        )
       ),
-      IndexModel(ascending("apiIdentifier.context"), IndexOptions()
-        .name("context")
-        .background(true)
-      ),
-      IndexModel(ascending("applications"),IndexOptions()
-        .name("applications")
-        .background(true)
-      )
-    ), replaceIndexes = true
-  ) with MongoJavatimeFormats.Implicits {
+      replaceIndexes = true
+    ) with MongoJavatimeFormats.Implicits {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
     val pipeline = Seq(
@@ -67,7 +73,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       ),
       project(fields(excludeId(), include("applications"))),
       unwind("$applications"),
-      lookup(from ="application", localField ="applications", foreignField = "id", as = "applications"),
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
       project(fields(computed("collaborators", "$applications.collaborators.emailAddress"))),
       unwind("$collaborators"),
       unwind("$collaborators"),
@@ -81,7 +87,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
     val pipelineWithOptionalEmailFilter = {
       partialEmail match {
         case Some(email) => pipeline ++ Seq(partialEmailMatch(email))
-        case None => pipeline
+        case None        => pipeline
       }
     }
 
@@ -99,8 +105,8 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
     )
 
     collection.countDocuments(filter)
-     .toFuture()
-     .map(x => x > 0)
+      .toFuture()
+      .map(x => x > 0)
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
@@ -111,15 +117,15 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
 
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
     val pipeline = Seq(
-      lookup(from ="application", localField ="applications", foreignField = "id", as = "applications"),
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
       filter(equal("applications.collaborators.userId", Codecs.toBson(userId))),
       project(
         fields(
           excludeId(),
-          computed("context","$apiIdentifier.context"),
-          computed("version","$apiIdentifier.version")
-         )
-       )
+          computed("context", "$apiIdentifier.context"),
+          computed("version", "$apiIdentifier.version")
+        )
+      )
     )
 
     collection.aggregate[BsonValue](pipeline)
@@ -133,7 +139,7 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       .headOption
       .map {
         case Some(data) => data.applications
-        case _ => Set.empty
+        case _          => Set.empty
       }
   }
 
@@ -165,6 +171,6 @@ class SubscriptionRepository @Inject()(mongo: MongoComponent)
       update = Updates.pull("applications", Codecs.toBson(applicationId)),
       options = new UpdateOptions().upsert(true)
     ).toFuture()
-     .map(_ => HasSucceeded)
+      .map(_ => HasSucceeded)
   }
 }

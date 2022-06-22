@@ -48,23 +48,23 @@ object DeclineApprovalsService {
 
   case class Actioned(application: ApplicationData) extends Result
 
-  sealed trait Rejected extends Result
+  sealed trait Rejected                              extends Result
   case object RejectedDueToIncorrectApplicationState extends Rejected
-  case object RejectedDueToIncorrectSubmissionState extends Rejected
-  case object RejectedDueToIncorrectApplicationData extends Rejected
+  case object RejectedDueToIncorrectSubmissionState  extends Rejected
+  case object RejectedDueToIncorrectApplicationData  extends Rejected
 }
 
 @Singleton
-class DeclineApprovalsService @Inject()(
-  auditService: AuditService,
-  applicationRepository: ApplicationRepository,
-  stateHistoryRepository: StateHistoryRepository,
-  responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-  submissionService: SubmissionsService,
-  clock: Clock
-)(implicit ec: ExecutionContext)
-  extends BaseService(stateHistoryRepository, clock) 
-  with ApplicationLogger {
+class DeclineApprovalsService @Inject() (
+    auditService: AuditService,
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    submissionService: SubmissionsService,
+    clock: Clock
+  )(implicit ec: ExecutionContext
+  ) extends BaseService(stateHistoryRepository, clock)
+    with ApplicationLogger {
 
   import DeclineApprovalsService._
 
@@ -80,52 +80,63 @@ class DeclineApprovalsService @Inject()(
     def logDone(app: ApplicationData, submission: Submission) =
       logger.info(s"Decline-02: decline appId:${app.id} ${app.state.name} ${submission.status}")
 
-    val ET = EitherTHelper.make[Result]
+    val ET    = EitherTHelper.make[Result]
     val appId = originalApp.id
     (
       for {
-        _                       <- ET.liftF(logStart(appId))
-        _                       <- ET.cond(originalApp.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification, (), RejectedDueToIncorrectApplicationState)
-        _                       <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
+        _ <- ET.liftF(logStart(appId))
+        _ <- ET.cond(originalApp.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification, (), RejectedDueToIncorrectApplicationState)
+        _ <- ET.cond(submission.status.isSubmitted, (), RejectedDueToIncorrectSubmissionState)
 
         // Set application state to user verification
-        updatedApp              =  declineApp(originalApp)
+        updatedApp               = declineApp(originalApp)
         savedApp                <- ET.liftF(applicationRepository.save(updatedApp))
         importantSubmissionData <- ET.fromOption(savedApp.importantSubmissionData, RejectedDueToIncorrectApplicationData)
         _                       <- ET.liftF(writeStateHistory(originalApp, gatekeeperUserName))
-        updatedSubmission       =  Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
+        updatedSubmission        = Submission.decline(LocalDateTime.now(clock), gatekeeperUserName, reasons)(submission)
         savedSubmission         <- ET.liftF(submissionService.store(updatedSubmission))
         _                       <- ET.liftF(responsibleIndividualVerificationRepository.delete(submission))
         _                       <- ET.liftF(auditDeclinedApprovalRequest(appId, savedApp, updatedSubmission, submission, importantSubmissionData, gatekeeperUserName, reasons))
-        _                       =  logDone(savedApp, savedSubmission)
+        _                        = logDone(savedApp, savedSubmission)
       } yield Actioned(savedApp)
     )
-    .fold[Result](identity, identity)
+      .fold[Result](identity, identity)
   }
 
   private def declineApp(application: ApplicationData): ApplicationData = {
     application.copy(state = application.state.toTesting(clock))
   }
-  private val fmt = DateTimeFormatter.ISO_DATE_TIME
+  private val fmt                                                       = DateTimeFormatter.ISO_DATE_TIME
 
-  private def auditDeclinedApprovalRequest(applicationId: ApplicationId, updatedApp: ApplicationData, submission: Submission, submissionBeforeDeclined: Submission, importantSubmissionData: ImportantSubmissionData, gatekeeperUserName: String, reasons: String)(implicit hc: HeaderCarrier): Future[AuditResult] = {
+  private def auditDeclinedApprovalRequest(
+      applicationId: ApplicationId,
+      updatedApp: ApplicationData,
+      submission: Submission,
+      submissionBeforeDeclined: Submission,
+      importantSubmissionData: ImportantSubmissionData,
+      gatekeeperUserName: String,
+      reasons: String
+    )(implicit hc: HeaderCarrier
+    ): Future[AuditResult] = {
 
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
-    
-    val declinedData = Map("status" -> "declined", "reasons" -> reasons)
-    val submittedOn: LocalDateTime = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-    val declinedOn: LocalDateTime = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t => (t.submissionId == submissionBeforeDeclined.id && t.submissionInstance == submissionBeforeDeclined.latestInstance.index)).map(_.dateTime)
-    val dates = Map(
-      "submission.started.date" -> submission.startedOn.format(fmt),
-      "submission.submitted.date" -> submittedOn.format(fmt),
-      "submission.declined.date" -> declinedOn.format(fmt)
-      ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String,String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
 
-    val markedAnswers =  MarkAnswer.markSubmission(submissionBeforeDeclined)
-    val nbrOfFails = markedAnswers.filter(_._2 == Fail).size
+    val declinedData                                                 = Map("status" -> "declined", "reasons" -> reasons)
+    val submittedOn: LocalDateTime                                   = submissionBeforeDeclined.latestInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val declinedOn: LocalDateTime                                    = submission.instances.tail.head.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t =>
+      (t.submissionId == submissionBeforeDeclined.id && t.submissionInstance == submissionBeforeDeclined.latestInstance.index)
+    ).map(_.dateTime)
+    val dates                                                        = Map(
+      "submission.started.date"   -> submission.startedOn.format(fmt),
+      "submission.submitted.date" -> submittedOn.format(fmt),
+      "submission.declined.date"  -> declinedOn.format(fmt)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
+
+    val markedAnswers = MarkAnswer.markSubmission(submissionBeforeDeclined)
+    val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
     val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
-    val counters = Map(
+    val counters      = Map(
       "submission.failures" -> nbrOfFails.toString,
       "submission.warnings" -> nbrOfWarnings.toString
     )

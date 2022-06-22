@@ -28,20 +28,20 @@ import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPreven
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
 
-class ContextServiceSpec 
-    extends AsyncHmrcSpec 
-    with Inside 
-    with SubmissionsTestData 
+class ContextServiceSpec
+    extends AsyncHmrcSpec
+    with Inside
+    with SubmissionsTestData
     with ApplicationTestData {
-  
+
   trait Setup extends ApplicationRepositoryMockModule with SubscriptionRepositoryMockModule {
 
-    val applicationId: ApplicationId = ApplicationId.random
+    val applicationId: ApplicationId     = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
     val underTest = new ContextService(ApplicationRepoMock.aMock, SubscriptionRepoMock.aMock)
   }
-  
+
   "ContextService" should {
     "deriveContext when app is found" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -50,7 +50,7 @@ class ContextServiceSpec
       val result = await(underTest.deriveContext(applicationId).value)
 
       val expectedContext = Map(Keys.IN_HOUSE_SOFTWARE -> "Yes", Keys.VAT_OR_ITSA -> "Yes")
-      
+
       result.right.value shouldBe expectedContext
     }
   }

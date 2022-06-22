@@ -35,7 +35,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
   }
 
   "Application with Uplift request" should {
-    val app =
+    val app     =
       ApplicationData(
         ApplicationId.random,
         "MyApp",
@@ -47,7 +47,8 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         productionState("user1"),
         Standard(),
         LocalDateTime.now,
-        Some(LocalDateTime.now))
+        Some(LocalDateTime.now)
+      )
     val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR), changedAt = LocalDateTime.now(clock))
 
     "create object" in {
@@ -82,7 +83,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         createdOn = LocalDateTime.now(clock)
       )
     }
-    
+
     def createRequestV1(access: Access, environment: Environment) = {
       ApplicationData.create(
         createApplicationRequest = CreateApplicationRequestV1(

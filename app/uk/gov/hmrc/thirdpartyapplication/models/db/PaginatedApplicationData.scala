@@ -29,5 +29,5 @@ case class PaginatedApplicationData(applications: List[ApplicationData], totals:
 
 object PaginatedApplicationData {
   implicit val dateTimeFormatter = MongoJavatimeFormats.localDateTimeReads
-  implicit val reads = Json.reads[PaginatedApplicationData]
+  implicit val reads             = Json.reads[PaginatedApplicationData]
 }

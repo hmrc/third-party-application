@@ -28,30 +28,30 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class RateLimitMetrics @Inject()(applicationRepository: ApplicationRepository)
-                                 extends MetricSource
-                                 with ApplicationLogger {
+class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
+    extends MetricSource
+    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
-    numberOfApplicationsByRateLimit.map(
-      applicationCounts =>
-        applicationCounts.map(rateLimit => {
-          applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
-        }))
+    numberOfApplicationsByRateLimit.map(applicationCounts =>
+      applicationCounts.map(rateLimit => {
+        applicationsByRateLimitKey(rateLimit._1) -> rateLimit._2
+      })
+    )
   }
 
   def numberOfApplicationsByRateLimit(implicit ec: ExecutionContext): Future[Map[Option[RateLimitTier], Int]] = {
     val result = applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).mapValues(_.size))
 
-      result.onComplete({
+    result.onComplete({
       case Success(v) => logger.info(s"[METRIC]: RateLimitMetrics: ${v}")
       case Failure(e) => logger.info(s"[METRIC]: Error occurred whilst processing RateLimitMetrics: ${e.getMessage}")
-      })
+    })
     result
   }
 
   private def applicationsByRateLimitKey(rateLimit: Option[RateLimitTier]): String = {
-    val rateLimitString = if(rateLimit.isDefined) rateLimit.get.toString else "UNKNOWN"
+    val rateLimitString = if (rateLimit.isDefined) rateLimit.get.toString else "UNKNOWN"
     s"applicationsByRateLimit.$rateLimitString"
   }
 }

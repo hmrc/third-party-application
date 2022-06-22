@@ -35,40 +35,45 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class ApplicationUpdateServiceSpec
-  extends AsyncHmrcSpec
-  with BeforeAndAfterAll
-  with ApplicationStateUtil
-  with ApplicationTestData
-  with UpliftRequestSamples
-  with FixedClock {
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with ApplicationTestData
+    with UpliftRequestSamples
+    with FixedClock {
 
   trait Setup extends AuditServiceMockModule
-    with ApplicationRepositoryMockModule
-    with NotificationServiceMockModule {
+      with ApplicationRepositoryMockModule
+      with NotificationServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId = ApplicationId.random
+    val applicationId         = ApplicationId.random
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
+
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
     val applicationData: ApplicationData = anApplicationData(
-                              applicationId,
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+      applicationId,
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
 
     val instigator = applicationData.collaborators.head.userId
-    val newName = "robs new app"
+    val newName    = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
 
-    lazy val locked = false
+    lazy val locked              = false
     protected val mockitoTimeout = 1000
-    val response = mock[HttpResponse]
+    val response                 = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
 
@@ -79,7 +84,7 @@ class ApplicationUpdateServiceSpec
     )
   }
 
-  val timestamp = LocalDateTime.now
+  val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
 
   "update with ChangeProductionApplicationName" should {
@@ -89,14 +94,14 @@ class ApplicationUpdateServiceSpec
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
 
-      val nameChangedEvent = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
+      val nameChangedEvent      = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
       val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent)).toValidatedNec)
       )
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      
+
       val result = await(underTest.update(applicationId, changeName).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
@@ -125,7 +130,7 @@ class ApplicationUpdateServiceSpec
     }
 
     "return error for no repository event types" in new Setup {
-      val app = anApplicationData(applicationId)
+      val app      = anApplicationData(applicationId)
       ApplicationRepoMock.Fetch.thenReturn(app)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -134,7 +139,7 @@ class ApplicationUpdateServiceSpec
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.one(nameChangedEmailEvent)).toValidatedNec)
       )
-      val result = await(underTest.update(applicationId, changeName).value)
+      val result                = await(underTest.update(applicationId, changeName).value)
 
       result shouldBe Left(NonEmptyChain.one(s"No repository events found for this command"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled

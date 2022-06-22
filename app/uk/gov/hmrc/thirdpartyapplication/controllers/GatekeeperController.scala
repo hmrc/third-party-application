@@ -32,22 +32,23 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class GatekeeperController @Inject()(
-                                      val authConnector: AuthConnector,
-                                      val applicationService: ApplicationService,
-                                      gatekeeperService: GatekeeperService,
-                                      subscriptionService: SubscriptionService,
-                                      val authConfig: AuthConnector.Config,
-                                      cc: ControllerComponents)(
-                                      implicit val ec: ExecutionContext)  
-                                      extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+class GatekeeperController @Inject() (
+    val authConnector: AuthConnector,
+    val applicationService: ApplicationService,
+    gatekeeperService: GatekeeperService,
+    subscriptionService: SubscriptionService,
+    val authConfig: AuthConnector.Config,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   private lazy val badStateResponse = PreconditionFailed(
-    JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'"))
+    JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
+  )
 
   private lazy val badResendResponse = PreconditionFailed(
-    JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'"))
-
+    JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_REQUESTER_VERIFICATION'")
+  )
 
   def approveUplift(id: ApplicationId) = requiresAuthentication().async(parse.json) {
     implicit request =>

@@ -93,7 +93,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
 
     "invoke repository save function with updated application data access overrides" in new OverridesFixture {
       AuditServiceMock.Audit.thenReturnSuccess()
-      val oldOverrides = Set[OverrideFlag](override1)
+      val oldOverrides                 = Set[OverrideFlag](override1)
       val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)
       ApplicationRepoMock.Save.thenReturn(applicationDataWithOverrides)
@@ -110,7 +110,7 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       val grantWithoutConsent1 = GrantWithoutConsent(Set("scope1"))
       val grantWithoutConsent2 = GrantWithoutConsent(Set("scope2"))
 
-      val oldOverrides = Set[OverrideFlag](grantWithoutConsent1)
+      val oldOverrides                 = Set[OverrideFlag](grantWithoutConsent1)
       val applicationDataWithOverrides = standardApplicationDataWithOverrides(applicationId, oldOverrides)
 
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWithOverrides)
@@ -142,23 +142,22 @@ class AccessServiceSpec extends AsyncHmrcSpec {
   trait Fixture extends ApplicationRepositoryMockModule with AuditServiceMockModule {
 
     val applicationId = ApplicationId.random
-    
+
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val accessService = new AccessService(ApplicationRepoMock.aMock, AuditServiceMock.aMock)
   }
 
   trait ScopeFixture extends Fixture {
-    val scope1 = "scope:key"
-    val scope2 = "read:performance-test"
-    val scope3 = "write:performance-test"
-    val scope4 = "scope:key2"
+    val scope1     = "scope:key"
+    val scope2     = "read:performance-test"
+    val scope3     = "write:performance-test"
+    val scope4     = "scope:key2"
     val scopes1to4 = Set(scope1, scope2, scope3, scope4)
     val scopes1to3 = Set(scope1, scope2, scope3)
     val scopes2to4 = Set(scope2, scope3, scope4)
 
-    def mockApplicationRepositoryFetchAndSave(partialApplication: Set[String] => ApplicationData,
-                                              fetchScopes: Set[String], saveScopes: Set[String] = Set.empty) = {
+    def mockApplicationRepositoryFetchAndSave(partialApplication: Set[String] => ApplicationData, fetchScopes: Set[String], saveScopes: Set[String] = Set.empty) = {
       ApplicationRepoMock.Fetch.thenReturn(partialApplication(fetchScopes))
       ApplicationRepoMock.Save.thenReturn(partialApplication(saveScopes))
     }
@@ -186,7 +185,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ApplicationState(),
       Privileged(None, scopes),
       LocalDateTime.now,
-      Some(LocalDateTime.now))
+      Some(LocalDateTime.now)
+    )
 
   private def ropcApplicationDataWithScopes(applicationId: ApplicationId)(scopes: Set[String]): ApplicationData =
     ApplicationData(
@@ -202,7 +202,8 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ApplicationState(),
       Ropc(scopes),
       LocalDateTime.now,
-      Some(LocalDateTime.now))
+      Some(LocalDateTime.now)
+    )
 
   private def standardApplicationDataWithOverrides(applicationId: ApplicationId, overrides: Set[OverrideFlag]): ApplicationData =
     ApplicationData(
@@ -218,5 +219,6 @@ class AccessServiceSpec extends AsyncHmrcSpec {
       ApplicationState(),
       Standard(redirectUris = List.empty, overrides = overrides),
       LocalDateTime.now,
-      Some(LocalDateTime.now))
+      Some(LocalDateTime.now)
+    )
 }

@@ -21,17 +21,17 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 class MarkedSubmissionSpec extends HmrcSpec {
 
   private def buildMarkedSubmissionWithMarks(marks: Mark*): MarkedSubmission = {
-    val submission = mock[Submission]
+    val submission      = mock[Submission]
     val markedQuestions = marks.toList.map(m => Question.Id.random -> m).toMap
     MarkedSubmission(submission, markedQuestions)
   }
 
   trait Setup {
-    val submissionWithAllPasses = buildMarkedSubmissionWithMarks(Pass, Pass, Pass)
-    val submissionWithOneFail = buildMarkedSubmissionWithMarks(Pass, Fail, Pass)
+    val submissionWithAllPasses     = buildMarkedSubmissionWithMarks(Pass, Pass, Pass)
+    val submissionWithOneFail       = buildMarkedSubmissionWithMarks(Pass, Fail, Pass)
     val submissionWithThreeWarnings = buildMarkedSubmissionWithMarks(Pass, Warn, Warn, Pass, Warn)
-    val submissionWithFourWarnings = buildMarkedSubmissionWithMarks(Warn, Warn, Warn, Pass, Warn)
-    val submissionWithNoQuestions = buildMarkedSubmissionWithMarks()
+    val submissionWithFourWarnings  = buildMarkedSubmissionWithMarks(Warn, Warn, Warn, Pass, Warn)
+    val submissionWithNoQuestions   = buildMarkedSubmissionWithMarks()
   }
 
   "MarkedSubmission.isFail" should {

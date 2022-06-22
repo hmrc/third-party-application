@@ -25,4 +25,3 @@ object ResponsibleIndividualVerificationState extends Enumeration {
 
   implicit val format = EnumJson.enumFormat(ResponsibleIndividualVerificationState)
 }
-

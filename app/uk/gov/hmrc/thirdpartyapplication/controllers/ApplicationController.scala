@@ -52,26 +52,27 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 
 @Singleton
-class ApplicationController @Inject()(val applicationService: ApplicationService,
-                                      val authConnector: AuthConnector,
-                                      val authConfig: AuthConnector.Config,
-                                      credentialService: CredentialService,
-                                      subscriptionService: SubscriptionService,
-                                      config: ApplicationControllerConfig,
-                                      gatekeeperService: GatekeeperService,
-                                      submissionsService: SubmissionsService,
-                                      upliftNamingService: UpliftNamingService,
-                                      upliftLinkService: UpliftLinkService,
-                                      cc: ControllerComponents)
-                                     (implicit val ec: ExecutionContext)
-    extends ExtraHeadersController(cc)
+class ApplicationController @Inject() (
+    val applicationService: ApplicationService,
+    val authConnector: AuthConnector,
+    val authConfig: AuthConnector.Config,
+    credentialService: CredentialService,
+    subscriptionService: SubscriptionService,
+    config: ApplicationControllerConfig,
+    gatekeeperService: GatekeeperService,
+    submissionsService: SubmissionsService,
+    upliftNamingService: UpliftNamingService,
+    upliftLinkService: UpliftLinkService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends ExtraHeadersController(cc)
     with JsonUtils
     with AuthorisationWrapper
     with ApplicationLogger {
 
   import cats.implicits._
-  
-  val applicationCacheExpiry = config.fetchApplicationTtlInSecs
+
+  val applicationCacheExpiry  = config.fetchApplicationTtlInSecs
   val subscriptionCacheExpiry = config.fetchSubscriptionTtlInSecs
 
   val apiGatewayUserAgent: String = "APIPlatformAuthorizer"
@@ -79,11 +80,10 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   private val E = EitherTHelper.make[String]
 
   def create = requiresAuthenticationFor(PRIVILEGED, ROPC).async(parse.json) { implicit request =>
-
-    def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] = 
+    def onV2(createApplicationRequest: CreateApplicationRequest, fn: CreateApplicationRequestV2 => Future[HasSucceeded]): Future[HasSucceeded] =
       createApplicationRequest match {
-        case _ : CreateApplicationRequestV1 => successful(HasSucceeded)
-        case r : CreateApplicationRequestV2 => fn(r)
+        case _: CreateApplicationRequestV1 => successful(HasSucceeded)
+        case r: CreateApplicationRequestV2 => fn(r)
       }
 
     def processV2(applicationId: ApplicationId)(requestV2: CreateApplicationRequestV2): Future[HasSucceeded] =
@@ -93,16 +93,16 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
           submission <- E.fromEitherF(submissionsService.create(applicationId, requestV2.requestedBy))
         } yield HasSucceeded
       )
-      .getOrElseF(Future.failed(new RuntimeException("Bang")))
+        .getOrElseF(Future.failed(new RuntimeException("Bang")))
 
     withJsonBody[CreateApplicationRequest] { createApplicationRequest =>
       {
         for {
-          applicationResponse   <- applicationService.create(createApplicationRequest)
-          applicationId          = applicationResponse.application.id
-          subs                   = createApplicationRequest.anySubscriptions
-          _                     <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
-          _                     <- onV2(createApplicationRequest, processV2(applicationId))
+          applicationResponse <- applicationService.create(createApplicationRequest)
+          applicationId        = applicationResponse.application.id
+          subs                 = createApplicationRequest.anySubscriptions
+          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationResponse.application.id, api)))
+          _                   <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>
@@ -123,11 +123,12 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case scala.util.Success(rateLimitTier) =>
-          applicationService updateRateLimitTier(applicationId, rateLimitTier) map { _ =>
+          applicationService updateRateLimitTier (applicationId, rateLimitTier) map { _ =>
             NoContent
           } recover recovery
-        case Failure(_) => successful(UnprocessableEntity(
-          JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")))
+        case Failure(_)                        => successful(UnprocessableEntity(
+            JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
+          ))
       }
     }
   }
@@ -170,8 +171,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       applicationService.addCollaborator(applicationId, collaboratorRequest) map {
         response => Ok(toJson(response))
       } recover {
-        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS,
-          "This email address is already registered with different role, delete and add with desired role"))
+        case _: UserAlreadyExists => Conflict(JsErrorResponse(USER_ALREADY_EXISTS, "This email address is already registered with different role, delete and add with desired role"))
 
         case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid Role"))
       } recover recovery
@@ -189,23 +189,22 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def fixCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[FixCollaboratorRequest] { fixCollaboratorRequest =>
       applicationService.fixCollaborator(applicationId, fixCollaboratorRequest).map {
-        case Some(_)  => Ok
-        case None => Conflict
+        case Some(_) => Ok
+        case None    => Conflict
       } recover recovery
     }
   }
 
   def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-      withJsonBody[ClientSecretRequest] { secret =>
-        credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token))
-        } recover {
-          case e: NotFoundException => handleNotFound(e.getMessage)
-          case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
-          case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-          case e => handleException(e)
-        }
+    withJsonBody[ClientSecretRequest] { secret =>
+      credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token)) } recover {
+        case e: NotFoundException          => handleNotFound(e.getMessage)
+        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
+        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
+        case e                             => handleException(e)
       }
     }
+  }
 
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
     Action.async(parse.json) { implicit request =>
@@ -219,87 +218,81 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     withJsonBody[ValidationRequest] { vr: ValidationRequest =>
       credentialService.validateCredentials(vr).value map {
         case Some(application) => Ok(toJson(application))
-        case None => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
+        case None              => Unauthorized(JsErrorResponse(INVALID_CREDENTIALS, "Invalid client id or secret"))
       } recover recovery
     }
   }
 
   def validateApplicationName: Action[JsValue] =
     Action.async(parse.json) { implicit request =>
-
       withJsonBody[ApplicationNameValidationRequest] { applicationNameValidationRequest: ApplicationNameValidationRequest =>
-
         upliftNamingService
           .validateApplicationName(applicationNameValidationRequest.applicationName, applicationNameValidationRequest.selfApplicationId)
           .map((result: ApplicationNameValidationResult) => {
 
             val json = result match {
-              case ValidName               => Json.obj()
-              case InvalidName             => Json.obj("errors" -> Json.obj("invalidName" -> true,  "duplicateName" -> false))
-              case DuplicateName           => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
+              case ValidName     => Json.obj()
+              case InvalidName   => Json.obj("errors" -> Json.obj("invalidName" -> true, "duplicateName" -> false))
+              case DuplicateName => Json.obj("errors" -> Json.obj("invalidName" -> false, "duplicateName" -> true))
             }
 
             Ok(json)
           })
 
       } recover recovery
-  }
+    }
 
   private def handleOption[T](future: Future[Option[T]])(implicit writes: Writes[T]): Future[Result] = {
     future.map {
       case Some(v) => Ok(toJson(v))
-      case None => handleNotFound("No application was found")
+      case None    => handleNotFound("No application was found")
     } recover recovery
   }
 
-  private def handleOptionT[T](opt: OptionT[Future,T])(implicit writes: Writes[T]): Future[Result] = {
+  private def handleOptionT[T](opt: OptionT[Future, T])(implicit writes: Writes[T]): Future[Result] = {
     opt.fold(handleNotFound("No application was found"))(v => Ok(toJson(v)))
       .recover(recovery)
   }
 
   def queryDispatcher() = Action.async { implicit request =>
-    val queryBy = request.queryString.keys.toList.sorted
+    val queryBy     = request.queryString.keys.toList.sorted
     val serverToken = hc.valueOf(SERVER_TOKEN_HEADER)
 
     def addHeaders(pred: Result => Boolean, headers: (String, String)*)(res: Result): Result =
       if (pred(res)) res.withHeaders(headers: _*) else res
 
     (queryBy, serverToken) match {
-      case (_, Some(token)) =>
+      case (_, Some(token))                      =>
         fetchByServerToken(token)
-          .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND,
-            CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
-      case ("clientId" :: _, _) =>
+          .map(addHeaders(res => res.header.status == OK || res.header.status == NOT_FOUND, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry", VARY -> SERVER_TOKEN_HEADER))
+      case ("clientId" :: _, _)                  =>
         val clientId = ClientId(request.queryString("clientId").head)
         fetchByClientId(clientId)
-          .map(addHeaders(_.header.status == OK,
-            CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
-      case ("environment" :: "userId" :: _, _) =>
+          .map(addHeaders(_.header.status == OK, CACHE_CONTROL -> s"max-age=$applicationCacheExpiry"))
+      case ("environment" :: "userId" :: _, _)   =>
         val rawQueryParameter = request.queryString("userId")
-        val ouserId = UserId.fromString(rawQueryParameter.head)
+        val ouserId           = UserId.fromString(rawQueryParameter.head)
 
         ouserId.fold(
           successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, s"UserId ${rawQueryParameter.head} is not a valid user Id")))
-        )(
-          userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head)
-        )
+        )(userId => fetchAllForUserIdAndEnvironment(userId, request.queryString("environment").head))
       case ("subscribesTo" :: "version" :: _, _) =>
         val context = ApiContext(request.queryString("subscribesTo").head)
         val version = ApiVersion(request.queryString("version").head)
         fetchAllBySubscriptionVersion(ApiIdentifier(context, version))
-      case ("subscribesTo" :: _, _) =>
+      case ("subscribesTo" :: _, _)              =>
         val context = ApiContext(request.queryString("subscribesTo").head)
         fetchAllBySubscription(context)
-      case ("noSubscriptions" :: _, _) =>
+      case ("noSubscriptions" :: _, _)           =>
         fetchAllWithNoSubscriptions()
-      case _ => fetchAll()
+      case _                                     => fetchAll()
     }
   }
 
   def searchApplications = Action.async { implicit request =>
     Try(ApplicationSearch.fromQueryString(request.queryString)) match {
       case Success(applicationSearch) => applicationService.searchApplications(applicationSearch).map(apps => Ok(toJson(apps))) recover recovery
-      case Failure(e) => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
+      case Failure(e)                 => successful(BadRequest(JsErrorResponse(BAD_QUERY_PARAMETER, e.getMessage)))
     }
   }
 
@@ -317,19 +310,22 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
       "No application was found for client id"
     )
 
-  private def fetchAndUpdateApplication(fetchFunction: () => Future[Option[ApplicationResponse]],
-                                        updateFunction: ApplicationId => Future[ExtendedApplicationResponse],
-                                        notFoundMessage: String)(implicit hc: HeaderCarrier): Future[Result] =
+  private def fetchAndUpdateApplication(
+      fetchFunction: () => Future[Option[ApplicationResponse]],
+      updateFunction: ApplicationId => Future[ExtendedApplicationResponse],
+      notFoundMessage: String
+    )(implicit hc: HeaderCarrier
+    ): Future[Result] =
     fetchFunction().flatMap {
       case Some(application) =>
         // If request has originated from an API gateway, record usage of the Application
         hc.extraHeaders
-        .find(_._1 == INTERNAL_USER_AGENT)
-        .map(_._2)
-        .map(_.split(","))
-        .flatMap(_.find(_ == apiGatewayUserAgent))
-        .fold(successful(Ok(toJson(application))))(_ => updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp))))
-      case None => successful(handleNotFound(notFoundMessage))
+          .find(_._1 == INTERNAL_USER_AGENT)
+          .map(_._2)
+          .map(_.split(","))
+          .flatMap(_.find(_ == apiGatewayUserAgent))
+          .fold(successful(Ok(toJson(application))))(_ => updateFunction(application.id).map(updatedApp => Ok(toJson(updatedApp))))
+      case None              => successful(handleNotFound(notFoundMessage))
     } recover recovery
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
@@ -369,7 +365,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   def isSubscribed(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = Action.async {
     val api = ApiIdentifier(context, version)
     subscriptionService.isSubscribed(applicationId, api) map {
-      case true => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
+      case true  => Ok(toJson(api)).withHeaders(CACHE_CONTROL -> s"max-age=$subscriptionCacheExpiry")
       case false => NotFound(JsErrorResponse(SUBSCRIPTION_NOT_FOUND, s"Application ${applicationId.value} is not subscribed to $context $version"))
     } recover recovery
   }
@@ -395,17 +391,17 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
     }
 
     def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      val ET = EitherTHelper.make[Result]
+      val ET              = EitherTHelper.make[Result]
       lazy val badRequest = BadRequest("Cannot delete this application")
 
       (
         for {
-          app   <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-          _     <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || ! app.state.isInPreProductionOrProduction, app, badRequest)
-          _     <- ET.liftF(applicationService.deleteApplication(id, None, audit))
+          app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
+          _   <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
+          _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
         } yield NoContent
       )
-      .fold(identity, identity)
+        .fold(identity, identity)
     }
 
     def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
@@ -415,7 +411,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
 
     {
       if (request.isStrideAuth) {
-          withJsonBodyFromAnyContent[DeleteApplicationRequest] {
+        withJsonBodyFromAnyContent[DeleteApplicationRequest] {
           deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
         }
       } else {
@@ -425,7 +421,7 @@ class ApplicationController @Inject()(val applicationService: ApplicationService
   }
 
   def confirmSetupComplete(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[ConfirmSetupCompleteRequest] {request =>
+    withJsonBody[ConfirmSetupCompleteRequest] { request =>
       applicationService.confirmSetupComplete(applicationId, request.requesterEmailAddress) map { _ =>
         NoContent
       } recover recovery

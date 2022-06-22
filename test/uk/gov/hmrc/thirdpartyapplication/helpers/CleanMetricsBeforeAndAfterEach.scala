@@ -20,7 +20,7 @@ import com.codahale.metrics.SharedMetricRegistries
 import org.scalatest.BeforeAndAfterEach
 
 trait CleanMetricsBeforeAndAfterEach extends BeforeAndAfterEach {
-  this : org.scalatest.BeforeAndAfterEach with org.scalatest.Suite =>
+  this: org.scalatest.BeforeAndAfterEach with org.scalatest.Suite =>
 
   override protected def beforeEach(): Unit = {
     SharedMetricRegistries.clear()

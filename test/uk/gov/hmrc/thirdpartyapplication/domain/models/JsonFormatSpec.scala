@@ -20,7 +20,6 @@ import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import play.api.libs.json.{Json, Reads}
 
-
 class JsonFormatSpec extends AnyWordSpec with Matchers {
 
   implicit val jsonFormat: Reads[CheckInformation] = CheckInformation.format
@@ -51,13 +50,13 @@ class JsonFormatSpec extends AnyWordSpec with Matchers {
   }
 
   val jsonWithoutDefaultingFields =
-      """
-        |{
-        |    "confirmedName" : false,
-        |    "providedPrivacyPolicyURL" : false,
-        |    "providedTermsAndConditionsURL" : false
-        |}
-        |""".stripMargin
+    """
+      |{
+      |    "confirmedName" : false,
+      |    "providedPrivacyPolicyURL" : false,
+      |    "providedTermsAndConditionsURL" : false
+      |}
+      |""".stripMargin
 
   "default teamConfirmed to false if missing from Json" in {
     val checkInformation: CheckInformation = Json.parse(jsonWithoutDefaultingFields).as[CheckInformation]

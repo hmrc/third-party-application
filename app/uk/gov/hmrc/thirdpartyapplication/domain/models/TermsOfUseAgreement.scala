@@ -25,5 +25,5 @@ case class TermsOfUseAgreement(emailAddress: String, timeStamp: LocalDateTime, v
 object TermsOfUseAgreement {
 
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format = Json.format[TermsOfUseAgreement]
+  implicit val format     = Json.format[TermsOfUseAgreement]
 }

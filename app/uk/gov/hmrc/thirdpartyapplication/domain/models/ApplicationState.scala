@@ -28,12 +28,12 @@ import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
 
 case class ApplicationState(
-  name: State = TESTING,
-  requestedByEmailAddress: Option[String] = None,
-  requestedByName: Option[String] = None,
-  verificationCode: Option[String] = None,
-  updatedOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
-) {
+    name: State = TESTING,
+    requestedByEmailAddress: Option[String] = None,
+    requestedByName: Option[String] = None,
+    verificationCode: Option[String] = None,
+    updatedOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC)
+  ) {
 
   final def requireState(requirement: State, transitionTo: State): Unit = {
     if (name != requirement) {
@@ -41,13 +41,12 @@ case class ApplicationState(
     }
   }
 
-  def isInTesting = name == State.TESTING
-  def isPendingResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
-  def isPendingGatekeeperApproval = name == State.PENDING_GATEKEEPER_APPROVAL
-  def isPendingRequesterVerification = name == State.PENDING_REQUESTER_VERIFICATION
-  def isInPreProductionOrProduction = name == State.PRE_PRODUCTION || name == State.PRODUCTION
+  def isInTesting                                                      = name == State.TESTING
+  def isPendingResponsibleIndividualVerification                       = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+  def isPendingGatekeeperApproval                                      = name == State.PENDING_GATEKEEPER_APPROVAL
+  def isPendingRequesterVerification                                   = name == State.PENDING_REQUESTER_VERIFICATION
+  def isInPreProductionOrProduction                                    = name == State.PRE_PRODUCTION || name == State.PRODUCTION
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
-
 
   def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
@@ -64,25 +63,24 @@ case class ApplicationState(
   def toPendingGatekeeperApproval(requestedByEmailAddress: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL,
-      updatedOn = LocalDateTime.now(clock),
-      requestedByEmailAddress = Some(requestedByEmailAddress))
+    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock), requestedByEmailAddress = Some(requestedByEmailAddress))
   }
 
   def toPendingGatekeeperApproval(clock: Clock) = {
     requireState(requirement = PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL,
-      updatedOn = LocalDateTime.now(clock))
+    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock))
   }
 
   def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
 
-    copy(name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+    copy(
+      name = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
       updatedOn = LocalDateTime.now(clock),
       requestedByEmailAddress = Some(requestedByEmailAddress),
-      requestedByName = Some(requestedByName))
+      requestedByName = Some(requestedByName)
+    )
   }
 
   def toPendingRequesterVerification(clock: Clock) = {
@@ -100,7 +98,7 @@ case class ApplicationState(
 
 object ApplicationState {
   import play.api.libs.json.Json
-  implicit val dateTimeFormats: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateTimeFormats: Format[LocalDateTime]            = MongoJavatimeFormats.localDateTimeFormat
   implicit val formatApplicationState: OFormat[ApplicationState] = Json.format[ApplicationState]
 
   val testing: ApplicationState = ApplicationState(State.TESTING, None)

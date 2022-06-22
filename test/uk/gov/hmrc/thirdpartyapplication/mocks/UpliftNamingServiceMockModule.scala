@@ -28,7 +28,7 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.ExclusionCondition
 
 trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
-    
+
   protected trait BaseUpliftNamingServiceMock {
     def aMock: UpliftNamingService
 
@@ -39,21 +39,23 @@ trait UpliftNamingServiceMockModule extends MockitoSugar with ArgumentMatchersSu
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object AssertAppHasUniqueNameAndAudit {
+
       def thenSucceeds() = {
         when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenReturn(successful(Unit))
       }
+
       def thenFailsWithApplicationAlreadyExists() = {
-        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer( (appName: String, _: AccessType, _: Option[ApplicationData]) => failed(ApplicationAlreadyExists(appName)))
+        when(aMock.assertAppHasUniqueNameAndAudit(*, *, *)(*)).thenAnswer((appName: String, _: AccessType, _: Option[ApplicationData]) => failed(ApplicationAlreadyExists(appName)))
       }
     }
 
     object ValidateApplicationName {
-      def succeeds() = when(aMock.validateApplicationName(*[String], *[ExclusionCondition])).thenReturn(successful(ValidName))
+      def succeeds()               = when(aMock.validateApplicationName(*[String], *[ExclusionCondition])).thenReturn(successful(ValidName))
       def failsWithDuplicateName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(DuplicateName))
-      def failsWithInvalidName() = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidName))
+      def failsWithInvalidName()   = when(aMock.validateApplicationName(*, *[ExclusionCondition])).thenReturn(successful(InvalidName))
     }
   }
-  
+
   object UpliftNamingServiceMock extends BaseUpliftNamingServiceMock {
     val aMock = mock[UpliftNamingService](withSettings.lenient())
   }

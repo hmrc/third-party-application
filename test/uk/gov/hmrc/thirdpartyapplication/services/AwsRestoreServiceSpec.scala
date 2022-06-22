@@ -34,6 +34,7 @@ import java.time.LocalDateTime
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
+
     def buildApplication(applicationName: String, serverToken: String): ApplicationData = {
       ApplicationData.create(
         CreateApplicationRequestV1(
@@ -44,7 +45,8 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
         ),
         applicationName,
         Token(ClientId(""), serverToken, List.empty),
-        createdOn = LocalDateTime.now(clock))
+        createdOn = LocalDateTime.now(clock)
+      )
     }
 
     val mockApiGatewayConnector: AwsApiGatewayConnector = mock[AwsApiGatewayConnector]
@@ -56,7 +58,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
 
   "restoreData" should {
     "republish all Applications" in new Setup {
-      val serverToken: String = UUID.randomUUID().toString
+      val serverToken: String          = UUID.randomUUID().toString
       val application: ApplicationData = buildApplication("foo", serverToken)
 
       ApplicationRepoMock.ProcessAll.thenReturn()

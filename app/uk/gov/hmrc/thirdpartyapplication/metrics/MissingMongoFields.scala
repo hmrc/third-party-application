@@ -25,13 +25,13 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.util.{Failure, Success}
 
 @Singleton
-class MissingMongoFields @Inject()(applicationRepository: ApplicationRepository)
-                                   extends MetricSource
-                                   with ApplicationLogger {
+class MissingMongoFields @Inject() (applicationRepository: ApplicationRepository)
+    extends MetricSource
+    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val counts: Future[(Int, Int)] = for {
-      missingRateLimit <- missingDocumentsWithField("rateLimitTier")
+      missingRateLimit      <- missingDocumentsWithField("rateLimitTier")
       missingLastAccessDate <- missingDocumentsWithField("lastAccess")
     } yield (missingRateLimit, missingLastAccessDate)
 

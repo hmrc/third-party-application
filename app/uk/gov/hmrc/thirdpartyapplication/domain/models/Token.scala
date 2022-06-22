@@ -21,15 +21,15 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import java.time.LocalDateTime
 
 case class Token(
-  clientId: ClientId,
-  accessToken: String,
-  clientSecrets: List[ClientSecret] = List(),
-  lastAccessTokenUsage: Option[LocalDateTime] = None
+    clientId: ClientId,
+    accessToken: String,
+    clientSecrets: List[ClientSecret] = List(),
+    lastAccessTokenUsage: Option[LocalDateTime] = None
   )
-  
+
 object Token {
   import play.api.libs.json.Json
 
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format = Json.format[Token]
+  implicit val format     = Json.format[Token]
 }

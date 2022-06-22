@@ -33,151 +33,153 @@ import uk.gov.hmrc.apiplatform.modules.approvals.services._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationState
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+
 class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData with FixedClock {
-    implicit val mat = NoMaterializer
-    val name = "bob example"
-    val emailAddress = "test@example.com"
-    val appId = ApplicationId.random
+  implicit val mat = NoMaterializer
+  val name         = "bob example"
+  val emailAddress = "test@example.com"
+  val appId        = ApplicationId.random
 
-    trait Setup 
-        extends RequestApprovalsServiceMockModule
-        with DeclineApprovalsServiceMockModule
-        with GrantApprovalsServiceMockModule
-        with ApplicationDataServiceMockModule
-        with SubmissionsServiceMockModule {
-      val underTest = new ApprovalsController(
-          ApplicationDataServiceMock.aMock,
-          SubmissionsServiceMock.aMock,
-          RequestApprovalsServiceMock.aMock, 
-          DeclineApprovalsServiceMock.aMock,
-          GrantApprovalsServiceMock.aMock,
-          Helpers.stubControllerComponents()
-      )
+  trait Setup
+      extends RequestApprovalsServiceMockModule
+      with DeclineApprovalsServiceMockModule
+      with GrantApprovalsServiceMockModule
+      with ApplicationDataServiceMockModule
+      with SubmissionsServiceMockModule {
 
-      def hasApp = ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(appId, state = ApplicationState.testing))
-      def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
-      
-      def hasNoSubmission = SubmissionsServiceMock.FetchLatest.thenReturnNone
-      def hasSubmission = SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
-      def hasExtSubmission = SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
+    val underTest = new ApprovalsController(
+      ApplicationDataServiceMock.aMock,
+      SubmissionsServiceMock.aMock,
+      RequestApprovalsServiceMock.aMock,
+      DeclineApprovalsServiceMock.aMock,
+      GrantApprovalsServiceMock.aMock,
+      Helpers.stubControllerComponents()
+    )
+
+    def hasApp   = ApplicationDataServiceMock.FetchApp.thenReturn(anApplicationData(appId, state = ApplicationState.testing))
+    def hasNoApp = ApplicationDataServiceMock.FetchApp.thenReturnNone
+
+    def hasNoSubmission  = SubmissionsServiceMock.FetchLatest.thenReturnNone
+    def hasSubmission    = SubmissionsServiceMock.FetchLatest.thenReturn(aSubmission.hasCompletelyAnswered)
+    def hasExtSubmission = SubmissionsServiceMock.FetchLatestExtended.thenReturn(aSubmission.hasCompletelyAnswered.withCompletedProgresss())
+  }
+
+  "requestApproval" should {
+    implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
+    val jsonBody        = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
+    val request         = FakeRequest().withJsonBody(jsonBody)
+
+    "return 'not found' error response if application is missing" in new Setup {
+      hasNoApp
+      hasNoSubmission
+
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe NOT_FOUND
     }
 
-    "requestApproval" should {
-        implicit val writes = Json.writes[ApprovalsController.RequestApprovalRequest]
-        val jsonBody = Json.toJson(ApprovalsController.RequestApprovalRequest(name, emailAddress))
-        val request = FakeRequest().withJsonBody(jsonBody)
-        
-        "return 'not found' error response if application is missing" in new Setup {
-            hasNoApp
-            hasNoSubmission
+    "return 'no content' success response if request is approved" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
 
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe NOT_FOUND
-        }        
-
-        "return 'no content' success response if request is approved" in new Setup {
-            hasApp
-            hasSubmission
-            RequestApprovalsServiceMock.RequestApproval.thenRequestIsApprovedFor(appId, emailAddress)
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe OK
-        }        
-
-        "return 'precondition failed' error response if request is not in the correct state" in new Setup {
-            hasApp
-            hasSubmission
-            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
-
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe PRECONDITION_FAILED
-        }
-
-        "return 'not found' error response if submission is missing" in new Setup {
-            hasApp
-            hasNoSubmission
-
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe NOT_FOUND
-        }        
-
-        "return 'precondition failed' error response if submission is incomplete" in new Setup {
-            hasApp
-            hasSubmission
-            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncorrectSubmissionErrorFor(appId, emailAddress)
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe PRECONDITION_FAILED
-        }        
-
-        "return 'conflict' error response if application with same name already exists" in new Setup {
-            hasApp
-            hasSubmission
-
-            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(appId, emailAddress)
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe CONFLICT
-        }
-
-        "return 'precondition failed' error response if name is illegal" in new Setup {
-            hasApp
-            hasSubmission
-            RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
-            val result = underTest.requestApproval(appId)(request)
-
-            status(result) shouldBe PRECONDITION_FAILED
-        }                
+      status(result) shouldBe OK
     }
 
-    "decline" should {
-      implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
-      val jsonBody = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
-      val request = FakeRequest().withJsonBody(jsonBody)
-      val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+    "return 'precondition failed' error response if request is not in the correct state" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithInvalidStateTransitionErrorFor(appId, emailAddress)
 
-      "return 'no content' success response if request is declined" in new Setup {
-        hasApp
-        hasSubmission
-        DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
-        val result = underTest.decline(appId)(request)
+      val result = underTest.requestApproval(appId)(request)
 
-        status(result) shouldBe OK
-      }
+      status(result) shouldBe PRECONDITION_FAILED
     }
-    
-    "grant" should {
-        implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
-        val request = FakeRequest().withJsonBody(jsonBody)
-        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
-        "return 'no content' success response if request is declined" in new Setup {
-            hasApp
-            hasSubmission
-            GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
-            val result = underTest.grant(appId)(request)
+    "return 'not found' error response if submission is missing" in new Setup {
+      hasApp
+      hasNoSubmission
 
-            status(result) shouldBe OK
-        }        
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe NOT_FOUND
     }
-    
-    "grant with warnings" should {
-        implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
-        val jsonBody = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
-        val request = FakeRequest().withJsonBody(jsonBody)
-        val application = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
 
-        "return 'no content' success response if request is granted with warnings" in new Setup {
-            hasApp
-            hasSubmission
-            GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
-            val result = underTest.grant(appId)(request)
+    "return 'precondition failed' error response if submission is incomplete" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIncorrectSubmissionErrorFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
 
-            status(result) shouldBe OK
-        }        
+      status(result) shouldBe PRECONDITION_FAILED
     }
+
+    "return 'conflict' error response if application with same name already exists" in new Setup {
+      hasApp
+      hasSubmission
+
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe CONFLICT
+    }
+
+    "return 'precondition failed' error response if name is illegal" in new Setup {
+      hasApp
+      hasSubmission
+      RequestApprovalsServiceMock.RequestApproval.thenRequestFailsWithIllegalNameErrorFor(appId, emailAddress)
+      val result = underTest.requestApproval(appId)(request)
+
+      status(result) shouldBe PRECONDITION_FAILED
+    }
+  }
+
+  "decline" should {
+    implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
+    val jsonBody        = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
+    val request         = FakeRequest().withJsonBody(jsonBody)
+    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+    "return 'no content' success response if request is declined" in new Setup {
+      hasApp
+      hasSubmission
+      DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
+      val result = underTest.decline(appId)(request)
+
+      status(result) shouldBe OK
+    }
+  }
+
+  "grant" should {
+    implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
+    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", None, None))
+    val request         = FakeRequest().withJsonBody(jsonBody)
+    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+    "return 'no content' success response if request is declined" in new Setup {
+      hasApp
+      hasSubmission
+      GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.grant(appId)(request)
+
+      status(result) shouldBe OK
+    }
+  }
+
+  "grant with warnings" should {
+    implicit val writes = Json.writes[ApprovalsController.GrantedRequest]
+    val jsonBody        = Json.toJson(ApprovalsController.GrantedRequest("Bob from SDST", Some("This is a warning"), Some("Marty McFly")))
+    val request         = FakeRequest().withJsonBody(jsonBody)
+    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
+
+    "return 'no content' success response if request is granted with warnings" in new Setup {
+      hasApp
+      hasSubmission
+      GrantApprovalsServiceMock.Grant.thenReturn(GrantApprovalsService.Actioned(application))
+      val result = underTest.grant(appId)(request)
+
+      status(result) shouldBe OK
+    }
+  }
 }

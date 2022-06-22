@@ -28,7 +28,6 @@ object EmailStub extends Stub {
       .willReturn(
         aResponse()
           .withStatus(OK)
-      )
-    )
+      ))
   }
 }

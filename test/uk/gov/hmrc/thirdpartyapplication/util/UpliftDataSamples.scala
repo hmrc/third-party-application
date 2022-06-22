@@ -21,9 +21,9 @@ import uk.gov.hmrc.thirdpartyapplication.models.UpliftRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
 trait UpliftRequestSamples {
-  val sellResellOrDistribute = SellResellOrDistribute("Yes")
+  val sellResellOrDistribute      = SellResellOrDistribute("Yes")
   val doNotSellResellOrDistribute = SellResellOrDistribute("No")
 
   def makeUpliftRequest(subscriptions: Set[ApiIdentifier]): UpliftRequest = UpliftRequest(sellResellOrDistribute, subscriptions)
-  def makeUpliftRequest(subscriptions: ApiIdentifier*): UpliftRequest = makeUpliftRequest(subscriptions.toSet)
+  def makeUpliftRequest(subscriptions: ApiIdentifier*): UpliftRequest     = makeUpliftRequest(subscriptions.toSet)
 }

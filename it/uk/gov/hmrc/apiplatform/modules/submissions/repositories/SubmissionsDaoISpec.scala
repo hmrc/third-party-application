@@ -30,7 +30,7 @@ class SubmissionsDaoISpec
       .disable(classOf[SchedulerModule])
 
   val submissionsRepository: SubmissionsRepository = app.injector.instanceOf[SubmissionsRepository]
-  val submissionsDao: SubmissionsDao = app.injector.instanceOf[SubmissionsDao]
+  val submissionsDao: SubmissionsDao               = app.injector.instanceOf[SubmissionsDao]
 
   override def beforeEach(): Unit = {
     await(submissionsRepository.collection.drop().toFuture())
@@ -81,8 +81,8 @@ class SubmissionsDaoISpec
     "replace the existing record" in {
       await(submissionsDao.save(aSubmission))
 
-      val oldAnswers = aSubmission.latestInstance.answersToQuestions
-      val newAnswers = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
+      val oldAnswers        = aSubmission.latestInstance.answersToQuestions
+      val newAnswers        = oldAnswers + (questionId -> SingleChoiceAnswer("Yes"))
       val updatedSubmission = Submission.updateLatestAnswersTo(newAnswers)(aSubmission)
 
       await(submissionsDao.update(updatedSubmission)) mustBe updatedSubmission

@@ -32,26 +32,33 @@ import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
-class StateHistoryRepository @Inject()(mongo: MongoComponent)
-                                      (implicit val ec: ExecutionContext)
-  extends PlayMongoRepository[StateHistory](
-    collectionName = "stateHistory",
-    mongoComponent = mongo,
-    domainFormat = StateHistory.format,
-    indexes = Seq(IndexModel(ascending("applicationId"), IndexOptions()
-      .name("applicationId")
-      .background(true)
-    ),
-      IndexModel(ascending("state"), IndexOptions()
-        .name("state")
-        .background(true)
+class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[StateHistory](
+      collectionName = "stateHistory",
+      mongoComponent = mongo,
+      domainFormat = StateHistory.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("applicationId"),
+          IndexOptions()
+            .name("applicationId")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("state"),
+          IndexOptions()
+            .name("state")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("applicationId", "state"),
+          IndexOptions()
+            .name("applicationId_state")
+            .background(true)
+        )
       ),
-      IndexModel(ascending("applicationId", "state"), IndexOptions()
-        .name("applicationId_state")
-        .background(true)
-      )
-    ), replaceIndexes = true
-  ) with MongoJavatimeFormats.Implicits {
+      replaceIndexes = true
+    ) with MongoJavatimeFormats.Implicits {
 
   def insert(stateHistory: StateHistory): Future[StateHistory] = {
     collection.insertOne(stateHistory)
@@ -80,8 +87,8 @@ class StateHistoryRepository @Inject()(mongo: MongoComponent)
   def fetchLatestByStateForApplication(applicationId: ApplicationId, state: State): Future[Option[StateHistory]] = {
     collection.find(and(
       equal("applicationId", Codecs.toBson(applicationId)),
-      equal("state", Codecs.toBson(state)))
-    )
+      equal("state", Codecs.toBson(state))
+    ))
       .sort(descending("changedAt"))
       .headOption
   }

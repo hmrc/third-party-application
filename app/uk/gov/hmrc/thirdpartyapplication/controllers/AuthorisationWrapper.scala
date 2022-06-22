@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import java.nio.charset.StandardCharsets
-import java.util.{Base64}
+import java.util.Base64
 
 import cats.data.OptionT
 import cats.implicits._
@@ -59,7 +59,7 @@ trait AuthorisationWrapper {
 
           request.headers.get("Authorization") match {
             case Some(authHeader) => base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
-            case _ => false
+            case _                => false
           }
         }
 
@@ -69,7 +69,7 @@ trait AuthorisationWrapper {
               Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, true, request))
             } else {
               implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-              val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+              val hasAnyGatekeeperEnrolment  = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
               authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => OptionalStrideAuthRequest[A](isStrideAuth = true, false, request))
             }
           } else {
@@ -82,7 +82,7 @@ trait AuthorisationWrapper {
       }
 
       override protected def executionContext: ExecutionContext = ec
-  }
+    }
 
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
@@ -96,10 +96,9 @@ trait AuthorisationWrapper {
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
     Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
 
-
   private def authenticate[A](input: Request[A]): Future[Option[Result]] = {
     if (authConfig.enabled) {
-      implicit val hc = HeaderCarrierConverter.fromRequest(input)
+      implicit val hc               = HeaderCarrierConverter.fromRequest(input)
       val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
       authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
     } else {
@@ -114,13 +113,15 @@ trait AuthorisationWrapper {
   }
 
   private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType]) extends ApplicationTypeFilter(accessTypes, false) {
+
     final protected def deriveAccessType[A](request: Request[A]) =
       Future((Json.parse(request.body.toString) \ "access" \ "accessType").asOpt[AccessType])
   }
 
   private case class RepositoryBasedApplicationTypeFilter(applicationId: ApplicationId, toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
-                                                              extends ApplicationTypeFilter(toMatchAccessTypes, failOnAccessTypeMismatch) {
-    private def error[A](e: Exception): OptionT[Future,A] = {
+      extends ApplicationTypeFilter(toMatchAccessTypes, failOnAccessTypeMismatch) {
+
+    private def error[A](e: Exception): OptionT[Future, A] = {
       OptionT.liftF(Future.failed(e))
     }
 
@@ -131,8 +132,8 @@ trait AuthorisationWrapper {
         .value
   }
 
-  private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
-                                              (implicit ec: ExecutionContext) extends ActionFilter[Request] {
+  private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
+      extends ActionFilter[Request] {
     def executionContext = ec
 
     lazy val FAILED_ACCESS_TYPE = successful(Some(Results.Forbidden(JsErrorResponse(APPLICATION_NOT_FOUND, "application access type mismatch"))))
@@ -144,7 +145,7 @@ trait AuthorisationWrapper {
     def filter[A](request: Request[A]): Future[Option[Result]] =
       deriveAccessType(request) flatMap {
         case Some(accessType) if toMatchAccessTypes.contains(accessType) => authenticate(request)
-        case Some(_)          if failOnAccessTypeMismatch                => FAILED_ACCESS_TYPE
+        case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE
         case _                                                           => successful(None)
       } recover localRecovery
 

@@ -30,16 +30,18 @@ import scala.util.{Failure, Success}
 
 @Singleton
 class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: SubscriptionRepository)
-                                           extends MetricSource
-                                           with MetricsHelper
-                                           with ApplicationLogger {
+    extends MetricSource
+    with MetricsHelper
+    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
     val result = numberOfSubscriptionsByApi
-      .map(subscriptionCounts => subscriptionCounts
-        .map(count => subscriptionCountKey(count._1) -> count._2))
+      .map(subscriptionCounts =>
+        subscriptionCounts
+          .map(count => subscriptionCountKey(count._1) -> count._2)
+      )
 
     result.onComplete({
       case Success(v) => logger.info(s"[METRIC] Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}")

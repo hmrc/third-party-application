@@ -21,11 +21,11 @@ import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
-
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class AwsRestoreController @Inject()(awsRestoreService: AwsRestoreService, cc: ControllerComponents)(implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils {
+class AwsRestoreController @Inject() (awsRestoreService: AwsRestoreService, cc: ControllerComponents)(implicit val ec: ExecutionContext) extends BackendController(cc)
+    with JsonUtils {
 
   def restoreAwsData() = Action.async { implicit request =>
     awsRestoreService.restoreData().map(_ => NoContent)

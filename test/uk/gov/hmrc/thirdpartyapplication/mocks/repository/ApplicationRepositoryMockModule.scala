@@ -31,16 +31,18 @@ import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
+
   protected trait BaseApplicationRepoMock {
     def aMock: ApplicationRepository
 
     def verify = MockitoSugar.verify(aMock)
 
-    def verify(mode: VerificationMode) = MockitoSugar.verify(aMock,mode)
+    def verify(mode: VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     def verifyZeroInteractions() = MockitoSugar.verifyZeroInteractions(aMock)
 
     object Fetch {
+
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.fetch(eqTo(applicationData.id))).thenReturn(successful(Some(applicationData)))
 
@@ -64,6 +66,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByClientId {
+
       def thenReturnWhen(clientId: ClientId)(applicationData: ApplicationData) =
         when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(Some(applicationData)))
 
@@ -74,17 +77,18 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.fetchByClientId(eqTo(clientId))).thenReturn(successful(None))
 
       def thenFail(failWith: Throwable) =
-          when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
+        when(aMock.fetchByClientId(*[ClientId])).thenReturn(failed(failWith))
     }
 
     object Save {
-      private val defaultFn = (a :ApplicationData) => successful(a)
+      private val defaultFn = (a: ApplicationData) => successful(a)
+
       def thenAnswer(fn: ApplicationData => Future[ApplicationData] = defaultFn) =
         when(aMock.save(*)).thenAnswer(fn)
 
-      def thenAnswer() = 
+      def thenAnswer() =
         when(aMock.save(*)).thenAnswer((app: ApplicationData) => successful(app))
-      
+
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.save(*)).thenReturn(successful(applicationData))
 
@@ -115,11 +119,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchStandardNonTestingApps {
+
       def thenReturn(apps: ApplicationData*) =
         when(aMock.fetchStandardNonTestingApps()).thenReturn(successful(apps.toList))
     }
 
     object FetchByName {
+
       def thenReturnEmptyList() =
         when(aMock.fetchApplicationsByName(*)).thenReturn(successful(List.empty))
 
@@ -140,6 +146,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object Delete {
+
       def verifyCalledWith(id: ApplicationId) =
         ApplicationRepoMock.verify.delete(eqTo(id))
 
@@ -148,15 +155,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchByServerToken {
+
       def thenReturnWhen(serverToken: String)(applicationData: ApplicationData) =
         when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(Some(applicationData)))
 
       def thenReturnNoneWhen(serverToken: String) =
-      when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
+        when(aMock.fetchByServerToken(eqTo(serverToken))).thenReturn(successful(None))
 
     }
 
     object FetchVerifiableUpliftBy {
+
       def thenReturnNoneWhen(verificationCode: String) =
         when(aMock.fetchVerifiableUpliftBy(eqTo(verificationCode))).thenReturn(successful(None))
 
@@ -166,15 +175,17 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchAllForContent {
+
       def thenReturnEmptyWhen(apiContext: ApiContext) =
-      when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(List.empty))
+        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(List.empty))
 
       def thenReturnWhen(apiContext: ApiContext)(apps: ApplicationData*) =
-      when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
+        when(aMock.fetchAllForContext(eqTo(apiContext))).thenReturn(successful(apps.toList))
 
     }
 
     object FetchAllForEmail {
+
       def thenReturnWhen(emailAddress: String)(apps: ApplicationData*) =
         when(aMock.fetchAllForEmailAddress(eqTo(emailAddress))).thenReturn(successful(apps.toList))
 
@@ -183,11 +194,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object fetchAllForUserId {
+
       def thenReturnWhen(userId: UserId)(apps: ApplicationData*) =
         when(aMock.fetchAllForUserId(eqTo(userId))).thenReturn(successful(apps.toList))
     }
 
     object FetchAllForApiIdentifier {
+
       def thenReturnEmptyWhen(apiIdentifier: ApiIdentifier) =
         when(aMock.fetchAllForApiIdentifier(eqTo(apiIdentifier))).thenReturn(successful(List.empty))
 
@@ -196,19 +209,22 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchAllWithNoSubscriptions {
+
       def thenReturn(apps: ApplicationData*) =
-      when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(apps.toList))
+        when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(apps.toList))
 
       def thenReturnNone() =
         when(aMock.fetchAllWithNoSubscriptions()).thenReturn(successful(Nil))
     }
 
     object RecordApplicationUsage {
+
       def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
         when(aMock.recordApplicationUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
     }
 
     object RecordServerTokenUsage {
+
       def thenReturnWhen(applicationId: ApplicationId)(applicationData: ApplicationData) =
         when(aMock.recordServerTokenUsage(eqTo(applicationId))).thenReturn(successful(applicationData))
 
@@ -217,27 +233,31 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object UpdateIpAllowlist {
+
       def verifyCalledWith(applicationId: ApplicationId, newIpAllowlist: IpAllowlist) =
-        ApplicationRepoMock.verify.updateApplicationIpAllowlist(eqTo(applicationId),eqTo(newIpAllowlist))
+        ApplicationRepoMock.verify.updateApplicationIpAllowlist(eqTo(applicationId), eqTo(newIpAllowlist))
 
       def thenReturnWhen(applicationId: ApplicationId, newIpAllowlist: IpAllowlist)(updatedApplicationData: ApplicationData) =
         when(aMock.updateApplicationIpAllowlist(eqTo(applicationId), eqTo(newIpAllowlist))).thenReturn(successful(updatedApplicationData))
     }
 
     object UpdateGrantLength {
+
       def verifyCalledWith(applicationId: ApplicationId, newGrantLength: Int) =
-        ApplicationRepoMock.verify.updateApplicationGrantLength(eqTo(applicationId),eqTo(newGrantLength))
+        ApplicationRepoMock.verify.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))
 
       def thenReturnWhen(applicationId: ApplicationId, newGrantLength: Int)(updatedApplicationData: ApplicationData) =
         when(aMock.updateApplicationGrantLength(eqTo(applicationId), eqTo(newGrantLength))).thenReturn(successful(updatedApplicationData))
     }
 
     object SearchApplications {
+
       def thenReturn(data: PaginatedApplicationData) =
         when(aMock.searchApplications(*)).thenReturn(successful(data))
     }
 
     object ProcessAll {
+
       def thenReturn() = {
         when(aMock.processAll(*)).thenReturn(successful(()))
       }
@@ -250,17 +270,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object RecordClientSecretUsage {
+
       def verifyNeverCalled() =
-        ApplicationRepoMock.verify(never).recordClientSecretUsage(*[ApplicationId],*)
+        ApplicationRepoMock.verify(never).recordClientSecretUsage(*[ApplicationId], *)
 
       def thenReturnWhen(applicationId: ApplicationId, clientSecretId: String)(applicationData: ApplicationData) =
-        when(aMock.recordClientSecretUsage(eqTo(applicationId),eqTo(clientSecretId))).thenReturn(successful(applicationData))
+        when(aMock.recordClientSecretUsage(eqTo(applicationId), eqTo(clientSecretId))).thenReturn(successful(applicationData))
 
       def thenFail(failWith: Throwable) =
-        when(aMock.recordClientSecretUsage(*[ApplicationId],*)).thenReturn(failed(failWith))
+        when(aMock.recordClientSecretUsage(*[ApplicationId], *)).thenReturn(failed(failWith))
     }
 
     object UpdateApplicationRateLimit {
+
       def thenReturn(applicationId: ApplicationId, rateLimit: RateLimitTier)(updatedApplication: ApplicationData) =
         when(aMock.updateApplicationRateLimit(eqTo(applicationId), eqTo(rateLimit))).thenReturn(successful(updatedApplication))
 
@@ -269,12 +291,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object AddClientSecret {
+
       def thenReturn(applicationId: ApplicationId)(updatedApplication: ApplicationData) = {
         when(aMock.addClientSecret(eqTo(applicationId), *)).thenReturn(successful(updatedApplication))
       }
     }
 
     object UpdateClientSecretHash {
+
       def thenReturn(applicationId: ApplicationId, clientSecretId: String)(updatedApplication: ApplicationData) = {
         when(aMock.updateClientSecretHash(eqTo(applicationId), eqTo(clientSecretId), *)).thenReturn(successful(updatedApplication))
       }
@@ -284,12 +308,14 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object DeleteClientSecret {
+
       def succeeds(application: ApplicationData, clientSecretId: String) = {
         val otherClientSecrets = application.tokens.production.clientSecrets.filterNot(_.id == clientSecretId)
         val updatedApplication =
           application
             .copy(tokens =
-              ApplicationTokens(Token(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets)))
+              ApplicationTokens(Token(application.tokens.production.clientId, application.tokens.production.accessToken, otherClientSecrets))
+            )
 
         when(aMock.deleteClientSecret(eqTo(application.id), eqTo(clientSecretId))).thenReturn(successful(updatedApplication))
       }
@@ -302,11 +328,13 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object AddApplicationTermsOfUseAcceptance {
+
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.addApplicationTermsOfUseAcceptance(*[ApplicationId], *[TermsOfUseAcceptance])).thenReturn(successful(applicationData))
     }
 
     object UpdateApplicationName {
+
       def thenReturn(applicationData: ApplicationData) = {
         when(aMock.updateApplicationName(*[ApplicationId], *[String])).thenReturn(successful(applicationData))
       }
@@ -317,6 +345,7 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object ApplyEvents {
+
       def thenReturn(applicationData: ApplicationData) =
         when(aMock.applyEvents(*[NonEmptyList[UpdateApplicationRepositoryEvent]])).thenReturn(successful(applicationData))
 

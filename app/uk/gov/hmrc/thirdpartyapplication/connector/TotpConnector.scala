@@ -33,15 +33,15 @@ object TotpConnector {
 }
 
 @Singleton
-class TotpConnector @Inject()(httpClient: HttpClient, config: TotpConnector.Config)(implicit val ec: ExecutionContext)   {
+class TotpConnector @Inject() (httpClient: HttpClient, config: TotpConnector.Config)(implicit val ec: ExecutionContext) {
 
   def generateTotp()(implicit hc: HeaderCarrier): Future[Totp] = {
     val url = s"${config.baseUrl}/time-based-one-time-password/secret"
 
     httpClient.POSTEmpty[Totp](url)
-    .recover {
-      case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $url: (${e.statusCode}, ${e.message})")
-      case NonFatal(e) => throw new RuntimeException(s"Error response from $url: ${e.getMessage}")
-    }
+      .recover {
+        case e: UpstreamErrorResponse => throw new RuntimeException(s"Unexpected response from $url: (${e.statusCode}, ${e.message})")
+        case NonFatal(e)              => throw new RuntimeException(s"Error response from $url: ${e.getMessage}")
+      }
   }
 }

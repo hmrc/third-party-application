@@ -34,19 +34,17 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import java.time.{Clock, LocalDateTime}
 
 @Singleton
-class UpliftService @Inject()(
-  auditService: AuditService,
-  applicationRepository: ApplicationRepository,
-  stateHistoryRepository: StateHistoryRepository,
-  applicationNamingService: UpliftNamingService,
-  apiGatewayStore: ApiGatewayStore,
-  clock: Clock
-)(implicit ec: ExecutionContext)
-  extends ApplicationLogger {
+class UpliftService @Inject() (
+    auditService: AuditService,
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    applicationNamingService: UpliftNamingService,
+    apiGatewayStore: ApiGatewayStore,
+    clock: Clock
+  )(implicit ec: ExecutionContext
+  ) extends ApplicationLogger {
 
-  def requestUplift(applicationId: ApplicationId,
-                    applicationName: String,
-                    requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
+  def requestUplift(applicationId: ApplicationId, applicationName: String, requestedByEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationStateChange] = {
 
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
@@ -55,20 +53,21 @@ class UpliftService @Inject()(
     )
 
     for {
-      app         <- fetchApp(applicationId)
-      upliftedApp =  uplift(app)
-      _           <- applicationNamingService.assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
-      updatedApp  <- applicationRepository.save(upliftedApp)
-      _           <- insertStateHistory(
-        app,
-        PENDING_GATEKEEPER_APPROVAL, Some(TESTING),
-        requestedByEmailAddress, COLLABORATOR,
-        (a: ApplicationData) => applicationRepository.save(a)
-      )
-      _ = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
-        s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
-      _ = auditService.audit(ApplicationUpliftRequested,
-        AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
+      app        <- fetchApp(applicationId)
+      upliftedApp = uplift(app)
+      _          <- applicationNamingService.assertAppHasUniqueNameAndAudit(applicationName, app.access.accessType, Some(app))
+      updatedApp <- applicationRepository.save(upliftedApp)
+      _          <- insertStateHistory(
+                      app,
+                      PENDING_GATEKEEPER_APPROVAL,
+                      Some(TESTING),
+                      requestedByEmailAddress,
+                      COLLABORATOR,
+                      (a: ApplicationData) => applicationRepository.save(a)
+                    )
+      _           = logger.info(s"UPLIFT01: uplift request (pending) application:${app.name} appId:${app.id} appState:${app.state.name} " +
+                      s"appRequestedByEmailAddress:${app.state.requestedByEmailAddress}")
+      _           = auditService.audit(ApplicationUpliftRequested, AuditHelper.applicationId(applicationId) ++ AuditHelper.calculateAppNameChange(app, updatedApp))
     } yield UpliftRequested
   }
 
@@ -81,7 +80,7 @@ class UpliftService @Inject()(
 
     def findLatestUpliftRequester(applicationId: ApplicationId): Future[String] = for {
       history <- stateHistoryRepository.fetchLatestByStateForApplication(applicationId, State.PENDING_GATEKEEPER_APPROVAL)
-      state = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
+      state    = history.getOrElse(throw new RuntimeException(s"Pending state not found for application: ${applicationId.value}"))
     } yield state.actor.id
 
     def audit(app: ApplicationData) =
@@ -92,28 +91,40 @@ class UpliftService @Inject()(
     def verifyPending(app: ApplicationData) = for {
       _ <- apiGatewayStore.createApplication(app.wso2ApplicationName, app.tokens.production.accessToken)
       _ <- applicationRepository.save(app.copy(state = app.state.toPreProduction(clock)))
-      _ <- insertStateHistory(app, State.PRE_PRODUCTION, Some(PENDING_REQUESTER_VERIFICATION),
-        app.state.requestedByEmailAddress.get, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
-      _ = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
-      _ = audit(app)
+      _ <- insertStateHistory(
+             app,
+             State.PRE_PRODUCTION,
+             Some(PENDING_REQUESTER_VERIFICATION),
+             app.state.requestedByEmailAddress.get,
+             COLLABORATOR,
+             (a: ApplicationData) => applicationRepository.save(a)
+           )
+      _  = logger.info(s"UPLIFT02: Application uplift for application:${app.name} appId:${app.id} has been verified successfully")
+      _  = audit(app)
     } yield UpliftVerified
 
     for {
       app <- applicationRepository.fetchVerifiableUpliftBy(verificationCode)
-        .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
+               .map(_.getOrElse(throw InvalidUpliftVerificationCode(verificationCode)))
 
       result <- app.state.name match {
-        case State.PRE_PRODUCTION | State.PRODUCTION => verifyProduction(app)
-        case State.PENDING_REQUESTER_VERIFICATION => verifyPending(app)
-        case _ => throw InvalidUpliftVerificationCode(verificationCode)
-      }
+                  case State.PRE_PRODUCTION | State.PRODUCTION => verifyProduction(app)
+                  case State.PENDING_REQUESTER_VERIFICATION    => verifyPending(app)
+                  case _                                       => throw InvalidUpliftVerificationCode(verificationCode)
+                }
     } yield result
   }
 
-  private def insertStateHistory(snapshotApp: ApplicationData, newState: State, oldState: Option[State],
-                                 requestedBy: String, actorType: ActorType.ActorType, rollback: ApplicationData => Any) = {
+  private def insertStateHistory(
+      snapshotApp: ApplicationData,
+      newState: State,
+      oldState: Option[State],
+      requestedBy: String,
+      actorType: ActorType.ActorType,
+      rollback: ApplicationData => Any
+    ) = {
     val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
-    
+
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)
@@ -122,9 +133,9 @@ class UpliftService @Inject()(
 
   private def fetchApp(applicationId: ApplicationId): Future[ApplicationData] = {
     val notFoundException = new NotFoundException(s"application not found for id: ${applicationId.value}")
-    
+
     applicationRepository.fetch(applicationId).flatMap {
-      case None => failed(notFoundException)
+      case None      => failed(notFoundException)
       case Some(app) => successful(app)
     }
   }

@@ -30,10 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.LocalDateTime
 
 class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
-  with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
+    with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: Actor = Actor("admin@example.com", ActorType.COLLABORATOR)
+  val actor: Actor       = Actor("admin@example.com", ActorType.COLLABORATOR)
 
   "insert" should {
 
@@ -53,8 +53,8 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
-      val stateHistory = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
+      val applicationId          = ApplicationId.random
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))
@@ -69,7 +69,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
+      val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock).minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = LocalDateTime.now(clock))
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock))
@@ -90,7 +90,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
     "Return the state history of the application" in {
 
-      val applicationId = ApplicationId.random
+      val applicationId   = ApplicationId.random
       val pendingHistory1 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock).minusDays(5))
       val approvedHistory = StateHistory(applicationId, State.PENDING_REQUESTER_VERIFICATION, actor, changedAt = LocalDateTime.now(clock))
       val pendingHistory2 = StateHistory(applicationId, State.PENDING_GATEKEEPER_APPROVAL, actor, changedAt = LocalDateTime.now(clock))
@@ -111,8 +111,8 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
     "Delete the state histories of the application" in {
 
-      val applicationId = ApplicationId.random
-      val stateHistory = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
+      val applicationId          = ApplicationId.random
+      val stateHistory           = StateHistory(applicationId, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       val anotherAppStateHistory = StateHistory(ApplicationId.random, State.TESTING, actor, changedAt = LocalDateTime.now(clock))
       await(repository.insert(stateHistory))
       await(repository.insert(anotherAppStateHistory))

@@ -29,7 +29,7 @@ class UpliftLinkServiceSpec extends AsyncHmrcSpec {
   trait Setup extends UpliftLinksRepositoryMockModule {
     val upliftLinksRepository: UpliftLinksRepository = UpliftLinksRepositoryMock.aMock
 
-    val sandboxApplicationId: ApplicationId = ApplicationId.random
+    val sandboxApplicationId: ApplicationId    = ApplicationId.random
     val productionApplicationId: ApplicationId = ApplicationId.random
 
     val service = new UpliftLinkService(upliftLinksRepository)

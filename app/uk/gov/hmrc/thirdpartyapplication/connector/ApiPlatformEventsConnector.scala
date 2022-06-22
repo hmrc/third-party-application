@@ -31,39 +31,32 @@ object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
 }
 
-class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatformEventsConnector.Config)
-                                          (implicit val ec: ExecutionContext) extends ResponseUtils with ApplicationLogger {
+class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatformEventsConnector.Config)(implicit val ec: ExecutionContext) extends ResponseUtils
+    with ApplicationLogger {
 
-  val serviceBaseUrl: String = s"${config.baseUrl}"
-  private val applicationEventsUri = "/application-events"
-  private val teamMemberAddedUri = "/teamMemberAdded"
-  private val teamMemberRemovedUri = "/teamMemberRemoved"
-  private val clientSecretAddedUri = "/clientSecretAdded"
+  val serviceBaseUrl: String         = s"${config.baseUrl}"
+  private val applicationEventsUri   = "/application-events"
+  private val teamMemberAddedUri     = "/teamMemberAdded"
+  private val teamMemberRemovedUri   = "/teamMemberRemoved"
+  private val clientSecretAddedUri   = "/clientSecretAdded"
   private val clientSecretRemovedUri = "/clientSecretRemoved"
   private val redirectUrisUpdatedUri = "/redirectUrisUpdated"
-  private val apiSubscribedUri = "/apiSubscribed"
-  private val apiUnsubscribedUri = "/apiUnsubscribed"
+  private val apiSubscribedUri       = "/apiSubscribed"
+  private val apiUnsubscribedUri     = "/apiUnsubscribed"
 
-  def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)
-                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
+  def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
 
-  def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)
-                              (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberAddedUri)(hc)
+  def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberAddedUri)(hc)
 
-  def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)
-                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberRemovedUri)(hc)
+  def sendTeamMemberRemovedEvent(event: TeamMemberRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberRemovedUri)(hc)
 
-  def sendClientSecretAddedEvent(event: ClientSecretAddedEvent)
-                                (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretAddedUri)(hc)
+  def sendClientSecretAddedEvent(event: ClientSecretAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretAddedUri)(hc)
 
-  def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)
-                                  (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
+  def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
 
-  def sendApiSubscribedEvent(event: ApiSubscribedEvent)
-                            (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
+  def sendApiSubscribedEvent(event: ApiSubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
 
-  def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)
-                              (implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
+  def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
 
@@ -78,7 +71,7 @@ class ApiPlatformEventsConnector @Inject()(http: HttpClient, config: ApiPlatform
         case Right(_) =>
           logger.info(s"calling platform event service for application ${event.applicationId}")
           true
-        case Left(e) =>
+        case Left(e)  =>
           logger.warn(s"calling platform event service failed for application ${event.applicationId} $e")
           false
       }

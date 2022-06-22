@@ -23,9 +23,9 @@ trait ResponseUtils {
 
   type ErrorOr[T] = Either[UpstreamErrorResponse, T]
 
-  def mapOrThrow[T](fn: HttpResponse => T)(response: ErrorOr[HttpResponse]) : T = response match {
+  def mapOrThrow[T](fn: HttpResponse => T)(response: ErrorOr[HttpResponse]): T = response match {
     case Left(err) => throw err
-    case Right(r) => fn(r)
+    case Right(r)  => fn(r)
   }
 
   def statusOrThrow = mapOrThrow(_.status) _

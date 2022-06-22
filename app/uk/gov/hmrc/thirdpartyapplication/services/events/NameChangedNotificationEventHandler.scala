@@ -27,9 +27,10 @@ import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.{Inject, Singleton}
 
 @Singleton
-class NameChangedNotificationEventHandler @Inject()(
-  emailConnector: EmailConnector
-)(implicit val ec: ExecutionContext) {
+class NameChangedNotificationEventHandler @Inject() (
+    emailConnector: EmailConnector
+  )(implicit val ec: ExecutionContext
+  ) {
 
   def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChangedEmailSent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
@@ -43,7 +44,7 @@ class NameChangedNotificationEventHandler @Inject()(
   def getResponsibleIndividual(app: ApplicationData): Set[String] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
+      case _                                                      => Set()
     }
   }
 }

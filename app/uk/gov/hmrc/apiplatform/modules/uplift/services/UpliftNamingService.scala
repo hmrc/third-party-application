@@ -33,11 +33,12 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 import uk.gov.hmrc.thirdpartyapplication.services.AbstractApplicationNamingService
 
 @Singleton
-class UpliftNamingService @Inject() (auditService: AuditService,
-                                     applicationRepository: ApplicationRepository,
-                                     nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig)
-                                    (implicit ec: ExecutionContext)
-    extends AbstractApplicationNamingService(
+class UpliftNamingService @Inject() (
+    auditService: AuditService,
+    applicationRepository: ApplicationRepository,
+    nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
+  )(implicit ec: ExecutionContext
+  ) extends AbstractApplicationNamingService(
       auditService,
       applicationRepository,
       nameValidationConfig
@@ -56,12 +57,11 @@ class UpliftNamingService @Inject() (auditService: AuditService,
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, upliftFilter(selfApplicationId))
 
-  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)
-                                    (implicit hc: HeaderCarrier) = {
+  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)(implicit hc: HeaderCarrier) = {
 
     for {
       duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _ =
+      _          =
         if (duplicate) {
           auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
           throw ApplicationAlreadyExists(submittedAppName)

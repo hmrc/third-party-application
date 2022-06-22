@@ -25,14 +25,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UpliftLinkService @Inject()(repo: UpliftLinksRepository)
-                                 (implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject() (repo: UpliftLinksRepository)(implicit ec: ExecutionContext) {
 
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] =
     repo.insert(UpliftLink(sandboxApplicationId, productionApplicationId))
 
-
-  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future,ApplicationId] =
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future, ApplicationId] =
     OptionT(repo.find(productionAppId))
 
 }

@@ -31,11 +31,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.controllers.QuestionnairesCon
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._
   implicit val mat = NoMaterializer
-  
+
   trait Setup extends QuestionnaireDAOMockModule with SubmissionsTestData {
     val underTest = new QuestionnairesController(QuestionnaireDAOMock.aMock, Helpers.stubControllerComponents())
   }
-  
+
   "fetch" should {
     "return ok response with questionnaire when found" in new Setup {
       QuestionnaireDAOMock.Fetch.thenReturn(Some(questionnaire))
@@ -45,7 +45,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[Questionnaire] match {
         case JsSuccess(s, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
 
@@ -66,7 +66,7 @@ class QuestionnairesControllerSpec extends AsyncHmrcSpec {
       status(result) shouldBe OK
       contentAsJson(result).validate[List[GroupOfQuestionnaires]] match {
         case JsSuccess(s, _) => succeed
-        case JsError(e) => fail(s"Not parsed as a response $e")
+        case JsError(e)      => fail(s"Not parsed as a response $e")
       }
     }
   }

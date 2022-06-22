@@ -21,7 +21,15 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationState, ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, Standard, TermsAndConditionsLocation}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{
+  ApplicationId,
+  ApplicationState,
+  ImportantSubmissionData,
+  PrivacyPolicyLocation,
+  ResponsibleIndividual,
+  Standard,
+  TermsAndConditionsLocation
+}
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
@@ -37,26 +45,35 @@ class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec wit
   trait Setup extends ApplicationServiceMockModule with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationReminderJobLockService]
-    val mockRepo = ResponsibleIndividualVerificationRepositoryMock.aMock
-    val timeNow = LocalDateTime.now
-    val fixedClock = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
+    val mockRepo       = ResponsibleIndividualVerificationRepositoryMock.aMock
+    val timeNow        = LocalDateTime.now
+    val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
-    val riName = "bob responsible"
-    val riEmail = "bob.responsible@example.com"
-    val appName = "my app"
-    val requesterName = "bob requester"
+    val riName         = "bob responsible"
+    val riEmail        = "bob.responsible@example.com"
+    val appName        = "my app"
+    val requesterName  = "bob requester"
     val requesterEmail = "bob.requester@example.com"
-    val importantSubmissionData = ImportantSubmissionData(None, ResponsibleIndividual.build(riName, riEmail), Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-    val app = anApplicationData(
+
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      ResponsibleIndividual.build(riName, riEmail),
+      Set.empty,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
+    val app              = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
     ).copy(name = appName)
-    val initialDelay = FiniteDuration(1, MINUTES)
-    val interval = FiniteDuration(1, HOURS)
+    val initialDelay     = FiniteDuration(1, MINUTES)
+    val interval         = FiniteDuration(1, HOURS)
     val reminderInterval = FiniteDuration(10, DAYS)
-    val jobConfig = ResponsibleIndividualVerificationReminderJobConfig(initialDelay, interval, reminderInterval, true)
-    val job = new ResponsibleIndividualVerificationReminderJob(mockLockKeeper, mockRepo, EmailConnectorMock.aMock, ApplicationServiceMock.aMock, fixedClock, jobConfig)
+    val jobConfig        = ResponsibleIndividualVerificationReminderJobConfig(initialDelay, interval, reminderInterval, true)
+    val job              = new ResponsibleIndividualVerificationReminderJob(mockLockKeeper, mockRepo, EmailConnectorMock.aMock, ApplicationServiceMock.aMock, fixedClock, jobConfig)
   }
 
   "ResponsibleIndividualVerificationReminderJob" should {

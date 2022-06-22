@@ -21,7 +21,7 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationUpdate, ApplicationUpdateFormatters, ApplicationId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate, ApplicationUpdateFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -32,12 +32,14 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
 @Singleton
-class ApplicationUpdateController @Inject()(val applicationUpdateService: ApplicationUpdateService,
-                                            val applicationService: ApplicationService,
-                                            val authConnector: AuthConnector,
-                                            val authConfig: AuthConnector.Config,
-                                            cc: ControllerComponents)(implicit val ec: ExecutionContext)
-    extends ExtraHeadersController(cc)
+class ApplicationUpdateController @Inject() (
+    val applicationUpdateService: ApplicationUpdateService,
+    val applicationService: ApplicationService,
+    val authConnector: AuthConnector,
+    val authConfig: AuthConnector.Config,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationUpdateFormatters
     with AuthorisationWrapper
@@ -47,7 +49,7 @@ class ApplicationUpdateController @Inject()(val applicationUpdateService: Applic
 
   def update(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     def fails(e: NonEmptyChain[String]) = {
-      logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[",",","]")}")
+      logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
       BadRequest("Failed to process command")
     }
 

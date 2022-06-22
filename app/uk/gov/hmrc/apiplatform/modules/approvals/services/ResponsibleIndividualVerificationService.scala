@@ -37,16 +37,17 @@ import scala.concurrent.{ExecutionContext, Future}
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
 
-class ResponsibleIndividualVerificationService @Inject()(responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
-                                                         applicationRepository: ApplicationRepository,
-                                                         stateHistoryRepository: StateHistoryRepository,
-                                                         applicationService: ApplicationService,
-                                                         submissionService: SubmissionsService,
-                                                         emailConnector: EmailConnector,
-                                                         declineApprovalsService: DeclineApprovalsService,
-                                                         clock: Clock)
-                                                        (implicit ec: ExecutionContext)
-  extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
+class ResponsibleIndividualVerificationService @Inject() (
+    responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
+    applicationRepository: ApplicationRepository,
+    stateHistoryRepository: StateHistoryRepository,
+    applicationService: ApplicationService,
+    submissionService: SubmissionsService,
+    emailConnector: EmailConnector,
+    declineApprovalsService: DeclineApprovalsService,
+    clock: Clock
+  )(implicit ec: ExecutionContext
+  ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
   def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualVerification(
@@ -74,24 +75,27 @@ class ResponsibleIndividualVerificationService @Inject()(responsibleIndividualVe
     import cats.implicits._
     import cats.instances.future.catsStdInstancesForFuture
 
-    val ET = EitherTHelper.make[String]
+    val ET               = EitherTHelper.make[String]
     val riVerificationId = ResponsibleIndividualVerificationId(code)
 
     logger.info(s"Start responsible individual accept ToU for code:${code}")
 
     (
       for {
-        riVerification                     <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
-        originalApp                        <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
-        _                                  <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
-        submitterEmail                     <- ET.fromOption(originalApp.state.requestedByEmailAddress, "requestedByEmailAddress not found")
-        submitterName                      <- ET.fromOption(originalApp.state.requestedByName, "requestedByName not found")
-        updatedApp                         =  deriveNewAppDetails(originalApp)
-        savedApp                           <- ET.liftF(applicationRepository.save(updatedApp))
-        responsibleIndividual              <- ET.fromOptionF(addTermsOfUseAcceptance(riVerification, savedApp).value, s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}")
-        _                                  <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
-        _                                  <- ET.liftF(responsibleIndividualVerificationRepository.delete(riVerificationId))
-        _                                  =  logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}, code:{$code}")
+        riVerification        <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
+        originalApp           <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
+        _                     <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
+        submitterEmail        <- ET.fromOption(originalApp.state.requestedByEmailAddress, "requestedByEmailAddress not found")
+        submitterName         <- ET.fromOption(originalApp.state.requestedByName, "requestedByName not found")
+        updatedApp             = deriveNewAppDetails(originalApp)
+        savedApp              <- ET.liftF(applicationRepository.save(updatedApp))
+        responsibleIndividual <- ET.fromOptionF(
+                                   addTermsOfUseAcceptance(riVerification, savedApp).value,
+                                   s"Unable to add Terms of Use acceptance to application with id ${riVerification.applicationId}"
+                                 )
+        _                     <- ET.liftF(writeStateHistory(originalApp, responsibleIndividual.emailAddress.value))
+        _                     <- ET.liftF(responsibleIndividualVerificationRepository.delete(riVerificationId))
+        _                      = logger.info(s"Responsible individual has successfully accepted ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, submitterName, submitterEmail)
     ).value
   }
@@ -101,10 +105,10 @@ class ResponsibleIndividualVerificationService @Inject()(responsibleIndividualVe
     appData.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
         val responsibleIndividual = importantSubmissionData.responsibleIndividual
-        val acceptance = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), verification.submissionId, verification.submissionInstance)
+        val acceptance            = TermsOfUseAcceptance(responsibleIndividual, LocalDateTime.now(clock), verification.submissionId, verification.submissionInstance)
         OptionT.liftF(applicationService.addTermsOfUseAcceptance(verification.applicationId, acceptance).map(_ => responsibleIndividual))
       }
-      case _ => OptionT.fromOption[Future](None)
+      case _                                                      => OptionT.fromOption[Future](None)
     }
   }
 
@@ -114,30 +118,37 @@ class ResponsibleIndividualVerificationService @Inject()(responsibleIndividualVe
     import cats.instances.future.catsStdInstancesForFuture
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val ET = EitherTHelper.make[String]
+    val ET               = EitherTHelper.make[String]
     val riVerificationId = ResponsibleIndividualVerificationId(code)
 
     logger.info(s"Start responsible individual decline ToU for code:${code}")
 
     (
       for {
-        riVerification             <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
-        originalApp                <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
-        _                          <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
-        submission                 <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
-        importantSubmissionData    <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
-        ri                         =  importantSubmissionData.responsibleIndividual
-        responsibleIndividualEmail =  ri.emailAddress.value
-        requesterName              <- ET.fromOption(originalApp.state.requestedByName, "no requester name found")
-        requesterEmail             <- ET.fromOption(originalApp.state.requestedByEmailAddress, "no requester email found")
-        reason                     =  "Responsible individual declined the terms of use."
-        _                          <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
-        _                          <- ET.liftF(emailConnector.sendResponsibleIndividualDeclined(ri.fullName.value, requesterEmail, originalApp.name, requesterName))
-        _                          =  logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
+        riVerification            <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
+        originalApp               <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
+        _                         <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
+        submission                <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
+        importantSubmissionData   <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
+        ri                         = importantSubmissionData.responsibleIndividual
+        responsibleIndividualEmail = ri.emailAddress.value
+        requesterName             <- ET.fromOption(originalApp.state.requestedByName, "no requester name found")
+        requesterEmail            <- ET.fromOption(originalApp.state.requestedByEmailAddress, "no requester email found")
+        reason                     = "Responsible individual declined the terms of use."
+        _                         <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
+        _                         <- ET.liftF(emailConnector.sendResponsibleIndividualDeclined(ri.fullName.value, requesterEmail, originalApp.name, requesterName))
+        _                          = logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
       } yield riVerification
     ).value
   }
 
   private def writeStateHistory(snapshotApp: ApplicationData, name: String) =
-    insertStateHistory(snapshotApp, PENDING_GATEKEEPER_APPROVAL, Some(PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), name, COLLABORATOR, (a: ApplicationData) => applicationRepository.save(a))
+    insertStateHistory(
+      snapshotApp,
+      PENDING_GATEKEEPER_APPROVAL,
+      Some(PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION),
+      name,
+      COLLABORATOR,
+      (a: ApplicationData) => applicationRepository.save(a)
+    )
 }

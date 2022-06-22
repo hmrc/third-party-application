@@ -25,11 +25,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.{LocalDateTime, ZoneOffset}
 
 object ResponsibleIndividualVerification {
-  implicit val dateFormat: Format[LocalDateTime] = MongoJavatimeFormats.localDateTimeFormat
+  implicit val dateFormat: Format[LocalDateTime]                  = MongoJavatimeFormats.localDateTimeFormat
   implicit val format: OFormat[ResponsibleIndividualVerification] = Json.format[ResponsibleIndividualVerification]
 }
 
-case class ResponsibleIndividualVerification (
+case class ResponsibleIndividualVerification(
     id: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random,
     applicationId: ApplicationId,
     submissionId: Submission.Id,
@@ -37,4 +37,4 @@ case class ResponsibleIndividualVerification (
     applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     state: ResponsibleIndividualVerificationState = INITIAL
-)
+  )

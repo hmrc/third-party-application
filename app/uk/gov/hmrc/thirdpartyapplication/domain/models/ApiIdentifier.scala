@@ -23,25 +23,27 @@ case class ApiContext(value: String) extends AnyVal
 case class ApiVersion(value: String) extends AnyVal
 
 case class ApiIdentifier(context: ApiContext, version: ApiVersion) {
-  
+
   def asText(separator: String): String = s"${context.value}$separator${version.value}"
 }
 
 object ApiContext {
+
   implicit val ordering: Ordering[ApiContext] = new Ordering[ApiContext] {
     override def compare(x: ApiContext, y: ApiContext): Int = x.value.compareTo(y.value)
   }
-  def random = ApiContext(Random.alphanumeric.take(10).mkString)
+  def random                                  = ApiContext(Random.alphanumeric.take(10).mkString)
 
   implicit val jsonFormat = Json.valueFormat[ApiContext]
 
 }
 
 object ApiVersion {
+
   implicit val ordering: Ordering[ApiVersion] = new Ordering[ApiVersion] {
     override def compare(x: ApiVersion, y: ApiVersion): Int = x.value.compareTo(y.value)
   }
-  def random = ApiVersion(Random.nextDouble().toString)
+  def random                                  = ApiVersion(Random.nextDouble().toString)
 
   implicit val jsonFormat = Json.valueFormat[ApiVersion]
 }
@@ -54,6 +56,7 @@ object ApiIdentifier {
 }
 
 trait ApiIdentifierSyntax {
+
   implicit class ApiContextSyntax(value: String) {
     def asContext: ApiContext = ApiContext(value)
   }
@@ -63,12 +66,12 @@ trait ApiIdentifierSyntax {
   }
 
   implicit class ApiIdentifierStringSyntax(context: String) {
-    def asIdentifier: ApiIdentifier = ApiContext(context).asIdentifier
+    def asIdentifier: ApiIdentifier                  = ApiContext(context).asIdentifier
     def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
   }
 
   implicit class ApiIdentifierContextSyntax(context: ApiContext) {
-    def asIdentifier: ApiIdentifier = ApiIdentifier(context, ApiVersion("1.0"))
+    def asIdentifier: ApiIdentifier                  = ApiIdentifier(context, ApiVersion("1.0"))
     def asIdentifier(version: String): ApiIdentifier = ApiIdentifier(context, ApiVersion(version))
   }
 }

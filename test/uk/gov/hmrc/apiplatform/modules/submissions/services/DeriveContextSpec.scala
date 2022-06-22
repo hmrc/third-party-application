@@ -28,17 +28,17 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 
   val fpContext1 = FraudPrevention.contexts.head
-  val fpSubs = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
-  val nonFpSubs = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
+  val fpSubs     = List(fpContext1.asIdentifier, fpContext1.asIdentifier("2.0"), ApiContext.random.asIdentifier)
+  val nonFpSubs  = List(ApiContext.random.asIdentifier, ApiContext.random.asIdentifier, ApiContext.random.asIdentifier)
 
   "DeriveContext" when {
     "deriveFraudPrevention is called" should {
       "return 'Yes' when at least one subscription is a fraud prevention candidate" in {
-        
+
         DeriveContext.deriveFraudPrevention(fpSubs) shouldBe "Yes"
       }
       "return 'No' when not a single subscription is a fraud prevention candidate" in {
-        
+
         DeriveContext.deriveFraudPrevention(nonFpSubs) shouldBe "No"
       }
     }

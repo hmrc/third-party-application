@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import org.mockito.{MockitoSugar, ArgumentMatchersSugar}
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import org.scalatest.EitherValues
 import org.scalatest.OptionValues
 import org.scalatest.wordspec.AnyWordSpec
@@ -27,5 +27,4 @@ import play.api.test.{DefaultAwaitTimeout, FutureAwaits}
 abstract class HmrcSpec extends AnyWordSpec with Matchers with OptionValues with EitherValues with WsScalaTestClient with MockitoSugar with ArgumentMatchersSugar
 
 abstract class AsyncHmrcSpec
-  extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {
-}
+    extends HmrcSpec with DefaultAwaitTimeout with FutureAwaits {}

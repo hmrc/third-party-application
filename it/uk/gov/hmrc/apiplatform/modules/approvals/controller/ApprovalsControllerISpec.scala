@@ -47,12 +47,12 @@ class ApprovalsControllerISpec
   protected override def appBuilder: GuiceApplicationBuilder =
     new GuiceApplicationBuilder()
       .configure(
-        "microservice.services.auth.port" -> wireMockPort,
-        "metrics.enabled" -> true,
-        "auditing.enabled" -> false,
-        "mongodb.uri" -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}",
-        "auditing.consumer.baseUri.host" -> wireMockHost,
-        "auditing.consumer.baseUri.port" -> wireMockPort,
+        "microservice.services.auth.port"  -> wireMockPort,
+        "metrics.enabled"                  -> true,
+        "auditing.enabled"                 -> false,
+        "mongodb.uri"                      -> s"mongodb://127.0.0.1:27017/test-${this.getClass.getSimpleName}",
+        "auditing.consumer.baseUri.host"   -> wireMockHost,
+        "auditing.consumer.baseUri.port"   -> wireMockPort,
         "microservice.services.email.host" -> wireMockHost,
         "microservice.services.email.port" -> wireMockPort
       )
@@ -61,10 +61,10 @@ class ApprovalsControllerISpec
   def grantUrl(id: String) =
     s"http://localhost:$port/approvals/application/$id/grant"
 
-  val wsClient: WSClient = app.injector.instanceOf[WSClient]
+  val wsClient: WSClient                     = app.injector.instanceOf[WSClient]
   val applicationRepo: ApplicationRepository = app.injector.instanceOf[ApplicationRepository]
-  val submissionRepo: SubmissionsRepository = app.injector.instanceOf[SubmissionsRepository]
-  val questionaireDao: QuestionnaireDao = app.injector.instanceOf[QuestionnaireDao]
+  val submissionRepo: SubmissionsRepository  = app.injector.instanceOf[SubmissionsRepository]
+  val questionaireDao: QuestionnaireDao      = app.injector.instanceOf[QuestionnaireDao]
 
   override def beforeEach(): Unit = {
     super.beforeEach()
@@ -76,7 +76,7 @@ class ApprovalsControllerISpec
       url: String,
       body: String,
       headers: List[(String, String)]
-  ): WSResponse =
+    ): WSResponse =
     wsClient
       .url(url)
       .withHttpHeaders(headers: _*)
@@ -97,29 +97,31 @@ class ApprovalsControllerISpec
   "ApprovalsController" should {
 
     def primeData(appId: ApplicationId): Unit = {
-      val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-      val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
+      val responsibleIndividual        = ResponsibleIndividual.build("bob example", "bob@example.com")
+      val testImportantSubmissionData  = ImportantSubmissionData(
+        Some("organisationUrl.com"),
         responsibleIndividual,
         Set(ServerLocation.InUK),
         TermsAndConditionsLocation.InDesktopSoftware,
         PrivacyPolicyLocation.InDesktopSoftware,
-        List.empty)
+        List.empty
+      )
       val application: ApplicationData = anApplicationData(
         appId,
         pendingGatekeeperApprovalState("bob@fastshow.com"),
-        access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+        access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+      )
 
       await(applicationRepo.save(application))
       await(submissionRepo.collection
-          .insertOne(submittedSubmission.copy(applicationId = appId))
-          .toFuture()
-      )
+        .insertOne(submittedSubmission.copy(applicationId = appId))
+        .toFuture())
     }
 
     "return 404 when application id does not exist" in {
       val bodyWontBeParsed = "{}"
-      val randomAppId = UUID.randomUUID().toString
-      val result = callPostEndpoint(
+      val randomAppId      = UUID.randomUUID().toString
+      val result           = callPostEndpoint(
         grantUrl(randomAppId),
         bodyWontBeParsed,
         headers = List.empty
@@ -133,7 +135,7 @@ class ApprovalsControllerISpec
       val appId: ApplicationId = ApplicationId(UUID.randomUUID())
       primeData(appId)
       stubEmail()
-      val requestBody = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate": 1651735542391}"""
+      val requestBody          = """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate": 1651735542391}"""
 
       val result = callPostEndpoint(
         grantUrl(appId.value.toString),
@@ -151,10 +153,10 @@ class ApprovalsControllerISpec
       val appId: ApplicationId = ApplicationId(UUID.randomUUID())
       primeData(appId)
       stubEmail()
-      val requestBody =
+      val requestBody          =
         """{"gatekeeperUserName":"Bob Hope","responsibleIndividualVerificationDate":"2022-03-27T00:00:00.000Z"}"""
 
-      val result = callPostEndpoint(
+      val result   = callPostEndpoint(
         grantUrl(appId.value.toString),
         requestBody,
         headers = List(CONTENT_TYPE -> "application/json")
@@ -168,10 +170,10 @@ class ApprovalsControllerISpec
       val appId: ApplicationId = ApplicationId(UUID.randomUUID())
       primeData(appId)
       stubEmail()
-      val requestBody = """{"gatekeeperUserName":"Bob Hope"}"""
-      val result = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
+      val requestBody          = """{"gatekeeperUserName":"Bob Hope"}"""
+      val result               = callPostEndpoint(grantUrl(appId.value.toString), requestBody, headers = List(CONTENT_TYPE -> "application/json"))
       result.status mustBe OK
-      val response = Json.parse(result.body).validate[ApplicationResponse].asOpt
+      val response             = Json.parse(result.body).validate[ApplicationResponse].asOpt
       response must not be None
 
     }

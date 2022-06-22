@@ -29,16 +29,18 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import java.time.LocalDateTime
 
 trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseRequestApprovalsServiceMock {
     def aMock: RequestApprovalsService
 
     object RequestApproval {
+
       def thenRequestIsApprovedFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalAccepted(anApplicationData(applicationId))))
-      
+
       def thenRequestFailsWithInvalidStateTransitionErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIncorrectApplicationState))
-      
+
       def thenRequestFailsWithApplicationNameAlreadyExistsErrorFor(applicationId: ApplicationId, emailAddress: String) =
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToDuplicateName("my app")))
 
@@ -49,7 +51,7 @@ trait RequestApprovalsServiceMockModule extends MockitoSugar with ArgumentMatche
         when(aMock.requestApproval(*, *, *, *)(*)).thenReturn(successful(ApprovalRejectedDueToIllegalName("my app")))
     }
   }
-  
+
   object RequestApprovalsServiceMock extends BaseRequestApprovalsServiceMock {
     val aMock = mock[RequestApprovalsService]
   }
