@@ -16,6 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
+import com.typesafe.config.ConfigFactory
 import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
