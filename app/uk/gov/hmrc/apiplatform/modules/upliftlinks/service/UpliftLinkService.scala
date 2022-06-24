@@ -26,12 +26,12 @@ import cats.data.OptionT
 import cats.implicits._
 
 @Singleton
-class UpliftLinkService @Inject() (repo: UpliftLinksRepository)(implicit ec: ExecutionContext) {
+class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
 
   def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] =
-    repo.insert(UpliftLink(sandboxApplicationId, productionApplicationId))
+    upliftLinksRepository.insert(UpliftLink(sandboxApplicationId, productionApplicationId))
 
   def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future, ApplicationId] =
-    OptionT(repo.find(productionAppId))
+    OptionT(upliftLinksRepository.find(productionAppId))
 
 }

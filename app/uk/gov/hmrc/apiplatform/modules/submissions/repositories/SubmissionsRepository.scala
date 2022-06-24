@@ -49,4 +49,4 @@ class SubmissionsRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         )
       ),
       replaceIndexes = true
-    ) with MongoJavatimeFormats.Implicits {}
+    ) {}

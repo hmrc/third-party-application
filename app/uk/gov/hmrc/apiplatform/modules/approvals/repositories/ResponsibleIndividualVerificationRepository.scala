@@ -59,7 +59,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
         )
       ),
       replaceIndexes = true
-    ) with MongoJavatimeFormats.Implicits {
+    ) {
 
   def save(verification: ResponsibleIndividualVerification): Future[ResponsibleIndividualVerification] = {
     collection.insertOne(verification)

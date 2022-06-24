@@ -109,8 +109,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         )
       ),
       replaceIndexes = true
-    ) with MetricsHelper
-    with MongoJavatimeFormats.Implicits {
+    ) with MetricsHelper {
 
   import MongoJsonFormatterOverrides._
 

@@ -58,7 +58,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
         )
       ),
       replaceIndexes = true
-    ) with MongoJavatimeFormats.Implicits {
+    ) {
 
   def insert(stateHistory: StateHistory): Future[StateHistory] = {
     collection.insertOne(stateHistory)
