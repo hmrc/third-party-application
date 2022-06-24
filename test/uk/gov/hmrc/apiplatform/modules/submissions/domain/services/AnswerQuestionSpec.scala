@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import cats.data.NonEmptyList
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import org.scalatest.Inside
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDao
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.{QuestionBuilder, SubmissionsTestData}
 
 trait AsIdsHelpers {
@@ -104,14 +104,14 @@ class AnswerQuestionSpec extends HmrcSpec with Inside with QuestionBuilder with 
       }
 
       "return left when answer is not valid" in new Setup {
-        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionnaireDao.Questionnaires.DevelopmentPractices.question1.id, List("Bob"))
+        val after = AnswerQuestion.recordAnswer(aSubmission, QuestionnaireDAO.Questionnaires.DevelopmentPractices.question1.id, List("Bob"))
 
         after.left.value
       }
     }
 
     "deriveProgressOfQuestionnaire" should {
-      import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDao.Questionnaires._
+      import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO.Questionnaires._
       val emptyAnswers = Map.empty[Question.Id, ActualAnswer]
 
       "return not started, with answerable questions when nothing answered" in new Setup {

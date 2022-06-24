@@ -36,10 +36,10 @@ class ApplicationsWithSubscriptionCount @Inject() (applicationRepository: Applic
     val result = applicationRepository.getApplicationWithSubscriptionCount()
     result.onComplete({
       case Success(v) =>
-        logger.info(s"[METRIC] Future.success - ApplicationsWithSubscriptionCount.metrics() - number of applications are: ${v.keys.size}")
+        logger.info(s"[METRIC] Success - ApplicationsWithSubscriptionCount - number of applications are: ${v.keys.size}")
 
       case Failure(e) =>
-        logger.info(s"[METRIC] Future.failure - ApplicationsWithSubscriptionCount.metrics() - error is: ${e.toString}")
+        logger.info(s"[METRIC] Error - ApplicationsWithSubscriptionCount - error is: ${e.toString}")
     })
     result
   }

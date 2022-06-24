@@ -44,8 +44,8 @@ class RateLimitMetrics @Inject() (applicationRepository: ApplicationRepository)
     val result = applicationRepository.fetchAll().map(applications => applications.groupBy(_.rateLimitTier).mapValues(_.size))
 
     result.onComplete({
-      case Success(v) => logger.info(s"[METRIC]: RateLimitMetrics: ${v}")
-      case Failure(e) => logger.info(s"[METRIC]: Error occurred whilst processing RateLimitMetrics: ${e.getMessage}")
+      case Success(v) => logger.info(s"[METRIC] Success - RateLimitMetrics: ${v}")
+      case Failure(e) => logger.info(s"[METRIC] Error - RateLimitMetrics - error is: ${e.getMessage}")
     })
     result
   }

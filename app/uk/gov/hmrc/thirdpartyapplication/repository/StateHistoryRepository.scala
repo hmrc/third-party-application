@@ -69,7 +69,7 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
   def fetchByState(state: State): Future[List[StateHistory]] = {
     collection.find(equal("state", Codecs.toBson(state)))
       .toFuture()
-      .map(x => x.toList)
+      .map(_.toList)
   }
 
   def findAll: Future[List[StateHistory]] = {

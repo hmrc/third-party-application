@@ -35,14 +35,14 @@ package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDao
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseSubmissionsDAOMock {
-    def aMock: SubmissionsDao
+    def aMock: SubmissionsDAO
 
     object Save {
 
@@ -82,6 +82,6 @@ trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {
   }
 
   object SubmissionsDAOMock extends BaseSubmissionsDAOMock {
-    val aMock = mock[SubmissionsDao]
+    val aMock = mock[SubmissionsDAO]
   }
 }

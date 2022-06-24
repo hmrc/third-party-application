@@ -20,14 +20,14 @@ import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{SingleChoiceAnswer, Submission, TextAnswer}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission.updateLatestAnswersTo
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDao
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 class SubmissionDataExtracterSpec extends HmrcSpec {
 
   trait Setup extends SubmissionsTestData {
     import Submission._
     val appName                                           = "expected app name"
-    val answersWithAppName: Submission.AnswersToQuestions = Map(QuestionnaireDao.questionIdsOfInterest.applicationNameId -> TextAnswer(appName))
+    val answersWithAppName: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.applicationNameId -> TextAnswer(appName))
     val submissionWithAnswers                             = updateLatestAnswersTo(answersWithAppName)(answeringSubmission)
   }
 
@@ -46,13 +46,13 @@ class SubmissionDataExtracterSpec extends HmrcSpec {
 
     "isRequesterTheResponsibleIndividual" should {
       "return true if the requester is the Responsible Individual" in new Setup {
-        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDao.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("Yes"))
+        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("Yes"))
         val submission                             = updateLatestAnswersTo(answers)(answeringSubmission)
 
         SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission) shouldBe true
       }
       "return false if the requester is not the Responsible Individual" in new Setup {
-        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDao.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("No"))
+        val answers: Submission.AnswersToQuestions = Map(QuestionnaireDAO.questionIdsOfInterest.responsibleIndividualIsRequesterId -> SingleChoiceAnswer("No"))
         val submission                             = updateLatestAnswersTo(answers)(answeringSubmission)
         SubmissionDataExtracter.isRequesterTheResponsibleIndividual(submission) shouldBe false
       }

@@ -50,9 +50,9 @@ class ApplicationCount @Inject() (applicationRepository: ApplicationRepository) 
 
     result.onComplete({
       case Success(v) =>
-        logger.info(s"[METRIC] Future.success - ApplicationCount.metrics() - number of applications are: $v")
+        logger.info(s"[METRIC] Success - ApplicationCount - number of applications are: $v")
       case Failure(e) =>
-        logger.info(s"[METRIC] Future.failure - ApplicationCount.metrics() - error is: ${e.toString}")
+        logger.info(s"[METRIC] Error - ApplicationCount - error is: ${e.toString}")
     })
     result.map(applicationCount => Map("applicationCount" -> applicationCount))
   }

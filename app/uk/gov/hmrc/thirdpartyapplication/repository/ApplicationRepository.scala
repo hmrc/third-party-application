@@ -150,7 +150,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   // Historically emailAddress was the unique identifier for User and it didn't have a userId.
   // So this method was to back fix any records without the userId.
-  // This is not possible to test as the model does not allow a User without a userId.
+  // This is difficult to test as the model does not allow a User without a userId.
   // $COVERAGE-OFF$
   def updateCollaboratorId(applicationId: ApplicationId, collaboratorEmailAddress: String, collaboratorUser: UserId): Future[Option[ApplicationData]] = {
     val query = and(

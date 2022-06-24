@@ -24,7 +24,7 @@ import play.api.libs.json.Json
 import play.api.libs.ws.{WSClient, WSResponse}
 import play.api.test.Helpers.CONTENT_TYPE
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDao, SubmissionsRepository}
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.{QuestionnaireDAO, SubmissionsRepository}
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
@@ -64,7 +64,7 @@ class ApprovalsControllerISpec
   val wsClient: WSClient                     = app.injector.instanceOf[WSClient]
   val applicationRepo: ApplicationRepository = app.injector.instanceOf[ApplicationRepository]
   val submissionRepo: SubmissionsRepository  = app.injector.instanceOf[SubmissionsRepository]
-  val questionaireDao: QuestionnaireDao      = app.injector.instanceOf[QuestionnaireDao]
+  val questionaireDao: QuestionnaireDAO      = app.injector.instanceOf[QuestionnaireDAO]
 
   override def beforeEach(): Unit = {
     super.beforeEach()

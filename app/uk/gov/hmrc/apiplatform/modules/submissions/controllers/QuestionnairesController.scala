@@ -20,7 +20,7 @@ import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDao
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
@@ -31,7 +31,7 @@ object QuestionnairesController {
 
 @Singleton
 class QuestionnairesController @Inject() (
-    dao: QuestionnaireDao,
+    dao: QuestionnaireDAO,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) {

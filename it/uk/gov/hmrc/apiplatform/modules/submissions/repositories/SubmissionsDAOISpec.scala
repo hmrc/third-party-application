@@ -13,7 +13,7 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import java.time.Clock
 import scala.concurrent.ExecutionContext.Implicits.global
 
-class SubmissionsDaoISpec
+class SubmissionsDAOISpec
     extends ServerBaseISpec
     with FixedClock
     with ApplicationTestData
@@ -30,7 +30,7 @@ class SubmissionsDaoISpec
       .disable(classOf[SchedulerModule])
 
   val submissionsRepository: SubmissionsRepository = app.injector.instanceOf[SubmissionsRepository]
-  val submissionsDao: SubmissionsDao               = app.injector.instanceOf[SubmissionsDao]
+  val submissionsDao: SubmissionsDAO               = app.injector.instanceOf[SubmissionsDAO]
 
   override def beforeEach(): Unit = {
     await(submissionsRepository.collection.drop().toFuture())

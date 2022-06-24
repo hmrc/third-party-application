@@ -48,9 +48,13 @@ class Scheduler @Inject() (
   ) extends RunningOfScheduledJobs {
 
   override lazy val scheduledJobs: Seq[ExclusiveScheduledJob] = {
-    Seq(upliftVerificationExpiryJob, resetLastAccessDateJob, responsibleIndividualVerificationReminderJob, responsibleIndividualVerificationRemovalJob).filter(_.isEnabled) ++ Seq(
-      bcryptPerformanceMeasureJob
+    Seq(
+      upliftVerificationExpiryJob,
+      resetLastAccessDateJob,
+      responsibleIndividualVerificationReminderJob,
+      responsibleIndividualVerificationRemovalJob
     )
+      .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)
   }
 }
 

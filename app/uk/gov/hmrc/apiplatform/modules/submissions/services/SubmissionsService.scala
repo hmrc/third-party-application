@@ -31,8 +31,8 @@ import java.time.{Clock, LocalDateTime}
 
 @Singleton
 class SubmissionsService @Inject() (
-    questionnaireDAO: QuestionnaireDao,
-    submissionsDAO: SubmissionsDao,
+    questionnaireDAO: QuestionnaireDAO,
+    submissionsDAO: SubmissionsDAO,
     contextService: ContextService,
     val clock: Clock
   )(implicit val ec: ExecutionContext
@@ -67,7 +67,7 @@ class SubmissionsService @Inject() (
         submissionId      = Submission.Id.random
         context          <- contextService.deriveContext(applicationId)
         newInstance       = Submission.Instance(0, emptyAnswers, NonEmptyList.of(Submission.Status.Created(LocalDateTime.now(clock), requestedBy)))
-        submission        = Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDao.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
+        submission        = Submission(submissionId, applicationId, LocalDateTime.now(clock), groups, QuestionnaireDAO.questionIdsOfInterest, NonEmptyList.of(newInstance), context)
         savedSubmission  <- liftF(submissionsDAO.save(submission))
       } yield savedSubmission
     )

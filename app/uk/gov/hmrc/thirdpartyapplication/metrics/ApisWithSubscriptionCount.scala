@@ -44,8 +44,8 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
       )
 
     result.onComplete({
-      case Success(v) => logger.info(s"[METRIC] Future.success - ApisWithSubscriptionCount.metrics() - api versions are: ${v.keys.size}")
-      case Failure(e) => logger.info(s"[METRIC] Future.failure - ApisWithSubscriptionCount.metrics() - error is: ${e.toString}")
+      case Success(v) => logger.info(s"[METRIC] Success - ApisWithSubscriptionCount - api versions are: ${v.keys.size}")
+      case Failure(e) => logger.info(s"[METRIC] Error - ApisWithSubscriptionCount - error is: ${e.toString}")
     })
     result
   }

@@ -158,16 +158,6 @@ case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilt
       )
     )
   }
-
-  /*def toMongoMatch =
-    Json.obj("$match" ->
-      Json.obj("$or" ->
-        Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$lte" -> lastUseDate)),
-          Json.obj("$and" ->
-            Json.arr(
-              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn" -> Json.obj("$lte" -> lastUseDate)))))))*/
 }
 
 case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
@@ -184,16 +174,6 @@ case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilte
       )
     )
   }
-  /*
-  def toMongoMatch =
-    Json.obj("$match" ->
-      Json.obj("$or" ->
-        Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$gte" -> lastUseDate)),
-          Json.obj("$and" ->
-            Json.arr(
-              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn" -> Json.obj("$gte" -> lastUseDate)))))))*/
 }
 
 case object LastUseDateFilter extends LastUseDateFilter {

@@ -43,8 +43,8 @@ class MissingMongoFields @Inject() (applicationRepository: ApplicationRepository
   private def missingDocumentsWithField(field: String)(implicit ec: ExecutionContext) = {
     val result = applicationRepository.documentsWithFieldMissing(field)
     result.onComplete({
-      case Success(v) => logger.info(s"[METRIC] Future.success - MissingMongoFields - Number of documents with missing field $field is: $v")
-      case Failure(e) => logger.info(s"[METRIC]: Error occurred whilst processing MissingMongoFields for field $field: ${e.getMessage}")
+      case Success(v) => logger.info(s"[METRIC] Success - MissingMongoFields - Number of documents with missing field $field is: $v")
+      case Failure(e) => logger.info(s"[METRIC] Error - MissingMongoFields - Error whilst processing field $field: ${e.getMessage}")
     })
     result
   }
