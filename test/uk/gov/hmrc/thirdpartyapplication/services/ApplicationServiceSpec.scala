@@ -178,7 +178,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldActor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -211,7 +211,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldActor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -235,7 +235,7 @@ class ApplicationServiceSpec
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, TESTING, OldActor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -261,7 +261,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldActor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -296,7 +296,7 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldActor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -325,7 +325,7 @@ class ApplicationServiceSpec
       )
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, Actor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldActor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -454,7 +454,7 @@ class ApplicationServiceSpec
       stateHistory.state shouldBe State.PRODUCTION
       stateHistory.previousState shouldBe Some(State.PRE_PRODUCTION)
       stateHistory.applicationId shouldBe applicationId
-      stateHistory.actor shouldBe Actor(requestedByEmail, COLLABORATOR)
+      stateHistory.actor shouldBe OldActor(requestedByEmail, COLLABORATOR)
     }
 
     "not update application in wrong state" in new Setup {

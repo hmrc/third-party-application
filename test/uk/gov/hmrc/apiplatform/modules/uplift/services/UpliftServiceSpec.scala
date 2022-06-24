@@ -82,7 +82,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_GATEKEEPER_APPROVAL,
-        actor = Actor(upliftRequestedBy, COLLABORATOR),
+        actor = OldActor(upliftRequestedBy, COLLABORATOR),
         previousState = Some(TESTING),
         changedAt = LocalDateTime.now(clock)
       )
@@ -187,8 +187,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, Actor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock))
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, Actor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
+        StateHistory(applicationId, State.PRE_PRODUCTION, OldActor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock))
+      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, OldActor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
 
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 

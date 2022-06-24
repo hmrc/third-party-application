@@ -22,7 +22,7 @@ import play.modules.reactivemongo.ReactiveMongoComponent
 import reactivemongo.api.indexes.Index
 import reactivemongo.api.indexes.IndexType.Ascending
 import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, ActorType}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
@@ -48,7 +48,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
     await(repository.drop)
   }
 
-  val actor = Actor("admin@example.com", ActorType.COLLABORATOR)
+  val actor = OldActor("admin@example.com", ActorType.COLLABORATOR)
 
   "insert" should {
 

@@ -38,4 +38,5 @@ object UpdateApplicationEvent {
 
   case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String) extends UpdateApplicationNotificationEvent
 
+  case class NameChangedAudit(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String, gatekeeperUser: String) extends UpdateApplicationAuditEvent
 }

@@ -66,6 +66,15 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
         oldName = app.name,
         newName = cmd.newName,
         requester = getRequester(app, cmd.instigator)
+      ),
+      UpdateApplicationEvent.NameChangedAudit(
+        applicationId = app.id,
+        timestamp = cmd.timestamp,
+        instigator = cmd.instigator,
+        oldName = app.name,
+        newName = cmd.newName,
+        requester = getRequester(app, cmd.instigator),
+        gatekeeperUser = cmd.gatekeeperUser
       )
     )
   }

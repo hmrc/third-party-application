@@ -38,6 +38,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val adminEmail            = "admin@example.com"
     val oldName               = "old app name"
     val newName               = "new app name"
+    val gatekeeperUser        = "gkuser"
+    val requester             = "requester"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -59,9 +61,10 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     )
     val userId               = idsByEmail(adminEmail)
     val timestamp            = LocalDateTime.now
-    val update               = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
+    val update               = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
     val nameChangedEvent     = NameChanged(applicationId, timestamp, userId, oldName, newName)
-    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
+    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, adminEmail)
+    val nameChangedAuditEvent = NameChangedAudit(applicationId, timestamp, userId, oldName, newName, adminEmail, gatekeeperUser)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }
@@ -70,7 +73,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val result = await(underTest.process(app, update))
 
-      result shouldBe Valid(NonEmptyList.of(nameChangedEvent, nameChangeEmailEvent))
+      result shouldBe Valid(NonEmptyList.of(nameChangedEvent, nameChangeEmailEvent, nameChangedAuditEvent))
     }
     "return an error if instigator is not a collaborator on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()

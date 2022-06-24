@@ -475,47 +475,40 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         val actor = teamMemberAddedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        teamMemberAddedEvent.eventType shouldBe EventType.TEAM_MEMBER_ADDED
         teamMemberAddedEvent.teamMemberEmail shouldBe teamMemberEmail
         teamMemberAddedEvent.teamMemberRole shouldBe teamMemberRole
       case teamMemberRemovedEvent: TeamMemberRemovedEvent     =>
         val actor = teamMemberRemovedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        teamMemberRemovedEvent.eventType shouldBe EventType.TEAM_MEMBER_REMOVED
         teamMemberRemovedEvent.teamMemberEmail shouldBe teamMemberEmail
         teamMemberRemovedEvent.teamMemberRole shouldBe teamMemberRole
       case clientSecretAddedEvent: ClientSecretAddedEvent     =>
         val actor = clientSecretAddedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        clientSecretAddedEvent.eventType shouldBe EventType.CLIENT_SECRET_ADDED
         clientSecretAddedEvent.clientSecretId shouldBe clientSecretId
       case clientSecretRemovedEvent: ClientSecretRemovedEvent =>
         val actor = clientSecretRemovedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        clientSecretRemovedEvent.eventType shouldBe EventType.CLIENT_SECRET_REMOVED
         clientSecretRemovedEvent.clientSecretId shouldBe clientSecretId
       case redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent =>
         val actor = redirectUrisUpdatedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        redirectUrisUpdatedEvent.eventType shouldBe EventType.REDIRECT_URIS_UPDATED
         redirectUrisUpdatedEvent.oldRedirectUris shouldBe oldRedirectUris
         redirectUrisUpdatedEvent.newRedirectUris shouldBe newRedirectUris
       case apiSubscribedEvent: ApiSubscribedEvent             =>
         val actor = apiSubscribedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        apiSubscribedEvent.eventType shouldBe EventType.API_SUBSCRIBED
         apiSubscribedEvent.context shouldBe context.value
         apiSubscribedEvent.version shouldBe version.value
       case apiUnSubscribedEvent: ApiUnsubscribedEvent         =>
         val actor = apiUnSubscribedEvent.actor
         actor.id shouldBe loggedInUserEmail
         actor.actorType shouldBe expectedActorType
-        apiUnSubscribedEvent.eventType shouldBe EventType.API_UNSUBSCRIBED
         apiUnSubscribedEvent.context shouldBe context.value
         apiUnSubscribedEvent.version shouldBe version.value
 

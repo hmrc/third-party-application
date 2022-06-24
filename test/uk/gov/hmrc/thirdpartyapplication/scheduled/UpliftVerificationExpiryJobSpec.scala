@@ -100,14 +100,14 @@ class UpliftVerificationExpiryJobSpec extends AsyncHmrcSpec with MongoSpecSuppor
       verify(mockStateHistoryRepository).insert(StateHistory(
         app1.id,
         State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = LocalDateTime.now(clock)
       ))
       verify(mockStateHistoryRepository).insert(StateHistory(
         app2.id,
         State.TESTING,
-        Actor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
+        OldActor("UpliftVerificationExpiryJob", ActorType.SCHEDULED_JOB),
         Some(PENDING_REQUESTER_VERIFICATION),
         changedAt = LocalDateTime.now(clock)
       ))

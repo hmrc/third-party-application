@@ -25,10 +25,17 @@ object ActorType extends Enumeration {
   implicit val format = EnumJson.enumFormat(ActorType)
 }
 
-case class Actor(id: String, actorType: ActorType.ActorType)
+case class OldActor(id: String, actorType: ActorType.ActorType)
 
-object Actor {
+object OldActor {
   import play.api.libs.json.{Json, OFormat}
 
-  implicit val format: OFormat[Actor] = Json.format[Actor]
+  implicit val format: OFormat[OldActor] = Json.format[OldActor]
 }
+
+sealed trait Actor
+
+case class GatekeeperUserActor(user: String) extends Actor
+//case class CollaboratorActor(email: String) extends Actor
+//case class ScheduledJobActor(jobId: String) extends Actor
+//case class UnknownActor() extends Actor

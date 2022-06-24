@@ -25,7 +25,7 @@ import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -59,7 +59,7 @@ class UpliftVerificationExpiryJob @Inject() (
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
                       State.TESTING,
-                      Actor("UpliftVerificationExpiryJob", SCHEDULED_JOB),
+                      OldActor("UpliftVerificationExpiryJob", SCHEDULED_JOB),
                       Some(State.PENDING_REQUESTER_VERIFICATION),
                       changedAt = LocalDateTime.now(clock)
                     ))

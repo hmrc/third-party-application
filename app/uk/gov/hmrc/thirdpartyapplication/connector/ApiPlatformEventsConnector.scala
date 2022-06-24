@@ -36,13 +36,14 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
 
   val serviceBaseUrl: String         = s"${config.baseUrl}"
   private val applicationEventsUri   = "/application-events"
-  private val teamMemberAddedUri     = "/teamMemberAdded"
-  private val teamMemberRemovedUri   = "/teamMemberRemoved"
-  private val clientSecretAddedUri   = "/clientSecretAdded"
-  private val clientSecretRemovedUri = "/clientSecretRemoved"
-  private val redirectUrisUpdatedUri = "/redirectUrisUpdated"
-  private val apiSubscribedUri       = "/apiSubscribed"
-  private val apiUnsubscribedUri     = "/apiUnsubscribed"
+  private val teamMemberAddedUri     = applicationEventsUri + "/teamMemberAdded"
+  private val teamMemberRemovedUri   = applicationEventsUri + "/teamMemberRemoved"
+  private val clientSecretAddedUri   = applicationEventsUri + "/clientSecretAdded"
+  private val clientSecretRemovedUri = applicationEventsUri + "/clientSecretRemoved"
+  private val redirectUrisUpdatedUri = applicationEventsUri + "/redirectUrisUpdated"
+  private val apiSubscribedUri       = applicationEventsUri + "/apiSubscribed"
+  private val apiUnsubscribedUri     = applicationEventsUri + "/apiUnsubscribed"
+  private val updateApplicationUri   = "/application-event"
 
   def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
 
@@ -57,6 +58,8 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   def sendApiSubscribedEvent(event: ApiSubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
 
   def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
+
+  def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
 
@@ -82,6 +85,6 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   }
 
   private def addEventURI(path: String): String = {
-    serviceBaseUrl + applicationEventsUri + path
+    serviceBaseUrl + path
   }
 }

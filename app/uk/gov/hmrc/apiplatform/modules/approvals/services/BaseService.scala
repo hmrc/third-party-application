@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.services
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
@@ -37,7 +37,7 @@ abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock
       actorType: ActorType.ActorType,
       rollback: ApplicationData => Any
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory)
       .andThen {
         case e: Failure[_] =>

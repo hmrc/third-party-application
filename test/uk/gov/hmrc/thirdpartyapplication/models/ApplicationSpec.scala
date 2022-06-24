@@ -49,7 +49,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         LocalDateTime.now,
         Some(LocalDateTime.now)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, Actor("1", ActorType.COLLABORATOR), changedAt = LocalDateTime.now(clock))
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = LocalDateTime.now(clock))
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)

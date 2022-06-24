@@ -44,7 +44,8 @@ class ApplicationUpdateServiceSpec
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
-      with NotificationServiceMockModule {
+      with NotificationServiceMockModule
+      with ApiPlatformEventServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -80,7 +81,8 @@ class ApplicationUpdateServiceSpec
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
-      NotificationServiceMock.aMock
+      NotificationServiceMock.aMock,
+      ApiPlatformEventServiceMock.aMock
     )
   }
 
@@ -93,12 +95,14 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
 
       val nameChangedEvent      = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
       val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
+      val nameChangedAuditEvent = NameChangedAudit(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser, gatekeeperUser)
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent)).toValidatedNec)
+        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent, nameChangedAuditEvent)).toValidatedNec)
       )
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
 
@@ -106,6 +110,7 @@ class ApplicationUpdateServiceSpec
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
       result shouldBe Right(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(nameChangedAuditEvent))
     }
 
     "return the error if the application does not exist" in new Setup {
