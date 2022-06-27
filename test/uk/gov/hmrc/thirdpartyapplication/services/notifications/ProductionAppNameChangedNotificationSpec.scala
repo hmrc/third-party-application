@@ -14,19 +14,17 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.events
+package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChangedEmailSent
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
-class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
@@ -48,22 +46,21 @@ class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with Applica
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-      ), 
-      name = oldName, 
+      ),
+      name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val userId = UserId.random
     val timestamp = LocalDateTime.now
-    val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
-
-    val underTest = new NameChangedNotificationEventHandler(EmailConnectorMock.aMock)
+    val gatekeeperUser = "gkuser"
+    val eventId = UpdateApplicationEvent.Id.random
+    val actor = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)
+    val nameChangeEmailEvent = UpdateApplicationEvent.ProductionAppNameChanged(eventId, applicationId, timestamp, actor, oldName, newName, "admin@example.com")
   }
 
   "sendAdviceEmail" should {
     "successfully send email" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
-      val result = await(underTest.sendAdviceEmail(app, nameChangeEmailEvent))
+      val result = await(ProductionAppNameChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, nameChangeEmailEvent))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldName, newName, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
     }

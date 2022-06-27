@@ -21,10 +21,12 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
+
+import java.time.LocalDateTime
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -84,13 +86,14 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     version = "2.0"
   )
 
-  val prodAppNameChangedEvent: ProductionAppNameChangedEvent = ProductionAppNameChangedEvent(
-    id = EventId.random,
-    applicationId = "jkkh",
+  val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
+    id = UpdateApplicationEvent.Id.random,
+    applicationId = ApplicationId.random,
+    eventDateTime = LocalDateTime.now,
     actor = GatekeeperUserActor("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",
-    requestingAdminName = "admin@example.com"
+    requestingAdminEmail = "admin@example.com"
   )
 
   abstract class Setup(enabled: Boolean = true) {
@@ -119,7 +122,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
           )
       )
 
-    def apiApplicationEventWillReturnCreated(request: ApplicationEvent) =
+    def apiApplicationEventWillReturnCreated(request: UpdateApplicationEvent) =
       stubFor(
         post(urlEqualTo("/application-event"))
           .withJsonRequestBody(request)

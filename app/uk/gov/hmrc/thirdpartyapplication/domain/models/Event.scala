@@ -72,7 +72,6 @@ object UpdateApplicationEvent {
   object ProductionAppNameChanged {
     implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
   }
-  // case class NameChangedEmailSent(id: EventId,applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String) extends UpdateApplicationEvent
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
