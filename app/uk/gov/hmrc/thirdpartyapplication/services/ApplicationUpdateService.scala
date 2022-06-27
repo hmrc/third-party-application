@@ -41,11 +41,9 @@ class ApplicationUpdateService @Inject()(
     for {
       app              <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
-      repositoryEvents <- E.fromOption(NonEmptyList.fromList(events.collect { case e: UpdateApplicationRepositoryEvent => e }), NonEmptyChain(s"No repository events found for this command"))
-      savedApp         <- E.liftF(applicationRepository.applyEvents(repositoryEvents))
-      auditEvents      <- E.fromOption(NonEmptyList.fromList(events.collect{ case e: UpdateApplicationAuditEvent => e }), NonEmptyChain(s"No audit events found for this command"))
-      _                <- E.liftF(apiPlatformEventService.applyEvents(auditEvents))
-      _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case e: UpdateApplicationNotificationEvent => e }))
+      savedApp         <- E.liftF(applicationRepository.applyEvents(events))
+      _                <- E.liftF(apiPlatformEventService.applyEvents(events))
+      _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }
 

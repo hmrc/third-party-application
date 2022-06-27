@@ -23,30 +23,26 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, EventType, ProductionAppNameChangedEvent, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChangedAudit
-
-import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO - context and version probably should be strings in the events??
 @Singleton
 class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationAuditEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
     events match {
       case NonEmptyList(e, Nil) => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def applyEvent(event: UpdateApplicationAuditEvent)(implicit hc: HeaderCarrier): Future[Boolean] =
-    event match {
-      case NameChangedAudit(appId, timestamp, _, oldName, newName, requester, gatekeeperUser) => sendProdAppNameChangedEvent(appId, timestamp, oldName, newName, requester, gatekeeperUser)
-    }
-
+  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    apiPlatformEventsConnector.sendApplicationEvent(event)
+  }
+ 
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
@@ -124,15 +120,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
-  private def sendProdAppNameChangedEvent(applicationId: ApplicationId, timestamp: LocalDateTime, oldName: String, newName: String, requester: String, gatekeeperUser: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    val appId = applicationId.value.toString
-    handleResult(
-      appId,
-      eventType = EventType.PROD_APP_NAME_CHANGED.toString,
-      maybeFuture = Some(sendEvent(ProductionAppNameChangedEvent(EventId.random, appId, timestamp, GatekeeperUserActor(gatekeeperUser), oldName, newName, requester)))
-    )
-  }
-
   private def handleResult(applicationId: String, eventType: String, maybeFuture: Option[Future[Boolean]]): Future[Boolean] = maybeFuture match {
     case Some(x) => x
     case None    =>
@@ -148,7 +135,6 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case ruue: RedirectUrisUpdatedEvent => apiPlatformEventsConnector.sendRedirectUrisUpdatedEvent(ruue)
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
-    case pnce: ProductionAppNameChangedEvent => apiPlatformEventsConnector.sendApplicationEvent(pnce)
   }
 
   private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldActor] = {

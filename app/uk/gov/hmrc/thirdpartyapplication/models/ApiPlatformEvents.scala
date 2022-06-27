@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import java.util.UUID
 import java.util.UUID.randomUUID
 import uk.gov.hmrc.thirdpartyapplication.domain.utils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType, GatekeeperUserActor, OldActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -75,14 +75,14 @@ case class ClientSecretRemovedEvent(id: EventId,
                                     clientSecretId: String) extends ApplicationEvent
 
 
-case class PpnsCallBackUriUpdatedEvent(id: EventId,
-                                       applicationId: String,
-                                       eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                       actor: OldActor,
-                                       boxId: String,
-                                       boxName: String,
-                                       oldCallbackUrl: String,
-                                       newCallbackUrl: String) extends ApplicationEvent
+// case class PpnsCallBackUriUpdatedEvent(id: EventId,
+//                                        applicationId: String,
+//                                        eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+//                                        actor: OldActor,
+//                                        boxId: String,
+//                                        boxName: String,
+//                                        oldCallbackUrl: String,
+//                                        newCallbackUrl: String) extends ApplicationEvent
 
 case class RedirectUrisUpdatedEvent(id: EventId,
                                     applicationId: String,
@@ -105,14 +105,6 @@ case class ApiUnsubscribedEvent(id: EventId,
                                 context: String,
                                 version: String) extends ApplicationEvent
 
-case class ProductionAppNameChangedEvent(id: EventId,
-                                         applicationId: String,
-                                         eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                         actor: Actor,
-                                         oldAppName: String,
-                                         newAppName: String,
-                                         requestingAdminName: String) extends ApplicationEvent
-
 object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   import play.api.libs.json._
   import uk.gov.hmrc.play.json.Union
@@ -128,15 +120,8 @@ object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   implicit val apiSubscribedEventFormats: OFormat[ApiSubscribedEvent]             = Json.format[ApiSubscribedEvent]
   implicit val apiUnsubscribedEventFormats: OFormat[ApiUnsubscribedEvent]         = Json.format[ApiUnsubscribedEvent]
 
-  implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
-  implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
-    .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
-    .format
-
-  implicit val productionAppNameChangedEventFormats: OFormat[ProductionAppNameChangedEvent] = Json.format[ProductionAppNameChangedEvent]
 
   implicit val formatApplicationEvent: OFormat[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
-    .and[ProductionAppNameChangedEvent](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[TeamMemberAddedEvent](EventType.TEAM_MEMBER_ADDED.toString)
     .and[TeamMemberRemovedEvent](EventType.TEAM_MEMBER_REMOVED.toString)
     .and[ClientSecretAddedEvent](EventType.CLIENT_SECRET_ADDED.toString)
@@ -145,4 +130,6 @@ object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
     .and[ApiSubscribedEvent](EventType.API_SUBSCRIBED.toString)
     .and[ApiUnsubscribedEvent](EventType.API_UNSUBSCRIBED.toString)
     .format
+
+
 }

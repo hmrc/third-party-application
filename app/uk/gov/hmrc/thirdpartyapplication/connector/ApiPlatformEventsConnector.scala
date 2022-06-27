@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
@@ -59,8 +60,6 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
 
   def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
-  def sendApplicationEvent(event: ApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
-
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
 
     implicit val headersWithoutAuthorization: HeaderCarrier = hc
@@ -84,6 +83,28 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
     }
   }
 
+  def sendApplicationEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
+
+  private def postEvent(event: UpdateApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+
+    if (config.enabled) {
+      http.POST[UpdateApplicationEvent, ErrorOr[Unit]](
+        addEventURI(uri),
+        event
+      ).map {
+        case Right(_) =>
+          logger.info(s"calling platform event service for application ${event.applicationId.value}")
+          true
+        case Left(e)  =>
+          logger.warn(s"calling platform event service failed for application ${event.applicationId.value} $e")
+          false
+      }
+    } else {
+      logger.info("call to platform events disabled")
+      Future.successful(true)
+    }
+  }
   private def addEventURI(path: String): String = {
     serviceBaseUrl + path
   }

@@ -32,11 +32,10 @@ class NotificationService @Inject()(
   nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
 
-  def sendNotifications(app: ApplicationData, events: List[UpdateApplicationNotificationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(app: ApplicationData, event: UpdateApplicationEvent) = {
+  def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
+    def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
-        case evt: UpdateApplicationEvent.NameChangedEmailSent => nameChangedNotificationEventHdlr.sendAdviceEmail(app, evt)
-        case _  => throw new RuntimeException(s"UnexpectedEvent type for sendNotification ${event}")
+        case evt: UpdateApplicationEvent.ProductionAppNameChanged => nameChangedNotificationEventHdlr.sendAdviceEmail(app, evt)
       }
     }
     

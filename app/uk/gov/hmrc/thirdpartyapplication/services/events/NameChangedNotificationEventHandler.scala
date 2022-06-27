@@ -31,9 +31,9 @@ class NameChangedNotificationEventHandler @Inject()(
   emailConnector: EmailConnector
 )(implicit val ec: ExecutionContext) {
 
-  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.NameChangedEmailSent)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.ProductionAppNameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    emailConnector.sendChangeOfApplicationName(event.requester, event.oldName, event.newName, recipients)
+    emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail, event.oldAppName, event.newAppName, recipients)
   }
 
   def getRecipients(app: ApplicationData): Set[String] = {

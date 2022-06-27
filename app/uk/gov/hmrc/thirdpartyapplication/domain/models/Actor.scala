@@ -33,9 +33,3 @@ object OldActor {
   implicit val format: OFormat[OldActor] = Json.format[OldActor]
 }
 
-sealed trait Actor
-
-case class GatekeeperUserActor(user: String) extends Actor
-//case class CollaboratorActor(email: String) extends Actor
-//case class ScheduledJobActor(jobId: String) extends Actor
-//case class UnknownActor() extends Actor

@@ -35,7 +35,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
 import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
@@ -425,7 +424,7 @@ class ApplicationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit v
       .map(_.map(r => s"applicationsWithSubscriptionCountV1.${sanitiseGrafanaNodeName(r._id.name)}" -> r.count).toMap)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationRepositoryEvent]): Future[ApplicationData] = {
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
     require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
 
     events match {
@@ -434,8 +433,12 @@ class ApplicationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit v
     }
   }
 
-  def applyEvent(event: UpdateApplicationRepositoryEvent): Future[ApplicationData] = event match {
-    case NameChanged(id, _, _, _, newName) => updateApplicationName(id, newName)
+  private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
+    import UpdateApplicationEvent._
+    
+    event match {
+      case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
+    }
   }
 }
 
