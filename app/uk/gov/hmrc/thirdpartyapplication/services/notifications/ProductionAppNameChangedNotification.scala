@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services.events
+package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
@@ -22,25 +22,20 @@ import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.http.HeaderCarrier
+import scala.concurrent.Future
 
-import scala.concurrent.{ExecutionContext, Future}
-import javax.inject.{Inject, Singleton}
-
-@Singleton
-class NameChangedNotificationEventHandler @Inject()(
-  emailConnector: EmailConnector
-)(implicit val ec: ExecutionContext) {
-
-  def sendAdviceEmail(app: ApplicationData, event: UpdateApplicationEvent.ProductionAppNameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+object ProductionAppNameChangedNotification {
+  
+  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ProductionAppNameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail, event.oldAppName, event.newAppName, recipients)
   }
 
-  def getRecipients(app: ApplicationData): Set[String] = {
+  private def getRecipients(app: ApplicationData): Set[String] = {
     app.collaborators.map(_.emailAddress)
   }
 
-  def getResponsibleIndividual(app: ApplicationData): Set[String] = {
+  private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
       case _ => Set()

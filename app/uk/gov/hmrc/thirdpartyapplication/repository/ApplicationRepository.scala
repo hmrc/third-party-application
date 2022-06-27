@@ -132,9 +132,6 @@ class ApplicationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit v
   def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$set" -> Json.obj("grantLength" -> grantLength)))
 
-  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("name" -> name, "normalisedName" -> name.toLowerCase)))
-
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Json.obj("$push" -> Json.obj("access.importantSubmissionData.termsOfUseAcceptances" -> Json.toJson(acceptance))))
 
@@ -432,6 +429,9 @@ class ApplicationRepository @Inject() (mongo: ReactiveMongoComponent)(implicit v
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
+
+  private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("name" -> name, "normalisedName" -> name.toLowerCase)))
 
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
