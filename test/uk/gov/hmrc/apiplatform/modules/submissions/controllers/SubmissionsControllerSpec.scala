@@ -30,12 +30,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.MarkedSubmission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
 
-class SubmissionsControllerSpec extends AsyncHmrcSpec {
-  import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._
+class SubmissionsControllerSpec extends AsyncHmrcSpec with SubmissionsFrontendJsonFormatters {
   implicit val mat = NoMaterializer
-
-  implicit val readsExtendedSubmission = Json.reads[Submission]
 
   trait Setup extends SubmissionsServiceMockModule with SubmissionsTestData {
     val underTest = new SubmissionsController(SubmissionsServiceMock.aMock, Helpers.stubControllerComponents())

@@ -20,20 +20,22 @@ import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
+import java.time.LocalDateTime
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
 
-  implicit val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = key => JsSuccess(Questionnaire.Id(key))
-  implicit val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = _.value
+  implicit val dateFormat: Format[LocalDateTime]
+  implicit lazy val keyReadsQuestionnaireId: KeyReads[Questionnaire.Id]   = key => JsSuccess(Questionnaire.Id(key))
+  implicit lazy val keyWritesQuestionnaireId: KeyWrites[Questionnaire.Id] = _.value
 
-  implicit val stateWrites: Writes[QuestionnaireState] = Writes {
+  implicit lazy val stateWrites: Writes[QuestionnaireState] = Writes {
     case QuestionnaireState.NotStarted    => JsString("NotStarted")
     case QuestionnaireState.InProgress    => JsString("InProgress")
     case QuestionnaireState.NotApplicable => JsString("NotApplicable")
     case QuestionnaireState.Completed     => JsString("Completed")
   }
 
-  implicit val stateReads: Reads[QuestionnaireState] = Reads {
+  implicit lazy val stateReads: Reads[QuestionnaireState] = Reads {
     case JsString("NotStarted")    => JsSuccess(QuestionnaireState.NotStarted)
     case JsString("InProgress")    => JsSuccess(QuestionnaireState.InProgress)
     case JsString("NotApplicable") => JsSuccess(QuestionnaireState.NotApplicable)
@@ -41,26 +43,22 @@ trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters 
     case _                         => JsError("Failed to parse QuestionnaireState value")
   }
 
-  implicit val questionnaireProgressFormat = Json.format[QuestionnaireProgress]
+  implicit lazy val questionnaireProgressFormat = Json.format[QuestionnaireProgress]
 
-  implicit val answersToQuestionsFormat: OFormat[Map[Question.Id, Option[ActualAnswer]]] = implicitly
+  implicit lazy val answersToQuestionsFormat: OFormat[Map[Question.Id, Option[ActualAnswer]]] = implicitly
 
-  implicit val questionIdsOfInterestFormat = Json.format[QuestionIdsOfInterest]
-}
+  implicit lazy val questionIdsOfInterestFormat = Json.format[QuestionIdsOfInterest]
 
-trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
   import Submission.Status._
 
-  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+  implicit lazy val RejectedStatusFormat             = Json.format[Declined]
+  implicit lazy val AcceptedStatusFormat             = Json.format[Granted]
+  implicit lazy val AcceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
+  implicit lazy val SubmittedStatusFormat            = Json.format[Submitted]
+  implicit lazy val answeringStatusFormat            = Json.format[Answering]
+  implicit lazy val CreatedStatusFormat              = Json.format[Created]
 
-  implicit val RejectedStatusFormat             = Json.format[Declined]
-  implicit val AcceptedStatusFormat             = Json.format[Granted]
-  implicit val AcceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
-  implicit val SubmittedStatusFormat            = Json.format[Submitted]
-  implicit val answeringStatusFormat            = Json.format[Answering]
-  implicit val CreatedStatusFormat              = Json.format[Created]
-
-  implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
+  implicit lazy val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
     .and[Declined]("declined")
     .and[Granted]("granted")
     .and[GrantedWithWarnings]("grantedWithWarnings")
@@ -69,38 +67,22 @@ trait SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
     .and[Created]("created")
     .format
 
-  implicit val submissionInstanceFormat = Json.format[Submission.Instance]
-  implicit val submissionFormat         = Json.format[Submission]
+  implicit lazy val submissionInstanceFormat = Json.format[Submission.Instance]
+  implicit lazy val submissionFormat         = Json.format[Submission]
 }
 
-object SubmissionsJsonFormatters extends SubmissionsJsonFormatters
+object SubmissionsJsonFormatters extends BaseSubmissionsJsonFormatters {
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+}
 
-trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters with EnvReads {
-
-  import Submission.Status._
+trait SubmissionsFrontendJsonFormatters extends BaseSubmissionsJsonFormatters with EnvReads with EnvWrites {
 
   implicit val utcReads = DefaultLocalDateTimeReads
+  implicit val utcWrites = DefaultLocalDateTimeWrites
+  implicit val dateFormat = Format(utcReads, utcWrites)
 
-  implicit val rejectedStatusFormat             = Json.format[Declined]
-  implicit val acceptedStatusFormat             = Json.format[Granted]
-  implicit val acceptedWithWarningsStatusFormat = Json.format[GrantedWithWarnings]
-  implicit val submittedStatusFormat            = Json.format[Submitted]
-  implicit val answeringStatusFormat            = Json.format[Answering]
-  implicit val createdStatusFormat              = Json.format[Created]
-
-  implicit val submissionStatus = Union.from[Submission.Status]("Submission.StatusType")
-    .and[Declined]("declined")
-    .and[Granted]("granted")
-    .and[GrantedWithWarnings]("grantedWithWarnings")
-    .and[Submitted]("submitted")
-    .and[Answering]("answering")
-    .and[Created]("created")
-    .format
-
-  implicit val submissionInstanceFormat = Json.format[Submission.Instance]
-  implicit val submissionFormat         = Json.format[Submission]
-  implicit val extendedSubmissionFormat = Json.format[ExtendedSubmission]
-  implicit val markedSubmissionFormat   = Json.format[MarkedSubmission]
+  implicit lazy val extendedSubmissionFormat = Json.format[ExtendedSubmission]
+  implicit lazy val markedSubmissionFormat   = Json.format[MarkedSubmission]
 }
 
 object SubmissionsFrontendJsonFormatters extends SubmissionsFrontendJsonFormatters
