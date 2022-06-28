@@ -360,7 +360,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     case SubmittedDescending   => List(Aggregates.sort(Sorts.descending("createdOn")))
     case LastUseDateAscending  => List(Aggregates.sort(Sorts.ascending("lastAccess")))
     case LastUseDateDescending => List(Aggregates.sort(Sorts.descending("lastAccess")))
-    case NoSorting             => List(Aggregates.sort(Document()))
+    case NoSorting             => List()
     case _                     => List(Aggregates.sort(Sorts.ascending("name")))
   }
 
