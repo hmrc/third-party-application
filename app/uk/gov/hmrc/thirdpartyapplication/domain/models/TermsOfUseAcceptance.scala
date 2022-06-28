@@ -26,5 +26,5 @@ case class TermsOfUseAcceptance(responsibleIndividual: ResponsibleIndividual, da
 
 object TermsOfUseAcceptance {
   implicit val dateformat = MongoJavatimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[TermsOfUseAcceptance]
+  implicit val format     = Json.using[Json.WithDefaultValues].format[TermsOfUseAcceptance]
 }
