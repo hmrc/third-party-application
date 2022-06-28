@@ -1,4 +1,4 @@
-package uk.gov.hmrc.apiplatform.modules.approvals.utils
+package uk.gov.hmrc.utils
 
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock

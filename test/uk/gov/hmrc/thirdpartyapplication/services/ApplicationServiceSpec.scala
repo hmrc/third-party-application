@@ -16,46 +16,41 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.util.concurrent.{TimeUnit, TimeoutException}
 import akka.actor.ActorSystem
 import cats.implicits._
 import org.mockito.captor.ArgCaptor
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.scalatest.BeforeAndAfterAll
-import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
-import uk.gov.hmrc.lock.LockRepository
+import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.{COLLABORATOR, GATEKEEPER}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, StateHistoryRepositoryMockModule, SubscriptionRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
+import java.time.{LocalDateTime, ZoneOffset}
+import java.util.concurrent.TimeoutException
 import scala.collection.mutable
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.duration.Duration
+import scala.concurrent.duration.DurationInt
 import scala.concurrent.{Await, ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
-
-import java.time.{LocalDateTime, ZoneOffset}
 
 class ApplicationServiceSpec
     extends AsyncHmrcSpec
@@ -84,7 +79,7 @@ class ApplicationServiceSpec
     protected val mockitoTimeout                  = 1000
     val mockEmailConnector: EmailConnector        = mock[EmailConnector]
     val mockTotpConnector: TotpConnector          = mock[TotpConnector]
-    val mockLockKeeper                            = new MockLockKeeper(locked)
+    val mockLockKeeper                            = new MockLockService(locked)
     val response                                  = mock[HttpResponse]
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService                     = mock[GatekeeperService]
@@ -97,8 +92,7 @@ class ApplicationServiceSpec
     )
 
     val mockCredentialGenerator: CredentialGenerator = mock[CredentialGenerator]
-
-    val mockNameValidationConfig = mock[ApplicationNamingService.ApplicationNameValidationConfig]
+    val mockNameValidationConfig                     = mock[ApplicationNamingService.ApplicationNameValidationConfig]
 
     when(mockNameValidationConfig.validateForDuplicateAppNames)
       .thenReturn(true)
@@ -145,20 +139,15 @@ class ApplicationServiceSpec
     override lazy val locked = true
   }
 
-  class MockLockKeeper(locked: Boolean) extends ApplicationLockKeeper(mock[ReactiveMongoComponent]) {
-
-    override def repo: LockRepository = mock[LockRepository]
-
-    override def lockId = ""
-
+  class MockLockService(locked: Boolean) extends ApplicationLockService(mock[LockRepository]) {
     var callsMadeToLockKeeper: Int = 0
 
-    override def tryLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
+    override def withLock[T](body: => Future[T])(implicit ec: ExecutionContext): Future[Option[T]] = {
       callsMadeToLockKeeper = callsMadeToLockKeeper + 1
       if (locked) {
         successful(None)
       } else {
-        successful(Some(Await.result(body, Duration(1, TimeUnit.SECONDS))))
+        successful(Some(Await.result(body, 1.seconds)))
       }
     }
   }

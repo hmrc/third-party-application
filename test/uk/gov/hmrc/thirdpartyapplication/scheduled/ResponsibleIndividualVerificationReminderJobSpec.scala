@@ -20,7 +20,6 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{
   ApplicationId,
@@ -41,10 +40,11 @@ import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 import java.time.temporal.ChronoUnit.SECONDS
 
-class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ApplicationServiceMockModule with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule {
-    val mockLockKeeper = mock[ResponsibleIndividualVerificationReminderJobLockKeeper]
+
+    val mockLockKeeper = mock[ResponsibleIndividualVerificationReminderJobLockService]
     val mockRepo       = ResponsibleIndividualVerificationRepositoryMock.aMock
     val timeNow        = LocalDateTime.now
     val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)

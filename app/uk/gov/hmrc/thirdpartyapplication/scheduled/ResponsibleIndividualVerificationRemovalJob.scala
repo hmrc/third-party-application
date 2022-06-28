@@ -17,34 +17,30 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import cats.data.OptionT
+import cats.implicits._
 import com.google.inject.Singleton
-
-import javax.inject.Inject
-import org.joda.time.Duration
-import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
-import java.time.{Clock, LocalDateTime}
-import scala.concurrent.duration.FiniteDuration
-import scala.concurrent.{ExecutionContext, Future}
-import cats.implicits._
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import java.time.temporal.ChronoUnit.SECONDS
+import java.time.{Clock, LocalDateTime}
+import javax.inject.Inject
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ResponsibleIndividualVerificationRemovalJob @Inject() (
-    val lockKeeper: ResponsibleIndividualVerificationRemovalJobLockKeeper,
+    responsibleIndividualVerificationRemovalJobLockService: ResponsibleIndividualVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
     submissionsService: SubmissionsService,
     emailConnector: EmailConnector,
@@ -60,6 +56,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
   implicit val hc: HeaderCarrier            = HeaderCarrier()
+  override val lockService: LockService     = responsibleIndividualVerificationRemovalJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
@@ -105,12 +102,11 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   }
 }
 
-class ResponsibleIndividualVerificationRemovalJobLockKeeper @Inject() (mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-
-  override def lockId: String = "ResponsibleIndividualVerificationRemovalScheduler"
-
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
+class ResponsibleIndividualVerificationRemovalJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
+  override val lockRepository: LockRepository = repository
+  override val lockId: String                 = "ResponsibleIndividualVerificationRemovalScheduler"
+  override val ttl: Duration                  = 1.hours
 }
 
 case class ResponsibleIndividualVerificationRemovalJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, removalInterval: FiniteDuration, enabled: Boolean)

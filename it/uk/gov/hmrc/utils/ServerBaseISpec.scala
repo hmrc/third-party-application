@@ -1,4 +1,4 @@
-package uk.gov.hmrc.apiplatform.modules.approvals.utils
+package uk.gov.hmrc.utils
 
 import org.scalatest.concurrent.ScalaFutures
 import org.scalatest.time.{Seconds, Span}

@@ -33,12 +33,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 
 class NotificationServiceSpec
-  extends AsyncHmrcSpec
-  with BeforeAndAfterAll
-  with ApplicationStateUtil
-  with ApplicationTestData
-  with UpliftRequestSamples
-  with FixedClock {
+    extends AsyncHmrcSpec
+    with BeforeAndAfterAll
+    with ApplicationStateUtil
+    with ApplicationTestData
+    with UpliftRequestSamples
+    with FixedClock {
 
   trait Setup {
 
@@ -46,25 +46,30 @@ class NotificationServiceSpec
 
     val actorSystem: ActorSystem = ActorSystem("System")
 
-    val applicationId = ApplicationId.random
+    val applicationId         = ApplicationId.random
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
+
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
     val applicationData: ApplicationData = anApplicationData(
-                              applicationId,
-                              access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
+      applicationId,
+      access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+    )
 
     val instigator = applicationData.collaborators.head.userId
-    val newName = "robs new app"
+    val newName    = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
 
-    lazy val locked = false
+    lazy val locked              = false
     protected val mockitoTimeout = 1000
-    val response = mock[HttpResponse]
+    val response                 = mock[HttpResponse]
 
     val mockNameChangedNotificationEventHandler: NameChangedNotificationEventHandler = mock[NameChangedNotificationEventHandler]
 
@@ -73,7 +78,7 @@ class NotificationServiceSpec
     )
   }
 
-  val timestamp = LocalDateTime.now
+  val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
 
   "sendNotifications" should {
@@ -84,13 +89,14 @@ class NotificationServiceSpec
       when(mockNameChangedNotificationEventHandler.sendAdviceEmail(*[ApplicationData], *)(*)).thenReturn(
         Future.successful(HasSucceeded)
       )
-      
+
       val result = await(underTest.sendNotifications(applicationData, List(nameChangedEmailEvent)))
       result shouldBe List(HasSucceeded)
     }
 
     "return error for unknown update types" in new Setup {
-      case class UnknownApplicationUpdateEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, requester: String) extends UpdateApplicationNotificationEvent
+      case class UnknownApplicationUpdateEvent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, requester: String)
+          extends UpdateApplicationNotificationEvent
       val unknownEvent = UnknownApplicationUpdateEvent(applicationId, timestamp, instigator, loggedInUser)
 
       val ex: RuntimeException = intercept[RuntimeException](await(underTest.sendNotifications(applicationData, List(unknownEvent))))

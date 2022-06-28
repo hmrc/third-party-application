@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import java.util.concurrent.TimeUnit._
-import javax.inject.{Inject, Provider, Singleton}
 import net.ceedubs.ficus.Ficus._
 import net.ceedubs.ficus.readers.ArbitraryTypeReader._
 import play.api.inject.{Binding, Module}
@@ -26,26 +24,18 @@ import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretServiceConfig, CredentialConfig}
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.AwsApiGatewayConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ApiSubscriptionFieldsConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.AuthConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-import uk.gov.hmrc.thirdpartyapplication.connector.TotpConnector
-
-import scala.concurrent.duration.{Duration, FiniteDuration}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
 
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
+import java.util.concurrent.TimeUnit._
+import javax.inject.{Inject, Provider, Singleton}
+import scala.concurrent.duration.{Duration, FiniteDuration}
 
 class ConfigurationModule extends Module {
 
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
-      bind[MetricsJobConfig].toProvider[MetricsJobConfigProvider],
       bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
       bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
@@ -85,19 +75,6 @@ class UpliftVerificationExpiryJobConfigProvider @Inject() (val configuration: Co
       .getOrElse(Duration(90, DAYS)) // scalastyle:off magic.number
 
     UpliftVerificationExpiryJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, validity)
-  }
-}
-
-@Singleton
-class MetricsJobConfigProvider @Inject() (val configuration: Configuration)
-    extends ServicesConfig(configuration)
-    with Provider[MetricsJobConfig] {
-
-  override def get() = {
-    val jobConfig = configuration.underlying.as[Option[JobConfig]]("metricsJob")
-      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
-
-    MetricsJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled)
   }
 }
 
@@ -284,12 +261,10 @@ class ResetLastAccessDateJobConfigProvider @Inject() (configuration: Configurati
     with Provider[ResetLastAccessDateJobConfig] {
 
   override def get(): ResetLastAccessDateJobConfig = {
-    val dateFormatter = DateTimeFormatter.ISO_LOCAL_DATE
-
     val enabled                        = configuration.get[Boolean]("resetLastAccessDateJob.enabled")
     val dryRun                         = configuration.get[Boolean]("resetLastAccessDateJob.dryRun")
     val noLastAccessDateBeforeAsString = configuration.get[String]("resetLastAccessDateJob.noLastAccessDateBefore")
 
-    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString, dateFormatter), enabled, dryRun)
+    ResetLastAccessDateJobConfig(LocalDate.parse(noLastAccessDateBeforeAsString), enabled, dryRun)
   }
 }

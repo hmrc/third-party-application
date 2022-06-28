@@ -294,16 +294,16 @@ class EmailConnectorSpec extends ConnectorSpec {
     }
 
     "send change of application name" in new Setup {
-      val requesterName = "bob@example.com"
-      val previousAppName = "Previous Application Name"
-      val newAppName = "New App Name"
+      val requesterName                           = "bob@example.com"
+      val previousAppName                         = "Previous Application Name"
+      val newAppName                              = "New App Name"
       val expectedParameters: Map[String, String] = Map(
-        "requesterName" -> requesterName,
+        "requesterName"           -> requesterName,
         "previousApplicationName" -> previousAppName,
-        "newApplicationName" -> newAppName
+        "newApplicationName"      -> newAppName
       )
-      val recipients = Set("admin@example.com", "dev@example.com", "ri@example.com")
-      val expectedRequest: SendEmailRequest = SendEmailRequest(recipients, "apiChangeOfApplicationName", expectedParameters)
+      val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationName", expectedParameters)
       emailWillReturn(expectedRequest)
 
       await(connector.sendChangeOfApplicationName(requesterName, previousAppName, newAppName, recipients))

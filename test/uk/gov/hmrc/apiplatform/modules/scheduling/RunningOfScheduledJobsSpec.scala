@@ -144,8 +144,8 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
     }
 
     "block while a scheduled jobs are still running" in new TestCase {
-      private val testApp = fakeApplication()
-      val stoppableJob    = new TestScheduledJob() {
+      private val testApp                = fakeApplication()
+      val stoppableJob: TestScheduledJob = new TestScheduledJob() {
         override def name: String = "StoppableJob"
       }
       new RunningOfScheduledJobs {
@@ -162,7 +162,7 @@ class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventual
         /* Intentionally burning CPU cycles for fixed period */
       }
 
-      val stopFuture = testApp.stop()
+      val stopFuture: Future[_] = testApp.stop()
       stopFuture should not be 'completed
 
       stoppableJob.isRunning = Future.successful(false)

@@ -16,18 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
+import play.api.libs.json.{Format, Json, OFormat}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
 
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 
 object ResponsibleIndividualVerification {
-  import play.api.libs.json.Json
-
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-  implicit val format     = Json.format[ResponsibleIndividualVerification]
+  implicit val dateFormat: Format[LocalDateTime]                  = MongoJavatimeFormats.localDateTimeFormat
+  implicit val format: OFormat[ResponsibleIndividualVerification] = Json.format[ResponsibleIndividualVerification]
 }
 
 case class ResponsibleIndividualVerification(
@@ -36,6 +35,6 @@ case class ResponsibleIndividualVerification(
     submissionId: Submission.Id,
     submissionInstance: Int,
     applicationName: String,
-    createdOn: LocalDateTime,
+    createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     state: ResponsibleIndividualVerificationState = INITIAL
   )

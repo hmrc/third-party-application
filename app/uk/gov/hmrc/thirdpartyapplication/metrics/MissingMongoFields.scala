@@ -17,26 +17,35 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.metrix.domain.MetricSource
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.mongo.metrix.MetricSource
 
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
 
 @Singleton
-class MissingMongoFields @Inject() (val applicationRepository: ApplicationRepository) extends MetricSource with ApplicationLogger {
+class MissingMongoFields @Inject() (applicationRepository: ApplicationRepository)
+    extends MetricSource
+    with ApplicationLogger {
 
   override def metrics(implicit ec: ExecutionContext): Future[Map[String, Int]] = {
     val counts: Future[(Int, Int)] = for {
-      missingRateLimit      <- applicationRepository.documentsWithFieldMissing("rateLimitTier")
-      missingLastAccessDate <- applicationRepository.documentsWithFieldMissing("lastAccess")
+      missingRateLimit      <- missingDocumentsWithField("rateLimitTier")
+      missingLastAccessDate <- missingDocumentsWithField("lastAccess")
     } yield (missingRateLimit, missingLastAccessDate)
 
     counts.map(a => {
-      logger.info(s"[METRIC]: Applications Missing Rate Limit Field: ${a._1}")
-      logger.info(s"[METRIC]: Applications Missing Last Access Date Field: ${a._2}")
-
       Map("applicationsMissingRateLimitField" -> a._1, "applicationsMissingLastAccessDateField" -> a._2)
     })
+  }
+
+  private def missingDocumentsWithField(field: String)(implicit ec: ExecutionContext) = {
+    val result = applicationRepository.documentsWithFieldMissing(field)
+    result.onComplete({
+      case Success(v) => logger.info(s"[METRIC] Success - MissingMongoFields - Number of documents with missing field $field is: $v")
+      case Failure(e) => logger.info(s"[METRIC] Error - MissingMongoFields - Error whilst processing field $field: ${e.getMessage}")
+    })
+    result
   }
 }

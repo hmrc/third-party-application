@@ -27,34 +27,38 @@ import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
 class NameChangedNotificationEventHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
+
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId = ApplicationId.random
-    val devEmail = "dev@example.com"
-    val adminEmail = "admin@example.com"
-    val oldName = "old app name"
-    val newName = "new app name"
+    val applicationId         = ApplicationId.random
+    val devEmail              = "dev@example.com"
+    val adminEmail            = "admin@example.com"
+    val oldName               = "old app name"
+    val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
 
-    val app = anApplicationData(applicationId).copy(
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
+    val app                  = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-      ), 
-      name = oldName, 
+      ),
+      name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val userId = UserId.random
-    val timestamp = LocalDateTime.now
-    val update = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
+    val userId               = UserId.random
+    val timestamp            = LocalDateTime.now
+    val update               = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
     val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
 
     val underTest = new NameChangedNotificationEventHandler(EmailConnectorMock.aMock)
