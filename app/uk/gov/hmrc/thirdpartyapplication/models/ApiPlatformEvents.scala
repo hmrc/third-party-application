@@ -74,16 +74,6 @@ case class ClientSecretRemovedEvent(id: EventId,
                                     actor: OldActor,
                                     clientSecretId: String) extends ApplicationEvent
 
-
-// case class PpnsCallBackUriUpdatedEvent(id: EventId,
-//                                        applicationId: String,
-//                                        eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-//                                        actor: OldActor,
-//                                        boxId: String,
-//                                        boxName: String,
-//                                        oldCallbackUrl: String,
-//                                        newCallbackUrl: String) extends ApplicationEvent
-
 case class RedirectUrisUpdatedEvent(id: EventId,
                                     applicationId: String,
                                     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
