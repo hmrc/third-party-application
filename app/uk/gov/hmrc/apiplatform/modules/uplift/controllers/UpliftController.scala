@@ -39,11 +39,8 @@ object UpliftController {
 }
 
 @Singleton
-class UpliftController @Inject() (
-    upliftService: UpliftService,
-    cc: ControllerComponents
-  )(implicit val ec: ExecutionContext
-  ) extends ExtraHeadersController(cc)
+class UpliftController @Inject() (upliftService: UpliftService, cc: ControllerComponents)(implicit val ec: ExecutionContext)
+    extends ExtraHeadersController(cc)
     with JsonUtils {
 
   import UpliftController._

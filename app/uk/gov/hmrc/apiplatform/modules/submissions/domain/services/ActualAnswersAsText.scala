@@ -19,13 +19,13 @@ package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object ActualAnswersAsText {
-  
+
   def apply(answer: ActualAnswer): String = answer match {
-    case SingleChoiceAnswer(value) => value
-    case TextAnswer(value) => value
+    case SingleChoiceAnswer(value)    => value
+    case TextAnswer(value)            => value
     case MultipleChoiceAnswer(values) => values.mkString
-    case NoAnswer => "n/a"
-    case AcknowledgedAnswer => ""
+    case NoAnswer                     => "n/a"
+    case AcknowledgedAnswer           => ""
   }
 
 }

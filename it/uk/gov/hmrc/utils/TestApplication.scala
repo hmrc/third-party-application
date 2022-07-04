@@ -1,4 +1,4 @@
-package uk.gov.hmrc.apiplatform.modules.approvals.utils
+package uk.gov.hmrc.utils
 
 import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder

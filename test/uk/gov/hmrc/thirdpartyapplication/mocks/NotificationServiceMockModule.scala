@@ -25,16 +25,18 @@ import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationServ
 import scala.concurrent.Future
 
 trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+
   protected trait BaseNotificationServiceMock {
 
     def aMock: NotificationService
 
     object SendNotifications {
+
       def thenReturnSuccess() =
         when(aMock.sendNotifications(*[ApplicationData], *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
     }
   }
-  
+
   object NotificationServiceMock extends BaseNotificationServiceMock {
     val aMock = mock[NotificationService]
   }

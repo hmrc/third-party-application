@@ -38,7 +38,11 @@ class UpliftNamingService @Inject() (
     applicationRepository: ApplicationRepository,
     nameValidationConfig: ApplicationNamingService.ApplicationNameValidationConfig
   )(implicit ec: ExecutionContext
-  ) extends AbstractApplicationNamingService(auditService, applicationRepository, nameValidationConfig) {
+  ) extends AbstractApplicationNamingService(
+      auditService,
+      applicationRepository,
+      nameValidationConfig
+    ) {
 
   import ApplicationNamingService._
 
@@ -53,19 +57,15 @@ class UpliftNamingService @Inject() (
   def validateApplicationName(applicationName: String, selfApplicationId: Option[ApplicationId]): Future[ApplicationNameValidationResult] =
     validateApplicationName(applicationName, upliftFilter(selfApplicationId))
 
-  def assertAppHasUniqueNameAndAudit(
-      submittedAppName: String,
-      accessType: AccessType,
-      existingApp: Option[ApplicationData] = None
-    )(implicit hc: HeaderCarrier
-    ) = {
+  def assertAppHasUniqueNameAndAudit(submittedAppName: String, accessType: AccessType, existingApp: Option[ApplicationData] = None)(implicit hc: HeaderCarrier) = {
 
     for {
       duplicate <- isDuplicateName(submittedAppName, existingApp.map(_.id))
-      _          = if (duplicate) {
-                     auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
-                     throw ApplicationAlreadyExists(submittedAppName)
-                   } else { Unit }
+      _          =
+        if (duplicate) {
+          auditDeniedDueToNaming(submittedAppName, accessType, existingApp.map(_.id))
+          throw ApplicationAlreadyExists(submittedAppName)
+        } else { Unit }
     } yield ()
   }
 }

@@ -16,7 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import cats.data.OptionT
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationWithDetails
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -30,9 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.http.HeaderCarrier
-
 import scala.concurrent.{ExecutionContext, Future}
-import cats.data.OptionT
 
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
@@ -49,7 +49,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
-  def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int) = {
+  def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,

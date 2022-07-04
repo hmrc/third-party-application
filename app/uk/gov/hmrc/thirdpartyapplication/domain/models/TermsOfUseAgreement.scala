@@ -16,16 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
-
+import play.api.libs.json.Json
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import java.time.LocalDateTime
 
 case class TermsOfUseAgreement(emailAddress: String, timeStamp: LocalDateTime, version: String)
 
 object TermsOfUseAgreement {
-  import play.api.libs.json.Json
 
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
-
-  implicit val format = Json.format[TermsOfUseAgreement]
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
+  implicit val format     = Json.format[TermsOfUseAgreement]
 }

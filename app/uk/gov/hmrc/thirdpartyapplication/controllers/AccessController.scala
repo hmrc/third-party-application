@@ -28,12 +28,14 @@ import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 @Singleton
-class AccessController @Inject()(val authConnector: AuthConnector,
-                                 val applicationService: ApplicationService,
-                                 val authConfig: AuthConnector.Config,
-                                 accessService: AccessService,
-                                 cc: ControllerComponents)(
-                                implicit val ec: ExecutionContext) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+class AccessController @Inject() (
+    val authConnector: AuthConnector,
+    val applicationService: ApplicationService,
+    val authConfig: AuthConnector.Config,
+    accessService: AccessService,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
 
   def readScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>
     accessService.readScopes(applicationId) map { scopeResponse =>

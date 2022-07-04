@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Aggregates
+import org.mongodb.scala.model.Filters._
+import uk.gov.hmrc.mongo.play.json.Codecs
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import play.api.libs.json.Json
 
-import uk.gov.hmrc.thirdpartyapplication.repository.MongoJavaTimeFormats
-
-import java.time.{LocalDate, LocalDateTime}
 import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
 
 case class ApplicationSearch(
     pageNumber: Int = 1,
@@ -33,7 +35,8 @@ case class ApplicationSearch(
     apiVersion: Option[ApiVersion] = None,
     sort: ApplicationSort = SubmittedAscending
   ) {
-  def hasSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
+  def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
+  def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
 }
 
 object ApplicationSearch {
@@ -77,7 +80,7 @@ case object TextSearchFilter extends TextSearchFilter {
 
   def apply(value: String): Option[TextSearchFilter] = {
     value match {
-      case _ if !value.isEmpty => Some(ApplicationTextSearch)
+      case _ if value.nonEmpty => Some(ApplicationTextSearch)
       case _                   => None
     }
   }
@@ -95,7 +98,7 @@ case object APISubscriptionFilter extends APISubscriptionFilter {
     value match {
       case "ANY"               => Some(OneOrMoreAPISubscriptions)
       case "NONE"              => Some(NoAPISubscriptions)
-      case _ if !value.isEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
+      case _ if value.nonEmpty => Some(SpecificAPISubscription) // If the value of apiSubscription is something else, assume we are searching for a specific API
       case _                   => None
     }
   }
@@ -142,35 +145,35 @@ case object AccessTypeFilter extends AccessTypeFilter {
 sealed trait LastUseDateFilter extends ApplicationSearchFilter
 
 case class LastUseBeforeDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
 
-  def toMongoMatch =
-    Json.obj("$match" ->
-      Json.obj("$or" ->
-        Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$lte" -> lastUseDate)),
-          Json.obj("$and"       ->
-            Json.arr(
-              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn"  -> Json.obj("$lte" -> lastUseDate))
-            ))
-        )))
+  def toMongoMatch: Bson = {
+    Aggregates.filter(
+      or(
+        lte("lastAccess", Codecs.toBson(lastUseDate)),
+        and(
+          exists("lastAccess", false),
+          lte("createdOn", lastUseDate)
+        )
+      )
+    )
+  }
 }
 
 case class LastUseAfterDate(lastUseDate: LocalDateTime) extends LastUseDateFilter {
-  implicit val dateFormat = MongoJavaTimeFormats.localDateTimeFormat
+  implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
 
-  def toMongoMatch =
-    Json.obj("$match" ->
-      Json.obj("$or" ->
-        Json.arr(
-          Json.obj("lastAccess" -> Json.obj("$gte" -> lastUseDate)),
-          Json.obj("$and"       ->
-            Json.arr(
-              Json.obj("lastAccess" -> Json.obj("$exists" -> false)),
-              Json.obj("createdOn"  -> Json.obj("$gte" -> lastUseDate))
-            ))
-        )))
+  def toMongoMatch: Bson = {
+    Aggregates.filter(
+      or(
+        gte("lastAccess", Codecs.toBson(lastUseDate)),
+        and(
+          exists("lastAccess", false),
+          gte("createdOn", lastUseDate)
+        )
+      )
+    )
+  }
 }
 
 case object LastUseDateFilter extends LastUseDateFilter {

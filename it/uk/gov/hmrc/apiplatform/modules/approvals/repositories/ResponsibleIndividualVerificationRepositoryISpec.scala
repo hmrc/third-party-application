@@ -16,47 +16,42 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import org.joda.time.DateTime
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import org.scalatestplus.play.guice.GuiceOneAppPerSuite
-import play.modules.reactivemongo.ReactiveMongoComponent
+import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.utils.ServerBaseISpec
+import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
+import java.time.Clock
 import java.time.LocalDateTime
 import java.util.UUID
-import scala.concurrent.ExecutionContext.Implicits.global
 
-class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
-    with GuiceOneAppPerSuite
-    with MongoSpecSupport
+class ResponsibleIndividualVerificationRepositoryISpec
+    extends ServerBaseISpec
     with SubmissionsTestData
-    with BeforeAndAfterEach with BeforeAndAfterAll {
+    with BeforeAndAfterEach
+    with FixedClock {
 
-  implicit val mat = app.materializer
-
-  private val reactiveMongoComponent = new ReactiveMongoComponent {
-    override def mongoConnector: MongoConnector = mongoConnectorForTest
+  protected override def appBuilder: GuiceApplicationBuilder = {
+    GuiceApplicationBuilder()
+      .configure(
+        "metrics.jvm" -> false,
+        "mongodb.uri" -> s"mongodb://localhost:27017/test-${this.getClass.getSimpleName}"
+      ).overrides(inject.bind[Clock].toInstance(clock))
+      .disable(classOf[SchedulerModule])
   }
 
-  val repo = new ResponsibleIndividualVerificationRepository(reactiveMongoComponent)
+  val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
 
-  override def beforeEach() {
-    List(repo).foreach { db =>
-      await(db.drop)
-      await(db.ensureIndexes)
-    }
-  }
-
-  override protected def afterAll() {
-    List(repo).foreach { db =>
-      await(db.drop)
-    }
+  override def beforeEach(): Unit = {
+    await(repository.collection.drop().toFuture())
+    await(repository.ensureIndexes)
   }
 
   def buildDoc(
@@ -73,9 +68,7 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) = {
-    val doc = buildDoc(state, createdOn, submissionId, submissionIndex)
-    await(repo.insert(doc))
-    doc
+    await(repository.save(buildDoc(state, createdOn, submissionId, submissionIndex)))
   }
 
   val MANY_DAYS_AGO    = 10
@@ -85,28 +78,28 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
   "save" should {
     "save document to the database" in {
       val doc = buildDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      await(repo.save(doc))
+      await(repository.save(doc))
 
-      val allDocs = await(repo.findAll())
-      allDocs shouldEqual List(doc)
+      val allDocs = await(repository.findAll)
+      allDocs mustBe List(doc)
     }
   }
 
   "fetch" should {
     "retrieve a document by id" in {
       val savedDoc   = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      val fetchedDoc = await(repo.fetch(savedDoc.id))
+      val fetchedDoc = await(repository.fetch(savedDoc.id))
 
-      Some(savedDoc) shouldEqual fetchedDoc
+      Some(savedDoc) mustBe fetchedDoc
     }
   }
 
   "delete" should {
     "remove a document by id" in {
       val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
-      await(repo.delete(savedDoc.id))
+      await(repository.delete(savedDoc.id))
 
-      await(repo.findAll()) shouldBe List()
+      await(repository.findAll) mustBe List()
     }
 
     "remove the record matching the latest submission instance only" in {
@@ -114,9 +107,9 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
       val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
       buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
       val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
-      await(repo.delete(submissionWithTwoInstances))
+      await(repository.delete(submissionWithTwoInstances))
 
-      await(repo.findAll()) shouldBe List(savedDocForSubmissionInstance0)
+      await(repository.findAll) mustBe List(savedDocForSubmissionInstance0)
     }
   }
 
@@ -127,9 +120,9 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
 
-      val results = await(repo.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
+      val results = await(repository.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
 
-      results shouldEqual List(initialWithOldDate)
+      results mustBe List(initialWithOldDate)
     }
   }
 
@@ -138,11 +131,11 @@ class ResponsibleIndividualVerificationRepositorySpec extends AsyncHmrcSpec
       val stateInitial      = buildAndSaveDoc(INITIAL)
       val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
 
-      await(repo.updateState(stateInitial.id, REMINDERS_SENT))
-      await(repo.updateState(stateReminderSent.id, REMINDERS_SENT))
+      await(repository.updateState(stateInitial.id, REMINDERS_SENT))
+      await(repository.updateState(stateReminderSent.id, REMINDERS_SENT))
 
-      val allDocs = await(repo.findAll()).toSet
-      allDocs shouldEqual Set(stateReminderSent, stateInitial.copy(state = REMINDERS_SENT))
+      val allDocs = await(repository.findAll).toSet
+      allDocs mustBe Set(stateReminderSent, stateInitial.copy(state = REMINDERS_SENT))
     }
   }
 }

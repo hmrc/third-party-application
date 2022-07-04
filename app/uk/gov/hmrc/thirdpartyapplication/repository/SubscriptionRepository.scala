@@ -16,150 +16,161 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import javax.inject.{Inject, Singleton}
-import play.api.libs.json.Json._
-import play.api.libs.json.{JsObject, JsString, Json}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.Cursor
-import reactivemongo.bson.{BSONObjectID, BSONRegex}
-import reactivemongo.play.json.ImplicitBSONHandlers._
-import uk.gov.hmrc.mongo.ReactiveRepository
-import uk.gov.hmrc.mongo.json.ReactiveMongoFormats
-import uk.gov.hmrc.thirdpartyapplication.models._
+import org.mongodb.scala.bson.BsonValue
+import org.mongodb.scala.bson.collection.immutable.Document
+import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Aggregates._
+import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Indexes.ascending
+import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
+import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util.mongo.IndexHelper._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
-import reactivemongo.api.ReadConcern
 
 @Singleton
-class SubscriptionRepository @Inject() (mongo: ReactiveMongoComponent)(implicit val ec: ExecutionContext)
-    extends ReactiveRepository[SubscriptionData, BSONObjectID]("subscription", mongo.mongoConnector.db, SubscriptionData.format, ReactiveMongoFormats.objectIdFormats) {
+class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
+    extends PlayMongoRepository[SubscriptionData](
+      collectionName = "subscription",
+      mongoComponent = mongo,
+      domainFormat = SubscriptionData.format,
+      indexes = Seq(
+        IndexModel(
+          ascending("apiIdentifier.context", "apiIdentifier.version"),
+          IndexOptions()
+            .name("context_version")
+            .unique(true)
+            .background(true)
+        ),
+        IndexModel(
+          ascending("apiIdentifier.context"),
+          IndexOptions()
+            .name("context")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("applications"),
+          IndexOptions()
+            .name("applications")
+            .background(true)
+        )
+      ),
+      replaceIndexes = true
+    ) {
 
   def searchCollaborators(context: ApiContext, version: ApiVersion, partialEmail: Option[String]): Future[List[String]] = {
-    val builder = collection.BatchCommands.AggregationFramework
-
-    val pipeline = List(
-      builder.Match(Json.obj("apiIdentifier.version" -> version, "apiIdentifier.context" -> context)),
-      builder.Project(Json.obj("applications" -> 1, "_id" -> 0)),
-      builder.UnwindField("applications"),
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Project(Json.obj("collaborators" -> "$applications.collaborators.emailAddress")),
-      builder.UnwindField("collaborators"),
-      builder.UnwindField("collaborators"),
-      builder.Group(JsString("$collaborators"))()
+    val pipeline = Seq(
+      filter(
+        Document(
+          "apiIdentifier.context" -> Codecs.toBson(context),
+          "apiIdentifier.version" -> Codecs.toBson(version)
+        )
+      ),
+      project(fields(excludeId(), include("applications"))),
+      unwind("$applications"),
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
+      project(fields(computed("collaborators", "$applications.collaborators.emailAddress"))),
+      unwind("$collaborators"),
+      unwind("$collaborators"),
+      group("$collaborators")
     )
 
     def partialEmailMatch(email: String) = {
-      val caseInsensitiveRegExOption = "i"
-      builder.Match(Json.obj("_id" -> BSONRegex(email, caseInsensitiveRegExOption)))
+      filter(Document(s"""{_id: {$$regex: "$email", $$options: "i"} }"""))
     }
 
-    val pipelineWithOptionalEmailFilter =
+    val pipelineWithOptionalEmailFilter = {
       partialEmail match {
-        case Some(email) => pipeline ++ List(partialEmailMatch(email))
+        case Some(email) => pipeline ++ Seq(partialEmailMatch(email))
         case None        => pipeline
       }
-
-    val query = collection.aggregateWith[JsObject]()(_ => (pipelineWithOptionalEmailFilter.head, pipelineWithOptionalEmailFilter.tail))
-
-    val fList = query.collect(Int.MaxValue, Cursor.FailOnError[List[JsObject]]())
-    fList.map {
-      _.map {
-        result =>
-          {
-            val email = (result \ "_id").as[String]
-            email
-          }
-      }
     }
+
+    collection.aggregate[BsonValue](pipelineWithOptionalEmailFilter)
+      .toFuture()
+      .map(_.map(_.asDocument().get("_id").asString().getValue))
+      .map(_.toList)
   }
 
-  implicit val dateFormat = ReactiveMongoFormats.dateTimeFormats
-
-  override def indexes = List(
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "apiIdentifier.context",
-      indexName = Some("context")
-    ),
-    createAscendingIndex(
-      indexName = Some("context_version"),
-      isUnique = true,
-      isBackground = true,
-      indexFieldsKey = List("apiIdentifier.context", "apiIdentifier.version"): _*
-    ),
-    createSingleFieldAscendingIndex(
-      indexFieldKey = "applications",
-      indexName = Some("applications")
+  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[Boolean] = {
+    val filter = and(
+      equal("applications", Codecs.toBson(applicationId)),
+      equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
     )
-  )
 
-  def isSubscribed(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    val selector = Some(Json.obj("$and" -> Json.arr(
-      Json.obj("applications"          -> applicationId.value.toString),
-      Json.obj("apiIdentifier.context" -> apiIdentifier.context.value),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version.value)
-    )))
-
-    collection.count(selector, None, 0, None, ReadConcern.Available)
-      .map {
-        case 1 => true
-        case _ => false
-      }
+    collection.countDocuments(filter)
+      .toFuture()
+      .map(x => x > 0)
   }
 
   def getSubscriptions(applicationId: ApplicationId): Future[List[ApiIdentifier]] = {
-    find("applications" -> applicationId.value.toString).map(_.map(_.apiIdentifier))
+    collection.find(equal("applications", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(_.map(_.apiIdentifier).toList)
   }
 
   def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    val builder  = collection.BatchCommands.AggregationFramework
-    val pipeline = List(
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Match(Json.obj("applications.collaborators.userId" -> userId.value)),
-      builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
+    val pipeline = Seq(
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
+      filter(equal("applications.collaborators.userId", Codecs.toBson(userId))),
+      project(
+        fields(
+          excludeId(),
+          computed("context", "$apiIdentifier.context"),
+          computed("version", "$apiIdentifier.version")
+        )
+      )
     )
-    collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
-  }
 
-  @Deprecated
-  def getSubscriptionsForDeveloper(email: String): Future[Set[ApiIdentifier]] = {
-    val builder  = collection.BatchCommands.AggregationFramework
-    val pipeline = List(
-      builder.Lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      builder.Match(Json.obj("applications.collaborators.emailAddress" -> email)),
-      builder.Project(Json.obj("context" -> "$apiIdentifier.context", "version" -> "$apiIdentifier.version", "_id" -> 0))
-    )
-    collection.aggregateWith[ApiIdentifier]()(_ => (pipeline.head, pipeline.tail)).collect(Int.MaxValue, Cursor.FailOnError[Set[ApiIdentifier]]())
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApiIdentifier])
+      .toFuture()
+      .map(_.toSet)
   }
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
-    val query = Json.obj("apiIdentifier" -> Json.toJson(apiIdentifier))
-    collection.find(query, Option.empty[SubscriptionData]).one[SubscriptionData] map {
-      case Some(subscriptionData) => subscriptionData.applications.toSet
-      case _                      => Set()
-    }
+    collection.find(contextAndVersionFilter(apiIdentifier))
+      .headOption
+      .map {
+        case Some(data) => data.applications
+        case _          => Set.empty
+      }
   }
 
-  private def makeSelector(apiIdentifier: ApiIdentifier) = {
-    Json.obj("$and" -> Json.arr(
-      Json.obj("apiIdentifier.context" -> apiIdentifier.context),
-      Json.obj("apiIdentifier.version" -> apiIdentifier.version)
-    ))
+  def findAll: Future[List[SubscriptionData]] = {
+    collection.find()
+      .toFuture()
+      .map(x => x.toList)
   }
 
-  def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    collection.update.one(
-      makeSelector(apiIdentifier),
-      Json.obj("$addToSet" -> Json.obj("applications" -> applicationId.value)),
-      upsert = true
-    ).map(_ => HasSucceeded)
+  private def contextAndVersionFilter(apiIdentifier: ApiIdentifier): Bson = {
+    and(
+      equal("apiIdentifier.context", Codecs.toBson(apiIdentifier.context)),
+      equal("apiIdentifier.version", Codecs.toBson(apiIdentifier.version))
+    )
   }
 
-  def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier) = {
-    collection.update.one(
-      makeSelector(apiIdentifier),
-      Json.obj("$pull" -> Json.obj("applications" -> applicationId.value))
-    ).map(_ => HasSucceeded)
+  def add(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
+    collection.updateOne(
+      filter = contextAndVersionFilter(apiIdentifier),
+      update = Updates.addToSet("applications", Codecs.toBson(applicationId)),
+      options = new UpdateOptions().upsert(true)
+    ).toFuture()
+      .map(_ => HasSucceeded)
+  }
+
+  def remove(applicationId: ApplicationId, apiIdentifier: ApiIdentifier): Future[HasSucceeded] = {
+    collection.updateOne(
+      filter = contextAndVersionFilter(apiIdentifier),
+      update = Updates.pull("applications", Codecs.toBson(applicationId)),
+      options = new UpdateOptions().upsert(true)
+    ).toFuture()
+      .map(_ => HasSucceeded)
   }
 }

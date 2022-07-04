@@ -18,11 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
-import play.modules.reactivemongo.ReactiveMongoComponent
-import reactivemongo.api.indexes.Index
-import reactivemongo.api.indexes.IndexType.Ascending
-import uk.gov.hmrc.mongo.{MongoConnector, MongoSpecSupport}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, ActorType}
+import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
@@ -32,23 +29,11 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.LocalDateTime
 
-class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport with IndexVerification
+class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with CleanMongoCollectionSupport
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
-  private val reactiveMongoComponent = new ReactiveMongoComponent { override def mongoConnector: MongoConnector = mongoConnectorForTest }
-
-  private val repository = new StateHistoryRepository(reactiveMongoComponent)
-
-  override def beforeEach() {
-    await(repository.drop)
-    await(repository.ensureIndexes)
-  }
-
-  override protected def afterEach() {
-    await(repository.drop)
-  }
-
-  val actor = OldActor("admin@example.com", ActorType.COLLABORATOR)
+  private val repository = new StateHistoryRepository(mongoComponent)
+  val actor: Actor       = Actor("admin@example.com", ActorType.COLLABORATOR)
 
   "insert" should {
 
@@ -59,7 +44,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
       val result = await(repository.insert(stateHistory))
 
       result shouldBe stateHistory
-      val savedStateHistories = await(repository.findAll())
+      val savedStateHistories = await(repository.findAll)
       savedStateHistories shouldBe List(stateHistory)
     }
   }
@@ -134,21 +119,7 @@ class StateHistoryRepositorySpec extends AsyncHmrcSpec with MongoSpecSupport wit
 
       await(repository.deleteByApplicationId(applicationId))
 
-      await(repository.findAll()) shouldBe List(anotherAppStateHistory)
+      await(repository.findAll) shouldBe List(anotherAppStateHistory)
     }
   }
-
-  "The 'stateHistory' collection" should {
-    "have all the indexes" in {
-      val expectedIndexes = Set(
-        Index(key = Seq("state" -> Ascending), name = Some("state"), unique = false, background = true),
-        Index(key = Seq("applicationId" -> Ascending), name = Some("applicationId"), unique = false, background = true),
-        Index(key = Seq("applicationId" -> Ascending, "state" -> Ascending), name = Some("applicationId_state"), unique = false, background = true),
-        Index(key = Seq("_id" -> Ascending), name = Some("_id_"), unique = false, background = false)
-      )
-
-      verifyIndexesVersionAgnostic(repository, expectedIndexes)
-    }
-  }
-
 }

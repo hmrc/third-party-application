@@ -23,7 +23,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMo
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService.Actioned
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.mongo.MongoSpecSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
@@ -36,12 +35,13 @@ import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
-class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with MongoSpecSupport with BeforeAndAfterAll with ApplicationStateUtil {
+class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ApplicationServiceMockModule with ApplicationRepositoryMockModule with SubmissionsServiceMockModule
       with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule with DeclineApprovalsServiceMockModule
       with SubmissionsTestData {
-    val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockKeeper]
+
+    val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockService]
     val timeNow        = LocalDateTime.now
     val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 

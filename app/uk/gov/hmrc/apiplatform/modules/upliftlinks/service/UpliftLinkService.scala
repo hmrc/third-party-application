@@ -16,25 +16,22 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
-import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.UpliftLinksRepository
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 import cats.data.OptionT
 import cats.implicits._
 
 @Singleton
 class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
 
-  def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] = {
-    val upliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
-    upliftLinksRepository.insert(upliftLink)
-    Future.successful(upliftLink)
-  }
+  def createUpliftLink(sandboxApplicationId: ApplicationId, productionApplicationId: ApplicationId): Future[UpliftLink] =
+    upliftLinksRepository.insert(UpliftLink(sandboxApplicationId, productionApplicationId))
 
-  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future, ApplicationId] = {
-    OptionT(upliftLinksRepository.find("productionApplicationId" -> productionAppId).map(_.headOption)).map(_.sandboxApplicationId)
-  }
+  def getSandboxAppForProductionAppId(productionAppId: ApplicationId): OptionT[Future, ApplicationId] =
+    OptionT(upliftLinksRepository.find(productionAppId))
+
 }

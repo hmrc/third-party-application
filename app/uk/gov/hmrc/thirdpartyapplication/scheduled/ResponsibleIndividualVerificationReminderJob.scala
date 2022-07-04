@@ -20,11 +20,8 @@ import cats.data.OptionT
 import com.google.inject.Singleton
 
 import javax.inject.Inject
-import org.joda.time.Duration
-import play.modules.reactivemongo.ReactiveMongoComponent
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.lock.{LockKeeper, LockRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, Standard}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
@@ -32,15 +29,17 @@ import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, HasSucceed
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import java.time.{Clock, LocalDateTime}
-import scala.concurrent.duration.FiniteDuration
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
 import cats.implicits._
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+
 import java.time.temporal.ChronoUnit.SECONDS
 
 @Singleton
 class ResponsibleIndividualVerificationReminderJob @Inject() (
-    val lockKeeper: ResponsibleIndividualVerificationReminderJobLockKeeper,
+    responsibleIndividualVerificationReminderJobLockService: ResponsibleIndividualVerificationReminderJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
     emailConnector: EmailConnector,
     applicationService: ApplicationService,
@@ -54,6 +53,7 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override def initialDelay: FiniteDuration = jobConfig.initialDelay
   override val isEnabled: Boolean           = jobConfig.enabled
   implicit val hc: HeaderCarrier            = HeaderCarrier()
+  override val lockService: LockService     = responsibleIndividualVerificationReminderJobLockService
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val remindIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
@@ -103,12 +103,11 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   }
 }
 
-class ResponsibleIndividualVerificationReminderJobLockKeeper @Inject() (mongo: ReactiveMongoComponent) extends LockKeeper {
-  override def repo: LockRepository = new LockRepository()(mongo.mongoConnector.db)
-
-  override def lockId: String = "ResponsibleIndividualVerificationReminderScheduler"
-
-  override val forceLockReleaseAfter: Duration = Duration.standardMinutes(60) // scalastyle:off magic.number
+class ResponsibleIndividualVerificationReminderJobLockService @Inject() (repository: LockRepository)
+    extends LockService {
+  override val lockId: String                 = "ResponsibleIndividualVerificationReminderScheduler"
+  override val lockRepository: LockRepository = repository
+  override val ttl: Duration                  = 1.hours
 }
 
 case class ResponsibleIndividualVerificationReminderJobConfig(initialDelay: FiniteDuration, interval: FiniteDuration, reminderInterval: FiniteDuration, enabled: Boolean)

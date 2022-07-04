@@ -17,28 +17,33 @@
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.service
 
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
+
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 
 class UpliftLinkServiceSpec extends AsyncHmrcSpec {
 
   trait Setup extends UpliftLinksRepositoryMockModule {
-    val upliftLinksRepository = UpliftLinksRepositoryMock.aMock
+    val upliftLinksRepository: UpliftLinksRepository = UpliftLinksRepositoryMock.aMock
 
-    val sandboxApplicationId    = ApplicationId.random
-    val productionApplicationId = ApplicationId.random
-    val repoUpliftLink          = UpliftLink(sandboxApplicationId, productionApplicationId)
+    val sandboxApplicationId: ApplicationId    = ApplicationId.random
+    val productionApplicationId: ApplicationId = ApplicationId.random
 
     val service = new UpliftLinkService(upliftLinksRepository)
   }
 
   "createUpliftLink" should {
     "add a new uplift link to the repo" in new Setup {
-      val upliftLink = await(service.createUpliftLink(sandboxApplicationId, productionApplicationId))
-      upliftLink.sandboxApplicationId shouldBe sandboxApplicationId
-      upliftLink.productionApplicationId shouldBe productionApplicationId
+      val upliftLink: UpliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
+      UpliftLinksRepositoryMock.Insert.thenReturn(upliftLink)
+
+      val upliftLinkInserted: UpliftLink = await(service.createUpliftLink(sandboxApplicationId, productionApplicationId))
+
+      upliftLinkInserted.sandboxApplicationId shouldBe sandboxApplicationId
+      upliftLinkInserted.productionApplicationId shouldBe productionApplicationId
 
       UpliftLinksRepositoryMock.Insert.verifyCalled()
     }
@@ -46,14 +51,18 @@ class UpliftLinkServiceSpec extends AsyncHmrcSpec {
 
   "getSandboxAppForProductionAppId" should {
     "return correct sandbox appId if prod appId exists in repo" in new Setup {
-      UpliftLinksRepositoryMock.Find.thenReturn(repoUpliftLink)
-      val repoSandboxAppId = await(service.getSandboxAppForProductionAppId(productionApplicationId).value)
-      repoSandboxAppId shouldBe Some(repoUpliftLink.sandboxApplicationId)
+      val upliftLink: UpliftLink = UpliftLink(sandboxApplicationId, productionApplicationId)
+      UpliftLinksRepositoryMock.Find.thenReturn(upliftLink)
+
+      val sandboxAppId: Option[ApplicationId] = await(service.getSandboxAppForProductionAppId(productionApplicationId).value)
+
+      sandboxAppId shouldBe Some(upliftLink.sandboxApplicationId)
     }
     "return None if prod appId does not exist in repo" in new Setup {
       UpliftLinksRepositoryMock.Find.thenReturnNothing
-      val repoSandboxAppId = await(service.getSandboxAppForProductionAppId(productionApplicationId).value)
-      repoSandboxAppId shouldBe None
+      val sandboxAppId: Option[ApplicationId] = await(service.getSandboxAppForProductionAppId(productionApplicationId).value)
+
+      sandboxAppId shouldBe None
     }
   }
 }

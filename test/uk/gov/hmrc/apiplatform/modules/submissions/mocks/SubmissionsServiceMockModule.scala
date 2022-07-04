@@ -88,7 +88,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     object DeleteAll {
 
       def thenReturn() =
-        when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(()))
+        when(aMock.deleteAllAnswersForApplication(*[ApplicationId])).thenReturn(successful(1))
     }
 
     object Store {
