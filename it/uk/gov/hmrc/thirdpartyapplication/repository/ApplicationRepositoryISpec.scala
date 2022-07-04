@@ -22,7 +22,6 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -2485,23 +2484,11 @@ class ApplicationRepositoryISpec
     }
   }
 
-  "updateApplicationName" should {
-    "update the name and normalised name for the application" in {
-      val applicationId = ApplicationId.random
-      val oldName       = "oldName"
-      val newName       = "newName"
-      val app           = anApplicationData(applicationId).copy(name = oldName)
-      await(applicationRepository.save(app))
-
-      val appWithUpdatedName = await(
-        applicationRepository.updateApplicationName(applicationId, newName)
-      )
-      appWithUpdatedName.name mustBe newName
-      appWithUpdatedName.normalisedName mustBe newName.toLowerCase
-    }
-  }
-
   "applyEvents" should {
+    val gkUserName    = "Mr Gate Keeperr"
+    val gkUser        = GatekeeperUserActor(gkUserName)
+    val adminEmail    = "admin@example.com"
+
     "handle multiple events correctly" in {
       val applicationId = ApplicationId.random
       val oldName       = "oldName"
@@ -2510,7 +2497,7 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(app))
 
       val events             = List("name1", "name2", newestName).map(
-        NameChanged(applicationId, LocalDateTime.now, UserId.random, oldName, _)
+        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, _, adminEmail)
       )
       val appWithUpdatedName = await(
         applicationRepository.applyEvents(NonEmptyList.fromList(events).get)
@@ -2526,13 +2513,7 @@ class ApplicationRepositoryISpec
       val app           = anApplicationData(applicationId).copy(name = oldName)
       await(applicationRepository.save(app))
 
-      val event              = NameChanged(
-        applicationId,
-        LocalDateTime.now,
-        UserId.random,
-        oldName,
-        newName
-      )
+      val event = ProductionAppNameChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldName, newName, adminEmail)
       val appWithUpdatedName =
         await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedName.name mustBe newName
@@ -2543,7 +2524,7 @@ class ApplicationRepositoryISpec
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random
       val events = List(appId1, appId2).map(
-        NameChanged(_, LocalDateTime.now, UserId.random, "old name", "new name")
+        ProductionAppNameChanged(UpdateApplicationEvent.Id.random, _, LocalDateTime.now, gkUser, "old name", "new name", adminEmail)
       )
       await(
         applicationRepository.save(

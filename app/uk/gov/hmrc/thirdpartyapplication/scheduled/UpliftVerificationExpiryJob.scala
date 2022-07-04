@@ -20,7 +20,7 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, State, StateHistory}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
@@ -55,7 +55,7 @@ class UpliftVerificationExpiryJob @Inject() (
       _          <- stateHistoryRepository.insert(StateHistory(
                       app.id,
                       State.TESTING,
-                      Actor("UpliftVerificationExpiryJob", SCHEDULED_JOB),
+                      OldActor("UpliftVerificationExpiryJob", SCHEDULED_JOB),
                       Some(State.PENDING_REQUESTER_VERIFICATION),
                       changedAt = LocalDateTime.now(clock)
                     ))

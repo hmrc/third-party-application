@@ -51,7 +51,29 @@ object UpdateApplicationEvent {
       .format
   }
 
-  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String)
-      extends UpdateApplicationNotificationEvent
+  case class Id(value: UUID) extends AnyVal
 
+  object Id {
+    implicit val format = Json.valueFormat[Id]
+
+    def random: Id = Id(UUID.randomUUID)
+  }
+
+  case class ProductionAppNameChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldAppName: String,
+    newAppName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ProductionAppNameChanged {
+    implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
+  }
+
+  implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
+    .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
+    .format
 }

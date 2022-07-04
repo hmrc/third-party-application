@@ -31,6 +31,7 @@ import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
@@ -479,7 +480,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("name" -> name, "normalisedName" -> name.toLowerCase)))
+    updateApplication(applicationId, Updates.combine(
+      Updates.set("name", name),
+      Updates.set("normalisedName", name.toLowerCase)
+    ))
 
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
