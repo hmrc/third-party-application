@@ -485,11 +485,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       Updates.set("normalisedName", name.toLowerCase)
     ))
 
+  private def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
+    updateApplication(applicationId, Json.obj("$set" -> Json.obj("access.importantSubmissionData.privacyPolicyLocation" -> location)))
+
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
 
     event match {
       case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
+      case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
     }
   }
 }
