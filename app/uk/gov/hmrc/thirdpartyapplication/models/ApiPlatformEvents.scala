@@ -120,6 +120,4 @@ object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
     .and[ApiSubscribedEvent](EventType.API_SUBSCRIBED.toString)
     .and[ApiUnsubscribedEvent](EventType.API_UNSUBSCRIBED.toString)
     .format
-
-
 }

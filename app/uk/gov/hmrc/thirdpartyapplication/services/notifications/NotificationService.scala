@@ -37,6 +37,6 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
       }
     }
     
-    Future.sequence(events.map(evt => sendNotification(app, evt)).toList)
+    Future.sequence(events.map(evt => sendNotification(app, evt)))
   }
 }

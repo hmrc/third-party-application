@@ -32,4 +32,3 @@ object OldActor {
 
   implicit val format: OFormat[OldActor] = Json.format[OldActor]
 }
-
