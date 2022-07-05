@@ -35,7 +35,7 @@ sealed trait TriggersNotification {
   self: UpdateApplicationEvent =>
 }
 
-sealed trait TriggersStandardNotification extends TriggersNotification {
+sealed trait TriggersStandardChangedNotification extends TriggersNotification {
   self: UpdateApplicationEvent =>
 
   def fieldName: String
@@ -90,7 +90,7 @@ object UpdateApplicationEvent {
     oldTermsAndConditionsUrl: String,
     newTermsAndConditionsUrl: String,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersStandardNotification {
+  ) extends UpdateApplicationEvent with TriggersStandardChangedNotification {
     def fieldName = "terms and conditions URL"
     def previousValue = oldTermsAndConditionsUrl
     def newValue = newTermsAndConditionsUrl
@@ -108,7 +108,7 @@ object UpdateApplicationEvent {
     oldPrivacyPolicyUrl: String,
     newPrivacyPolicyUrl: String,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersStandardNotification {
+  ) extends UpdateApplicationEvent with TriggersStandardChangedNotification {
     def fieldName = "privacy policy URL"
     def previousValue = oldPrivacyPolicyUrl
     def newValue = newPrivacyPolicyUrl

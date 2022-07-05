@@ -308,5 +308,25 @@ class EmailConnectorSpec extends ConnectorSpec {
 
       await(connector.sendChangeOfApplicationName(requesterName, previousAppName, newAppName, recipients))
     }
+
+    "send change of application details" in new Setup {
+      val requesterName                           = "bob@example.com"
+      val applicationName                         = "App name"
+      val fieldName                               = "privacy policy URL"
+      val previousValue                           = "https://example.com/previous-privacy-policy"
+      val newValue                                = "https://example.com/new-privacy-policy"
+      val expectedParameters: Map[String, String] = Map(
+        "requesterName"   -> requesterName,
+        "applicationName" -> applicationName,
+        "fieldName"       -> fieldName,
+        "previousValue"   -> previousValue,
+        "newValue"        -> newValue
+      )
+      val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetails", expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
+    }
   }
 }
