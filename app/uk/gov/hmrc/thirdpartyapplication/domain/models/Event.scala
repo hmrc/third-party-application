@@ -31,11 +31,11 @@ sealed trait UpdateApplicationEvent {
   def requestingAdminEmail: String
 }
 
-sealed trait TriggersNotification {
+trait TriggersNotification {
   self: UpdateApplicationEvent =>
 }
 
-sealed trait TriggersStandardChangedNotification extends TriggersNotification {
+trait TriggersStandardChangedNotification extends TriggersNotification {
   self: UpdateApplicationEvent =>
 
   def fieldName: String
