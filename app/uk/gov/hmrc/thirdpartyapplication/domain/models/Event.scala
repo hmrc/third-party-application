@@ -118,7 +118,9 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[PrivacyPolicyUrlChanged] = Json.format[PrivacyPolicyUrlChanged]
   }
 
-  implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
+  implicit val formatUpdateApplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
+    .and[TermsAndConditionsUrlChanged](EventType.TERMS_AND_CONDITIONS_URL_CHANGED.toString)
+    .and[PrivacyPolicyUrlChanged](EventType.PRIVACY_POLICY_URL_CHANGED.toString)
     .format
 }
