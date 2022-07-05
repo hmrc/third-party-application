@@ -28,10 +28,19 @@ sealed trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
   def actor: UpdateApplicationEvent.Actor
+  def requestingAdminEmail: String
 }
 
-trait TriggersNotification {
+sealed trait TriggersNotification {
   self: UpdateApplicationEvent =>
+}
+
+sealed trait TriggersStandardNotification extends TriggersNotification {
+  self: UpdateApplicationEvent =>
+
+  def fieldName: String
+  def previousValue: String
+  def newValue: String
 }
 
 object UpdateApplicationEvent {
@@ -71,6 +80,42 @@ object UpdateApplicationEvent {
 
   object ProductionAppNameChanged {
     implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
+  }
+
+  case class TermsAndConditionsUrlChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldTermsAndConditionsUrl: String,
+    newTermsAndConditionsUrl: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersStandardNotification {
+    def fieldName = "terms and conditions URL"
+    def previousValue = oldTermsAndConditionsUrl
+    def newValue = newTermsAndConditionsUrl
+  }
+
+  object TermsAndConditionsUrlChanged {
+    implicit val format: OFormat[TermsAndConditionsUrlChanged] = Json.format[TermsAndConditionsUrlChanged]
+  }
+
+  case class PrivacyPolicyUrlChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldPrivacyPolicyUrl: String,
+    newPrivacyPolicyUrl: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersStandardNotification {
+    def fieldName = "privacy policy URL"
+    def previousValue = oldPrivacyPolicyUrl
+    def newValue = newPrivacyPolicyUrl
+  }
+
+  object PrivacyPolicyUrlChanged {
+    implicit val format: OFormat[PrivacyPolicyUrlChanged] = Json.format[PrivacyPolicyUrlChanged]
   }
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
