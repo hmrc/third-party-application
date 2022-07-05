@@ -17,13 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
-import cats.data.Validated.Valid
-import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, ChangeProductionApplicationPrivacyPolicyLocation, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import cats.data.{NonEmptyList, ValidatedNec}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -58,11 +54,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
   }
 
   def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): CommandHandler.Result = {
-    val x = validate(app, cmd) map { _ =>
+    Future.successful(validate(app, cmd) map { _ =>
       asEvents(app, cmd)
-    }
-    // Future[ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]]]
-    val v: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = x.leftMap(_ => NonEmptyChain.one("godammit"))
-     Future.successful(v)
+    })
   }
 }

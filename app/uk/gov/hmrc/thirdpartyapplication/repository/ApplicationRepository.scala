@@ -486,7 +486,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ))
 
   private def updateApplicationPrivacyPolicyLocation(applicationId: ApplicationId, location: PrivacyPolicyLocation): Future[ApplicationData] =
-    updateApplication(applicationId, Json.obj("$set" -> Json.obj("access.importantSubmissionData.privacyPolicyLocation" -> location)))
+    updateApplication(applicationId, Updates.set("access.importantSubmissionData.privacyPolicyLocation", Codecs.toBson(location)))
 
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
