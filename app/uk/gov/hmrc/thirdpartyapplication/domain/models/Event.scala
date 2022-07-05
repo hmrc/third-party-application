@@ -17,24 +17,63 @@
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.time.LocalDateTime
+import java.time.ZoneOffset
+import java.util.UUID
+import play.api.libs.json._
+import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
-trait UpdateApplicationEvent {
+sealed trait UpdateApplicationEvent {
+  def id: UpdateApplicationEvent.Id
   def applicationId: ApplicationId
-  def timestamp: LocalDateTime
-  def instigator: UserId
+  def eventDateTime: LocalDateTime
+  def actor: UpdateApplicationEvent.Actor
 }
 
-trait UpdateApplicationRepositoryEvent extends UpdateApplicationEvent {}
-
-trait UpdateApplicationNotificationEvent extends UpdateApplicationEvent {
-  def requester: String
+trait TriggersNotification {
+  self: UpdateApplicationEvent =>
 }
 
 object UpdateApplicationEvent {
+  sealed trait Actor
 
-  case class NameChanged(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String) extends UpdateApplicationRepositoryEvent
+  case class GatekeeperUserActor(user: String) extends Actor
+  //case class CollaboratorActor(email: String) extends Actor
+  //case class ScheduledJobActor(jobId: String) extends Actor
+  //case class UnknownActor() extends Actor
 
-  case class NameChangedEmailSent(applicationId: ApplicationId, timestamp: LocalDateTime, instigator: UserId, oldName: String, newName: String, requester: String)
-      extends UpdateApplicationNotificationEvent
+  object Actor {
+    implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
 
+
+    implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
+      .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
+      .format
+  }
+
+  case class Id(value: UUID) extends AnyVal
+
+  object Id {
+    implicit val format = Json.valueFormat[Id]
+
+    def random: Id = Id(UUID.randomUUID)
+  }
+
+  case class ProductionAppNameChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldAppName: String,
+    newAppName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ProductionAppNameChanged {
+    implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
+  }
+
+  implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
+    .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
+    .format
 }

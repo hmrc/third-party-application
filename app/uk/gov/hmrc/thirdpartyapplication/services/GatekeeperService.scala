@@ -198,7 +198,7 @@ class GatekeeperService @Inject() (
       rollback: ApplicationData => Any,
       notes: Option[String] = None
     ): Future[StateHistory] = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, notes, LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

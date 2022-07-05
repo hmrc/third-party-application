@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 import java.util.UUID
 import java.util.UUID.randomUUID
 import uk.gov.hmrc.thirdpartyapplication.domain.utils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Actor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -38,97 +38,70 @@ object EventType extends Enumeration {
   val REDIRECT_URIS_UPDATED               = Value
   val API_SUBSCRIBED                      = Value
   val API_UNSUBSCRIBED                    = Value
+  val PROD_APP_NAME_CHANGED               = Value
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 
-trait ApplicationEvent {
-  val id: EventId
-  val applicationId: String
-  val eventDateTime: LocalDateTime
-  val eventType: EventType.Value
-  val actor: Actor
+sealed trait ApplicationEvent {
+  def id: EventId
+  def applicationId: String
+  def eventDateTime: LocalDateTime
 }
 
-case class TeamMemberAddedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val actor: Actor,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    teamMemberEmail: String,
-    teamMemberRole: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.TEAM_MEMBER_ADDED
-}
+case class TeamMemberAddedEvent(id: EventId,
+                                applicationId: String,
+                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                actor: OldActor,
+                                teamMemberEmail: String,
+                                teamMemberRole: String) extends ApplicationEvent
 
-case class TeamMemberRemovedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    teamMemberEmail: String,
-    teamMemberRole: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.TEAM_MEMBER_REMOVED
-}
+case class TeamMemberRemovedEvent(id: EventId,
+                                  applicationId: String,
+                                  eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                  actor: OldActor,
+                                  teamMemberEmail: String,
+                                  teamMemberRole: String) extends ApplicationEvent
 
-case class ClientSecretAddedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    clientSecretId: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.CLIENT_SECRET_ADDED
-}
+case class ClientSecretAddedEvent(id: EventId,
+                                  applicationId: String,
+                                  eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                  actor: OldActor,
+                                  clientSecretId: String) extends ApplicationEvent
 
-case class ClientSecretRemovedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    clientSecretId: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.CLIENT_SECRET_REMOVED
-}
+case class ClientSecretRemovedEvent(id: EventId,
+                                    applicationId: String,
+                                    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                    actor: OldActor,
+                                    clientSecretId: String) extends ApplicationEvent
 
-case class RedirectUrisUpdatedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    oldRedirectUris: String,
-    newRedirectUris: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.REDIRECT_URIS_UPDATED
-}
+case class RedirectUrisUpdatedEvent(id: EventId,
+                                    applicationId: String,
+                                    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                    actor: OldActor,
+                                    oldRedirectUris: String,
+                                    newRedirectUris: String) extends ApplicationEvent
 
-case class ApiSubscribedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    context: String,
-    version: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.API_SUBSCRIBED
-}
+case class ApiSubscribedEvent(id: EventId,
+                              applicationId: String,
+                              eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                              actor: OldActor,
+                              context: String,
+                              version: String) extends ApplicationEvent
 
-case class ApiUnsubscribedEvent(
-    override val id: EventId,
-    override val applicationId: String,
-    override val eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    override val actor: Actor,
-    context: String,
-    version: String
-  ) extends ApplicationEvent {
-  override val eventType: EventType.Value = EventType.API_UNSUBSCRIBED
-}
+case class ApiUnsubscribedEvent(id: EventId,
+                                applicationId: String,
+                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                                actor: OldActor,
+                                context: String,
+                                version: String) extends ApplicationEvent
 
 object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   import play.api.libs.json._
   import uk.gov.hmrc.play.json.Union
 
   implicit val eventIdFormat: Format[EventId]                                     = Json.valueFormat[EventId]
+  implicit val oldActorFormat: OFormat[OldActor]                                  = Json.format[OldActor]
+
   implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent]         = Json.format[TeamMemberAddedEvent]
   implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent]     = Json.format[TeamMemberRemovedEvent]
   implicit val clientSecretAddedEventFormats: OFormat[ClientSecretAddedEvent]     = Json.format[ClientSecretAddedEvent]
@@ -137,7 +110,8 @@ object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   implicit val apiSubscribedEventFormats: OFormat[ApiSubscribedEvent]             = Json.format[ApiSubscribedEvent]
   implicit val apiUnsubscribedEventFormats: OFormat[ApiUnsubscribedEvent]         = Json.format[ApiUnsubscribedEvent]
 
-  implicit val formatApplicationEvent: Format[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
+
+  implicit val formatApplicationEvent: OFormat[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
     .and[TeamMemberAddedEvent](EventType.TEAM_MEMBER_ADDED.toString)
     .and[TeamMemberRemovedEvent](EventType.TEAM_MEMBER_REMOVED.toString)
     .and[ClientSecretAddedEvent](EventType.CLIENT_SECRET_ADDED.toString)

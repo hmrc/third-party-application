@@ -21,10 +21,12 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import com.github.tomakehurst.wiremock.client.WireMock._
 import play.api.http.Status._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
 
 import scala.concurrent.ExecutionContext.Implicits.global
-
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
+
+import java.time.LocalDateTime
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -33,7 +35,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val teamMemberAddedEvent: TeamMemberAddedEvent = TeamMemberAddedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN"
   )
@@ -41,7 +43,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val teamMemberRemovedEvent: TeamMemberRemovedEvent = TeamMemberRemovedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     teamMemberEmail = "teamMember@teamMember.com",
     teamMemberRole = "ADMIN"
   )
@@ -49,21 +51,21 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val clientSecretAddedEvent: ClientSecretAddedEvent = ClientSecretAddedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     clientSecretId = "1234"
   )
 
   val clientSecretRemovedEvent: ClientSecretRemovedEvent = ClientSecretRemovedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     clientSecretId = "1234"
   )
 
   val redirectUrisUpdatedEvent: RedirectUrisUpdatedEvent = RedirectUrisUpdatedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     oldRedirectUris = "originalUris",
     newRedirectUris = "newRedirectUris"
   )
@@ -71,7 +73,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val apiSubscribedEvent: ApiSubscribedEvent = ApiSubscribedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
     version = "2.0"
   )
@@ -79,9 +81,19 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val apiUnSubscribedEvent: ApiUnsubscribedEvent = ApiUnsubscribedEvent(
     id = EventId.random,
     applicationId = "jkkh",
-    actor = Actor(id = "bob@bob.com", ActorType.COLLABORATOR),
+    actor = OldActor(id = "bob@bob.com", ActorType.COLLABORATOR),
     context = "context",
     version = "2.0"
+  )
+
+  val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
+    id = UpdateApplicationEvent.Id.random,
+    applicationId = ApplicationId.random,
+    eventDateTime = LocalDateTime.now,
+    actor = GatekeeperUserActor("mr gatekeeper"),
+    oldAppName = "old name",
+    newAppName = "new name",
+    requestingAdminEmail = "admin@example.com"
   )
 
   abstract class Setup(enabled: Boolean = true) {
@@ -104,6 +116,25 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
     def apiApplicationEventsWillFailWith(status: Int) =
       stubFor(
         post(urlMatching("/application-events/.*"))
+          .willReturn(
+            aResponse()
+              .withStatus(status)
+          )
+      )
+
+    def apiApplicationEventWillReturnCreated(request: UpdateApplicationEvent) =
+      stubFor(
+        post(urlEqualTo("/application-event"))
+          .withJsonRequestBody(request)
+          .willReturn(
+            aResponse()
+              .withStatus(CREATED)
+          )
+      )
+
+    def apiApplicationEventWillFailWith(status: Int) =
+      stubFor(
+        post(urlEqualTo("/application-event"))
           .willReturn(
             aResponse()
               .withStatus(status)
@@ -262,6 +293,28 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
       "return false when httpclient receives internal server error status" in new Setup() {
         apiApplicationEventsWillFailWith(INTERNAL_SERVER_ERROR)
         val result = await(underTest.sendApiUnsubscribedEvent(apiUnSubscribedEvent)(hc))
+
+        result shouldBe false
+      }
+    }
+
+    "ProdAppNameChangeEvent" should {
+      "return true when httpclient receives CREATED status" in new Setup() {
+        apiApplicationEventWillReturnCreated(prodAppNameChangedEvent)
+        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "return true when connector is disabled" in new Setup(false) {
+        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
+
+        result shouldBe true
+      }
+
+      "return false when httpclient receives internal server error status" in new Setup() {
+        apiApplicationEventWillFailWith(INTERNAL_SERVER_ERROR)
+        val result = await(underTest.sendApplicationEvent(prodAppNameChangedEvent)(hc))
 
         result shouldBe false
       }

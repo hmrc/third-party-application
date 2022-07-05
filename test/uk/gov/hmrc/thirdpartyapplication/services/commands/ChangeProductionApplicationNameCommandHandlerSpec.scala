@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.{NonEmptyChain, NonEmptyList}
-import cats.data.Validated.{Invalid, Valid}
+import cats.data.NonEmptyChain
+import cats.data.Validated.Invalid
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
@@ -38,6 +38,8 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
     val adminEmail            = "admin@example.com"
     val oldName               = "old app name"
     val newName               = "new app name"
+    val gatekeeperUser        = "gkuser"
+    val requester             = "requester"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -49,7 +51,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       List.empty
     )
 
-    val app                  = anApplicationData(applicationId).copy(
+    val app = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
@@ -57,20 +59,27 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val userId               = idsByEmail(adminEmail)
-    val timestamp            = LocalDateTime.now
-    val update               = ChangeProductionApplicationName(userId, timestamp, "gkuser", newName)
-    val nameChangedEvent     = NameChanged(applicationId, timestamp, userId, oldName, newName)
-    val nameChangeEmailEvent = NameChangedEmailSent(applicationId, timestamp, userId, oldName, newName, "admin@example.com")
+    val userId    = idsByEmail(adminEmail)
+    val timestamp = LocalDateTime.now
+    val update    = ChangeProductionApplicationName(userId, timestamp, gatekeeperUser, newName)
+    val actor     = GatekeeperUserActor(gatekeeperUser)
 
     val underTest = new ChangeProductionApplicationNameCommandHandler(UpliftNamingServiceMock.aMock)
   }
+
   "process" should {
     "create correct events for a valid request" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val result = await(underTest.process(app, update))
 
-      result shouldBe Valid(NonEmptyList.of(nameChangedEvent, nameChangeEmailEvent))
+      result.isValid shouldBe true
+      val event = result.toOption.get.head.asInstanceOf[ProductionAppNameChanged]
+      event.applicationId shouldBe applicationId
+      event.actor shouldBe actor
+      event.eventDateTime shouldBe timestamp
+      event.oldAppName shouldBe oldName
+      event.newAppName shouldBe newName
+      event.requestingAdminEmail shouldBe adminEmail
     }
     "return an error if instigator is not a collaborator on the application" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()

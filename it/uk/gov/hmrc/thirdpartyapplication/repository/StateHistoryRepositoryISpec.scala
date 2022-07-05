@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Actor, ActorType}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, ActorType}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
@@ -33,7 +33,7 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
     with BeforeAndAfterEach with BeforeAndAfterAll with Eventually with FixedClock {
 
   private val repository = new StateHistoryRepository(mongoComponent)
-  val actor: Actor       = Actor("admin@example.com", ActorType.COLLABORATOR)
+  val actor: OldActor    = OldActor("admin@example.com", ActorType.COLLABORATOR)
 
   "insert" should {
 

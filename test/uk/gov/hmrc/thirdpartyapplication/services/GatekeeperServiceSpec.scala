@@ -48,11 +48,11 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
   private def aHistory(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL): StateHistory = {
-    StateHistory(appId, state, Actor("anEmail", COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
+    StateHistory(appId, state, OldActor("anEmail", COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
   }
 
   private def aStateHistoryResponse(appId: ApplicationId, state: State = PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, LocalDateTime.now(clock))
+    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, LocalDateTime.now(clock))
   }
 
   private def anApplicationData(
@@ -191,7 +191,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_REQUESTER_VERIFICATION,
-        actor = Actor(gatekeeperUserId, GATEKEEPER),
+        actor = OldActor(gatekeeperUserId, GATEKEEPER),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         changedAt = LocalDateTime.now(clock)
       )
@@ -312,7 +312,7 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
       val expectedStateHistory = StateHistory(
         applicationId = application.id,
         state = TESTING,
-        actor = Actor(gatekeeperUserId, GATEKEEPER),
+        actor = OldActor(gatekeeperUserId, GATEKEEPER),
         previousState = Some(PENDING_GATEKEEPER_APPROVAL),
         notes = Some(rejectReason),
         changedAt = LocalDateTime.now(clock)

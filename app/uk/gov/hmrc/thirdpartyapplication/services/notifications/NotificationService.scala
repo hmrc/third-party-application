@@ -14,32 +14,29 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.events._
 import uk.gov.hmrc.http.HeaderCarrier
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+
 
 @Singleton
-class NotificationService @Inject() (
-    nameChangedNotificationEventHdlr: NameChangedNotificationEventHandler
-  )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
-  def sendNotifications(app: ApplicationData, events: List[UpdateApplicationNotificationEvent])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
-    def sendNotification(app: ApplicationData, event: UpdateApplicationEvent) = {
+  def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
+    def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
-        case evt: UpdateApplicationEvent.NameChangedEmailSent => nameChangedNotificationEventHdlr.sendAdviceEmail(app, evt)
-        case _                                                => throw new RuntimeException(s"UnexpectedEvent type for sendNotification ${event}")
+        case evt: UpdateApplicationEvent.ProductionAppNameChanged => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
       }
     }
-
-    Future.sequence(events.map(evt => sendNotification(app, evt)).toList)
+    
+    Future.sequence(events.map(evt => sendNotification(app, evt)))
   }
 }

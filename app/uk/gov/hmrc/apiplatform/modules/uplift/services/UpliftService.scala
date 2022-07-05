@@ -123,7 +123,7 @@ class UpliftService @Inject() (
       actorType: ActorType.ActorType,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
 
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>

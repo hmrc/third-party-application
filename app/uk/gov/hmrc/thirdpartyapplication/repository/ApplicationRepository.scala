@@ -29,13 +29,11 @@ import org.mongodb.scala.model._
 import play.api.libs.json.Json._
 import play.api.libs.json._
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.NameChanged
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
@@ -134,9 +132,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   def updateApplicationGrantLength(applicationId: ApplicationId, grantLength: Int): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("grantLength", grantLength))
-
-  def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
-    updateApplication(applicationId, Updates.combine(Updates.set("name", name), Updates.set("normalisedName", name.toLowerCase)))
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
@@ -475,7 +470,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
         .toMap)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationRepositoryEvent]): Future[ApplicationData] = {
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ApplicationData] = {
     require(events.map(_.applicationId).toList.toSet.size == 1, "Events must all be for the same application")
 
     events match {
@@ -484,8 +479,18 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
-  def applyEvent(event: UpdateApplicationRepositoryEvent): Future[ApplicationData] = event match {
-    case NameChanged(id, _, _, _, newName) => updateApplicationName(id, newName)
+  private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
+    updateApplication(applicationId, Updates.combine(
+      Updates.set("name", name),
+      Updates.set("normalisedName", name.toLowerCase)
+    ))
+
+  private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
+    import UpdateApplicationEvent._
+
+    event match {
+      case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
+    }
   }
 }
 

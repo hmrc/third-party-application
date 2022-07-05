@@ -16,28 +16,31 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import cats.data.NonEmptyList
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 
 import scala.concurrent.Future
 
-trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
-  protected trait BaseNotificationServiceMock {
+  protected trait BaseApiPlatformEventServiceMockModule {
 
-    def aMock: NotificationService
+    def aMock: ApiPlatformEventService
 
-    object SendNotifications {
-
-      def thenReturnSuccess() =
-        when(aMock.sendNotifications(*[ApplicationData], *)(*)).thenReturn(Future.successful(List(HasSucceeded)))
+    object ApplyEvents {
+      def succeeds = {
+        when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
+      }
+      def verifyCalledWith(events: NonEmptyList[UpdateApplicationEvent]) = {
+        verify(aMock).applyEvents(eqTo(events))(*)
+      }
     }
   }
 
-  object NotificationServiceMock extends BaseNotificationServiceMock {
-    val aMock = mock[NotificationService]
+  object ApiPlatformEventServiceMock extends BaseApiPlatformEventServiceMockModule {
+    val aMock = mock[ApiPlatformEventService]
   }
 }

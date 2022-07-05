@@ -44,7 +44,8 @@ class ApplicationUpdateServiceSpec
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
-      with NotificationServiceMockModule {
+      with NotificationServiceMockModule
+      with ApiPlatformEventServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -76,16 +77,21 @@ class ApplicationUpdateServiceSpec
     val response                 = mock[HttpResponse]
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
+    val event = ProductionAppNameChanged(
+      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), applicationData.name, newName, adminEmail)
+
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
-      NotificationServiceMock.aMock
+      NotificationServiceMock.aMock,
+      ApiPlatformEventServiceMock.aMock
     )
   }
 
   val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
+  val adminEmail = "admin@example.com"
 
   "update with ChangeProductionApplicationName" should {
 
@@ -93,19 +99,18 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-
-      val nameChangedEvent      = NameChanged(applicationId, timestamp, instigator, applicationData.name, appAfter.name)
-      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(nameChangedEvent, nameChangedEmailEvent)).toValidatedNec)
+        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
       )
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
 
       val result = await(underTest.update(applicationId, changeName).value)
 
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(nameChangedEvent)
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
       result shouldBe Right(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
     }
 
     "return the error if the application does not exist" in new Setup {
@@ -126,22 +131,6 @@ class ApplicationUpdateServiceSpec
       val result = await(underTest.update(applicationId, unknownUpdate).value)
 
       result shouldBe Left(NonEmptyChain.one(s"Unknown ApplicationUpdate type $unknownUpdate"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-
-    "return error for no repository event types" in new Setup {
-      val app      = anApplicationData(applicationId)
-      ApplicationRepoMock.Fetch.thenReturn(app)
-      val appAfter = applicationData.copy(name = newName)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-
-      val nameChangedEmailEvent = NameChangedEmailSent(applicationId, timestamp, instigator, applicationData.name, appAfter.name, loggedInUser)
-      when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.one(nameChangedEmailEvent)).toValidatedNec)
-      )
-      val result                = await(underTest.update(applicationId, changeName).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No repository events found for this command"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
   }

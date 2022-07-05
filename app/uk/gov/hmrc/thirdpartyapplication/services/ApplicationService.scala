@@ -170,7 +170,7 @@ class ApplicationService @Inject() (
       newState        = app.state.toProduction(clock)
       appWithNewState = app.copy(state = newState)
       updatedApp     <- applicationRepository.save(appWithNewState)
-      stateHistory    = StateHistory(applicationId, newState.name, Actor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
+      stateHistory    = StateHistory(applicationId, newState.name, OldActor(requesterEmailAddress, COLLABORATOR), Some(oldState.name), None, app.state.updatedOn)
       _              <- stateHistoryRepository.insert(stateHistory)
     } yield updatedApp
   }
@@ -454,8 +454,8 @@ class ApplicationService @Inject() (
 
   def createStateHistory(appData: ApplicationData)(implicit hc: HeaderCarrier) = {
     val actor = appData.access.accessType match {
-      case PRIVILEGED | ROPC => Actor("", GATEKEEPER)
-      case _                 => Actor(loggedInUser, COLLABORATOR)
+      case PRIVILEGED | ROPC => OldActor("", GATEKEEPER)
+      case _                 => OldActor(loggedInUser, COLLABORATOR)
     }
     insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
   }
@@ -527,7 +527,7 @@ class ApplicationService @Inject() (
       actorType: ActorType.ActorType,
       rollback: ApplicationData => Any
     ) = {
-    val stateHistory = StateHistory(snapshotApp.id, newState, Actor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
+    val stateHistory = StateHistory(snapshotApp.id, newState, OldActor(requestedBy, actorType), oldState, changedAt = LocalDateTime.now(clock))
     stateHistoryRepository.insert(stateHistory) andThen {
       case Failure(_) =>
         rollback(snapshotApp)

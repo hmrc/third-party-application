@@ -50,22 +50,18 @@ class ChangeProductionApplicationNameCommandHandler @Inject() (
     ) { case _ => app }
   }
 
+  import UpdateApplicationEvent._
+
   private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationName): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
-      UpdateApplicationEvent.NameChanged(
+      ProductionAppNameChanged(
+        id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
-        timestamp = cmd.timestamp,
-        instigator = cmd.instigator,
-        oldName = app.name,
-        newName = cmd.newName
-      ),
-      UpdateApplicationEvent.NameChangedEmailSent(
-        applicationId = app.id,
-        timestamp = cmd.timestamp,
-        instigator = cmd.instigator,
-        oldName = app.name,
-        newName = cmd.newName,
-        requester = getRequester(app, cmd.instigator)
+        eventDateTime = cmd.timestamp,
+        actor = GatekeeperUserActor(cmd.gatekeeperUser),
+        oldAppName = app.name,
+        newAppName = cmd.newName,
+        requestingAdminEmail = getRequester(app, cmd.instigator)
       )
     )
   }

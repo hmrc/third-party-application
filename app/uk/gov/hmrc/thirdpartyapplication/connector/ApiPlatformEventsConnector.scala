@@ -26,6 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import javax.inject.Inject
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 
 object ApiPlatformEventsConnector {
   case class Config(baseUrl: String, enabled: Boolean)
@@ -36,13 +37,14 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
 
   val serviceBaseUrl: String         = s"${config.baseUrl}"
   private val applicationEventsUri   = "/application-events"
-  private val teamMemberAddedUri     = "/teamMemberAdded"
-  private val teamMemberRemovedUri   = "/teamMemberRemoved"
-  private val clientSecretAddedUri   = "/clientSecretAdded"
-  private val clientSecretRemovedUri = "/clientSecretRemoved"
-  private val redirectUrisUpdatedUri = "/redirectUrisUpdated"
-  private val apiSubscribedUri       = "/apiSubscribed"
-  private val apiUnsubscribedUri     = "/apiUnsubscribed"
+  private val teamMemberAddedUri     = applicationEventsUri + "/teamMemberAdded"
+  private val teamMemberRemovedUri   = applicationEventsUri + "/teamMemberRemoved"
+  private val clientSecretAddedUri   = applicationEventsUri + "/clientSecretAdded"
+  private val clientSecretRemovedUri = applicationEventsUri + "/clientSecretRemoved"
+  private val redirectUrisUpdatedUri = applicationEventsUri + "/redirectUrisUpdated"
+  private val apiSubscribedUri       = applicationEventsUri + "/apiSubscribed"
+  private val apiUnsubscribedUri     = applicationEventsUri + "/apiUnsubscribed"
+  private val updateApplicationUri   = "/application-event"
 
   def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
 
@@ -81,7 +83,29 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
     }
   }
 
+  def sendApplicationEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, updateApplicationUri)(hc)
+
+  private def postEvent(event: UpdateApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {
+    implicit val headersWithoutAuthorization: HeaderCarrier = hc.copy(authorization = None)
+
+    if (config.enabled) {
+      http.POST[UpdateApplicationEvent, ErrorOr[Unit]](
+        addEventURI(uri),
+        event
+      ).map {
+        case Right(_) =>
+          logger.info(s"calling platform event service for application ${event.applicationId.value}")
+          true
+        case Left(e)  =>
+          logger.warn(s"calling platform event service failed for application ${event.applicationId.value} $e")
+          false
+      }
+    } else {
+      logger.info("call to platform events disabled")
+      Future.successful(true)
+    }
+  }
   private def addEventURI(path: String): String = {
-    serviceBaseUrl + applicationEventsUri + path
+    serviceBaseUrl + path
   }
 }

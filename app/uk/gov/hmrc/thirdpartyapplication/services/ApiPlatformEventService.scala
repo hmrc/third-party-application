@@ -16,31 +16,33 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import cats.data.NonEmptyList
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.{
-  ApiSubscribedEvent,
-  ApiUnsubscribedEvent,
-  ApplicationEvent,
-  ClientSecretAddedEvent,
-  ClientSecretRemovedEvent,
-  EventId,
-  RedirectUrisUpdatedEvent,
-  TeamMemberAddedEvent,
-  TeamMemberRemovedEvent
-}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO - context and version probably should be strings in the events??
 @Singleton
 class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
+    events match {
+      case NonEmptyList(e, Nil) => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    apiPlatformEventsConnector.sendApplicationEvent(event)
+  }
+ 
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
@@ -135,12 +137,12 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
   }
 
-  private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[Actor] = {
+  private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldActor] = {
     if (userContext.isEmpty) {
-      Option(Actor("admin@gatekeeper", ActorType.GATEKEEPER))
+      Option(OldActor("admin@gatekeeper", ActorType.GATEKEEPER))
     } else {
       userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-        .map(email => Actor(email, deriveActorType(email, collaborators)))
+        .map(email => OldActor(email, deriveActorType(email, collaborators)))
     }
   }
 

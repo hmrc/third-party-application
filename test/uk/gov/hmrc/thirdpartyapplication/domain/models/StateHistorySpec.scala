@@ -25,7 +25,7 @@ class StateHistorySpec extends HmrcSpec {
 
   val applicationId = ApplicationId.random
   val now           = LocalDateTime.now
-  val actor         = Actor("admin@example.com", ActorType.COLLABORATOR)
+  val actor         = OldActor("admin@example.com", ActorType.COLLABORATOR)
 
   "State history" should {
     "sort by date" in {

@@ -496,7 +496,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   private def aHistory(appId: ApplicationId, state: State = State.PENDING_GATEKEEPER_APPROVAL) = {
-    StateHistoryResponse(appId, state, Actor("anEmail", COLLABORATOR), None, LocalDateTime.now)
+    StateHistoryResponse(appId, state, OldActor("anEmail", COLLABORATOR), None, LocalDateTime.now)
   }
 
   private def anAppResult(id: ApplicationId = ApplicationId.random, submittedOn: LocalDateTime = LocalDateTime.now, state: ApplicationState = testingState()) = {
