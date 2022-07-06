@@ -40,12 +40,10 @@ private[controllers] object SearchCollaboratorsRequest {
 @Singleton
 class CollaboratorController @Inject() (
     val applicationService: ApplicationService,
-    val authConnector: AuthConnector,
-    val authConfig: AuthConnector.Config,
     subscriptionService: SubscriptionService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+  ) extends BackendController(cc) with JsonUtils {
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

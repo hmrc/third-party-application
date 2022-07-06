@@ -40,7 +40,7 @@ class ConfigurationModule extends Module {
       bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
-      bind[AuthConnector.Config].toProvider[AuthConfigProvider],
+      bind[AuthConfig].toProvider[AuthConfigProvider],
       bind[EmailConnector.Config].toProvider[EmailConfigProvider],
       bind[TotpConnector.Config].toProvider[TotpConfigProvider],
       bind[AwsApiGatewayConnector.Config].toProvider[AwsApiGatewayConfigProvider],
@@ -133,10 +133,9 @@ class ApiStorageConfigProvider @Inject() (val configuration: Configuration)
 @Singleton
 class AuthConfigProvider @Inject() (val configuration: Configuration)
     extends ServicesConfig(configuration)
-    with Provider[AuthConnector.Config] {
+    with Provider[AuthConfig] {
 
   override def get() = {
-    val url                            = baseUrl("auth")
     val userRole                       = getString("roles.user")
     val superUserRole                  = getString("roles.super-user")
     val adminRole                      = getString("roles.admin")
@@ -144,7 +143,7 @@ class AuthConfigProvider @Inject() (val configuration: Configuration)
     val canDeleteApplications: Boolean = ConfigHelper.getConfig("canDeleteApplications", configuration.getOptional[Boolean])
     val authorisationKey               = getString("authorisationKey")
 
-    AuthConnector.Config(url, userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
+    AuthConfig(userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
   }
 }
 

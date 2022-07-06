@@ -25,7 +25,6 @@ import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
@@ -48,8 +47,11 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
-
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -86,11 +88,11 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector             = mock[AuthConnector]
+    val mockAuthConnector: StrideAuthConnector       = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
 
-    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
+    val mockAuthConfig: AuthConfig = mock[AuthConfig]
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")

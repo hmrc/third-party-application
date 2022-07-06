@@ -39,20 +39,21 @@ POST          /application/:id/client-secret                         uk.gov.hmrc
 POST          /application/:id/client-secret/:clientSecretId         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecret(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, clientSecretId: String)
 
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+
+POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
+
+# Gatekeeper ONLY routes
+GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
+GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /application/:id/approve-uplift                        uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.approveUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /application/:id/reject-uplift                         uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.rejectUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /application/:id/resend-verification                   uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.resendVerification(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /application/:id/block                                 uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.blockApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 POST          /application/:id/unblock                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.unblockApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-
-POST          /application/:id/request-uplift                        uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.requestUplift(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-POST          /verify-uplift/:code                                   uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController.verifyUplift(code: String)
-
-POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateRateLimitTier(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-
-GET           /gatekeeper/applications                               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppsForGatekeeper
-GET           /gatekeeper/application/:id                            uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
-GET           /gatekeeper/application/:id/stateHistory               uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.fetchAppStateHistoryById(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+POST          /application/:id/rate-limit-tier                       uk.gov.hmrc.thirdpartyapplication.controllers.GatekeeperController.updateRateLimitTier(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 POST          /application/:id/check-information                     uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.updateCheck(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
