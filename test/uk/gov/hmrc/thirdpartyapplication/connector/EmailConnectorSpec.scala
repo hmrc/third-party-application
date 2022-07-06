@@ -24,6 +24,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
 import EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class EmailConnectorSpec extends ConnectorSpec {
 
@@ -37,6 +38,8 @@ class EmailConnectorSpec extends ConnectorSpec {
     val config           = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
     val connector        = new EmailConnector(http, config)
 
+    wireMockServer.resetRequests()
+
     final def emailWillReturn(request: SendEmailRequest) = {
       stubFor(
         post(urlPathEqualTo("/hmrc/email"))
@@ -45,6 +48,12 @@ class EmailConnectorSpec extends ConnectorSpec {
             aResponse()
               .withStatus(OK)
           )
+      )
+    }
+
+    final def verifySent() = {
+      wireMockServer.verify(
+        postRequestedFor(urlEqualTo("/hmrc/email"))
       )
     }
   }
@@ -324,9 +333,13 @@ class EmailConnectorSpec extends ConnectorSpec {
       )
       val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
       val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetails", expectedParameters)
+      
       emailWillReturn(expectedRequest)
 
-      await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
+      val result = await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
+
+      result shouldBe HasSucceeded
+      verifySent
     }
   }
 }
