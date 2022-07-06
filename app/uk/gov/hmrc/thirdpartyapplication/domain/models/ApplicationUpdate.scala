@@ -30,7 +30,7 @@ trait GatekeeperApplicationUpdate extends ApplicationUpdate {
 }
 
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
-case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, oldLocation: PrivacyPolicyLocation, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
+case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 
 trait ApplicationUpdateFormatters {
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]

@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, ImportantSubmissionData, PrivacyPolicyLocation, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.{Inject, Singleton}
@@ -41,13 +41,17 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): NonEmptyList[UpdateApplicationEvent] = {
+    val oldLocation = app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation
+      case _ => PrivacyPolicyLocation.NoneProvided
+    }
     NonEmptyList.of(
       ProductionAppPrivacyPolicyLocationChanged(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(getRequester(app, cmd.instigator)),
-        oldLocation = cmd.oldLocation,
+        oldLocation = oldLocation,
         newLocation = cmd.newLocation
       )
     )

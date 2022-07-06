@@ -137,7 +137,7 @@ class ApplicationUpdateServiceSpec
   "update with ChangeProductionApplicationPrivacyPolicyLocation" should {
     val oldLocation           = PrivacyPolicyLocation.InDesktopSoftware
     val newLocation           = PrivacyPolicyLocation.Url("http://example.com")
-    val changePrivacyPolicyLocation = ChangeProductionApplicationPrivacyPolicyLocation(instigator, timestamp, oldLocation, newLocation)
+    val changePrivacyPolicyLocation = ChangeProductionApplicationPrivacyPolicyLocation(instigator, timestamp, newLocation)
     val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation)
 
     def setPrivacyPolicyLocation(app: ApplicationData, location: PrivacyPolicyLocation) = {

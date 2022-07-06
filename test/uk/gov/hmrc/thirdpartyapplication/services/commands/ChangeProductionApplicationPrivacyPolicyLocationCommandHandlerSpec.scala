@@ -57,7 +57,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     )
     val userId    = idsByEmail(adminEmail)
     val timestamp = LocalDateTime.now
-    val update    = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, oldLocation, newLocation)
+    val update    = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
     val actor     = CollaboratorActor(adminEmail)
 
     val underTest = new ChangeProductionApplicationPrivacyPolicyLocationCommandHandler()
