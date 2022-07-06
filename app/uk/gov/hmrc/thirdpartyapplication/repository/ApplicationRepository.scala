@@ -491,6 +491,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   private def updateLegacyApplicationPrivacyPolicyLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.set("access.privacyPolicyUrl", url))
 
+  private def updateApplicationTermsAndConditionsLocation(applicationId: ApplicationId, location: TermsAndConditionsLocation): Future[ApplicationData] =
+    updateApplication(applicationId, Updates.set("access.importantSubmissionData.termsAndConditionsLocation", Codecs.toBson(location)))
+
+  private def updateLegacyApplicationTermsAndConditionsLocation(applicationId: ApplicationId, url: String): Future[ApplicationData] =
+    updateApplication(applicationId, Updates.set("access.termsAndConditionsUrl", url))
+
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
 
@@ -498,6 +504,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt : ProductionLegacyAppPrivacyPolicyLocationChanged => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
+      case evt : ProductionAppTermsConditionsLocationChanged => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
+      case evt : ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
     }
   }
 }
