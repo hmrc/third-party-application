@@ -24,7 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.connector._
 
 import scala.concurrent.ExecutionContext
 
