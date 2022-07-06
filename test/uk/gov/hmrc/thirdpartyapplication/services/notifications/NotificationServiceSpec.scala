@@ -72,28 +72,16 @@ class NotificationServiceSpec
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldAppName, newAppName, Set(responsibleIndividual.emailAddress.value, loggedInUser))
     }
 
-    "when receive a TermsAndConditionsUrlChanged, call the event handler and return successfully" in new Setup {
+    "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousTermsAndConditionsUrl = "https://example.com/old-terms-and-conditions"
-      val newTermsAndConditionsUrl = "https://example.com/new-terms-and-conditions"
-      val event = TermsAndConditionsUrlChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousTermsAndConditionsUrl, newTermsAndConditionsUrl, adminEmail)
-
-      val result = await(underTest.sendNotifications(applicationData, List(event)))
-      result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "terms and conditions URL", previousTermsAndConditionsUrl, newTermsAndConditionsUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
-    }
-
-    "when receive a PrivacyPolicyUrlChanged, call the event handler and return successfully" in new Setup {
-      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
-      val previousPrivacyPolicyUrl = "https://example.com/old-privacy-policy"
-      val newPrivacyPolicyUrl = "https://example.com/new-privacy-policy"
-      val event = PrivacyPolicyUrlChanged(
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
+      val event = ProductionAppPrivacyPolicyLocationChanged(
         UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousPrivacyPolicyUrl, newPrivacyPolicyUrl, adminEmail)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl, newPrivacyPolicyUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value, Set(responsibleIndividual.emailAddress.value, loggedInUser))
     }
   }
 }

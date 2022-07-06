@@ -2520,6 +2520,25 @@ class ApplicationRepositoryISpec
       appWithUpdatedName.normalisedName mustBe newName.toLowerCase
     }
 
+    "handle ProductionAppPrivacyPolicyLocationChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldLocation   = PrivacyPolicyLocation.InDesktopSoftware
+      val newLocation   = PrivacyPolicyLocation.Url("http://example.com")
+      val access        = Standard(List.empty, None, None, Set.empty, None, Some(
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty,
+          TermsAndConditionsLocation.InDesktopSoftware, oldLocation, List.empty)
+      ))
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
+      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedPrivacyPolicyLocation.access match {
+        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+        case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      }
+    }
+
     "throw an error if events relate to different applications" in {
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random

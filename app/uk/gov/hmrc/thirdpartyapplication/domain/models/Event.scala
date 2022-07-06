@@ -22,6 +22,8 @@ import java.util.UUID
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
+import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.InDesktopSoftware
+import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 
 sealed trait UpdateApplicationEvent {
   def id: UpdateApplicationEvent.Id
@@ -47,16 +49,17 @@ object UpdateApplicationEvent {
   sealed trait Actor
 
   case class GatekeeperUserActor(user: String) extends Actor
-  //case class CollaboratorActor(email: String) extends Actor
+  case class CollaboratorActor(email: String) extends Actor
   //case class ScheduledJobActor(jobId: String) extends Actor
   //case class UnknownActor() extends Actor
 
   object Actor {
     implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
-
+    implicit val collaboratorActorFormat: OFormat[CollaboratorActor] = Json.format[CollaboratorActor]
 
     implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
       .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
+      .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
   }
 
@@ -82,45 +85,38 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
   }
 
-  case class TermsAndConditionsUrlChanged(
+  case class ProductionAppPrivacyPolicyLocationChanged(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
-    oldTermsAndConditionsUrl: String,
-    newTermsAndConditionsUrl: String,
-    requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersStandardChangedNotification {
-    def fieldName = "terms and conditions URL"
-    def previousValue = oldTermsAndConditionsUrl
-    def newValue = newTermsAndConditionsUrl
-  }
-
-  object TermsAndConditionsUrlChanged {
-    implicit val format: OFormat[TermsAndConditionsUrlChanged] = Json.format[TermsAndConditionsUrlChanged]
-  }
-
-  case class PrivacyPolicyUrlChanged(
-    id: UpdateApplicationEvent.Id,
-    applicationId: ApplicationId,
-    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    actor: Actor,
-    oldPrivacyPolicyUrl: String,
-    newPrivacyPolicyUrl: String,
+    oldLocation: PrivacyPolicyLocation,
+    newLocation: PrivacyPolicyLocation,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent with TriggersStandardChangedNotification {
     def fieldName = "privacy policy URL"
-    def previousValue = oldPrivacyPolicyUrl
-    def newValue = newPrivacyPolicyUrl
+    def previousValue = {
+      oldLocation match {
+        case InDesktopSoftware => "In desktop software"
+        case Url(value)        => value
+        case _                 => "None provided"
+      }
+    }
+    def newValue = {
+      newLocation match {
+        case InDesktopSoftware => "In desktop software"
+        case Url(value)        => value
+        case _                 => "None provided"
+      }
+    }
   }
 
-  object PrivacyPolicyUrlChanged {
-    implicit val format: OFormat[PrivacyPolicyUrlChanged] = Json.format[PrivacyPolicyUrlChanged]
+  object ProductionAppPrivacyPolicyLocationChanged {
+    implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]
   }
 
-  implicit val formatUpdateApplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
+  implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
-    .and[TermsAndConditionsUrlChanged](EventType.TERMS_AND_CONDITIONS_URL_CHANGED.toString)
-    .and[PrivacyPolicyUrlChanged](EventType.PRIVACY_POLICY_URL_CHANGED.toString)
+    .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
     .format
 }
