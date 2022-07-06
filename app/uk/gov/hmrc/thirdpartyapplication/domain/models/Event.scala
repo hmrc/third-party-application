@@ -38,16 +38,17 @@ object UpdateApplicationEvent {
   sealed trait Actor
 
   case class GatekeeperUserActor(user: String) extends Actor
-  //case class CollaboratorActor(email: String) extends Actor
+  case class CollaboratorActor(email: String) extends Actor
   //case class ScheduledJobActor(jobId: String) extends Actor
   //case class UnknownActor() extends Actor
 
   object Actor {
     implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
-
+    implicit val collaboratorActorFormat: OFormat[CollaboratorActor] = Json.format[CollaboratorActor]
 
     implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
       .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
+      .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
   }
 
@@ -73,7 +74,21 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ProductionAppNameChanged] = Json.format[ProductionAppNameChanged]
   }
 
+  case class ProductionAppPrivacyPolicyLocationChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldLocation: PrivacyPolicyLocation,
+    newLocation: PrivacyPolicyLocation
+  ) extends UpdateApplicationEvent
+
+  object ProductionAppPrivacyPolicyLocationChanged {
+    implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]
+  }
+
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
+    .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
     .format
 }

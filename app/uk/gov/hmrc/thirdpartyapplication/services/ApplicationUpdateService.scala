@@ -31,6 +31,7 @@ import scala.concurrent.{ExecutionContext, Future}
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
+  changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
@@ -49,8 +50,9 @@ class ApplicationUpdateService @Inject()(
 
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
     applicationUpdate match {
-      case cmd: ChangeProductionApplicationName => changeProductionApplicationNameCmdHdlr.process(app, cmd)
-      case _                                    => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
+      case cmd: ChangeProductionApplicationName                  => changeProductionApplicationNameCmdHdlr.process(app, cmd)
+      case cmd: ChangeProductionApplicationPrivacyPolicyLocation => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
+      case _                                                     => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }
 }

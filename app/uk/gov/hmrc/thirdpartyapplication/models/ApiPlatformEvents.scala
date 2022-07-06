@@ -31,14 +31,15 @@ object EventId {
 
 object EventType extends Enumeration {
   type AccessType = Value
-  val TEAM_MEMBER_ADDED                   = Value
-  val TEAM_MEMBER_REMOVED                 = Value
-  val CLIENT_SECRET_ADDED                 = Value
-  val CLIENT_SECRET_REMOVED               = Value
-  val REDIRECT_URIS_UPDATED               = Value
-  val API_SUBSCRIBED                      = Value
-  val API_UNSUBSCRIBED                    = Value
-  val PROD_APP_NAME_CHANGED               = Value
+  val TEAM_MEMBER_ADDED                        = Value
+  val TEAM_MEMBER_REMOVED                      = Value
+  val CLIENT_SECRET_ADDED                      = Value
+  val CLIENT_SECRET_REMOVED                    = Value
+  val REDIRECT_URIS_UPDATED                    = Value
+  val API_SUBSCRIBED                           = Value
+  val API_UNSUBSCRIBED                         = Value
+  val PROD_APP_NAME_CHANGED                    = Value
+  val PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED = Value
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 
