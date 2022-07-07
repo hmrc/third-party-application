@@ -2531,7 +2531,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation)
+      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation

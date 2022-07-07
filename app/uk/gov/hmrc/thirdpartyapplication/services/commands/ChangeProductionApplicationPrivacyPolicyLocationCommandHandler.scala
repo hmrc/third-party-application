@@ -52,7 +52,8 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(getRequester(app, cmd.instigator)),
         oldLocation = oldLocation,
-        newLocation = cmd.newLocation
+        newLocation = cmd.newLocation,
+        requestingAdminEmail = getRequester(app, cmd.instigator)
       )
     )
   }

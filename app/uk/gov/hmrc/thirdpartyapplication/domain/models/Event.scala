@@ -28,6 +28,7 @@ sealed trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
   def actor: UpdateApplicationEvent.Actor
+  def requestingAdminEmail: String
 }
 
 trait TriggersNotification {
@@ -80,8 +81,9 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     oldLocation: PrivacyPolicyLocation,
-    newLocation: PrivacyPolicyLocation
-  ) extends UpdateApplicationEvent
+    newLocation: PrivacyPolicyLocation,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppPrivacyPolicyLocationChanged {
     implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]

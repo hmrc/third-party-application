@@ -138,7 +138,7 @@ class ApplicationUpdateServiceSpec
     val oldLocation           = PrivacyPolicyLocation.InDesktopSoftware
     val newLocation           = PrivacyPolicyLocation.Url("http://example.com")
     val changePrivacyPolicyLocation = ChangeProductionApplicationPrivacyPolicyLocation(instigator, timestamp, newLocation)
-    val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation)
+    val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation, adminEmail)
 
     def setPrivacyPolicyLocation(app: ApplicationData, location: PrivacyPolicyLocation) = {
       app.access match {

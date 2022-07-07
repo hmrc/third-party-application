@@ -24,6 +24,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
 import EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class EmailConnectorSpec extends ConnectorSpec {
 
@@ -37,6 +38,8 @@ class EmailConnectorSpec extends ConnectorSpec {
     val config           = EmailConnector.Config(wireMockUrl, hubUrl, hubTestTitle, environmentName)
     val connector        = new EmailConnector(http, config)
 
+    wireMockServer.resetRequests()
+
     final def emailWillReturn(request: SendEmailRequest) = {
       stubFor(
         post(urlPathEqualTo("/hmrc/email"))
@@ -45,6 +48,12 @@ class EmailConnectorSpec extends ConnectorSpec {
             aResponse()
               .withStatus(OK)
           )
+      )
+    }
+
+    final def verifySent() = {
+      wireMockServer.verify(
+        postRequestedFor(urlEqualTo("/hmrc/email"))
       )
     }
   }
@@ -307,6 +316,30 @@ class EmailConnectorSpec extends ConnectorSpec {
       emailWillReturn(expectedRequest)
 
       await(connector.sendChangeOfApplicationName(requesterName, previousAppName, newAppName, recipients))
+    }
+
+    "send change of application details" in new Setup {
+      val requesterName                           = "bob@example.com"
+      val applicationName                         = "App name"
+      val fieldName                               = "privacy policy URL"
+      val previousValue                           = "https://example.com/previous-privacy-policy"
+      val newValue                                = "https://example.com/new-privacy-policy"
+      val expectedParameters: Map[String, String] = Map(
+        "requesterName"   -> requesterName,
+        "applicationName" -> applicationName,
+        "fieldName"       -> fieldName,
+        "previousValue"   -> previousValue,
+        "newValue"        -> newValue
+      )
+      val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetails", expectedParameters)
+      
+      emailWillReturn(expectedRequest)
+
+      val result = await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
+
+      result shouldBe HasSucceeded
+      verifySent
     }
   }
 }

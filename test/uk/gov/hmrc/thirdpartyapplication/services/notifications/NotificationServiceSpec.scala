@@ -58,18 +58,30 @@ class NotificationServiceSpec
     val gatekeeperUser = "gkuser"
     val oldAppName = "old name"
     val newAppName = "new name"
-    val event = ProductionAppNameChanged(
-      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), oldAppName, newAppName, adminEmail)
     val underTest = new NotificationService(EmailConnectorMock.aMock)
   }
 
   "sendNotifications" should {
-    "call the event handler and return successfully" in new Setup {
+    "when receive a ProductionAppNameChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
+      val event = ProductionAppNameChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), oldAppName, newAppName, adminEmail)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationName.verifyCalledWith(adminEmail, oldAppName, newAppName, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+    }
+
+    "when receive a ProductionAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
+      val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
+      val event = ProductionAppPrivacyPolicyLocationChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousPrivacyPolicyUrl, newPrivacyPolicyUrl, adminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value, Set(responsibleIndividual.emailAddress.value, loggedInUser))
     }
   }
 }

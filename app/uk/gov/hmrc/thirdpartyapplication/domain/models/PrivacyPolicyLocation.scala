@@ -35,4 +35,12 @@ object PrivacyPolicyLocation {
     .and[InDesktopSoftware.type]("inDesktop")
     .and[Url]("url")
     .format
+
+  def describe(privacyPolicyLocation: PrivacyPolicyLocation): String = {
+    privacyPolicyLocation match {
+      case InDesktopSoftware => "In desktop software"
+      case Url(value)        => value
+      case _                 => "None provided"
+    }
+  }
 }
