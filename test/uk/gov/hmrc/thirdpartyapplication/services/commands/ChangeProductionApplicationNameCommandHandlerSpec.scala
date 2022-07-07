@@ -68,9 +68,22 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
   }
 
   "process" should {
-    "create correct events for a valid request" in new Setup {
+    "create correct events for a valid request with a standard app" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
       val result = await(underTest.process(app, update))
+
+      result.isValid shouldBe true
+      val event = result.toOption.get.head.asInstanceOf[ProductionAppNameChanged]
+      event.applicationId shouldBe applicationId
+      event.actor shouldBe actor
+      event.eventDateTime shouldBe timestamp
+      event.oldAppName shouldBe oldName
+      event.newAppName shouldBe newName
+      event.requestingAdminEmail shouldBe adminEmail
+    }
+    "create correct events for a valid request with a priv app" in new Setup {
+      UpliftNamingServiceMock.ValidateApplicationName.succeeds()
+      val result = await(underTest.process(app.copy(access = Privileged()), update))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ProductionAppNameChanged]
@@ -98,12 +111,6 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       val result = await(underTest.process(app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
 
       result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
-    }
-    "return an error if application is non-standard" in new Setup {
-      UpliftNamingServiceMock.ValidateApplicationName.succeeds()
-      val result = await(underTest.process(app.copy(access = Privileged()), update))
-
-      result shouldBe Invalid(NonEmptyChain.one("App must have a STANDARD access type"))
     }
     "return an error if the application already has the specified name" in new Setup {
       UpliftNamingServiceMock.ValidateApplicationName.succeeds()
