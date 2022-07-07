@@ -22,8 +22,6 @@ import java.util.UUID
 import play.api.libs.json._
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
-import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.InDesktopSoftware
-import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation.Url
 
 sealed trait UpdateApplicationEvent {
   def id: UpdateApplicationEvent.Id
@@ -35,14 +33,6 @@ sealed trait UpdateApplicationEvent {
 
 trait TriggersNotification {
   self: UpdateApplicationEvent =>
-}
-
-trait TriggersStandardChangedNotification extends TriggersNotification {
-  self: UpdateApplicationEvent =>
-
-  def fieldName: String
-  def previousValue: String
-  def newValue: String
 }
 
 object UpdateApplicationEvent {
@@ -93,23 +83,7 @@ object UpdateApplicationEvent {
     oldLocation: PrivacyPolicyLocation,
     newLocation: PrivacyPolicyLocation,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersStandardChangedNotification {
-    def fieldName = "privacy policy URL"
-    def previousValue = {
-      oldLocation match {
-        case InDesktopSoftware => "In desktop software"
-        case Url(value)        => value
-        case _                 => "None provided"
-      }
-    }
-    def newValue = {
-      newLocation match {
-        case InDesktopSoftware => "In desktop software"
-        case Url(value)        => value
-        case _                 => "None provided"
-      }
-    }
-  }
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppPrivacyPolicyLocationChanged {
     implicit val format: OFormat[ProductionAppPrivacyPolicyLocationChanged] = Json.format[ProductionAppPrivacyPolicyLocationChanged]

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -26,9 +25,9 @@ import scala.concurrent.Future
 
 object StandardChangedNotification {
   
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent with TriggersStandardChangedNotification)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String, previousValue: String, newValue: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
-    emailConnector.sendChangeOfApplicationDetails(event.requestingAdminEmail, app.name, event.fieldName, event.previousValue, event.newValue, recipients)
+    emailConnector.sendChangeOfApplicationDetails(requestingAdminEmail, app.name, fieldName, previousValue, newValue, recipients)
   }
 
   private def getRecipients(app: ApplicationData): Set[String] = {

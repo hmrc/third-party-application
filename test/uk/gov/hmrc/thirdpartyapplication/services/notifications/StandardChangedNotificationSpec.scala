@@ -61,9 +61,8 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
       val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
       val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
-      val event = UpdateApplicationEvent.ProductionAppPrivacyPolicyLocationChanged(eventId, applicationId, timestamp, actor, previousPrivacyPolicyUrl, newPrivacyPolicyUrl, "admin@example.com")
 
-      val result = await(StandardChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, event))
+      val result = await(StandardChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, "admin@example.com", "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value))
       result shouldBe HasSucceeded
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, app.name, "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
     }
