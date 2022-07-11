@@ -35,8 +35,10 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val applicationId         = ApplicationId.random
     val devEmail              = "dev@example.com"
     val adminEmail            = "admin@example.com"
+    val oldUrl                = "http://example.com/old"
+    val newUrl                = "http://example.com/new"
     val oldLocation           = PrivacyPolicyLocation.InDesktopSoftware
-    val newLocation           = PrivacyPolicyLocation.Url("http://example.com")
+    val newLocation           = PrivacyPolicyLocation.Url(newUrl)
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
@@ -48,13 +50,22 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val newJourneyApp = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
       ),
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
+
+    val oldJourneyApp = anApplicationData(applicationId).copy(
+      collaborators = Set(
+        Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
+        Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
+      ),
+      access = Standard(privacyPolicyUrl = Some(oldUrl))
+    )
+
     val userId    = idsByEmail(adminEmail)
     val timestamp = LocalDateTime.now
     val update    = ChangeProductionApplicationPrivacyPolicyLocation(userId, timestamp, newLocation)
@@ -63,9 +74,9 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
     val underTest = new ChangeProductionApplicationPrivacyPolicyLocationCommandHandler()
   }
 
-  "process" should {
+  "process with a new journey app" should {
     "create correct events for a valid request" in new Setup {
-      val result = await(underTest.process(app, update))
+      val result = await(underTest.process(newJourneyApp, update))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ProductionAppPrivacyPolicyLocationChanged]
@@ -76,22 +87,56 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandlerSpec extends
       event.newLocation shouldBe newLocation
     }
     "return an error if instigator is not a collaborator on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = UserId.random)))
+      val result = await(underTest.process(newJourneyApp, update.copy(instigator = UserId.random)))
 
       result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
     }
     "return an error if instigator is not an admin on the application" in new Setup {
-      val result = await(underTest.process(app, update.copy(instigator = idsByEmail(devEmail))))
+      val result = await(underTest.process(newJourneyApp, update.copy(instigator = idsByEmail(devEmail))))
 
       result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
     }
     "return an error if application is still in the process of being approved" in new Setup {
-      val result = await(underTest.process(app.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
+      val result = await(underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
 
       result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
     }
     "return an error if application is non-standard" in new Setup {
-      val result = await(underTest.process(app.copy(access = Privileged()), update))
+      val result = await(underTest.process(newJourneyApp.copy(access = Privileged()), update))
+
+      result shouldBe Invalid(NonEmptyChain.one("App must have a STANDARD access type"))
+    }
+  }
+
+  "process with a legacy journey app" should {
+    "create correct events for a valid request" in new Setup {
+      val result = await(underTest.process(oldJourneyApp, update))
+
+      result.isValid shouldBe true
+      val event = result.toOption.get.head.asInstanceOf[ProductionLegacyAppPrivacyPolicyLocationChanged]
+      event.applicationId shouldBe applicationId
+      event.actor shouldBe actor
+      event.eventDateTime shouldBe timestamp
+      event.oldUrl shouldBe oldUrl
+      event.newUrl shouldBe newUrl
+    }
+    "return an error if instigator is not a collaborator on the application" in new Setup {
+      val result = await(underTest.process(newJourneyApp, update.copy(instigator = UserId.random)))
+
+      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+    }
+    "return an error if instigator is not an admin on the application" in new Setup {
+      val result = await(underTest.process(newJourneyApp, update.copy(instigator = idsByEmail(devEmail))))
+
+      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
+    }
+    "return an error if application is still in the process of being approved" in new Setup {
+      val result = await(underTest.process(newJourneyApp.copy(state = ApplicationState(State.PENDING_GATEKEEPER_APPROVAL)), update))
+
+      result shouldBe Invalid(NonEmptyChain.one("App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"))
+    }
+    "return an error if application is non-standard" in new Setup {
+      val result = await(underTest.process(newJourneyApp.copy(access = Privileged()), update))
 
       result shouldBe Invalid(NonEmptyChain.one("App must have a STANDARD access type"))
     }

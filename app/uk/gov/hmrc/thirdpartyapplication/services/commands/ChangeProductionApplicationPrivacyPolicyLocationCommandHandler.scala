@@ -17,7 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationPrivacyPolicyLocation, ImportantSubmissionData, PrivacyPolicyLocation, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -40,12 +41,23 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): NonEmptyList[UpdateApplicationEvent] = {
-    val oldLocation = app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation
-      case _ => PrivacyPolicyLocation.NoneProvided
+  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): Either[String,UpdateApplicationEvent] = {
+    cmd.newLocation match {
+      case PrivacyPolicyLocation.Url(newUrl) =>
+        Right(ProductionLegacyAppPrivacyPolicyLocationChanged(
+          id = UpdateApplicationEvent.Id.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp,
+          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          oldUrl = oldUrl,
+          newUrl = newUrl,
+          requestingAdminEmail = getRequester(app, cmd.instigator)
+        ))
+      case _ => Left("Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
     }
-    NonEmptyList.of(
+  }
+
+  private def buildEventForNewApp(oldLocation: PrivacyPolicyLocation, app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): UpdateApplicationEvent =
       ProductionAppPrivacyPolicyLocationChanged(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
@@ -55,12 +67,21 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
         newLocation = cmd.newLocation,
         requestingAdminEmail = getRequester(app, cmd.instigator)
       )
-    )
+
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): Either[String,UpdateApplicationEvent] = {
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) =>
+        Right(buildEventForNewApp(privacyPolicyLocation, app, cmd))
+      case Standard(_, _, maybePrivacyPolicyUrl, _, _, None) =>
+        buildEventForLegacyApp(maybePrivacyPolicyUrl.getOrElse(""), app, cmd)
+      case _ =>
+        Left("Unexpected application access value found: " + app.access)
+    }
   }
 
   def process(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): CommandHandler.Result = {
-    Future.successful(validate(app, cmd) map { _ =>
-      asEvents(app, cmd)
-    })
+    Future.successful(validate(app, cmd).fold(errs => Invalid(errs), _ => {
+      asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
+    }))
   }
 }

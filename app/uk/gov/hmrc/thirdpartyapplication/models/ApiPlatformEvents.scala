@@ -40,6 +40,7 @@ object EventType extends Enumeration {
   val API_UNSUBSCRIBED                         = Value
   val PROD_APP_NAME_CHANGED                    = Value
   val PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED = Value
+  val PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED = Value
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 
