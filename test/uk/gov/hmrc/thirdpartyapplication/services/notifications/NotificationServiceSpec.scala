@@ -83,5 +83,17 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value, Set(responsibleIndividual.emailAddress.value, loggedInUser))
     }
+
+    "when receive a ProductionLegacyAppPrivacyPolicyLocationChanged, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      val previousPrivacyPolicyUrl = "https://example.com/old-privacy-policy"
+      val newPrivacyPolicyUrl = "https://example.com/new-privacy-policy"
+      val event = ProductionLegacyAppPrivacyPolicyLocationChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousPrivacyPolicyUrl, newPrivacyPolicyUrl, adminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl, newPrivacyPolicyUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+    }
   }
 }

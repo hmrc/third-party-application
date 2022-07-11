@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
@@ -2535,6 +2535,22 @@ class ApplicationRepositoryISpec
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
+        case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      }
+    }
+
+    "handle ProductionLegacyAppPrivacyPolicyLocationChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldUrl = "http://example.com/old"
+      val newUrl = "http://example.com/new"
+      val access = Standard(List.empty, None, Some(oldUrl), Set.empty, None, None)
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val event = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl, adminEmail)
+      val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedPrivacyPolicyLocation.access match {
+        case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
         case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
       }
     }
