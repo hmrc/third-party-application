@@ -2566,7 +2566,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation)
+      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
@@ -2582,7 +2582,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl)
+      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl, adminEmail)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl

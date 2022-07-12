@@ -122,13 +122,13 @@ object UpdateApplicationEvent {
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
-    oldLocation: TermsAndConditionsLocation,
-    newLocation: TermsAndConditionsLocation,
+    oldUrl: String,
+    newUrl: String,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent
 
   object ProductionLegacyAppTermsConditionsLocationChanged {
-    implicit val format: OFormat[ProductionAppTermsConditionsLocationChanged] = Json.format[ProductionAppTermsConditionsLocationChanged]
+    implicit val format: OFormat[ProductionLegacyAppTermsConditionsLocationChanged] = Json.format[ProductionLegacyAppTermsConditionsLocationChanged]
   }
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")

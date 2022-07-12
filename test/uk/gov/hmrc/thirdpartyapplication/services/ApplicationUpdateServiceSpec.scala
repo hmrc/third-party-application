@@ -181,7 +181,7 @@ class ApplicationUpdateServiceSpec
     val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
     val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
     val changeTermsConditionsLocation = ChangeProductionApplicationTermsAndConditionsLocation(instigator, timestamp, newLocation)
-    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation)
+    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation, adminEmail)
 
     def setTermsAndConditionsLocation(app: ApplicationData, location: TermsAndConditionsLocation) = {
       app.access match {
