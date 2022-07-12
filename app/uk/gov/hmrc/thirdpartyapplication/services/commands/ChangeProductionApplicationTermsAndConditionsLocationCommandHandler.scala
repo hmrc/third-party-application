@@ -17,7 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -40,26 +41,47 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): NonEmptyList[UpdateApplicationEvent] = {
-    val oldLocation = app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation
-      case _ => TermsAndConditionsLocation.NoneProvided
+  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
+    cmd.newLocation match {
+      case TermsAndConditionsLocation.Url(newUrl) =>
+        Right(ProductionLegacyAppTermsConditionsLocationChanged(
+          id = UpdateApplicationEvent.Id.random,
+          applicationId = app.id,
+          eventDateTime = cmd.timestamp,
+          actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+          oldUrl = oldUrl,
+          newUrl = newUrl,
+          requestingAdminEmail = getRequester(app, cmd.instigator)
+        ))
+      case _ => Left("Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
     }
-    NonEmptyList.of(
-      ProductionAppTermsConditionsLocationChanged(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(getRequester(app, cmd.instigator)),
-        oldLocation = oldLocation,
-        newLocation = cmd.newLocation
-      )
+  }
+
+  private def buildEventForNewApp(oldLocation: TermsAndConditionsLocation, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): UpdateApplicationEvent =
+    ProductionAppTermsConditionsLocationChanged(
+      id = UpdateApplicationEvent.Id.random,
+      applicationId = app.id,
+      eventDateTime = cmd.timestamp,
+      actor = CollaboratorActor(getRequester(app, cmd.instigator)),
+      oldLocation = oldLocation,
+      newLocation = cmd.newLocation,
+      requestingAdminEmail = getRequester(app, cmd.instigator)
     )
+
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) =>
+        Right(buildEventForNewApp(termsAndConditionsLocation, app, cmd))
+      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None) =>
+        buildEventForLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
+      case _ =>
+        Left("Unexpected application access value found: " + app.access)
+    }
   }
 
   def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): CommandHandler.Result = {
-    Future.successful(validate(app, cmd) map { _ =>
-      asEvents(app, cmd)
-    })
+    Future.successful(validate(app, cmd).fold(errs => Invalid(errs), _ => {
+      asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
+    }))
   }
 }
