@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.services
+package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -94,6 +94,30 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "privacy policy URL", previousPrivacyPolicyUrl, newPrivacyPolicyUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+    }
+
+    "when receive a ProductionAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
+      val newTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
+      val event = ProductionAppTermsConditionsLocationChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousTermsAndConditionsUrl, newTermsAndConditionsUrl, adminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "terms and conditions URL", previousTermsAndConditionsUrl.value, newTermsAndConditionsUrl.value, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+    }
+
+    "when receive a ProductionLegacyAppTermsConditionsLocationChanged, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
+      val previousTermsAndConditionsUrl = "https://example.com/old-terms-conds"
+      val newTermsAndConditionsUrl = "https://example.com/new-terms-conds"
+      val event = ProductionLegacyAppTermsConditionsLocationChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousTermsAndConditionsUrl, newTermsAndConditionsUrl, adminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "terms and conditions URL", previousTermsAndConditionsUrl, newTermsAndConditionsUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
     }
   }
 }

@@ -18,17 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.helpers
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
-import uk.gov.hmrc.thirdpartyapplication.controllers.AuthorisationWrapper
-
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.controllers.StrideGatekeeperAuthorise
 
 object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
 
-  def givenUserIsAuthenticated(underTest: AuthorisationWrapper) = {
+  def givenUserIsAuthenticated(underTest: StrideGatekeeperAuthorise) = {
     when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
   }
 
-  def givenUserIsNotAuthenticated(underTest: AuthorisationWrapper) = {
+  def givenUserIsNotAuthenticated(underTest: StrideGatekeeperAuthorise) = {
     when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
   }
+
 }

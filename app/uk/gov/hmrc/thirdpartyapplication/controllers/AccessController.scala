@@ -20,22 +20,23 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json.toJson
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
 
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class AccessController @Inject() (
-    val authConnector: AuthConnector,
+    val authConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
-    val authConfig: AuthConnector.Config,
+    val authConfig: AuthConfig,
     accessService: AccessService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+  ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with AuthorisationWrapper {
 
   def readScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>
     accessService.readScopes(applicationId) map { scopeResponse =>

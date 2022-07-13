@@ -20,27 +20,29 @@ import javax.inject.{Inject, Singleton}
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.models.SubscriptionAlreadyExistsException
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.successful
+import scala.util.{Try, Success, Failure}
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class GatekeeperController @Inject() (
-    val authConnector: AuthConnector,
+    val authConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
-    val authConfig: AuthConnector.Config,
+    val authConfig: AuthConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+  ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -104,13 +106,27 @@ class GatekeeperController @Inject() (
     gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: ApplicationId) =
-    requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
-      implicit request =>
-        withJsonBody[ApiIdentifier] { api =>
-          subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api).map(_ => NoContent) recover {
-            case e: SubscriptionAlreadyExistsException => Conflict(JsErrorResponse(SUBSCRIPTION_ALREADY_EXISTS, e.getMessage))
-          } recover recovery
-        }
+  // TODO - this should use a request with payload validation in the JSformatter
+  def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
+    withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
+      Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
+        case Success(rateLimitTier) =>
+          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map(_ => NoContent) recover recovery
+        case Failure(_)                        => 
+          successful(UnprocessableEntity(
+            JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
+          ))
+      }
+    }
+    .recover(recovery)
+  }
+ 
+  def deleteApplication(id: ApplicationId) =
+    requiresAuthentication().async { implicit request =>
+      withJsonBodyFromAnyContent[DeleteApplicationRequest] { deleteApplicationPayload =>
+        gatekeeperService.deleteApplication(id, deleteApplicationPayload)
+          .map(_ => NoContent)
+          .recover(recovery)
+      }
     }
 }

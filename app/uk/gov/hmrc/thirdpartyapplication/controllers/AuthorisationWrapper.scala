@@ -25,9 +25,8 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
@@ -36,24 +35,41 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
-trait AuthorisationWrapper {
-  self: BaseController =>
+trait StrideGatekeeperAuthorise {
+  self: BackendController with JsonUtils =>
 
+  def authConfig: AuthConfig
+  def authConnector: StrideAuthConnector
   implicit def ec: ExecutionContext
 
-  def authConnector: AuthConnector
-  def applicationService: ApplicationService
-  def authConfig: AuthConnector.Config
+  def authenticate[A](input: Request[A]): Future[None.type] = {
+    if (authConfig.enabled) {
+      implicit val hc               = HeaderCarrierConverter.fromRequest(input)
+      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => None)
+    } else {
+      Future.successful(None)
+    }
+  }
+}
 
-  def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction
+case class MaybeMatchesAuthorisationKeyRequest[A](matchesAuthorisationKey: Boolean, request: Request[A]) extends WrappedRequest[A](request)
 
-  case class OptionalStrideAuthRequest[A](isStrideAuth: Boolean, matchesAuthorisationKey: Boolean, request: Request[A]) extends WrappedRequest[A](request)
+trait AuthKeyRefiner {
+  self: BaseController =>
+  
+  def authConfig: AuthConfig
 
-  def strideAuthRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, OptionalStrideAuthRequest] =
-    new ActionRefiner[Request, OptionalStrideAuthRequest] {
+  def authKeyRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] =
+    new ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] {
 
-      def refine[A](request: Request[A]): Future[Either[Result, OptionalStrideAuthRequest[A]]] = {
+      override protected def executionContext: ExecutionContext = ec
+
+      def refine[A](request: Request[A]): Future[Either[Result, MaybeMatchesAuthorisationKeyRequest[A]]] = {
         def matchesAuthorisationKey: Boolean = {
           def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
@@ -63,74 +79,17 @@ trait AuthorisationWrapper {
           }
         }
 
-        val strideAuthSuccess =
-          if (authConfig.enabled && request.headers.hasHeader(AUTHORIZATION)) {
-            if (matchesAuthorisationKey) {
-              Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, true, request))
-            } else {
-              implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-              val hasAnyGatekeeperEnrolment  = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
-              authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => OptionalStrideAuthRequest[A](isStrideAuth = true, false, request))
-            }
-          } else {
-            Future.successful(OptionalStrideAuthRequest[A](isStrideAuth = false, false, request))
-          }
+        val authKeyCheck = authConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
 
-        strideAuthSuccess.flatMap(strideAuthRequest => {
-          Future.successful(Right[Result, OptionalStrideAuthRequest[A]](strideAuthRequest))
-        })
+        (MaybeMatchesAuthorisationKeyRequest[A](authKeyCheck, request)).asRight[Result].pure[Future]
       }
-
-      override protected def executionContext: ExecutionContext = ec
     }
+}
 
-  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
-    Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
+trait AuthorisationWrapper {
+  self: BaseController with StrideGatekeeperAuthorise =>
 
-  def requiresAuthenticationFor(uuid: ApplicationId, accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, accessTypes.toList, false)
-
-  def requiresAuthenticationForStandardApplications(uuid: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(uuid, List(STANDARD), true)
-
-  def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
-
-  private def authenticate[A](input: Request[A]): Future[Option[Result]] = {
-    if (authConfig.enabled) {
-      implicit val hc               = HeaderCarrierConverter.fromRequest(input)
-      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
-      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map { _ => None }
-    } else {
-      Future.successful(None)
-    }
-  }
-
-  private def authenticationAction(implicit ec: ExecutionContext) = new ActionFilter[Request] {
-    def executionContext = ec
-
-    def filter[A](input: Request[A]): Future[Option[Result]] = authenticate(input)
-  }
-
-  private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType]) extends ApplicationTypeFilter(accessTypes, false) {
-
-    final protected def deriveAccessType[A](request: Request[A]) =
-      Future((Json.parse(request.body.toString) \ "access" \ "accessType").asOpt[AccessType])
-  }
-
-  private case class RepositoryBasedApplicationTypeFilter(applicationId: ApplicationId, toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
-      extends ApplicationTypeFilter(toMatchAccessTypes, failOnAccessTypeMismatch) {
-
-    private def error[A](e: Exception): OptionT[Future, A] = {
-      OptionT.liftF(Future.failed(e))
-    }
-
-    final protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]] =
-      applicationService.fetch(applicationId)
-        .map(app => app.access.accessType)
-        .orElse(error(new NotFoundException(s"application ${applicationId.value} doesn't exist")))
-        .value
-  }
+  def applicationService: ApplicationService
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
@@ -151,4 +110,36 @@ trait AuthorisationWrapper {
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }
+
+
+  private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType]) extends ApplicationTypeFilter(accessTypes, false) {
+
+    final protected def deriveAccessType[A](request: Request[A]) =
+      Future.successful((Json.parse(request.body.toString) \ "access" \ "accessType").asOpt[AccessType])
+  }
+
+  private case class RepositoryBasedApplicationTypeFilter(applicationId: ApplicationId, toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)
+      extends ApplicationTypeFilter(toMatchAccessTypes, failOnAccessTypeMismatch) {
+
+    private def error[A](e: Exception): OptionT[Future, A] = {
+      OptionT.liftF(Future.failed(e))
+    }
+
+    final protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]] =
+      applicationService.fetch(applicationId)
+        .map(app => app.access.accessType)
+        .orElse(error(new NotFoundException(s"application ${applicationId.value} doesn't exist")))
+        .value
+  }
+
+
+  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
+    Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
+
+  def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(STANDARD), true)
+
+  def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
+
 }

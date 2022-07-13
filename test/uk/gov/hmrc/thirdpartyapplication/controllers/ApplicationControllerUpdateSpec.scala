@@ -27,7 +27,6 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
@@ -48,6 +47,8 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.LocalDateTime
 
@@ -72,15 +73,14 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector             = mock[AuthConnector]
+    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
-    val testAuthConfig: AuthConnector.Config =
-      AuthConnector.Config(
-        baseUrl = "",
+    val testAuthConfig: AuthConfig =
+      AuthConfig(
         userRole = "USER",
         superUserRole = "SUPER",
         adminRole = "ADMIN",
