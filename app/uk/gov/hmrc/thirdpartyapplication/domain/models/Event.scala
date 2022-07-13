@@ -111,11 +111,7 @@ object UpdateApplicationEvent {
     oldLocation: TermsAndConditionsLocation,
     newLocation: TermsAndConditionsLocation,
     requestingAdminEmail: String
-<<<<<<< HEAD
-  ) extends UpdateApplicationEvent
-=======
   ) extends UpdateApplicationEvent with TriggersNotification
->>>>>>> APIS-5822
 
   object ProductionAppTermsConditionsLocationChanged {
     implicit val format: OFormat[ProductionAppTermsConditionsLocationChanged] = Json.format[ProductionAppTermsConditionsLocationChanged]
