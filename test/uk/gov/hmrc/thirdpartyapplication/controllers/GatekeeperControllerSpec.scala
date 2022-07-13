@@ -23,7 +23,6 @@ import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -47,6 +46,10 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import play.api.mvc.AnyContentAsJson
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock {
 
@@ -67,12 +70,12 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   trait Setup extends ApplicationLogger {
     val mockGatekeeperService   = mock[GatekeeperService]
-    val mockAuthConnector       = mock[AuthConnector]
+    val mockAuthConnector       = mock[StrideAuthConnector]
     val mockApplicationService  = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers        = HeaderCarrier()
 
-    val mockAuthConfig = mock[AuthConnector.Config](withSettings.lenient())
+    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
     when(mockAuthConfig.enabled).thenReturn(true)
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -109,7 +112,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
-  private def aNewApplicationResponse(access: Access = standardAccess, environment: Environment = Environment.PRODUCTION) = {
+  private def aNewApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION) = {
     val grantLengthInDays = 547
 
     new ApplicationResponse(
@@ -137,79 +140,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       "code"    -> ErrorCode.FORBIDDEN.toString,
       "message" -> "Insufficient enrolments"
     )
-  }
-
-  private def anAPIJson() = {
-    """{ "context" : "some-context", "version" : "1.0" }"""
-  }
-
-  "createSubscriptionForApplication" should {
-    val applicationId = ApplicationId.random
-    val body          = anAPIJson()
-
-    "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-        .thenReturn(successful(HasSucceeded))
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe NO_CONTENT
-    }
-
-    "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
-      new PrivilegedAndRopcSetup {
-
-        givenUserIsAuthenticated(underTest)
-
-        testWithPrivilegedAndRopcGatekeeperLoggedIn(
-          applicationId, {
-            when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-              .thenReturn(successful(HasSucceeded))
-
-            status(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))) shouldBe NO_CONTENT
-          }
-        )
-      }
-
-    "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
-      new PrivilegedAndRopcSetup {
-
-        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-          applicationId, {
-            assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
-          }
-        )
-      }
-
-    "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-
-      val body = """{ "json": "invalid" }"""
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
   }
 
   "Fetch apps" should {
@@ -492,6 +422,104 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       status(result) shouldBe OK
       verify(mockGatekeeperService).unblockApplication(applicationId)
+    }
+  }
+
+  "update rate limit tier" should {
+    import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+    
+    val applicationId                  = ApplicationId.random
+    val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
+    val validUpdateRateLimitTierJson   = Json.parse("""{ "rateLimitTier" : "silver" }""")
+
+    "fail with a 422 (unprocessable entity) when request json is invalid" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
+
+      status(result) shouldBe UNPROCESSABLE_ENTITY
+      verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
+    }
+
+    "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
+      status(result) shouldBe UNPROCESSABLE_ENTITY
+      contentAsJson(result) shouldBe Json.toJson(Json.parse(
+        """
+         {
+         "code": "INVALID_REQUEST_PAYLOAD",
+         "message": "'multicoloured' is an invalid rate limit tier"
+         }"""
+      ))
+    }
+
+    "succeed with a 204 (no content) when rate limit tier is successfully added to application" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
+
+      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
+
+      status(result) shouldBe NO_CONTENT
+      verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+
+      givenUserIsAuthenticated(underTest)
+
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*))
+        .thenReturn(failed(new RuntimeException("Expected test exception")))
+
+      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+    }
+
+    "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
+
+      givenUserIsNotAuthenticated(underTest)
+
+      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
+
+      intercept[SessionRecordNotFound](
+        await(underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson)))
+      )
+    }
+  }
+
+  "strideUserDeleteApplication" should {
+    val applicationId           = ApplicationId.random
+    val gatekeeperUserId        = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+
+    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
+      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*)).thenReturn(successful(Deleted))
+
+      val result = underTest.deleteApplication(applicationId).apply(request
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe NO_CONTENT
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
+      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*))
+        .thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.deleteApplication(applicationId).apply(request
+        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
+      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
     }
   }
 

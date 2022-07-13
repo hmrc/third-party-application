@@ -25,18 +25,16 @@ import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
-import uk.gov.hmrc.auth.core.AuthorisationException
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.SILVER
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -60,6 +58,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -88,13 +88,13 @@ class ApplicationControllerSpec
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: AuthConnector             = mock[AuthConnector]
+    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockUpliftNamingService: UpliftNamingService = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
-    val mockAuthConfig: AuthConnector.Config = mock[AuthConnector.Config]
+    val mockAuthConfig: AuthConfig = mock[AuthConfig]
     when(mockAuthConfig.enabled).thenReturn(enabled())
     when(mockAuthConfig.userRole).thenReturn("USER")
     when(mockAuthConfig.superUserRole).thenReturn("SUPER")
@@ -1221,70 +1221,6 @@ class ApplicationControllerSpec
 
   }
 
-  "update rate limit tier" should {
-
-    val applicationId                  = ApplicationId.random
-    val invalidUpdateRateLimitTierJson = Json.parse("""{ "foo" : "bar" }""")
-    val validUpdateRateLimitTierJson   = Json.parse("""{ "rateLimitTier" : "silver" }""")
-
-    "fail with a 422 (unprocessable entity) when request json is invalid" in new Setup {
-
-      givenUserIsAuthenticated(underTest)
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
-
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      verify(underTest.applicationService, never).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
-    }
-
-    "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
-
-      givenUserIsAuthenticated(underTest)
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
-      status(result) shouldBe UNPROCESSABLE_ENTITY
-      contentAsJson(result) shouldBe Json.toJson(Json.parse(
-        """
-         {
-         "code": "INVALID_REQUEST_PAYLOAD",
-         "message": "'multicoloured' is an invalid rate limit tier"
-         }"""
-      ))
-    }
-
-    "succeed with a 204 (no content) when rate limit tier is successfully added to application" in new Setup {
-
-      givenUserIsAuthenticated(underTest)
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
-
-      status(result) shouldBe NO_CONTENT
-      verify(underTest.applicationService).updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-
-      givenUserIsAuthenticated(underTest)
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*))
-        .thenReturn(failed(new RuntimeException("Expected test exception")))
-
-      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-    }
-
-    "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
-
-      givenUserIsNotAuthenticated(underTest)
-
-      when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
-
-      assertThrows[SessionRecordNotFound](await(underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))))
-    }
-  }
 
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
@@ -1440,7 +1376,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService, never).deleteApplication(*[ApplicationId], *, *)(*)
     }
 
-    "fail with a 400 error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
+    "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
       when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
 
@@ -1450,20 +1386,20 @@ class ApplicationControllerSpec
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "fail with an authorisation error when a production application is requested to be deleted and auth key is invalid" in new ProductionDeleteApplications {
+    "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new ProductionDeleteApplications {
       givenUserIsNotAuthenticated(underTest)
       when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
       when(mockAuthConfig.authorisationKey).thenReturn("foo")
 
-      val error = intercept[AuthorisationException] {
-        await(underTest.deleteApplication(applicationId)(request
+      val result = underTest.deleteApplication(applicationId)(
+          request
           .withBody(Json.toJson(deleteRequest))
           .withHeaders(AUTHORIZATION -> "bar")
-          .asInstanceOf[FakeRequest[AnyContent]]))
-      }
+          .asInstanceOf[FakeRequest[AnyContent]]
+        )
 
-      error.getMessage shouldBe "Session record not found"
+      status(result) shouldBe BAD_REQUEST
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
@@ -1489,38 +1425,6 @@ class ApplicationControllerSpec
 
       status(result) shouldBe NOT_FOUND
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
-    }
-  }
-
-  "strideUserDeleteApplication" should {
-    val applicationId           = ApplicationId.random
-    val gatekeeperUserId        = "big.boss.gatekeeper"
-    val requestedByEmailAddress = "admin@example.com"
-    val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
-
-    "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
-      givenUserIsAuthenticated(underTest)
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*)).thenReturn(successful(Deleted))
-
-      val result = underTest.deleteApplication(applicationId).apply(request
-        .withHeaders(AUTHORIZATION -> "foo")
-        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
-
-      status(result) shouldBe NO_CONTENT
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
-    }
-
-    "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      givenUserIsAuthenticated(underTest)
-      when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*))
-        .thenReturn(failed(new RuntimeException("Expected test failure")))
-
-      val result = underTest.deleteApplication(applicationId).apply(request
-        .withHeaders(AUTHORIZATION -> "foo")
-        .withBody(AnyContentAsJson(Json.toJson(deleteRequest))))
-
-      status(result) shouldBe INTERNAL_SERVER_ERROR
-      verify(mockGatekeeperService).deleteApplication(eqTo(applicationId), eqTo(deleteRequest))(*)
     }
   }
 }

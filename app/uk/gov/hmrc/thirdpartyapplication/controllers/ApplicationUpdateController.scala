@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import cats.data.NonEmptyChain
 import play.api.libs.json.Json
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate, ApplicationUpdateFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
@@ -30,18 +29,21 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class ApplicationUpdateController @Inject() (
     val applicationUpdateService: ApplicationUpdateService,
     val applicationService: ApplicationService,
-    val authConnector: AuthConnector,
-    val authConfig: AuthConnector.Config,
+    val authConnector: StrideAuthConnector,
+    val authConfig: AuthConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationUpdateFormatters
+    with StrideGatekeeperAuthorise
     with AuthorisationWrapper
     with ApplicationLogger {
 

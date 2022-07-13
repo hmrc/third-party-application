@@ -14,7 +14,9 @@ object AppDependencies {
     "org.typelevel"     %% "cats-core"                         % "2.0.0",
     "com.github.t3hnar" %% "scala-bcrypt"                      % "4.1",
     "uk.gov.hmrc"       %% "time"                              % "3.25.0",
-    "commons-validator"  % "commons-validator"                 % "1.7"
+    "commons-validator"  % "commons-validator"                 % "1.7",
+    "uk.gov.hmrc"       %% "internal-auth-client-play-28"      % "1.2.0"
+
   )
 
   private lazy val testDeps = Seq(

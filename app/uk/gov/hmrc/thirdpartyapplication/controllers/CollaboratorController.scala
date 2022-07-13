@@ -24,7 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.connector._
 
 import scala.concurrent.ExecutionContext
 
@@ -40,12 +39,10 @@ private[controllers] object SearchCollaboratorsRequest {
 @Singleton
 class CollaboratorController @Inject() (
     val applicationService: ApplicationService,
-    val authConnector: AuthConnector,
-    val authConfig: AuthConnector.Config,
     subscriptionService: SubscriptionService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with AuthorisationWrapper {
+  ) extends BackendController(cc) with JsonUtils {
 
   override implicit def hc(implicit request: RequestHeader) = {
     def header(key: String) = request.headers.get(key) map (key -> _)

@@ -23,7 +23,6 @@ import play.api.mvc._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
@@ -50,12 +49,14 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class ApplicationController @Inject() (
     val applicationService: ApplicationService,
-    val authConnector: AuthConnector,
-    val authConfig: AuthConnector.Config,
+    val authConnector: StrideAuthConnector,
+    val authConfig: AuthConfig,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
@@ -67,7 +68,9 @@ class ApplicationController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
+    with StrideGatekeeperAuthorise
     with AuthorisationWrapper
+    with AuthKeyRefiner
     with ApplicationLogger {
 
   import cats.implicits._
@@ -116,20 +119,6 @@ class ApplicationController @Inject() (
       applicationService.update(applicationId, application).map { result =>
         Ok(toJson(result))
       } recover recovery
-    }
-  }
-
-  def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
-    withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
-      Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
-        case scala.util.Success(rateLimitTier) =>
-          applicationService updateRateLimitTier (applicationId, rateLimitTier) map { _ =>
-            NoContent
-          } recover recovery
-        case Failure(_)                        => successful(UnprocessableEntity(
-            JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
-          ))
-      }
     }
   }
 
@@ -384,40 +373,23 @@ class ApplicationController @Inject() (
     }
   }
 
-  def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen strideAuthRefiner).async { implicit request: OptionalStrideAuthRequest[AnyContent] =>
+  def deleteApplication(id: ApplicationId): Action[AnyContent] = (Action andThen authKeyRefiner).async { implicit request: MaybeMatchesAuthorisationKeyRequest[AnyContent] =>
     def audit(app: ApplicationData): Future[AuditResult] = {
       logger.info(s"Delete application ${app.id.value} - ${app.name}")
       successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
     }
 
-    def nonStrideAuthenticatedApplicationDelete(): Future[Result] = {
-      val ET              = EitherTHelper.make[Result]
-      lazy val badRequest = BadRequest("Cannot delete this application")
+    val ET              = EitherTHelper.make[Result]
+    lazy val badRequest = BadRequest("Cannot delete this application")
 
-      (
-        for {
-          app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-          _   <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
-          _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
-        } yield NoContent
-      )
-        .fold(identity, identity)
-    }
-
-    def strideAuthenticatedApplicationDelete(deleteApplicationPayload: DeleteApplicationRequest): Future[Result] = {
-      // This is audited in the GK FE
-      gatekeeperService.deleteApplication(id, deleteApplicationPayload).map(_ => NoContent)
-    }
-
-    {
-      if (request.isStrideAuth) {
-        withJsonBodyFromAnyContent[DeleteApplicationRequest] {
-          deleteApplicationPayload => strideAuthenticatedApplicationDelete(deleteApplicationPayload)
-        }
-      } else {
-        nonStrideAuthenticatedApplicationDelete()
-      }
-    } recover recovery
+    (
+      for {
+        app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
+        _   <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
+        _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
+      } yield NoContent
+    )
+      .fold(identity, identity)
   }
 
   def confirmSetupComplete(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>

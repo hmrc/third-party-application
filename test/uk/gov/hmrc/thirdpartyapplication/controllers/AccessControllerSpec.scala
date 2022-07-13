@@ -22,7 +22,6 @@ import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc.{AnyContentAsEmpty, Result}
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
@@ -35,6 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import akka.stream.testkit.NoMaterializer
 
 import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 class AccessControllerSpec extends ControllerSpec {
   import play.api.test.Helpers._
@@ -51,9 +52,9 @@ class AccessControllerSpec extends ControllerSpec {
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   val mockApplicationService   = mock[ApplicationService]
-  val mockAuthConnector        = mock[AuthConnector]
+  val mockAuthConnector        = mock[StrideAuthConnector]
   val mockAccessService        = mock[AccessService]
-  val mockAuthConfig           = mock[AuthConnector.Config]
+  val mockAuthConfig           = mock[AuthConfig]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {

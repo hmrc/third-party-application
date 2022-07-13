@@ -14,29 +14,19 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.connector
+package uk.gov.hmrc.apiplatform.modules.gkauth.connectors
 
-import uk.gov.hmrc.auth.core.PlayAuthConnector
+import javax.inject.{Inject, Singleton}
+
+import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HttpClient
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-
-object AuthConnector {
-
-  case class Config(
-      baseUrl: String,
-      userRole: String,
-      superUserRole: String,
-      adminRole: String,
-      enabled: Boolean,
-      canDeleteApplications: Boolean,
-      authorisationKey: String
-    )
+object StrideAuthConnector {
+  case class Config(strideAuthBaseUrl: String)
 }
 
 @Singleton
-class AuthConnector @Inject() (val http: HttpClient, authConfig: AuthConnector.Config)(implicit val ec: ExecutionContext) extends PlayAuthConnector {
-  lazy val serviceUrl: String = authConfig.baseUrl
+class StrideAuthConnector @Inject()(val http: HttpClient, config: StrideAuthConnector.Config) extends PlayAuthConnector {
+  lazy val serviceUrl = config.strideAuthBaseUrl
 }
+
