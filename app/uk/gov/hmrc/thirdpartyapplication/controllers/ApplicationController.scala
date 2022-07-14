@@ -51,13 +51,14 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 @Singleton
 class ApplicationController @Inject() (
     val applicationService: ApplicationService,
-    val authConnector: StrideAuthConnector,
+    val strideAuthConnector: StrideAuthConnector,
     val authConfig: AuthConfig,
-    val strideAuthConfig: StrideAuthConnector.Config,
+    val strideAuthRoles: StrideAuthRoles,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,

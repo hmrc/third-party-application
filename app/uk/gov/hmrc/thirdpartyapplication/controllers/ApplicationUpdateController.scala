@@ -36,7 +36,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 class ApplicationUpdateController @Inject() (
     val applicationUpdateService: ApplicationUpdateService,
     val applicationService: ApplicationService,
-    val authConnector: StrideAuthConnector,
+    val strideAuthConnector: StrideAuthConnector,
     val authConfig: AuthConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext

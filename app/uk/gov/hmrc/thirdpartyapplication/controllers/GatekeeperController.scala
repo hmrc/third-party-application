@@ -32,15 +32,16 @@ import scala.concurrent.Future.successful
 import scala.util.{Try, Success, Failure}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 @Singleton
 class GatekeeperController @Inject() (
-    val authConnector: StrideAuthConnector,
+    val strideAuthConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
     val authConfig: AuthConfig,
-    val strideAuthConfig: StrideAuthConnector.Config,
+    val strideAuthRoles: StrideAuthRoles,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {

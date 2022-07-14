@@ -34,16 +34,15 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.mvc.Result
 import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 @Singleton
 class StrideAuthorisationService @Inject() (
-  authConnector: AuthConnector,
+  strideAuthConnector: StrideAuthConnector,
   forbiddenHandler: ForbiddenHandler,
-  strideAuthConfig: StrideAuthConnector.Config
+  strideAuthRoles: StrideAuthRoles
 )(implicit val ec: ExecutionContext) {
-
-  import strideAuthConfig.roles._
 
   def createStrideRefiner[A](strideRoleRequired: GatekeeperStrideRole): (Request[A]) => Future[Either[Result, LoggedInRequest[A]]] = implicit request => {
     implicit val hc = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
@@ -54,7 +53,7 @@ class StrideAuthorisationService @Inject() (
           Right(new LoggedInRequest(name.name, role, request))
         }
 
-        ( authorisedEnrolments.getEnrolment(adminRole).isDefined, authorisedEnrolments.getEnrolment(superUserRole).isDefined, authorisedEnrolments.getEnrolment(userRole).isDefined ) match {
+        ( authorisedEnrolments.getEnrolment(strideAuthRoles.adminRole).isDefined, authorisedEnrolments.getEnrolment(strideAuthRoles.superUserRole).isDefined, authorisedEnrolments.getEnrolment(strideAuthRoles.userRole).isDefined ) match {
           case (true, _, _) => applyRole(GatekeeperRoles.ADMIN)
           case (_, true, _) => applyRole(GatekeeperRoles.SUPERUSER)
           case (_, _, true) => applyRole(GatekeeperRoles.USER)
@@ -69,9 +68,9 @@ class StrideAuthorisationService @Inject() (
   }
 
   private def authorise(strideRoleRequired: GatekeeperStrideRole)(implicit hc: HeaderCarrier): Future[~[Option[Name], Enrolments]] = {
-    val predicate = StrideAuthorisationPredicateForGatekeeperRole(strideAuthConfig.roles)(strideRoleRequired)
+    val predicate = StrideAuthorisationPredicateForGatekeeperRole(strideAuthRoles)(strideRoleRequired)
     val retrieval = Retrievals.name and Retrievals.authorisedEnrolments
     
-    authConnector.authorise(predicate, retrieval)
+    strideAuthConnector.authorise(predicate, retrieval)
   }
 }

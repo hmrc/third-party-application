@@ -95,7 +95,7 @@ class ApplicationControllerSpec
       mockApplicationService,
       mockStrideAuthConnector,
       provideAuthConfig(),
-      mockStrideAuthConfig,
+      fakeStrideRoles,
       mockCredentialService,
       mockSubscriptionService,
       config,

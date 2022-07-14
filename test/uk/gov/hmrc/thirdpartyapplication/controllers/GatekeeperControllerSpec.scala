@@ -73,7 +73,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     implicit val headers        = HeaderCarrier()
 
     lazy val underTest =
-      new GatekeeperController(mockStrideAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, provideAuthConfig(), mockStrideAuthConfig, Helpers.stubControllerComponents()) {
+      new GatekeeperController(mockStrideAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, provideAuthConfig(), fakeStrideRoles, Helpers.stubControllerComponents()) {
         override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
       }
   }
