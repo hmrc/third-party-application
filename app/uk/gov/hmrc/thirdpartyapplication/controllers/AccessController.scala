@@ -26,14 +26,15 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationSer
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class AccessController @Inject() (
-    val authConnector: StrideAuthConnector,
+    val strideAuthConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
     val authConfig: AuthConfig,
-    val strideAuthConfig: StrideAuthConnector.Config,
+    val strideAuthRoles: StrideAuthRoles,
     accessService: AccessService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext

@@ -42,6 +42,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
 
@@ -52,8 +53,8 @@ class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
   abstract class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with AuthorisationWrapper {
     def applicationService: ApplicationService
     def authConfig: AuthConfig
-    def strideAuthConfig: StrideAuthConnector.Config
-    def authConnector: StrideAuthConnector
+    def strideAuthRoles: StrideAuthRoles
+    def strideAuthConnector: StrideAuthConnector
     implicit def ec = executionContext
   }
 
@@ -62,10 +63,10 @@ class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
 
     lazy val underTest = new TestAuthorisationWrapper(stubControllerComponents) {
       implicit val headerCarrier: HeaderCarrier         = HeaderCarrier()
-      val authConnector: StrideAuthConnector            = mock[StrideAuthConnector]
+      val strideAuthConnector: StrideAuthConnector      = mock[StrideAuthConnector]
       val applicationService: ApplicationService        = mock[ApplicationService]
       val authConfig: AuthConfig                        = provideAuthConfig()
-      val strideAuthConfig: StrideAuthConnector.Config  = mockStrideAuthConfig
+      val strideAuthRoles                               = fakeStrideRoles
     }
     val request   = FakeRequest()
 
@@ -103,7 +104,7 @@ class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
       )(standardRequest)
 
       status(result) shouldBe OK
-      verifyZeroInteractions(underTest.authConnector)
+      verifyZeroInteractions(underTest.strideAuthConnector)
     }
 
     "throws SessionRecordNotFound when access type in the payload is PRIVILEGED and gatekeeper is not logged in" in new Setup {
@@ -157,7 +158,7 @@ class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
       val result = underTest.requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(_ => successful(Ok("")))(request)
 
       status(result) shouldBe OK
-      verifyZeroInteractions(underTest.authConnector)
+      verifyZeroInteractions(underTest.strideAuthConnector)
     }
 
     "throws SessionRecordNotFound when access type of the application is PRIVILEGED and gatekeeper is not logged in" in new Setup {

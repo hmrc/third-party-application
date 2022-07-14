@@ -21,13 +21,11 @@ import org.mockito.MockitoSugar
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import java.util.Base64
 import java.nio.charset.StandardCharsets
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 
 trait MockedAuthHelper extends MockitoSugar with AuthSetup {
-  val fakeStrideRoles = StrideAuthConnector.StrideAuthRoles("ADMIN","SUPER","USER")
-
-  val mockStrideAuthConfig = mock[StrideAuthConnector.Config]
-  when(mockStrideAuthConfig.roles).thenReturn(fakeStrideRoles)
+  val fakeStrideRoles = StrideAuthRoles("ADMIN","SUPER","USER")
 
   val mockStrideAuthConnector: StrideAuthConnector = mock[StrideAuthConnector]
 }

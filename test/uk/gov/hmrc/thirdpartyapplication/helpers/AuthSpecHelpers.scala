@@ -24,11 +24,11 @@ import uk.gov.hmrc.thirdpartyapplication.controllers.StrideGatekeeperAuthorise
 object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
 
   def givenUserIsAuthenticated(underTest: StrideGatekeeperAuthorise) = {
-    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
+    when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
   }
 
   def givenUserIsNotAuthenticated(underTest: StrideGatekeeperAuthorise) = {
-    when(underTest.authConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
+    when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
   }
 
 }

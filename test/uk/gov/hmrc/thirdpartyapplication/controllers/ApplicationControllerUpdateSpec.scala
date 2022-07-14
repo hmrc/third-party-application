@@ -84,7 +84,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       mockApplicationService,
       mockStrideAuthConnector,
       provideAuthConfig(),
-      mockStrideAuthConfig,
+      fakeStrideRoles,
       mockCredentialService,
       mockSubscriptionService,
       config,

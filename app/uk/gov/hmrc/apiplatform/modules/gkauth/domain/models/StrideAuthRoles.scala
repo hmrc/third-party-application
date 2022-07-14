@@ -14,19 +14,10 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.apiplatform.modules.gkauth.connectors
+package uk.gov.hmrc.apiplatform.modules.gkauth.domain.models
 
-import javax.inject.{Inject, Singleton}
-
-import uk.gov.hmrc.auth.core._
-import uk.gov.hmrc.http.HttpClient
-
-object StrideAuthConnector {
-  case class Config(strideAuthBaseUrl: String)
-}
-
-@Singleton
-class StrideAuthConnector @Inject()(val http: HttpClient, config: StrideAuthConnector.Config) extends PlayAuthConnector {
-  lazy val serviceUrl = config.strideAuthBaseUrl
-}
-
+case class StrideAuthRoles(
+  adminRole: String,
+  superUserRole: String,
+  userRole: String
+)

@@ -38,20 +38,21 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 trait StrideGatekeeperAuthorise {
   self: BackendController with JsonUtils =>
 
   def authConfig: AuthConfig
-  def strideAuthConfig: StrideAuthConnector.Config
-  def authConnector: StrideAuthConnector
+  def strideAuthRoles: StrideAuthRoles
+  def strideAuthConnector: StrideAuthConnector
   implicit def ec: ExecutionContext
 
   def authenticate[A](input: Request[A]): Future[None.type] = {
     if (authConfig.enabled) {
       implicit val hc               = HeaderCarrierConverter.fromRequest(input)
-      val hasAnyGatekeeperEnrolment = Enrolment(strideAuthConfig.roles.userRole) or Enrolment(strideAuthConfig.roles.superUserRole) or Enrolment(strideAuthConfig.roles.adminRole)
-      authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => None)
+      val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
+      strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => None)
     } else {
       Future.successful(None)
     }

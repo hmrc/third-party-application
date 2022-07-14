@@ -38,6 +38,7 @@ import akka.stream.testkit.NoMaterializer
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec with MockedAuthHelper {
 
@@ -48,8 +49,8 @@ class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec with MockedAuth
   abstract class TestAuthoriseAction(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {
     def applicationService: ApplicationService
     def authConfig: AuthConfig
-    def strideAuthConfig: StrideAuthConnector.Config
-    def authConnector: StrideAuthConnector
+    def strideAuthRoles: StrideAuthRoles
+    def strideAuthConnector: StrideAuthConnector
     implicit def ec = executionContext
   }
 
@@ -58,10 +59,10 @@ class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec with MockedAuth
 
     lazy val underTest = new TestAuthoriseAction(stubControllerComponents) {
       implicit val headerCarrier: HeaderCarrier           = HeaderCarrier()
-      val authConnector: StrideAuthConnector              = mockStrideAuthConnector
+      val strideAuthConnector: StrideAuthConnector        = mockStrideAuthConnector
       val applicationService: ApplicationService          = mock[ApplicationService]
       val authConfig: AuthConfig                          = provideAuthConfig()
-      val strideAuthConfig                                = mockStrideAuthConfig
+      val strideAuthRoles                                 = fakeStrideRoles
     }
     val request   = FakeRequest()
 

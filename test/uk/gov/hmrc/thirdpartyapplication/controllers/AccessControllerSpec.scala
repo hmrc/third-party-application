@@ -168,7 +168,7 @@ class AccessControllerSpec extends ControllerSpec with MockedAuthHelper {
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
       when(mockAccessService.updateOverrides(*[ApplicationId], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
-    lazy val accessController = new AccessController(mockStrideAuthConnector, mockApplicationService, provideAuthConfig(), mockStrideAuthConfig, mockAccessService, mockControllerComponents)
+    lazy val accessController = new AccessController(mockStrideAuthConnector, mockApplicationService, provideAuthConfig(), fakeStrideRoles, mockAccessService, mockControllerComponents)
 
     givenUserIsAuthenticated(accessController)
 

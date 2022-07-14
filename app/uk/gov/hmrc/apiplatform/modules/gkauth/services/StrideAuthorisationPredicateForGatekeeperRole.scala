@@ -19,11 +19,10 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperStrideRole
 import uk.gov.hmrc.auth.core.authorise.Predicate
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.{GatekeeperRoles, StrideAuthRoles}
 
 object StrideAuthorisationPredicateForGatekeeperRole {
-  def apply(strideAuthRoles: StrideAuthConnector.StrideAuthRoles)(strideRoleRequired: GatekeeperStrideRole): Predicate = {
+  def apply(strideAuthRoles: StrideAuthRoles)(strideRoleRequired: GatekeeperStrideRole): Predicate = {
     import strideAuthRoles._
     
     val adminEnrolment = Enrolment(adminRole)

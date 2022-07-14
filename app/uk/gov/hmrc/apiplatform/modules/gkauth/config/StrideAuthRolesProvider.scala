@@ -16,16 +16,20 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.config
 
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
+import javax.inject.{Inject, Provider, Singleton}
+import play.api.Configuration
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
-class StrideConfigurationModule extends Module {
-  override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
-    List(
-      bind[StrideAuthConnector.Config].toProvider[StrideAuthConnectorConfigProvider],
-      bind[StrideAuthRoles].toProvider[StrideAuthRolesProvider]
-    )
+@Singleton
+class StrideAuthRolesProvider @Inject()(configuration: Configuration) extends ServicesConfig(configuration) with Provider[StrideAuthRoles] {
+  override def get(): StrideAuthRoles = {
+
+    val strideConfig = configuration.underlying.getConfig("stride")
+    val adminRole = strideConfig.getString("roles.admin")
+    val superUserRole = strideConfig.getString("roles.super-user")
+    val userRole = strideConfig.getString("roles.user")
+
+    StrideAuthRoles(adminRole, superUserRole, userRole)
   }
 }
