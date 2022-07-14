@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -57,11 +57,13 @@ class ApplicationUpdateServiceSpec
 
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
+    val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
+      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock
     )
@@ -173,6 +175,46 @@ class ApplicationUpdateServiceSpec
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
+  }
 
+  "update with ChangeProductionApplicationTermsAndConditionsLocation" should {
+    val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
+    val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
+    val changeTermsConditionsLocation = ChangeProductionApplicationTermsAndConditionsLocation(instigator, timestamp, newLocation)
+    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation, adminEmail)
+
+    def setTermsAndConditionsLocation(app: ApplicationData, location: TermsAndConditionsLocation) = {
+      app.access match {
+        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(termsAndConditionsLocation = location))))
+        case _ => fail("Unexpected access type: " + app.access)
+      }
+    }
+
+    "return the updated application if the application exists" in new Setup {
+      val appBefore = setTermsAndConditionsLocation(applicationData, oldLocation)
+      val appAfter = setTermsAndConditionsLocation(applicationData, newLocation)
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+
+      when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, changeTermsConditionsLocation).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
+      result shouldBe Right(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
+    }
+
+    "return the error if the application does not exist" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+      val result = await(underTest.update(applicationId, changeTermsConditionsLocation).value)
+
+      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
+      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
   }
 }

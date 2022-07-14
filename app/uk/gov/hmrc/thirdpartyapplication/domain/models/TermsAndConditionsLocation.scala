@@ -35,4 +35,12 @@ object TermsAndConditionsLocation {
     .and[InDesktopSoftware.type]("inDesktop")
     .and[Url]("url")
     .format
+
+  def describe(termsAndConditionsLocation: TermsAndConditionsLocation): String = {
+    termsAndConditionsLocation match {
+      case InDesktopSoftware => "In desktop software"
+      case Url(value)        => value
+      case _                 => "None provided"
+    }
+  }
 }

@@ -28,7 +28,7 @@ import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, _}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
@@ -2552,6 +2552,41 @@ class ApplicationRepositoryISpec
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
         case _ => fail("unexpected access type: " + appWithUpdatedPrivacyPolicyLocation.access)
+      }
+    }
+
+    "handle ProductionAppTermsConditionsLocationChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldLocation   = TermsAndConditionsLocation.InDesktopSoftware
+      val newLocation   = TermsAndConditionsLocation.Url("http://example.com")
+      val access        = Standard(List.empty, None, None, Set.empty, None, Some(
+        ImportantSubmissionData(None, ResponsibleIndividual.build("bob example", "bob@example.com"), Set.empty,
+          oldLocation, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
+      ))
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation, adminEmail)
+      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedTermsConditionsLocation.access match {
+        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
+        case _ => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
+      }
+    }
+
+    "handle ProductionLegacyAppTermsConditionsLocationChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldUrl = "http://example.com/old"
+      val newUrl = "http://example.com/new"
+      val access = Standard(List.empty, Some(oldUrl), None, Set.empty, None, None)
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl, adminEmail)
+      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedTermsConditionsLocation.access match {
+        case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
+        case _ => fail("unexpected access type: " + appWithUpdatedTermsConditionsLocation.access)
       }
     }
 
