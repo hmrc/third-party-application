@@ -47,16 +47,13 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
     with UpliftRequestSamples
-    with SubmissionsTestData {
+    with SubmissionsTestData
+    with MockedAuthHelper {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -81,32 +78,22 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector       = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
-
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
-    when(mockAuthConfig.enabled).thenReturn(enabled())
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
     val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
-    val underTest = new ApplicationController(
+    lazy val underTest = new ApplicationController(
       mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+      mockStrideAuthConnector,
+      provideAuthConfig(),
+      mockStrideAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,

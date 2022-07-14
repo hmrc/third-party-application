@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.internalauth.client.FrontendAuthComponents
+import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -30,12 +30,12 @@ import javax.inject.{Singleton, Inject}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
 @Singleton
-class LdapAuthorisationService @Inject() (auth: FrontendAuthComponents)(implicit ec: ExecutionContext) extends ApplicationLogger {
-  def refineLdap[A]: (MessagesRequest[A]) => Future[Either[MessagesRequest[A], LoggedInRequest[A]]] = (msgRequest) => {
+class LdapAuthorisationService @Inject() (auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends ApplicationLogger {
+  def refineLdap[A]: (Request[A]) => Future[Either[Request[A], LoggedInRequest[A]]] = (request) => {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(msgRequest, msgRequest.session)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    lazy val notAuthenticatedOrAuthorized: Either[MessagesRequest[A], LoggedInRequest[A]] = Left(msgRequest)
+    lazy val notAuthenticatedOrAuthorized: Either[Request[A], LoggedInRequest[A]] = Left(request)
 
     hc.authorization.fold({
       logger.debug("No Header Carrier Authoriation")
@@ -43,7 +43,7 @@ class LdapAuthorisationService @Inject() (auth: FrontendAuthComponents)(implicit
     })(authorization => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
         .map {
-          case (name ~ true) => Right(new LoggedInRequest(Some(name.value), GatekeeperRoles.READ_ONLY, msgRequest)) 
+          case (name ~ true) => Right(new LoggedInRequest(Some(name.value), GatekeeperRoles.READ_ONLY, request)) 
           case (name ~ false) => 
             logger.debug("No LDAP predicate matched")
             notAuthenticatedOrAuthorized

@@ -34,10 +34,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import akka.stream.testkit.NoMaterializer
 
 import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
-class AccessControllerSpec extends ControllerSpec {
+class AccessControllerSpec extends ControllerSpec with MockedAuthHelper {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
@@ -52,9 +50,7 @@ class AccessControllerSpec extends ControllerSpec {
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   val mockApplicationService   = mock[ApplicationService]
-  val mockAuthConnector        = mock[StrideAuthConnector]
   val mockAccessService        = mock[AccessService]
-  val mockAuthConfig           = mock[AuthConfig]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {
@@ -172,7 +168,7 @@ class AccessControllerSpec extends ControllerSpec {
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
       when(mockAccessService.updateOverrides(*[ApplicationId], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
-    private[controllers] val accessController = new AccessController(mockAuthConnector, mockApplicationService, mockAuthConfig, mockAccessService, mockControllerComponents)
+    lazy val accessController = new AccessController(mockStrideAuthConnector, mockApplicationService, provideAuthConfig(), mockStrideAuthConfig, mockAccessService, mockControllerComponents)
 
     givenUserIsAuthenticated(accessController)
 

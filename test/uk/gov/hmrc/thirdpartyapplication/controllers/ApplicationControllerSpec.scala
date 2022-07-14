@@ -46,8 +46,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import java.{util => ju}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -58,8 +56,6 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.{LocalDateTime, ZoneOffset}
 
@@ -68,47 +64,38 @@ class ApplicationControllerSpec
     with ApplicationStateUtil
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData {
+    with ApplicationTestData
+    with MockedAuthHelper {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup {
+  trait Setup extends AuthSetup {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockUpliftNamingService: UpliftNamingService = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
-    when(mockAuthConfig.enabled).thenReturn(enabled())
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
-
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
     val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
-    val underTest = new ApplicationController(
+    lazy val underTest = new ApplicationController(
       mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+      mockStrideAuthConnector,
+      provideAuthConfig(),
+      mockStrideAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,
@@ -120,16 +107,7 @@ class ApplicationControllerSpec
     )
   }
 
-  trait SandboxDeleteApplications extends Setup {
-    override def canDeleteApplications() = true
-    override def enabled()               = false
-  }
-
-  trait ProductionDeleteApplications extends Setup {
-    override def canDeleteApplications() = false
-    override def enabled()               = true
-  }
-
+  
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
@@ -1312,9 +1290,8 @@ class ApplicationControllerSpec
     val gatekeeperUserId                             = "big.boss.gatekeeper"
     val requestedByEmailAddress                      = "admin@example.com"
     val deleteRequest                                = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
-    def base64Encode(stringToEncode: String): String = new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
 
-    "succeed when a sandbox application is successfully deleted" in new SandboxDeleteApplications {
+    "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
 
@@ -1324,7 +1301,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in TESTING state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
       val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = PRODUCTION)
       val inTestingId = application.id
 
@@ -1337,7 +1314,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(inTestingId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
       val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = PRODUCTION)
       val inPendingId = application.id
 
@@ -1350,7 +1327,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
       val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = PRODUCTION)
       val inPendingId = application.id
 
@@ -1363,7 +1340,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
     }
 
-    "fail when a principal application is in PRODUCTION state is deleted" in new ProductionDeleteApplications {
+    "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
       val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = PRODUCTION)
       val inProdId = application.id
 
@@ -1376,7 +1353,7 @@ class ApplicationControllerSpec
       verify(mockApplicationService, never).deleteApplication(*[ApplicationId], *, *)(*)
     }
 
-    "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
+    "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new Setup with ProductionAuthSetup {
       when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
 
@@ -1386,16 +1363,15 @@ class ApplicationControllerSpec
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new ProductionDeleteApplications {
+    "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new Setup with ProductionAuthSetup {
       givenUserIsNotAuthenticated(underTest)
       when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
-      when(mockAuthConfig.authorisationKey).thenReturn("foo")
 
       val result = underTest.deleteApplication(applicationId)(
           request
           .withBody(Json.toJson(deleteRequest))
-          .withHeaders(AUTHORIZATION -> "bar")
+          .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey.reverse))
           .asInstanceOf[FakeRequest[AnyContent]]
         )
 
@@ -1403,22 +1379,21 @@ class ApplicationControllerSpec
       verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "succeed when a production application is requested to be deleted and authorisation key is valid" in new ProductionDeleteApplications {
+    "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
       when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
       when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
-      val authorisationKey = "foo"
-      when(mockAuthConfig.authorisationKey).thenReturn(authorisationKey)
-
+      
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
-        .asInstanceOf[FakeRequest[AnyContent]])
+        .asInstanceOf[FakeRequest[AnyContent]]
+        )
 
       status(result) shouldBe NO_CONTENT
       verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new SandboxDeleteApplications {
+    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new Setup with SandboxAuthSetup {
       when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.none)
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])

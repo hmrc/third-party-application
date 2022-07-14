@@ -29,9 +29,6 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-
 import java.time.LocalDateTime
 
 class ApplicationUpdateControllerSpec
@@ -39,7 +36,8 @@ class ApplicationUpdateControllerSpec
     with ApplicationStateUtil
     with ControllerTestData
     with TableDrivenPropertyChecks
-    with ApplicationTestData {
+    with ApplicationTestData
+    with MockedAuthHelper {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
@@ -50,14 +48,12 @@ class ApplicationUpdateControllerSpec
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
     val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector           = mock[StrideAuthConnector]
-    val mockAuthConfig: AuthConfig       = mock[AuthConfig]
 
-    val underTest = new ApplicationUpdateController(
+    lazy val underTest = new ApplicationUpdateController(
       ApplicationUpdateServiceMock.aMock,
       mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+      mockStrideAuthConnector,
+      provideAuthConfig(),
       Helpers.stubControllerComponents()
     )
 

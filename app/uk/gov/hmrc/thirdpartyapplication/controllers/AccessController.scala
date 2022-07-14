@@ -33,6 +33,7 @@ class AccessController @Inject() (
     val authConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
     val authConfig: AuthConfig,
+    val strideAuthConfig: StrideAuthConnector.Config,
     accessService: AccessService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext

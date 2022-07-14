@@ -47,47 +47,34 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.LocalDateTime
+import org.mockito.MockitoSugar
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
-    with ApplicationStateUtil with TableDrivenPropertyChecks {
+    with ApplicationStateUtil with TableDrivenPropertyChecks with MockedAuthHelper
+     {
 
   import play.api.test.Helpers
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup {
+  trait Setup extends MockitoSugar {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
     val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
-    val testAuthConfig: AuthConfig =
-      AuthConfig(
-        userRole = "USER",
-        superUserRole = "SUPER",
-        adminRole = "ADMIN",
-        enabled = enabled(),
-        canDeleteApplications = canDeleteApplications(),
-        authorisationKey = "12345"
-      )
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
@@ -95,8 +82,9 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
     val underTest = new ApplicationController(
       mockApplicationService,
-      mockAuthConnector,
-      testAuthConfig,
+      mockStrideAuthConnector,
+      provideAuthConfig(),
+      mockStrideAuthConfig,
       mockCredentialService,
       mockSubscriptionService,
       config,
@@ -106,16 +94,6 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       mockUpliftLinkService,
       Helpers.stubControllerComponents()
     )
-  }
-
-  trait SandboxDeleteApplications extends Setup {
-    override def canDeleteApplications() = true
-    override def enabled()               = false
-  }
-
-  trait ProductionDeleteApplications extends Setup {
-    override def canDeleteApplications() = false
-    override def enabled()               = true
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
@@ -162,7 +140,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val privilegedApplicationRequest = anUpdateApplicationRequest(privilegedAccess)
     val id                           = ApplicationId.random
 
-    "fail with a 404 (not found) when a valid Privileged application and gatekeeper is not logged in" in new Setup {
+    "fail with a 404 (not found) when a valid Privileged application and gatekeeper is not logged in" in new Setup with MockedAuthHelper {
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
@@ -171,7 +149,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
+    "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup with MockedAuthHelper {
 
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
 
@@ -180,7 +158,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
       verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
     }
 
-    "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup {
+    "fail with a 422 (unprocessable entity) when request exceeds maximum number of redirect URIs" in new Setup with MockedAuthHelper {
       when(underTest.applicationService.fetch(id)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
 
       val updateApplicationRequestJson: String =
