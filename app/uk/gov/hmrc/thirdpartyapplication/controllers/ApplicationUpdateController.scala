@@ -43,8 +43,6 @@ class ApplicationUpdateController @Inject() (
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationUpdateFormatters
-    with StrideGatekeeperAuthorise
-    with AuthorisationWrapper
     with ApplicationLogger {
 
   import cats.implicits._

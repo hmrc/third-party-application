@@ -22,7 +22,14 @@ import uk.gov.hmrc.auth.core._
 import uk.gov.hmrc.http.HttpClient
 
 object StrideAuthConnector {
-  case class Config(strideAuthBaseUrl: String)
+  
+  case class StrideAuthRoles(
+    adminRole: String,
+    superUserRole: String,
+    userRole: String
+  )
+
+  case class Config(strideAuthBaseUrl: String, roles: StrideAuthRoles)
 }
 
 @Singleton

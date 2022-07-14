@@ -43,13 +43,14 @@ trait StrideGatekeeperAuthorise {
   self: BackendController with JsonUtils =>
 
   def authConfig: AuthConfig
+  def strideAuthConfig: StrideAuthConnector.Config
   def authConnector: StrideAuthConnector
   implicit def ec: ExecutionContext
 
   def authenticate[A](input: Request[A]): Future[None.type] = {
     if (authConfig.enabled) {
       implicit val hc               = HeaderCarrierConverter.fromRequest(input)
-      val hasAnyGatekeeperEnrolment = Enrolment(authConfig.userRole) or Enrolment(authConfig.superUserRole) or Enrolment(authConfig.adminRole)
+      val hasAnyGatekeeperEnrolment = Enrolment(strideAuthConfig.roles.userRole) or Enrolment(strideAuthConfig.roles.superUserRole) or Enrolment(strideAuthConfig.roles.adminRole)
       authConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => None)
     } else {
       Future.successful(None)
@@ -73,14 +74,18 @@ trait AuthKeyRefiner {
         def matchesAuthorisationKey: Boolean = {
           def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
-          request.headers.get("Authorization") match {
-            case Some(authHeader) => base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
+          request.headers.get(AUTHORIZATION) match {
+            case Some(authHeader) => println("HDR: "+authHeader+" vs "+authConfig.authorisationKey); base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
             case _                => false
           }
         }
 
-        val authKeyCheck = authConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
+        println("Enabled "+authConfig.enabled)
+        println("Matches "+matchesAuthorisationKey)
+        println("Header " + request.headers.hasHeader(AUTHORIZATION))
 
+        val authKeyCheck = authConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
+        println("Auth key check "+authKeyCheck)
         (MaybeMatchesAuthorisationKeyRequest[A](authKeyCheck, request)).asRight[Result].pure[Future]
       }
     }

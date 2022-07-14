@@ -48,10 +48,8 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import play.api.mvc.AnyContentAsJson
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with MockedAuthHelper {
 
   import play.api.test.Helpers._
 
@@ -70,19 +68,12 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   trait Setup extends ApplicationLogger {
     val mockGatekeeperService   = mock[GatekeeperService]
-    val mockAuthConnector       = mock[StrideAuthConnector]
     val mockApplicationService  = mock[ApplicationService]
     val mockSubscriptionService = mock[SubscriptionService]
     implicit val headers        = HeaderCarrier()
 
-    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
-    when(mockAuthConfig.enabled).thenReturn(true)
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-
-    val underTest =
-      new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, mockAuthConfig, Helpers.stubControllerComponents()) {
+    lazy val underTest =
+      new GatekeeperController(mockStrideAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, provideAuthConfig(), mockStrideAuthConfig, Helpers.stubControllerComponents()) {
         override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
       }
   }

@@ -26,6 +26,11 @@ class StrideAuthConnectorConfigProvider @Inject()(configuration: Configuration) 
   override def get(): StrideAuthConnector.Config = {
     val strideAuthBaseUrl = baseUrl("auth")
 
-    StrideAuthConnector.Config(strideAuthBaseUrl)
+    val strideConfig = configuration.underlying.getConfig("stride")
+    val adminRole = strideConfig.getString("roles.admin")
+    val superUserRole = strideConfig.getString("roles.super-user")
+    val userRole = strideConfig.getString("roles.user")
+
+    StrideAuthConnector.Config(strideAuthBaseUrl, StrideAuthConnector.StrideAuthRoles(adminRole, superUserRole, userRole))
   }
 }

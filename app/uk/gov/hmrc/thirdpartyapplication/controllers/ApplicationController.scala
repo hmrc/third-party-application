@@ -57,6 +57,7 @@ class ApplicationController @Inject() (
     val applicationService: ApplicationService,
     val authConnector: StrideAuthConnector,
     val authConfig: AuthConfig,
+    val strideAuthConfig: StrideAuthConnector.Config,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,

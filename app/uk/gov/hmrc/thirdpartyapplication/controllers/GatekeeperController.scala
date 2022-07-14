@@ -40,6 +40,7 @@ class GatekeeperController @Inject() (
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
     val authConfig: AuthConfig,
+    val strideAuthConfig: StrideAuthConnector.Config,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {

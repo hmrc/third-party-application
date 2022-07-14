@@ -39,18 +39,16 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
-class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec {
+class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec with MockedAuthHelper {
 
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
-  val mockAuthConfig                           = mock[AuthConfig]
-
-  when(mockAuthConfig.enabled).thenReturn(true)
 
   abstract class TestAuthoriseAction(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {
     def applicationService: ApplicationService
     def authConfig: AuthConfig
+    def strideAuthConfig: StrideAuthConnector.Config
     def authConnector: StrideAuthConnector
     implicit def ec = executionContext
   }
@@ -58,11 +56,12 @@ class StrideGatekeeperAuthoriseActionSpec extends ControllerSpec {
   trait Setup {
     val stubControllerComponents = Helpers.stubControllerComponents()
 
-    val underTest = new TestAuthoriseAction(stubControllerComponents) {
+    lazy val underTest = new TestAuthoriseAction(stubControllerComponents) {
       implicit val headerCarrier: HeaderCarrier           = HeaderCarrier()
-      override val authConnector: StrideAuthConnector     = mock[StrideAuthConnector]
-      override val applicationService: ApplicationService = mock[ApplicationService]
-      override val authConfig: AuthConfig       = mockAuthConfig
+      val authConnector: StrideAuthConnector              = mockStrideAuthConnector
+      val applicationService: ApplicationService          = mock[ApplicationService]
+      val authConfig: AuthConfig                          = provideAuthConfig()
+      val strideAuthConfig                                = mockStrideAuthConfig
     }
     val request   = FakeRequest()
 

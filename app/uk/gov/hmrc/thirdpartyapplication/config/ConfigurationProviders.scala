@@ -136,14 +136,11 @@ class AuthConfigProvider @Inject() (val configuration: Configuration)
     with Provider[AuthConfig] {
 
   override def get() = {
-    val userRole                       = getString("roles.user")
-    val superUserRole                  = getString("roles.super-user")
-    val adminRole                      = getString("roles.admin")
     val enabled                        = getConfBool("auth.enabled", true)
     val canDeleteApplications: Boolean = ConfigHelper.getConfig("canDeleteApplications", configuration.getOptional[Boolean])
     val authorisationKey               = getString("authorisationKey")
 
-    AuthConfig(userRole, superUserRole, adminRole, enabled, canDeleteApplications, authorisationKey)
+    AuthConfig(enabled, canDeleteApplications, authorisationKey)
   }
 }
 

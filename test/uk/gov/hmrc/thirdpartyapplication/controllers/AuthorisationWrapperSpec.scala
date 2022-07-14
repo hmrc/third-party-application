@@ -43,18 +43,16 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.LocalDateTime
 
-class AuthorisationWrapperSpec extends ControllerSpec {
+class AuthorisationWrapperSpec extends ControllerSpec with MockedAuthHelper {
 
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
-  val mockAuthConfig                           = mock[AuthConfig]
-
-  when(mockAuthConfig.enabled).thenReturn(true)
 
   abstract class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with AuthorisationWrapper {
     def applicationService: ApplicationService
     def authConfig: AuthConfig
+    def strideAuthConfig: StrideAuthConnector.Config
     def authConnector: StrideAuthConnector
     implicit def ec = executionContext
   }
@@ -62,11 +60,12 @@ class AuthorisationWrapperSpec extends ControllerSpec {
   trait Setup {
     val stubControllerComponents = Helpers.stubControllerComponents()
 
-    val underTest = new TestAuthorisationWrapper(stubControllerComponents) {
-      implicit val headerCarrier: HeaderCarrier           = HeaderCarrier()
-      override val authConnector: StrideAuthConnector     = mock[StrideAuthConnector]
-      override val applicationService: ApplicationService = mock[ApplicationService]
-      override val authConfig: AuthConfig       = mockAuthConfig
+    lazy val underTest = new TestAuthorisationWrapper(stubControllerComponents) {
+      implicit val headerCarrier: HeaderCarrier         = HeaderCarrier()
+      val authConnector: StrideAuthConnector            = mock[StrideAuthConnector]
+      val applicationService: ApplicationService        = mock[ApplicationService]
+      val authConfig: AuthConfig                        = provideAuthConfig()
+      val strideAuthConfig: StrideAuthConnector.Config  = mockStrideAuthConfig
     }
     val request   = FakeRequest()
 
