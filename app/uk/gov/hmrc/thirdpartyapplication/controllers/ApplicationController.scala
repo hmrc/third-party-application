@@ -49,16 +49,16 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.AuthKeyRefiner
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 
 @Singleton
 class ApplicationController @Inject() (
-    val applicationService: ApplicationService,
-    val strideAuthConnector: StrideAuthConnector,
+    val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     val authConfig: AuthConfig,
-    val strideAuthRoles: StrideAuthRoles,
+    val applicationService: ApplicationService,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
@@ -70,9 +70,8 @@ class ApplicationController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with StrideGatekeeperAuthorise
-    with AuthorisationWrapper
-    with actions.AuthKeyRefiner
+    with ApplicationTypeAuthorisationActions
+    with AuthKeyRefiner
     with ApplicationLogger {
 
   import cats.implicits._

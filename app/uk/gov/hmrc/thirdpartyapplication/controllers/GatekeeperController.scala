@@ -30,31 +30,23 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 import scala.util.{Try, Success, Failure}
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapAuthorisationService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 
 @Singleton
 class GatekeeperController @Inject() (
-    val strideAuthConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
+    val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
+    val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
-    val strideAuthorisationService: StrideAuthorisationService,
-    val ldapAuthorisationService: LdapAuthorisationService,
-    val authConfig: AuthConfig,
-    val strideAuthRoles: StrideAuthRoles,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc)
   with JsonUtils
-  with StrideGatekeeperAuthorise
-  with StrideGatekeeperAuthoriseAction
-  with AnyStrideUserActionMixin
-  with GatekeeperAuthorisationActions {
+  with AnyGatekeeperRoleAuthorisationAction
+  with OnlyStrideGatekeeperRoleAuthoriseAction {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")

@@ -14,16 +14,13 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.controllers
+package uk.gov.hmrc.thirdpartyapplication.controllers.actions
 
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
 import play.api.mvc._
-import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode.APPLICATION_NOT_FOUND
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
@@ -31,35 +28,27 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 
-trait StrideGatekeeperAuthorise {
-  self: BackendController with JsonUtils =>
+trait ApplicationTypeAuthorisationActions {
+  self: BaseController =>
 
-  def authConfig: AuthConfig
-  def strideAuthRoles: StrideAuthRoles
-  def strideAuthConnector: StrideAuthConnector
   implicit def ec: ExecutionContext
-
-  def authenticate[A](input: Request[A]): Future[None.type] = {
-    if (authConfig.enabled) {
-      implicit val hc               = HeaderCarrierConverter.fromRequest(input)
-      val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
-      strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval).map(_ => None)
-    } else {
-      Future.successful(None)
-    }
-  }
-}
-
-
-trait AuthorisationWrapper {
-  self: BaseController with StrideGatekeeperAuthorise =>
-
   def applicationService: ApplicationService
+  def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
+
+
+  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
+    Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
+
+  def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(STANDARD), true)
+
+  def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
+    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
+
+
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
@@ -73,7 +62,7 @@ trait AuthorisationWrapper {
 
     def filter[A](request: Request[A]): Future[Option[Result]] =
       deriveAccessType(request) flatMap {
-        case Some(accessType) if toMatchAccessTypes.contains(accessType) => authenticate(request)
+        case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE
         case _                                                           => successful(None)
       } recover localRecovery
@@ -101,15 +90,4 @@ trait AuthorisationWrapper {
         .orElse(error(new NotFoundException(s"application ${applicationId.value} doesn't exist")))
         .value
   }
-
-
-  def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
-    Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
-
-  def requiresAuthenticationForStandardApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(STANDARD), true)
-
-  def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
-    Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
-
 }

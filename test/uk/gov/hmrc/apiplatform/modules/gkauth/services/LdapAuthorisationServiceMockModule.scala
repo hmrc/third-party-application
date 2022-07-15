@@ -30,7 +30,7 @@ trait LdapAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
 
   protected trait BaseLdapAuthorisationServiceMock {
-    def aMock: LdapAuthorisationService
+    def aMock: LdapGatekeeperRoleAuthorisationService
 
     object Auth {
       private def wrap[A](fn: Request[A] => Future[Either[Request[A], LoggedInRequest[A]]]) = {
@@ -51,7 +51,7 @@ trait LdapAuthorisationServiceMockModule {
   }
   
   object LdapAuthorisationServiceMock extends BaseLdapAuthorisationServiceMock {
-    val aMock = mock[LdapAuthorisationService]
+    val aMock = mock[LdapGatekeeperRoleAuthorisationService]
   }
 
 }
