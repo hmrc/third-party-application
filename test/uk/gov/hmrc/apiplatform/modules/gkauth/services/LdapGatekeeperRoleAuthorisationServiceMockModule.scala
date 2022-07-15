@@ -19,38 +19,23 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 
-import play.api.mvc.Request
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.LoggedInRequest
-
-import scala.concurrent.Future
+import play.api.mvc.Results._
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles
 
-trait LdapAuthorisationServiceMockModule {
+trait LdapGatekeeperRoleAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
 
-  protected trait BaseLdapAuthorisationServiceMock {
+  protected trait BaseLdapGatekeeperRoleAuthorisationServiceMock {
     def aMock: LdapGatekeeperRoleAuthorisationService
 
-    object Auth {
-      private def wrap[A](fn: Request[A] => Future[Either[Request[A], LoggedInRequest[A]]]) = {
-        when(aMock.refineLdap[A]).thenReturn(fn)
-      }
-      def succeeds[A] = {
-        wrap[A](
-          (msg) => successful(Right(new LoggedInRequest(Some("Bobby Example"), GatekeeperRoles.READ_ONLY, msg)))
-        )
-      }
+    object EnsureHasGatekeeperRole {
+      def succeeds[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
 
-      def notAuthorised[A] = {
-        wrap[A](
-          (msg) => successful(Left(msg))
-        )
-      }
+      def notAuthorised[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Forbidden("Boo"))))
     }
   }
   
-  object LdapAuthorisationServiceMock extends BaseLdapAuthorisationServiceMock {
+  object LdapGatekeeperRoleAuthorisationServiceMock extends BaseLdapGatekeeperRoleAuthorisationServiceMock {
     val aMock = mock[LdapGatekeeperRoleAuthorisationService]
   }
 

@@ -29,7 +29,7 @@ abstract class AbstractGatekeeperRoleAuthorisationService(authConfig: AuthConfig
   protected lazy val FORBIDDEN_RESPONSE = successful(Some(Results.Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))))
   protected lazy val OK_RESPONSE = successful(None)
 
-  final def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
+  def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
     if (authConfig.enabled) {
       innerEnsureHasGatekeeperRole(request)
     } else {

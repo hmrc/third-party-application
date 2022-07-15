@@ -26,8 +26,6 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 trait MockedAuthHelper extends MockitoSugar with AuthSetup {
   val fakeStrideRoles = StrideAuthRoles("ADMIN","SUPER","USER")
-
-  val mockStrideAuthConnector: StrideAuthConnector = mock[StrideAuthConnector]
 }
 
 trait AuthSetup {
