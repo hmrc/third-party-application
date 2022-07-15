@@ -28,6 +28,8 @@ import play.api.mvc.Result
 import play.api.mvc.Results._
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.auth.core.{InvalidBearerToken}
+import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
 
 trait StrideAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
@@ -45,20 +47,20 @@ trait StrideAuthorisationServiceMockModule {
         )
       }
 
-      def invalidBearerToken[A]() = {
+      def invalidBearerToken[A] = {
         wrap[A](
           (msg) => failed(new InvalidBearerToken)
         )
       }
-      def hasInsufficientEnrolments[A]() = {
+      def hasInsufficientEnrolments[A] = {
         wrap[A](
           (msg) => successful(Left(Forbidden("You do not have permission")))
         )
       }
 
-      def sessionRecordNotFound[A]() = {
+      def sessionRecordNotFound[A] = {
         wrap[A](
-          (msg) => successful(Left(Redirect("http://example.com")))
+          (msg) => successful(Left(Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))))
         )
       }
     }

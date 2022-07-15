@@ -33,6 +33,9 @@ import scala.util.{Try, Success, Failure}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideAuthorisationService
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -40,11 +43,18 @@ class GatekeeperController @Inject() (
     val applicationService: ApplicationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
+    val strideAuthorisationService: StrideAuthorisationService,
+    val ldapAuthorisationService: LdapAuthorisationService,
     val authConfig: AuthConfig,
     val strideAuthRoles: StrideAuthRoles,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {
+  ) extends BackendController(cc)
+  with JsonUtils
+  with StrideGatekeeperAuthorise
+  with StrideGatekeeperAuthoriseAction
+  with AnyStrideUserActionMixin
+  with GatekeeperAuthorisationActions {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -94,13 +104,13 @@ class GatekeeperController @Inject() (
     } recover recovery
   }
 
-  def fetchAppsForGatekeeper = requiresAuthentication().async {
+  def fetchAppsForGatekeeper = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
       apps => Ok(Json.toJson(apps))
     } recover recovery
   }
 
-  def fetchAppById(id: ApplicationId) = requiresAuthentication().async {
+  def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
