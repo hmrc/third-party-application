@@ -14,21 +14,21 @@
  * limitations under the License.
  */
 
-package uk.gov.hmrc.thirdpartyapplication.helpers
+// package uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
-import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.controllers.StrideGatekeeperAuthorise
+// import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+// import uk.gov.hmrc.auth.core.SessionRecordNotFound
+// import scala.concurrent.Future
+// import uk.gov.hmrc.thirdpartyapplication.controllers.StrideGatekeeperAuthorise
 
-object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
+// object AuthSpecHelpers extends MockitoSugar with ArgumentMatchersSugar {
 
-  def givenUserIsAuthenticated(underTest: StrideGatekeeperAuthorise) = {
-    when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
-  }
+//   def givenUserIsAuthenticated(underTest: StrideGatekeeperAuthorise) = {
+//     when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.successful(()))
+//   }
 
-  def givenUserIsNotAuthenticated(underTest: StrideGatekeeperAuthorise) = {
-    when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
-  }
+//   def givenUserIsNotAuthenticated(underTest: StrideGatekeeperAuthorise) = {
+//     when(underTest.strideAuthConnector.authorise[Unit](*, *)(*, *)).thenReturn(Future.failed(new SessionRecordNotFound))
+//   }
 
-}
+// }

@@ -18,24 +18,23 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
- import scala.concurrent.Future.{failed, successful}
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import play.api.mvc.Results._
+import scala.concurrent.Future.successful
 
-trait StrideAuthConnectorMockModule {
+trait StrideGatekeeperRoleAuthorisationServiceMockModule {
   self: MockitoSugar with ArgumentMatchersSugar =>
 
-  protected trait BaseStrideAuthConnectorMock {
-    def aMock: StrideAuthConnector
+  protected trait BaseStrideGatekeeperRoleAuthorisationServiceMock {
+    def aMock: StrideGatekeeperRoleAuthorisationService
 
-    object Authorise{
-      def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
+    object EnsureHasGatekeeperRole {
+      def succeeds = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
 
-      def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
+      def notAuthorised = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Forbidden("bang"))))
     }
   }
   
-  object StrideAuthConnectorMock extends BaseStrideAuthConnectorMock {
-    val aMock = mock[StrideAuthConnector]
+  object StrideGatekeeperRoleAuthorisationServiceMock extends BaseStrideGatekeeperRoleAuthorisationServiceMock {
+    val aMock = mock[StrideGatekeeperRoleAuthorisationService]
   }
 }
-
