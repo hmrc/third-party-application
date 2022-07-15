@@ -26,19 +26,12 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.LoggedInRequest
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc.ActionRefiner
 import play.api.mvc.Request
-import play.api.mvc.Results.Forbidden
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRole
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles.READ_ONLY
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 import uk.gov.hmrc.thirdpartyapplication.controllers.StrideGatekeeperAuthorise
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 
-trait ForbiddenHandler {
-  def handle(request: Request[_]): Result = Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))
-}
-
-trait GatekeeperStrideAuthorisationActions {
+trait AnyStrideUserActionMixin {
   self: BackendController with StrideGatekeeperAuthorise =>
 
   def strideAuthorisationService: StrideAuthorisationService
@@ -76,7 +69,7 @@ trait GatekeeperStrideAuthorisationActions {
 }
 
 trait GatekeeperAuthorisationActions {
-  self: BackendController with GatekeeperStrideAuthorisationActions =>
+  self: BackendController with AnyStrideUserActionMixin =>
     
   def ldapAuthorisationService: LdapAuthorisationService
     

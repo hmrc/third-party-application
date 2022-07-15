@@ -25,7 +25,6 @@ import play.api.test.{FakeRequest, StubMessagesFactory}
 import play.api.mvc.MessagesRequest
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.LoggedInRequest
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
-import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions.ForbiddenHandler
 import play.api.mvc.Result
 import play.api.http.Status._
 import org.scalatest.prop.TableDrivenPropertyChecks
@@ -41,7 +40,6 @@ class StrideAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnec
     
     val underTest = new StrideAuthorisationService(
       strideAuthConnector = StrideAuthConnectorMock.aMock,
-      forbiddenHandler = new ForbiddenHandler {},
       strideAuthRoles
     )
   }

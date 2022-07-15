@@ -48,8 +48,12 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import play.api.mvc.AnyContentAsJson
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapAuthorisationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideAuthorisationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperStrideRole
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with MockedAuthHelper {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with LdapAuthorisationServiceMockModule with StrideAuthorisationServiceMockModule with MockedAuthHelper {
 
   import play.api.test.Helpers._
 
@@ -67,13 +71,23 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   )
 
   trait Setup extends ApplicationLogger {
-    val mockGatekeeperService   = mock[GatekeeperService]
-    val mockApplicationService  = mock[ApplicationService]
-    val mockSubscriptionService = mock[SubscriptionService]
-    implicit val headers        = HeaderCarrier()
+    val mockGatekeeperService           = mock[GatekeeperService]
+    val mockApplicationService          = mock[ApplicationService]
+    val mockSubscriptionService         = mock[SubscriptionService]
+    implicit val headers                = HeaderCarrier()
 
     lazy val underTest =
-      new GatekeeperController(mockStrideAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, provideAuthConfig(), fakeStrideRoles, Helpers.stubControllerComponents()) {
+      new GatekeeperController(
+        mockStrideAuthConnector,
+        mockApplicationService,
+        mockGatekeeperService,
+        mockSubscriptionService,
+        StrideAuthorisationServiceMock.aMock,
+        LdapAuthorisationServiceMock.aMock,
+        provideAuthConfig(),
+        fakeStrideRoles,
+        Helpers.stubControllerComponents()
+      ) {
         override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
       }
   }
@@ -135,18 +149,21 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
   "Fetch apps" should {
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+      LdapAuthorisationServiceMock.Auth.notAuthorised
+      StrideAuthorisationServiceMock.Auth.sessionRecordNotFound
 
-      assertThrows[SessionRecordNotFound](await(underTest.fetchAppsForGatekeeper(request)))
+      val result = underTest.fetchAppsForGatekeeper(request)
+
+      status(result) shouldBe FORBIDDEN
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
     "return apps" in new Setup {
+      LdapAuthorisationServiceMock.Auth.notAuthorised
+      StrideAuthorisationServiceMock.Auth.succeeds(GatekeeperRoles.USER)
       val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
-
-      givenUserIsAuthenticated(underTest)
 
       val result = underTest.fetchAppsForGatekeeper(request)
 
@@ -158,17 +175,32 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val appId = ApplicationId.random
 
     "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+      LdapAuthorisationServiceMock.Auth.notAuthorised
+      StrideAuthorisationServiceMock.Auth.sessionRecordNotFound
 
-      assertThrows[SessionRecordNotFound](await(underTest.fetchAppById(appId)(request)))
+      val result = underTest.fetchAppById(appId)(request)
+      
+      status(result) shouldBe FORBIDDEN
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
-    "return app with history" in new Setup {
+    "return app with history for LDAP user" in new Setup {
+      LdapAuthorisationServiceMock.Auth.succeeds
       val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
-      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
+
+      val result = underTest.fetchAppById(appId)(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+    "return app with history for Gatekeeper user" in new Setup {
+      LdapAuthorisationServiceMock.Auth.notAuthorised
+      StrideAuthorisationServiceMock.Auth.succeeds(GatekeeperRoles.USER)
+
+      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -179,7 +211,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      LdapAuthorisationServiceMock.Auth.notAuthorised
+      StrideAuthorisationServiceMock.Auth.succeeds(GatekeeperRoles.USER)
 
       when(mockGatekeeperService.fetchAppWithHistory(appId))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))

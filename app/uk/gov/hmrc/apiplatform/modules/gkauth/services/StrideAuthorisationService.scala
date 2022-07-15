@@ -26,23 +26,28 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperStrideRole
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.LoggedInRequest
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRole
-import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions.ForbiddenHandler
 
 import scala.concurrent.{ExecutionContext, Future}
 import play.api.mvc.Request
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import play.api.mvc.Result
+import play.api.mvc.Results._
 import uk.gov.hmrc.auth.core.retrieve.Name
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import play.api.mvc.Results.Forbidden
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
+import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
+
 
 @Singleton
 class StrideAuthorisationService @Inject() (
   strideAuthConnector: StrideAuthConnector,
-  forbiddenHandler: ForbiddenHandler,
   strideAuthRoles: StrideAuthRoles
 )(implicit val ec: ExecutionContext) {
+
+  def handleForbidden(request: Request[_]): Result = Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))
 
   def createStrideRefiner[A](strideRoleRequired: GatekeeperStrideRole): (Request[A]) => Future[Either[Result, LoggedInRequest[A]]] = implicit request => {
     implicit val hc = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
@@ -57,13 +62,13 @@ class StrideAuthorisationService @Inject() (
           case (true, _, _) => applyRole(GatekeeperRoles.ADMIN)
           case (_, true, _) => applyRole(GatekeeperRoles.SUPERUSER)
           case (_, _, true) => applyRole(GatekeeperRoles.USER)
-          case _            => Left(forbiddenHandler.handle(request))
+          case _            => Left(handleForbidden(request))
         }
 
-      case None ~ authorisedEnrolments       => Left(forbiddenHandler.handle(request))
+      case None ~ authorisedEnrolments       => Left(handleForbidden(request))
     } recover {
-      case _: NoActiveSession                => Left(forbiddenHandler.handle(request))
-      case _: InsufficientEnrolments         => Left(forbiddenHandler.handle(request))
+      case _: NoActiveSession                => Left(handleForbidden(request))
+      case _: InsufficientEnrolments         => Left(handleForbidden(request))
     }
   }
 
