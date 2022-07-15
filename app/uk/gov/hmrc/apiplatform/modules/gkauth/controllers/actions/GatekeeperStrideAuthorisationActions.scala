@@ -38,7 +38,7 @@ trait AnyStrideUserActionMixin {
 
   implicit def ec: ExecutionContext
 
-  def gatekeeperRoleActionRefiner(minimumRoleRequired: GatekeeperRole): ActionRefiner[Request, LoggedInRequest] = 
+  private def gatekeeperRoleActionRefiner(minimumRoleRequired: GatekeeperRole): ActionRefiner[Request, LoggedInRequest] = 
     new ActionRefiner[Request, LoggedInRequest] {
       def executionContext = ec
 
@@ -58,7 +58,7 @@ trait AnyStrideUserActionMixin {
       gatekeeperRoleActionRefiner(minimumRoleRequired).invokeBlock(request, block)
     }
 
-  def anyStrideUserAction(block: LoggedInRequest[_] => Future[Result]): Action[AnyContent] =
+  def requiresGatekeeperRoleAction(block: LoggedInRequest[_] => Future[Result]): Action[AnyContent] =
     gatekeeperRoleAction(GatekeeperRoles.USER)(block)
 
   def atLeastSuperUserAction(block: LoggedInRequest[_] => Future[Result]): Action[AnyContent] =
@@ -78,7 +78,7 @@ trait GatekeeperAuthorisationActions {
       ldapAuthorisationService.refineLdap(request)
       .recover { case _ => Left(request) }
       .flatMap(_ match {
-        case Left(_) => anyStrideUserAction(block)(request)
+        case Left(_) => requiresGatekeeperRoleAction(block)(request)
         case Right(lir) => block(lir)
       })
     }

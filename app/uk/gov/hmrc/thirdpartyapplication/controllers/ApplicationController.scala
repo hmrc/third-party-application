@@ -72,7 +72,7 @@ class ApplicationController @Inject() (
     with JsonUtils
     with StrideGatekeeperAuthorise
     with AuthorisationWrapper
-    with AuthKeyRefiner
+    with actions.AuthKeyRefiner
     with ApplicationLogger {
 
   import cats.implicits._
