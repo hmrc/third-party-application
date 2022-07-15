@@ -16,9 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
-
 import cats.data.OptionT
 import cats.implicits._
 import play.api.libs.json.Json
@@ -33,7 +30,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
-import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
@@ -59,38 +55,6 @@ trait StrideGatekeeperAuthorise {
   }
 }
 
-case class MaybeMatchesAuthorisationKeyRequest[A](matchesAuthorisationKey: Boolean, request: Request[A]) extends WrappedRequest[A](request)
-
-trait AuthKeyRefiner {
-  self: BaseController =>
-  
-  def authConfig: AuthConfig
-
-  def authKeyRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] =
-    new ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] {
-
-      override protected def executionContext: ExecutionContext = ec
-
-      def refine[A](request: Request[A]): Future[Either[Result, MaybeMatchesAuthorisationKeyRequest[A]]] = {
-        def matchesAuthorisationKey: Boolean = {
-          def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
-
-          request.headers.get(AUTHORIZATION) match {
-            case Some(authHeader) => println("HDR: "+authHeader+" vs "+authConfig.authorisationKey); base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
-            case _                => false
-          }
-        }
-
-        println("Enabled "+authConfig.enabled)
-        println("Matches "+matchesAuthorisationKey)
-        println("Header " + request.headers.hasHeader(AUTHORIZATION))
-
-        val authKeyCheck = authConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
-        println("Auth key check "+authKeyCheck)
-        (MaybeMatchesAuthorisationKeyRequest[A](authKeyCheck, request)).asRight[Result].pure[Future]
-      }
-    }
-}
 
 trait AuthorisationWrapper {
   self: BaseController with StrideGatekeeperAuthorise =>

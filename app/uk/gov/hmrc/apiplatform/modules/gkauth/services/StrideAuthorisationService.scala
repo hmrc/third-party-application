@@ -47,7 +47,7 @@ class StrideAuthorisationService @Inject() (
   strideAuthRoles: StrideAuthRoles
 )(implicit val ec: ExecutionContext) {
 
-  def handleForbidden(request: Request[_]): Result = Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))
+  private def handleForbidden(request: Request[_]): Result = Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))
 
   def createStrideRefiner[A](strideRoleRequired: GatekeeperStrideRole): (Request[A]) => Future[Either[Result, LoggedInRequest[A]]] = implicit request => {
     implicit val hc = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
