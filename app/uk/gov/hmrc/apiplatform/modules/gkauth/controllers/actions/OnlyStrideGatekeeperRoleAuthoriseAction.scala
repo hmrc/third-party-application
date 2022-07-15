@@ -20,14 +20,19 @@ import play.api.mvc.BaseController
 import scala.concurrent.ExecutionContext
 import play.api.mvc._
 import scala.concurrent.Future
+import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 
-trait StrideGatekeeperAuthoriseAction {
-  self: BaseController with JsonUtils with StrideGatekeeperAuthorise =>
+trait OnlyStrideGatekeeperRoleAuthoriseAction {
+  self: BaseController =>
 
-  private def authenticationAction(implicit ec: ExecutionContext) = new ActionFilter[Request] {
-    def executionContext = ec
+  implicit val ec: ExecutionContext
 
-    def filter[A](input: Request[A]): Future[None.type] = authenticate(input)
+  def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
+ 
+  private def authenticationAction = new ActionFilter[Request] {
+    protected def executionContext: ExecutionContext = ec
+
+    def filter[A](input: Request[A]): Future[Option[Result]] = strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(input)
   }
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction

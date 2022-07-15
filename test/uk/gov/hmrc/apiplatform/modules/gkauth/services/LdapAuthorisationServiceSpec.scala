@@ -40,7 +40,7 @@ class LdapAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComp
   trait Setup {
     val mockStubBehaviour = mock[StubBehaviour]
     val frontendAuth = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
-    val underTest = new LdapAuthorisationService(frontendAuth)
+    val underTest = new LdapGatekeeperRoleAuthorisationService(frontendAuth)
     protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None,expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
 
   }
