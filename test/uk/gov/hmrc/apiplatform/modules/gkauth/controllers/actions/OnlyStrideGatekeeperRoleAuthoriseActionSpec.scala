@@ -60,6 +60,6 @@ class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with Str
   "fail when not authorised" in new Setup {
     StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
     val result = underTest.testMethod(request)
-    status(result) shouldBe FORBIDDEN
+    status(result) shouldBe UNAUTHORIZED
   }
 } 

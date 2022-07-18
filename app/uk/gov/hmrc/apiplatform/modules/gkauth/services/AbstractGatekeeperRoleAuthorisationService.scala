@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 abstract class AbstractGatekeeperRoleAuthorisationService(authConfig: AuthConfig) extends ApplicationLogger {
 
-  protected lazy val FORBIDDEN_RESPONSE = successful(Some(Results.Forbidden(JsErrorResponse(ErrorCode.FORBIDDEN, "Forbidden action"))))
+  protected lazy val UNAUTHORIZED_RESPONSE = successful(Some(Results.Unauthorized(JsErrorResponse(ErrorCode.UNAUTHORIZED, "Unauthorised"))))
   protected lazy val OK_RESPONSE = successful(None)
 
   def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {

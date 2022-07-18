@@ -21,7 +21,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import play.api.http.Status.FORBIDDEN
+import play.api.http.Status.UNAUTHORIZED
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule  {
@@ -72,10 +72,10 @@ class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with St
       result shouldBe None
     }
 
-    "return Some(...) (forbidden) when user is present but not authorised" in new Setup with EnabledAuth with Unauthorised {
+    "return Some(...) (unauthorised) when user is present but not authorised" in new Setup with EnabledAuth with Unauthorised {
        val result = await(underTest.ensureHasGatekeeperRole(request))
 
-       result.value.header.status shouldBe FORBIDDEN
+       result.value.header.status shouldBe UNAUTHORIZED
     }
   }
 }
