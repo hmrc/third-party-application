@@ -16,19 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import org.mockito.MockitoSugar
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 import java.util.Base64
 import java.nio.charset.StandardCharsets
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
-
-trait MockedAuthHelper extends MockitoSugar with AuthSetup {
-  val fakeStrideRoles = StrideAuthRoles("ADMIN","SUPER","USER")
-}
-
-trait AuthSetup {
+trait AuthConfigSetup {
 
   val authorisationKey = "Foo"
 
@@ -39,10 +31,8 @@ trait AuthSetup {
   }
 }
 
-trait SandboxAuthSetup extends AuthSetup { 
+trait SandboxAuthSetup extends AuthConfigSetup { 
   override def provideAuthConfig(): AuthConfig = AuthConfig(true, true, authorisationKey)
 }
 
-trait ProductionAuthSetup extends AuthSetup {
-  override def provideAuthConfig(): AuthConfig = AuthConfig(true, false, authorisationKey)
-}
+trait ProductionAuthSetup extends AuthConfigSetup

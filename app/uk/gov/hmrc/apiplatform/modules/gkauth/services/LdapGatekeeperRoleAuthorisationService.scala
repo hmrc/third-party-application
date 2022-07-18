@@ -35,17 +35,17 @@ class LdapGatekeeperRoleAuthorisationService @Inject() (authConfig: AuthConfig, 
 
     hc.authorization.fold[Future[Option[Result]]]({
       logger.debug("No Header Carrier Authorisation")
-      FORBIDDEN_RESPONSE
+      UNAUTHORIZED_RESPONSE
     })(authorization => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
         .flatMap {
           case (name ~ true) => OK_RESPONSE
           case (name ~ false) => 
             logger.debug("No LDAP predicate matched")
-            FORBIDDEN_RESPONSE
+            UNAUTHORIZED_RESPONSE
           case _ => 
             logger.debug("LDAP Authenticate failed to find user")
-            FORBIDDEN_RESPONSE
+            UNAUTHORIZED_RESPONSE
         }
     })
   }

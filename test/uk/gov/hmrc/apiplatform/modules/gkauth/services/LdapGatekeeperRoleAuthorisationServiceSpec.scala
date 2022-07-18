@@ -27,7 +27,7 @@ import play.api.test.StubControllerComponentsFactory
 import play.api.mvc.ControllerComponents
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import play.api.http.Status.FORBIDDEN
+import play.api.http.Status.UNAUTHORIZED
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory  {
   val fakeRequest = FakeRequest()
@@ -95,16 +95,16 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
       result shouldBe None
     }
 
-    "return Some(...) (forbidden) when user is present but not authorised" in new Setup with EnabledAuth with SessionPresent with Unauthorised {
+    "return Some(...) (unauthorized) when user is present but not authorised" in new Setup with EnabledAuth with SessionPresent with Unauthorised {
        val result = await(underTest.ensureHasGatekeeperRole(request))
 
-       result.value.header.status shouldBe FORBIDDEN
+       result.value.header.status shouldBe UNAUTHORIZED
     }
 
-    "return Some(...) (forbidden) when user is absent" in new Setup with EnabledAuth with NoSessionPresent {
+    "return Some(...) (unauthorized) when user is absent" in new Setup with EnabledAuth with NoSessionPresent {
        val result = await(underTest.ensureHasGatekeeperRole(request))
 
-       result.value.header.status shouldBe FORBIDDEN
+       result.value.header.status shouldBe UNAUTHORIZED
     }
   }
 }

@@ -38,7 +38,7 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (authConfig: AuthConfig
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
       .map(_ => None)
       .recoverWith {
-        case NonFatal(_) => FORBIDDEN_RESPONSE
+        case NonFatal(_) => UNAUTHORIZED_RESPONSE
       }
   }
 }
