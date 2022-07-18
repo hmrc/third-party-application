@@ -24,10 +24,10 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client._
 import scala.concurrent.ExecutionContext
 import javax.inject.{Singleton, Inject}
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
-class LdapGatekeeperRoleAuthorisationService @Inject() (authConfig: AuthConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authConfig) {
+class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
 

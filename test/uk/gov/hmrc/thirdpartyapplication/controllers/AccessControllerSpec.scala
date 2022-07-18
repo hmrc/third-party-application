@@ -170,7 +170,7 @@ class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAutho
 
     lazy val accessController = new AccessController(StrideGatekeeperRoleAuthorisationServiceMock.aMock, mockApplicationService, mockAccessService, mockControllerComponents)
 
-    StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+    StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
     def invokeAccessControllerReadScopesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readScopes(applicationId)(fakeRequest)

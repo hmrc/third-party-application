@@ -51,13 +51,13 @@ import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.AuthKeyRefiner
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 
 @Singleton
 class ApplicationController @Inject() (
     val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
-    val authConfig: AuthConfig,
+    val authControlConfig: AuthControlConfig,
     val applicationService: ApplicationService,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
@@ -386,7 +386,7 @@ class ApplicationController @Inject() (
     (
       for {
         app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-        _   <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
+        _   <- ET.cond(authControlConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
         _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
       } yield NoContent
     )

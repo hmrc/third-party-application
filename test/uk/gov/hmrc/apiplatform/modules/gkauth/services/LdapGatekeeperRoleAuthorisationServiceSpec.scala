@@ -26,7 +26,7 @@ import uk.gov.hmrc.internalauth.client.Retrieval
 import play.api.test.StubControllerComponentsFactory
 import play.api.mvc.ControllerComponents
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.http.Status.UNAUTHORIZED
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory  {
@@ -40,20 +40,20 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
     val mockStubBehaviour = mock[StubBehaviour]
     val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
     
-    def authConfig: AuthConfig
-    lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authConfig, backendAuthComponents)
+    def authControlConfig: AuthControlConfig
+    lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
 
     protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None,expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
   }
 
   trait DisabledAuth {
     self: Setup =>
-    val authConfig = AuthConfig(enabled = false, canDeleteApplications = false, authorisationKey = "Foo")
+    val authControlConfig = AuthControlConfig(enabled = false, canDeleteApplications = false, authorisationKey = "Foo")
   }
 
   trait EnabledAuth {
     self: Setup =>
-    val authConfig = AuthConfig(enabled = true, canDeleteApplications = false, authorisationKey = "Foo")
+    val authControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = false, authorisationKey = "Foo")
   }
 
   trait SessionPresent {

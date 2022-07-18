@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import java.util.Base64
 import java.nio.charset.StandardCharsets
 
@@ -26,13 +26,13 @@ trait AuthConfigSetup {
 
   def base64Encode(stringToEncode: String): String = new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
 
-  def provideAuthConfig(): AuthConfig = {
-    AuthConfig(true, false, authorisationKey)
+  def provideAuthConfig(): AuthControlConfig = {
+    AuthControlConfig(true, false, authorisationKey)
   }
 }
 
 trait SandboxAuthSetup extends AuthConfigSetup { 
-  override def provideAuthConfig(): AuthConfig = AuthConfig(true, true, authorisationKey)
+  override def provideAuthConfig(): AuthControlConfig = AuthControlConfig(true, true, authorisationKey)
 }
 
 trait ProductionAuthSetup extends AuthConfigSetup

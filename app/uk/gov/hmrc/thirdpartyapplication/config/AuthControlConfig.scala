@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-case class AuthConfig(
+case class AuthControlConfig(
   enabled: Boolean,
   canDeleteApplications: Boolean,
   authorisationKey: String

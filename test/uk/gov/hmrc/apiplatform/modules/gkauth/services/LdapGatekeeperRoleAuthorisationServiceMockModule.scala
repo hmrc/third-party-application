@@ -29,7 +29,7 @@ trait LdapGatekeeperRoleAuthorisationServiceMockModule {
     def aMock: LdapGatekeeperRoleAuthorisationService
 
     object EnsureHasGatekeeperRole {
-      def succeeds[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
+      def authorised[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
 
       def notAuthorised[A] = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Unauthorized("Boo"))))
     }

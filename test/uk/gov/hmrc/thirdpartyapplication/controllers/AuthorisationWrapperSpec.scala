@@ -68,7 +68,7 @@
 
 //   abstract class TestAuthorisationWrapper(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with AuthorisationWrapper {
 //     def applicationService: ApplicationService
-//     def authConfig: AuthConfig
+//     def authControlConfig: AuthConfig
 //     def strideAuthRoles: StrideAuthRoles
 //     def strideAuthConnector: StrideAuthConnector
 //     implicit def ec = executionContext
@@ -81,7 +81,7 @@
 //       implicit val headerCarrier: HeaderCarrier         = HeaderCarrier()
 //       val strideAuthConnector: StrideAuthConnector      = mock[StrideAuthConnector]
 //       val applicationService: ApplicationService        = mock[ApplicationService]
-//       val authConfig: AuthConfig                        = provideAuthConfig()
+//       val authControlConfig: AuthConfig                        = provideAuthConfig()
 //       val strideAuthRoles                               = fakeStrideRoles
 //     }
 //     val request   = FakeRequest()
