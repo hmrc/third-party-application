@@ -23,13 +23,13 @@ import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import scala.util.control.NonFatal
 import javax.inject.{Singleton, Inject}
 
 @Singleton
-class StrideGatekeeperRoleAuthorisationService @Inject() (authConfig: AuthConfig, strideAuthRoles: StrideAuthRoles, strideAuthConnector: StrideAuthConnector)(implicit val ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authConfig) {
+class StrideGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, strideAuthRoles: StrideAuthRoles, strideAuthConnector: StrideAuthConnector)(implicit val ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 

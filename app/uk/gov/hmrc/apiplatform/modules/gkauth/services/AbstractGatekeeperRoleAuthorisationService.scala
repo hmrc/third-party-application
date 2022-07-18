@@ -22,15 +22,15 @@ import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
-abstract class AbstractGatekeeperRoleAuthorisationService(authConfig: AuthConfig) extends ApplicationLogger {
+abstract class AbstractGatekeeperRoleAuthorisationService(authControlConfig: AuthControlConfig) extends ApplicationLogger {
 
-  protected lazy val UNAUTHORIZED_RESPONSE = successful(Some(Results.Unauthorized(JsErrorResponse(ErrorCode.UNAUTHORIZED, "Unauthorised"))))
+  lazy val UNAUTHORIZED_RESPONSE = successful(Some(Results.Unauthorized(JsErrorResponse(ErrorCode.UNAUTHORIZED, "Unauthorised"))))
   protected lazy val OK_RESPONSE = successful(None)
 
   def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
-    if (authConfig.enabled) {
+    if (authControlConfig.enabled) {
       innerEnsureHasGatekeeperRole(request)
     } else {
       Future.successful(None)

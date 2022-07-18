@@ -47,7 +47,7 @@ import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockMo
 import java.time.LocalDateTime
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -93,7 +93,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     lazy val underTest = new ApplicationController(
       StrideGatekeeperRoleAuthorisationServiceMock.aMock,
-      AuthConfig(true, false, "key"),
+      AuthControlConfig(true, false, "key"),
       ApplicationServiceMock.aMock,
       mockCredentialService,
       mockSubscriptionService,
@@ -140,7 +140,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -154,7 +154,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -225,7 +225,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*))
         .thenReturn(failed(ApplicationAlreadyExists("appName")))

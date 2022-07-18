@@ -111,7 +111,7 @@ class ApplicationControllerSpec
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
     }
@@ -165,7 +165,7 @@ class ApplicationControllerSpec
     }
 
     "successfully update approval information for application XYZ" in new Setup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse(appId = id)))
       when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse(appId = id)))
@@ -301,7 +301,7 @@ class ApplicationControllerSpec
           val response = AddCollaboratorResponse(registeredUser = true)
           when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
-          StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+          StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
           val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
@@ -392,7 +392,7 @@ class ApplicationControllerSpec
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
         applicationId, {
@@ -1098,7 +1098,7 @@ class ApplicationControllerSpec
     "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
 
-        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(
           applicationId, {
@@ -1168,7 +1168,7 @@ class ApplicationControllerSpec
     "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
 
-        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(
           applicationId, {

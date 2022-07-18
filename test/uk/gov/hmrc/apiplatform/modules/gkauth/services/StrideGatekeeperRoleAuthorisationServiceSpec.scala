@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.http.Status.UNAUTHORIZED
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
@@ -28,21 +28,21 @@ class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with St
   val request = FakeRequest()
   
   trait Setup {
-    def authConfig: AuthConfig
+    def authControlConfig: AuthControlConfig
 
     val fakeStrideAuthRoles = StrideAuthRoles("A","B","C")
 
-    lazy val underTest = new StrideGatekeeperRoleAuthorisationService(authConfig, fakeStrideAuthRoles, StrideAuthConnectorMock.aMock)
+    lazy val underTest = new StrideGatekeeperRoleAuthorisationService(authControlConfig, fakeStrideAuthRoles, StrideAuthConnectorMock.aMock)
   }
 
   trait DisabledAuth {
     self: Setup =>
-    val authConfig = AuthConfig(enabled = false, canDeleteApplications = false, authorisationKey = "Foo")
+    val authControlConfig = AuthControlConfig(enabled = false, canDeleteApplications = false, authorisationKey = "Foo")
   }
 
   trait EnabledAuth {
     self: Setup =>
-    val authConfig = AuthConfig(enabled = true, canDeleteApplications = false, authorisationKey = "Foo")
+    val authControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = false, authorisationKey = "Foo")
   }
 
   trait Authorised {

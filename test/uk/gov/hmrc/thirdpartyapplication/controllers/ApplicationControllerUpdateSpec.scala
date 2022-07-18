@@ -51,7 +51,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.test.Helpers
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
@@ -87,7 +87,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
 
     val underTest = new ApplicationController(
       StrideGatekeeperRoleAuthorisationServiceMock.aMock,
-      AuthConfig(true, false, "key"),
+      AuthControlConfig(true, false, "key"),
       ApplicationServiceMock.aMock,
       mockCredentialService,
       mockSubscriptionService,
@@ -103,7 +103,7 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.succeeds
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
     }

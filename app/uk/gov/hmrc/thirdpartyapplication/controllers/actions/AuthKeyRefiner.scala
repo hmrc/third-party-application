@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers.actions
 
 import play.api.mvc._
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.MaybeMatchesAuthorisationKeyRequest
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -29,7 +29,7 @@ import cats.implicits._
 trait AuthKeyRefiner {
   self: BaseController =>
   
-  def authConfig: AuthConfig
+  def authControlConfig: AuthControlConfig
 
   def authKeyRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] =
     new ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] {
@@ -41,12 +41,12 @@ trait AuthKeyRefiner {
           def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
 
           request.headers.get(AUTHORIZATION) match {
-            case Some(authHeader) => base64Decode(authHeader).map(_ == authConfig.authorisationKey).getOrElse(false)
+            case Some(authHeader) => base64Decode(authHeader).map(_ == authControlConfig.authorisationKey).getOrElse(false)
             case _                => false
           }
         }
 
-        val authKeyCheck = authConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
+        val authKeyCheck = authControlConfig.enabled && request.headers.hasHeader(AUTHORIZATION) && matchesAuthorisationKey
         (MaybeMatchesAuthorisationKeyRequest[A](authKeyCheck, request)).asRight[Result].pure[Future]
       }
     }
