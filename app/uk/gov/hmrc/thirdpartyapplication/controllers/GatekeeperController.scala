@@ -106,7 +106,7 @@ class GatekeeperController @Inject() (
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
-  def fetchAppStateHistoryById(id: ApplicationId) = requiresAuthentication().async {
+  def fetchAppStateHistoryById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
