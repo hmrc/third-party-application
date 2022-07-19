@@ -49,14 +49,16 @@ import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.AuthKeyRefiner
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 
 @Singleton
 class ApplicationController @Inject() (
+    val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
+    val authControlConfig: AuthControlConfig,
     val applicationService: ApplicationService,
-    val authConnector: StrideAuthConnector,
-    val authConfig: AuthConfig,
     credentialService: CredentialService,
     subscriptionService: SubscriptionService,
     config: ApplicationControllerConfig,
@@ -68,8 +70,7 @@ class ApplicationController @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
-    with StrideGatekeeperAuthorise
-    with AuthorisationWrapper
+    with ApplicationTypeAuthorisationActions
     with AuthKeyRefiner
     with ApplicationLogger {
 
@@ -385,7 +386,7 @@ class ApplicationController @Inject() (
     (
       for {
         app <- ET.fromOptionF(applicationService.fetch(id).value, handleNotFound("No application was found"))
-        _   <- ET.cond(authConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
+        _   <- ET.cond(authControlConfig.canDeleteApplications || request.matchesAuthorisationKey || !app.state.isInPreProductionOrProduction, app, badRequest)
         _   <- ET.liftF(applicationService.deleteApplication(id, None, audit))
       } yield NoContent
     )

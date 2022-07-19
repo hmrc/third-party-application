@@ -16,40 +16,36 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.internalauth.client.FrontendAuthComponents
+import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import play.api.mvc._
 import scala.concurrent.Future
-import scala.concurrent.Future.successful
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.LoggedInRequest
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.GatekeeperRoles
 import uk.gov.hmrc.internalauth.client._
 import scala.concurrent.ExecutionContext
 import javax.inject.{Singleton, Inject}
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
-class LdapAuthorisationService @Inject() (auth: FrontendAuthComponents)(implicit ec: ExecutionContext) extends ApplicationLogger {
-  def refineLdap[A]: (MessagesRequest[A]) => Future[Either[MessagesRequest[A], LoggedInRequest[A]]] = (msgRequest) => {
+class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(msgRequest, msgRequest.session)
+  protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
 
-    lazy val notAuthenticatedOrAuthorized: Either[MessagesRequest[A], LoggedInRequest[A]] = Left(msgRequest)
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
 
-    hc.authorization.fold({
-      logger.debug("No Header Carrier Authoriation")
-      successful(notAuthenticatedOrAuthorized)
+    hc.authorization.fold[Future[Option[Result]]]({
+      logger.debug("No Header Carrier Authorisation")
+      UNAUTHORIZED_RESPONSE
     })(authorization => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
-        .map {
-          case (name ~ true) => Right(new LoggedInRequest(Some(name.value), GatekeeperRoles.READ_ONLY, msgRequest)) 
+        .flatMap {
+          case (name ~ true) => OK_RESPONSE
           case (name ~ false) => 
             logger.debug("No LDAP predicate matched")
-            notAuthenticatedOrAuthorized
+            UNAUTHORIZED_RESPONSE
           case _ => 
             logger.debug("LDAP Authenticate failed to find user")
-            notAuthenticatedOrAuthorized
+            UNAUTHORIZED_RESPONSE
         }
     })
   }

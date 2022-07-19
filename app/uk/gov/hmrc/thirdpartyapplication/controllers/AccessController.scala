@@ -25,18 +25,17 @@ import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationSer
 
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 
 @Singleton
 class AccessController @Inject() (
-    val authConnector: StrideAuthConnector,
+    val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     val applicationService: ApplicationService,
-    val authConfig: AuthConfig,
     accessService: AccessService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with AuthorisationWrapper {
+  ) extends BackendController(cc) with JsonUtils with ApplicationTypeAuthorisationActions {
 
   def readScopes(applicationId: ApplicationId) = requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { _ =>
     accessService.readScopes(applicationId) map { scopeResponse =>

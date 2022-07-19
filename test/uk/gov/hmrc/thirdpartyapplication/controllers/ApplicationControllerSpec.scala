@@ -23,15 +23,14 @@ import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
+import play.api.test.Helpers
 import play.api.test.FakeRequest
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.http.NotFoundException
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 
@@ -40,28 +39,25 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
-import java.nio.charset.StandardCharsets
-import java.util.Base64
 import java.{util => ju}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.failed
 import scala.concurrent.Future.successful
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -70,76 +66,58 @@ class ApplicationControllerSpec
     with TableDrivenPropertyChecks
     with ApplicationTestData {
 
-  import play.api.test.Helpers
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup {
+  trait Setup 
+      extends AuthConfigSetup
+      with SubmissionsServiceMockModule
+      with UpliftLinkServiceMockModule
+      with StrideGatekeeperRoleAuthorisationServiceMockModule
+      with ApplicationServiceMockModule {
+
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
-    val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
-    val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockUpliftNamingService: UpliftNamingService = mock[UpliftNamingService]
-    val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
-
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
-    when(mockAuthConfig.enabled).thenReturn(enabled())
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
     val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
-    val underTest = new ApplicationController(
-      mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+    lazy val underTest = new ApplicationController(
+      StrideGatekeeperRoleAuthorisationServiceMock.aMock,
+      provideAuthConfig(),
+      ApplicationServiceMock.aMock,
       mockCredentialService,
       mockSubscriptionService,
       config,
       mockGatekeeperService,
-      mockSubmissionService,
+      SubmissionsServiceMock.aMock,
       mockUpliftNamingService,
-      mockUpliftLinkService,
+      UpliftLinkServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
   }
 
-  trait SandboxDeleteApplications extends Setup {
-    override def canDeleteApplications() = true
-    override def enabled()               = false
-  }
-
-  trait ProductionDeleteApplications extends Setup {
-    override def canDeleteApplications() = false
-    override def enabled()               = true
-  }
-
+  
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsNotAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
     }
@@ -179,7 +157,7 @@ class ApplicationControllerSpec
     val id                  = ApplicationId.random
 
     "fail with a 404 (not found) when id is provided but no application exists for that id" in new Setup {
-      when(underTest.applicationService.fetch(id)).thenReturn(OptionT.none)
+      ApplicationServiceMock.Fetch.thenReturnNothingFor(id)
 
       val result = underTest.updateCheck(id)(request.withBody(Json.toJson(checkInformation)))
 
@@ -187,7 +165,7 @@ class ApplicationControllerSpec
     }
 
     "successfully update approval information for application XYZ" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(underTest.applicationService.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](aNewApplicationResponse(appId = id)))
       when(underTest.applicationService.updateCheck(eqTo(id), eqTo(checkInformation))).thenReturn(successful(aNewApplicationResponse(appId = id)))
@@ -203,7 +181,7 @@ class ApplicationControllerSpec
     val applicationId = ApplicationId.random
 
     "succeed with a 200 (ok) if the application exists for the given id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
 
       val result = underTest.fetch(applicationId)(request)
 
@@ -211,7 +189,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 404 (not found) if no application exists for the given id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
+      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
 
       val result = underTest.fetch(applicationId)(request)
 
@@ -219,7 +197,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.liftF(failed(new RuntimeException("Expected test failure"))))
+      ApplicationServiceMock.Fetch.thenThrowFor(applicationId)(new RuntimeException("Expected test failure"))
 
       val result = underTest.fetch(applicationId)(request)
 
@@ -263,7 +241,7 @@ class ApplicationControllerSpec
       val emailAddress                = "bob@example.com"
       val confirmSetupCompleteRequest = ConfirmSetupCompleteRequest(emailAddress)
 
-      when(mockApplicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
+      when(underTest.applicationService.confirmSetupComplete(eqTo(applicationId), eqTo(emailAddress))).thenReturn(successful(mock[ApplicationData]))
 
       val result = underTest.confirmSetupComplete(applicationId)(request.withBody(Json.toJson(confirmSetupCompleteRequest)))
 
@@ -285,7 +263,7 @@ class ApplicationControllerSpec
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.parse(payload))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       val response = AddCollaboratorResponse(registeredUser = true)
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequestWithUserId))(*)).thenReturn(successful(response))
 
@@ -307,7 +285,7 @@ class ApplicationControllerSpec
     val addRequest: FakeRequest[_] => FakeRequest[JsValue] = request => request.withBody(Json.toJson(addCollaboratorRequest))
 
     "succeed with a 200 (ok) for a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       val response = AddCollaboratorResponse(registeredUser = true)
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
@@ -323,7 +301,7 @@ class ApplicationControllerSpec
           val response = AddCollaboratorResponse(registeredUser = true)
           when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*)).thenReturn(successful(response))
 
-          givenUserIsAuthenticated(underTest)
+          StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
           val result = underTest.addCollaborator(applicationId)(addRequest(request))
 
@@ -357,7 +335,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 422 (unprocessable) if role is invalid" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
 
       val result = underTest.addCollaborator(applicationId)(request.withBody(Json.obj("emailAddress" -> s"$email", "role" -> "invalid")))
 
@@ -365,7 +343,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 409 (conflict) if email already registered with different role" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
         .thenReturn(failed(new UserAlreadyExists))
 
@@ -375,7 +353,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.addCollaborator(eqTo(applicationId), eqTo(addCollaboratorRequest))(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
@@ -399,7 +377,7 @@ class ApplicationControllerSpec
         .withBody(Json.toJson(DeleteCollaboratorRequest(collaborator, adminsToEmailSet, notifyCollaborator)))
 
     "succeed with a 204 (No Content) for a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
         eqTo(collaborator),
@@ -414,7 +392,7 @@ class ApplicationControllerSpec
     }
 
     "succeed with a 204 (No Content) for a PRIVILEGED or ROPC application when the Gatekeeper is logged in" in new PrivilegedAndRopcSetup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
         applicationId, {
@@ -466,7 +444,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 403 (forbidden) if deleting the only admin" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
         eqTo(collaborator),
@@ -481,7 +459,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(underTest.applicationService.deleteCollaborator(
         eqTo(applicationId),
         eqTo(collaborator),
@@ -581,7 +559,7 @@ class ApplicationControllerSpec
 
     "succeed with a 204 for a STANDARD application" in new Setup {
 
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(mockCredentialService.deleteClientSecret(eqTo(applicationId), eqTo(clientSecretId), eqTo(actorEmailAddress))(*))
         .thenReturn(successful(tokenResponse))
 
@@ -1100,7 +1078,7 @@ class ApplicationControllerSpec
     val body          = anAPIJson()
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
+      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
 
       val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
 
@@ -1108,7 +1086,7 @@ class ApplicationControllerSpec
     }
 
     "succeed with a 204 (no content) when a subscription is successfully added to a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
@@ -1120,7 +1098,7 @@ class ApplicationControllerSpec
     "succeed with a 204 (no content) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
 
-        givenUserIsAuthenticated(underTest)
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(
           applicationId, {
@@ -1137,13 +1115,15 @@ class ApplicationControllerSpec
 
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
           applicationId, {
-            assertThrows[SessionRecordNotFound](await(underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))))
+            val result = underTest.createSubscriptionForApplication(applicationId)(request.withBody(Json.parse(body)))
+
+            status(result) shouldBe UNAUTHORIZED
           }
         )
       }
 
     "fail with a 422 (unprocessable entity) when unexpected json is provided" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
 
       val body = """{ "json": "invalid" }"""
 
@@ -1153,7 +1133,7 @@ class ApplicationControllerSpec
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
@@ -1168,7 +1148,7 @@ class ApplicationControllerSpec
     val applicationId = ApplicationId.random
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.none)
+      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
 
       val result = underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)
 
@@ -1176,7 +1156,7 @@ class ApplicationControllerSpec
     }
 
     "succeed with a 204 (no content) when a subscription is successfully removed from a STANDARD application" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(successful(HasSucceeded))
 
@@ -1188,7 +1168,7 @@ class ApplicationControllerSpec
     "succeed with a 204 (no content) when a subscription is successfully removed from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
 
-        givenUserIsAuthenticated(underTest)
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(
           applicationId, {
@@ -1204,13 +1184,13 @@ class ApplicationControllerSpec
       new PrivilegedAndRopcSetup {
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
           applicationId, {
-            assertThrows[SessionRecordNotFound](await(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)))
+            status(underTest.removeSubscriptionForApplication(applicationId, "some-context".asContext, "1.0".asVersion)(request)) shouldBe UNAUTHORIZED
           }
         )
       }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      when(underTest.applicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](aNewApplicationResponse()))
+      ApplicationServiceMock.Fetch.thenReturn(aNewApplicationResponse())
       when(mockSubscriptionService.removeSubscriptionForApplication(eqTo(applicationId), *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 
@@ -1300,7 +1280,7 @@ class ApplicationControllerSpec
 
       val result = underTest.searchApplications(req)
 
-      verifyZeroInteractions(mockApplicationService)
+      verifyZeroInteractions(ApplicationServiceMock.aMock)
 
       status(result) shouldBe BAD_REQUEST
     }
@@ -1312,199 +1292,119 @@ class ApplicationControllerSpec
     val gatekeeperUserId                             = "big.boss.gatekeeper"
     val requestedByEmailAddress                      = "admin@example.com"
     val deleteRequest                                = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
-    def base64Encode(stringToEncode: String): String = new String(Base64.getEncoder.encode(stringToEncode.getBytes), StandardCharsets.UTF_8)
 
-    "succeed when a sandbox application is successfully deleted" in new SandboxDeleteApplications {
-      when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.pure[Future](application))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+    "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
+      ApplicationServiceMock.Fetch.thenReturn(application)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in TESTING state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in TESTING state is deleted" in new Setup with ProductionAuthSetup {
       val inTesting   = aNewApplicationResponse(state = ApplicationState(name = State.TESTING), environment = PRODUCTION)
       val inTestingId = application.id
 
-      when(mockApplicationService.fetch(inTestingId)).thenReturn(OptionT.pure[Future](inTesting))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      ApplicationServiceMock.Fetch.thenReturnFor(inTestingId)(inTesting)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inTestingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).deleteApplication(eqTo(inTestingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inTestingId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in PENDING_GATEKEEPER_APPROVAL state is deleted" in new Setup with ProductionAuthSetup {
       val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_GATEKEEPER_APPROVAL), environment = PRODUCTION)
       val inPendingId = application.id
 
-      when(mockApplicationService.fetch(inPendingId)).thenReturn(OptionT.pure[Future](inPending))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
+ 
 
       status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
     }
 
-    "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new ProductionDeleteApplications {
+    "succeed when a principal application is in PENDING_REQUESTER_VERIFICATION state is deleted" in new Setup with ProductionAuthSetup {
       val inPending   = aNewApplicationResponse(state = ApplicationState(name = State.PENDING_REQUESTER_VERIFICATION), environment = PRODUCTION)
       val inPendingId = application.id
 
-      when(mockApplicationService.fetch(inPendingId)).thenReturn(OptionT.pure[Future](inPending))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      ApplicationServiceMock.Fetch.thenReturnFor(inPendingId)(inPending)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
     }
 
-    "fail when a principal application is in PRODUCTION state is deleted" in new ProductionDeleteApplications {
+    "fail when a principal application is in PRODUCTION state is deleted" in new Setup with ProductionAuthSetup {
       val inProd   = aNewApplicationResponse(state = ApplicationState(name = State.PRODUCTION), environment = PRODUCTION)
       val inProdId = application.id
 
-      when(mockApplicationService.fetch(inProdId)).thenReturn(OptionT.pure[Future](inProd))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+      ApplicationServiceMock.Fetch.thenReturnFor(inProdId)(inProd)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inProdId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe BAD_REQUEST
-      verify(mockApplicationService, never).deleteApplication(*[ApplicationId], *, *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(*[ApplicationId], *, *)(*)
     }
 
-    "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new ProductionDeleteApplications {
-      when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+    "fail with a bad request error when a production application is requested to be deleted and authorisation key is missing" in new Setup with ProductionAuthSetup {
+      ApplicationServiceMock.Fetch.thenReturn(application)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe BAD_REQUEST
-      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new ProductionDeleteApplications {
-      givenUserIsNotAuthenticated(underTest)
-      when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
-      when(mockAuthConfig.authorisationKey).thenReturn("foo")
+    "fail with a bad request when a production application is requested to be deleted and auth key is invalid" in new Setup with ProductionAuthSetup {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      ApplicationServiceMock.Fetch.thenReturn(application)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(
           request
           .withBody(Json.toJson(deleteRequest))
-          .withHeaders(AUTHORIZATION -> "bar")
+          .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey.reverse))
           .asInstanceOf[FakeRequest[AnyContent]]
         )
 
       status(result) shouldBe BAD_REQUEST
-      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "succeed when a production application is requested to be deleted and authorisation key is valid" in new ProductionDeleteApplications {
-      when(mockApplicationService.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](application))
-      when(mockApplicationService.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
-      val authorisationKey = "foo"
-      when(mockAuthConfig.authorisationKey).thenReturn(authorisationKey)
-
+    "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
+      ApplicationServiceMock.Fetch.thenReturn(application)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds
+      
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
-        .asInstanceOf[FakeRequest[AnyContent]])
+        .asInstanceOf[FakeRequest[AnyContent]]
+        )
 
       status(result) shouldBe NO_CONTENT
-      verify(mockApplicationService).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
 
-    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new SandboxDeleteApplications {
-      when(mockApplicationService.fetch(applicationId)).thenReturn(OptionT.none)
+    "fail with a 404 error when a nonexistent sandbox application is requested to be deleted" in new Setup with SandboxAuthSetup {
+      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
 
       val result = underTest.deleteApplication(applicationId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NOT_FOUND
-      verify(mockApplicationService, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
+      verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
     }
   }
 }
 
-trait ControllerTestData {
 
-  val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
-  )
-
-  val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  val privilegedAccess = Privileged(scopes = Set("scope1"))
-  val ropcAccess       = Ropc()
-
-  def anAPI() = {
-    "some-context".asIdentifier("1.0")
-  }
-
-  def aSubcriptionData() = {
-    SubscriptionData(anAPI(), Set(ApplicationId.random, ApplicationId.random))
-  }
-
-  def anAPIJson() = {
-    """{ "context" : "some-context", "version" : "1.0" }"""
-  }
-
-  def aNewApplicationResponse(
-      access: Access = standardAccess,
-      environment: Environment = Environment.PRODUCTION,
-      appId: ApplicationId = ApplicationId.random,
-      state: ApplicationState = ApplicationState(State.TESTING)
-    ) = {
-    val grantLengthInDays = 547
-    new ApplicationResponse(
-      appId,
-      ClientId("clientId"),
-      "gatewayId",
-      "My Application",
-      environment.toString,
-      Some("Description"),
-      collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
-      grantLengthInDays,
-      None,
-      standardAccess.redirectUris,
-      standardAccess.termsAndConditionsUrl,
-      standardAccess.privacyPolicyUrl,
-      access,
-      state
-    )
-  }
-
-  def aNewExtendedApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION, subscriptions: List[ApiIdentifier] = List.empty) =
-    extendedApplicationResponseFromApplicationResponse(aNewApplicationResponse(access, environment)).copy(subscriptions = subscriptions)
-
-  def extendedApplicationResponseFromApplicationResponse(app: ApplicationResponse) = {
-    new ExtendedApplicationResponse(
-      app.id,
-      app.clientId,
-      app.gatewayId,
-      app.name,
-      app.deployedTo,
-      app.description,
-      app.collaborators,
-      app.createdOn,
-      app.lastAccess,
-      app.grantLength,
-      app.redirectUris,
-      app.termsAndConditionsUrl,
-      app.privacyPolicyUrl,
-      app.access,
-      app.state,
-      app.rateLimitTier,
-      app.checkInformation,
-      app.blocked,
-      app.trusted,
-      ju.UUID.randomUUID().toString,
-      List.empty
-    )
-  }
-}

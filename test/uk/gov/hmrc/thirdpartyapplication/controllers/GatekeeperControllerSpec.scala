@@ -21,7 +21,6 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import play.api.libs.json.Json
 import play.api.mvc.{RequestHeader, Result}
 import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
@@ -30,8 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
+import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import cats.implicits._
 
@@ -48,10 +46,11 @@ import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import play.api.mvc.AnyContentAsJson
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationServiceMockModule
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger {
 
   import play.api.test.Helpers._
 
@@ -68,21 +67,24 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     Collaborator("dev@example.com", DEVELOPER, UserId.random)
   )
 
-  trait Setup extends ApplicationLogger {
-    val mockGatekeeperService   = mock[GatekeeperService]
-    val mockAuthConnector       = mock[StrideAuthConnector]
-    val mockApplicationService  = mock[ApplicationService]
-    val mockSubscriptionService = mock[SubscriptionService]
-    implicit val headers        = HeaderCarrier()
+  trait Setup 
+      extends StrideGatekeeperRoleAuthorisationServiceMockModule
+      with LdapGatekeeperRoleAuthorisationServiceMockModule
+      with ApplicationServiceMockModule
+    {
+    val mockGatekeeperService           = mock[GatekeeperService]
+    val mockSubscriptionService         = mock[SubscriptionService]
+    implicit val headers                = HeaderCarrier()
 
-    val mockAuthConfig = mock[AuthConfig](withSettings.lenient())
-    when(mockAuthConfig.enabled).thenReturn(true)
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-
-    val underTest =
-      new GatekeeperController(mockAuthConnector, mockApplicationService, mockGatekeeperService, mockSubscriptionService, mockAuthConfig, Helpers.stubControllerComponents()) {
+    lazy val underTest =
+      new GatekeeperController(
+        ApplicationServiceMock.aMock,
+        LdapGatekeeperRoleAuthorisationServiceMock.aMock,
+        StrideGatekeeperRoleAuthorisationServiceMock.aMock,
+        mockGatekeeperService,
+        mockSubscriptionService,
+        Helpers.stubControllerComponents()
+      ) {
         override implicit def hc(implicit request: RequestHeader): HeaderCarrier = headers
       }
   }
@@ -90,13 +92,13 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsNotAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
     }
@@ -143,19 +145,34 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   }
 
   "Fetch apps" should {
-    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+    "fails with unauthorised when the user is not authorised" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.fetchAppsForGatekeeper(request)))
+      val result = underTest.fetchAppsForGatekeeper(request)
+
+      status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
-    "return apps" in new Setup {
+    "return apps for stride role" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
       val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
       when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
-      givenUserIsAuthenticated(underTest)
+      val result = underTest.fetchAppsForGatekeeper(request)
+
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+
+    "return apps for ldap role" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      val expected = List(anAppResult(), anAppResult(state = productionState("user1")))
+      when(mockGatekeeperService.fetchNonTestingAppsWithSubmittedDate()).thenReturn(successful(expected))
 
       val result = underTest.fetchAppsForGatekeeper(request)
 
@@ -166,18 +183,34 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   "Fetch app by id" should {
     val appId = ApplicationId.random
 
-    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+    "fails with unauthorised when the user is not authorised" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.fetchAppById(appId)(request)))
+      val result = underTest.fetchAppById(appId)(request)
+      
+      status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
-    "return app with history" in new Setup {
+    "return app with history for LDAP user" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
-      givenUserIsAuthenticated(underTest)
+      when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
+
+      val result = underTest.fetchAppById(appId)(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expected)
+    }
+    
+    "return app with history for Gatekeeper user" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      val expected = ApplicationWithHistory(anAppResponse(appId), List(aHistory(appId), aHistory(appId, State.PRODUCTION)))
 
       when(mockGatekeeperService.fetchAppWithHistory(appId)).thenReturn(successful(expected))
 
@@ -188,7 +221,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.fetchAppWithHistory(appId))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -202,10 +236,24 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   "fetchAppStateHistoryById" should {
     val appId = ApplicationId.random
 
-    "return app with history" in new Setup {
+    "return app with history for Stride GK User" in new Setup {
       val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
+
+      val result = underTest.fetchAppStateHistoryById(appId)(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expectedStateHistories)
+    }
+
+    "return app with history for LDAP GK User" in new Setup {
+      val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
+
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
 
@@ -221,16 +269,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val gatekeeperUserId     = "big.boss.gatekeeper"
     val approveUpliftRequest = ApproveUpliftRequest(gatekeeperUserId)
 
-    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+    "fails with unauthorised when the user is not authorised" in new Setup {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader))))
+      val result = (underTest.approveUplift(applicationId)(request.withBody(Json.toJson(approveUpliftRequest)).withHeaders(authTokenHeader)))
+      status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
     "successfully approve uplift when user is authorised" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId)).thenReturn(successful(UpliftApproved))
 
@@ -241,7 +290,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "return 404 if the application doesn't exist" in new Setup {
       withSuppressedLoggingFrom(logger, "application doesn't exist") { suppressedLogs =>
-        givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
           .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -253,7 +302,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with 412 (Precondition Failed) when the application is not in the PENDING_GATEKEEPER_APPROVAL state" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
         .thenReturn(failed(new InvalidStateTransition(State.TESTING, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL)))
@@ -265,7 +314,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       withSuppressedLoggingFrom(logger, "expected test failure") { suppressedLogs =>
-        givenUserIsAuthenticated(underTest)
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         when(mockGatekeeperService.approveUplift(applicationId, gatekeeperUserId))
           .thenReturn(failed(new RuntimeException("Expected test failure")))
@@ -282,16 +331,18 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val gatekeeperUserId    = "big.boss.gatekeeper"
     val rejectUpliftRequest = RejectUpliftRequest(gatekeeperUserId, "Test error")
     val testReq             = request.withBody(Json.toJson(rejectUpliftRequest)).withHeaders(authTokenHeader)
-    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
 
-      assertThrows[SessionRecordNotFound](await(underTest.rejectUplift(applicationId)(testReq)))
+    "fails with unauthorised when the user is not authorised" in new Setup {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+
+      val result = underTest.rejectUplift(applicationId)(testReq)
+      status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
     "successfully reject uplift when user is authorised" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest)).thenReturn(successful(UpliftRejected))
 
@@ -301,7 +352,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -312,7 +363,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with 412 (Precondition Failed) when the application is not in the PENDING_GATEKEEPER_APPROVAL state" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
         .thenReturn(failed(new InvalidStateTransition(State.PENDING_REQUESTER_VERIFICATION, State.TESTING, State.PENDING_GATEKEEPER_APPROVAL)))
@@ -324,7 +375,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
       withSuppressedLoggingFrom(logger, "Expected test failure") { suppressedLogs =>
-        givenUserIsAuthenticated(underTest)
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         when(mockGatekeeperService.rejectUplift(applicationId, rejectUpliftRequest))
           .thenReturn(failed(new RuntimeException("Expected test failure")))
@@ -341,16 +392,17 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val gatekeeperUserId          = "big.boss.gatekeeper"
     val resendVerificationRequest = ResendVerificationRequest(gatekeeperUserId)
 
-    "throws SessionRecordNotFound when the user is not authorised" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+    "fails with unauthorised when the user is not authorised" in new Setup {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))))
+      val result = underTest.resendVerification(applicationId)(request.withBody(Json.toJson(resendVerificationRequest)).withHeaders(authTokenHeader))
+      status(result) shouldBe UNAUTHORIZED
 
       verifyZeroInteractions(mockGatekeeperService)
     }
 
     "successfully resend verification when user is authorised" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId)).thenReturn(successful(VerificationResent))
 
@@ -360,7 +412,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "return 404 if the application doesn't exist" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new NotFoundException("application doesn't exist")))
@@ -371,7 +423,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with 412 (Precondition Failed) when the application is not in the PENDING_REQUESTER_VERIFICATION state" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new InvalidStateTransition(State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_REQUESTER_VERIFICATION)))
@@ -382,7 +434,7 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.resendVerification(applicationId, gatekeeperUserId))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
@@ -398,7 +450,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "block the application" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.blockApplication(*[ApplicationId])).thenReturn(successful(Blocked))
 
@@ -414,7 +467,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "unblock the application" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.unblockApplication(*[ApplicationId])).thenReturn(successful(Unblocked))
 
@@ -434,7 +488,8 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "fail with a 422 (unprocessable entity) when request json is invalid" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(invalidUpdateRateLimitTierJson))
 
@@ -444,7 +499,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "fail with a 422 (unprocessable entity) when request json is valid but rate limit tier is an invalid value" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
 
       val result = underTest.updateRateLimitTier(applicationId)(request.withBody(Json.parse("""{ "rateLimitTier" : "multicoloured" }""")))
       status(result) shouldBe UNPROCESSABLE_ENTITY
@@ -459,7 +516,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "succeed with a 204 (no content) when rate limit tier is successfully added to application" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
 
       when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
@@ -471,7 +530,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
 
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
 
       when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*))
         .thenReturn(failed(new RuntimeException("Expected test exception")))
@@ -482,14 +543,13 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with a 401 (Unauthorized) when the request is done without a gatekeeper token" in new Setup {
-
-      givenUserIsNotAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       when(underTest.applicationService.updateRateLimitTier(eqTo(applicationId), eqTo(SILVER))(*)).thenReturn(successful(mock[ApplicationData]))
 
-      intercept[SessionRecordNotFound](
-        await(underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson)))
-      )
+      val result = underTest.updateRateLimitTier(applicationId)(request.withBody(validUpdateRateLimitTierJson))
+      status(result) shouldBe UNAUTHORIZED
     }
   }
 
@@ -500,7 +560,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed with a 204 (no content) when the application is successfully deleted" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
       when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*)).thenReturn(successful(Deleted))
 
       val result = underTest.deleteApplication(applicationId).apply(request
@@ -511,7 +573,9 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
 
     "fail with a 500 (internal server error) when an exception is thrown" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
       when(mockGatekeeperService.deleteApplication(*[ApplicationId], *)(*))
         .thenReturn(failed(new RuntimeException("Expected test failure")))
 

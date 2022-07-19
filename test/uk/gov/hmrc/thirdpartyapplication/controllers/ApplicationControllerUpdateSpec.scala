@@ -27,14 +27,12 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
@@ -47,87 +45,71 @@ import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 import java.time.LocalDateTime
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import play.api.test.Helpers
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
-    with ApplicationStateUtil with TableDrivenPropertyChecks {
+    with ApplicationStateUtil with TableDrivenPropertyChecks
+     {
 
-  import play.api.test.Helpers
   import play.api.test.Helpers._
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup {
+  trait Setup
+      extends SubmissionsServiceMockModule
+      with UpliftLinkServiceMockModule
+      with StrideGatekeeperRoleAuthorisationServiceMockModule
+      with ApplicationServiceMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
-    val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector             = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
 
-    val testAuthConfig: AuthConfig =
-      AuthConfig(
-        userRole = "USER",
-        superUserRole = "SUPER",
-        adminRole = "ADMIN",
-        enabled = enabled(),
-        canDeleteApplications = canDeleteApplications(),
-        authorisationKey = "12345"
-      )
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
     val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
     val underTest = new ApplicationController(
-      mockApplicationService,
-      mockAuthConnector,
-      testAuthConfig,
+      StrideGatekeeperRoleAuthorisationServiceMock.aMock,
+      AuthControlConfig(true, false, "key"),
+      ApplicationServiceMock.aMock,
       mockCredentialService,
       mockSubscriptionService,
       config,
       mockGatekeeperService,
-      mockSubmissionService,
+      SubmissionsServiceMock.aMock,
       mockNamingService,
-      mockUpliftLinkService,
+      UpliftLinkServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
-  }
-
-  trait SandboxDeleteApplications extends Setup {
-    override def canDeleteApplications() = true
-    override def enabled()               = false
-  }
-
-  trait ProductionDeleteApplications extends Setup {
-    override def canDeleteApplications() = false
-    override def enabled()               = true
   }
 
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
     }
 
     def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      givenUserIsNotAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
       testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
     }

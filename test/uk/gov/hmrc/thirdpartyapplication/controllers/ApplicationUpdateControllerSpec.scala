@@ -19,20 +19,18 @@ package uk.gov.hmrc.thirdpartyapplication.controllers
 import org.scalatest.prop.TableDrivenPropertyChecks
 import play.api.libs.json.Json
 import play.api.mvc._
+import play.api.test.Helpers
 import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-
 import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 
 class ApplicationUpdateControllerSpec
     extends ControllerSpec
@@ -41,23 +39,17 @@ class ApplicationUpdateControllerSpec
     with TableDrivenPropertyChecks
     with ApplicationTestData {
 
-  import play.api.test.Helpers
   import play.api.test.Helpers._
 
-  trait Setup extends ApplicationUpdateServiceMockModule {
+  trait Setup
+      extends ApplicationUpdateServiceMockModule with ApplicationServiceMockModule {
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    val mockApplicationService: ApplicationService = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector           = mock[StrideAuthConnector]
-    val mockAuthConfig: AuthConfig       = mock[AuthConfig]
-
-    val underTest = new ApplicationUpdateController(
+    lazy val underTest = new ApplicationUpdateController(
       ApplicationUpdateServiceMock.aMock,
-      mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+      ApplicationServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
 

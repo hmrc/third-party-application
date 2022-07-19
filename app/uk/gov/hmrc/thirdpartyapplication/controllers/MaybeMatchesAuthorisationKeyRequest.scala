@@ -16,19 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.mvc.BaseController
-import scala.concurrent.ExecutionContext
-import play.api.mvc._
-import scala.concurrent.Future
+import play.api.mvc.{Request, WrappedRequest}
 
-trait StrideGatekeeperAuthoriseAction {
-  self: BaseController with JsonUtils with StrideGatekeeperAuthorise =>
-
-  private def authenticationAction(implicit ec: ExecutionContext) = new ActionFilter[Request] {
-    def executionContext = ec
-
-    def filter[A](input: Request[A]): Future[None.type] = authenticate(input)
-  }
-
-  def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction
-}
+case class MaybeMatchesAuthorisationKeyRequest[A](matchesAuthorisationKey: Boolean, request: Request[A]) extends WrappedRequest[A](request)

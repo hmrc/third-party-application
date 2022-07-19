@@ -30,19 +30,23 @@ import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
 import scala.util.{Try, Success, Failure}
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
+import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
 
 @Singleton
 class GatekeeperController @Inject() (
-    val authConnector: StrideAuthConnector,
     val applicationService: ApplicationService,
+    val ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService,
+    val strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService,
     gatekeeperService: GatekeeperService,
     subscriptionService: SubscriptionService,
-    val authConfig: AuthConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
-  ) extends BackendController(cc) with JsonUtils with StrideGatekeeperAuthorise with StrideGatekeeperAuthoriseAction {
+  ) extends BackendController(cc)
+  with JsonUtils
+  with AnyGatekeeperRoleAuthorisationAction
+  with OnlyStrideGatekeeperRoleAuthoriseAction {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -92,17 +96,17 @@ class GatekeeperController @Inject() (
     } recover recovery
   }
 
-  def fetchAppsForGatekeeper = requiresAuthentication().async {
+  def fetchAppsForGatekeeper = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchNonTestingAppsWithSubmittedDate() map {
       apps => Ok(Json.toJson(apps))
     } recover recovery
   }
 
-  def fetchAppById(id: ApplicationId) = requiresAuthentication().async {
+  def fetchAppById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchAppWithHistory(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
-  def fetchAppStateHistoryById(id: ApplicationId) = requiresAuthentication().async {
+  def fetchAppStateHistoryById(id: ApplicationId) = anyAuthenticatedUserAction { loggedInRequest =>
     gatekeeperService.fetchAppStateHistoryById(id) map (app => Ok(Json.toJson(app))) recover recovery
   }
 
