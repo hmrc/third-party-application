@@ -236,11 +236,24 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
   "fetchAppStateHistoryById" should {
     val appId = ApplicationId.random
 
-    "return app with history" in new Setup {
+    "return app with history for Stride GK User" in new Setup {
       val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
 
       LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
+
+      val result = underTest.fetchAppStateHistoryById(appId)(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expectedStateHistories)
+    }
+
+    "return app with history for LDAP GK User" in new Setup {
+      val expectedStateHistories = List(aHistory(appId), aHistory(appId, State.PRODUCTION))
+
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(mockGatekeeperService.fetchAppStateHistoryById(appId)).thenReturn(successful(expectedStateHistories))
 
