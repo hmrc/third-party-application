@@ -19,16 +19,16 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions
 import play.api.mvc.{Action, AnyContent, Result}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
-
 import play.api.mvc.Request
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
+import scala.util.control.NonFatal
 
 trait AnyGatekeeperRoleAuthorisationAction {
   self: BackendController =>
-    
+
   implicit val ec: ExecutionContext
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
@@ -36,9 +36,9 @@ trait AnyGatekeeperRoleAuthorisationAction {
   def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] =  {
     Action.async { implicit request => 
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
-      .recover { case _ => Some(ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE)}
+      .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE}
       .flatMap(_ match {
-        case Some(failureToAuthorise) => 
+        case Some(failureToAuthorise) =>
           strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
             .flatMap(_ match {
               case None => block(request)
