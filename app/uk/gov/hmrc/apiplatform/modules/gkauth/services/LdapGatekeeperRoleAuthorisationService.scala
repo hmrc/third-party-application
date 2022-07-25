@@ -30,9 +30,8 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
-
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequestAndSession(request, request.session)
-
+    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
+    
     hc.authorization.fold[Future[Option[Result]]]({
       logger.debug("No Header Carrier Authorisation")
       UNAUTHORIZED_RESPONSE
