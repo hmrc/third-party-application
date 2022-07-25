@@ -25,7 +25,6 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.services.{AccessService, ApplicationService}
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -34,10 +33,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import akka.stream.testkit.NoMaterializer
 
 import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 
-class AccessControllerSpec extends ControllerSpec {
+class AccessControllerSpec extends ControllerSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
   import play.api.test.Helpers._
   import play.api.test.Helpers
 
@@ -52,9 +51,7 @@ class AccessControllerSpec extends ControllerSpec {
   implicit private val fakeRequest: FakeRequest[AnyContentAsEmpty.type] = FakeRequest()
 
   val mockApplicationService   = mock[ApplicationService]
-  val mockAuthConnector        = mock[StrideAuthConnector]
   val mockAccessService        = mock[AccessService]
-  val mockAuthConfig           = mock[AuthConfig]
   val mockControllerComponents = Helpers.stubControllerComponents()
 
   "Access controller read scopes function" should {
@@ -79,7 +76,6 @@ class AccessControllerSpec extends ControllerSpec {
         status(invokeAccessControllerReadScopesWith(applicationId)) shouldBe INTERNAL_SERVER_ERROR
       })
     }
-
   }
 
   "Access controller update scopes function" should {
@@ -172,9 +168,9 @@ class AccessControllerSpec extends ControllerSpec {
     def mockAccessServiceUpdateOverridesToReturn(eventualOverridesResponse: Future[OverridesResponse]) =
       when(mockAccessService.updateOverrides(*[ApplicationId], any[OverridesRequest])(*)).thenReturn(eventualOverridesResponse)
 
-    private[controllers] val accessController = new AccessController(mockAuthConnector, mockApplicationService, mockAuthConfig, mockAccessService, mockControllerComponents)
+    lazy val accessController = new AccessController(StrideGatekeeperRoleAuthorisationServiceMock.aMock, mockApplicationService, mockAccessService, mockControllerComponents)
 
-    givenUserIsAuthenticated(accessController)
+    StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
     def invokeAccessControllerReadScopesWith(applicationId: ApplicationId): Future[Result] =
       accessController.readScopes(applicationId)(fakeRequest)

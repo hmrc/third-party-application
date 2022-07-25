@@ -16,10 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-case class AuthConfig(
-  userRole: String,
-  superUserRole: String,
-  adminRole: String,
+case class AuthControlConfig(
   enabled: Boolean,
   canDeleteApplications: Boolean,
   authorisationKey: String

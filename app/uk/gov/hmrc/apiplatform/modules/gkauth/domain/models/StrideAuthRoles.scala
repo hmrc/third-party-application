@@ -16,7 +16,8 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.domain.models
 
-import play.api.mvc.Request
-import play.api.mvc.WrappedRequest
-
-class LoggedInRequest[A](val name: Option[String], val role: GatekeeperRole, request: Request[A]) extends WrappedRequest[A](request)
+case class StrideAuthRoles(
+  adminRole: String,
+  superUserRole: String,
+  userRole: String
+)

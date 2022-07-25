@@ -29,22 +29,16 @@ import javax.inject.Singleton
 import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
 
 @Singleton
 class ApplicationUpdateController @Inject() (
     val applicationUpdateService: ApplicationUpdateService,
     val applicationService: ApplicationService,
-    val authConnector: StrideAuthConnector,
-    val authConfig: AuthConfig,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends ExtraHeadersController(cc)
     with JsonUtils
     with ApplicationUpdateFormatters
-    with StrideGatekeeperAuthorise
-    with AuthorisationWrapper
     with ApplicationLogger {
 
   import cats.implicits._

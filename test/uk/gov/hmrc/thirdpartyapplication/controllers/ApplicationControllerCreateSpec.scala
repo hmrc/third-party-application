@@ -22,17 +22,14 @@ import play.api.libs.json.Json
 import play.api.mvc._
 import play.api.test.FakeRequest
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.auth.core.SessionRecordNotFound
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.helpers.AuthSpecHelpers._
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
 import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
 import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
@@ -47,11 +44,10 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.config.AuthConfig
-import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 class ApplicationControllerCreateSpec extends ControllerSpec
     with ApplicationStateUtil with TableDrivenPropertyChecks
@@ -75,38 +71,30 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess       = Ropc()
 
-  trait Setup extends SubmissionsServiceMockModule with UpliftLinkServiceMockModule {
+  trait Setup 
+      extends SubmissionsServiceMockModule
+      with UpliftLinkServiceMockModule
+      with StrideGatekeeperRoleAuthorisationServiceMockModule
+      with ApplicationServiceMockModule {
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(X_REQUEST_ID_HEADER -> "requestId")
 
     implicit lazy val request: FakeRequest[AnyContentAsEmpty.type] =
       FakeRequest().withHeaders("X-name" -> "blob", "X-email-address" -> "test@example.com", "X-Server-Token" -> "abc123")
 
-    def canDeleteApplications() = true
-    def enabled()               = true
-
     val mockGatekeeperService: GatekeeperService     = mock[GatekeeperService]
     val mockEnrolment: Enrolment                     = mock[Enrolment]
     val mockCredentialService: CredentialService     = mock[CredentialService]
-    val mockApplicationService: ApplicationService   = mock[ApplicationService]
-    val mockAuthConnector: StrideAuthConnector       = mock[StrideAuthConnector]
     val mockSubscriptionService: SubscriptionService = mock[SubscriptionService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
-
-    val mockAuthConfig: AuthConfig = mock[AuthConfig]
-    when(mockAuthConfig.enabled).thenReturn(enabled())
-    when(mockAuthConfig.userRole).thenReturn("USER")
-    when(mockAuthConfig.superUserRole).thenReturn("SUPER")
-    when(mockAuthConfig.adminRole).thenReturn("ADMIN")
-    when(mockAuthConfig.canDeleteApplications).thenReturn(canDeleteApplications())
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321
     val config                = ApplicationControllerConfig(applicationTtlInSecs, subscriptionTtlInSecs)
 
-    val underTest = new ApplicationController(
-      mockApplicationService,
-      mockAuthConnector,
-      mockAuthConfig,
+    lazy val underTest = new ApplicationController(
+      StrideGatekeeperRoleAuthorisationServiceMock.aMock,
+      AuthControlConfig(true, false, "key"),
+      ApplicationServiceMock.aMock,
       mockCredentialService,
       mockSubscriptionService,
       config,
@@ -130,7 +118,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     val ropcApplicationResponse       = CreateApplicationResponse(aNewApplicationResponse(ropcAccess))
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
-      when(underTest.applicationService.create(eqTo(standardApplicationRequest))(*)).thenReturn(successful(standardApplicationResponse))
+      ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
@@ -142,7 +130,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
-      when(underTest.applicationService.create(eqTo(standardApplicationRequestV1))(*)).thenReturn(successful(standardApplicationResponse))
+      ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequestV1)(standardApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
@@ -152,8 +140,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      givenUserIsAuthenticated(underTest)
-      when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*)).thenReturn(successful(privilegedApplicationResponse))
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+      ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
@@ -166,8 +154,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
-      givenUserIsAuthenticated(underTest)
-      when(underTest.applicationService.create(eqTo(ropcApplicationRequest))(*)).thenReturn(successful(ropcApplicationResponse))
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+      ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
@@ -183,7 +171,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val apis                                  = Set(testApi)
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
-      when(underTest.applicationService.create(eqTo(applicationRequestWithOneSubscription))(*)).thenReturn(successful(standardApplicationResponse))
+      ApplicationServiceMock.Create.onRequestReturn(applicationRequestWithOneSubscription)(standardApplicationResponse)
       when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(
         HasSucceeded
       ))
@@ -203,7 +191,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val apis                                   = Set(testApi, anotherTestApi)
       val applicationRequestWithTwoSubscriptions = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
-      when(underTest.applicationService.create(eqTo(applicationRequestWithTwoSubscriptions))(*)).thenReturn(successful(standardApplicationResponse))
+      ApplicationServiceMock.Create.onRequestReturn(applicationRequestWithTwoSubscriptions)(standardApplicationResponse)
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -219,23 +207,25 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     }
 
     "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))))
+      val result = underTest.create()(request.withBody(Json.toJson(privilegedApplicationRequest)))
+      status(result) shouldBe UNAUTHORIZED
 
       verify(underTest.applicationService, never).create(any[CreateApplicationRequest])(*)
     }
 
     "fail with a 401 (Unauthorized) for a valid ROPC application request when gatekeeper is not logged in" in new Setup {
-      givenUserIsNotAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
 
-      assertThrows[SessionRecordNotFound](await(underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))))
+      val result = underTest.create()(request.withBody(Json.toJson(ropcApplicationRequest)))
+      status(result) shouldBe UNAUTHORIZED
 
       verify(underTest.applicationService, never).create(any[CreateApplicationRequest])(*)
     }
 
     "fail with a 409 (Conflict) for a privileged application when the name already exists for another production application" in new Setup {
-      givenUserIsAuthenticated(underTest)
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
       when(underTest.applicationService.create(eqTo(privilegedApplicationRequest))(*))
         .thenReturn(failed(ApplicationAlreadyExists("appName")))
