@@ -285,6 +285,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(query).toFuture()
   }
 
+  def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
+    val pipeline: Seq[Bson] = Seq(
+      matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
+      lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
+      sort(ascending("createdOn", "states.changedAt"))
+    )
+    collection.aggregate[BsonValue](pipeline).map(Codecs.fromBson[ApplicationWithStateHistory]).toFuture()
+  }
+
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
     val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
     val sort    = convertToSortClause(applicationSearch.sort)
