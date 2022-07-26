@@ -28,8 +28,9 @@ import play.api.mvc.ControllerComponents
 import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.http.Status.UNAUTHORIZED
+import play.api.http.HeaderNames.AUTHORIZATION
 
-class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory  {
+class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
   val fakeRequest = FakeRequest()
   
   val cc: ControllerComponents = stubControllerComponents()
@@ -43,7 +44,7 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
     def authControlConfig: AuthControlConfig
     lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
 
-    protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None,expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
+    protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None, expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
   }
 
   trait DisabledAuth {
@@ -56,32 +57,31 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
     val authControlConfig = AuthControlConfig(enabled = true, canDeleteApplications = false, authorisationKey = "Foo")
   }
 
-  trait SessionPresent {
+  trait AuthHeaderPresent {
     self: Setup =>
-    val request = fakeRequest.withSession("authToken" -> "Token some-token")
+    val request = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) //.withSession("authToken" -> "Token some-token")
   }
 
-  trait NoSessionPresent {
+  trait NoAuthHeaderPresent {
     self: Setup =>
     val request = fakeRequest
   }
 
   trait Authorised {
-    self: Setup with SessionPresent =>
+    self: Setup with AuthHeaderPresent =>
 
     stub(true)
   }
 
   trait Unauthorised {
-    self: Setup with SessionPresent =>
+    self: Setup with AuthHeaderPresent =>
 
     stub(false)
   }
 
 
   "with auth disabled" should {
-    
-    "return None (good result) when auth is not enabled" in new Setup with DisabledAuth with NoSessionPresent {
+    "return None (good result) when auth is not enabled" in new Setup with DisabledAuth with NoAuthHeaderPresent {
       val result = await(underTest.ensureHasGatekeeperRole(request))
 
       result shouldBe None
@@ -89,19 +89,19 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
   }
 
   "with auth enabled" should {
-    "return None (good result) when user should be authorised " in new Setup with EnabledAuth with SessionPresent with Authorised {
+    "return None (good result) when user should be authorised " in new Setup with EnabledAuth with AuthHeaderPresent with Authorised {
       val result = await(underTest.ensureHasGatekeeperRole(request))
 
       result shouldBe None
     }
 
-    "return Some(...) (unauthorized) when user is present but not authorised" in new Setup with EnabledAuth with SessionPresent with Unauthorised {
+    "return Some(...) (unauthorized) when user is present but not authorised" in new Setup with EnabledAuth with AuthHeaderPresent with Unauthorised {
        val result = await(underTest.ensureHasGatekeeperRole(request))
 
        result.value.header.status shouldBe UNAUTHORIZED
     }
 
-    "return Some(...) (unauthorized) when user is absent" in new Setup with EnabledAuth with NoSessionPresent {
+    "return Some(...) (unauthorized) when user is absent" in new Setup with EnabledAuth with NoAuthHeaderPresent {
        val result = await(underTest.ensureHasGatekeeperRole(request))
 
        result.value.header.status shouldBe UNAUTHORIZED
