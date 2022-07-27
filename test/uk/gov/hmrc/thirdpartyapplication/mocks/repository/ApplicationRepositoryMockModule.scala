@@ -347,6 +347,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def verifyNeverCalled =
         ApplicationRepoMock.verify(never).applyEvents(*[NonEmptyList[UpdateApplicationEvent]])
     }
+
+    object FetchProdAppStateHistories {
+      def thenReturn(appStateHistories: ApplicationWithStateHistory*) =
+        when(aMock.fetchProdAppStateHistories()).thenReturn(Future.successful(appStateHistories.toList))
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {

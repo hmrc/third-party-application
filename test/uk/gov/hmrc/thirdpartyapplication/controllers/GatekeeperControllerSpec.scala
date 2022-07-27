@@ -264,6 +264,40 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
     }
   }
 
+  "fetchAppStateHistories" should {
+    val expectedAppStateHistories = List(
+      ApplicationStateHistory(ApplicationId.random, List(
+        ApplicationStateHistoryItem(State.TESTING, LocalDateTime.parse("2022-07-01T12:00:00")),
+        ApplicationStateHistoryItem(State.PENDING_GATEKEEPER_APPROVAL, LocalDateTime.parse("2022-07-01T13:00:00")),
+        ApplicationStateHistoryItem(State.PRODUCTION, LocalDateTime.parse("2022-07-01T14:00:00"))
+      )),
+      ApplicationStateHistory(ApplicationId.random, List())
+    )
+
+    "return app histories for Stride GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAppStateHistories()).thenReturn(successful(expectedAppStateHistories))
+
+      val result = underTest.fetchAppStateHistories()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expectedAppStateHistories)
+    }
+
+    "return app histories for LDAP GK User" in new Setup {
+      LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+
+      when(mockGatekeeperService.fetchAppStateHistories()).thenReturn(successful(expectedAppStateHistories))
+
+      val result = underTest.fetchAppStateHistories()(request)
+
+      status(result) shouldBe 200
+      contentAsJson(result) shouldBe Json.toJson(expectedAppStateHistories)
+    }
+  }
+
   "approveUplift" should {
     val applicationId        = ApplicationId.random
     val gatekeeperUserId     = "big.boss.gatekeeper"
