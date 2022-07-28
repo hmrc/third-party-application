@@ -54,11 +54,10 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
     def apiName(apiIdentifier: ApiIdentifier): String =
       s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
 
-    subscriptionRepository.findAll
+    subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists
       .map(subscriptions =>
         subscriptions
-          .map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size)
-          .toMap
+          .map { case (apiIdentifier, count) => apiName(apiIdentifier) -> count }
       )
   }
 }

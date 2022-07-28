@@ -19,8 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Accumulators.sum
 import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Filters.{and, equal, not, size}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
@@ -133,6 +134,29 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(_.toSet)
   }
 
+  def getSubscriptionCountByApiCheckingApplicationExists: Future[Map[ApiIdentifier, Int]] = {
+
+    val pipeline = Seq(
+      unwind("$applications"),
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applicationDetail"),
+      filter(not(size("applicationDetail", 0))),
+      group("$apiIdentifier", sum("count", 1)),
+    )
+
+    collection.aggregate[BsonValue](pipeline)
+      .toFuture()
+      .map(_.map(bsonValue => {
+        val doc = bsonValue.asDocument()
+        val id = doc.get("_id").asDocument()
+        val context = id.get("context").asString().getValue
+        val version = id.get("version").asString().getValue
+        val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
+        val count = doc.get("count").asInt32().getValue
+        apiIdentifier -> count
+      }))
+      .map(_.toMap)
+  }
+  
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
     collection.find(contextAndVersionFilter(apiIdentifier))
       .headOption
