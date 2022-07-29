@@ -22,7 +22,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.LocalDateTime
 
 case class ApplicationStateHistoryItem(state: State, timestamp: LocalDateTime)
-case class ApplicationStateHistory(applicationId: ApplicationId, stateHistory: List[ApplicationStateHistoryItem])
+case class ApplicationStateHistory(applicationId: ApplicationId, appName: String, journeyVersion: Int, stateHistory: List[ApplicationStateHistoryItem])
 
 object ApplicationStateHistory {
   implicit val formatApplicationStateHistoryItem = Json.format[ApplicationStateHistoryItem]

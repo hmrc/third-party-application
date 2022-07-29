@@ -2621,10 +2621,21 @@ class ApplicationRepositoryISpec
   }
 
   "fetchProdAppStateHistories" should {
-    def saveApp(state: State, timeOffset: Duration, environment: Environment = Environment.PRODUCTION) = {
+    def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
       val appId = ApplicationId.random
       val app = anApplicationData(appId).copy(
         state = ApplicationState(name = state),
+        access = Standard(importantSubmissionData = isNewJourney match {
+          case true => Some(ImportantSubmissionData(
+            None,
+            ResponsibleIndividual.build("ri name", "ri@example.com"),
+            Set.empty,
+            TermsAndConditionsLocation.InDesktopSoftware,
+            PrivacyPolicyLocation.InDesktopSoftware,
+            List.empty
+          ))
+          case false => None
+        }),
         createdOn = LocalDateTime.now.plus(timeOffset),
         environment = environment.toString,
         tokens = ApplicationTokens(Token(ClientId.random, "access token"))
@@ -2640,14 +2651,24 @@ class ApplicationRepositoryISpec
       stateHistory
     }
 
-    "return app state history correctly" in {
-      val app = saveApp(State.PRODUCTION, Duration.ZERO)
+    "return app state history correctly for new journey app" in {
+      val app = saveApp(State.PRODUCTION, Duration.ZERO, true)
       val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
       val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
       val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(app.id, List(stateHistory1, stateHistory2, stateHistory3)))
+      results mustBe List(ApplicationWithStateHistory(app.id, app.name, 2, List(stateHistory1, stateHistory2, stateHistory3)))
+    }
+
+    "return app state history correctly for old journey app" in {
+      val app = saveApp(State.PRODUCTION, Duration.ZERO, false)
+      val stateHistory1 = saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
+      val stateHistory2 = saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(2))
+      val stateHistory3 = saveHistoryStatePair(app.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(3))
+
+      val results = await(applicationRepository.fetchProdAppStateHistories())
+      results mustBe List(ApplicationWithStateHistory(app.id, app.name, 1, List(stateHistory1, stateHistory2, stateHistory3)))
     }
 
     "return app state histories sorted correctly" in {
@@ -2662,9 +2683,9 @@ class ApplicationRepositoryISpec
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results mustBe List(
-        ApplicationWithStateHistory(app1.id, List(app1History)),
-        ApplicationWithStateHistory(app3.id, List(app3History)),
-        ApplicationWithStateHistory(app2.id, List(app2History))
+        ApplicationWithStateHistory(app1.id, app1.name, 2, List(app1History)),
+        ApplicationWithStateHistory(app3.id, app2.name, 2, List(app3History)),
+        ApplicationWithStateHistory(app2.id, app3.name, 2, List(app2History))
       )
     }
 
@@ -2673,11 +2694,11 @@ class ApplicationRepositoryISpec
       val stateHistory1 = saveHistoryStatePair(prodApp.id, State.TESTING, State.PENDING_GATEKEEPER_APPROVAL, Duration.ofHours(1))
       val stateHistory2 = saveHistoryStatePair(prodApp.id, State.PENDING_GATEKEEPER_APPROVAL, State.PRODUCTION, Duration.ofHours(2))
 
-      val sandboxApp = saveApp(State.PRODUCTION, Duration.ofHours(1), Environment.SANDBOX)
+      val sandboxApp = saveApp(State.PRODUCTION, Duration.ofHours(1), true, Environment.SANDBOX)
       saveHistory(sandboxApp.id, None, State.PRODUCTION, Duration.ofHours(1))
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
-      results mustBe List(ApplicationWithStateHistory(prodApp.id, List(stateHistory1, stateHistory2)))
+      results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
     }
   }
 

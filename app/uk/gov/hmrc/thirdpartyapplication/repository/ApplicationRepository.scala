@@ -288,6 +288,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     val pipeline: Seq[Bson] = Seq(
       matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
+      addFields(Field("version", Document("{\"$cond\": [{$not: \"$access.importantSubmissionData\"}, 1, 2]}"))), //TODO nicer way to write this?
       lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
       sort(ascending("createdOn", "states.changedAt"))
     )

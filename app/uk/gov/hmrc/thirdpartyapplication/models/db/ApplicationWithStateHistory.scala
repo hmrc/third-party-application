@@ -20,7 +20,7 @@ import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, StateHistory}
 
-case class ApplicationWithStateHistory(id: ApplicationId, states: List[StateHistory])
+case class ApplicationWithStateHistory(id: ApplicationId, name: String, version: Int, states: List[StateHistory])
 
 object ApplicationWithStateHistory {
   implicit val dateTimeFormatter = MongoJavatimeFormats.localDateTimeReads
