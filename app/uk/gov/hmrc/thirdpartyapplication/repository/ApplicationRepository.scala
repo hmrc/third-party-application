@@ -18,8 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 
 import cats.data.NonEmptyList
 import com.mongodb.client.model.{FindOneAndUpdateOptions, ReturnDocument}
+import org.bson.BsonValue
 import org.mongodb.scala.bson.conversions.Bson
-import org.mongodb.scala.bson.{BsonValue, Document}
+import org.mongodb.scala.bson.{BsonArray, BsonInt32, BsonString, Document}
 import org.mongodb.scala.model
 import org.mongodb.scala.model.Aggregates._
 import org.mongodb.scala.model.Filters._
@@ -288,7 +289,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     val pipeline: Seq[Bson] = Seq(
       matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
-      addFields(Field("version", Document("{\"$cond\": [{$not: \"$access.importantSubmissionData\"}, 1, 2]}"))), //TODO nicer way to write this?
+      addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
       lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
       sort(ascending("createdOn", "states.changedAt"))
     )
@@ -306,6 +307,15 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
     runAggregationQuery(filters, pagination, sort, applicationSearch.hasSubscriptionFilter(), applicationSearch.hasSpecificApiSubscriptionFilter())
   }
+
+  private def cond[T](condition: Document, trueValue: Int, falseValue: Int): Bson = {
+    Document("$cond" -> BsonArray(
+      condition,
+      BsonInt32(trueValue),
+      BsonInt32(falseValue)
+    ))
+  }
+
 
   private def matches(predicates: Bson): Bson = filter(predicates)
 
