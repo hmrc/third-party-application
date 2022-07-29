@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import com.google.inject.Singleton
-import play.api.libs.json.Format
+import play.api.libs.json.OFormat
 
 import javax.inject.Inject
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
@@ -68,5 +68,5 @@ case class SubscriptionCountByApi(_id: ApiIdentifier, count: Int)
 object SubscriptionCountByApi {
   import play.api.libs.json.Json
 
-  implicit val subscriptionCountByApi: Format[SubscriptionCountByApi] = Json.format[SubscriptionCountByApi]
+  implicit val subscriptionCountByApi: OFormat[SubscriptionCountByApi] = Json.format[SubscriptionCountByApi]
 }
