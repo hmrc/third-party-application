@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
@@ -353,12 +354,15 @@ class SubscriptionRepositoryISpec
           .insertOne(aSubscriptionData(api3, api3Version, application3.id))
           .toFuture()
       )
+      
+      val expectedResult = List(
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), 2),
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)), 2)
+      )
 
       val result = await(subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists)
 
-      result.get(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version))) mustBe Some(2)
-      result.get(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version))) mustBe Some(2)
-      result.get(ApiIdentifier(ApiContext(api3), ApiVersion(api3Version))) mustBe None
+      result must contain theSameElementsAs expectedResult
     }
   }
 

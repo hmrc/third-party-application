@@ -34,8 +34,8 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
     s"apisWithSubscriptionCountV1.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
 
   "metrics refresh" should {
-    def subscriptionDetails(subscription: (String, String, Int)): (ApiIdentifier, Int) =
-      ApiIdentifier(ApiContext(subscription._1), ApiVersion(subscription._2)) -> subscription._3
+    def subscriptionDetails(subscription: (String, String, Int)): SubscriptionCountByApi =
+      SubscriptionCountByApi(ApiIdentifier(ApiContext(subscription._1), ApiVersion(subscription._2)), subscription._3)
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
@@ -44,7 +44,7 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
       when(mockSubscriptionsRepository.getSubscriptionCountByApiCheckingApplicationExists)
         .thenReturn(Future.successful(
-          Map(subscriptionDetails(api1v1), subscriptionDetails(api1v2), subscriptionDetails(api2))
+          List(subscriptionDetails(api1v1), subscriptionDetails(api1v2), subscriptionDetails(api2))
         ))
 
       val result: Map[String, Int] = await(metricUnderTest.metrics)

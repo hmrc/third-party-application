@@ -29,6 +29,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -134,8 +135,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(_.toSet)
   }
 
-  def getSubscriptionCountByApiCheckingApplicationExists: Future[Map[ApiIdentifier, Int]] = {
-
+  def getSubscriptionCountByApiCheckingApplicationExists: Future[List[SubscriptionCountByApi]] = {
     val pipeline = Seq(
       unwind("$applications"),
       lookup(from = "application", localField = "applications", foreignField = "id", as = "applicationDetail"),
@@ -144,19 +144,11 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     )
 
     collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[SubscriptionCountByApi])
       .toFuture()
-      .map(_.map(bsonValue => {
-        val doc = bsonValue.asDocument()
-        val id = doc.get("_id").asDocument()
-        val context = id.get("context").asString().getValue
-        val version = id.get("version").asString().getValue
-        val apiIdentifier = ApiIdentifier(ApiContext(context), ApiVersion(version))
-        val count = doc.get("count").asInt32().getValue
-        apiIdentifier -> count
-      }))
-      .map(_.toMap)
+      .map(_.toList)
   }
-  
+
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
     collection.find(contextAndVersionFilter(apiIdentifier))
       .headOption
