@@ -140,7 +140,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       unwind("$applications"),
       lookup(from = "application", localField = "applications", foreignField = "id", as = "applicationDetail"),
       filter(not(size("applicationDetail", 0))),
-      group("$apiIdentifier", sum("count", 1)),
+      group("$apiIdentifier", sum("count", 1))
     )
 
     collection.aggregate[BsonValue](pipeline)
