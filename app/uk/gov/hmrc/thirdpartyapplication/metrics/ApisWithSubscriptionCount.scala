@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
 import com.google.inject.Singleton
+import play.api.libs.json.OFormat
 
 import javax.inject.Inject
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
@@ -38,9 +39,8 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
     def subscriptionCountKey(apiName: String): String = s"apisWithSubscriptionCountV1.$apiName"
 
     val result = numberOfSubscriptionsByApi
-      .map(subscriptionCounts =>
-        subscriptionCounts
-          .map(count => subscriptionCountKey(count._1) -> count._2)
+      .map(_.map {
+        case (apiName, count) => subscriptionCountKey(apiName) -> count }
       )
 
     result.onComplete({
@@ -54,11 +54,19 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
     def apiName(apiIdentifier: ApiIdentifier): String =
       s"""${sanitiseGrafanaNodeName(apiIdentifier.context.value)}.${sanitiseGrafanaNodeName(apiIdentifier.version.value)}"""
 
-    subscriptionRepository.findAll
+    subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists
       .map(subscriptions =>
         subscriptions
-          .map(subscription => apiName(subscription.apiIdentifier) -> subscription.applications.size)
+          .map { subscriptionCountByApi => apiName(subscriptionCountByApi._id) -> subscriptionCountByApi.count }
           .toMap
       )
   }
+}
+
+case class SubscriptionCountByApi(_id: ApiIdentifier, count: Int)
+
+object SubscriptionCountByApi {
+  import play.api.libs.json.Json
+
+  implicit val subscriptionCountByApi: OFormat[SubscriptionCountByApi] = Json.format[SubscriptionCountByApi]
 }

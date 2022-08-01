@@ -26,6 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
@@ -321,6 +322,50 @@ class SubscriptionRepositoryISpec
     }
   }
 
+  "ApisWithSubscriptionCount" should {
+    "return APIs with a count of subscriptions" in {
+      val api1 = "api-1"
+      val api2 = "api-2"
+      val api3 = "api-3"
+      val api1Version = "api-1-version-1"
+      val api2Version = "api-2-version-2"
+      val api3Version = "api-3-version-3"
+
+      val application1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId)
+      val application2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId)
+      val application3 = anApplicationData(id = ApplicationId.random, clientId = generateClientId)
+
+      await(applicationRepository.save(application1))
+      await(applicationRepository.save(application2))
+      // application 3 is intentionally not saved
+
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api1, api1Version, application1.id, application2.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api2, api2Version, application1.id, application2.id, application3.id))
+          .toFuture()
+      )
+      await(
+        subscriptionRepository.collection
+          .insertOne(aSubscriptionData(api3, api3Version, application3.id))
+          .toFuture()
+      )
+      
+      val expectedResult = List(
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), 2),
+        SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)), 2)
+      )
+
+      val result = await(subscriptionRepository.getSubscriptionCountByApiCheckingApplicationExists)
+
+      result must contain theSameElementsAs expectedResult
+    }
+  }
+
   def subscriptionData(apiContext: ApiContext, version: ApiVersion, applicationIds: ApplicationId*): SubscriptionData = {
     SubscriptionData(
       ApiIdentifier(apiContext, version),
@@ -328,6 +373,10 @@ class SubscriptionRepositoryISpec
     )
   }
 
+  def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
+    subscriptionData(ApiContext(apiContext), ApiVersion(version), applicationIds: _*)
+  }
+  
   def anApplicationData(
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),

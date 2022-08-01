@@ -16,14 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SubscriptionData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiContext, ApiIdentifier, ApiVersion}
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, MetricsHelper}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
 
@@ -36,15 +34,15 @@ class ApisWithSubscriptionCountSpec extends AsyncHmrcSpec with MetricsHelper {
     s"apisWithSubscriptionCountV1.${sanitiseGrafanaNodeName(subscription._1)}.${sanitiseGrafanaNodeName(subscription._2)}"
 
   "metrics refresh" should {
-    def subscriptionDetails(subscription: (String, String, Int)): SubscriptionData =
-      SubscriptionData(subscription._1.asIdentifier(subscription._2), Seq.fill(subscription._3)(ApplicationId.random).toSet)
+    def subscriptionDetails(subscription: (String, String, Int)): SubscriptionCountByApi =
+      SubscriptionCountByApi(ApiIdentifier(ApiContext(subscription._1), ApiVersion(subscription._2)), subscription._3)
 
     "update subscription counts" in new Setup {
       private val api1v1 = ("apiOne", "1.0", 5)
       private val api1v2 = ("api(One)", "2.0", 10)
       private val api2   = ("route/apiTwo", "1.0", 100)
 
-      when(mockSubscriptionsRepository.findAll)
+      when(mockSubscriptionsRepository.getSubscriptionCountByApiCheckingApplicationExists)
         .thenReturn(Future.successful(
           List(subscriptionDetails(api1v1), subscriptionDetails(api1v2), subscriptionDetails(api2))
         ))

@@ -19,8 +19,9 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.mongodb.scala.bson.BsonValue
 import org.mongodb.scala.bson.collection.immutable.Document
 import org.mongodb.scala.bson.conversions.Bson
+import org.mongodb.scala.model.Accumulators.sum
 import org.mongodb.scala.model.Aggregates._
-import org.mongodb.scala.model.Filters.{and, equal}
+import org.mongodb.scala.model.Filters.{and, equal, not, size}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.Projections.{computed, excludeId, fields, include}
 import org.mongodb.scala.model.{IndexModel, IndexOptions, UpdateOptions, Updates}
@@ -28,6 +29,7 @@ import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.metrics.SubscriptionCountByApi
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -131,6 +133,20 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(Codecs.fromBson[ApiIdentifier])
       .toFuture()
       .map(_.toSet)
+  }
+
+  def getSubscriptionCountByApiCheckingApplicationExists: Future[List[SubscriptionCountByApi]] = {
+    val pipeline = Seq(
+      unwind("$applications"),
+      lookup(from = "application", localField = "applications", foreignField = "id", as = "applicationDetail"),
+      filter(not(size("applicationDetail", 0))),
+      group("$apiIdentifier", sum("count", 1))
+    )
+
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[SubscriptionCountByApi])
+      .toFuture()
+      .map(_.toList)
   }
 
   def getSubscribers(apiIdentifier: ApiIdentifier): Future[Set[ApplicationId]] = {
