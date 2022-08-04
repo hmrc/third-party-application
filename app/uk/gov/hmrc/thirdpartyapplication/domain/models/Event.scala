@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
@@ -131,11 +132,28 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ProductionLegacyAppTermsConditionsLocationChanged] = Json.format[ProductionLegacyAppTermsConditionsLocationChanged]
   }
 
+  case class ResponsibleIndividualChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    responsibleIndividualName: String,
+    responsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent
+
+  object ResponsibleIndividualChanged {
+    implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
+  }
+
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
     .and[ProductionLegacyAppPrivacyPolicyLocationChanged](EventType.PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
     .and[ProductionAppTermsConditionsLocationChanged](EventType.PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
     .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
+    .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
     .format
 }

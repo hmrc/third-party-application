@@ -2595,6 +2595,36 @@ class ApplicationRepositoryISpec
       }
     }
 
+    "handle ResponsibleIndividualChanged event correctly" in {
+      val applicationId = ApplicationId.random
+      val riName = "Mr Responsible"
+      val riEmail = "ri@example.com"
+      val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
+      val submissionId = Submission.Id.random
+      val submissionIndex = 1
+      val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
+        TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List(TermsOfUseAcceptance(oldRi, LocalDateTime.now, submissionId, submissionIndex)))
+      val access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val devHubUser = CollaboratorActor("admin@example.com")
+      val event = ResponsibleIndividualChanged(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, riName, riEmail, submissionId, submissionIndex, adminEmail)
+      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedRI.access match {
+        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+          importantSubmissionData.responsibleIndividual.fullName.value mustBe riName
+          importantSubmissionData.responsibleIndividual.emailAddress.value mustBe riEmail
+          importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+          latestAcceptance.responsibleIndividual.fullName.value mustBe riName
+          latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
+        }
+        case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
+      }
+    }
+
     "throw an error if events relate to different applications" in {
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random
