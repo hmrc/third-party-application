@@ -21,11 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Role, Standard, State, UpdateApplicationEvent, UserId}
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -48,8 +44,20 @@ object CommandHandler {
       "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"
     )
 
+  def isApproved(app: ApplicationData) =
+    cond(
+      app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
+      "App is not in PRE_PRODUCTION or in PRODUCTION state"
+    )
+
   def isStandardAccess(app: ApplicationData) =
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
+
+  def isStandardNewJourneyApp(app: ApplicationData) =
+    cond(app.access match {
+      case Standard(_, _, _, _, _, Some(_)) => true
+      case _ => false
+    }, "Must be a standard new journey application")
 
   def getRequester(app: ApplicationData, instigator: UserId) = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))

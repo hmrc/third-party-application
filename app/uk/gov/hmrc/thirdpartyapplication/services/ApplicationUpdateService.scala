@@ -33,6 +33,7 @@ class ApplicationUpdateService @Inject()(
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
   changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+  changeResponsibleIndividualCommandHandler: ChangeResponsibleIndividualCommandHandler,
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
@@ -54,6 +55,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
+      case cmd: ChangeResponsibleIndividual                           => changeResponsibleIndividualCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

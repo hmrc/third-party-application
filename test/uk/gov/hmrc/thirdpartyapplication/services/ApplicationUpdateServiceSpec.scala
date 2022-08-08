@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import akka.actor.ActorSystem
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 import org.scalatest.BeforeAndAfterAll
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
@@ -26,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler, ChangeResponsibleIndividualCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -58,12 +59,14 @@ class ApplicationUpdateServiceSpec
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
     val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
+    val mockChangeResponsibleIndividualCommandHandler: ChangeResponsibleIndividualCommandHandler = mock[ChangeResponsibleIndividualCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
+      mockChangeResponsibleIndividualCommandHandler,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock
     )
@@ -212,6 +215,44 @@ class ApplicationUpdateServiceSpec
     "return the error if the application does not exist" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
       val result = await(underTest.update(applicationId, changeTermsConditionsLocation).value)
+
+      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
+      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
+  }
+
+  "update with ChangeResponsibleIndividual" should {
+    val changeResponsibleIndividual = ChangeResponsibleIndividual(UserId.random, LocalDateTime.now, "name", "email")
+
+    "return the updated application if the application exists" in new Setup {
+      val newRiName = "Mr Responsible"
+      val newRiEmail = "ri@example.com"
+      val appBefore = applicationData
+      val appAfter = applicationData.copy(access = Standard(
+        importantSubmissionData = Some(testImportantSubmissionData.copy(
+          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
+      val event = ResponsibleIndividualChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        CollaboratorActor(changeResponsibleIndividual.email),
+        newRiName, newRiEmail, Submission.Id.random, 1, changeResponsibleIndividual.email)
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+
+      when(mockChangeResponsibleIndividualCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividual])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
+      result shouldBe Right(appAfter)
+    }
+
+    "return the error if the application does not exist" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+      val result = await(underTest.update(applicationId, changeResponsibleIndividual).value)
 
       result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
