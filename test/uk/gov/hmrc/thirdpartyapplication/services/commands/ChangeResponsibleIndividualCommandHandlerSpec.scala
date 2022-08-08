@@ -106,7 +106,7 @@ class ChangeResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
     "return an error if the requester is already the RI for the application" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val result = await(underTest.process(app, ChangeResponsibleIndividual(oldRiUserId, ts, oldRiName, oldRiEmail)))
-      result shouldBe Invalid(NonEmptyChain.one(s"The specified individual $oldRiName [$oldRiEmail] is already the RI for this application"))
+      result shouldBe Invalid(NonEmptyChain.one(s"The specified individual is already the RI for this application"))
     }
   }
 }

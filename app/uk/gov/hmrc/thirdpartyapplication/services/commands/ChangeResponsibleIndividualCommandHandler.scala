@@ -39,7 +39,7 @@ class ChangeResponsibleIndividualCommandHandler @Inject()(
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
         ! responsibleIndividual.fullName.value.equalsIgnoreCase(name) || ! responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
       case _ => true
-    }, s"The specified individual $name [$email] is already the RI for this application")
+    }, s"The specified individual is already the RI for this application")
 
   private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividual): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map4(
