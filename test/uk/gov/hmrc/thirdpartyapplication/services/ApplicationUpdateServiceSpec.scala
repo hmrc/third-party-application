@@ -270,4 +270,41 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.verifyNeverCalled
     }
   }
+
+  "update with VerifyResponsibleIndividual" should {
+    val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, LocalDateTime.now, "name", "email")
+
+    "return the updated application if the application exists" in new Setup {
+      val newRiName = "Mr Responsible"
+      val newRiEmail = "ri@example.com"
+      val app = applicationData
+      val appName = applicationData.name
+      val event = ResponsibleIndividualVerificationStarted(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        CollaboratorActor(verifyResponsibleIndividual.email),
+        newRiName, newRiEmail, appName, Submission.Id.random, 1, verifyResponsibleIndividual.email)
+      ApplicationRepoMock.Fetch.thenReturn(app)
+      ApplicationRepoMock.ApplyEvents.thenReturn(app)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+
+      when(mockVerifyResponsibleIndividualCommandHandler.process(*[ApplicationData], *[VerifyResponsibleIndividual])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, verifyResponsibleIndividual).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
+      result shouldBe Right(app)
+    }
+
+    "return the error if the application does not exist" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+      val result = await(underTest.update(applicationId, verifyResponsibleIndividual).value)
+
+      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
+      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
+  }
 }

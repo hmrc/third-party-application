@@ -16,20 +16,21 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
+import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{ADMIN_REQUESTED_CHANGE, INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, ResponsibleIndividualVerificationStarted}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
-import java.time.Clock
-import java.time.LocalDateTime
+import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
 class ResponsibleIndividualVerificationRepositoryISpec
@@ -136,6 +137,61 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       val allDocs = await(repository.findAll).toSet
       allDocs mustBe Set(stateReminderSent, stateInitial.copy(state = REMINDERS_SENT))
+    }
+  }
+
+  "applyEvents" should {
+    def buildRiVerificationEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualVerificationStarted(
+        UpdateApplicationEvent.Id.random,
+        ApplicationId.random,
+        LocalDateTime.now(ZoneOffset.UTC),
+        CollaboratorActor("requester@example.com"),
+        "ri name",
+        "ri@example.com",
+        "my app",
+        submissionId,
+        submissionIndex,
+        "admin@example.com"
+    )
+
+    "handle ResponsibleIndividualVerificationStarted event correctly" in {
+      val event = buildRiVerificationEvent(Submission.Id.random, 1)
+      val result = await(repository.applyEvents(NonEmptyList.one(event)))
+
+      result.applicationId mustBe event.applicationId
+      result.applicationName mustBe event.applicationName
+      result.submissionId mustBe event.submissionId
+      result.submissionInstance mustBe event.submissionIndex
+      result.state mustBe ADMIN_REQUESTED_CHANGE
+      result.createdOn mustBe event.eventDateTime
+
+      await(repository.findAll) mustBe List(result)
+    }
+
+    "remove old records that match submission when ResponsibleIndividualVerificationStarted event is received" in {
+      val existingSubmissionId = Submission.Id.random
+      val existingSubmissionIndex = 1
+
+      val existingRecordMatchingSubmission = buildDoc(ADMIN_REQUESTED_CHANGE, submissionId = existingSubmissionId, submissionIndex = existingSubmissionIndex)
+      val existingRecordNotMatchingSubmissionId = buildDoc(ADMIN_REQUESTED_CHANGE, submissionId = Submission.Id.random, submissionIndex = existingSubmissionIndex)
+      val existingRecordNotMatchingSubmissionIndex = buildDoc(ADMIN_REQUESTED_CHANGE, submissionId = existingSubmissionId, submissionIndex = 2)
+
+      await(repository.save(existingRecordMatchingSubmission))
+      await(repository.save(existingRecordNotMatchingSubmissionId))
+      await(repository.save(existingRecordNotMatchingSubmissionIndex))
+
+      val event = buildRiVerificationEvent(existingSubmissionId, existingSubmissionIndex)
+      val newRecord = await(repository.applyEvents(NonEmptyList.one(event)))
+
+      newRecord.applicationId mustBe event.applicationId
+      newRecord.applicationName mustBe event.applicationName
+      newRecord.submissionId mustBe existingSubmissionId
+      newRecord.submissionInstance mustBe existingSubmissionIndex
+      newRecord.state mustBe ADMIN_REQUESTED_CHANGE
+      newRecord.createdOn mustBe event.eventDateTime
+
+      await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, newRecord)
     }
   }
 }

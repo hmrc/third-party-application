@@ -2625,6 +2625,17 @@ class ApplicationRepositoryISpec
       }
     }
 
+    "handle ResponsibleIndividualVerificationStarted event correctly" in {
+      val app = anApplicationData(applicationId)
+      await(applicationRepository.save(app))
+
+      val event = ResponsibleIndividualVerificationStarted(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, CollaboratorActor("admin@example.com"),
+        "ri name", "ri@example.com", "app name", Submission.Id.random, 1, "requester@example.com")
+      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedTermsConditionsLocation mustBe app
+    }
+
     "throw an error if events relate to different applications" in {
       val appId1 = ApplicationId.random
       val appId2 = ApplicationId.random
