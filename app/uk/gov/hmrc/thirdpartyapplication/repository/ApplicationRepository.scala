@@ -530,6 +530,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )))
     ))
 
+  private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
+
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
 
@@ -540,6 +542,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ProductionAppTermsConditionsLocationChanged => updateApplicationTermsAndConditionsLocation(evt.applicationId, evt.newLocation)
       case evt : ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
       case evt : ResponsibleIndividualChanged => updateApplicationResponsibleIndividual(evt)
+      case _ : ResponsibleIndividualVerificationStarted => noOp(event)
     }
   }
 }

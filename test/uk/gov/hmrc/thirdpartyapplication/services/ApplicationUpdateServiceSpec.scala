@@ -19,15 +19,17 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import akka.actor.ActorSystem
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
 import org.scalatest.BeforeAndAfterAll
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.http.HttpResponse
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler, ChangeResponsibleIndividualCommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler, ChangeResponsibleIndividualCommandHandler, VerifyResponsibleIndividualCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -45,6 +47,7 @@ class ApplicationUpdateServiceSpec
 
   trait Setup extends AuditServiceMockModule
       with ApplicationRepositoryMockModule
+      with ResponsibleIndividualVerificationRepositoryMockModule
       with NotificationServiceMockModule
       with ApiPlatformEventServiceMockModule {
 
@@ -60,13 +63,16 @@ class ApplicationUpdateServiceSpec
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
     val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
     val mockChangeResponsibleIndividualCommandHandler: ChangeResponsibleIndividualCommandHandler = mock[ChangeResponsibleIndividualCommandHandler]
+    val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
+      ResponsibleIndividualVerificationRepositoryMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
       mockChangeResponsibleIndividualCommandHandler,
+      mockVerifyResponsibleIndividualCommandHandler,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock
     )
@@ -76,6 +82,7 @@ class ApplicationUpdateServiceSpec
   val gatekeeperUser = "gkuser1"
   val adminEmail = "admin@example.com"
   val applicationId         = ApplicationId.random
+  val submissionId          = Submission.Id.random
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
   val testImportantSubmissionData = ImportantSubmissionData(
@@ -91,6 +98,7 @@ class ApplicationUpdateServiceSpec
     applicationId,
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
+  val riVerification = models.ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp)
   val instigator = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {
@@ -103,6 +111,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
@@ -159,6 +168,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
 
       when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -200,6 +210,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
 
       when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -239,6 +250,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
 
       when(mockChangeResponsibleIndividualCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividual])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)

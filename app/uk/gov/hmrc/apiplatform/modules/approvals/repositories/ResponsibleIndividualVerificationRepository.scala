@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
+import cats.data.NonEmptyList
 import org.mongodb.scala.model.Filters.{and, equal, lte}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ResponsibleIndividualVerificationStarted
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
@@ -95,10 +97,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
   }
 
   def delete(submission: Submission): Future[HasSucceeded] = {
+    deleteSubmissionInstance(submission.id, submission.latestInstance.index)
+  }
+
+  private def deleteSubmissionInstance(id: Submission.Id, index: Int): Future[HasSucceeded] = {
     collection.deleteOne(
       and(
-        equal("submissionId", Codecs.toBson(submission.id)),
-        equal("submissionInstance", Codecs.toBson(submission.latestInstance.index))
+        equal("submissionId", Codecs.toBson(id)),
+        equal("submissionInstance", Codecs.toBson(index))
       )
     )
       .toFuture()
@@ -109,5 +115,33 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     collection.find()
       .toFuture()
       .map(x => x.toList)
+  }
+
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ResponsibleIndividualVerification] = {
+    events match {
+      case NonEmptyList(e, Nil)  => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  private def addResponsibleIndividualVerification(evt : ResponsibleIndividualVerificationStarted): Future[ResponsibleIndividualVerification] = {
+    val verification = ResponsibleIndividualVerification(
+      ResponsibleIndividualVerificationId.random,
+      evt.applicationId,
+      evt.submissionId,
+      evt.submissionIndex,
+      evt.applicationName,
+      evt.eventDateTime,
+      ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
+    )
+
+    deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
+      .flatMap(_ => save(verification))
+  }
+
+  private def applyEvent(event: UpdateApplicationEvent): Future[ResponsibleIndividualVerification] = {
+    event match {
+      case evt : ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
+    }
   }
 }
