@@ -272,7 +272,8 @@ class ApplicationUpdateServiceSpec
   }
 
   "update with VerifyResponsibleIndividual" should {
-    val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, LocalDateTime.now, "name", "email")
+    val adminName = "Ms Admin"
+    val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, LocalDateTime.now, adminName, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
       val newRiName = "Mr Responsible"
@@ -280,9 +281,9 @@ class ApplicationUpdateServiceSpec
       val app = applicationData
       val appName = applicationData.name
       val event = ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(verifyResponsibleIndividual.email),
-        newRiName, newRiEmail, appName, Submission.Id.random, 1, verifyResponsibleIndividual.email)
+        UpdateApplicationEvent.Id.random, applicationId, appName, timestamp,
+        CollaboratorActor(verifyResponsibleIndividual.riEmail), adminName, adminEmail,
+        newRiName, newRiEmail, Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
       ApplicationRepoMock.Fetch.thenReturn(app)
       ApplicationRepoMock.ApplyEvents.thenReturn(app)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds

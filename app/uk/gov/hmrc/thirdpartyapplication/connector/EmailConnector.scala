@@ -71,6 +71,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val addedClientSecretNotification             = "apiAddedClientSecretNotification"
   val removedClientSecretNotification           = "apiRemovedClientSecretNotification"
   val verifyResponsibleIndividual               = "apiVerifyResponsibleIndividual"
+  val verifyResponsibleIndividualUpdate         = "apiVerifyResponsibleIndividualUpdate"
   val responsibleIndividualReminderToAdmin      = "apiResponsibleIndividualReminderToAdmin"
   val responsibleIndividualDidNotVerify         = "apiResponsibleIndividualDidNotVerify"
   val responsibleIndividualDeclined             = "apiResponsibleIndividualDeclined"
@@ -204,6 +205,26 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
     post(SendEmailRequest(
       Set(responsibleIndividualEmailAddress),
       verifyResponsibleIndividual,
+      Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName"           -> applicationName,
+        "requesterName"             -> requesterName,
+        "developerHubLink"          -> s"$devHubBaseUrl/developer/submissions/responsible-individual-verification?code=$verifyResponsibleIndividualUniqueId"
+      )
+    ))
+  }
+
+  def sendVerifyResponsibleIndividualUpdateNotification(
+     responsibleIndividualName: String,
+     responsibleIndividualEmailAddress: String,
+     applicationName: String,
+     requesterName: String,
+     verifyResponsibleIndividualUniqueId: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(SendEmailRequest(
+      Set(responsibleIndividualEmailAddress),
+      verifyResponsibleIndividualUpdate,
       Map(
         "responsibleIndividualName" -> responsibleIndividualName,
         "applicationName"           -> applicationName,

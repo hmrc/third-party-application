@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, Standard, UpdateApplicationEvent, VerifyResponsibleIndividual}
@@ -46,7 +47,7 @@ class VerifyResponsibleIndividualCommandHandler @Inject()(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
-      isNotCurrentRi(cmd.name, cmd.email, app)
+      isNotCurrentRi(cmd.riName, cmd.riEmail, app)
     ) { case _ => app }
   }
 
@@ -58,14 +59,16 @@ class VerifyResponsibleIndividualCommandHandler @Inject()(
       ResponsibleIndividualVerificationStarted(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
+        app.name,
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(requesterEmail),
-        responsibleIndividualName = cmd.name,
-        responsibleIndividualEmail = cmd.email,
-        applicationName = app.name,
+        cmd.requesterName,
+        requestingAdminEmail = getRequester(app, cmd.instigator),
+        responsibleIndividualName = cmd.riName,
+        responsibleIndividualEmail = cmd.riEmail,
         submission.id,
         submission.latestInstance.index,
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+        ResponsibleIndividualVerificationId.random
       )
     )
   }

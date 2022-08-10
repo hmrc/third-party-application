@@ -17,6 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
 import org.scalatest.BeforeAndAfterAll
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -118,6 +120,17 @@ class NotificationServiceSpec
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, applicationData.name, "terms and conditions URL", previousTermsAndConditionsUrl, newTermsAndConditionsUrl, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+    }
+
+    "when receive a ResponsibleIndividualVerificationStarted, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.thenReturnSuccess()
+      val event = ResponsibleIndividualVerificationStarted(UpdateApplicationEvent.Id.random, ApplicationId.random, "app name", LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), "admin name", "admin@example.com",
+        "ri name", "ri@example.com", Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.verifyCalledWith(event.responsibleIndividualName, event.responsibleIndividualEmail, event.applicationName, event.requestingAdminName, event.verificationId.value)
     }
   }
 }

@@ -33,7 +33,7 @@ case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalD
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
 case class ChangeResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
-case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
+case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 
 trait ApplicationUpdateFormatters {
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]

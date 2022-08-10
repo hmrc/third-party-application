@@ -145,20 +145,23 @@ class ResponsibleIndividualVerificationRepositoryISpec
       ResponsibleIndividualVerificationStarted(
         UpdateApplicationEvent.Id.random,
         ApplicationId.random,
+        "app name",
         LocalDateTime.now(ZoneOffset.UTC),
         CollaboratorActor("requester@example.com"),
+        "ms admin",
+        "admin@example.com",
         "ri name",
         "ri@example.com",
-        "my app",
         submissionId,
         submissionIndex,
-        "admin@example.com"
+        ResponsibleIndividualVerificationId.random
     )
 
     "handle ResponsibleIndividualVerificationStarted event correctly" in {
       val event = buildRiVerificationEvent(Submission.Id.random, 1)
       val result = await(repository.applyEvents(NonEmptyList.one(event)))
 
+      result.id mustBe event.verificationId
       result.applicationId mustBe event.applicationId
       result.applicationName mustBe event.applicationName
       result.submissionId mustBe event.submissionId
@@ -184,6 +187,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val event = buildRiVerificationEvent(existingSubmissionId, existingSubmissionIndex)
       val newRecord = await(repository.applyEvents(NonEmptyList.one(event)))
 
+      newRecord.id mustBe event.verificationId
       newRecord.applicationId mustBe event.applicationId
       newRecord.applicationName mustBe event.applicationName
       newRecord.submissionId mustBe existingSubmissionId

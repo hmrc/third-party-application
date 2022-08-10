@@ -51,7 +51,7 @@ class ApplicationUpdateService @Inject()(
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
-      _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
+      _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }
 

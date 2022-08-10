@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
@@ -151,15 +152,17 @@ object UpdateApplicationEvent {
   case class ResponsibleIndividualVerificationStarted(
    id: UpdateApplicationEvent.Id,
    applicationId: ApplicationId,
+   applicationName: String,
    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
    actor: Actor,
+   requestingAdminName: String,
+   requestingAdminEmail: String,
    responsibleIndividualName: String,
    responsibleIndividualEmail: String,
-   applicationName: String,
    submissionId: Submission.Id,
    submissionIndex: Int,
-   requestingAdminEmail: String
- ) extends UpdateApplicationEvent
+   verificationId: ResponsibleIndividualVerificationId
+ ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualVerificationStarted {
     implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]

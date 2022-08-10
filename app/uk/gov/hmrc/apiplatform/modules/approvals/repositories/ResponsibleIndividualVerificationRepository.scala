@@ -126,7 +126,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   private def addResponsibleIndividualVerification(evt : ResponsibleIndividualVerificationStarted): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualVerification(
-      ResponsibleIndividualVerificationId.random,
+      evt.verificationId,
       evt.applicationId,
       evt.submissionId,
       evt.submissionIndex,

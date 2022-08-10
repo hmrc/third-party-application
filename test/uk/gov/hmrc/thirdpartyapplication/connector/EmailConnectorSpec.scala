@@ -18,11 +18,11 @@ package uk.gov.hmrc.thirdpartyapplication.connector
 
 import play.api.http.Status._
 import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
-
 import com.github.tomakehurst.wiremock.client.WireMock._
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import EmailConnector.SendEmailRequest
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
@@ -337,6 +337,31 @@ class EmailConnectorSpec extends ConnectorSpec {
       emailWillReturn(expectedRequest)
 
       val result = await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
+
+      result shouldBe HasSucceeded
+      verifySent
+    }
+
+    "send verify responsible individual update notification" in new Setup {
+      val responsibleIndividualName  = "Bob Example"
+      val responsibleIndividualEmail = "bob@example.com"
+      val adminName                  = "John Admin"
+      val adminEmail                 = "admin@example.com"
+      val appName                    = "app name"
+      val verificationId             = ResponsibleIndividualVerificationId.random.value
+
+      val expectedParameters: Map[String, String] = Map(
+        "responsibleIndividualName" -> responsibleIndividualName,
+        "applicationName" -> appName,
+        "requesterName" -> adminName,
+        "developerHubLink" -> s"$hubUrl/developer/submissions/responsible-individual-verification?code=$verificationId"
+      )
+      val recipients                        = Set(responsibleIndividualEmail)
+      val expectedRequest: SendEmailRequest = SendEmailRequest(recipients, "apiVerifyResponsibleIndividualUpdate", expectedParameters)
+
+      emailWillReturn(expectedRequest)
+
+      val result = await(connector.sendVerifyResponsibleIndividualUpdateNotification(responsibleIndividualName, responsibleIndividualEmail, appName, adminName, verificationId))
 
       result shouldBe HasSucceeded
       verifySent
