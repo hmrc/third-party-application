@@ -70,8 +70,8 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
     }
 
     object ApplyEvents {
-      def thenReturn(verification: ResponsibleIndividualVerification) = {
-        when(aMock.applyEvents(*)).thenReturn(Future.successful(verification))
+      def succeeds() = {
+        when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
       }
     }
 

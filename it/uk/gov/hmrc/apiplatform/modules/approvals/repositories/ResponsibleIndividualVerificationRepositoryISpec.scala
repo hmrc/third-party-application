@@ -144,7 +144,6 @@ class ResponsibleIndividualVerificationRepositoryISpec
   "applyEvents" should {
     val appName = "my app"
     val now = LocalDateTime.now(ZoneOffset.UTC)
-    val verificationId = ResponsibleIndividualVerificationId.random
     val appId = ApplicationId.random
 
     def buildRiVerificationEvent(submissionId: Submission.Id, submissionIndex: Int) =
@@ -160,12 +159,12 @@ class ResponsibleIndividualVerificationRepositoryISpec
         "ri@example.com",
         submissionId,
         submissionIndex,
-        verificationId
+        ResponsibleIndividualVerificationId.random
     )
 
-    def buildRiVerificationRecord(submissionId: Submission.Id, submissionIndex: Int) =
+    def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualVerification(
-        verificationId,
+        id,
         appId,
         submissionId,
         submissionIndex,
@@ -181,7 +180,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedRecord = buildRiVerificationRecord(submissionId, submissionIndex)
+      val expectedRecord = buildRiVerificationRecord(event.verificationId, submissionId, submissionIndex)
       await(repository.findAll) mustBe List(expectedRecord)
     }
 
@@ -189,9 +188,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
       val existingSubmissionId = Submission.Id.random
       val existingSubmissionIndex = 1
 
-      val existingRecordMatchingSubmission = buildRiVerificationRecord(existingSubmissionId, existingSubmissionIndex)
-      val existingRecordNotMatchingSubmissionId = buildRiVerificationRecord(Submission.Id.random, existingSubmissionIndex)
-      val existingRecordNotMatchingSubmissionIndex = buildRiVerificationRecord(existingSubmissionId, existingSubmissionIndex + 1)
+      val existingRecordMatchingSubmission = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, existingSubmissionId, existingSubmissionIndex)
+      val existingRecordNotMatchingSubmissionId = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, Submission.Id.random, existingSubmissionIndex)
+      val existingRecordNotMatchingSubmissionIndex = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, existingSubmissionId, existingSubmissionIndex + 1)
 
       await(repository.save(existingRecordMatchingSubmission))
       await(repository.save(existingRecordNotMatchingSubmissionId))
@@ -202,7 +201,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
-      val expectedNewRecord = existingRecordMatchingSubmission.copy(createdOn = updateTimestamp)
+      val expectedNewRecord = existingRecordMatchingSubmission.copy(id = event.verificationId, createdOn = updateTimestamp)
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
     }
 

@@ -111,7 +111,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(name = newName)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
@@ -168,7 +168,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
       when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -210,7 +210,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
       when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -250,7 +250,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
       when(mockChangeResponsibleIndividualCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividual])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -288,7 +288,7 @@ class ApplicationUpdateServiceSpec
       ApplicationRepoMock.ApplyEvents.thenReturn(app)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.thenReturn(riVerification)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
       when(mockVerifyResponsibleIndividualCommandHandler.process(*[ApplicationData], *[VerifyResponsibleIndividual])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
