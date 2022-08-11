@@ -117,14 +117,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(x => x.toList)
   }
 
-  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[ResponsibleIndividualVerification] = {
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
       case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
     }
   }
 
-  private def addResponsibleIndividualVerification(evt : ResponsibleIndividualVerificationStarted): Future[ResponsibleIndividualVerification] = {
+  private def addResponsibleIndividualVerification(evt : ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
     val verification = ResponsibleIndividualVerification(
       evt.verificationId,
       evt.applicationId,
@@ -137,11 +137,13 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
     deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       .flatMap(_ => save(verification))
+      .map(_ => HasSucceeded)
   }
 
-  private def applyEvent(event: UpdateApplicationEvent): Future[ResponsibleIndividualVerification] = {
+  private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
       case evt : ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
+      case _ => Future.successful(HasSucceeded)
     }
   }
 }
