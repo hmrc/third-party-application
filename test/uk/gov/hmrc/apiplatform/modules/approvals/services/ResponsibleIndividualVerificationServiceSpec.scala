@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -77,7 +77,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
 
     val riVerificationId = ResponsibleIndividualVerificationId.random
 
-    val riVerification            = ResponsibleIndividualVerification(
+    val riVerification            = ResponsibleIndividualToUVerification(
       riVerificationId,
       application.id,
       Submission.Id.random,

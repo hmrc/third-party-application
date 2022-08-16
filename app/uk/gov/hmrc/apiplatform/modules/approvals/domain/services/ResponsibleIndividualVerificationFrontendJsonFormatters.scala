@@ -16,14 +16,22 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationWithDetails, ResponsibleIndividualUpdateVerification}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationType.{TERMS_OF_USE, ADMIN_UPDATE}
 import play.api.libs.json._
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats._
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
-  implicit val responsibleIndividualVerificationFormat            = Json.format[ResponsibleIndividualVerification]
+  import uk.gov.hmrc.play.json.Union
+
+  implicit val responsibleIndividualVerificationFormat            = Json.format[ResponsibleIndividualToUVerification]
+  implicit val responsibleIndividualUpdateVerificationFormat      = Json.format[ResponsibleIndividualUpdateVerification]
   implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
+  
+  implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
+    .and[ResponsibleIndividualToUVerification](TERMS_OF_USE.toString)
+    .and[ResponsibleIndividualUpdateVerification](ADMIN_UPDATE.toString)
+    .format
 }
 
 object ResponsibleIndividualVerificationFrontendJsonFormatters extends ResponsibleIndividualVerificationFrontendJsonFormatters

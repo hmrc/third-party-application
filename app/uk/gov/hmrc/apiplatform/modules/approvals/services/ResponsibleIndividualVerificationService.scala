@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import cats.data.OptionT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationWithDetails
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -50,7 +50,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
   def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
-    val verification = ResponsibleIndividualVerification(
+    val verification = ResponsibleIndividualToUVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
       submissionInstance = submissionInstance,

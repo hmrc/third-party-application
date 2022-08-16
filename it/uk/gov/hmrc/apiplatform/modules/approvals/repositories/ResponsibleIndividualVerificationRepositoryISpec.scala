@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -60,7 +60,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) =
-    ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
+    ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
@@ -135,7 +135,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.updateState(stateReminderSent.id, REMINDERS_SENT))
 
       val allDocs = await(repository.findAll).toSet
-      allDocs mustBe Set(stateReminderSent, stateInitial.copy(state = REMINDERS_SENT))
+      allDocs mustBe Set(stateReminderSent, stateInitial.asInstanceOf[ResponsibleIndividualToUVerification].copy(state = REMINDERS_SENT))
     }
   }
 }

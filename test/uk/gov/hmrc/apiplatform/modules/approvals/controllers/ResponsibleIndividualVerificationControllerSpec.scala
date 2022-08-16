@@ -28,6 +28,7 @@ import akka.stream.testkit.NoMaterializer
 import play.api.libs.json.Json
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
+  import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters._
   implicit val mat = NoMaterializer
   val code         = "12345678"
   val name         = "bob example"

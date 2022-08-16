@@ -35,7 +35,8 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,
-      domainFormat = ResponsibleIndividualVerification.format,
+      domainFormat = ResponsibleIndividualVerification.jsonFormatResponsibleIndividualVerification,
+      extraCodecs = Seq(Codecs.playFormatCodec(ResponsibleIndividualVerification.riVerificationFormat), Codecs.playFormatCodec(ResponsibleIndividualVerification.riUpdateVerificationFormat)),
       indexes = Seq(
         IndexModel(
           ascending("id"),
@@ -60,6 +61,8 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       ),
       replaceIndexes = true
     ) {
+  
+  import ResponsibleIndividualVerification._
 
   def save(verification: ResponsibleIndividualVerification): Future[ResponsibleIndividualVerification] = {
     collection.insertOne(verification)
