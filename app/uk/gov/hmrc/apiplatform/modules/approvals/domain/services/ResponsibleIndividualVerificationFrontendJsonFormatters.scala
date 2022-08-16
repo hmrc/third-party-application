@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationWithDetails, ResponsibleIndividualUpdateVerification}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationType.{TERMS_OF_USE, ADMIN_UPDATE}
 import play.api.libs.json._
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
@@ -29,8 +28,8 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
   implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
   
   implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
-    .and[ResponsibleIndividualToUVerification](TERMS_OF_USE.toString)
-    .and[ResponsibleIndividualUpdateVerification](ADMIN_UPDATE.toString)
+    .and[ResponsibleIndividualToUVerification]("termsOfUse")
+    .and[ResponsibleIndividualUpdateVerification]("adminUpdate")
     .format
 }
 
