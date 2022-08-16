@@ -36,7 +36,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,
       domainFormat = ResponsibleIndividualVerification.jsonFormatResponsibleIndividualVerification,
-      extraCodecs = Seq(Codecs.playFormatCodec(ResponsibleIndividualVerification.riVerificationFormat), Codecs.playFormatCodec(ResponsibleIndividualVerification.riUpdateVerificationFormat)),
+      extraCodecs = Codecs.playFormatSumCodecs(ResponsibleIndividualVerification.jsonFormatResponsibleIndividualVerification),
       indexes = Seq(
         IndexModel(
           ascending("id"),
