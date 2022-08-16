@@ -36,7 +36,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewVerification {
 
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
+        when(aMock.createNewToUVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
           Future.successful(
             ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
           )

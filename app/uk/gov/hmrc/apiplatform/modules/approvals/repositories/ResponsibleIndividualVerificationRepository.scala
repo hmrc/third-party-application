@@ -23,7 +23,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
@@ -62,8 +61,6 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       replaceIndexes = true
     ) {
   
-  import ResponsibleIndividualVerification._
-
   def save(verification: ResponsibleIndividualVerification): Future[ResponsibleIndividualVerification] = {
     collection.insertOne(verification)
       .toFuture()

@@ -92,7 +92,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     "create a new verification object and save it to the database" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
 
-      val result = await(underTest.createNewVerification(application, submissionId, submissionInstanceIndex))
+      val result = await(underTest.createNewToUVerification(application, submissionId, submissionInstanceIndex))
 
       result.applicationId shouldBe applicationId
       result.submissionId shouldBe submissionId

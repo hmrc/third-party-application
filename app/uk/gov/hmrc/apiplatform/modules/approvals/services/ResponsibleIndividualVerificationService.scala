@@ -49,7 +49,7 @@ class ResponsibleIndividualVerificationService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
-  def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
+  def createNewToUVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
     val verification = ResponsibleIndividualToUVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
