@@ -88,11 +88,26 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }
 
-  "createNewVerification" should {
-    "create a new verification object and save it to the database" in new Setup {
+  "createNewToUVerification" should {
+    "create a new ToU verification object and save it to the database" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
 
       val result = await(underTest.createNewToUVerification(application, submissionId, submissionInstanceIndex))
+
+      result.applicationId shouldBe applicationId
+      result.submissionId shouldBe submissionId
+      result.submissionInstance shouldBe submissionInstanceIndex
+      result.applicationName shouldBe appName
+
+      ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
+    }
+  }
+
+  "createNewUpdateVerification" should {
+    "create a new update verification object and save it to the database" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
+
+      val result = await(underTest.createNewUpdateVerification(application, submissionId, submissionInstanceIndex, responsibleIndividual.fullName.value, responsibleIndividual.emailAddress.value))
 
       result.applicationId shouldBe applicationId
       result.submissionId shouldBe submissionId

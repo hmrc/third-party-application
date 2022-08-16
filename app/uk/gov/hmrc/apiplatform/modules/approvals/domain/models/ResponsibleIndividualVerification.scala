@@ -63,6 +63,6 @@ case class ResponsibleIndividualUpdateVerification(
     submissionInstance: Int,
     applicationName: String,
     createdOn: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    state: ResponsibleIndividualVerificationState = INITIAL,
-    responsibleIndividual: ResponsibleIndividual
+    responsibleIndividual: ResponsibleIndividual,
+    state: ResponsibleIndividualVerificationState = INITIAL
   ) extends ResponsibleIndividualVerification
