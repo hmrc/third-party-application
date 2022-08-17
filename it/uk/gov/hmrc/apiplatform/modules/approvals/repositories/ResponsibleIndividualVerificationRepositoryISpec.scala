@@ -156,4 +156,19 @@ class ResponsibleIndividualVerificationRepositoryISpec
       allDocs mustBe Set(stateReminderSent, stateInitial.asInstanceOf[ResponsibleIndividualToUVerification].copy(state = REMINDERS_SENT))
     }
   }
+
+  "updateSetDefaultVerificationType" should {
+    "not change any records where verificationType already exists" in {
+      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val updateType = await(repository.save(doc))
+
+      val stateInitial      = buildAndSaveDoc(INITIAL)
+      val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
+
+      await(repository.updateSetDefaultVerificationType("termsOfUse"))
+
+      val allDocs = await(repository.findAll).toSet
+      allDocs mustBe Set(stateReminderSent, stateInitial, updateType)
+    }
+  }
 }
