@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
-import org.mongodb.scala.model.Filters.{and, equal, lte}
+import org.mongodb.scala.model.Filters.{and, equal, lte, exists}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
@@ -109,5 +109,13 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     collection.find()
       .toFuture()
       .map(x => x.toList)
+  }
+
+  def updateSetDefaultVerificationType(defaultTypeValue: String): Future[HasSucceeded] = {
+    val filter = exists("verificationType", false)
+
+    collection.updateMany(filter, update = Updates.set("verificationType", Codecs.toBson(defaultTypeValue)))
+      .toFuture()
+      .map(_ => HasSucceeded)
   }
 }
