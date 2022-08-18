@@ -23,14 +23,17 @@ trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 
   import uk.gov.hmrc.play.json.Union
 
+  implicit val utcReads = DefaultLocalDateTimeReads
+
   implicit val responsibleIndividualVerificationFormat            = Json.format[ResponsibleIndividualToUVerification]
   implicit val responsibleIndividualUpdateVerificationFormat      = Json.format[ResponsibleIndividualUpdateVerification]
-  implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
   
   implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")
     .and[ResponsibleIndividualToUVerification]("termsOfUse")
     .and[ResponsibleIndividualUpdateVerification]("adminUpdate")
     .format
+
+  implicit val responsibleIndividualVerificationWithDetailsFormat = Json.format[ResponsibleIndividualVerificationWithDetails]
 }
 
 object ResponsibleIndividualVerificationFrontendJsonFormatters extends ResponsibleIndividualVerificationFrontendJsonFormatters
