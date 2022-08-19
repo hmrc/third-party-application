@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService.Actioned
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -91,7 +91,7 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       val verification =
-        ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
@@ -118,9 +118,9 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       val verification1 =
-        ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
       val verification2 =
-        ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
+        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification1, verification2)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
