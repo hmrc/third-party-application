@@ -17,15 +17,15 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
 import cats.data.NonEmptyList
-import org.mongodb.scala.model.Filters.{and, equal, lte}
+import org.mongodb.scala.model.Filters.{and, equal, exists, lte}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ResponsibleIndividualVerificationStarted
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
@@ -37,7 +37,8 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",
       mongoComponent = mongo,
-      domainFormat = ResponsibleIndividualVerification.format,
+      domainFormat = ResponsibleIndividualVerification.jsonFormatResponsibleIndividualVerification,
+      extraCodecs = Codecs.playFormatSumCodecs(ResponsibleIndividualVerification.jsonFormatResponsibleIndividualVerification),
       indexes = Seq(
         IndexModel(
           ascending("id"),
@@ -117,6 +118,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(x => x.toList)
   }
 
+  def updateSetDefaultVerificationType(defaultTypeValue: String): Future[HasSucceeded] = {
+    val filter = exists("verificationType", false)
+
+    collection.updateMany(filter, update = Updates.set("verificationType", Codecs.toBson(defaultTypeValue)))
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
   def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
     events match {
       case NonEmptyList(e, Nil)  => applyEvent(e)
@@ -125,13 +134,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
   }
 
   private def addResponsibleIndividualVerification(evt : ResponsibleIndividualVerificationStarted): Future[HasSucceeded] = {
-    val verification = ResponsibleIndividualVerification(
+    val verification = ResponsibleIndividualUpdateVerification(
       evt.verificationId,
       evt.applicationId,
       evt.submissionId,
       evt.submissionIndex,
       evt.applicationName,
       evt.eventDateTime,
+      ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
       ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
     )
 

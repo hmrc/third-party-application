@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import cats.data.OptionT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationWithDetails
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -36,6 +36,7 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 
 class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
@@ -49,13 +50,29 @@ class ResponsibleIndividualVerificationService @Inject() (
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
 
-  def createNewVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
-    val verification = ResponsibleIndividualVerification(
+  def createNewToUVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int): Future[ResponsibleIndividualVerification] = {
+    val verification = ResponsibleIndividualToUVerification(
       applicationId = applicationData.id,
       submissionId = submissionId,
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
       createdOn = LocalDateTime.now(clock)
+    )
+    responsibleIndividualVerificationRepository.save(verification)
+  }
+
+  def createNewUpdateVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int, responsibleIndividualName: String, responsibleIndividualEmail: String): Future[ResponsibleIndividualVerification] = {
+    val responsibleIndividual = ResponsibleIndividual.build(
+      responsibleIndividualName,
+      responsibleIndividualEmail
+    ) 
+    val verification = ResponsibleIndividualUpdateVerification(
+      applicationId = applicationData.id,
+      submissionId = submissionId,
+      submissionInstance = submissionInstance,
+      applicationName = applicationData.name,
+      createdOn = LocalDateTime.now(clock),
+      responsibleIndividual = responsibleIndividual
     )
     responsibleIndividualVerificationRepository.save(verification)
   }

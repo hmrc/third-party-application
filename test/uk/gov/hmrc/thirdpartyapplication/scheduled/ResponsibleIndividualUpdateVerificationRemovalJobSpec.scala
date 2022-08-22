@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{ADMIN_REQUESTED_CHANGE, REMINDERS_SENT}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -61,8 +61,9 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     "remove database record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
-      val verification = ResponsibleIndividualVerification(
-        ResponsibleIndividualVerificationId.random, ApplicationId.random, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now
+      val verification = ResponsibleIndividualUpdateVerification(
+        ResponsibleIndividualVerificationId.random, ApplicationId.random, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now,
+        ResponsibleIndividual.build("ri name", "ri@example.com")
       )
       ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()

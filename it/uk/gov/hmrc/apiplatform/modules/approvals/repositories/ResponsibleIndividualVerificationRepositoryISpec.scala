@@ -20,7 +20,8 @@ import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{ADMIN_REQUESTED_CHANGE, INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
@@ -50,19 +51,28 @@ class ResponsibleIndividualVerificationRepositoryISpec
   }
 
   val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
+  val responsibleIndividual = ResponsibleIndividual.build("Bob Fleming", "bob@fleming.com")
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
     await(repository.ensureIndexes)
   }
 
-  def buildDoc(
+  def buildToUDoc(
       state: ResponsibleIndividualVerificationState,
       createdOn: LocalDateTime = LocalDateTime.now,
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) =
-    ResponsibleIndividualVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
+    ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, state)
+
+  def buildUpdateDoc(
+      state: ResponsibleIndividualVerificationState,
+      createdOn: LocalDateTime = LocalDateTime.now,
+      submissionId: Submission.Id = Submission.Id.random,
+      submissionIndex: Int = 0
+    ) =
+    ResponsibleIndividualUpdateVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, responsibleIndividual, state)
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
@@ -70,7 +80,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) = {
-    await(repository.save(buildDoc(state, createdOn, submissionId, submissionIndex)))
+    await(repository.save(buildToUDoc(state, createdOn, submissionId, submissionIndex)))
   }
 
   val MANY_DAYS_AGO    = 10
@@ -78,8 +88,16 @@ class ResponsibleIndividualVerificationRepositoryISpec
   val FEW_DAYS_AGO     = 1
 
   "save" should {
-    "save document to the database" in {
-      val doc = buildDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+    "save ToU document to the database" in {
+      val doc = buildToUDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      await(repository.save(doc))
+
+      val allDocs = await(repository.findAll)
+      allDocs mustBe List(doc)
+    }
+
+    "save update document to the database" in {
+      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -137,7 +155,22 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.updateState(stateReminderSent.id, REMINDERS_SENT))
 
       val allDocs = await(repository.findAll).toSet
-      allDocs mustBe Set(stateReminderSent, stateInitial.copy(state = REMINDERS_SENT))
+      allDocs mustBe Set(stateReminderSent, stateInitial.asInstanceOf[ResponsibleIndividualToUVerification].copy(state = REMINDERS_SENT))
+    }
+  }
+
+  "updateSetDefaultVerificationType" should {
+    "not change any records where verificationType already exists" in {
+      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val updateType = await(repository.save(doc))
+
+      val stateInitial      = buildAndSaveDoc(INITIAL)
+      val stateReminderSent = buildAndSaveDoc(REMINDERS_SENT)
+
+      await(repository.updateSetDefaultVerificationType("termsOfUse"))
+
+      val allDocs = await(repository.findAll).toSet
+      allDocs mustBe Set(stateReminderSent, stateInitial, updateType)
     }
   }
 
@@ -160,16 +193,17 @@ class ResponsibleIndividualVerificationRepositoryISpec
         submissionId,
         submissionIndex,
         ResponsibleIndividualVerificationId.random
-    )
+      )
 
     def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualVerification(
+      ResponsibleIndividualUpdateVerification(
         id,
         appId,
         submissionId,
         submissionIndex,
         appName,
         now,
+        ResponsibleIndividual.build("ri name", "ri@example.com"),
         ADMIN_REQUESTED_CHANGE
       )
 

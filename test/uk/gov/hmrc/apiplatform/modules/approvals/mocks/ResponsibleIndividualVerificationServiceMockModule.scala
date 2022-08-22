@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -36,9 +36,9 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
     object CreateNewVerification {
 
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
-        when(aMock.createNewVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
+        when(aMock.createNewToUVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
           Future.successful(
-            ResponsibleIndividualVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
+            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
           )
         )
       }
@@ -49,7 +49,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenGetVerification(code: String) = {
         when(aMock.getVerification(*)).thenAnswer((code: String) =>
           Future.successful(Some(
-            ResponsibleIndividualVerification(
+            ResponsibleIndividualToUVerification(
               ResponsibleIndividualVerificationId(code),
               ApplicationId.random,
               Submission.Id.random,
@@ -72,7 +72,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
         when(aMock.accept(*)).thenAnswer((code: String) =>
           Future.successful(Right(
             ResponsibleIndividualVerificationWithDetails(
-              ResponsibleIndividualVerification(
+              ResponsibleIndividualToUVerification(
                 ResponsibleIndividualVerificationId(code),
                 ApplicationId.random,
                 Submission.Id.random,
@@ -94,7 +94,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenDecline() = {
         when(aMock.decline(*)).thenAnswer((code: String) =>
           Future.successful(Right(
-            ResponsibleIndividualVerification(
+            ResponsibleIndividualToUVerification(
               ResponsibleIndividualVerificationId(code),
               ApplicationId.random,
               Submission.Id.random,
