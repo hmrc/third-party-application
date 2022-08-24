@@ -96,6 +96,27 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         )(*)
     }
 
+    object SendVerifyResponsibleIndividualUpdateNotification {
+      def thenReturnSuccess(): Unit = {
+        when(aMock.sendVerifyResponsibleIndividualUpdateNotification(*, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(
+        responsibleIndividualName: String,
+        responsibleIndividualEmailAddress: String,
+        applicationName: String,
+        requesterName: String,
+        verifyResponsibleIndividualUniqueId: String
+      ) =
+        verify.sendVerifyResponsibleIndividualUpdateNotification(
+          eqTo(responsibleIndividualName),
+          eqTo(responsibleIndividualEmailAddress),
+          eqTo(applicationName),
+          eqTo(requesterName),
+          eqTo(verifyResponsibleIndividualUniqueId)
+        )(*)
+    }
+
     object SendVerifyResponsibleIndividualReminderToAdmin {
 
       def thenReturnSuccess() = {

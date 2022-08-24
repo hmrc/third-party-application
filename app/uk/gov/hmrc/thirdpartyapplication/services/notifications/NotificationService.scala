@@ -26,18 +26,18 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 
-
 @Singleton
 class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
   def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
-        case evt: UpdateApplicationEvent.ProductionAppNameChanged                  => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: UpdateApplicationEvent.ProductionAppNameChanged => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: UpdateApplicationEvent.ProductionAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", PrivacyPolicyLocation.describe(evt.oldLocation), PrivacyPolicyLocation.describe(evt.newLocation))
         case evt: UpdateApplicationEvent.ProductionLegacyAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", evt.oldUrl, evt.newUrl)
         case evt: UpdateApplicationEvent.ProductionAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", TermsAndConditionsLocation.describe(evt.oldLocation), TermsAndConditionsLocation.describe(evt.newLocation))
         case evt: UpdateApplicationEvent.ProductionLegacyAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", evt.oldUrl, evt.newUrl)
+        case evt: UpdateApplicationEvent.ResponsibleIndividualVerificationStarted => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
       }
     }
     

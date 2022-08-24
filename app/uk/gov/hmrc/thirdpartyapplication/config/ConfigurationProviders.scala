@@ -38,6 +38,7 @@ class ConfigurationModule extends Module {
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
       bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
+      bind[ResponsibleIndividualUpdateVerificationRemovalJobConfig].toProvider[ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider],
       bind[ResponsibleIndividualVerificationSetDefaultTypeJobConfig].toProvider[ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider],
       bind[ApiSubscriptionFieldsConnector.Config].toProvider[ApiSubscriptionFieldsConfigProvider],
       bind[ApiStorageConfig].toProvider[ApiStorageConfigProvider],
@@ -112,8 +113,24 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
 }
 
 @Singleton
+class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() (val configuration: Configuration)
+  extends ServicesConfig(configuration)
+    with Provider[ResponsibleIndividualUpdateVerificationRemovalJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("responsibleIndividualUpdateVerificationRemovalJob")
+      .getOrElse(JobConfig(FiniteDuration(2, MINUTES), FiniteDuration(1, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    val removalInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("responsibleIndividualUpdateVerificationRemovalJob.removalInterval")
+      .getOrElse(Duration(10, DAYS)) // scalastyle:off magic.number
+
+    ResponsibleIndividualUpdateVerificationRemovalJobConfig(jobConfig.initialDelay, jobConfig.interval, removalInterval, jobConfig.enabled)
+  }
+}
+
+@Singleton
 class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject() (val configuration: Configuration)
-    extends ServicesConfig(configuration)
+  extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationSetDefaultTypeJobConfig] {
 
   override def get() = {

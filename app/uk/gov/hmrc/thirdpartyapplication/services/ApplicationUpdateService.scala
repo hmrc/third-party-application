@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import cats.data.{EitherT, NonEmptyChain, Validated}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -24,16 +25,19 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
+  responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
   changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
   changeResponsibleIndividualCommandHandler: ChangeResponsibleIndividualCommandHandler,
+  verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
@@ -45,8 +49,9 @@ class ApplicationUpdateService @Inject()(
       app              <- E.fromOptionF(applicationRepository.fetch(applicationId), NonEmptyChain(s"No application found with id $applicationId"))
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
+      _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
-      _                <- E.liftF(notificationService.sendNotifications(app, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
+      _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }
 
@@ -56,6 +61,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeResponsibleIndividual                           => changeResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

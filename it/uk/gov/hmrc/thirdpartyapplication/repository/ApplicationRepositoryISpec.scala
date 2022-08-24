@@ -22,6 +22,7 @@ import org.mongodb.scala.model.{Filters, Updates}
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.play.json.Codecs
@@ -2623,6 +2624,17 @@ class ApplicationRepositoryISpec
         }
         case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
       }
+    }
+
+    "handle ResponsibleIndividualVerificationStarted event correctly" in {
+      val app = anApplicationData(applicationId)
+      await(applicationRepository.save(app))
+
+      val event = ResponsibleIndividualVerificationStarted(
+        UpdateApplicationEvent.Id.random, applicationId, "app name", LocalDateTime.now, CollaboratorActor("admin@example.com"),
+        "ms admin", "admin@example.com", "ri name", "ri@example.com", Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
+      val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedTermsConditionsLocation mustBe app
     }
 
     "throw an error if events relate to different applications" in {

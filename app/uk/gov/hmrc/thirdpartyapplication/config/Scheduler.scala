@@ -43,6 +43,7 @@ class Scheduler @Inject() (
     responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
     responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
     responsibleIndividualVerificationSetDefaultTypeJob: ResponsibleIndividualVerificationSetDefaultTypeJob,
+    responsibleIndividualUpdateVerificationRemovalJob: ResponsibleIndividualUpdateVerificationRemovalJob,
     override val applicationLifecycle: ApplicationLifecycle,
     override val application: Application
   )(implicit val ec: ExecutionContext
@@ -54,6 +55,7 @@ class Scheduler @Inject() (
       resetLastAccessDateJob,
       responsibleIndividualVerificationReminderJob,
       responsibleIndividualVerificationRemovalJob,
+      responsibleIndividualUpdateVerificationRemovalJob,
       responsibleIndividualVerificationSetDefaultTypeJob
     )
       .filter(_.isEnabled) ++ Seq(bcryptPerformanceMeasureJob)

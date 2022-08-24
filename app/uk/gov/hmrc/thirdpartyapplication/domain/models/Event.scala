@@ -20,6 +20,7 @@ import java.time.LocalDateTime
 import java.time.ZoneOffset
 import java.util.UUID
 import play.api.libs.json._
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
@@ -148,6 +149,25 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
   }
 
+  case class ResponsibleIndividualVerificationStarted(
+   id: UpdateApplicationEvent.Id,
+   applicationId: ApplicationId,
+   applicationName: String,
+   eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+   actor: Actor,
+   requestingAdminName: String,
+   requestingAdminEmail: String,
+   responsibleIndividualName: String,
+   responsibleIndividualEmail: String,
+   submissionId: Submission.Id,
+   submissionIndex: Int,
+   verificationId: ResponsibleIndividualVerificationId
+ ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ResponsibleIndividualVerificationStarted {
+    implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]
+  }
+
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
@@ -155,5 +175,6 @@ object UpdateApplicationEvent {
     .and[ProductionAppTermsConditionsLocationChanged](EventType.PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
     .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
     .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
+    .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
     .format
 }

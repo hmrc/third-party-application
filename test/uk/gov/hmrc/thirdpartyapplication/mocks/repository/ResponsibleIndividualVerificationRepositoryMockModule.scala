@@ -73,6 +73,13 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
       def thenReturnSuccess()                   = when(aMock.updateSetDefaultVerificationType(*)).thenReturn(successful(HasSucceeded))
       def verifyCalledWith(defaultType: String) = verify(aMock).updateSetDefaultVerificationType(defaultType)
     }
+
+    object ApplyEvents {
+      def succeeds() = {
+        when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
+      }
+    }
+
   }
 
   object ResponsibleIndividualVerificationRepositoryMock extends BaseResponsibleIndividualVerificationRepositoryMock {
