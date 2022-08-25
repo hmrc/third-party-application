@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler, ChangeResponsibleIndividualCommandHandler, VerifyResponsibleIndividualCommandHandler}
+import uk.gov.hmrc.thirdpartyapplication.services.commands.{ChangeProductionApplicationNameCommandHandler, ChangeProductionApplicationPrivacyPolicyLocationCommandHandler, ChangeProductionApplicationTermsAndConditionsLocationCommandHandler, ChangeResponsibleIndividualToSelfCommandHandler, VerifyResponsibleIndividualCommandHandler}
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.http.HeaderCarrier
 
@@ -62,7 +62,7 @@ class ApplicationUpdateServiceSpec
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
     val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
-    val mockChangeResponsibleIndividualCommandHandler: ChangeResponsibleIndividualCommandHandler = mock[ChangeResponsibleIndividualCommandHandler]
+    val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler = mock[ChangeResponsibleIndividualToSelfCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
 
     val underTest = new ApplicationUpdateService(
@@ -71,7 +71,7 @@ class ApplicationUpdateServiceSpec
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-      mockChangeResponsibleIndividualCommandHandler,
+      mockChangeResponsibleIndividualToSelfCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock
@@ -234,7 +234,7 @@ class ApplicationUpdateServiceSpec
   }
 
   "update with ChangeResponsibleIndividual" should {
-    val changeResponsibleIndividual = ChangeResponsibleIndividual(UserId.random, LocalDateTime.now, "name", "email")
+    val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, LocalDateTime.now, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
       val newRiName = "Mr Responsible"
@@ -253,7 +253,7 @@ class ApplicationUpdateServiceSpec
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
 
-      when(mockChangeResponsibleIndividualCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividual])).thenReturn(
+      when(mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
       )
 
