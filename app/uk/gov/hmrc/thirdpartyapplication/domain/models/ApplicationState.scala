@@ -109,6 +109,9 @@ object ApplicationState {
   def pendingRequesterVerification(requestedBy: String, verificationCode: String) =
     ApplicationState(State.PENDING_REQUESTER_VERIFICATION, Some(requestedBy), Some(verificationCode))
 
+  def pendingResponsibleIndividualVerification(requestedBy: String) =
+    ApplicationState(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, Some(requestedBy))
+
   def preProduction(requestedBy: String) =
     ApplicationState(State.PRE_PRODUCTION, Some(requestedBy))
 

@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ResponsibleIndividualVerificationStarted
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
@@ -150,9 +150,14 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
+  private def deleteResponsibleIndividualVerification(evt : ResponsibleIndividualSet): Future[HasSucceeded] = {
+    delete(ResponsibleIndividualVerificationId(evt.code))
+  }
+
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
       case evt : ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
+      case evt : ResponsibleIndividualSet => deleteResponsibleIndividualVerification(evt)
       case _ => Future.successful(HasSucceeded)
     }
   }

@@ -22,6 +22,7 @@ import java.util.UUID
 import play.api.libs.json._
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
@@ -147,6 +148,25 @@ object UpdateApplicationEvent {
 
   object ResponsibleIndividualChanged {
     implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
+  }
+
+  case class ResponsibleIndividualSet(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    responsibleIndividualName: String,
+    responsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    code: String,
+    oldAppState: State,
+    newAppState: State,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent
+
+  object ResponsibleIndividualSet {
+    implicit val format: OFormat[ResponsibleIndividualSet] = Json.format[ResponsibleIndividualSet]
   }
 
   case class ResponsibleIndividualVerificationStarted(

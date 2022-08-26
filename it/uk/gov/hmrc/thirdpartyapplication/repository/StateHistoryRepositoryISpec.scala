@@ -23,9 +23,14 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, ActorType}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualSet, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import cats.data.NonEmptyList
+import scala.concurrent.ExecutionContext.Implicits.global
 
 import java.time.LocalDateTime
 
@@ -122,4 +127,30 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
       await(repository.findAll) shouldBe List(anotherAppStateHistory)
     }
   }
+
+  "applyEvents" should {
+
+    "apply a ResponsibleIndividualSet event" in {
+      val requesterEmail = "bill.badger@rupert.com"
+      val newRiName = "Mr Responsible"
+      val newRiEmail = "ri@example.com"
+      val code = "12323542873452376452461023612398"
+      val appId = ApplicationId.random
+      val ts = LocalDateTime.now(clock)
+      val actor: OldActor    = OldActor(requesterEmail, ActorType.COLLABORATOR)
+      val event = ResponsibleIndividualSet(
+        UpdateApplicationEvent.Id.random, appId, ts,
+        CollaboratorActor(requesterEmail),
+        newRiName, newRiEmail, Submission.Id.random, 0, code, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
+        State.PENDING_GATEKEEPER_APPROVAL, requesterEmail)
+      val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+
+      val result = await(repository.applyEvents(NonEmptyList.one(event)))
+
+      result shouldBe HasSucceeded
+      val savedStateHistories = await(repository.findAll)
+      savedStateHistories shouldBe List(stateHistory)
+    }
+  }
+
 }

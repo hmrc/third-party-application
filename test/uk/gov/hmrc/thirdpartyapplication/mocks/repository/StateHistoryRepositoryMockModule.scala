@@ -21,6 +21,7 @@ import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.captor.ArgCaptor
 import org.mockito.verification.VerificationMode
+import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
@@ -82,6 +83,12 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def thenFailWith(ex: Exception) =
         when(aMock.fetchByApplicationId(*[ApplicationId])).thenReturn(failed(ex))
+    }
+
+    object ApplyEvents {
+      def succeeds() = {
+        when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
+      }
     }
   }
 

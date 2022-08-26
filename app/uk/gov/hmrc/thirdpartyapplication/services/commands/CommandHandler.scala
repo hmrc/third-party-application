@@ -50,6 +50,12 @@ object CommandHandler {
       "App is not in PRE_PRODUCTION or in PRODUCTION state"
     )
 
+  def isPendingResponsibleIndividualVerification(app: ApplicationData) =
+    cond(
+      app.isPendingResponsibleIndividualVerification,
+      "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
+    )
+
   def isStandardAccess(app: ApplicationData) =
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
 
