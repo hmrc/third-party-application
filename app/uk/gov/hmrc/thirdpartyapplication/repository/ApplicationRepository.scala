@@ -532,7 +532,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def updateApplicationSetResponsibleIndividual(event: ResponsibleIndividualSet): Future[ApplicationData] =
     updateApplication(event.applicationId, Updates.combine(
-      Updates.set("state.name", event.newAppState),
+      Updates.set("state.name", Codecs.toBson(event.newAppState)),
       Updates.set("state.updatedOn", event.eventDateTime),
       Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
         ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
