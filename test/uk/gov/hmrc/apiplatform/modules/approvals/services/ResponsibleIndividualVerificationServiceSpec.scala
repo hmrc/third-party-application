@@ -132,54 +132,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
   }
 
-  "accept" should {
-    "return verification record with details and add ToU acceptance if application is found" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      ApplicationRepoMock.Save.thenReturn(application)
-      ApplicationServiceMock.AddTermsOfUseAcceptance.thenReturn(application)
-      StateHistoryRepoMock.Insert.thenAnswer()
-      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
-
-      val result = await(underTest.accept(riVerificationId.value))
-
-      result shouldBe 'Right
-      result shouldBe Right(riVerificationWithDetails)
-      result.right.value.verification.id shouldBe riVerificationId
-      result.right.value.verification.applicationName shouldBe appName
-
-      val acceptance = ApplicationServiceMock.AddTermsOfUseAcceptance.verifyCalledWith(riVerification.applicationId)
-      acceptance.responsibleIndividual shouldBe responsibleIndividual
-      acceptance.submissionId shouldBe riVerification.submissionId
-
-      val savedStateHistory = StateHistoryRepoMock.Insert.verifyCalled()
-      savedStateHistory.previousState shouldBe Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
-      savedStateHistory.state shouldBe State.PENDING_GATEKEEPER_APPROVAL
-
-      val savedAppData = ApplicationRepoMock.Save.verifyCalled()
-      savedAppData.state.name shouldBe State.PENDING_GATEKEEPER_APPROVAL
-
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.verifyCalledWith(riVerificationId)
-    }
-
-    "return correct error message if application is not found" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)
-      ApplicationRepoMock.Fetch.thenReturnNone()
-
-      val result = await(underTest.accept(riVerificationId.value))
-
-      result shouldBe Left(s"Application with id ${riVerification.applicationId} not found")
-    }
-
-    "return correct error message if verification record is not found" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-
-      val result = await(underTest.accept(riVerificationId.value))
-
-      result shouldBe Left(s"responsibleIndividualVerification not found")
-    }
-  }
-
   "decline" should {
     "return verification record if verification record is found" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

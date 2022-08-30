@@ -17,11 +17,11 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ResponsibleIndividual}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.{Clock, LocalDateTime}
 import scala.concurrent.Future
@@ -63,29 +63,6 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
 
       def thenReturnNone() = {
         when(aMock.getVerification(*)).thenAnswer(Future.successful(None))
-      }
-    }
-
-    object Accept {
-
-      def thenAccept() = {
-        when(aMock.accept(*)).thenAnswer((code: String) =>
-          Future.successful(Right(
-            ResponsibleIndividualVerificationWithDetails(
-              ResponsibleIndividualToUVerification(
-                ResponsibleIndividualVerificationId(code),
-                ApplicationId.random,
-                Submission.Id.random,
-                0,
-                "App name",
-                LocalDateTime.now(Clock.systemUTC())
-              ),
-              ResponsibleIndividual.build("bob example", "bob@example.com"),
-              "Rick Deckard",
-              "rick@submitter.com"
-            )
-          ))
-        )
       }
     }
 

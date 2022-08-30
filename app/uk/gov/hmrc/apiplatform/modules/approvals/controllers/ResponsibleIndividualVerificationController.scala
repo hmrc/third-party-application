@@ -22,7 +22,7 @@ import javax.inject.Inject
 import javax.inject.Singleton
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
 import play.api.libs.json.Json
 import play.api.mvc.Results
@@ -55,16 +55,6 @@ class ResponsibleIndividualVerificationController @Inject() (
     val success     = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
 
     responsibleIndividualVerificationService.getVerification(code).map(_.fold(failed)(success))
-  }
-
-  def accept() = Action.async { implicit request =>
-    val failed  = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
-    val success = (responsibleIndividualVerificationWithDetails: ResponsibleIndividualVerificationWithDetails) =>
-      Ok(Json.toJson(responsibleIndividualVerificationWithDetails))
-
-    withJsonBodyFromAnyContent[ResponsibleIndividualVerificationRequest] { riVerificationRequest =>
-      responsibleIndividualVerificationService.accept(riVerificationRequest.code).map(_.fold(failed, success))
-    }
   }
 
   def decline() = Action.async { implicit request =>

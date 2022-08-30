@@ -64,20 +64,6 @@ class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with
     }
   }
 
-  "accept" should {
-    implicit val writes = Json.writes[ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest]
-    val jsonBody        = Json.toJson(ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest(code))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-
-    "return ok if accepted successfully" in new Setup {
-      ResponsibleIndividualVerificationServiceMock.Accept.thenAccept()
-
-      val result = underTest.accept()(request)
-
-      status(result) shouldBe OK
-    }
-  }
-
   "decline" should {
     implicit val writes = Json.writes[ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest]
     val jsonBody        = Json.toJson(ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest(code))
