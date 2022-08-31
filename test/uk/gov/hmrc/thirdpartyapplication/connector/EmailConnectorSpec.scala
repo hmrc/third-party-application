@@ -346,7 +346,6 @@ class EmailConnectorSpec extends ConnectorSpec {
       val responsibleIndividualName  = "Bob Example"
       val responsibleIndividualEmail = "bob@example.com"
       val adminName                  = "John Admin"
-      val adminEmail                 = "admin@example.com"
       val appName                    = "app name"
       val verificationId             = ResponsibleIndividualVerificationId.random.value
 
