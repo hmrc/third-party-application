@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ResponsibleIndividualSet
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationStateChanged
 import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
 
@@ -111,12 +111,12 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt : ResponsibleIndividualSet => addStateHistoryRecord(evt)
+      case evt : ApplicationStateChanged => addStateHistoryRecord(evt)
       case _ => Future.successful(HasSucceeded)
     }
   }
 
-  private def addStateHistoryRecord(evt: ResponsibleIndividualSet) = {
+  private def addStateHistoryRecord(evt: ApplicationStateChanged) = {
     val stateHistory = StateHistory(evt.applicationId, evt.newAppState, OldActor(evt.requestingAdminEmail, COLLABORATOR), Some(evt.oldAppState), changedAt = evt.eventDateTime)
     insert(stateHistory).map(_ => HasSucceeded)
   }

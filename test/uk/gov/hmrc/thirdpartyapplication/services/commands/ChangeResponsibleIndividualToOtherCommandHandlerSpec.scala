@@ -45,12 +45,13 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
     val riEmail = "ri@example.com"
     val oldRiName = "old ri"
     val requesterEmail = appAdminEmail
+    val requesterName = "mr admin"
     val importantSubmissionData = ImportantSubmissionData(None, ResponsibleIndividual.build(riName, riEmail),
       Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
     val app = anApplicationData(appId).copy(collaborators = Set(
       Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
     ), access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)
-    ), state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail))
+    ), state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
     val ts = LocalDateTime.now
     val code = "3242342387452384623549234"
     val riVerification = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), 
@@ -61,20 +62,30 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)
+      
       val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
+      
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ResponsibleIndividualSet]
-      event.applicationId shouldBe appId
-      event.eventDateTime shouldBe ts
-      event.actor shouldBe CollaboratorActor(appAdminEmail)
-      event.responsibleIndividualName shouldBe riName
-      event.responsibleIndividualEmail shouldBe riEmail
-      event.submissionIndex shouldBe submission.latestInstance.index
-      event.submissionId shouldBe submission.id
-      event.requestingAdminEmail shouldBe appAdminEmail
-      event.code shouldBe code
-      event.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
-      event.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+      result.toOption.get.length shouldBe 2
+      val riSetEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualSet]
+      riSetEvent.applicationId shouldBe appId
+      riSetEvent.eventDateTime shouldBe ts
+      riSetEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+      riSetEvent.responsibleIndividualName shouldBe riName
+      riSetEvent.responsibleIndividualEmail shouldBe riEmail
+      riSetEvent.submissionIndex shouldBe submission.latestInstance.index
+      riSetEvent.submissionId shouldBe submission.id
+      riSetEvent.requestingAdminEmail shouldBe appAdminEmail
+      riSetEvent.code shouldBe code
+
+      val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
+      stateEvent.applicationId shouldBe appId
+      stateEvent.eventDateTime shouldBe ts
+      stateEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+      stateEvent.requestingAdminEmail shouldBe requesterEmail
+      stateEvent.requestingAdminName shouldBe requesterName
+      stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
+      stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
@@ -107,7 +118,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)
-      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail))
+      val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
       val result = await(underTest.process(pendingGKApprovalApp, ChangeResponsibleIndividualToOther(code, ts)))
       result shouldBe Invalid(NonEmptyChain.one("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"))
     }

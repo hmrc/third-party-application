@@ -160,13 +160,26 @@ object UpdateApplicationEvent {
     submissionId: Submission.Id,
     submissionIndex: Int,
     code: String,
-    oldAppState: State,
-    newAppState: State,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent
 
   object ResponsibleIndividualSet {
     implicit val format: OFormat[ResponsibleIndividualSet] = Json.format[ResponsibleIndividualSet]
+  }
+
+  case class ApplicationStateChanged(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    oldAppState: State,
+    newAppState: State,
+    requestingAdminName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent
+
+  object ApplicationStateChanged {
+    implicit val format: OFormat[ApplicationStateChanged] = Json.format[ApplicationStateChanged]
   }
 
   case class ResponsibleIndividualVerificationStarted(
@@ -196,6 +209,7 @@ object UpdateApplicationEvent {
     .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
     .and[ResponsibleIndividualSet](EventType.RESPONSIBLE_INDIVIDUAL_SET.toString)
     .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
+    .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
     .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
     .format
 }

@@ -94,7 +94,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
 
     "return an error if the application is not approved" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
-      val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com"))
+      val notApprovedApp = app.copy(state = ApplicationState.pendingGatekeeperApproval("someone@example.com", "Someone"))
       val result = await(underTest.process(notApprovedApp, VerifyResponsibleIndividual(appAdminUserId, ts, appAdminName, riName, riEmail)))
       result shouldBe Invalid(NonEmptyChain.one("App is not in PRE_PRODUCTION or in PRODUCTION state"))
     }

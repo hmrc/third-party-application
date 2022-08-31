@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualSet}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualSet, ApplicationStateChanged}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
@@ -532,8 +532,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def updateApplicationSetResponsibleIndividual(event: ResponsibleIndividualSet): Future[ApplicationData] =
     updateApplication(event.applicationId, Updates.combine(
-      Updates.set("state.name", Codecs.toBson(event.newAppState)),
-      Updates.set("state.updatedOn", event.eventDateTime),
       Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
         ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
         event.eventDateTime,
@@ -542,6 +540,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       )))
     ))
   
+  private def updateApplicationState(event: ApplicationStateChanged): Future[ApplicationData] =
+    updateApplication(event.applicationId, Updates.combine(
+      Updates.set("state.name", Codecs.toBson(event.newAppState)),
+      Updates.set("state.updatedOn", event.eventDateTime),
+      Updates.set("state.requestedByEmailAddress", event.requestingAdminEmail),
+      Updates.set("state.requestedByName", event.requestingAdminName)
+    ))
+
   private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
 
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
@@ -555,6 +561,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
       case evt : ResponsibleIndividualSet => updateApplicationSetResponsibleIndividual(evt)
       case evt : ResponsibleIndividualChanged => updateApplicationChangeResponsibleIndividual(evt)
+      case evt : ApplicationStateChanged => updateApplicationState(evt)
       case _ : ResponsibleIndividualVerificationStarted => noOp(event)
     }
   }

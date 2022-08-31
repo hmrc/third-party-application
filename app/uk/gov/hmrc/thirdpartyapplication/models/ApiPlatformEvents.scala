@@ -45,6 +45,7 @@ object EventType extends Enumeration {
   val PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED = Value
   val RESPONSIBLE_INDIVIDUAL_SET = Value
   val RESPONSIBLE_INDIVIDUAL_CHANGED = Value
+  val APPLICATION_STATE_CHANGED = Value
   val RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED = Value
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }

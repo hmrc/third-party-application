@@ -60,13 +60,20 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
   private def isRequesterEmailDefined(app: ApplicationData) =
     cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
 
+  private def getRequesterName(app: ApplicationData) =
+    app.state.requestedByName
+
+  private def isRequesterNameDefined(app: ApplicationData) =
+    cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
+
   private def validateToU(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualToUVerification): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map5(
+    Apply[ValidatedNec[String, *]].map6(
       isStandardNewJourneyApp(app),
       isPendingResponsibleIndividualVerification(app),
       isApplicationIdTheSame(app, riVerification),
       isResponsibleIndividualDefined(app),
-      isRequesterEmailDefined(app)
+      isRequesterEmailDefined(app),
+      isRequesterNameDefined(app)
     ) { case _ => app }
   }
 
@@ -75,6 +82,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
   private def asEventsToU(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualToUVerification): NonEmptyList[UpdateApplicationEvent] = {
     val responsibleIndividual = getResponsibleIndividual(app).get
     val requesterEmail = getRequesterEmail(app).get
+    val requesterName = getRequesterName(app).get
     NonEmptyList.of(
       ResponsibleIndividualSet(
         id = UpdateApplicationEvent.Id.random,
@@ -86,8 +94,16 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
         riVerification.submissionId,
         riVerification.submissionInstance,
         cmd.code,
+        requestingAdminEmail = requesterEmail
+      ),
+      ApplicationStateChanged(
+        id = UpdateApplicationEvent.Id.random,
+        applicationId = app.id,
+        eventDateTime = cmd.timestamp,
+        actor = CollaboratorActor(requesterEmail),
         app.state.name,
         State.PENDING_GATEKEEPER_APPROVAL,
+        requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
       )
     )

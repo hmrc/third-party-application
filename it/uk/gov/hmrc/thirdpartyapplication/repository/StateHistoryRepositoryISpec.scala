@@ -24,11 +24,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualSet, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationStateChanged, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import cats.data.NonEmptyList
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -130,19 +129,17 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
 
   "applyEvents" should {
 
-    "apply a ResponsibleIndividualSet event" in {
+    "apply a ApplicationStateChanged event" in {
       val requesterEmail = "bill.badger@rupert.com"
-      val newRiName = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val code = "12323542873452376452461023612398"
+      val requesterName = "bill badger"
       val appId = ApplicationId.random
       val ts = LocalDateTime.now(clock)
       val actor: OldActor    = OldActor(requesterEmail, ActorType.COLLABORATOR)
-      val event = ResponsibleIndividualSet(
+      val event = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, appId, ts,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 0, code, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        State.PENDING_GATEKEEPER_APPROVAL, requesterEmail)
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
+        State.PENDING_GATEKEEPER_APPROVAL, requesterName, requesterEmail)
       val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
 
       val result = await(repository.applyEvents(NonEmptyList.one(event)))
