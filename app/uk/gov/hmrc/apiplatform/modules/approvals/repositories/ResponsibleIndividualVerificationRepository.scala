@@ -75,8 +75,9 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .headOption()
   }
 
-  def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
+  def fetchByTypeStateAndAge(verificationType: String, state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
     collection.find(and(
+      equal("verificationType", verificationType),
       equal("state", Codecs.toBson(state)),
       lte("createdOn", minimumCreatedOn)
     )).toFuture()
@@ -143,7 +144,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
       evt.requestingAdminEmail,
-      ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
+      ResponsibleIndividualVerificationState.INITIAL
     )
 
     deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)

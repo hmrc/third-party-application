@@ -32,13 +32,13 @@ trait ResponsibleIndividualVerificationRepositoryMockModule extends MockitoSugar
   protected trait BaseResponsibleIndividualVerificationRepositoryMock {
     def aMock: ResponsibleIndividualVerificationRepository
 
-    object FetchByStateAndAge {
+    object FetchByTypeStateAndAge {
 
       def thenReturn(verifications: ResponsibleIndividualVerification*) =
-        when(aMock.fetchByStateAndAge(*[ResponsibleIndividualVerificationState], *[LocalDateTime])).thenReturn(Future.successful(List(verifications: _*)))
+        when(aMock.fetchByTypeStateAndAge(*, *[ResponsibleIndividualVerificationState], *[LocalDateTime])).thenReturn(Future.successful(List(verifications: _*)))
 
-      def verifyCalledWith(state: ResponsibleIndividualVerificationState, dateTime: LocalDateTime) =
-        verify(aMock).fetchByStateAndAge(state, dateTime)
+      def verifyCalledWith(verificationType: String, state: ResponsibleIndividualVerificationState, dateTime: LocalDateTime) =
+        verify(aMock).fetchByTypeStateAndAge(verificationType, state, dateTime)
     }
 
     object DeleteById {

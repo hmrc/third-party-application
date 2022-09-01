@@ -17,8 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -65,12 +65,12 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
         ResponsibleIndividualVerificationId.random, ApplicationId.random, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now,
         ResponsibleIndividual.build("ri name", "ri@example.com"), "admin@example.com"
       )
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(ADMIN_REQUESTED_CHANGE, timeNow.minus(removalInterval.toSeconds, SECONDS))
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeUpdate, INITIAL, timeNow.minus(removalInterval.toSeconds, SECONDS))
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification.id)
     }
   }

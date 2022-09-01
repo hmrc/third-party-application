@@ -61,7 +61,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      removalsDue <- repository.fetchByStateAndAge(ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
+      removalsDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {

@@ -19,8 +19,8 @@ package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 import cats.data.NonEmptyList
 import org.scalatest.BeforeAndAfterEach
 import play.api.inject
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{ADMIN_REQUESTED_CHANGE, INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -141,7 +141,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
 
-      val results = await(repository.fetchByStateAndAge(INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
+      val results = await(repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, INITIAL, LocalDateTime.now.minusDays(UPDATE_THRESHOLD)))
 
       results mustBe List(initialWithOldDate)
     }
@@ -217,7 +217,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         now,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
         "admin@example.com",
-        ADMIN_REQUESTED_CHANGE
+        INITIAL
       )
 
     "handle ResponsibleIndividualVerificationStarted event correctly" in {
