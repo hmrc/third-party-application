@@ -183,22 +183,35 @@ object UpdateApplicationEvent {
   }
 
   case class ResponsibleIndividualVerificationStarted(
-   id: UpdateApplicationEvent.Id,
-   applicationId: ApplicationId,
-   applicationName: String,
-   eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-   actor: Actor,
-   requestingAdminName: String,
-   requestingAdminEmail: String,
-   responsibleIndividualName: String,
-   responsibleIndividualEmail: String,
-   submissionId: Submission.Id,
-   submissionIndex: Int,
-   verificationId: ResponsibleIndividualVerificationId
- ) extends UpdateApplicationEvent with TriggersNotification
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    applicationName: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    requestingAdminName: String,
+    requestingAdminEmail: String,
+    responsibleIndividualName: String,
+    responsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    verificationId: ResponsibleIndividualVerificationId
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualVerificationStarted {
     implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]
+  }
+
+  case class ResponsibleIndividualVerificationCompleted(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    code: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent
+
+  object ResponsibleIndividualVerificationCompleted {
+    implicit val format: OFormat[ResponsibleIndividualVerificationCompleted] = Json.format[ResponsibleIndividualVerificationCompleted]
   }
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
@@ -211,5 +224,6 @@ object UpdateApplicationEvent {
     .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
     .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
     .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
+    .and[ResponsibleIndividualVerificationCompleted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_COMPLETED.toString)
     .format
 }

@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApp
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualVerificationCompleted}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -179,8 +179,9 @@ class ResponsibleIndividualVerificationRepositoryISpec
     val appName = "my app"
     val now = LocalDateTime.now(ZoneOffset.UTC)
     val appId = ApplicationId.random
+    val code = "12341285217652137257396"
 
-    def buildRiVerificationEvent(submissionId: Submission.Id, submissionIndex: Int) =
+    def buildRiVerificationStartedEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualVerificationStarted(
         UpdateApplicationEvent.Id.random,
         appId,
@@ -194,6 +195,16 @@ class ResponsibleIndividualVerificationRepositoryISpec
         submissionId,
         submissionIndex,
         ResponsibleIndividualVerificationId.random
+      )
+
+    def buildRiVerificationCompletedEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualVerificationCompleted(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        code, 
+        "admin@example.com"
       )
 
     def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
@@ -212,7 +223,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     "handle ResponsibleIndividualVerificationStarted event correctly" in {
       val submissionId = Submission.Id.random
       val submissionIndex = 1
-      val event = buildRiVerificationEvent(submissionId, submissionIndex)
+      val event = buildRiVerificationStartedEvent(submissionId, submissionIndex)
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
@@ -233,12 +244,28 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordNotMatchingSubmissionIndex))
 
       val updateTimestamp = LocalDateTime.now().plusHours(1)
-      val event = buildRiVerificationEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
+      val event = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
       val expectedNewRecord = existingRecordMatchingSubmission.copy(id = event.verificationId, createdOn = updateTimestamp)
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
+    }
+
+    "handle ResponsibleIndividualVerificationCompleted event correctly" in {
+      val submissionId = Submission.Id.random
+      val submissionIndex = 1
+      val event = buildRiVerificationCompletedEvent(submissionId, submissionIndex)
+
+      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
+
+      await(repository.save(existingRecordMatchingCode))
+      await(repository.save(existingRecordNotMatchingCode))
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
     }
 
     "handle other events correctly" in {

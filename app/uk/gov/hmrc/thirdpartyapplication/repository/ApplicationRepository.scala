@@ -563,6 +563,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ResponsibleIndividualChanged => updateApplicationChangeResponsibleIndividual(evt)
       case evt : ApplicationStateChanged => updateApplicationState(evt)
       case _ : ResponsibleIndividualVerificationStarted => noOp(event)
+      case _ : ResponsibleIndividualVerificationCompleted => noOp(event)
     }
   }
 }

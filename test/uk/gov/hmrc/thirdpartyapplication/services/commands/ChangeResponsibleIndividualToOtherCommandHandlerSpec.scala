@@ -66,7 +66,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
       
       result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
+      result.toOption.get.length shouldBe 3
       val riSetEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualSet]
       riSetEvent.applicationId shouldBe appId
       riSetEvent.eventDateTime shouldBe ts
@@ -86,6 +86,13 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       stateEvent.requestingAdminName shouldBe requesterName
       stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
       stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
+
+      val rivCompleteEvent = result.toOption.get.tail.tail.head.asInstanceOf[ResponsibleIndividualVerificationCompleted]
+      rivCompleteEvent.applicationId shouldBe appId
+      rivCompleteEvent.eventDateTime shouldBe ts
+      rivCompleteEvent.actor shouldBe CollaboratorActor(appAdminEmail)
+      rivCompleteEvent.requestingAdminEmail shouldBe requesterEmail
+      rivCompleteEvent.code shouldBe code
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
