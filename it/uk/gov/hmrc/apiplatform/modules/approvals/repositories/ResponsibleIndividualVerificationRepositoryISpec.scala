@@ -52,6 +52,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   val repository: ResponsibleIndividualVerificationRepository = app.injector.instanceOf[ResponsibleIndividualVerificationRepository]
   val responsibleIndividual = ResponsibleIndividual.build("Bob Fleming", "bob@fleming.com")
+  val requestingAdminEmail = "admin@fleming.com"
 
   override def beforeEach(): Unit = {
     await(repository.collection.drop().toFuture())
@@ -72,7 +73,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) =
-    ResponsibleIndividualUpdateVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, responsibleIndividual, state)
+    ResponsibleIndividualUpdateVerification(ResponsibleIndividualVerificationId.random, ApplicationId.random, submissionId, submissionIndex, UUID.randomUUID().toString, createdOn, responsibleIndividual, requestingAdminEmail, state)
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
@@ -204,6 +205,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         appName,
         now,
         ResponsibleIndividual.build("ri name", "ri@example.com"),
+        "admin@example.com",
         ADMIN_REQUESTED_CHANGE
       )
 

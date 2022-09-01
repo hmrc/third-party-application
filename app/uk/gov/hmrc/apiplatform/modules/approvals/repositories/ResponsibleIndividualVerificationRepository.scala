@@ -142,6 +142,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       evt.applicationName,
       evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
+      evt.requestingAdminEmail,
       ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
     )
 

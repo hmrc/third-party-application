@@ -104,7 +104,7 @@ class ApplicationUpdateServiceSpec
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
   val riVerification = models.ResponsibleIndividualUpdateVerification(
-    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual)
+    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminEmail)
   val instigator = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {

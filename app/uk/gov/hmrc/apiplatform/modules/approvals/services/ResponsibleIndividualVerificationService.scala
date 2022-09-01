@@ -56,7 +56,7 @@ class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository.save(verification)
   }
 
-  def createNewUpdateVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int, responsibleIndividualName: String, responsibleIndividualEmail: String): Future[ResponsibleIndividualVerification] = {
+  def createNewUpdateVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int, responsibleIndividualName: String, responsibleIndividualEmail: String, requestingAdminEmail: String): Future[ResponsibleIndividualVerification] = {
     val responsibleIndividual = ResponsibleIndividual.build(
       responsibleIndividualName,
       responsibleIndividualEmail
@@ -67,7 +67,8 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
       createdOn = LocalDateTime.now(clock),
-      responsibleIndividual = responsibleIndividual
+      responsibleIndividual = responsibleIndividual,
+      requestingAdminEmail = requestingAdminEmail
     )
     responsibleIndividualVerificationRepository.save(verification)
   }

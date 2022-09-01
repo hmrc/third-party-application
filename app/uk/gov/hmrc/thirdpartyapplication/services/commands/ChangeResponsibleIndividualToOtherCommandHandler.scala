@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToOther, ImportantSubmissionData, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
@@ -51,7 +51,7 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
   private def isResponsibleIndividualDefined(app: ApplicationData) =
     cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")
 
-  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualToUVerification) = 
+  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) = 
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
   private def getRequesterEmail(app: ApplicationData) =
@@ -74,6 +74,16 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
       isResponsibleIndividualDefined(app),
       isRequesterEmailDefined(app),
       isRequesterNameDefined(app)
+    ) { case _ => app }
+  }
+
+  private def validateUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ValidatedNec[String, ApplicationData] = {
+    val responsibleIndividual = riVerification.responsibleIndividual
+    Apply[ValidatedNec[String, *]].map4(
+      isStandardNewJourneyApp(app),
+      isApproved(app),
+      isApplicationIdTheSame(app, riVerification),
+      isNotCurrentRi(responsibleIndividual.fullName.value, responsibleIndividual.emailAddress.value, app)
     ) { case _ => app }
   }
 
@@ -109,11 +119,32 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
     )
   }
 
+  private def asEventsUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): NonEmptyList[UpdateApplicationEvent] = {
+    val responsibleIndividual = riVerification.responsibleIndividual
+    val requesterEmail = riVerification.requestingAdminEmail
+    NonEmptyList.of(
+      ResponsibleIndividualChanged(
+        id = UpdateApplicationEvent.Id.random,
+        applicationId = app.id,
+        eventDateTime = cmd.timestamp,
+        actor = CollaboratorActor(requesterEmail),
+        responsibleIndividualName = responsibleIndividual.fullName.value,
+        responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
+        riVerification.submissionId,
+        riVerification.submissionInstance,
+        requestingAdminEmail = requesterEmail
+      )
+    )  
+  }
+
   def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther): CommandHandler.Result = {
     responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).map(maybeRIVerification => {
       maybeRIVerification match {
         case Some(riVerificationToU: ResponsibleIndividualToUVerification) => validateToU(app, cmd, riVerificationToU) map { _ =>
           asEventsToU(app, cmd, riVerificationToU)
+        }
+        case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => validateUpdate(app, cmd, riVerificationUpdate) map { _ =>
+          asEventsUpdate(app, cmd, riVerificationUpdate)
         }
         case _ => Validated.Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}"))
       }
