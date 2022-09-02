@@ -85,6 +85,7 @@ class ApplicationUpdateServiceSpec
 
   val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
+  val adminName = "Mr Admin"
   val adminEmail = "admin@example.com"
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
@@ -104,7 +105,7 @@ class ApplicationUpdateServiceSpec
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
   val riVerification = models.ResponsibleIndividualUpdateVerification(
-    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminEmail)
+    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
   val instigator = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {
@@ -253,8 +254,8 @@ class ApplicationUpdateServiceSpec
           responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
       val event = ResponsibleIndividualChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(changeResponsibleIndividual.email),
-        newRiName, newRiEmail, Submission.Id.random, 1, changeResponsibleIndividual.email)
+        CollaboratorActor(changeResponsibleIndividual.email), "bob example", "bob@example.com",
+        newRiName, newRiEmail, Submission.Id.random, 1, changeResponsibleIndividual.name, changeResponsibleIndividual.email)
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds

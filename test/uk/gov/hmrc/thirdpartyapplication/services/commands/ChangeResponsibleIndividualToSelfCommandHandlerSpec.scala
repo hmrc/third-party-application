@@ -62,10 +62,13 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       event.applicationId shouldBe appId
       event.eventDateTime shouldBe ts
       event.actor shouldBe CollaboratorActor(appAdminEmail)
-      event.responsibleIndividualName shouldBe riName
-      event.responsibleIndividualEmail shouldBe riEmail
+      event.newResponsibleIndividualName shouldBe riName
+      event.newResponsibleIndividualEmail shouldBe riEmail
+      event.previousResponsibleIndividualName shouldBe oldRiName
+      event.previousResponsibleIndividualEmail shouldBe oldRiEmail
       event.submissionIndex shouldBe submission.latestInstance.index
       event.submissionId shouldBe submission.id
+      event.requestingAdminName shouldBe riName
       event.requestingAdminEmail shouldBe appAdminEmail
     }
 
@@ -79,14 +82,14 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
       val result = await(underTest.process(nonStandardApp, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)))
-      result shouldBe Invalid(NonEmptyChain.one("Must be a standard new journey application"))
+      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
     }
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
       val result = await(underTest.process(oldJourneyApp, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)))
-      result shouldBe Invalid(NonEmptyChain.one("Must be a standard new journey application"))
+      result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
     }
 
     "return an error if the application is not approved" in new Setup {

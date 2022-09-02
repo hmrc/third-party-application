@@ -143,6 +143,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       evt.applicationName,
       evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
+      evt.requestingAdminName,
       evt.requestingAdminEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )

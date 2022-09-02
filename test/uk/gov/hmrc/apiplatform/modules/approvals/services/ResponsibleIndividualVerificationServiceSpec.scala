@@ -104,21 +104,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
     }
   }
 
-  "createNewUpdateVerification" should {
-    "create a new update verification object and save it to the database" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Save.thenReturnSuccess()
-
-      val result = await(underTest.createNewUpdateVerification(application, submissionId, submissionInstanceIndex, responsibleIndividual.fullName.value, responsibleIndividual.emailAddress.value, requestingAdminEmail))
-
-      result.applicationId shouldBe applicationId
-      result.submissionId shouldBe submissionId
-      result.submissionInstance shouldBe submissionInstanceIndex
-      result.applicationName shouldBe appName
-
-      ResponsibleIndividualVerificationRepositoryMock.Save.verifyCalledWith(result)
-    }
-  }
-
   "getVerification" should {
     "get a RI verification record" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)

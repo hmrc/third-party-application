@@ -21,7 +21,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Role, Standard, State, UpdateApplicationEvent, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Role, Standard, State, UpdateApplicationEvent, UserId, ImportantSubmissionData}
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -68,4 +68,13 @@ object CommandHandler {
   def getRequester(app: ApplicationData, instigator: UserId) = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
   }
+
+  def getResponsibleIndividual(app: ApplicationData) =
+    app.access match {
+      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
+      case _ => None
+  }
+
+  def isResponsibleIndividualDefined(app: ApplicationData) =
+    cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")
 }

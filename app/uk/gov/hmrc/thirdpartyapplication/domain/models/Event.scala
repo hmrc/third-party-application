@@ -139,12 +139,15 @@ object UpdateApplicationEvent {
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
-    responsibleIndividualName: String,
-    responsibleIndividualEmail: String,
+    previousResponsibleIndividualName: String,
+    previousResponsibleIndividualEmail: String,
+    newResponsibleIndividualName: String,
+    newResponsibleIndividualEmail: String,
     submissionId: Submission.Id,
     submissionIndex: Int,
+    requestingAdminName: String,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualChanged {
     implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]

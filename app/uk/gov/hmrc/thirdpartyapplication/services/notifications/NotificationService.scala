@@ -38,6 +38,7 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
         case evt: UpdateApplicationEvent.ProductionAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", TermsAndConditionsLocation.describe(evt.oldLocation), TermsAndConditionsLocation.describe(evt.newLocation))
         case evt: UpdateApplicationEvent.ProductionLegacyAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", evt.oldUrl, evt.newUrl)
         case evt: UpdateApplicationEvent.ResponsibleIndividualVerificationStarted => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
+        case evt: UpdateApplicationEvent.ResponsibleIndividualChanged => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt)
       }
     }
     

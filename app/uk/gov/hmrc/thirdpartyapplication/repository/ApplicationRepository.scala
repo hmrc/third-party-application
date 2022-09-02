@@ -520,10 +520,10 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
     updateApplication(event.applicationId, Updates.combine(
-      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.responsibleIndividualName),
-      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.responsibleIndividualEmail),
+      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.newResponsibleIndividualName),
+      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.newResponsibleIndividualEmail),
       Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
-        ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
+        ResponsibleIndividual.build(event.newResponsibleIndividualName, event.newResponsibleIndividualEmail),
         event.eventDateTime,
         event.submissionId,
         event.submissionIndex

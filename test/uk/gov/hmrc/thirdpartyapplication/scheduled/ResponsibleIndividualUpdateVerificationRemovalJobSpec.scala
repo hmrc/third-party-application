@@ -63,7 +63,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
 
       val verification = ResponsibleIndividualUpdateVerification(
         ResponsibleIndividualVerificationId.random, ApplicationId.random, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now,
-        ResponsibleIndividual.build("ri name", "ri@example.com"), "admin@example.com"
+        ResponsibleIndividual.build("ri name", "ri@example.com"), "Mr Admin", "admin@example.com"
       )
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()

@@ -42,10 +42,11 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
     }, s"The specified individual is already the RI for this application")
 
   private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map4(
+    Apply[ValidatedNec[String, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isAdminOnApp(cmd.instigator, app),
+      isResponsibleIndividualDefined(app),
       isNotCurrentRi(cmd.name, cmd.email, app)
     ) { case _ => app }
   }
@@ -53,6 +54,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
   import UpdateApplicationEvent._
 
   private def asEvents(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
+    val previousResponsibleIndividual = getResponsibleIndividual(app).get
     val requesterEmail = getRequester(app, cmd.instigator)
     NonEmptyList.of(
       ResponsibleIndividualChanged(
@@ -60,11 +62,14 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(requesterEmail),
-        responsibleIndividualName = cmd.name,
-        responsibleIndividualEmail = cmd.email,
-        submission.id,
-        submission.latestInstance.index,
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+        previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
+        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
+        newResponsibleIndividualName = cmd.name,
+        newResponsibleIndividualEmail = cmd.email,
+        submissionId = submission.id,
+        submissionIndex = submission.latestInstance.index,
+        requestingAdminName = cmd.name,
+        requestingAdminEmail = requesterEmail
       )
     )
   }

@@ -2612,7 +2612,7 @@ class ApplicationRepositoryISpec
 
       val devHubUser = CollaboratorActor("admin@example.com")
       val event = ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, riName, riEmail, submissionId, submissionIndex, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldRi.fullName.value, oldRi.emailAddress.value, riName, riEmail, submissionId, submissionIndex, adminName, adminEmail)
       val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedRI.access match {
         case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {

@@ -42,15 +42,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
       case _ => true
     }, s"The specified individual is already the RI for this application")
 
-  private def getResponsibleIndividual(app: ApplicationData) =
-    app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
-      case _ => None
-    }
-
-  private def isResponsibleIndividualDefined(app: ApplicationData) =
-    cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")
-
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) = 
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
@@ -79,10 +70,11 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
 
   private def validateUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): ValidatedNec[String, ApplicationData] = {
     val responsibleIndividual = riVerification.responsibleIndividual
-    Apply[ValidatedNec[String, *]].map4(
+    Apply[ValidatedNec[String, *]].map5(
       isStandardNewJourneyApp(app),
       isApproved(app),
       isApplicationIdTheSame(app, riVerification),
+      isResponsibleIndividualDefined(app),
       isNotCurrentRi(responsibleIndividual.fullName.value, responsibleIndividual.emailAddress.value, app)
     ) { case _ => app }
   }
@@ -128,27 +120,30 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
   }
 
   private def asEventsUpdate(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualUpdateVerification): NonEmptyList[UpdateApplicationEvent] = {
-    val responsibleIndividual = riVerification.responsibleIndividual
-    val requesterEmail = riVerification.requestingAdminEmail
+    val newResponsibleIndividual = riVerification.responsibleIndividual
+    val previousResponsibleIndividual = getResponsibleIndividual(app).get
     NonEmptyList.of(
       ResponsibleIndividualChanged(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
-        responsibleIndividualName = responsibleIndividual.fullName.value,
-        responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
-        riVerification.submissionId,
-        riVerification.submissionInstance,
-        requestingAdminEmail = requesterEmail
+        actor = CollaboratorActor(riVerification.requestingAdminEmail),
+        newResponsibleIndividualName = newResponsibleIndividual.fullName.value,
+        newResponsibleIndividualEmail = newResponsibleIndividual.emailAddress.value,
+        previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
+        previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
+        submissionId = riVerification.submissionId,
+        submissionIndex = riVerification.submissionInstance,
+        requestingAdminName = riVerification.requestingAdminName,
+        requestingAdminEmail = riVerification.requestingAdminEmail
       ),
       ResponsibleIndividualVerificationCompleted(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
+        actor = CollaboratorActor(riVerification.requestingAdminEmail),
         cmd.code,
-        requestingAdminEmail = requesterEmail
+        requestingAdminEmail = riVerification.requestingAdminEmail
       )
     )  
   }
