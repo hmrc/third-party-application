@@ -20,14 +20,14 @@ import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividual, ImportantSubmissionData, Standard, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeResponsibleIndividualToSelf, ImportantSubmissionData, Standard, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class ChangeResponsibleIndividualCommandHandler @Inject()(
+class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -41,7 +41,7 @@ class ChangeResponsibleIndividualCommandHandler @Inject()(
       case _ => true
     }, s"The specified individual is already the RI for this application")
 
-  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividual): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map4(
       isStandardNewJourneyApp(app),
       isApproved(app),
@@ -52,7 +52,7 @@ class ChangeResponsibleIndividualCommandHandler @Inject()(
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: ChangeResponsibleIndividual, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
     val requesterEmail = getRequester(app, cmd.instigator)
     NonEmptyList.of(
       ResponsibleIndividualChanged(
@@ -69,7 +69,7 @@ class ChangeResponsibleIndividualCommandHandler @Inject()(
     )
   }
 
-  def process(app: ApplicationData, cmd: ChangeResponsibleIndividual): CommandHandler.Result = {
+  def process(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): CommandHandler.Result = {
     submissionService.fetchLatest(app.id).map(maybeSubmission => {
       maybeSubmission match {
         case Some(submission) => validate(app, cmd) map { _ =>

@@ -3,5 +3,4 @@ POST          /application/:id/decline                     uk.gov.hmrc.apiplatfo
 POST          /application/:id/grant                       uk.gov.hmrc.apiplatform.modules.approvals.controllers.ApprovalsController.grant(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 GET           /responsible-individual-verification/:code   uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.getVerification(code: String)
-POST          /responsible-individual-accept               uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.accept
 POST          /responsible-individual-decline              uk.gov.hmrc.apiplatform.modules.approvals.controllers.ResponsibleIndividualVerificationController.decline

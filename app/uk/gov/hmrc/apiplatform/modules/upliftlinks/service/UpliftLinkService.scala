@@ -23,7 +23,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import cats.data.OptionT
-import cats.implicits._
 
 @Singleton
 class UpliftLinkService @Inject() (upliftLinksRepository: UpliftLinksRepository)(implicit ec: ExecutionContext) {
