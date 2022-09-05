@@ -28,6 +28,8 @@ object StateHistory {
 
   implicit def dateTimeOrdering: Ordering[LocalDateTime] = Ordering.fromLessThan(_ isBefore _)
 
+  implicit val ordering: Ordering[StateHistory] = Ordering.fromLessThan( (a,b) => a.changedAt isBefore b.changedAt)
+
   implicit val dateFormat = MongoJavatimeFormats.localDateTimeFormat
   implicit val format     = Json.format[StateHistory]
 }
