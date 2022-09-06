@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApp
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualVerificationCompleted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -198,12 +198,33 @@ class ResponsibleIndividualVerificationRepositoryISpec
         ResponsibleIndividualVerificationId.random
       )
 
-    def buildRiVerificationCompletedEvent(submissionId: Submission.Id, submissionIndex: Int) =
-      ResponsibleIndividualVerificationCompleted(
+    def buildResponsibleIndividualChangedEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualChanged(
         UpdateApplicationEvent.Id.random,
         appId,
         now,
         CollaboratorActor("requester@example.com"),
+        "Mr Previous Ri",
+        "previous-ri@example.com",
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        submissionIndex,
+        code, 
+        "Mr Admin",
+        "admin@example.com"
+      )
+
+    def buildResponsibleIndividualSetEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualSet(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        submissionIndex,
         code, 
         "admin@example.com"
       )
@@ -254,10 +275,26 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingSubmissionId, existingRecordNotMatchingSubmissionIndex, expectedNewRecord)
     }
 
-    "handle ResponsibleIndividualVerificationCompleted event correctly" in {
+    "handle ResponsibleIndividualChanged event correctly" in {
       val submissionId = Submission.Id.random
       val submissionIndex = 1
-      val event = buildRiVerificationCompletedEvent(submissionId, submissionIndex)
+      val event = buildResponsibleIndividualChangedEvent(submissionId, submissionIndex)
+
+      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
+
+      await(repository.save(existingRecordMatchingCode))
+      await(repository.save(existingRecordNotMatchingCode))
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+    }
+
+    "handle ResponsibleIndividualSet event correctly" in {
+      val submissionId = Submission.Id.random
+      val submissionIndex = 1
+      val event = buildResponsibleIndividualSetEvent(submissionId, submissionIndex)
 
       val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)

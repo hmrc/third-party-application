@@ -68,7 +68,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       val result = await(underTest.process(app, ChangeResponsibleIndividualToOther(code, ts)))
       
       result.isValid shouldBe true
-      result.toOption.get.length shouldBe 3
+      result.toOption.get.length shouldBe 2
       val riSetEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualSet]
       riSetEvent.applicationId shouldBe appId
       riSetEvent.eventDateTime shouldBe ts
@@ -88,13 +88,6 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       stateEvent.requestingAdminName shouldBe requesterName
       stateEvent.newAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
       stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
-
-      val rivCompleteEvent = result.toOption.get.tail.tail.head.asInstanceOf[ResponsibleIndividualVerificationCompleted]
-      rivCompleteEvent.applicationId shouldBe appId
-      rivCompleteEvent.eventDateTime shouldBe ts
-      rivCompleteEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      rivCompleteEvent.requestingAdminEmail shouldBe requesterEmail
-      rivCompleteEvent.code shouldBe code
     }
 
     "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
@@ -104,7 +97,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       val result = await(underTest.process(prodApp, ChangeResponsibleIndividualToOther(code, ts)))
       
       result.isValid shouldBe true
-      result.toOption.get.length shouldBe 2
+      result.toOption.get.length shouldBe 1
       val riChangedEvent = result.toOption.get.head.asInstanceOf[ResponsibleIndividualChanged]
       riChangedEvent.applicationId shouldBe appId
       riChangedEvent.eventDateTime shouldBe ts
@@ -116,13 +109,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       riChangedEvent.submissionIndex shouldBe submission.latestInstance.index
       riChangedEvent.submissionId shouldBe submission.id
       riChangedEvent.requestingAdminEmail shouldBe appAdminEmail
-
-      val rivCompleteEvent = result.toOption.get.tail.head.asInstanceOf[ResponsibleIndividualVerificationCompleted]
-      rivCompleteEvent.applicationId shouldBe appId
-      rivCompleteEvent.eventDateTime shouldBe ts
-      rivCompleteEvent.actor shouldBe CollaboratorActor(appAdminEmail)
-      rivCompleteEvent.requestingAdminEmail shouldBe requesterEmail
-      rivCompleteEvent.code shouldBe code
+      riChangedEvent.code shouldBe code
     }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {

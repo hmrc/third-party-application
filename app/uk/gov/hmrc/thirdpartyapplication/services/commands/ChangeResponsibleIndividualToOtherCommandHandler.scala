@@ -107,14 +107,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
         State.PENDING_GATEKEEPER_APPROVAL,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
-      ),
-      ResponsibleIndividualVerificationCompleted(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(requesterEmail),
-        cmd.code,
-        requestingAdminEmail = requesterEmail
       )
     )
   }
@@ -134,15 +126,8 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
         submissionId = riVerification.submissionId,
         submissionIndex = riVerification.submissionInstance,
+        code = cmd.code,
         requestingAdminName = riVerification.requestingAdminName,
-        requestingAdminEmail = riVerification.requestingAdminEmail
-      ),
-      ResponsibleIndividualVerificationCompleted(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(riVerification.requestingAdminEmail),
-        cmd.code,
         requestingAdminEmail = riVerification.requestingAdminEmail
       )
     )  

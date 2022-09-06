@@ -58,12 +58,10 @@ class ChangeResponsibleIndividualToSelfCommandHandlerSpec extends AsyncHmrcSpec 
       SubmissionsServiceMock.FetchLatest.thenReturn(submission)
       val result = await(underTest.process(app, ChangeResponsibleIndividualToSelf(appAdminUserId, ts, riName, riEmail)))
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[ResponsibleIndividualChanged]
+      val event = result.toOption.get.head.asInstanceOf[ResponsibleIndividualChangedToSelf]
       event.applicationId shouldBe appId
       event.eventDateTime shouldBe ts
       event.actor shouldBe CollaboratorActor(appAdminEmail)
-      event.newResponsibleIndividualName shouldBe riName
-      event.newResponsibleIndividualEmail shouldBe riEmail
       event.previousResponsibleIndividualName shouldBe oldRiName
       event.previousResponsibleIndividualEmail shouldBe oldRiEmail
       event.submissionIndex shouldBe submission.latestInstance.index

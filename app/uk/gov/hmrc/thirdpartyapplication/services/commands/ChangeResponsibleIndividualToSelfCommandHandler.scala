@@ -57,15 +57,13 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
     val requesterEmail = getRequester(app, cmd.instigator)
     NonEmptyList.of(
-      ResponsibleIndividualChanged(
+      ResponsibleIndividualChangedToSelf(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(requesterEmail),
         previousResponsibleIndividualName = previousResponsibleIndividual.fullName.value,
         previousResponsibleIndividualEmail = previousResponsibleIndividual.emailAddress.value,
-        newResponsibleIndividualName = cmd.name,
-        newResponsibleIndividualEmail = cmd.email,
         submissionId = submission.id,
         submissionIndex = submission.latestInstance.index,
         requestingAdminName = cmd.name,

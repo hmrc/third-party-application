@@ -136,7 +136,7 @@ class NotificationServiceSpec
       EmailConnectorMock.SendChangeOfResponsibleIndividual.thenReturnSuccess()
       val event = ResponsibleIndividualChanged(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
         CollaboratorActor("admin@example.com"), "old ri name", "oldri@example.com",
-        "ri name", "ri@example.com", Submission.Id.random, 1, "admin name", "admin@example.com")
+        "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
