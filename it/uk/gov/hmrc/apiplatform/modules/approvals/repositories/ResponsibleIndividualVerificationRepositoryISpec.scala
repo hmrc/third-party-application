@@ -226,6 +226,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         submissionId,
         submissionIndex,
         code, 
+        "Mr Admin",
         "admin@example.com"
       )
 

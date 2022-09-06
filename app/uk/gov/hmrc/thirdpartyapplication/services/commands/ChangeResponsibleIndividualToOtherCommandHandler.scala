@@ -93,9 +93,10 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
         actor = CollaboratorActor(requesterEmail),
         responsibleIndividualName = responsibleIndividual.fullName.value,
         responsibleIndividualEmail = responsibleIndividual.emailAddress.value,
-        riVerification.submissionId,
-        riVerification.submissionInstance,
-        cmd.code,
+        submissionId = riVerification.submissionId,
+        submissionIndex = riVerification.submissionInstance,
+        code = cmd.code,
+        requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
       ),
       ApplicationStateChanged(

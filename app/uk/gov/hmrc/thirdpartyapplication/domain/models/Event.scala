@@ -181,6 +181,7 @@ object UpdateApplicationEvent {
     submissionId: Submission.Id,
     submissionIndex: Int,
     code: String,
+    requestingAdminName: String,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent
 

@@ -301,7 +301,7 @@ class ApplicationUpdateServiceSpec
       val riSetEvent = ResponsibleIndividualSet(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterEmail)
+        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterName, requesterEmail)
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),
