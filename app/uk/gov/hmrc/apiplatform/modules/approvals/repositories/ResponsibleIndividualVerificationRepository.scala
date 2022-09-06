@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet, ResponsibleIndividualChanged}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
@@ -75,8 +75,9 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .headOption()
   }
 
-  def fetchByStateAndAge(state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
+  def fetchByTypeStateAndAge(verificationType: String, state: ResponsibleIndividualVerificationState, minimumCreatedOn: LocalDateTime): Future[List[ResponsibleIndividualVerification]] = {
     collection.find(and(
+      equal("verificationType", verificationType),
       equal("state", Codecs.toBson(state)),
       lte("createdOn", minimumCreatedOn)
     )).toFuture()
@@ -142,7 +143,9 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       evt.applicationName,
       evt.eventDateTime,
       ResponsibleIndividual.build(evt.responsibleIndividualName, evt.responsibleIndividualEmail),
-      ResponsibleIndividualVerificationState.ADMIN_REQUESTED_CHANGE
+      evt.requestingAdminName,
+      evt.requestingAdminEmail,
+      ResponsibleIndividualVerificationState.INITIAL
     )
 
     deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
@@ -150,14 +153,15 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       .map(_ => HasSucceeded)
   }
 
-  private def deleteResponsibleIndividualVerification(evt : ResponsibleIndividualSet): Future[HasSucceeded] = {
-    delete(ResponsibleIndividualVerificationId(evt.code))
+  private def deleteResponsibleIndividualVerification(code: String): Future[HasSucceeded] = {
+    delete(ResponsibleIndividualVerificationId(code))
   }
 
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
       case evt : ResponsibleIndividualVerificationStarted => addResponsibleIndividualVerification(evt)
-      case evt : ResponsibleIndividualSet => deleteResponsibleIndividualVerification(evt)
+      case evt : ResponsibleIndividualSet => deleteResponsibleIndividualVerification(evt.code)
+      case evt : ResponsibleIndividualChanged => deleteResponsibleIndividualVerification(evt.code)
       case _ => Future.successful(HasSucceeded)
     }
   }

@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -31,7 +31,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
 import java.time.{Clock, LocalDateTime}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 
 class ResponsibleIndividualVerificationService @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
@@ -52,22 +51,6 @@ class ResponsibleIndividualVerificationService @Inject() (
       submissionInstance = submissionInstance,
       applicationName = applicationData.name,
       createdOn = LocalDateTime.now(clock)
-    )
-    responsibleIndividualVerificationRepository.save(verification)
-  }
-
-  def createNewUpdateVerification(applicationData: ApplicationData, submissionId: Submission.Id, submissionInstance: Int, responsibleIndividualName: String, responsibleIndividualEmail: String): Future[ResponsibleIndividualVerification] = {
-    val responsibleIndividual = ResponsibleIndividual.build(
-      responsibleIndividualName,
-      responsibleIndividualEmail
-    ) 
-    val verification = ResponsibleIndividualUpdateVerification(
-      applicationId = applicationData.id,
-      submissionId = submissionId,
-      submissionInstance = submissionInstance,
-      applicationName = applicationData.name,
-      createdOn = LocalDateTime.now(clock),
-      responsibleIndividual = responsibleIndividual
     )
     responsibleIndividualVerificationRepository.save(verification)
   }

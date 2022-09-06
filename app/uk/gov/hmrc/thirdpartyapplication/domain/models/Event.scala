@@ -139,15 +139,36 @@ object UpdateApplicationEvent {
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
-    responsibleIndividualName: String,
-    responsibleIndividualEmail: String,
+    previousResponsibleIndividualName: String,
+    previousResponsibleIndividualEmail: String,
+    newResponsibleIndividualName: String,
+    newResponsibleIndividualEmail: String,
     submissionId: Submission.Id,
     submissionIndex: Int,
+    code: String,
+    requestingAdminName: String,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualChanged {
     implicit val format: OFormat[ResponsibleIndividualChanged] = Json.format[ResponsibleIndividualChanged]
+  }
+
+  case class ResponsibleIndividualChangedToSelf(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    previousResponsibleIndividualName: String,
+    previousResponsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    requestingAdminName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ResponsibleIndividualChangedToSelf {
+    implicit val format: OFormat[ResponsibleIndividualChangedToSelf] = Json.format[ResponsibleIndividualChangedToSelf]
   }
 
   case class ResponsibleIndividualSet(
@@ -160,6 +181,7 @@ object UpdateApplicationEvent {
     submissionId: Submission.Id,
     submissionIndex: Int,
     code: String,
+    requestingAdminName: String,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent
 
@@ -183,23 +205,24 @@ object UpdateApplicationEvent {
   }
 
   case class ResponsibleIndividualVerificationStarted(
-   id: UpdateApplicationEvent.Id,
-   applicationId: ApplicationId,
-   applicationName: String,
-   eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-   actor: Actor,
-   requestingAdminName: String,
-   requestingAdminEmail: String,
-   responsibleIndividualName: String,
-   responsibleIndividualEmail: String,
-   submissionId: Submission.Id,
-   submissionIndex: Int,
-   verificationId: ResponsibleIndividualVerificationId
- ) extends UpdateApplicationEvent with TriggersNotification
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    applicationName: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    requestingAdminName: String,
+    requestingAdminEmail: String,
+    responsibleIndividualName: String,
+    responsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    verificationId: ResponsibleIndividualVerificationId
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ResponsibleIndividualVerificationStarted {
     implicit val format: OFormat[ResponsibleIndividualVerificationStarted] = Json.format[ResponsibleIndividualVerificationStarted]
   }
+
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
@@ -209,6 +232,7 @@ object UpdateApplicationEvent {
     .and[ProductionLegacyAppTermsConditionsLocationChanged](EventType.PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED.toString)
     .and[ResponsibleIndividualSet](EventType.RESPONSIBLE_INDIVIDUAL_SET.toString)
     .and[ResponsibleIndividualChanged](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED.toString)
+    .and[ResponsibleIndividualChangedToSelf](EventType.RESPONSIBLE_INDIVIDUAL_CHANGED_TO_SELF.toString)
     .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
     .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
     .format
