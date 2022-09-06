@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService.Actioned
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
@@ -92,13 +92,13 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
 
       val verification =
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(riName, requesterEmail, appName, requesterName)
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification.id)
       DeclineApprovalsServiceMock.Decline.verifyCalledWith(
         app,
@@ -121,13 +121,13 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
       val verification2 =
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId.random, app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.thenReturn(verification1, verification2)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification1, verification2)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(riName, requesterEmail, appName, requesterName)
-      ResponsibleIndividualVerificationRepositoryMock.FetchByStateAndAge.verifyCalledWith(REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyNeverCalledWith(verification1.id)
       ResponsibleIndividualVerificationRepositoryMock.DeleteById.verifyCalledWith(verification2.id)
       DeclineApprovalsServiceMock.Decline.verifyCalledWith(

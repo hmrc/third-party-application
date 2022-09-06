@@ -85,6 +85,7 @@ class ApplicationUpdateServiceSpec
 
   val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
+  val adminName = "Mr Admin"
   val adminEmail = "admin@example.com"
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
@@ -104,7 +105,7 @@ class ApplicationUpdateServiceSpec
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
   val riVerification = models.ResponsibleIndividualUpdateVerification(
-    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual)
+    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
   val instigator = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {
@@ -247,14 +248,16 @@ class ApplicationUpdateServiceSpec
     "return the updated application if the application exists" in new Setup {
       val newRiName = "Mr Responsible"
       val newRiEmail = "ri@example.com"
+      val code = "656474284925734543643"
       val appBefore = applicationData
       val appAfter = applicationData.copy(access = Standard(
         importantSubmissionData = Some(testImportantSubmissionData.copy(
           responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
       val event = ResponsibleIndividualChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(changeResponsibleIndividual.email),
-        newRiName, newRiEmail, Submission.Id.random, 1, changeResponsibleIndividual.email)
+        CollaboratorActor(changeResponsibleIndividual.email), "bob example", "bob@example.com",
+        newRiName, newRiEmail, Submission.Id.random, 1, code, changeResponsibleIndividual.name, 
+        changeResponsibleIndividual.email)
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
@@ -298,7 +301,7 @@ class ApplicationUpdateServiceSpec
       val riSetEvent = ResponsibleIndividualSet(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterEmail)
+        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterName, requesterEmail)
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),

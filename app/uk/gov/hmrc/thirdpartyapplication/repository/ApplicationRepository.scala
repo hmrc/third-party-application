@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualSet, ApplicationStateChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet, ApplicationStateChanged}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
@@ -520,10 +520,22 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def updateApplicationChangeResponsibleIndividual(event: ResponsibleIndividualChanged): Future[ApplicationData] =
     updateApplication(event.applicationId, Updates.combine(
-      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.responsibleIndividualName),
-      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.responsibleIndividualEmail),
+      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.newResponsibleIndividualName),
+      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.newResponsibleIndividualEmail),
       Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
-        ResponsibleIndividual.build(event.responsibleIndividualName, event.responsibleIndividualEmail),
+        ResponsibleIndividual.build(event.newResponsibleIndividualName, event.newResponsibleIndividualEmail),
+        event.eventDateTime,
+        event.submissionId,
+        event.submissionIndex
+      )))
+    ))
+
+  private def updateApplicationChangeResponsibleIndividualToSelf(event: ResponsibleIndividualChangedToSelf): Future[ApplicationData] =
+    updateApplication(event.applicationId, Updates.combine(
+      Updates.set("access.importantSubmissionData.responsibleIndividual.fullName", event.requestingAdminName),
+      Updates.set("access.importantSubmissionData.responsibleIndividual.emailAddress", event.requestingAdminEmail),
+      Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(TermsOfUseAcceptance(
+        ResponsibleIndividual.build(event.requestingAdminName, event.requestingAdminEmail),
         event.eventDateTime,
         event.submissionId,
         event.submissionIndex
@@ -561,6 +573,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ProductionLegacyAppTermsConditionsLocationChanged => updateLegacyApplicationTermsAndConditionsLocation(evt.applicationId, evt.newUrl)
       case evt : ResponsibleIndividualSet => updateApplicationSetResponsibleIndividual(evt)
       case evt : ResponsibleIndividualChanged => updateApplicationChangeResponsibleIndividual(evt)
+      case evt : ResponsibleIndividualChangedToSelf => updateApplicationChangeResponsibleIndividualToSelf(evt)
       case evt : ApplicationStateChanged => updateApplicationState(evt)
       case _ : ResponsibleIndividualVerificationStarted => noOp(event)
     }

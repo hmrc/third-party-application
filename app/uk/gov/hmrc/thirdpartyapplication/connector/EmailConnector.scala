@@ -77,6 +77,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val responsibleIndividualDeclined             = "apiResponsibleIndividualDeclined"
   val changeOfApplicationName                   = "apiChangeOfApplicationName"
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
+  val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
 
   def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val article = if (role == "admin") "an" else "a"
@@ -324,6 +325,26 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
         "fieldName"       -> fieldName,
         "previousValue"   -> previousValue,
         "newValue"        -> newValue
+      )
+    ))
+  }
+
+  def sendChangeOfResponsibleIndividual(
+      requesterName: String,
+      applicationName: String,
+      previousResponsibleIndividual: String,
+      newResponsibleIndividual: String,
+      recipients: Set[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(SendEmailRequest(
+      recipients,
+      changeOfResponsibleIndividual,
+      Map(
+        "requesterName"                 -> requesterName,
+        "applicationName"               -> applicationName,
+        "previousResponsibleIndividual" -> previousResponsibleIndividual,
+        "newResponsibleIndividual"      -> newResponsibleIndividual
       )
     ))
   }
