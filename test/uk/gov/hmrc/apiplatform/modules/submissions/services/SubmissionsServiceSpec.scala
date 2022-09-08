@@ -21,12 +21,15 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsDAOMockModul
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import org.scalatest.Inside
 import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import cats.data.NonEmptyList
+import java.time.{LocalDateTime, ZoneOffset}
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
@@ -222,6 +225,42 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
         val result = await(underTest.recordAnswers(submissionId, questionId, List.empty))
 
         result shouldBe 'left
+      }
+    }
+
+    "applyEvents" should {
+    val now = LocalDateTime.now(ZoneOffset.UTC)
+    val appId = ApplicationId.random
+    val submissionId = Submission.Id.random
+    val reasons = "reasons description"
+
+    def buildApplicationApprovalRequestDeclinedEvent() =
+      ApplicationApprovalRequestDeclined(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        0,
+        reasons, 
+        "Mr Admin",
+        "admin@example.com"
+      )
+
+      "decline a submission given an ApplicationApprovalRequestDeclined event" in new Setup {
+        val event = buildApplicationApprovalRequestDeclinedEvent()
+
+        SubmissionsDAOMock.Fetch.thenReturn(submittedSubmission)
+        SubmissionsDAOMock.Update.thenReturn()
+
+        val result = await(underTest.applyEvents(NonEmptyList.one(event)))
+
+        val out = result.value
+        out.instances.length shouldBe submittedSubmission.instances.length + 1
+        out.instances.tail.head.status.isDeclined shouldBe true 
+        SubmissionsDAOMock.Update.verifyCalled()
       }
     }
   }
