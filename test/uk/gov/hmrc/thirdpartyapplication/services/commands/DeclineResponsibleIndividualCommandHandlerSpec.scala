@@ -84,8 +84,8 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
       appApprovalRequestDeclined.applicationId shouldBe appId
       appApprovalRequestDeclined.eventDateTime shouldBe ts
       appApprovalRequestDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
-      appApprovalRequestDeclined.responsibleIndividualName shouldBe riName
-      appApprovalRequestDeclined.responsibleIndividualEmail shouldBe riEmail
+      appApprovalRequestDeclined.decliningUserName shouldBe riName
+      appApprovalRequestDeclined.decliningUserEmail shouldBe riEmail
       appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
       appApprovalRequestDeclined.submissionId shouldBe submission.id
       appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
