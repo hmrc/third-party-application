@@ -70,6 +70,7 @@ class ApplicationUpdateServiceSpec
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
+    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
@@ -84,7 +85,8 @@ class ApplicationUpdateServiceSpec
       mockChangeResponsibleIndividualToSelfCommandHandler,
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualCommandHandler
+      mockDeclineResponsibleIndividualCommandHandler,
+      mockDeclineApplicationApprovalRequestCommandHandler
     )
   }
 
@@ -430,6 +432,51 @@ class ApplicationUpdateServiceSpec
       val result = await(underTest.update(applicationId, declineResponsibleIndividual).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(riDeclined, appApprovalRequestDeclined, stateEvent)
+      result shouldBe Right(appAfter)
+    }
+  }
+
+  "update with DeclineApplicationApprovalRequest" should {
+    val gatekeeperUser = "Bob.TheBuilder"
+    val reasons = "Reasons description text"
+    val declineApplicationApprovalRequest = DeclineApplicationApprovalRequest(gatekeeperUser, reasons, LocalDateTime.now)
+    val requesterEmail = "bill.badger@rupert.com"
+    val requesterName = "bill badger"
+    val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+
+    "return the updated application if the application exists" in new Setup {
+      val newRiName = "Mr Responsible"
+      val newRiEmail = "ri@example.com"
+      val appBefore = appInPendingRIVerification
+      val appAfter = appInPendingRIVerification.copy(access = Standard(
+        importantSubmissionData = Some(testImportantSubmissionData.copy(
+          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
+      val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        CollaboratorActor(requesterEmail),
+        newRiName, newRiEmail, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
+      val stateEvent = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        CollaboratorActor(requesterEmail),
+        State.PENDING_GATEKEEPER_APPROVAL, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
+        requesterEmail, requesterName)
+      val events = NonEmptyList.of(appApprovalRequestDeclined, stateEvent)
+
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+
+      when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(
+        Future.successful(Validated.valid(events).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, declineApplicationApprovalRequest).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(appApprovalRequestDeclined, stateEvent)
       result shouldBe Right(appAfter)
     }
   }

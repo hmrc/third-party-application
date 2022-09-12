@@ -45,18 +45,6 @@ class ChangeResponsibleIndividualToOtherCommandHandler @Inject()(
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) = 
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  private def getRequesterEmail(app: ApplicationData) =
-    app.state.requestedByEmailAddress
-
-  private def isRequesterEmailDefined(app: ApplicationData) =
-    cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
-
-  private def getRequesterName(app: ApplicationData) =
-    app.state.requestedByName
-
-  private def isRequesterNameDefined(app: ApplicationData) =
-    cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
-
   private def validateToU(app: ApplicationData, cmd: ChangeResponsibleIndividualToOther, riVerification: ResponsibleIndividualToUVerification): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map6(
       isStandardNewJourneyApp(app),

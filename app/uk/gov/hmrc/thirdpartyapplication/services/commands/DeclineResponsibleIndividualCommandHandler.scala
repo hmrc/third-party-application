@@ -19,8 +19,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.Apply
 import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividual, ImportantSubmissionData, Standard, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividual, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 
@@ -37,18 +37,6 @@ class DeclineResponsibleIndividualCommandHandler @Inject()(
 
   private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) = 
     cond(app.id == riVerification.applicationId, "The given application id is different")
-
-  private def getRequesterEmail(app: ApplicationData) =
-    app.state.requestedByEmailAddress
-
-  private def isRequesterEmailDefined(app: ApplicationData) =
-    cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
-
-  private def getRequesterName(app: ApplicationData) =
-    app.state.requestedByName
-
-  private def isRequesterNameDefined(app: ApplicationData) =
-    cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
 
   private def validateToU(app: ApplicationData, cmd: DeclineResponsibleIndividual, riVerification: ResponsibleIndividualToUVerification): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map6(
