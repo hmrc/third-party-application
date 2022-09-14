@@ -41,6 +41,7 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
         case evt: UpdateApplicationEvent.ResponsibleIndividualChanged => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.newResponsibleIndividualName)
         case evt: UpdateApplicationEvent.ResponsibleIndividualChangedToSelf => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.requestingAdminName)
         case evt: UpdateApplicationEvent.ResponsibleIndividualDeclined => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: UpdateApplicationEvent.ResponsibleIndividualDidNotVerify => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
       }
     }
     

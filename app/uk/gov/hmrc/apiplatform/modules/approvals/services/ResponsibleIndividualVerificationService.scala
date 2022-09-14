@@ -20,13 +20,11 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.{ExecutionContext, Future}
 
 import javax.inject.Inject
@@ -39,7 +37,6 @@ class ResponsibleIndividualVerificationService @Inject() (
     applicationService: ApplicationService,
     submissionService: SubmissionsService,
     emailConnector: EmailConnector,
-    declineApprovalsService: DeclineApprovalsService,
     clock: Clock
   )(implicit ec: ExecutionContext
   ) extends BaseService(stateHistoryRepository, clock) with ApplicationLogger {
@@ -57,35 +54,5 @@ class ResponsibleIndividualVerificationService @Inject() (
 
   def getVerification(code: String): Future[Option[ResponsibleIndividualVerification]] = {
     responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(code))
-  }
-
-  def decline(code: String): Future[Either[String, ResponsibleIndividualVerification]] = {
-
-    import cats.implicits._
-    import cats.instances.future.catsStdInstancesForFuture
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-
-    val ET               = EitherTHelper.make[String]
-    val riVerificationId = ResponsibleIndividualVerificationId(code)
-
-    logger.info(s"Start responsible individual decline ToU for code:${code}")
-
-    (
-      for {
-        riVerification            <- ET.fromOptionF(responsibleIndividualVerificationRepository.fetch(riVerificationId), "responsibleIndividualVerification not found")
-        originalApp               <- ET.fromOptionF(applicationRepository.fetch(riVerification.applicationId), s"Application with id ${riVerification.applicationId} not found")
-        _                         <- ET.cond(originalApp.isPendingResponsibleIndividualVerification, (), "application not in state pendingResponsibleIndividualVerification")
-        submission                <- ET.fromOptionF(submissionService.fetchLatest(riVerification.applicationId), "submission not found")
-        importantSubmissionData   <- ET.fromOption(originalApp.importantSubmissionData, "expected application data is missing")
-        ri                         = importantSubmissionData.responsibleIndividual
-        responsibleIndividualEmail = ri.emailAddress.value
-        requesterName             <- ET.fromOption(originalApp.state.requestedByName, "no requester name found")
-        requesterEmail            <- ET.fromOption(originalApp.state.requestedByEmailAddress, "no requester email found")
-        reason                     = "Responsible individual declined the terms of use."
-        _                         <- ET.liftF(declineApprovalsService.decline(originalApp, submission, responsibleIndividualEmail, reason))
-        _                         <- ET.liftF(emailConnector.sendResponsibleIndividualDeclined(ri.fullName.value, requesterEmail, originalApp.name, requesterName))
-        _                          = logger.info(s"Responsible individual has successfully declined ToU for appId:${riVerification.applicationId}, code:{$code}")
-      } yield riVerification
-    ).value
   }
 }

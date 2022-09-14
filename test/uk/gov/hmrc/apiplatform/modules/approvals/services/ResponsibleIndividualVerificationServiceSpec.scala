@@ -17,7 +17,6 @@
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
@@ -40,7 +39,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       with StateHistoryRepositoryMockModule
       with ResponsibleIndividualVerificationRepositoryMockModule
       with ApplicationServiceMockModule
-      with DeclineApprovalsServiceMockModule
       with SubmissionsServiceMockModule
       with EmailConnectorMockModule
       with FixedClock {
@@ -72,7 +70,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       ApplicationServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       EmailConnectorMock.aMock,
-      DeclineApprovalsServiceMock.aMock,
       clock
     )
 
@@ -115,28 +112,6 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       result.get.applicationName shouldBe appName
 
       ResponsibleIndividualVerificationRepositoryMock.Fetch.verifyCalledWith(riVerificationId)
-    }
-  }
-
-  "decline" should {
-    "return verification record if verification record is found" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification)
-      ApplicationRepoMock.Fetch.thenReturn(application)
-      SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
-      EmailConnectorMock.SendResponsibleIndividualDeclined.thenReturnSuccess()
-
-      val result = await(underTest.decline(riVerificationId.value))
-
-      result shouldBe Right(riVerification)
-    }
-
-    "return correct error message if verification record is not found" in new Setup {
-      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-
-      val result = await(underTest.decline(riVerificationId.value))
-
-      result shouldBe Left(s"responsibleIndividualVerification not found")
     }
   }
 }

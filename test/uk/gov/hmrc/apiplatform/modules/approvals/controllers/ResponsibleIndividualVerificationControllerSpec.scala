@@ -25,7 +25,6 @@ import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVeri
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import play.api.test.FakeRequest
 import akka.stream.testkit.NoMaterializer
-import play.api.libs.json.Json
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
   implicit val mat = NoMaterializer
@@ -61,20 +60,6 @@ class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with
       val result = underTest.getVerification(code)(request)
 
       status(result) shouldBe NOT_FOUND
-    }
-  }
-
-  "decline" should {
-    implicit val writes = Json.writes[ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest]
-    val jsonBody        = Json.toJson(ResponsibleIndividualVerificationController.ResponsibleIndividualVerificationRequest(code))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-
-    "return ok if declined successfully" in new Setup {
-      ResponsibleIndividualVerificationServiceMock.Decline.thenDecline()
-
-      val result = underTest.decline()(request)
-
-      status(result) shouldBe OK
     }
   }
 }

@@ -153,5 +153,16 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendResponsibleIndividualDeclined.verifyCalledWith(event.responsibleIndividualName, event.requestingAdminEmail, applicationData.name, event.requestingAdminName)
     }
+
+    "when receive a ResponsibleIndividualDidNotVerify, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
+      val event = ResponsibleIndividualDidNotVerify(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), 
+        "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(event.responsibleIndividualName, event.requestingAdminEmail, applicationData.name, event.requestingAdminName)
+    }
   }
 }

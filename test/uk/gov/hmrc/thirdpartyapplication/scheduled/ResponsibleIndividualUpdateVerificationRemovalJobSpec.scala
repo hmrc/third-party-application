@@ -19,7 +19,6 @@ package uk.gov.hmrc.thirdpartyapplication.scheduled
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -37,7 +36,7 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ApplicationServiceMockModule with ApplicationRepositoryMockModule with SubmissionsServiceMockModule
-      with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule with DeclineApprovalsServiceMockModule
+      with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualUpdateVerificationRemovalJobLockService]

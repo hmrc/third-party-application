@@ -19,26 +19,55 @@ package uk.gov.hmrc.thirdpartyapplication.services
 import org.mockito.ArgumentMatcher
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
-import uk.gov.hmrc.play.audit.http.connector.AuditConnector
+import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Warn, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, GatekeeperUserActor}
 
+import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import cats.data.NonEmptyList
 
+import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
+class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock with ApplicationTestData with SubmissionsTestData {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
-    val auditService       = new AuditService(mockAuditConnector)
+    val auditService       = new AuditService(mockAuditConnector, clock)
   }
+
+  val timestamp      = LocalDateTime.now
+  val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
+
+  val testImportantSubmissionData = ImportantSubmissionData(
+    Some("organisationUrl.com"),
+    responsibleIndividual,
+    Set(ServerLocation.InUK),
+    TermsAndConditionsLocation.InDesktopSoftware,
+    PrivacyPolicyLocation.InDesktopSoftware,
+    List.empty
+  )
+
+  val applicationData: ApplicationData = anApplicationData(
+    applicationId,
+    access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
+  )
+  val instigator = applicationData.collaborators.head.userId
+
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
@@ -49,6 +78,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
           de.tags == expected.tags &&
           de.detail == expected.detail
     };
+
   "AuditService audit" should {
     "pass through data to underlying auditConnector" in new Setup {
       val data                       = Map("some-header" -> "la-di-dah")
@@ -112,6 +142,64 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       auditService.audit(AppCreated, data)
       verify(auditService.auditConnector).sendEvent(argThat(isSameDataEvent(expected)))(*, *)
+    }
+  }
+
+  "applyEvents" should {
+    val gatekeeperUser = "Bob.TheBuilder"
+    val reasons = "Reasons description text"
+    val requesterEmail = "bill.badger@rupert.com"
+    val requesterName = "bill badger"
+    val appInTesting = applicationData.copy(state = ApplicationState.testing)
+
+    "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
+      implicit val hc: HeaderCarrier = HeaderCarrier()
+
+      val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        GatekeeperUserActor(gatekeeperUser),
+        gatekeeperUser, gatekeeperUser, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
+
+      val tags = Map("gatekeeperId" -> gatekeeperUser)
+      val questionsWithAnswers = QuestionsAndAnswersToMap(declinedSubmission)
+      val declinedData = Map("status" -> "declined", "reasons" -> reasons)
+      val fmt = DateTimeFormatter.ISO_DATE_TIME
+      val submissionPreviousInstance = declinedSubmission.instances.tail.head
+      val submittedOn: LocalDateTime = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+      val declinedOn: LocalDateTime = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+      val dates = Map(
+        "submission.started.date"   -> declinedSubmission.startedOn.format(fmt),
+        "submission.submitted.date" -> submittedOn.format(fmt),
+        "submission.declined.date"  -> declinedOn.format(fmt)
+      )
+      val markedAnswers = MarkAnswer.markSubmission(declinedSubmission)
+      val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
+      val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+      val counters      = Map(
+        "submission.failures" -> nbrOfFails.toString,
+        "submission.warnings" -> nbrOfWarnings.toString
+      )
+      val gatekeeperDetails = Map(
+        "applicationId"          -> appInTesting.id.value.toString,
+        "applicationName"        -> appInTesting.name,
+        "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
+        "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress).mkString(", ")
+      )
+
+      val extraDetail = questionsWithAnswers ++ declinedData ++ dates ++ counters ++ gatekeeperDetails
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ApplicationApprovalDeclined.auditType,
+        tags = hc.toAuditTags(ApplicationApprovalDeclined.name, "-") ++ tags,
+        detail = extraDetail
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(appInTesting, Some(declinedSubmission), NonEmptyList.one(appApprovalRequestDeclined)))
+      
+      result shouldBe Some(AuditResult.Success)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
   }
 

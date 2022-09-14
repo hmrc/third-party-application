@@ -70,6 +70,7 @@ class ApplicationUpdateServiceSpec
     val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
     val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
+    val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
     val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
 
     val underTest = new ApplicationUpdateService(
@@ -79,6 +80,7 @@ class ApplicationUpdateServiceSpec
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
       SubmissionsServiceMock.aMock,
+      AuditServiceMock.aMock,
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
@@ -86,6 +88,7 @@ class ApplicationUpdateServiceSpec
       mockChangeResponsibleIndividualToOtherCommandHandler,
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
+      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler
     )
   }
@@ -129,6 +132,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationNameCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationName])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -187,6 +191,7 @@ class ApplicationUpdateServiceSpec
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -231,6 +236,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -275,6 +281,7 @@ class ApplicationUpdateServiceSpec
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -327,6 +334,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])).thenReturn(
         Future.successful(Validated.valid(events).toValidatedNec)
@@ -367,6 +375,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockVerifyResponsibleIndividualCommandHandler.process(*[ApplicationData], *[VerifyResponsibleIndividual])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -424,6 +433,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineResponsibleIndividualCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividual])).thenReturn(
         Future.successful(Validated.valid(events).toValidatedNec)
@@ -469,6 +479,7 @@ class ApplicationUpdateServiceSpec
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(
         Future.successful(Validated.valid(events).toValidatedNec)

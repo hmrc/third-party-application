@@ -65,24 +65,6 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
         when(aMock.getVerification(*)).thenAnswer(Future.successful(None))
       }
     }
-
-    object Decline {
-
-      def thenDecline() = {
-        when(aMock.decline(*)).thenAnswer((code: String) =>
-          Future.successful(Right(
-            ResponsibleIndividualToUVerification(
-              ResponsibleIndividualVerificationId(code),
-              ApplicationId.random,
-              Submission.Id.random,
-              0,
-              "App name",
-              LocalDateTime.now(Clock.systemUTC())
-            )
-          ))
-        )
-      }
-    }
   }
 
   object ResponsibleIndividualVerificationServiceMock extends BaseResponsibleIndividualVerificationServiceMock {

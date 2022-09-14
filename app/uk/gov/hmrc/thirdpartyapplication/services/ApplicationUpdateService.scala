@@ -38,6 +38,7 @@ class ApplicationUpdateService @Inject()(
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService,
   submissionService: SubmissionsService,
+  auditService: AuditService,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
   changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
@@ -45,6 +46,7 @@ class ApplicationUpdateService @Inject()(
   changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
   verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
   declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
+  declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
   declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
@@ -56,9 +58,10 @@ class ApplicationUpdateService @Inject()(
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
       _                <- E.liftF(stateHistoryRepository.applyEvents(events))
-      _                <- E.liftF(submissionService.applyEvents(events))
+      submission       <- E.liftF(submissionService.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
+      _                <- E.liftF(auditService.applyEvents(savedApp, submission, events))
       _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }
@@ -72,6 +75,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
       case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }

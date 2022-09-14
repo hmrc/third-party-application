@@ -24,6 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
+import org.mockito.captor.ArgCaptor
 import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
@@ -37,11 +38,23 @@ trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatch
       def thenReturnSuccess(applicationData: ApplicationData) =
         when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.rightT(applicationData))
 
+      def thenReturnSuccess(applicationId: ApplicationId, applicationData: ApplicationData) =
+        when(aMock.update(eqTo(applicationId), *[ApplicationUpdate])(*)).thenReturn(EitherT.rightT(applicationData))
+
       def thenReturnError(errorMsg: String) =
         when(aMock.update(*[ApplicationId], *[ApplicationUpdate])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
 
+      def thenReturnError(applicationId: ApplicationId, errorMsg: String) =
+        when(aMock.update(eqTo(applicationId), *[ApplicationUpdate])(*)).thenReturn(EitherT.leftT(NonEmptyChain(errorMsg)))
+
       def verifyNeverCalled =
         verify(aMock, never).update(*[ApplicationId], *[ApplicationUpdate])(*)
+
+      def verifyCalledWith(applicationId: ApplicationId) = {
+        val captor = ArgCaptor[ApplicationUpdate]
+        verify(aMock).update(eqTo(applicationId), captor.capture)(*)
+        captor.value
+      }
     }
   }
 
