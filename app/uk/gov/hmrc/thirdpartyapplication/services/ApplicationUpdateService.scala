@@ -58,10 +58,10 @@ class ApplicationUpdateService @Inject()(
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
       _                <- E.liftF(stateHistoryRepository.applyEvents(events))
-      submission       <- E.liftF(submissionService.applyEvents(events))
+      _                <- E.liftF(submissionService.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
-      _                <- E.liftF(auditService.applyEvents(savedApp, submission, events))
+      _                <- E.liftF(auditService.applyEvents(savedApp, events))
       _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }

@@ -33,6 +33,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Warn, Su
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, GatekeeperUserActor}
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,11 +44,11 @@ import cats.data.NonEmptyList
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock with ApplicationTestData with SubmissionsTestData {
+class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
-    val auditService       = new AuditService(mockAuditConnector, clock)
+    val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)
   }
 
   val timestamp      = LocalDateTime.now
@@ -195,8 +196,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       )
 
       when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+      SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
-      val result = await(auditService.applyEvents(appInTesting, Some(declinedSubmission), NonEmptyList.one(appApprovalRequestDeclined)))
+      val result = await(auditService.applyEvents(appInTesting, NonEmptyList.one(appApprovalRequestDeclined)))
       
       result shouldBe Some(AuditResult.Success)
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
