@@ -78,7 +78,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
         decliningUserEmail = responsibleIndividual.emailAddress.value,
         submissionId = riVerification.submissionId,
         submissionIndex = riVerification.submissionInstance,
-        reasons = "Responsible individual declined the terms of use.",
+        reasons = cmd.reasons,
         requestingAdminName = requesterName,
         requestingAdminEmail = requesterEmail
       ),

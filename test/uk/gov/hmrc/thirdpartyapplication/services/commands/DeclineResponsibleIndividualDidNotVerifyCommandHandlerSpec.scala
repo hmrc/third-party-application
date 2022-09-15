@@ -90,7 +90,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       appApprovalRequestDeclined.submissionIndex shouldBe submission.latestInstance.index
       appApprovalRequestDeclined.submissionId shouldBe submission.id
       appApprovalRequestDeclined.requestingAdminEmail shouldBe appAdminEmail
-      appApprovalRequestDeclined.reasons shouldBe "Responsible individual declined the terms of use."
+      appApprovalRequestDeclined.reasons shouldBe reasons
 
       val stateEvent = result.toOption.get.tail.tail.head.asInstanceOf[ApplicationStateChanged]
       stateEvent.applicationId shouldBe appId
