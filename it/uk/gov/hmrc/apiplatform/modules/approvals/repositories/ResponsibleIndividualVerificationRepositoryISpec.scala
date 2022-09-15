@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApp
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet, ResponsibleIndividualDeclined, ResponsibleIndividualDeclinedUpdate, ResponsibleIndividualDidNotVerify}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -215,6 +215,51 @@ class ResponsibleIndividualVerificationRepositoryISpec
         "admin@example.com"
       )
 
+    def buildResponsibleIndividualDeclinedEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualDeclined(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        submissionIndex,
+        code, 
+        "Mr Admin",
+        "admin@example.com"
+      )
+
+    def buildResponsibleIndividualDeclinedUpdateEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualDeclinedUpdate(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        submissionIndex,
+        code, 
+        "Mr Admin",
+        "admin@example.com"
+      )
+
+    def buildResponsibleIndividualDidNotVerifyEvent(submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualDidNotVerify(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        "Mr New Ri",
+        "ri@example.com",
+        submissionId,
+        submissionIndex,
+        code, 
+        "Mr Admin",
+        "admin@example.com"
+      )
+
     def buildResponsibleIndividualSetEvent(submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualSet(
         UpdateApplicationEvent.Id.random,
@@ -228,6 +273,17 @@ class ResponsibleIndividualVerificationRepositoryISpec
         code, 
         "Mr Admin",
         "admin@example.com"
+      )
+
+    def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
+      ResponsibleIndividualToUVerification(
+        id,
+        appId,
+        submissionId,
+        submissionIndex,
+        appName,
+        now,
+        INITIAL
       )
 
     def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
@@ -283,6 +339,54 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
       val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
       val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
+
+      await(repository.save(existingRecordMatchingCode))
+      await(repository.save(existingRecordNotMatchingCode))
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+    }
+
+    "handle ResponsibleIndividualDeclined event correctly" in {
+      val submissionId = Submission.Id.random
+      val submissionIndex = 0
+      val event = buildResponsibleIndividualDeclinedEvent(submissionId, submissionIndex)
+
+      val existingRecordMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
+      val existingRecordNotMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
+
+      await(repository.save(existingRecordMatchingCode))
+      await(repository.save(existingRecordNotMatchingCode))
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+    }
+
+    "handle ResponsibleIndividualDeclinedUpdate event correctly" in {
+      val submissionId = Submission.Id.random
+      val submissionIndex = 1
+      val event = buildResponsibleIndividualDeclinedUpdateEvent(submissionId, submissionIndex)
+
+      val existingRecordMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId(code), submissionId, 0)
+      val existingRecordNotMatchingCode = buildRiVerificationRecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
+
+      await(repository.save(existingRecordMatchingCode))
+      await(repository.save(existingRecordNotMatchingCode))
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+    }
+
+    "handle ResponsibleIndividualDidNotVerify event correctly" in {
+      val submissionId = Submission.Id.random
+      val submissionIndex = 0
+      val event = buildResponsibleIndividualDidNotVerifyEvent(submissionId, submissionIndex)
+
+      val existingRecordMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 0)
+      val existingRecordNotMatchingCode = buildRiVerificationToURecord(ResponsibleIndividualVerificationId.random, submissionId, 1)
 
       await(repository.save(existingRecordMatchingCode))
       await(repository.save(existingRecordNotMatchingCode))
