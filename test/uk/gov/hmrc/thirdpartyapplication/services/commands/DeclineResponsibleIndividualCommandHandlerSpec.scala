@@ -101,25 +101,25 @@ class DeclineResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with 
       stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
     }
 
-    // "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
-    //   ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
+    "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
       
-    //   val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
-    //   val result = await(underTest.process(prodApp, DeclineResponsibleIndividual(code, ts)))
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
+      val result = await(underTest.process(prodApp, DeclineResponsibleIndividual(code, ts)))
       
-    //   result.isValid shouldBe true
-    //   result.toOption.get.length shouldBe 1
-    //   val riDeclined = result.toOption.get.head.asInstanceOf[ResponsibleIndividualDeclined]
-    //   riDeclined.applicationId shouldBe appId
-    //   riDeclined.eventDateTime shouldBe ts
-    //   riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
-    //   riDeclined.responsibleIndividualName shouldBe riName
-    //   riDeclined.responsibleIndividualEmail shouldBe riEmail
-    //   riDeclined.submissionIndex shouldBe submission.latestInstance.index
-    //   riDeclined.submissionId shouldBe submission.id
-    //   riDeclined.requestingAdminEmail shouldBe appAdminEmail
-    //   riDeclined.code shouldBe code
-    // }
+      result.isValid shouldBe true
+      result.toOption.get.length shouldBe 1
+      val riDeclined = result.toOption.get.head.asInstanceOf[ResponsibleIndividualDeclinedUpdate]
+      riDeclined.applicationId shouldBe appId
+      riDeclined.eventDateTime shouldBe ts
+      riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+      riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
+      riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+      riDeclined.submissionIndex shouldBe submission.latestInstance.index
+      riDeclined.submissionId shouldBe submission.id
+      riDeclined.requestingAdminEmail shouldBe appAdminEmail
+      riDeclined.code shouldBe code
+    }
 
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing

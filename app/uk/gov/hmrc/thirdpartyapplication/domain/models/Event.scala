@@ -241,6 +241,24 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualDeclined] = Json.format[ResponsibleIndividualDeclined]
   }
 
+  case class ResponsibleIndividualDeclinedUpdate(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    responsibleIndividualName: String,
+    responsibleIndividualEmail: String,
+    submissionId: Submission.Id,
+    submissionIndex: Int,
+    code: String,
+    requestingAdminName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ResponsibleIndividualDeclinedUpdate {
+    implicit val format: OFormat[ResponsibleIndividualDeclinedUpdate] = Json.format[ResponsibleIndividualDeclinedUpdate]
+  }
+
   case class ResponsibleIndividualDidNotVerify(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
@@ -289,6 +307,7 @@ object UpdateApplicationEvent {
     .and[ApplicationStateChanged](EventType.APPLICATION_STATE_CHANGED.toString)
     .and[ResponsibleIndividualVerificationStarted](EventType.RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED.toString)
     .and[ResponsibleIndividualDeclined](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED.toString)
+    .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
     .format

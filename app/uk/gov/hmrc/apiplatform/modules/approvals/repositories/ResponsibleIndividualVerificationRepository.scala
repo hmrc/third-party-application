@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet, ResponsibleIndividualChanged, ResponsibleIndividualDeclined, ResponsibleIndividualDidNotVerify}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet, ResponsibleIndividualChanged, ResponsibleIndividualDeclined, ResponsibleIndividualDidNotVerify, ResponsibleIndividualDeclinedUpdate}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
@@ -163,6 +163,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       case evt : ResponsibleIndividualSet => deleteResponsibleIndividualVerification(evt.code)
       case evt : ResponsibleIndividualChanged => deleteResponsibleIndividualVerification(evt.code)
       case evt : ResponsibleIndividualDeclined => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
+      case evt : ResponsibleIndividualDeclinedUpdate => deleteResponsibleIndividualVerification(evt.code)
       case evt : ResponsibleIndividualDidNotVerify => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       case _ => Future.successful(HasSucceeded)
     }
