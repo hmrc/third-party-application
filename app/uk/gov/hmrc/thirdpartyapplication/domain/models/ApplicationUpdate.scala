@@ -35,7 +35,7 @@ case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: Loca
 case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class DeclineResponsibleIndividualDidNotVerify(code: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
 
 

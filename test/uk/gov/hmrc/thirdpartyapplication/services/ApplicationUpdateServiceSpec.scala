@@ -448,8 +448,7 @@ class ApplicationUpdateServiceSpec
 
   "update with DeclineResponsibleIndividualDidNotVerify" should {
     val code = "235345t3874528745379534234234234"
-    val reasons = "Reasons, reasons"
-    val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, reasons, LocalDateTime.now)
+    val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, LocalDateTime.now)
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName = "bill badger"
     val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))

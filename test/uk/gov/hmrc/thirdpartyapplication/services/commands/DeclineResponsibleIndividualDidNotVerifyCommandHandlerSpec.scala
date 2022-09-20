@@ -53,7 +53,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
     ), state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
     val ts = LocalDateTime.now
     val code = "3242342387452384623549234"
-    val reasons = "Responsible individual not not verify within 20 days"
+    val reasons = "The responsible individual did not accept the terms of use in 20 days."
     val riVerificationToU = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), 
       appId, submission.id, submission.latestInstance.index, "App Name", ts, ResponsibleIndividualVerificationState.INITIAL)  
     val riVerificationUpdate = ResponsibleIndividualUpdateVerification(ResponsibleIndividualVerificationId(code), 
@@ -66,7 +66,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
     "create correct event for a valid request with a ToU responsibleIndividualVerification and a standard app" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       
-      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 3
@@ -102,23 +102,43 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       stateEvent.oldAppState shouldBe State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION
     }
 
+    "create correct event for a valid request with an update responsibleIndividualVerification and a standard app" in new Setup {
+      ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationUpdate)
+      
+      val prodApp = app.copy(state = ApplicationState.production(requesterEmail, requesterName))
+      val result = await(underTest.process(prodApp, DeclineResponsibleIndividualDidNotVerify(code, ts)))
+      
+      result.isValid shouldBe true
+      result.toOption.get.length shouldBe 1
+      val riDeclined = result.toOption.get.head.asInstanceOf[ResponsibleIndividualDeclinedUpdate]
+      riDeclined.applicationId shouldBe appId
+      riDeclined.eventDateTime shouldBe ts
+      riDeclined.actor shouldBe CollaboratorActor(appAdminEmail)
+      riDeclined.responsibleIndividualName shouldBe newResponsibleIndividual.fullName.value
+      riDeclined.responsibleIndividualEmail shouldBe newResponsibleIndividual.emailAddress.value
+      riDeclined.submissionIndex shouldBe submission.latestInstance.index
+      riDeclined.submissionId shouldBe submission.id
+      riDeclined.requestingAdminEmail shouldBe appAdminEmail
+      riDeclined.code shouldBe code
+    }
+
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturnNothing
-      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       result shouldBe Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code $code"))
     }
 
     "return an error if the application is non-standard" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result = await(underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(nonStandardApp, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
     }
 
     "return an error if the application is old journey" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result = await(underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(oldJourneyApp, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application", "The responsible individual has not been set for this application"))
     }
 
@@ -126,14 +146,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       val riVerification2 = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), 
         ApplicationId.random, submission.id, submission.latestInstance.index, "App Name", ts, ResponsibleIndividualVerificationState.INITIAL)  
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerification2)
-      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(app, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       result shouldBe Invalid(NonEmptyChain.one("The given application id is different"))
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification" in new Setup {
       ResponsibleIndividualVerificationRepositoryMock.Fetch.thenReturn(riVerificationToU)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
-      val result = await(underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, reasons, ts)))
+      val result = await(underTest.process(pendingGKApprovalApp, DeclineResponsibleIndividualDidNotVerify(code, ts)))
       result shouldBe Invalid(NonEmptyChain.one("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"))
     }
   }

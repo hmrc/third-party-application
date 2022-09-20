@@ -20,13 +20,10 @@ import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.REMINDERS_SENT
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 import java.time.temporal.ChronoUnit.SECONDS
@@ -36,8 +33,7 @@ import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApplicationServiceMockModule with ApplicationRepositoryMockModule with SubmissionsServiceMockModule
-      with EmailConnectorMockModule with ResponsibleIndividualVerificationRepositoryMockModule with ApplicationUpdateServiceMockModule
+  trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationUpdateServiceMockModule
       with SubmissionsTestData {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationRemovalJobLockService]
@@ -72,9 +68,6 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
     val job = new ResponsibleIndividualVerificationRemovalJob(
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      SubmissionsServiceMock.aMock,
-      EmailConnectorMock.aMock,
-      ApplicationRepoMock.aMock,
       ApplicationUpdateServiceMock.aMock,
       fixedClock,
       jobConfig
@@ -89,7 +82,6 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       val verification =
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
-      ResponsibleIndividualVerificationRepositoryMock.DeleteById.thenReturnSuccess()
 
       await(job.runJob)
 

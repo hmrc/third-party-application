@@ -22,13 +22,10 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 import java.time.temporal.ChronoUnit.SECONDS
 import java.time.{Clock, LocalDateTime}
@@ -40,9 +37,6 @@ import scala.concurrent.{ExecutionContext, Future}
 class ResponsibleIndividualVerificationRemovalJob @Inject() (
     responsibleIndividualVerificationRemovalJobLockService: ResponsibleIndividualVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
-    submissionsService: SubmissionsService,
-    emailConnector: EmailConnector,
-    applicationRepository: ApplicationRepository,
     applicationUpdateService: ApplicationUpdateService,
     val clock: Clock,
     jobConfig: ResponsibleIndividualVerificationRemovalJobConfig
@@ -71,8 +65,7 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   }
 
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val declineReason = "The responsible individual did not accept the terms of use in 20 days."
-    val request       =  DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, declineReason, LocalDateTime.now(clock))
+    val request       =  DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
 
     (for {
       savedApp       <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
