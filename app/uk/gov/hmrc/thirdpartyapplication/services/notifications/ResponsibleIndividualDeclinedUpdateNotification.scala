@@ -28,22 +28,11 @@ import scala.concurrent.Future
 object ResponsibleIndividualDeclinedUpdateNotification {
   
   def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ResponsibleIndividualDeclinedUpdate)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val recipients = getRecipients(app) ++ getCurrentResponsibleIndividualEmail(app)
+    val recipients = Set(event.requestingAdminEmail)
     emailConnector.sendResponsibleIndividualNotChanged(
       event.responsibleIndividualName,
       app.name,
       recipients
     )
-  }
-
-  private def getRecipients(app: ApplicationData): Set[String] = {
-    app.collaborators.map(_.emailAddress)
-  }
-
-  private def getCurrentResponsibleIndividualEmail(app: ApplicationData): Set[String] = {
-    app.access match {
-      case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
-    }
   }
 }

@@ -173,7 +173,7 @@ class NotificationServiceSpec
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
-      EmailConnectorMock.SendResponsibleIndividualNotChanged.verifyCalledWith(event.responsibleIndividualName, applicationData.name, Set(responsibleIndividual.emailAddress.value, loggedInUser))
+      EmailConnectorMock.SendResponsibleIndividualNotChanged.verifyCalledWith(event.responsibleIndividualName, applicationData.name, Set(event.requestingAdminEmail))
     }
 
     "when receive a ResponsibleIndividualDidNotVerify, call the event handler and return successfully" in new Setup {
