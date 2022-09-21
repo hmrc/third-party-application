@@ -67,6 +67,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
     val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
 
+    logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
       savedApp       <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
     } yield HasSucceeded).value
