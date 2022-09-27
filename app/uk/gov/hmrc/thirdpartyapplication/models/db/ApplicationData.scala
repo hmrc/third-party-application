@@ -109,7 +109,7 @@ object ApplicationData {
       name,
       name.toLowerCase,
       collaborators,
-      description,
+      createApplicationRequest.description.filterNot(_ => environment == Environment.PRODUCTION),
       wso2ApplicationName,
       ApplicationTokens(environmentToken),
       applicationState,
