@@ -163,7 +163,8 @@ class ApplicationServiceSpec
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
       val expectedApplicationData: ApplicationData =
-        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION)
+        anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
+        
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -173,7 +174,7 @@ class ApplicationServiceSpec
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
           "newApplicationName"        -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
+          "newApplicationDescription" -> ""
         ),
         hc
       )
@@ -196,6 +197,7 @@ class ApplicationServiceSpec
         environment = Environment.PRODUCTION,
         access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       )
+      .copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -206,7 +208,7 @@ class ApplicationServiceSpec
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
           "newApplicationName"        -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
+          "newApplicationDescription" -> ""
         ),
         hc
       )
@@ -220,7 +222,8 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION)
+      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
+
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -230,7 +233,7 @@ class ApplicationServiceSpec
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
           "newApplicationName"        -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
+          "newApplicationDescription" -> ""
         ),
         hc
       )
@@ -246,6 +249,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: ApplicationData =
         anApplicationData(createdApp.application.id, state = ApplicationState(State.PRODUCTION, updatedOn = LocalDateTime.now(clock)), environment = Environment.SANDBOX)
+
       createdApp.totp shouldBe None
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
@@ -281,6 +285,8 @@ class ApplicationServiceSpec
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
+      .copy(description = None)
+
       createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
@@ -291,7 +297,7 @@ class ApplicationServiceSpec
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
           "newApplicationName"        -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
+          "newApplicationDescription" -> ""
         ),
         hc
       )
@@ -312,6 +318,8 @@ class ApplicationServiceSpec
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
         access = Ropc()
       )
+      .copy(description = None)
+
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
       StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldActor("", GATEKEEPER), changedAt = LocalDateTime.now(clock)))
@@ -320,7 +328,7 @@ class ApplicationServiceSpec
         Map(
           "applicationId"             -> createdApp.application.id.value.toString,
           "newApplicationName"        -> applicationRequest.name,
-          "newApplicationDescription" -> applicationRequest.description.get
+          "newApplicationDescription" -> ""
         ),
         hc
       )
