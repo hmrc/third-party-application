@@ -26,7 +26,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import play.api.libs.json.Json
 import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
-import uk.gov.hmrc.apiplatform.modules.approvals.services.DeclineApprovalsService
 import play.api.libs.json.JsValue
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
@@ -54,7 +53,6 @@ class ApprovalsController @Inject() (
     val applicationDataService: ApplicationDataService,
     val submissionService: SubmissionsService,
     requestApprovalsService: RequestApprovalsService,
-    declineApprovalService: DeclineApprovalsService,
     grantApprovalService: GrantApprovalsService,
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
@@ -82,22 +80,6 @@ class ApprovalsController @Inject() (
       )
         .recover(recovery)
     }
-  }
-
-  def decline(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>
-    import DeclineApprovalsService._
-
-    withJsonBodyFromAnyContent[DeclinedRequest] { declinedRequest =>
-      declineApprovalService.decline(request.application, request.submission, declinedRequest.gatekeeperUserName, declinedRequest.reasons)
-        .map(_ match {
-          case Actioned(application)                  => Ok(Json.toJson(ApplicationResponse(application)))
-          case RejectedDueToIncorrectSubmissionState  => PreconditionFailed(asJsonError("NOT_IN_SUBMITTED_STATE", s"Submission for $applicationId was not in a submitted state"))
-          case RejectedDueToIncorrectApplicationState =>
-            PreconditionFailed(asJsonError("APPLICATION_IN_INCORRECT_STATE", s"Application is not in state '${State.PENDING_GATEKEEPER_APPROVAL}'"))
-          case RejectedDueToIncorrectApplicationData  => PreconditionFailed(asJsonError("APPLICATION_DATA_IS_INCORRECT", "Application does not have the expected data"))
-        })
-    }
-      .recover(recovery)
   }
 
   def grant(applicationId: ApplicationId) = withApplicationAndSubmission(applicationId) { implicit request =>

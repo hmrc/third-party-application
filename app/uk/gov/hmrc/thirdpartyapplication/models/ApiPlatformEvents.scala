@@ -31,23 +31,29 @@ object EventId {
 
 object EventType extends Enumeration {
   type AccessType = Value
-  val TEAM_MEMBER_ADDED                        = Value
-  val TEAM_MEMBER_REMOVED                      = Value
-  val CLIENT_SECRET_ADDED                      = Value
-  val CLIENT_SECRET_REMOVED                    = Value
-  val REDIRECT_URIS_UPDATED                    = Value
-  val API_SUBSCRIBED                           = Value
-  val API_UNSUBSCRIBED                         = Value
-  val PROD_APP_NAME_CHANGED                    = Value
-  val PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED = Value
-  val PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED = Value
-  val PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED = Value
+  
+  val TEAM_MEMBER_ADDED                                 = Value
+  val TEAM_MEMBER_REMOVED                               = Value
+  val CLIENT_SECRET_ADDED                               = Value
+  val CLIENT_SECRET_REMOVED                             = Value
+  val REDIRECT_URIS_UPDATED                             = Value
+  val API_SUBSCRIBED                                    = Value
+  val API_UNSUBSCRIBED                                  = Value
+  val PROD_APP_NAME_CHANGED                             = Value
+  val PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED          = Value
+  val PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED   = Value
+  val PROD_APP_TERMS_CONDITIONS_LOCATION_CHANGED        = Value
   val PROD_LEGACY_APP_TERMS_CONDITIONS_LOCATION_CHANGED = Value
-  val RESPONSIBLE_INDIVIDUAL_SET = Value
-  val RESPONSIBLE_INDIVIDUAL_CHANGED = Value
-  val RESPONSIBLE_INDIVIDUAL_CHANGED_TO_SELF = Value
-  val APPLICATION_STATE_CHANGED = Value
-  val RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED = Value
+  val RESPONSIBLE_INDIVIDUAL_SET                        = Value
+  val RESPONSIBLE_INDIVIDUAL_CHANGED                    = Value
+  val RESPONSIBLE_INDIVIDUAL_CHANGED_TO_SELF            = Value
+  val APPLICATION_STATE_CHANGED                         = Value
+  val RESPONSIBLE_INDIVIDUAL_VERIFICATION_STARTED       = Value
+  val RESPONSIBLE_INDIVIDUAL_DECLINED                   = Value
+  val RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE            = Value
+  val RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY             = Value
+  val APPLICATION_APPROVAL_REQUEST_DECLINED             = Value
+  
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 

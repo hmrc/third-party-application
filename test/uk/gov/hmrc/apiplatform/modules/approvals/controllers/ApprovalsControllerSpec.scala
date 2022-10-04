@@ -22,7 +22,6 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.test.Helpers._
 import play.api.test.Helpers
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.RequestApprovalsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.approvals.mocks.DeclineApprovalsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.GrantApprovalsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationDataServiceMockModule
@@ -42,7 +41,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
 
   trait Setup
       extends RequestApprovalsServiceMockModule
-      with DeclineApprovalsServiceMockModule
       with GrantApprovalsServiceMockModule
       with ApplicationDataServiceMockModule
       with SubmissionsServiceMockModule {
@@ -51,7 +49,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       ApplicationDataServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       RequestApprovalsServiceMock.aMock,
-      DeclineApprovalsServiceMock.aMock,
       GrantApprovalsServiceMock.aMock,
       Helpers.stubControllerComponents()
     )
@@ -132,22 +129,6 @@ class ApprovalsControllerSpec extends AsyncHmrcSpec with ApplicationTestData wit
       val result = underTest.requestApproval(appId)(request)
 
       status(result) shouldBe PRECONDITION_FAILED
-    }
-  }
-
-  "decline" should {
-    implicit val writes = Json.writes[ApprovalsController.DeclinedRequest]
-    val jsonBody        = Json.toJson(ApprovalsController.DeclinedRequest("Bob from SDST", "Cos it's bobbins"))
-    val request         = FakeRequest().withJsonBody(jsonBody)
-    val application     = anApplicationData(appId, pendingGatekeeperApprovalState("bob"))
-
-    "return 'no content' success response if request is declined" in new Setup {
-      hasApp
-      hasSubmission
-      DeclineApprovalsServiceMock.Decline.thenReturn(DeclineApprovalsService.Actioned(application))
-      val result = underTest.decline(appId)(request)
-
-      status(result) shouldBe OK
     }
   }
 

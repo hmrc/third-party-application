@@ -56,6 +56,12 @@ object CommandHandler {
       "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
     )
 
+  def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: ApplicationData) =
+    cond(
+      app.isInPendingGatekeeperApprovalOrResponsibleIndividualVerification,
+      "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"
+    )
+
   def isStandardAccess(app: ApplicationData) =
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
 
@@ -77,4 +83,16 @@ object CommandHandler {
 
   def isResponsibleIndividualDefined(app: ApplicationData) =
     cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")
+
+  def getRequesterEmail(app: ApplicationData) =
+    app.state.requestedByEmailAddress
+
+  def isRequesterEmailDefined(app: ApplicationData) =
+    cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
+
+  def getRequesterName(app: ApplicationData) =
+    app.state.requestedByName
+
+  def isRequesterNameDefined(app: ApplicationData) =
+    cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")
 }

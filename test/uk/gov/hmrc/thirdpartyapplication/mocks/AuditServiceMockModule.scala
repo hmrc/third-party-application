@@ -93,6 +93,12 @@ trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
         captureExtras.value
       }
     }
+
+    object ApplyEvents {
+      def succeeds() = {
+        when(aMock.applyEvents(*, *)(*)).thenReturn(successful(None))
+      }
+    }
   }
 
   object AuditServiceMock extends BaseAuditServiceMock {

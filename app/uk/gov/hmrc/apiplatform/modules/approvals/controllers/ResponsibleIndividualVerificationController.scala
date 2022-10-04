@@ -48,21 +48,10 @@ class ResponsibleIndividualVerificationController @Inject() (
     with JsonUtils
     with JsonErrorResponse {
 
-  import ResponsibleIndividualVerificationController._
-
   def getVerification(code: String) = Action.async { implicit request =>
     lazy val failed = NotFound(Results.EmptyContent())
     val success     = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
 
     responsibleIndividualVerificationService.getVerification(code).map(_.fold(failed)(success))
-  }
-
-  def decline() = Action.async { implicit request =>
-    val failed  = (msg: String) => BadRequest(Json.toJson(ErrorMessage(msg)))
-    val success = (responsibleIndividualVerification: ResponsibleIndividualVerification) => Ok(Json.toJson(responsibleIndividualVerification))
-
-    withJsonBodyFromAnyContent[ResponsibleIndividualVerificationRequest] { riVerificationRequest =>
-      responsibleIndividualVerificationService.decline(riVerificationRequest.code).map(_.fold(failed, success))
-    }
   }
 }

@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.{EitherT, NonEmptyChain, Validated}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.http.HeaderCarrier
 
+import cats.data.{EitherT, NonEmptyChain, Validated}
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -34,14 +35,19 @@ class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
   stateHistoryRepository: StateHistoryRepository,
+  notificationService: NotificationService,
+  apiPlatformEventService: ApiPlatformEventService,
+  submissionService: SubmissionsService,
+  auditService: AuditService,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
   changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
   changeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler,
   changeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler,
   verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
-  notificationService: NotificationService,
-  apiPlatformEventService: ApiPlatformEventService
+  declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
+  declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
+  declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -52,8 +58,10 @@ class ApplicationUpdateService @Inject()(
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
       _                <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _                <- E.liftF(submissionService.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
+      _                <- E.liftF(auditService.applyEvents(savedApp, events))
       _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
     } yield savedApp
   }
@@ -66,6 +74,9 @@ class ApplicationUpdateService @Inject()(
       case cmd: ChangeResponsibleIndividualToSelf                     => changeResponsibleIndividualToSelfCommandHandler.process(app, cmd)
       case cmd: ChangeResponsibleIndividualToOther                    => changeResponsibleIndividualToOtherCommandHandler.process(app, cmd)
       case cmd: VerifyResponsibleIndividual                           => verifyResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
+      case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
+      case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

@@ -142,5 +142,49 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendChangeOfResponsibleIndividual.verifyCalledWith(event.requestingAdminName, applicationData.name, event.previousResponsibleIndividualName, event.newResponsibleIndividualName, Set("oldri@example.com", loggedInUser))
     }
+
+    "when receive a ResponsibleIndividualChangedToSelf, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendChangeOfResponsibleIndividual.thenReturnSuccess()
+      val event = ResponsibleIndividualChangedToSelf(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), "old ri name", "oldri@example.com",
+        Submission.Id.random, 1, "admin name", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendChangeOfResponsibleIndividual.verifyCalledWith(event.requestingAdminName, applicationData.name, event.previousResponsibleIndividualName, event.requestingAdminName, Set("oldri@example.com", loggedInUser))
+    }
+
+    "when receive a ResponsibleIndividualDeclined, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendResponsibleIndividualDeclined.thenReturnSuccess()
+      val event = ResponsibleIndividualDeclined(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), 
+        "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendResponsibleIndividualDeclined.verifyCalledWith(event.responsibleIndividualName, event.requestingAdminEmail, applicationData.name, event.requestingAdminName)
+    }
+
+    "when receive a ResponsibleIndividualDeclinedUpdate, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendResponsibleIndividualNotChanged.thenReturnSuccess()
+      val event = ResponsibleIndividualDeclinedUpdate(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), 
+        "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendResponsibleIndividualNotChanged.verifyCalledWith(event.responsibleIndividualName, applicationData.name, Set(event.requestingAdminEmail))
+    }
+
+    "when receive a ResponsibleIndividualDidNotVerify, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
+      val event = ResponsibleIndividualDidNotVerify(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("admin@example.com"), 
+        "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(event.responsibleIndividualName, event.requestingAdminEmail, applicationData.name, event.requestingAdminName)
+    }
   }
 }

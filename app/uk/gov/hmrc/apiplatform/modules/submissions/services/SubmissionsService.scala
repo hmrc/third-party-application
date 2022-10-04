@@ -20,6 +20,8 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
 import uk.gov.hmrc.apiplatform.modules.submissions.repositories._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationApprovalRequestDeclined
 
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future
@@ -116,4 +118,30 @@ class SubmissionsService @Inject() (
 
   def store(submission: Submission): Future[Submission] =
     submissionsDAO.update(submission)
+
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[Option[Submission]] = {
+    events match {
+      case NonEmptyList(e, Nil)  => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  private def applyEvent(event: UpdateApplicationEvent): Future[Option[Submission]] = {
+    event match {
+      case evt : ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
+      case _ => Future.successful(None)
+    }
+  }
+
+  private def declineApplicationApprovalRequest(evt : ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
+    (
+      for {
+        extSubmission            <- fromOptionF(fetch(evt.submissionId), "submission not found")
+        updatedSubmission        =  Submission.decline(evt.eventDateTime, evt.decliningUserEmail, evt.reasons)(extSubmission.submission)
+        savedSubmission          <- liftF(store(updatedSubmission))
+      } yield savedSubmission
+    )
+      .toOption
+      .value
+  }
 }

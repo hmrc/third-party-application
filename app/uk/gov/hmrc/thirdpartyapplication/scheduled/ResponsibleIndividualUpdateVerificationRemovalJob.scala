@@ -20,19 +20,24 @@ import com.google.inject.Singleton
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.DeclineResponsibleIndividualDidNotVerify
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.temporal.ChronoUnit.SECONDS
 import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+import cats.implicits._
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     responsibleIndividualUpdateVerificationRemovalJobLockService: ResponsibleIndividualUpdateVerificationRemovalJobLockService,
     repository: ResponsibleIndividualVerificationRepository,
+    applicationUpdateService: ApplicationUpdateService,
     val clock: Clock,
     jobConfig: ResponsibleIndividualUpdateVerificationRemovalJobConfig
   )(implicit val ec: ExecutionContext
@@ -49,7 +54,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
       removalsDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeUpdate, ResponsibleIndividualVerificationState.INITIAL, removeIfCreatedBeforeNow)
-      _           <- Future.sequence(removalsDue.map(removeRecord(_)))
+      _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
       case e: Throwable => {
@@ -59,10 +64,14 @@ class ResponsibleIndividualUpdateVerificationRemovalJob @Inject() (
     }
   }
 
-  private def removeRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    repository.delete(verificationDueForRemoval.id)
-  }
+  def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
+    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
 
+    logger.info(s"Responsible individual update verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
+    (for {
+      savedApp       <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
+    } yield HasSucceeded).value
+  }
 }
 
 class ResponsibleIndividualUpdateVerificationRemovalJobLockService @Inject() (repository: LockRepository)

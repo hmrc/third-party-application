@@ -34,6 +34,10 @@ case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: Use
 case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
 case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
+case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
+
 
 trait ApplicationUpdateFormatters {
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
@@ -42,6 +46,8 @@ trait ApplicationUpdateFormatters {
   implicit val changeResponsibleIndividualToSelfFormatter = Json.format[ChangeResponsibleIndividualToSelf]
   implicit val changeResponsibleIndividualToOtherFormatter = Json.format[ChangeResponsibleIndividualToOther]
   implicit val verifyResponsibleIndividualFormatter = Json.format[VerifyResponsibleIndividual]
+  implicit val declineResponsibleIndividualFormatter = Json.format[DeclineResponsibleIndividual]
+  implicit val declineApplicationApprovalRequestFormatter = Json.format[DeclineApplicationApprovalRequest]
 
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
@@ -50,5 +56,7 @@ trait ApplicationUpdateFormatters {
     .and[ChangeResponsibleIndividualToSelf]("changeResponsibleIndividualToSelf")
     .and[ChangeResponsibleIndividualToOther]("changeResponsibleIndividualToOther")
     .and[VerifyResponsibleIndividual]("verifyResponsibleIndividual")
+    .and[DeclineResponsibleIndividual]("declineResponsibleIndividual")
+    .and[DeclineApplicationApprovalRequest]("declineApplicationApprovalRequest")
     .format
 }

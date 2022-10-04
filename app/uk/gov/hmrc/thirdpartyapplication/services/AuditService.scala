@@ -25,12 +25,24 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Warn, Submission}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationApprovalRequestDeclined
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import cats.data.NonEmptyList
+import java.time.{Clock, LocalDateTime}
+import java.time.format.DateTimeFormatter
 
 @Singleton
-class AuditService @Inject() (val auditConnector: AuditConnector)(implicit val ec: ExecutionContext) {
+class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+
+  import cats.instances.future.catsStdInstancesForFuture
 
   def audit(action: AuditAction, data: Map[String, String])(implicit hc: HeaderCarrier): Future[AuditResult] =
     audit(action, data, Map.empty)
@@ -52,7 +64,32 @@ class AuditService @Inject() (val auditConnector: AuditConnector)(implicit val e
     ): Future[AuditResult] = {
     val tags = Map("gatekeeperId" -> gatekeeperId)
     audit(action, AuditHelper.gatekeeperActionDetails(app) ++ extra, tags)
+  }
 
+  def applyEvents(app: ApplicationData, events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    events match {
+      case NonEmptyList(e, Nil)  => applyEvent(app, e)
+      case NonEmptyList(e, tail) => applyEvent(app, e).flatMap(_ => applyEvents(app, NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    event match {
+      case evt : ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
+      case _ => Future.successful(None)
+    }
+  }
+
+  private def auditApplicationApprovalRequestDeclined(app: ApplicationData, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    (
+      for {
+        submission   <- fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
+        extraDetails =  AuditHelper.createExtraDetailsForApplicationApprovalRequestDeclined(app, submission, evt)
+        result       <- liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
+      } yield result
+    )
+      .toOption
+      .value
   }
 }
 
@@ -281,4 +318,36 @@ object AuditHelper {
 
   private def calcPrivacyPolicyChange(a: Standard, b: Standard) =
     when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
+
+  def createExtraDetailsForApplicationApprovalRequestDeclined(app: ApplicationData, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
+  
+    val fmt = DateTimeFormatter.ISO_DATE_TIME
+
+    val importantSubmissionData = app.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))
+    val submissionPreviousInstance = submission.instances.tail.head
+
+    val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
+
+    val declinedData                                                 = Map("status" -> "declined", "reasons" -> evt.reasons)
+    val submittedOn: LocalDateTime                                   = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
+    val declinedOn: LocalDateTime                                    = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+    val responsibleIndividualVerificationDate: Option[LocalDateTime] = importantSubmissionData.termsOfUseAcceptances.find(t =>
+      (t.submissionId == submission.id && t.submissionInstance == submissionPreviousInstance.index)
+    ).map(_.dateTime)
+    val dates                                                        = Map(
+      "submission.started.date"   -> submission.startedOn.format(fmt),
+      "submission.submitted.date" -> submittedOn.format(fmt),
+      "submission.declined.date"  -> declinedOn.format(fmt)
+    ) ++ responsibleIndividualVerificationDate.fold(Map.empty[String, String])(rivd => Map("responsibleIndividual.verification.date" -> rivd.format(fmt)))
+
+    val markedAnswers = MarkAnswer.markSubmission(submission)
+    val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
+    val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
+    val counters      = Map(
+      "submission.failures" -> nbrOfFails.toString,
+      "submission.warnings" -> nbrOfWarnings.toString
+    )
+
+    questionsWithAnswers ++ declinedData ++ dates ++ counters
+  }    
 }
