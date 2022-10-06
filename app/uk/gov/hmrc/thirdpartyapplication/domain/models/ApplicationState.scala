@@ -58,12 +58,17 @@ case class ApplicationState(
     copy(name = PRE_PRODUCTION, updatedOn = LocalDateTime.now(clock))
   }
 
-  def toTesting(clock: Clock) = copy(name = TESTING, requestedByEmailAddress = None, verificationCode = None, updatedOn = LocalDateTime.now(clock))
+  def toTesting(clock: Clock) = copy(name = TESTING, requestedByEmailAddress = None, requestedByName = None, verificationCode = None, updatedOn = LocalDateTime.now(clock))
 
-  def toPendingGatekeeperApproval(requestedByEmailAddress: String, clock: Clock) = {
+  def toPendingGatekeeperApproval(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock), requestedByEmailAddress = Some(requestedByEmailAddress))
+    copy(
+      name = State.PENDING_GATEKEEPER_APPROVAL, 
+      updatedOn = LocalDateTime.now(clock), 
+      requestedByEmailAddress = Some(requestedByEmailAddress),
+      requestedByName = Some(requestedByName)
+    )
   }
 
   def toPendingGatekeeperApproval(clock: Clock) = {

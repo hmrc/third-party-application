@@ -50,6 +50,7 @@ trait ApplicationStateUtil extends FixedClock {
   def pendingGatekeeperApprovalState(requestedBy: String) = ApplicationState(
     name = State.PENDING_GATEKEEPER_APPROVAL,
     requestedByEmailAddress = Some(requestedBy),
+    requestedByName = Some(requestedBy),
     verificationCode = None,
     updatedOn = LocalDateTime.now(clock)
   )
