@@ -61,8 +61,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
   }
 
   "requestUplift" should {
-    val requestedName     = "application name"
-    val upliftRequestedBy = "email@example.com"
+    val requestedName          = "application name"
+    val upliftRequestedByEmail = "email@example.com"
 
     "update the state of the application" in new Setup {
       AuditServiceMock.Audit.thenReturnSuccess()
@@ -70,12 +70,12 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
 
       val application: ApplicationData         = anApplicationData(applicationId, testingState())
       val expectedApplication: ApplicationData =
-        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedBy), name = requestedName, normalisedName = requestedName.toLowerCase)
+        application.copy(state = pendingGatekeeperApprovalState(upliftRequestedByEmail), name = requestedName, normalisedName = requestedName.toLowerCase)
 
       val expectedStateHistory = StateHistory(
         applicationId = expectedApplication.id,
         state = PENDING_GATEKEEPER_APPROVAL,
-        actor = OldActor(upliftRequestedBy, COLLABORATOR),
+        actor = OldActor(upliftRequestedByEmail, COLLABORATOR),
         previousState = Some(TESTING),
         changedAt = LocalDateTime.now(clock)
       )
@@ -86,7 +86,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      val result: ApplicationStateChange = await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
 
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplication)
       StateHistoryRepoMock.Insert.verifyCalledWith(expectedStateHistory)
@@ -102,7 +102,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
 
       intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
 
       ApplicationRepoMock.Save.verifyCalledWith(application)
@@ -117,7 +117,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      await(underTest.requestUplift(applicationId, application.name, upliftRequestedBy))
+      await(underTest.requestUplift(applicationId, application.name, upliftRequestedByEmail))
       AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, Map("applicationId" -> application.id.value.toString), hc)
     }
 
@@ -130,7 +130,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenSucceeds()
       StateHistoryRepoMock.Insert.thenAnswer()
 
-      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+      await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
 
       val expectedAuditDetails: Map[String, String] = Map("applicationId" -> application.id.value.toString, "newApplicationName" -> requestedName)
       AuditServiceMock.Audit.verifyCalledWith(ApplicationUpliftRequested, expectedAuditDetails, hc)
@@ -142,7 +142,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Fetch.thenReturn(application)
 
       intercept[InvalidStateTransition] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
       ApplicationRepoMock.FetchByName.veryNeverCalled()
     }
@@ -158,7 +158,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       UpliftNamingServiceMock.AssertAppHasUniqueNameAndAudit.thenFailsWithApplicationAlreadyExists()
 
       intercept[ApplicationAlreadyExists] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
     }
 
@@ -166,7 +166,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Fetch.thenFail(new RuntimeException("Expected test failure"))
 
       intercept[RuntimeException] {
-        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedBy))
+        await(underTest.requestUplift(applicationId, requestedName, upliftRequestedByEmail))
       }
     }
   }

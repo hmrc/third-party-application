@@ -91,7 +91,7 @@ object CommandHandler {
     cond(getRequesterEmail(app).isDefined, "The requestedByEmailAddress has not been set for this application")
 
   def getRequesterName(app: ApplicationData) =
-    app.state.requestedByName
+    app.state.requestedByName.orElse(getRequesterEmail(app))
 
   def isRequesterNameDefined(app: ApplicationData) =
     cond(getRequesterName(app).isDefined, "The requestedByName has not been set for this application")

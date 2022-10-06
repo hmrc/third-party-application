@@ -49,7 +49,7 @@ class UpliftService @Inject() (
     def uplift(existing: ApplicationData) = existing.copy(
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
-      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock)
+      state = existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByEmailAddress, clock)
     )
 
     for {

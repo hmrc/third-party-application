@@ -172,7 +172,7 @@ class RequestApprovalsService @Inject() (
       normalisedName = applicationName.toLowerCase,
       access = updateStandardData(existing.access, importantSubmissionData),
       state = if (isRequesterTheResponsibleIndividual)
-        existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, clock)
+        existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, clock)
       else
         existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
     )
