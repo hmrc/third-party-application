@@ -35,8 +35,20 @@ object CommandHandler {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
+  private def isAdmin(userId: UserId, app: ApplicationData) =
+    app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
+
   def isAdminOnApp(userId: UserId, app: ApplicationData) =
-    cond(app.collaborators.find(c => c.role == Role.ADMINISTRATOR && c.userId == userId).nonEmpty, "User must be an ADMIN")
+    cond(isAdmin(userId, app), "User must be an ADMIN")
+
+  def isAdminIfInProduction(userId: UserId, app: ApplicationData) =
+    cond(
+      (app.state.name == State.PRODUCTION && isAdmin(userId, app)) || (app.state.name != State.PRODUCTION),
+      "App is in PRODUCTION so User must be an ADMIN"
+    )
+
+  def withinClientSecretLimit(app: ApplicationData, clientSecretLimit: Int) =
+    cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client Secret Limit Exceeded")
 
   def isNotInProcessOfBeingApproved(app: ApplicationData) =
     cond(

@@ -56,6 +56,7 @@ class CredentialService @Inject() (
     })
   }
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
       existingApp <- fetchApp(applicationId)

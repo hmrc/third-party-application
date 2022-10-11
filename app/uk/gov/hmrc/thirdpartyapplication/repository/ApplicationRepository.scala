@@ -191,6 +191,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
+  // TODO: deprecate?
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
@@ -566,6 +567,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
+      case evt : ClientSecretAdded =>  updateApplication(evt.applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(evt.clientSecret)))
       case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt : ProductionLegacyAppPrivacyPolicyLocationChanged => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)

@@ -26,6 +26,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, ClientSecretAddedObfuscated}
+
 import scala.concurrent.{ExecutionContext, Future}
 
 // TODO - context and version probably should be strings in the events??
@@ -39,10 +41,17 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     }
   }
 
-  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
-    apiPlatformEventsConnector.sendApplicationEvent(event)
+  private def obfuscateEvent(event: UpdateApplicationEvent): UpdateApplicationEvent ={
+    event match{
+      case evt: ClientSecretAdded => ClientSecretAddedObfuscated.fromClientSecretAdded(evt)
+      case _ => event
+    }
   }
- 
+  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Boolean] = {
+    apiPlatformEventsConnector.sendApplicationEvent(obfuscateEvent(event))
+  }
+
+
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
