@@ -196,6 +196,16 @@ class ApplicationController @Inject() (
     }
   }
 
+  def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[ClientSecretRequestWithUserId] { secret =>
+      credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
+        case e: NotFoundException => handleNotFound(e.getMessage)
+        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
+        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
+        case e => handleException(e)
+      }
+    }
+  }
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
     Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>

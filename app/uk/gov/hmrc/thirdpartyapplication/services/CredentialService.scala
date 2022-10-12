@@ -16,31 +16,35 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.OptionT
+import cats.data.{EitherT, NonEmptyChain, OptionT}
 import cats.implicits._
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithUserId, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
 @Singleton
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
+    applicationUpdateService: ApplicationUpdateService,
     auditService: AuditService,
     clientSecretService: ClientSecretService,
     config: CredentialConfig,
     apiPlatformEventService: ApiPlatformEventService,
-    emailConnector: EmailConnector
+    emailConnector: EmailConnector,
+    clock: Clock
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -55,6 +59,24 @@ class CredentialService @Inject() (
       ApplicationTokenResponse(app.tokens.production)
     })
   }
+
+  def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithUserId)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+
+     for {
+      existingApp <- fetchApp(applicationId)
+      _ = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+
+      generatedSecret = clientSecretService.generateClientSecret()
+      newSecret = generatedSecret._1
+      newSecretValue = generatedSecret._2
+
+      _ <- applicationUpdateService.update(applicationId,
+        AddClientSecret(request.userId, request.actorEmailAddress, newSecretValue, newSecret, LocalDateTime.now(clock)))
+        .value
+      updatedApplication <- fetchApp(applicationId)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
+   }
+
 
   @deprecated("remove after client is no longer using the old endpoint")
   def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
