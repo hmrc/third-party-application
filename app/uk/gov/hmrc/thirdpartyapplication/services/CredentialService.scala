@@ -16,7 +16,7 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.{EitherT, NonEmptyChain, OptionT}
+import cats.data.OptionT
 import cats.implicits._
 
 import javax.inject.{Inject, Singleton}
@@ -31,7 +31,6 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
-import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.control.NonFatal
 
@@ -43,8 +42,7 @@ class CredentialService @Inject() (
     clientSecretService: ClientSecretService,
     config: CredentialConfig,
     apiPlatformEventService: ApiPlatformEventService,
-    emailConnector: EmailConnector,
-    clock: Clock
+    emailConnector: EmailConnector
   )(implicit val ec: ExecutionContext
   ) extends ApplicationLogger {
 
@@ -62,20 +60,24 @@ class CredentialService @Inject() (
 
   def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithUserId)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
-     for {
+    def generateCommand() = {
+      val generatedSecret = clientSecretService.generateClientSecret()
+      AddClientSecret(instigator = request.userId,
+        email = request.actorEmailAddress,
+        secretValue = generatedSecret._2,
+        clientSecret = generatedSecret._1,
+        timestamp = request.timestamp)
+    }
+
+    for {
       existingApp <- fetchApp(applicationId)
       _ = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-
-      generatedSecret = clientSecretService.generateClientSecret()
-      newSecret = generatedSecret._1
-      newSecretValue = generatedSecret._2
-
-      _ <- applicationUpdateService.update(applicationId,
-        AddClientSecret(request.userId, request.actorEmailAddress, newSecretValue, newSecret, LocalDateTime.now(clock)))
-        .value
+      addSecretCmd = generateCommand()
+      _ <- applicationUpdateService.update(applicationId, addSecretCmd).value
       updatedApplication <- fetchApp(applicationId)
-    } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
-   }
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, addSecretCmd.secretValue)
+
+  }
 
 
   @deprecated("remove after client is no longer using the old endpoint")

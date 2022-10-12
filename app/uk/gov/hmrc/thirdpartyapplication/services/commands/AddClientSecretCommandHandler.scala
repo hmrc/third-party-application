@@ -18,39 +18,33 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, ClientSecret, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.{ClientSecretService, CredentialConfig}
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AddClientSecretCommandHandler @Inject()(clientSecretService: ClientSecretService,
-                                              config: CredentialConfig)
+class AddClientSecretCommandHandler @Inject()()
                                              (implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: AddClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.instigator, app),
-      withinClientSecretLimit(app, config.clientSecretLimit)) { case _ => app }
+    Apply[ValidatedNec[String, *]].map(isAdminIfInProduction(cmd.instigator, app))(_ => app)
   }
-
-  clientSecretService.generateClientSecret()
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: AddClientSecret, generatedClientSecret: (ClientSecret, String)): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: AddClientSecret): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
       ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(cmd.email),
-        secretValue = generatedClientSecret._2,
-        clientSecret =generatedClientSecret._1,
+        secretValue = cmd.secretValue,
+        clientSecret = cmd.clientSecret,
         requestingAdminEmail = getRequester(app, cmd.instigator)
       )
     )
@@ -59,7 +53,7 @@ class AddClientSecretCommandHandler @Inject()(clientSecretService: ClientSecretS
   def process(app: ApplicationData, cmd: AddClientSecret): CommandHandler.Result = {
     Future.successful {
       validate(app, cmd) map { _ =>
-        asEvents(app, cmd, clientSecretService.generateClientSecret())
+        asEvents(app, cmd)
       }
     }
   }

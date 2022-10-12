@@ -47,9 +47,6 @@ object CommandHandler {
       "App is in PRODUCTION so User must be an ADMIN"
     )
 
-  def withinClientSecretLimit(app: ApplicationData, clientSecretLimit: Int) =
-    cond(app.tokens.production.clientSecrets.size < clientSecretLimit, "Client Secret Limit Exceeded")
-
   def isNotInProcessOfBeingApproved(app: ApplicationData) =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,

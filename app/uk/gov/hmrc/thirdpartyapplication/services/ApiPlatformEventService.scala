@@ -51,7 +51,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     apiPlatformEventsConnector.sendApplicationEvent(obfuscateEvent(event))
   }
 
-
+  @deprecated("remove when no longer using old logic")
   def sendClientSecretAddedEvent(appData: ApplicationData, clientSecretId: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(

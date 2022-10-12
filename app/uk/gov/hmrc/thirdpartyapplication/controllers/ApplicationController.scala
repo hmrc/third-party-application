@@ -185,6 +185,7 @@ class ApplicationController @Inject() (
     }
   }
 
+  @deprecated("remove when client no longer uses this route")
   def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[ClientSecretRequest] { secret =>
       credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token)) } recover {

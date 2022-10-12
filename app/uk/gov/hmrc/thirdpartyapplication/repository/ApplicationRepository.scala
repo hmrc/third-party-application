@@ -191,7 +191,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
-  // TODO: deprecate?
+  @deprecated("remove when no longer using old logic")
   def addClientSecret(applicationId: ApplicationId, clientSecret: ClientSecret): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(clientSecret)))
 
@@ -582,6 +582,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _ : ResponsibleIndividualDeclinedUpdate => noOp(event)
       case _ : ResponsibleIndividualDidNotVerify => noOp(event)
       case _ : ApplicationApprovalRequestDeclined => noOp(event)
+      case _ : ClientSecretAddedObfuscated => noOp(event)
     }
   }
 }
