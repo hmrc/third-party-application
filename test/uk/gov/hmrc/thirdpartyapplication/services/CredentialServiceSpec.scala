@@ -30,7 +30,7 @@ import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.{AuditServiceMockModule, ClientSecretServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
 import play.api.Logger
 
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -41,7 +41,12 @@ import java.time.LocalDateTime
 
 class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with AuditServiceMockModule with ClientSecretServiceMockModule with EmailConnectorMockModule {
+  trait Setup extends ApplicationRepositoryMockModule
+    with AuditServiceMockModule
+    with ApplicationUpdateServiceMockModule
+    with ClientSecretServiceMockModule
+    with EmailConnectorMockModule {
+
     implicit val hc: HeaderCarrier                           = HeaderCarrier()
     val mockLogger: Logger                                   = mock[Logger]
     val clientSecretLimit                                    = 5
@@ -53,6 +58,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val underTest: CredentialService =
       new CredentialService(
         ApplicationRepoMock.aMock,
+        ApplicationUpdateServiceMock.aMock,
         AuditServiceMock.aMock,
         ClientSecretServiceMock.aMock,
         credentialConfig,
