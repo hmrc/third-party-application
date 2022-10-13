@@ -2513,6 +2513,32 @@ class ApplicationRepositoryISpec
       appWithUpdatedName.normalisedName mustBe newestName.toLowerCase
     }
 
+    "handle AddClientSecret event correctly" in {
+      val applicationId = ApplicationId.random
+
+      val app = anApplicationData(applicationId)
+
+      val newClientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
+      val secretValue = "secretValue"
+      val event = ClientSecretAdded(
+        id = UpdateApplicationEvent.Id.random,
+        applicationId = app.id,
+        eventDateTime = LocalDateTime.now(),
+        actor = CollaboratorActor(adminEmail),
+        secretValue = secretValue,
+        clientSecret = newClientSecret,
+        requestingAdminEmail = adminEmail
+      )
+      val existingClientSecrets = app.tokens.production.clientSecrets
+      await(applicationRepository.save(app))
+
+      val appWithNewClientSecret =
+        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithNewClientSecret.tokens.production.clientSecrets must contain only (existingClientSecrets ++ List(newClientSecret) : _*)
+
+    }
+
+
     "handle NameChanged event correctly" in {
       val applicationId = ApplicationId.random
       val oldName       = "oldName"
