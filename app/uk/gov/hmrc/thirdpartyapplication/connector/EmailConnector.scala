@@ -68,6 +68,8 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val applicationApprovedNotification           = "apiApplicationApprovedNotification"
   val applicationRejectedNotification           = "apiApplicationRejectedNotification"
   val applicationDeletedNotification            = "apiApplicationDeletedNotification"
+  val productionCredentialsRequestExpiryWarning = "apiProductionCredentialsRequestExpiryWarning"
+  val productionCredentialsRequestExpired       = "apiProductionCredentialsRequestExpired"
   val addedClientSecretNotification             = "apiAddedClientSecretNotification"
   val removedClientSecretNotification           = "apiRemovedClientSecretNotification"
   val verifyResponsibleIndividual               = "apiVerifyResponsibleIndividual"
@@ -151,6 +153,34 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
         recipients,
         applicationDeletedNotification,
         Map("applicationName" -> applicationName, "requestor" -> requesterEmail, "applicationId" -> applicationId.value.toString)
+      )
+    )
+  }
+
+  def sendProductionCredentialsRequestExpiryWarning(
+      applicationName: String,
+      recipients: Set[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(
+      SendEmailRequest(
+        recipients,
+        productionCredentialsRequestExpiryWarning,
+        Map("applicationName" -> applicationName)
+      )
+    )
+  }
+
+  def sendProductionCredentialsRequestExpired(
+      applicationName: String,
+      recipients: Set[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    post(
+      SendEmailRequest(
+        recipients,
+        productionCredentialsRequestExpired,
+        Map("applicationName" -> applicationName)
       )
     )
   }
