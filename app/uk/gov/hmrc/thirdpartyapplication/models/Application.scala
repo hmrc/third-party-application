@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.time.LocalDateTime
 

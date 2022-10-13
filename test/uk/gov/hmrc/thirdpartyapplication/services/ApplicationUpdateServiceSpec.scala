@@ -63,6 +63,7 @@ class ApplicationUpdateServiceSpec
     protected val mockitoTimeout = 1000
     val response                 = mock[HttpResponse]
 
+    val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler = mock[AddClientSecretCommandHandler]
     val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
     val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
     val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
@@ -81,6 +82,7 @@ class ApplicationUpdateServiceSpec
       ApiPlatformEventServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       AuditServiceMock.aMock,
+      mockAddClientSecretCommandHandler,
       mockChangeProductionApplicationNameCommandHandler,
       mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
       mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
