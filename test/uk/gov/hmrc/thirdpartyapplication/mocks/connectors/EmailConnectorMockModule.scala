@@ -157,6 +157,16 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         verify.sendResponsibleIndividualNotChanged(eqTo(responsibleIndividualName), eqTo(applicationName), eqTo(recipients))(*)
     }
 
+    object SendProductionCredentialsRequestExpiryWarning {
+
+      def thenReturnSuccess() = {
+        when(aMock.sendProductionCredentialsRequestExpiryWarning(*, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(applicationName: String, recipients: Set[String]) =
+        verify.sendProductionCredentialsRequestExpiryWarning(eqTo(applicationName), eqTo(recipients))(*)
+    }
+
     object SendChangeOfApplicationName {
 
       def thenReturnSuccess() = {

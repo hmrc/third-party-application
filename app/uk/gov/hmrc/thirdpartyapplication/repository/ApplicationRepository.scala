@@ -253,11 +253,11 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(query).toFuture()
   }
 
-  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: String): Future[Seq[ApplicationData]] = {
+  def fetchByStatusDetailsAndEnvironmentNotAleadyNotified(state: State.State, updatedBefore: LocalDateTime, environment: Environment.Environment): Future[Seq[ApplicationData]] = {
     collection.aggregate(
       Seq(
         filter(equal("state.name", Codecs.toBson(state))),
-        filter(equal("environment", environment)),
+        filter(equal("environment", Codecs.toBson(environment))),
         filter(lte("state.updatedOn", updatedBefore)),
         lookup(from = "notifications", localField = "id", foreignField = "applicationId", as = "matched"),
         filter(size("matched", 0))

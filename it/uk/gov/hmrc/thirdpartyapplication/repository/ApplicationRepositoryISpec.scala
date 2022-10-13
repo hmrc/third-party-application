@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, Notification, NotificationType, NotificationStatus}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -68,13 +68,18 @@ class ApplicationRepositoryISpec
   private val stateHistoryRepository =
     app.injector.instanceOf[StateHistoryRepository]
 
+  private val notificationRepository =
+    app.injector.instanceOf[NotificationRepository]
+
   override def beforeEach(): Unit = {
     super.beforeEach()
     await(applicationRepository.collection.drop.toFuture())
     await(subscriptionRepository.collection.drop.toFuture())
+    await(notificationRepository.collection.drop.toFuture())
 
     await(applicationRepository.ensureIndexes)
     await(subscriptionRepository.ensureIndexes)
+    await(notificationRepository.ensureIndexes)
   }
 
   lazy val defaultGrantLength = 547
@@ -727,6 +732,82 @@ class ApplicationRepositoryISpec
         applicationDetail,
         State.PENDING_REQUESTER_VERIFICATION,
         0
+      )
+    }
+  }
+
+  "fetchByStatusDetailsAndEnvironmentNotAleadyNotified" should {
+
+    val currentDate          = LocalDateTime.now(clock)
+    val yesterday            = currentDate.minusDays(1)
+    val dayBeforeYesterday   = currentDate.minusDays(2)
+    val lastWeek             = currentDate.minusDays(7)
+
+    def verifyApplications(
+        responseApplications: Seq[ApplicationData],
+        expectedState: State.State,
+        expectedNumber: Int
+      ): Unit = {
+      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      withClue(
+        s"The expected number of applications with state $expectedState is $expectedNumber"
+      ) {
+        responseApplications.size mustBe expectedNumber
+      }
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        2
+      )
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay and don't return already notified ones" in {
+      val app4 = createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        app4
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+      await(notificationRepository.createEntity(Notification(app4.id, lastWeek, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        1
       )
     }
   }
