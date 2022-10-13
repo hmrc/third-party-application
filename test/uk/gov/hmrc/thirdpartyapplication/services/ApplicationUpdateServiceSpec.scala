@@ -120,6 +120,46 @@ class ApplicationUpdateServiceSpec
     ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
   val instigator = applicationData.collaborators.head.userId
 
+  "update with AddClientSecret" should {
+    val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
+    val secretValue  = "somSecret"
+    val addClientSecret = AddClientSecret(instigator, adminEmail,  secretValue, clientSecret, timestamp)
+    val productionToken = applicationData.tokens.production
+    val updatedProductionToken = productionToken.copy(clientSecrets = productionToken.clientSecrets  ++ List(clientSecret) )
+    val event = ClientSecretAdded(
+      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), secretValue, clientSecret, adminEmail )
+
+    "return the updated application if the application exists" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturn(applicationData)
+      val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      AuditServiceMock.ApplyEvents.succeeds
+
+      when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(
+        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
+      )
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+
+      val result = await(underTest.update(applicationId, addClientSecret).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
+      result shouldBe Right(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
+    }
+
+    "return the error if the application does not exist" in new Setup {
+      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
+      val result = await(underTest.update(applicationId, addClientSecret).value)
+
+      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
+      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
+    }
+  }
+
   "update with ChangeProductionApplicationName" should {
     val newName    = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
