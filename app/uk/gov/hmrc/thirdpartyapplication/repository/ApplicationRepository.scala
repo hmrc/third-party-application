@@ -214,6 +214,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ).toFuture()
   }
 
+  @deprecated("remove when no longer using old logic")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String): Future[ApplicationData] = {
     val query = equal("id", Codecs.toBson(applicationId))
 
@@ -568,6 +569,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
     event match {
       case evt : ClientSecretAdded =>  updateApplication(evt.applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(evt.clientSecret)))
+      case evt : ClientSecretRemoved => updateApplication(evt.applicationId, Updates.pull("tokens.production.clientSecrets", Codecs.toBson(Json.obj("id" -> evt.clientSecretId))))
       case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt : ProductionLegacyAppPrivacyPolicyLocationChanged => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)

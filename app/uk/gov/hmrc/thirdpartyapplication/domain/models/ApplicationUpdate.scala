@@ -29,6 +29,7 @@ trait GatekeeperApplicationUpdate extends ApplicationUpdate {
 }
 
 case class AddClientSecret(instigator: UserId, email: String, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
+case class RemoveClientSecret(instigator: UserId, email: String, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
@@ -42,6 +43,7 @@ case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: St
 
 trait ApplicationUpdateFormatters {
   implicit val addClientSecretFormatter = Json.format[AddClientSecret]
+  implicit val removeClientSecretFormatter = Json.format[RemoveClientSecret]
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
   implicit val changePrivacyPolicyLocationFormatter = Json.format[ChangeProductionApplicationPrivacyPolicyLocation]
   implicit val changeTermsAndConditionsLocationFormatter = Json.format[ChangeProductionApplicationTermsAndConditionsLocation]
@@ -53,6 +55,7 @@ trait ApplicationUpdateFormatters {
 
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[AddClientSecret]("addClientSecret")
+    .and[RemoveClientSecret]("removeClientSecret")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
     .and[ChangeProductionApplicationPrivacyPolicyLocation]("changeProductionApplicationPrivacyPolicyLocation")
     .and[ChangeProductionApplicationTermsAndConditionsLocation]("changeProductionApplicationTermsAndConditionsLocation")

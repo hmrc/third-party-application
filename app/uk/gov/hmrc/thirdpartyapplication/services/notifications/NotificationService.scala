@@ -33,6 +33,7 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
         case evt: UpdateApplicationEvent.ClientSecretAdded => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
+        case evt: UpdateApplicationEvent.ClientSecretRemoved => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
         case evt: UpdateApplicationEvent.ProductionAppNameChanged => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: UpdateApplicationEvent.ProductionAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", PrivacyPolicyLocation.describe(evt.oldLocation), PrivacyPolicyLocation.describe(evt.newLocation))
         case evt: UpdateApplicationEvent.ProductionLegacyAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", evt.oldUrl, evt.newUrl)

@@ -59,6 +59,12 @@ object CommandHandler {
       "App is not in PRE_PRODUCTION or in PRODUCTION state"
     )
 
+  def clientSecretExists(clientSecretId: String, app: ApplicationData) =
+    cond(
+      app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
+      s"Client Secret Id [$clientSecretId] not found in Application [${app.id.value}]"
+    )
+
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isPendingResponsibleIndividualVerification,

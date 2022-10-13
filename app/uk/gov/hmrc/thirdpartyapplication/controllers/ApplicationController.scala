@@ -207,6 +207,8 @@ class ApplicationController @Inject() (
       }
     }
   }
+
+  @deprecated("remove when client no longer uses this route")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
     Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>

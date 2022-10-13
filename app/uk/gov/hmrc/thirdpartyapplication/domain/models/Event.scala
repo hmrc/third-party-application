@@ -102,6 +102,20 @@ object UpdateApplicationEvent {
     }
   }
 
+  case class ClientSecretRemoved(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    clientSecretId: String,
+    clientSecretName: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ClientSecretRemoved {
+    implicit val format: OFormat[ClientSecretRemoved] = Json.format[ClientSecretRemoved]
+  }
+
   case class ProductionAppNameChanged(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
@@ -335,6 +349,7 @@ object UpdateApplicationEvent {
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ClientSecretAddedObfuscated](EventType.CLIENT_SECRET_ADDED_V2.toString)
+    .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)
     .and[ProductionAppPrivacyPolicyLocationChanged](EventType.PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)
     .and[ProductionLegacyAppPrivacyPolicyLocationChanged](EventType.PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED.toString)

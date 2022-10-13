@@ -79,7 +79,6 @@ class CredentialService @Inject() (
 
   }
 
-
   @deprecated("remove after client is no longer using the old endpoint")
   def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
@@ -99,6 +98,7 @@ class CredentialService @Inject() (
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
