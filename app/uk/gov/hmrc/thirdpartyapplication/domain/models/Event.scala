@@ -72,7 +72,7 @@ object UpdateApplicationEvent {
     secretValue: String,
     clientSecret: ClientSecret,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent
+  ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretAdded {
     implicit val format: OFormat[ClientSecretAdded] = Json.format[ClientSecretAdded]
