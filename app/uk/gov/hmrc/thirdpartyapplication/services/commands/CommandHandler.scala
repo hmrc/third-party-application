@@ -62,7 +62,7 @@ object CommandHandler {
   def clientSecretExists(clientSecretId: String, app: ApplicationData) =
     cond(
       app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
-      s"Client Secret Id [$clientSecretId] not found in Application [${app.id.value}]"
+      s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
 
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
