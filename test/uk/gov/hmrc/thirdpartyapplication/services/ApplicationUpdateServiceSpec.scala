@@ -16,84 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import akka.actor.ActorSystem
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
-import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
 
-class ApplicationUpdateServiceSpec
-    extends AsyncHmrcSpec
-    with BeforeAndAfterAll
-    with ApplicationStateUtil
-    with ApplicationTestData
-    with UpliftRequestSamples
-    with FixedClock {
+class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
+    with UpliftRequestSamples {
 
-  trait Setup extends AuditServiceMockModule
-      with ApplicationRepositoryMockModule
-      with ResponsibleIndividualVerificationRepositoryMockModule
-      with StateHistoryRepositoryMockModule
-      with NotificationServiceMockModule
-      with ApiPlatformEventServiceMockModule
-      with SubmissionsServiceMockModule {
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-
-    val actorSystem: ActorSystem = ActorSystem("System")
-
-    lazy val locked              = false
-    protected val mockitoTimeout = 1000
-    val response                 = mock[HttpResponse]
-
-    val mockAddClientSecretCommandHandler: AddClientSecretCommandHandler = mock[AddClientSecretCommandHandler]
-    val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
-    val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
-    val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler = mock[ChangeResponsibleIndividualToSelfCommandHandler]
-    val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
-    val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
-    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
-
-    val underTest = new ApplicationUpdateService(
-      ApplicationRepoMock.aMock,
-      ResponsibleIndividualVerificationRepositoryMock.aMock,
-      StateHistoryRepoMock.aMock,
-      NotificationServiceMock.aMock,
-      ApiPlatformEventServiceMock.aMock,
-      SubmissionsServiceMock.aMock,
-      AuditServiceMock.aMock,
-      mockAddClientSecretCommandHandler,
-      mockChangeProductionApplicationNameCommandHandler,
-      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-      mockChangeResponsibleIndividualToSelfCommandHandler,
-      mockChangeResponsibleIndividualToOtherCommandHandler,
-      mockVerifyResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler
-    )
-  }
+  trait Setup extends CommonSetup
 
   val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"
@@ -119,46 +58,6 @@ class ApplicationUpdateServiceSpec
   val riVerification = models.ResponsibleIndividualUpdateVerification(
     ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
   val instigator = applicationData.collaborators.head.userId
-
-  "update with AddClientSecret" should {
-    val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
-    val secretValue  = "somSecret"
-    val addClientSecret = AddClientSecret(instigator, adminEmail,  secretValue, clientSecret, timestamp)
-    val productionToken = applicationData.tokens.production
-    val updatedProductionToken = productionToken.copy(clientSecrets = productionToken.clientSecrets  ++ List(clientSecret) )
-    val event = ClientSecretAdded(
-      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), secretValue, clientSecret, adminEmail )
-
-    "return the updated application if the application exists" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturn(applicationData)
-      val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(
-        Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
-      )
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-
-      val result = await(underTest.update(applicationId, addClientSecret).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
-      result shouldBe Right(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
-    }
-
-    "return the error if the application does not exist" in new Setup {
-      ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
-      val result = await(underTest.update(applicationId, addClientSecret).value)
-
-      result shouldBe Left(NonEmptyChain.one(s"No application found with id $applicationId"))
-      ApplicationRepoMock.ApplyEvents.verifyNeverCalled
-    }
-  }
 
   "update with ChangeProductionApplicationName" should {
     val newName    = "robs new app"
