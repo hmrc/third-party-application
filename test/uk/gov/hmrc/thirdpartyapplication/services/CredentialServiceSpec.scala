@@ -367,25 +367,4 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     }
   }
 
-//  private val requestedByEmail = "john.smith@example.com"
-//
-//  private def anApplicationData(
-//      applicationId: ApplicationId,
-//      state: ApplicationState = productionState(requestedByEmail),
-//      collaborators: Set[Collaborator] = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random))
-//    ) = {
-//    ApplicationData(
-//      applicationId,
-//      "MyApp",
-//      "myapp",
-//      collaborators,
-//      Some("description"),
-//      "aaaaaaaaaa",
-//      ApplicationTokens(environmentToken),
-//      state,
-//      Standard(),
-//      LocalDateTime.now(clock),
-//      Some(LocalDateTime.now(clock))
-//    )
-//  }
 }
