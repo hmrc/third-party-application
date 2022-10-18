@@ -40,6 +40,7 @@ class Scheduler @Inject() (
     upliftVerificationExpiryJob: UpliftVerificationExpiryJob,
     bcryptPerformanceMeasureJob: BCryptPerformanceMeasureJob,
     resetLastAccessDateJob: ResetLastAccessDateJob,
+    productionCredentialsRequestExpiryWarningJob: ProductionCredentialsRequestExpiryWarningJob,
     responsibleIndividualVerificationReminderJob: ResponsibleIndividualVerificationReminderJob,
     responsibleIndividualVerificationRemovalJob: ResponsibleIndividualVerificationRemovalJob,
     responsibleIndividualVerificationSetDefaultTypeJob: ResponsibleIndividualVerificationSetDefaultTypeJob,
@@ -53,6 +54,7 @@ class Scheduler @Inject() (
     Seq(
       upliftVerificationExpiryJob,
       resetLastAccessDateJob,
+      productionCredentialsRequestExpiryWarningJob,
       responsibleIndividualVerificationReminderJob,
       responsibleIndividualVerificationRemovalJob,
       responsibleIndividualUpdateVerificationRemovalJob,

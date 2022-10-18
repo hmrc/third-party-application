@@ -352,6 +352,11 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       def thenReturn(appStateHistories: ApplicationWithStateHistory*) =
         when(aMock.fetchProdAppStateHistories()).thenReturn(Future.successful(appStateHistories.toList))
     }
+
+    object FetchByStatusDetailsAndEnvironmentNotAleadyNotified {
+      def thenReturn(apps: ApplicationData*) =
+        when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(*, *, *)).thenReturn(successful(apps.toList))
+    }
   }
 
   object ApplicationRepoMock extends BaseApplicationRepoMock {
