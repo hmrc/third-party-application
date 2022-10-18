@@ -218,6 +218,32 @@ class EmailConnectorSpec extends ConnectorSpec {
       await(connector.sendApplicationDeletedNotification(applicationName, applicationId, adminEmail1, expectedToEmails))
     }
 
+    "send production credentials request expiry warning email" in new Setup {
+
+      val expectedTemplateId                      = "apiProductionCredentialsRequestExpiryWarning"
+      val expectedToEmails                        = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> applicationName
+      )
+      val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendProductionCredentialsRequestExpiryWarning(applicationName, expectedToEmails))
+    }
+
+    "send production credentials request expired email" in new Setup {
+
+      val expectedTemplateId                      = "apiProductionCredentialsRequestExpired"
+      val expectedToEmails                        = Set(adminEmail1, adminEmail2)
+      val expectedParameters: Map[String, String] = Map(
+        "applicationName" -> applicationName
+      )
+      val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
+      emailWillReturn(expectedRequest)
+
+      await(connector.sendProductionCredentialsRequestExpired(applicationName, expectedToEmails))
+    }
+
     "send added client secret notification email" in new Setup {
       val expectedTemplateId                      = "apiAddedClientSecretNotification"
       val expectedToEmails                        = Set(adminEmail1, adminEmail2)

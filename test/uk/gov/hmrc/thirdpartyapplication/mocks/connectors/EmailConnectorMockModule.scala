@@ -167,6 +167,16 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         verify.sendProductionCredentialsRequestExpiryWarning(eqTo(applicationName), eqTo(recipients))(*)
     }
 
+    object SendProductionCredentialsRequestExpired {
+
+      def thenReturnSuccess() = {
+        when(aMock.sendProductionCredentialsRequestExpired(*, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(applicationName: String, recipients: Set[String]) =
+        verify.sendProductionCredentialsRequestExpired(eqTo(applicationName), eqTo(recipients))(*)
+    }
+
     object SendChangeOfApplicationName {
 
       def thenReturnSuccess() = {

@@ -32,17 +32,17 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.NotificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationType, NotificationStatus}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 
-class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
+class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with EmailConnectorMockModule with NotificationRepositoryMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with ApplicationServiceMockModule with EmailConnectorMockModule with NotificationRepositoryMockModule with ApplicationTestData {
 
-    val mockLockKeeper = mock[ProductionCredentialsRequestExpiryWarningJobLockService]
+    val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
     val timeNow        = LocalDateTime.now
     val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
@@ -68,25 +68,24 @@ class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec wit
     ).copy(name = appName)
     val initialDelay     = FiniteDuration(1, MINUTES)
     val interval         = FiniteDuration(1, HOURS)
-    val warningInterval  = FiniteDuration(10, DAYS)
-    val jobConfig        = ProductionCredentialsRequestExpiryWarningJobConfig(initialDelay, interval, true, warningInterval)
-    val job              = new ProductionCredentialsRequestExpiryWarningJob(mockLockKeeper, ApplicationRepoMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
+    val deleteInterval  = FiniteDuration(10, DAYS)
+    val jobConfig        = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
+    val job              = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationServiceMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
     val recipients = app.collaborators.map(_.emailAddress)
   }
 
-  "ProductionCredentialsRequestExpiryWarningJob" should {
-    "send emails correctly and create a notification record" in new Setup {
-      ApplicationRepoMock.FetchByStatusDetailsAndEnvironmentNotAleadyNotified.thenReturn(app)
-      EmailConnectorMock.SendProductionCredentialsRequestExpiryWarning.thenReturnSuccess()
-      NotificationRepositoryMock.CreateEntity.thenReturnSuccess()
+  "ProductionCredentialsRequestExpiredJob" should {
+    "delete applications, send emails correctly and delete any notification records" in new Setup {
+      ApplicationRepoMock.FetchByStatusDetailsAndEnvironment.thenReturn(app)
+      ApplicationServiceMock.DeleteApplication.thenSucceeds()
+      EmailConnectorMock.SendProductionCredentialsRequestExpired.thenReturnSuccess()
+      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
 
       await(job.runJob)
 
-      EmailConnectorMock.SendProductionCredentialsRequestExpiryWarning.verifyCalledWith(appName, recipients)
-      val notification = NotificationRepositoryMock.CreateEntity.verifyCalledWith()
-      notification.applicationId shouldBe app.id
-      notification.notificationType shouldBe NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING
-      notification.status shouldBe NotificationStatus.SENT
+      ApplicationServiceMock.DeleteApplication.verifyCalledWith(app.id, None)
+      NotificationRepositoryMock.DeleteAllByApplicationId.verifyCalledWith(app.id)
+      EmailConnectorMock.SendProductionCredentialsRequestExpired.verifyCalledWith(appName, recipients)
     }
   }
 }
