@@ -57,9 +57,9 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     logger.info(s"Delete expired production credentials requests for production applications having status of TESTING with updatedOn earlier than $deleteTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      warningApps <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
-      _            = logger.info(s"Found ${warningApps.size} applications")
-      _           <- Future.sequence(warningApps.map(deleteExpiredApplication))
+      deleteApps  <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
+      _            = logger.info(s"Found ${deleteApps.size} applications")
+      _           <- Future.sequence(deleteApps.map(deleteExpiredApplication))
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
