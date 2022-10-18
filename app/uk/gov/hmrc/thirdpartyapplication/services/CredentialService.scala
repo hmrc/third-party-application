@@ -18,13 +18,14 @@ package uk.gov.hmrc.thirdpartyapplication.services
 
 import cats.data.OptionT
 import cats.implicits._
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ValidationRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithUserId, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.{ClientSecretsLimitExceeded, _}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -36,6 +37,7 @@ import scala.util.control.NonFatal
 @Singleton
 class CredentialService @Inject() (
     applicationRepository: ApplicationRepository,
+    applicationUpdateService: ApplicationUpdateService,
     auditService: AuditService,
     clientSecretService: ClientSecretService,
     config: CredentialConfig,
@@ -56,6 +58,28 @@ class CredentialService @Inject() (
     })
   }
 
+  def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithUserId)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+
+    def generateCommand() = {
+      val generatedSecret = clientSecretService.generateClientSecret()
+      AddClientSecret(instigator = request.userId,
+        email = request.actorEmailAddress,
+        secretValue = generatedSecret._2,
+        clientSecret = generatedSecret._1,
+        timestamp = request.timestamp)
+    }
+
+    for {
+      existingApp <- fetchApp(applicationId)
+      _ = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+      addSecretCmd = generateCommand()
+      _ <- applicationUpdateService.update(applicationId, addSecretCmd).value
+      updatedApplication <- fetchApp(applicationId)
+    } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, addSecretCmd.secretValue)
+
+  }
+
+  @deprecated("remove after client is no longer using the old endpoint")
   def addClientSecret(applicationId: ApplicationId, secretRequest: ClientSecretRequest)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     for {
       existingApp <- fetchApp(applicationId)
@@ -74,6 +98,7 @@ class CredentialService @Inject() (
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, newSecret.id, newSecretValue)
   }
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
       auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))

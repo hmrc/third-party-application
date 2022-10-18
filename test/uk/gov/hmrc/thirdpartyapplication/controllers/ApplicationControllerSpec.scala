@@ -474,7 +474,7 @@ class ApplicationControllerSpec
     }
   }
 
-  "add client secret" should {
+  "add client secret (deprecated)" should {
     val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
@@ -541,6 +541,81 @@ class ApplicationControllerSpec
             .thenReturn(failed(new RuntimeException))
 
           val result = underTest.addClientSecret(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+          status(result) shouldBe INTERNAL_SERVER_ERROR
+        }
+      )
+    }
+
+  }
+
+  "add client secret (new)" should {
+    val applicationId = ApplicationId.random
+    val applicationTokensResponse =
+      ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
+    val secretRequest = ClientSecretRequestWithUserId(UserId.random, "actor@example.com", LocalDateTime.now())
+
+    "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(
+        applicationId, {
+          when(mockCredentialService.addClientSecretNew(eqTo(applicationId), eqTo(secretRequest))(*))
+            .thenReturn(successful(applicationTokensResponse))
+
+          val result = underTest.addClientSecretNew(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+          status(result) shouldBe OK
+          contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
+        }
+      )
+    }
+
+    "succeed with a 200 (ok) when request originates from outside gatekeeper" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
+        applicationId, {
+          when(mockCredentialService.addClientSecretNew(eqTo(applicationId), eqTo(secretRequest))(*))
+            .thenReturn(successful(applicationTokensResponse))
+
+          val result = underTest.addClientSecretNew(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+          status(result) shouldBe OK
+          contentAsJson(result) shouldBe Json.toJson(applicationTokensResponse)
+        }
+      )
+    }
+
+    "fail with a 403 (Forbidden) when the environment has already the maximum number of secrets set" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(
+        applicationId, {
+          when(mockCredentialService.addClientSecretNew(eqTo(applicationId), eqTo(secretRequest))(*))
+            .thenReturn(failed(new ClientSecretsLimitExceeded))
+
+          val result = underTest.addClientSecretNew(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+          verifyErrorResult(result, FORBIDDEN, ErrorCode.CLIENT_SECRET_LIMIT_EXCEEDED)
+        }
+      )
+    }
+
+    "fail with a 404 (not found) when no application exists for the given id" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(
+        applicationId, {
+          when(mockCredentialService.addClientSecretNew(eqTo(applicationId), eqTo(secretRequest))(*))
+            .thenReturn(failed(new NotFoundException("application not found")))
+
+          val result = underTest.addClientSecretNew(applicationId)(request.withBody(Json.toJson(secretRequest)))
+
+          verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
+        }
+      )
+    }
+
+    "fail with a 500 (internal server error) when an exception is thrown" in new PrivilegedAndRopcSetup {
+      testWithPrivilegedAndRopcGatekeeperLoggedIn(
+        applicationId, {
+          when(mockCredentialService.addClientSecretNew(eqTo(applicationId), eqTo(secretRequest))(*))
+            .thenReturn(failed(new RuntimeException))
+
+          val result = underTest.addClientSecretNew(applicationId)(request.withBody(Json.toJson(secretRequest)))
 
           status(result) shouldBe INTERNAL_SERVER_ERROR
         }

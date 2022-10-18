@@ -36,6 +36,8 @@ POST          /application/:id/subscription                          uk.gov.hmrc
 DELETE        /application/:id/subscription                          uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.removeSubscriptionForApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, context: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext, version: uk.gov.hmrc.thirdpartyapplication.domain.models.ApiVersion)
 
 POST          /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecret(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+PATCH         /application/:id/client-secret                         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.addClientSecretNew(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
+
 POST          /application/:id/client-secret/:clientSecretId         uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteClientSecret(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId, clientSecretId: String)
 
 POST          /application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)

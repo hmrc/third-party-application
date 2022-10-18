@@ -185,6 +185,7 @@ class ApplicationController @Inject() (
     }
   }
 
+  @deprecated("remove when client no longer uses this route")
   def addClientSecret(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[ClientSecretRequest] { secret =>
       credentialService.addClientSecret(applicationId, secret) map { token => Ok(toJson(token)) } recover {
@@ -196,6 +197,18 @@ class ApplicationController @Inject() (
     }
   }
 
+  def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
+    withJsonBody[ClientSecretRequestWithUserId] { secret =>
+      credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
+        case e: NotFoundException => handleNotFound(e.getMessage)
+        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
+        case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
+        case e => handleException(e)
+      }
+    }
+  }
+
+  @deprecated("remove when client no longer uses this route")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String) = {
     Action.async(parse.json) { implicit request =>
       withJsonBody[DeleteClientSecretRequest] { deleteClientSecretRequest =>

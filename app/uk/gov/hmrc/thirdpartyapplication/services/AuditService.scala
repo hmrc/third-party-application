@@ -23,12 +23,12 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit,  _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Warn, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationApprovalRequestDeclined
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -36,6 +36,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 
 import scala.concurrent.{ExecutionContext, Future}
 import cats.data.NonEmptyList
+
 import java.time.{Clock, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
@@ -76,6 +77,8 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt : ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
+      case evt : ClientSecretAdded => auditClientSecretAdded(app, evt)
+      case evt : ClientSecretRemoved => auditClientSecretRemoved(app, evt)
       case _ => Future.successful(None)
     }
   }
@@ -91,6 +94,29 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
   }
+
+  private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    (for {
+     result  <- liftF(audit(
+       ClientSecretAddedAudit,
+       Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")
+     ))
+    } yield result
+      )
+      .toOption
+      .value
+
+  private def auditClientSecretRemoved(app: ApplicationData, evt: ClientSecretRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    (for {
+      result <- liftF(audit(
+        ClientSecretRemovedAudit,
+        Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
+      ))
+    } yield result
+      )
+      .toOption
+      .value
+
 }
 
 sealed trait AuditAction {
