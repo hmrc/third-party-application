@@ -81,7 +81,7 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
     }
 
     "create a valid event for a developer on a non production application" in new Setup {
-      val nonProductionApp = app.copy(state = app.state.copy(State.PRE_PRODUCTION))
+      val nonProductionApp = app.copy(environment = Environment.SANDBOX.toString)
       val result = await(underTest.process(nonProductionApp, addClientSecretByDev))
 
       result.isValid shouldBe true
