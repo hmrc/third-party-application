@@ -16,82 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import akka.actor.ActorSystem
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
-import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepositoryMockModule, ResponsibleIndividualVerificationRepositoryMockModule}
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.http.HeaderCarrier
 
 import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.StateHistoryRepositoryMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
 
-class ApplicationUpdateServiceSpec
-    extends AsyncHmrcSpec
-    with BeforeAndAfterAll
-    with ApplicationStateUtil
-    with ApplicationTestData
-    with UpliftRequestSamples
-    with FixedClock {
+class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
+    with UpliftRequestSamples {
 
-  trait Setup extends AuditServiceMockModule
-      with ApplicationRepositoryMockModule
-      with ResponsibleIndividualVerificationRepositoryMockModule
-      with StateHistoryRepositoryMockModule
-      with NotificationServiceMockModule
-      with ApiPlatformEventServiceMockModule
-      with SubmissionsServiceMockModule {
-
-    implicit val hc: HeaderCarrier = HeaderCarrier()
-
-    val actorSystem: ActorSystem = ActorSystem("System")
-
-    lazy val locked              = false
-    protected val mockitoTimeout = 1000
-    val response                 = mock[HttpResponse]
-
-    val mockChangeProductionApplicationNameCommandHandler: ChangeProductionApplicationNameCommandHandler = mock[ChangeProductionApplicationNameCommandHandler]
-    val mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler = mock[ChangeProductionApplicationPrivacyPolicyLocationCommandHandler]
-    val mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler = mock[ChangeProductionApplicationTermsAndConditionsLocationCommandHandler]
-    val mockChangeResponsibleIndividualToSelfCommandHandler: ChangeResponsibleIndividualToSelfCommandHandler = mock[ChangeResponsibleIndividualToSelfCommandHandler]
-    val mockChangeResponsibleIndividualToOtherCommandHandler: ChangeResponsibleIndividualToOtherCommandHandler = mock[ChangeResponsibleIndividualToOtherCommandHandler]
-    val mockVerifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler = mock[VerifyResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
-    val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
-    val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
-
-    val underTest = new ApplicationUpdateService(
-      ApplicationRepoMock.aMock,
-      ResponsibleIndividualVerificationRepositoryMock.aMock,
-      StateHistoryRepoMock.aMock,
-      NotificationServiceMock.aMock,
-      ApiPlatformEventServiceMock.aMock,
-      SubmissionsServiceMock.aMock,
-      AuditServiceMock.aMock,
-      mockChangeProductionApplicationNameCommandHandler,
-      mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
-      mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
-      mockChangeResponsibleIndividualToSelfCommandHandler,
-      mockChangeResponsibleIndividualToOtherCommandHandler,
-      mockVerifyResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualCommandHandler,
-      mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler
-    )
-  }
+  trait Setup extends CommonSetup
 
   val timestamp      = LocalDateTime.now
   val gatekeeperUser = "gkuser1"

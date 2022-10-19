@@ -35,8 +35,17 @@ object CommandHandler {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
+  private def isAdmin(userId: UserId, app: ApplicationData) =
+    app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
+
   def isAdminOnApp(userId: UserId, app: ApplicationData) =
-    cond(app.collaborators.find(c => c.role == Role.ADMINISTRATOR && c.userId == userId).nonEmpty, "User must be an ADMIN")
+    cond(isAdmin(userId, app), "User must be an ADMIN")
+
+  def isAdminIfInProduction(userId: UserId, app: ApplicationData) =
+    cond(
+      (app.state.name == State.PRODUCTION && isAdmin(userId, app)) || (app.state.name != State.PRODUCTION),
+      "App is in PRODUCTION so User must be an ADMIN"
+    )
 
   def isNotInProcessOfBeingApproved(app: ApplicationData) =
     cond(
@@ -48,6 +57,12 @@ object CommandHandler {
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       "App is not in PRE_PRODUCTION or in PRODUCTION state"
+    )
+
+  def clientSecretExists(clientSecretId: String, app: ApplicationData) =
+    cond(
+      app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
+      s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
 
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =

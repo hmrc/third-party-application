@@ -186,5 +186,34 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.verifyCalledWith(event.responsibleIndividualName, event.requestingAdminEmail, applicationData.name, event.requestingAdminName)
     }
+
+    "when receive a ClientSecretAdded, call the event handler and return successfully" in new Setup {
+      val obfuscatedSecret = "********cret"
+      val requestingAdminEmail = "admin@example.com"
+      EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
+      val event = ClientSecretAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("dev@example.com"),
+        "secret", ClientSecret(obfuscatedSecret, LocalDateTime.now(), hashedSecret = "hashed"), requestingAdminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendAddedClientSecretNotification.verifyCalledWith(
+        requestingAdminEmail, obfuscatedSecret, applicationData.name, recipients = applicationData.admins.map(_.emailAddress))
+    }
+
+    "when receive a ClientSecretRemoved, call the event handler and return successfully" in new Setup {
+      val clientSecretId = "the-id"
+      val clientSecretName = "********cret"
+      val requestingAdminEmail = "admin@example.com"
+      EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
+      val event = ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("dev@example.com"),
+        clientSecretId, clientSecretName, requestingAdminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
+        requestingAdminEmail, clientSecretName, applicationData.name, recipients = applicationData.admins.map(_.emailAddress))
+    }
   }
 }

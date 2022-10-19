@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.http.HeaderCarrier
-
 import cats.data.{EitherT, NonEmptyChain, Validated}
+
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -39,6 +39,8 @@ class ApplicationUpdateService @Inject()(
   apiPlatformEventService: ApiPlatformEventService,
   submissionService: SubmissionsService,
   auditService: AuditService,
+  addClientSecretCommandHandler: AddClientSecretCommandHandler,
+  removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
   changeProductionApplicationNameCmdHdlr: ChangeProductionApplicationNameCommandHandler,
   changeProductionApplicationPrivacyPolicyLocationCmdHdlr: ChangeProductionApplicationPrivacyPolicyLocationCommandHandler,
   changeProductionApplicationTermsAndConditionsLocationCmdHdlr: ChangeProductionApplicationTermsAndConditionsLocationCommandHandler,
@@ -68,6 +70,8 @@ class ApplicationUpdateService @Inject()(
 
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
     applicationUpdate match {
+      case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
+      case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)
       case cmd: ChangeProductionApplicationName                       => changeProductionApplicationNameCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationPrivacyPolicyLocation      => changeProductionApplicationPrivacyPolicyLocationCmdHdlr.process(app, cmd)
       case cmd: ChangeProductionApplicationTermsAndConditionsLocation => changeProductionApplicationTermsAndConditionsLocationCmdHdlr.process(app, cmd)
