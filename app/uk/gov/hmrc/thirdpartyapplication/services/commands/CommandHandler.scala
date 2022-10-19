@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Role, Standard, State, UpdateApplicationEvent, UserId, ImportantSubmissionData}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -43,7 +44,7 @@ object CommandHandler {
 
   def isAdminIfInProduction(userId: UserId, app: ApplicationData) =
     cond(
-      (app.state.name == State.PRODUCTION && isAdmin(userId, app)) || (app.state.name != State.PRODUCTION),
+      (app.environment == Environment.PRODUCTION.toString && isAdmin(userId, app)) || (app.environment == Environment.SANDBOX.toString),
       "App is in PRODUCTION so User must be an ADMIN"
     )
 
