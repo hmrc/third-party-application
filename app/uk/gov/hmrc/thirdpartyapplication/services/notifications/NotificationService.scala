@@ -45,6 +45,7 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
         case evt: UpdateApplicationEvent.ResponsibleIndividualDeclined => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: UpdateApplicationEvent.ResponsibleIndividualDeclinedUpdate => ResponsibleIndividualDeclinedUpdateNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: UpdateApplicationEvent.ResponsibleIndividualDidNotVerify => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: UpdateApplicationEvent.CollaboratorAdded => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
       }
     }
     

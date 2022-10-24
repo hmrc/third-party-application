@@ -66,6 +66,13 @@ object CommandHandler {
       s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
 
+  def collaboratorAlreadyOnApp(email: String, app: ApplicationData)  = {
+      cond(
+      app.collaborators.exists(_.emailAddress != email.toLowerCase),
+      s"Collaborator already linked to Application ${app.id.value}"
+    )
+  }
+
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isPendingResponsibleIndividualVerification,

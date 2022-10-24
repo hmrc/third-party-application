@@ -126,25 +126,16 @@ class ApplicationService @Inject() (
     def sendNotificationEmails(
         applicationName: String,
         collaborator: Collaborator,
-        registeredUser: Boolean,
         adminsToEmail: Set[String]
       )(implicit hc: HeaderCarrier
       ): Future[HasSucceeded] = {
-      def roleForEmail(role: Role) = {
-        role match {
-          case ADMINISTRATOR => "admin"
-          case DEVELOPER     => "developer"
-          case _             => throw new RuntimeException(s"Unexpected role $role")
-        }
-      }
 
-      val role: String = roleForEmail(collaborator.role)
 
       if (adminsToEmail.nonEmpty) {
-        emailConnector.sendAddedCollaboratorNotification(collaborator.emailAddress, role, applicationName, adminsToEmail)
+        emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
       }
 
-      emailConnector.sendAddedCollaboratorConfirmation(role, applicationName, Set(collaborator.emailAddress))
+      emailConnector.sendAddedCollaboratorConfirmation(collaborator.role, applicationName, Set(collaborator.emailAddress))
     }
 
     for {
@@ -153,7 +144,7 @@ class ApplicationService @Inject() (
       _           <- addUser(app, collaborator)
       _            = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
       _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      _            = sendNotificationEmails(app.name, collaborator, request.isRegistered, request.adminsToEmail)
+      _            = sendNotificationEmails(app.name, collaborator,  request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
 

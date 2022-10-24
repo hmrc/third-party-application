@@ -112,7 +112,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedNotification(collaboratorEmail, role, applicationName, expectedToEmails))
     }
 
     "send removed collaborator confirmation email" in new Setup {

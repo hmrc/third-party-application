@@ -31,7 +31,8 @@ object EventId {
 
 object EventType extends Enumeration {
   type AccessType = Value
-  
+
+  val COLLABORATOR_ADDED                                = Value
   val TEAM_MEMBER_ADDED                                 = Value
   val TEAM_MEMBER_REMOVED                               = Value
   val CLIENT_SECRET_ADDED                               = Value

@@ -24,6 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
 sealed trait UpdateApplicationEvent {
@@ -329,6 +330,22 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
   }
 
+  case class CollaboratorAdded(id: UpdateApplicationEvent.Id,
+                               applicationId: ApplicationId,
+                               eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                               actor: Actor,
+                               collaboratorId: UserId,
+                               collaboratorEmail: String,
+                               collaboratorRole: Role,
+                               verifiedAdminsToEmail: Set[String],
+                               requestingAdminEmail: String) extends UpdateApplicationEvent
+
+  object CollaboratorAdded {
+    implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
+
+    def collaboratorFromEvent(evt: CollaboratorAdded) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+  }
+
   case class ApplicationApprovalRequestDeclined(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
@@ -364,5 +381,6 @@ object UpdateApplicationEvent {
     .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
+    .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
     .format
 }

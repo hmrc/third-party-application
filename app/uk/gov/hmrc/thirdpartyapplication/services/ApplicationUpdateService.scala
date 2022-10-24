@@ -49,7 +49,8 @@ class ApplicationUpdateService @Inject()(
   verifyResponsibleIndividualCommandHandler: VerifyResponsibleIndividualCommandHandler,
   declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
   declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
-  declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler
+  declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
+  addCollaboratorCommandHandler: AddCollaboratorCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -81,6 +82,8 @@ class ApplicationUpdateService @Inject()(
       case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
+      case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
+      case cmd: AddCollaboratorGatekeeper                             => addCollaboratorCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

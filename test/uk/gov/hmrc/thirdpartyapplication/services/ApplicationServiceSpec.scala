@@ -716,7 +716,7 @@ class ApplicationServiceSpec
         any[HeaderCarrier]
       )
       verify(mockEmailConnector).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
-      verify(mockEmailConnector).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
+      verify(mockEmailConnector).sendCollaboratorAddedNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 
@@ -741,7 +741,7 @@ class ApplicationServiceSpec
       )
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       verify(mockEmailConnector).sendAddedCollaboratorConfirmation("developer", applicationData.name, Set(email))
-      verify(mockEmailConnector).sendAddedCollaboratorNotification(email, "developer", applicationData.name, adminsToEmail)
+      verify(mockEmailConnector).sendCollaboratorAddedNotification(email, "developer", applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = false)
     }
 
