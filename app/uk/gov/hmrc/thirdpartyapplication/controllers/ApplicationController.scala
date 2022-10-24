@@ -375,14 +375,17 @@ class ApplicationController @Inject() (
     } recover recovery
   }
 
-  def createSubscriptionForApplication(applicationId: ApplicationId) =
+  @deprecated("remove when client no longer uses this route")
+  def createSubscriptionForApplication(applicationId: ApplicationId) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
         withJsonBody[ApiIdentifier] { api =>
           subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api).map(_ => NoContent) recover recovery
         }
     }
+  }
 
+  @deprecated("remove when client no longer uses this route")
   def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery

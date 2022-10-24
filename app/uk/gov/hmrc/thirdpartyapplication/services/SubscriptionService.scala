@@ -56,6 +56,7 @@ class SubscriptionService @Inject() (
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
+  // TODO 5522: Call ApplicationUpdateService instead; still used when adding a new application
   def createSubscriptionForApplicationMinusChecks(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
@@ -65,6 +66,7 @@ class SubscriptionService @Inject() (
     } yield HasSucceeded
   }
 
+  @deprecated("remove when no longer using old logic")
   def removeSubscriptionForApplication(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
@@ -74,6 +76,7 @@ class SubscriptionService @Inject() (
     } yield HasSucceeded
   }
 
+  @deprecated("remove when no longer using old logic")
   private def auditSubscription(action: AuditAction, applicationId: ApplicationId, api: ApiIdentifier)(implicit hc: HeaderCarrier): Future[AuditResult] = {
     auditService.audit(
       action,

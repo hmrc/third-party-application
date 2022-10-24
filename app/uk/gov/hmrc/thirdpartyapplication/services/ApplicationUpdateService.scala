@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -35,6 +35,7 @@ class ApplicationUpdateService @Inject()(
   applicationRepository: ApplicationRepository,
   responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
   stateHistoryRepository: StateHistoryRepository,
+  subscriptionRepository: SubscriptionRepository,
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService,
   submissionService: SubmissionsService,
@@ -51,7 +52,9 @@ class ApplicationUpdateService @Inject()(
   declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
   declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
   addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
-  removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler
+  removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
+  subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
+  unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -62,6 +65,7 @@ class ApplicationUpdateService @Inject()(
       events           <- EitherT(processUpdate(app, applicationUpdate).map(_.toEither))
       savedApp         <- E.liftF(applicationRepository.applyEvents(events))
       _                <- E.liftF(stateHistoryRepository.applyEvents(events))
+      _                <- E.liftF(subscriptionRepository.applyEvents(events.collect { case evt: UpdateApplicationEvent with UpdatesSubscription => evt}))
       _                <- E.liftF(submissionService.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
@@ -85,6 +89,8 @@ class ApplicationUpdateService @Inject()(
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
+      case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
+      case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

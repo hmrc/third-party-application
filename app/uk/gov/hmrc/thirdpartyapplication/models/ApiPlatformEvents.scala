@@ -42,7 +42,9 @@ object EventType extends Enumeration {
   val CLIENT_SECRET_REMOVED_V2                          = Value
   val REDIRECT_URIS_UPDATED                             = Value
   val API_SUBSCRIBED                                    = Value
+  val API_SUBSCRIBED_V2                                 = Value
   val API_UNSUBSCRIBED                                  = Value
+  val API_UNSUBSCRIBED_V2                               = Value
   val PROD_APP_NAME_CHANGED                             = Value
   val PROD_APP_PRIVACY_POLICY_LOCATION_CHANGED          = Value
   val PROD_LEGACY_APP_PRIVACY_POLICY_LOCATION_CHANGED   = Value

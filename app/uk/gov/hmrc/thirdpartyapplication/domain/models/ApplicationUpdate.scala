@@ -36,6 +36,8 @@ case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
+case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 
 trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String
@@ -57,6 +59,8 @@ trait ApplicationUpdateFormatters {
   implicit val verifyResponsibleIndividualFormatter = Json.format[VerifyResponsibleIndividual]
   implicit val declineResponsibleIndividualFormatter = Json.format[DeclineResponsibleIndividual]
   implicit val declineApplicationApprovalRequestFormatter = Json.format[DeclineApplicationApprovalRequest]
+  implicit val subscribeToApiFormatter = Json.format[SubscribeToApi]
+  implicit val unsubscribeFromApiFormatter = Json.format[UnsubscribeFromApi]
 
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[AddClientSecret]("addClientSecret")
@@ -71,5 +75,7 @@ trait ApplicationUpdateFormatters {
     .and[VerifyResponsibleIndividual]("verifyResponsibleIndividual")
     .and[DeclineResponsibleIndividual]("declineResponsibleIndividual")
     .and[DeclineApplicationApprovalRequest]("declineApplicationApprovalRequest")
+    .and[SubscribeToApi]("subscribeToApi")
+    .and[UnsubscribeFromApi]("unsubscribeFromApi")
     .format
 }

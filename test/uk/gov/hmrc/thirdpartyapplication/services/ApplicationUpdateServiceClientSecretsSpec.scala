@@ -31,6 +31,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
     SubmissionsServiceMock.ApplyEvents.succeeds()
     StateHistoryRepoMock.ApplyEvents.succeeds()
+    SubscriptionRepoMock.ApplyEvents.succeeds()
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
     AuditServiceMock.ApplyEvents.succeeds
   }

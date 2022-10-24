@@ -58,8 +58,10 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   @deprecated("remove after client is no longer using the old endpoint")
   def sendClientSecretRemovedEvent(event: ClientSecretRemovedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, clientSecretRemovedUri)(hc)
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def sendApiSubscribedEvent(event: ApiSubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiSubscribedUri)(hc)
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def sendApiUnsubscribedEvent(event: ApiUnsubscribedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, apiUnsubscribedUri)(hc)
 
   private def postEvent(event: ApplicationEvent, uri: String)(hc: HeaderCarrier): Future[Boolean] = {

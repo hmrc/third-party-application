@@ -20,11 +20,10 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription, UserId}
+
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -74,6 +73,18 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def verifyCalledWith(appId: ApplicationId, apiIdentifier: ApiIdentifier) =
         verify.remove(eqTo(appId), eqTo(apiIdentifier))
+    }
+
+    object ApplyEvents {
+      def succeeds() = {
+        when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(events: (UpdateApplicationEvent with UpdatesSubscription)*) =
+        verify.applyEvents(events.toList)
+
+      def verifyNeverCalled =
+        SubscriptionRepoMock.verify(never).applyEvents(*[List[UpdateApplicationEvent with UpdatesSubscription]])
     }
   }
 

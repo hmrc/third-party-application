@@ -23,12 +23,12 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{CollaboratorAdded => CollaboratorAddedAudit, CollaboratorRemoved => CollaboratorRemovedAudit,  ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit, _}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{CollaboratorAdded => CollaboratorAddedAudit, CollaboratorRemoved => CollaboratorRemovedAudit, ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -81,6 +81,8 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt : ClientSecretRemoved => auditClientSecretRemoved(app, evt)
       case evt : CollaboratorAdded => auditAddCollaborator(app, evt)
       case evt: CollaboratorRemoved => auditRemoveCollaborator(app, evt)
+      case evt : ApiSubscribed => auditApiSubscribed(app, evt)
+      case evt : ApiUnsubscribed => auditApiUnsubscribed(app, evt)
       case _ => Future.successful(None)
     }
   }
@@ -111,25 +113,35 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
+  private def auditApiSubscribed(app: ApplicationData, evt: ApiSubscribed)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    liftF(audit(
+      Subscribed,
+      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version, "apiContext" -> evt.context)
+    ))
+      .toOption
+      .value
+
+  private def auditApiUnsubscribed(app: ApplicationData, evt: ApiUnsubscribed)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    liftF(audit(
+      Unsubscribed,
+      Map("applicationId" -> app.id.value.toString, "apiVersion" -> evt.version, "apiContext" -> evt.context)
+    ))
+      .toOption
+      .value
+
   private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    (for {
-     result  <- liftF(audit(
+    liftF(audit(
        ClientSecretAddedAudit,
        Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")
-     ))
-    } yield result
-      )
+    ))
       .toOption
       .value
 
   private def auditClientSecretRemoved(app: ApplicationData, evt: ClientSecretRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
-    (for {
-      result <- liftF(audit(
-        ClientSecretRemovedAudit,
-        Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
-      ))
-    } yield result
-      )
+    liftF(audit(
+      ClientSecretRemovedAudit,
+      Map("applicationId" -> app.id.value.toString, "removedClientSecret" -> evt.clientSecretId)
+    ))
       .toOption
       .value
 
