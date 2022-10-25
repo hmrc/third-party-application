@@ -43,7 +43,6 @@ case class RemoveCollaboratorGateKeeper(gatekeeperUser: String,  email: String, 
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
 
-
 trait ApiPlatformJobsApplicationUpdate extends ApplicationUpdate {
   def jobId: String
 }
@@ -57,6 +56,7 @@ trait ApplicationUpdateFormatters {
   implicit val addCollaboratorGatekeeperFormatter = Json.format[AddCollaboratorGatekeeper]
   implicit val removeCollaboratorFormatter = Json.format[RemoveCollaborator]
   implicit val removeCollaboratorGatekeeperFormatter = Json.format[RemoveCollaboratorGateKeeper]
+  implicit val removeCollaboratorPlatformJobsFormatter = Json.format[RemoveCollaboratorPlatformJobs]
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
   implicit val changePrivacyPolicyLocationFormatter = Json.format[ChangeProductionApplicationPrivacyPolicyLocation]
   implicit val changeTermsAndConditionsLocationFormatter = Json.format[ChangeProductionApplicationTermsAndConditionsLocation]
@@ -71,6 +71,9 @@ trait ApplicationUpdateFormatters {
     .and[RemoveClientSecret]("removeClientSecret")
     .and[AddCollaborator]("addCollaborator")
     .and[AddCollaboratorGatekeeper]("addCollaboratorGatekeeper")
+    .and[RemoveCollaborator]("removeCollaborator")
+    .and[RemoveCollaboratorGateKeeper]("removeCollaboratorGateKeeper")
+    .and[RemoveCollaboratorPlatformJobs]("removeCollaboratorPlatformJobs")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
     .and[ChangeProductionApplicationPrivacyPolicyLocation]("changeProductionApplicationPrivacyPolicyLocation")
     .and[ChangeProductionApplicationTermsAndConditionsLocation]("changeProductionApplicationTermsAndConditionsLocation")

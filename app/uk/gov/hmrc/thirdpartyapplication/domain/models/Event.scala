@@ -44,14 +44,18 @@ object UpdateApplicationEvent {
 
   case class GatekeeperUserActor(user: String) extends Actor
   case class CollaboratorActor(email: String) extends Actor
-  //case class ScheduledJobActor(jobId: String) extends Actor
-  //case class UnknownActor() extends Actor
+  case class ScheduledJobActor(jobId: String) extends Actor
+//  case class UnknownActor() extends Actor
 
   object Actor {
     implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
     implicit val collaboratorActorFormat: OFormat[CollaboratorActor] = Json.format[CollaboratorActor]
+    implicit val scheduledJobActorFormat: OFormat[ScheduledJobActor] = Json.format[ScheduledJobActor]
+//    implicit val unknownActorFormat: OFormat[UnknownActor] = Json.format[UnknownActor]
 
     implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
+//      .and[UnknownActor](ActorType.UNKNOWN.toString)
+      .and[ScheduledJobActor](ActorType.SCHEDULED_JOB.toString)
       .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
       .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
@@ -338,7 +342,7 @@ object UpdateApplicationEvent {
                                collaboratorEmail: String,
                                collaboratorRole: Role,
                                verifiedAdminsToEmail: Set[String],
-                               requestingAdminEmail: String) extends UpdateApplicationEvent
+                               requestingAdminEmail: String) extends UpdateApplicationEvent with TriggersNotification
 
   object CollaboratorAdded {
     implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
@@ -346,6 +350,22 @@ object UpdateApplicationEvent {
     def collaboratorFromEvent(evt: CollaboratorAdded) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
   }
 
+  case class CollaboratorRemoved(id: UpdateApplicationEvent.Id,
+                               applicationId: ApplicationId,
+                               eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                               actor: Actor,
+                               collaboratorId: UserId,
+                               collaboratorEmail: String,
+                               collaboratorRole: Role,
+                               notifyCollaborator: Boolean,
+                               verifiedAdminsToEmail: Set[String],
+                               requestingAdminEmail: String) extends UpdateApplicationEvent with TriggersNotification
+
+  object CollaboratorRemoved {
+    implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
+
+    def collaboratorFromEvent(evt: CollaboratorRemoved) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+  }
   case class ApplicationApprovalRequestDeclined(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,

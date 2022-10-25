@@ -25,6 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 
 @Singleton
 class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
@@ -32,20 +33,21 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
   def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
-        case evt: UpdateApplicationEvent.ClientSecretAdded => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.ClientSecretRemoved => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.ProductionAppNameChanged => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.ProductionAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", PrivacyPolicyLocation.describe(evt.oldLocation), PrivacyPolicyLocation.describe(evt.newLocation))
-        case evt: UpdateApplicationEvent.ProductionLegacyAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", evt.oldUrl, evt.newUrl)
-        case evt: UpdateApplicationEvent.ProductionAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", TermsAndConditionsLocation.describe(evt.oldLocation), TermsAndConditionsLocation.describe(evt.newLocation))
-        case evt: UpdateApplicationEvent.ProductionLegacyAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", evt.oldUrl, evt.newUrl)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualVerificationStarted => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualChanged => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.newResponsibleIndividualName)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualChangedToSelf => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.requestingAdminName)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualDeclined => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualDeclinedUpdate => ResponsibleIndividualDeclinedUpdateNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.ResponsibleIndividualDidNotVerify => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
-        case evt: UpdateApplicationEvent.CollaboratorAdded => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
+        case evt: ClientSecretAdded => ClientSecretAddedNotification.sendClientSecretAddedNotification(emailConnector, app, evt)
+        case evt: ClientSecretRemoved => ClientSecretRemovedNotification.sendClientSecretRemovedNotification(emailConnector, app, evt)
+        case evt: ProductionAppNameChanged => ProductionAppNameChangedNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ProductionAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", PrivacyPolicyLocation.describe(evt.oldLocation), PrivacyPolicyLocation.describe(evt.newLocation))
+        case evt: ProductionLegacyAppPrivacyPolicyLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "privacy policy URL", evt.oldUrl, evt.newUrl)
+        case evt: ProductionAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", TermsAndConditionsLocation.describe(evt.oldLocation), TermsAndConditionsLocation.describe(evt.newLocation))
+        case evt: ProductionLegacyAppTermsConditionsLocationChanged => StandardChangedNotification.sendAdviceEmail(emailConnector, app, evt.requestingAdminEmail, "terms and conditions URL", evt.oldUrl, evt.newUrl)
+        case evt: ResponsibleIndividualVerificationStarted => VerifyResponsibleIndividualUpdateNotification.sendAdviceEmail(emailConnector, evt)
+        case evt: ResponsibleIndividualChanged => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.newResponsibleIndividualName)
+        case evt: ResponsibleIndividualChangedToSelf => ResponsibleIndividualChangedNotification.sendAdviceEmail(emailConnector, app, evt.previousResponsibleIndividualEmail, evt.requestingAdminName, evt.previousResponsibleIndividualName, evt.requestingAdminName)
+        case evt: ResponsibleIndividualDeclined => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ResponsibleIndividualDeclinedUpdate => ResponsibleIndividualDeclinedUpdateNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ResponsibleIndividualDidNotVerify => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: CollaboratorAdded => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
+        case evt: CollaboratorRemoved => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
       }
     }
     

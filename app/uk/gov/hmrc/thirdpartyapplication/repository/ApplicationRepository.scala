@@ -595,6 +595,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ResponsibleIndividualChangedToSelf => updateApplicationChangeResponsibleIndividualToSelf(evt)
       case evt : ApplicationStateChanged => updateApplicationState(evt)
       case evt : CollaboratorAdded =>  updateApplication(event.applicationId, Updates.push("collaborators", Codecs.toBson(CollaboratorAdded.collaboratorFromEvent(evt))))
+      case evt : CollaboratorRemoved =>  updateApplication(event.applicationId, Updates.pull("collaborators", Codecs.toBson(Json.obj("userId" -> evt.collaboratorId))))
       case _ : ResponsibleIndividualVerificationStarted => noOp(event)
       case _ : ResponsibleIndividualDeclined => noOp(event)
       case _ : ResponsibleIndividualDeclinedUpdate => noOp(event)

@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -38,6 +38,10 @@ object CommandHandler {
 
   private def isAdmin(userId: UserId, app: ApplicationData) =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
+
+  private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
+    updated.exists(_.role == Role.ADMINISTRATOR)
+  }
 
   def isAdminOnApp(userId: UserId, app: ApplicationData) =
     cond(isAdmin(userId, app), "User must be an ADMIN")
@@ -72,6 +76,14 @@ object CommandHandler {
       s"Collaborator already linked to Application ${app.id.value}"
     )
   }
+
+  def applicationWillHaveAnAdmin(email: String, app: ApplicationData) = {
+    cond(
+      applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
+      s"Collaborator is last remaining admin for Application ${app.id.value}"
+    )
+  }
+
 
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
