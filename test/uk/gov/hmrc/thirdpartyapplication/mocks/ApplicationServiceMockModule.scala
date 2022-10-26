@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import cats.data.OptionT
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, TermsOfUseAcceptance}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -74,6 +75,10 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
     object DeleteApplication {
       def thenSucceeds() = when(aMock.deleteApplication(*[ApplicationId], *, *)(*)).thenReturn(successful(Deleted))
+
+      def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
+        verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
+      } 
     }
 
     object AddTermsOfUseAcceptance {

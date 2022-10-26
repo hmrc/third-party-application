@@ -19,9 +19,12 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
+import org.mongodb.scala.model.Filters.equal
 import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.PlayMongoRepository
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -51,4 +54,10 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   def createEntity(notification: Notification): Future[Boolean] =
     collection.insertOne(notification).toFuture().map(wr => wr.wasAcknowledged())
+
+  def deleteAllByApplicationId(applicationId: ApplicationId): Future[HasSucceeded] = {
+    collection.deleteMany(equal("applicationId", Codecs.toBson(applicationId)))
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }    
 }

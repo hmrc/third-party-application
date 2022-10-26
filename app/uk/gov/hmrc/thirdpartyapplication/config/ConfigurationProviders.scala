@@ -37,6 +37,7 @@ class ConfigurationModule extends Module {
     List(
       bind[UpliftVerificationExpiryJobConfig].toProvider[UpliftVerificationExpiryJobConfigProvider],
       bind[ProductionCredentialsRequestExpiryWarningJobConfig].toProvider[ProductionCredentialsRequestExpiryWarningJobConfigProvider],
+      bind[ProductionCredentialsRequestExpiredJobConfig].toProvider[ProductionCredentialsRequestExpiredJobConfigProvider],
       bind[ResponsibleIndividualVerificationReminderJobConfig].toProvider[ResponsibleIndividualVerificationReminderJobConfigProvider],
       bind[ResponsibleIndividualVerificationRemovalJobConfig].toProvider[ResponsibleIndividualVerificationRemovalJobConfigProvider],
       bind[ResponsibleIndividualUpdateVerificationRemovalJobConfig].toProvider[ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider],
@@ -94,6 +95,22 @@ class ProductionCredentialsRequestExpiryWarningJobConfigProvider @Inject() (val 
       .getOrElse(Duration(150, DAYS)) // scalastyle:off magic.number
 
     ProductionCredentialsRequestExpiryWarningJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, warningInterval)
+  }
+}
+
+@Singleton
+class ProductionCredentialsRequestExpiredJobConfigProvider @Inject() (val configuration: Configuration)
+    extends ServicesConfig(configuration)
+    with Provider[ProductionCredentialsRequestExpiredJobConfig] {
+
+  override def get() = {
+    val jobConfig = configuration.underlying.as[Option[JobConfig]]("productionCredentialsRequestExpiredJob")
+      .getOrElse(JobConfig(FiniteDuration(60, SECONDS), FiniteDuration(24, HOURS), enabled = true)) // scalastyle:off magic.number
+
+    val deleteInterval: FiniteDuration = configuration.getOptional[FiniteDuration]("productionCredentialsRequestExpiredJob.deleteInterval")
+      .getOrElse(Duration(183, DAYS)) // scalastyle:off magic.number
+
+    ProductionCredentialsRequestExpiredJobConfig(jobConfig.initialDelay, jobConfig.interval, jobConfig.enabled, deleteInterval)
   }
 }
 
