@@ -80,7 +80,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(Role.ADMINISTRATOR, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Role.ADMINISTRATOR, applicationName, expectedToEmails))
     }
 
     "send added collaborator confirmation email with article for developer" in new Setup {
@@ -96,7 +96,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(Role.DEVELOPER, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Role.DEVELOPER, applicationName, expectedToEmails))
     }
 
     "send added collaborator notification email" in new Setup {

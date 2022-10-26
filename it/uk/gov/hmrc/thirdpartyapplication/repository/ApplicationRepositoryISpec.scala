@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import cats.data.NonEmptyList
 import org.mockito.MockitoSugar.{mock, times, verify, verifyNoMoreInteractions}
 import org.mongodb.scala.model.{Filters, Updates}
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{BeforeAndAfterEach, color}
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, Notification, NotificationType, NotificationStatus}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens, ApplicationWithStateHistory, Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
@@ -2642,6 +2642,63 @@ class ApplicationRepositoryISpec
       val appWithClientSecretRemoved =
         await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithClientSecretRemoved.tokens.production.clientSecrets must contain only (existingClientSecrets.filterNot(_.id==clientSecretToRemove.id) : _*)
+
+    }
+
+
+    "handle CollaboratorAdded event correctly" in {
+      val applicationId = ApplicationId.random
+
+      val app = anApplicationData(applicationId)
+      val collaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
+      val adminsToEmail = Set("email1", "email2", "email3")
+      val existingCollaborators = app.collaborators
+
+      val event = CollaboratorAdded(
+        id = UpdateApplicationEvent.Id.random,
+        applicationId = app.id,
+        eventDateTime = LocalDateTime.now(),
+        actor = CollaboratorActor(adminEmail),
+        collaboratorId = collaborator.userId,
+        collaboratorRole = collaborator.role,
+        collaboratorEmail = collaborator.emailAddress,
+        verifiedAdminsToEmail = adminsToEmail,
+        requestingAdminEmail = adminEmail
+      )
+
+      await(applicationRepository.save(app))
+
+      val appWithNewCollaborator =
+        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithNewCollaborator.collaborators must contain only (existingCollaborators.toList ++ List(collaborator): _*)
+
+    }
+
+    "handle CollaboratorRemoved event correctly" in {
+      val applicationId = ApplicationId.random
+
+      val app = anApplicationData(applicationId)
+      val collaborator = Collaborator("email", Role.DEVELOPER, idOf("email"))
+      val adminsToEmail = Set("email1", "email2", "email3")
+
+      val event = CollaboratorRemoved(
+        id = UpdateApplicationEvent.Id.random,
+        applicationId = app.id,
+        eventDateTime = LocalDateTime.now(),
+        actor = CollaboratorActor(adminEmail),
+        collaboratorId = collaborator.userId,
+        collaboratorRole = collaborator.role,
+        collaboratorEmail = collaborator.emailAddress,
+        notifyCollaborator = true,
+        verifiedAdminsToEmail = adminsToEmail,
+        requestingAdminEmail = adminEmail
+      )
+
+      await(applicationRepository.save(app.copy(collaborators = app.collaborators ++ Set(collaborator))))
+
+      val appWithNewCollaborator =
+        await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithNewCollaborator.collaborators must contain only (app.collaborators.toList : _*)
 
     }
 

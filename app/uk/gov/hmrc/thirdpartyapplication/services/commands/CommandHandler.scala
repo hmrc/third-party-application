@@ -72,7 +72,7 @@ object CommandHandler {
 
   def collaboratorAlreadyOnApp(email: String, app: ApplicationData)  = {
       cond(
-      app.collaborators.exists(_.emailAddress != email.toLowerCase),
+      !app.collaborators.exists(_.emailAddress.toLowerCase == email.toLowerCase),
       s"Collaborator already linked to Application ${app.id.value}"
     )
   }

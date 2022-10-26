@@ -715,7 +715,7 @@ class ApplicationServiceSpec
       verify(mockApiPlatformEventService).sendTeamMemberAddedEvent(eqTo(applicationData), eqTo(request.collaborator.emailAddress), eqTo(request.collaborator.role.toString()))(
         any[HeaderCarrier]
       )
-      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(Role.DEVELOPER, applicationData.name, Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER, applicationData.name, Set(email))
       verify(mockEmailConnector).sendCollaboratorAddedNotification(email, Role.DEVELOPER, applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
@@ -740,7 +740,7 @@ class ApplicationServiceSpec
         any[HeaderCarrier]
       )
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(Role.DEVELOPER,  applicationData.name, Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER,  applicationData.name, Set(email))
       verify(mockEmailConnector).sendCollaboratorAddedNotification(email,  Role.DEVELOPER, applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = false)
     }
@@ -767,7 +767,7 @@ class ApplicationServiceSpec
       )
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(Role.DEVELOPER, expected.name,  Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER, expected.name,  Set(email))
       verifyNoMoreInteractions(mockEmailConnector)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
@@ -785,12 +785,12 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.Save.thenReturn(expected)
 
-      when(mockEmailConnector.sendAddedCollaboratorConfirmation(*, *, *)(*)).thenReturn(failed(new RuntimeException))
+      when(mockEmailConnector.sendCollaboratorAddedConfirmation(*, *, *)(*)).thenReturn(failed(new RuntimeException))
 
       val result: AddCollaboratorResponse = await(underTest.addCollaborator(applicationId, collaboratorRequest(isRegistered = true)))
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendAddedCollaboratorConfirmation(*, *, *)(*)
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(*, *, *)(*)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }
 

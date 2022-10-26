@@ -109,6 +109,7 @@ class ApplicationService @Inject() (
     } yield ApplicationResponse(data = savedApp)
   }
 
+  @deprecated("please use AddCollaborator or AddCollaboratorGatekeeper commands to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
     def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: UserId): Collaborator = {
@@ -135,7 +136,7 @@ class ApplicationService @Inject() (
         emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
       }
 
-      emailConnector.sendAddedCollaboratorConfirmation(collaborator.role, applicationName, Set(collaborator.emailAddress))
+      emailConnector.sendCollaboratorAddedConfirmation(collaborator.role, applicationName, Set(collaborator.emailAddress))
     }
 
     for {

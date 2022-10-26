@@ -26,8 +26,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AddCollaboratorCommandHandler @Inject()()
-                                             (implicit val ec: ExecutionContext) extends CommandHandler {
+class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
@@ -38,15 +37,13 @@ class AddCollaboratorCommandHandler @Inject()()
 
   import UpdateApplicationEvent._
 
-
    private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] ={
     asEvents(app, getRequester(app, cmd.instigator), cmd.adminsToEmail, CollaboratorActor(cmd.email), cmd.timestamp, cmd.collaborator)
   }
 
   private def asEvents(app: ApplicationData, cmd: AddCollaboratorGatekeeper): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.email), cmd.timestamp, cmd.collaborator)
+    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.gatekeeperUser), cmd.timestamp, cmd.collaborator)
   }
-
 
   private def asEvents(app: ApplicationData, requestingAdminEmail: String, adminsToEmail:Set[String], actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
@@ -56,7 +53,7 @@ class AddCollaboratorCommandHandler @Inject()()
         eventDateTime = eventTime,
         actor = actor,
         collaboratorId = collaborator.userId,
-        collaboratorEmail = collaborator.emailAddress,
+        collaboratorEmail = collaborator.emailAddress.toLowerCase,
         collaboratorRole = collaborator.role,
         verifiedAdminsToEmail = adminsToEmail,
         requestingAdminEmail = requestingAdminEmail

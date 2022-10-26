@@ -26,8 +26,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject()()
-                                                (implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
@@ -40,15 +39,15 @@ class RemoveCollaboratorCommandHandler @Inject()()
 
 
    private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[UpdateApplicationEvent] ={
-    asEvents(app, getRequester(app, cmd.instigator), cmd.adminsToEmail, CollaboratorActor(cmd.email), cmd.timestamp, cmd.collaborator, cmd.notifyCollaborator)
+    asEvents(app, getRequester(app, cmd.instigator), cmd.adminsToEmail, CollaboratorActor(cmd.email), cmd.timestamp, cmd.collaborator, notifyCollaborator = true)
   }
 
   private def asEvents(app: ApplicationData, cmd: RemoveCollaboratorGateKeeper): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.gatekeeperUser), cmd.timestamp, cmd.collaborator, cmd.notifyCollaborator)
+    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.gatekeeperUser), cmd.timestamp, cmd.collaborator, notifyCollaborator = true)
   }
 
   private def asEvents(app: ApplicationData, cmd: RemoveCollaboratorPlatformJobs): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, ActorType.SCHEDULED_JOB.toString , cmd.adminsToEmail, ScheduledJobActor(cmd.jobId), cmd.timestamp, cmd.collaborator, cmd.notifyCollaborator)
+    asEvents(app, ActorType.SCHEDULED_JOB.toString , cmd.adminsToEmail, ScheduledJobActor(cmd.jobId), cmd.timestamp, cmd.collaborator, notifyCollaborator = false)
   }
 
 

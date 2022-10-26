@@ -18,7 +18,9 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import java.{util => ju}
 
-case class ApplicationId(value: ju.UUID) extends AnyVal
+case class ApplicationId(value: ju.UUID) extends AnyVal {
+  def asText: String = value.toString
+}
 
 object ApplicationId {
   import play.api.libs.json.Json

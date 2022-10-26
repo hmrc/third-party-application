@@ -30,7 +30,7 @@ object CollaboratorAddedNotification {
                                        (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HasSucceeded] = {
     for {
       _ <- emailConnector.sendCollaboratorAddedNotification(event.collaboratorEmail, event.collaboratorRole, app.name, event.verifiedAdminsToEmail)
-      _ <- emailConnector.sendAddedCollaboratorConfirmation(event.collaboratorRole, app.name, Set(event.collaboratorEmail))
+      _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaboratorRole, app.name, Set(event.collaboratorEmail))
     } yield HasSucceeded
   }
 }

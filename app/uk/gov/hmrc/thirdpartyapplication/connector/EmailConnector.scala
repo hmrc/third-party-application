@@ -90,7 +90,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       case DEVELOPER => "developer"
     }
 
-  def sendAddedCollaboratorConfirmation(role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+  def sendCollaboratorAddedConfirmation(role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val article = if (role == ADMINISTRATOR) "an" else "a"
 
     post(SendEmailRequest(

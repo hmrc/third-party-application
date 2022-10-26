@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object ActorType extends Enumeration {
   type ActorType = Value
-  val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB, UNKNOWN = Value
+  val COLLABORATOR, GATEKEEPER, SCHEDULED_JOB = Value
 
   implicit val format = EnumJson.enumFormat(ActorType)
 }

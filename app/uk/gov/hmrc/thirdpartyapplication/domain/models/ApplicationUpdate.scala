@@ -26,7 +26,7 @@ trait ApplicationUpdate {
 case class AddClientSecret(instigator: UserId, email: String, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
 case class RemoveClientSecret(instigator: UserId, email: String, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class AddCollaborator(instigator: UserId, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
-case class RemoveCollaborator(instigator: UserId, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], notifyCollaborator: Boolean, timestamp: LocalDateTime) extends ApplicationUpdate
+case class RemoveCollaborator(instigator: UserId, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
 case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
@@ -38,8 +38,8 @@ case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: Loc
 trait GatekeeperApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String
 }
-case class AddCollaboratorGatekeeper(gatekeeperUser: String, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
-case class RemoveCollaboratorGateKeeper(gatekeeperUser: String,  email: String,  collaborator: Collaborator, adminsToEmail:Set[String], notifyCollaborator: Boolean, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
+case class AddCollaboratorGatekeeper(gatekeeperUser: String, collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
+case class RemoveCollaboratorGateKeeper(gatekeeperUser: String, collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
 
@@ -47,7 +47,7 @@ trait ApiPlatformJobsApplicationUpdate extends ApplicationUpdate {
   def jobId: String
 }
 
-case class RemoveCollaboratorPlatformJobs(jobId: String, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], notifyCollaborator: Boolean, timestamp: LocalDateTime) extends ApiPlatformJobsApplicationUpdate
+case class RemoveCollaboratorPlatformJobs(jobId: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApiPlatformJobsApplicationUpdate
 
 trait ApplicationUpdateFormatters {
   implicit val addClientSecretFormatter = Json.format[AddClientSecret]

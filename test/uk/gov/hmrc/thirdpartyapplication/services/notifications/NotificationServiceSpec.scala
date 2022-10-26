@@ -157,7 +157,7 @@ class NotificationServiceSpec
     "when receive a ResponsibleIndividualDeclined, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualDeclined.thenReturnSuccess()
       val event = ResponsibleIndividualDeclined(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
-        CollaboratorActor("admin@example.com"), 
+        CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -168,7 +168,7 @@ class NotificationServiceSpec
     "when receive a ResponsibleIndividualDeclinedUpdate, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualNotChanged.thenReturnSuccess()
       val event = ResponsibleIndividualDeclinedUpdate(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
-        CollaboratorActor("admin@example.com"), 
+        CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -179,7 +179,7 @@ class NotificationServiceSpec
     "when receive a ResponsibleIndividualDidNotVerify, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
       val event = ResponsibleIndividualDidNotVerify(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
-        CollaboratorActor("admin@example.com"), 
+        CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -214,6 +214,64 @@ class NotificationServiceSpec
       result shouldBe List(HasSucceeded)
       EmailConnectorMock.SendRemovedClientSecretNotification.verifyCalledWith(
         requestingAdminEmail, clientSecretName, applicationData.name, recipients = applicationData.admins.map(_.emailAddress))
+    }
+
+    "when receive a AddCollaborator, call the event handler and return successfully" in new Setup {
+      val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
+
+      val requestingAdminEmail = "admin@example.com"
+      EmailConnectorMock.SendCollaboratorAddedNotification.thenReturnSuccess()
+      EmailConnectorMock.SendCollaboratorAddedConfirmation.thenReturnSuccess()
+
+      val collaboratorEmail = "somedev@someCompany.com"
+      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val event = CollaboratorAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("dev@example.com"),
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        adminsToEmail,
+        requestingAdminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+
+      EmailConnectorMock.SendCollaboratorAddedNotification.verifyCalledWith(
+        collaboratorEmail, collaborator.role,  applicationData.name, recipients = adminsToEmail)
+
+      EmailConnectorMock.SendCollaboratorAddedConfirmation
+        .verifyCalledWith(collaborator.role, applicationData.name, recipients = Set(collaboratorEmail))
+
+    }
+
+
+    "when receive a RemoveCollaborator, call the event handler and return successfully" in new Setup {
+      val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
+
+      val requestingAdminEmail = "admin@example.com"
+      EmailConnectorMock.SendCollaboratorRemovedNotification.thenReturnSuccess()
+      EmailConnectorMock.SendCollaboratorRemovedConfirmation.thenReturnSuccess()
+
+      val collaboratorEmail = "somedev@someCompany.com"
+      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val event = CollaboratorRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+        CollaboratorActor("dev@example.com"),
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        true,
+        adminsToEmail,
+        requestingAdminEmail)
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+
+      EmailConnectorMock.SendCollaboratorRemovedNotification.verifyCalledWith(
+        collaboratorEmail, applicationData.name, recipients = adminsToEmail)
+
+      EmailConnectorMock.SendCollaboratorRemovedConfirmation
+        .verifyCalledWith(requestingAdminEmail, applicationData.name, recipients = Set(collaboratorEmail))
+
     }
   }
 }
