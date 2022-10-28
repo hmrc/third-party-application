@@ -148,10 +148,10 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     object Delete {
 
       def verifyCalledWith(id: ApplicationId) =
-        ApplicationRepoMock.verify.delete(eqTo(id))
+        ApplicationRepoMock.verify.delete(eqTo(id), any)
 
-      def thenReturnHasSucceeded() =
-        when(aMock.delete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
+      def thenReturn(applicationData: ApplicationData) =
+        when(aMock.delete(*[ApplicationId], *)).thenReturn(successful(applicationData))
     }
 
     object FetchByServerToken {

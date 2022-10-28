@@ -855,19 +855,20 @@ class ApplicationRepositoryISpec
 
   "delete" should {
 
-    "delete an application from the database" in {
+    "change an application's state to Deleted" in {
+      val now = LocalDateTime.now
       val application = anApplicationDataForTest(ApplicationId.random)
       await(applicationRepository.save(application))
 
       val retrieved = await(applicationRepository.fetch(application.id)).get
       retrieved mustBe application
 
-      await(applicationRepository.delete(application.id))
+      await(applicationRepository.delete(application.id, now))
       val result = await(applicationRepository.fetch(application.id))
 
-      result mustBe None
+      result.isDefined mustBe true
+      result.get.state.name mustBe State.DELETED
     }
-
   }
 
   "fetch" should {
@@ -1348,6 +1349,13 @@ class ApplicationRepositoryISpec
         ApplicationId.random,
         prodClientId = generateClientId
       )
+      val randomDeletedApplication = aNamedApplicationData(
+        ApplicationId.random,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      await(applicationRepository.save(randomDeletedApplication))
+      await(applicationRepository.delete(randomDeletedApplication.id, LocalDateTime.now))
       await(applicationRepository.save(application))
       await(applicationRepository.save(randomOtherApplication))
 
@@ -1360,11 +1368,52 @@ class ApplicationRepositoryISpec
         await(applicationRepository.searchApplications(applicationSearch))
 
       result.totals.size mustBe 1
-      result.totals.head.total mustBe 2
+      result.totals.head.total mustBe 3
       result.matching.size mustBe 1
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationId
+    }
+
+    "return applications with search text matching application name including deleted" in {
+      val applicationId   = ApplicationId.random
+      val applicationName = "Test Application 2"
+
+      val application            = aNamedApplicationData(
+        applicationId,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      val randomOtherApplication = anApplicationDataForTest(
+        ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val randomDeletedApplication = aNamedApplicationData(
+        ApplicationId.random,
+        applicationName,
+        prodClientId = generateClientId
+      )
+      await(applicationRepository.save(randomDeletedApplication))
+      await(applicationRepository.delete(randomDeletedApplication.id, LocalDateTime.now))
+      await(applicationRepository.save(application))
+      await(applicationRepository.save(randomOtherApplication))
+
+      val applicationSearch = new ApplicationSearch(
+        filters = List(ApplicationTextSearch),
+        textToSearch = Some(applicationName),
+        includeDeleted = true
+      )
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 3
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 2
+      result.applications.size mustBe 2
+      result.applications.head.id mustBe randomDeletedApplication.id
+      result.applications.tail.head.id mustBe applicationId
     }
 
     "return applications with search text matching client id" in {
