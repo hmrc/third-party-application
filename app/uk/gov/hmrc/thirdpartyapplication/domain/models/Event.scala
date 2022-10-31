@@ -402,5 +402,6 @@ object UpdateApplicationEvent {
     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
     .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
+    .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
     .format
 }
