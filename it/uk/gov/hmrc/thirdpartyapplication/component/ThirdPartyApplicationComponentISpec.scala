@@ -454,9 +454,7 @@ class ThirdPartyApplicationComponentISpec extends BaseFeatureSpec {
 
       Then("The application is deleted")
       val fetchResponse = Http(s"$serviceUrl/application/${application.id.value}").asString
-      fetchResponse.code shouldBe OK
-      val fetchedApplication = fetchApplication(application.id)
-      fetchedApplication.state.name shouldBe State.DELETED
+      fetchResponse.code shouldBe NOT_FOUND
     }
 
     Scenario("Change rate limit tier for an application") {

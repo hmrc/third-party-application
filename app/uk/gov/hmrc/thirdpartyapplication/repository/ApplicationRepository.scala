@@ -526,6 +526,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       .map(_ => ())
   }
 
+  def hardDelete(id: ApplicationId): Future[HasSucceeded] = {
+    collection.deleteOne(equal("id", Codecs.toBson(id)))
+      .toFuture()
+      .map(_ => HasSucceeded)
+  }
+
   def delete(id: ApplicationId, updatedOn: LocalDateTime): Future[ApplicationData] = {
     updateApplication(id, Updates.combine(
       Updates.set("state.name", Codecs.toBson(State.DELETED)),

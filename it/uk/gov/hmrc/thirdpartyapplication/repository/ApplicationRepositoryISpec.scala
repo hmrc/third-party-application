@@ -736,6 +736,53 @@ class ApplicationRepositoryISpec
     }
   }
 
+  "fetchByStatusDetailsAndEnvironment" should {
+
+    val currentDate          = LocalDateTime.now(clock)
+    val yesterday            = currentDate.minusDays(1)
+    val dayBeforeYesterday   = currentDate.minusDays(2)
+    val lastWeek             = currentDate.minusDays(7)
+
+    def verifyApplications(
+        responseApplications: Seq[ApplicationData],
+        expectedState: State.State,
+        expectedNumber: Int
+      ): Unit = {
+      responseApplications.foreach(app => app.state.name mustBe expectedState)
+      withClue(
+        s"The expected number of applications with state $expectedState is $expectedNumber"
+      ) {
+        responseApplications.size mustBe expectedNumber
+      }
+    }
+
+    "retrieve the only application with TESTING state that have been updated before the expiryDay" in {
+      val applications = Seq(
+        createAppWithStatusUpdatedOn(State.TESTING, currentDate),
+        createAppWithStatusUpdatedOn(State.PENDING_REQUESTER_VERIFICATION, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, dayBeforeYesterday),
+        createAppWithStatusUpdatedOn(State.TESTING, lastWeek)
+      )
+      applications.foreach(application =>
+        await(applicationRepository.save(application))
+      )
+
+      val applicationDetails = await(
+        applicationRepository.fetchByStatusDetailsAndEnvironment(
+          State.TESTING,
+          yesterday,
+          Environment.PRODUCTION
+        )
+      )
+
+      verifyApplications(
+        applicationDetails,
+        State.TESTING,
+        2
+      )
+    }
+  }
+
   "fetchByStatusDetailsAndEnvironmentNotAleadyNotified" should {
 
     val currentDate          = LocalDateTime.now(clock)
@@ -868,6 +915,22 @@ class ApplicationRepositoryISpec
 
       result.isDefined mustBe true
       result.get.state.name mustBe State.DELETED
+    }
+  }
+
+  "hardDelete" should {
+
+    "delete an application from the database" in {
+      val application = anApplicationDataForTest(ApplicationId.random)
+      await(applicationRepository.save(application))
+
+      val retrieved = await(applicationRepository.fetch(application.id)).get
+      retrieved mustBe application
+
+      await(applicationRepository.hardDelete(application.id))
+      val result = await(applicationRepository.fetch(application.id))
+
+      result mustBe None
     }
   }
 
@@ -1181,7 +1244,7 @@ class ApplicationRepositoryISpec
       result.applications.head.id mustBe application2.id // as a result of pageNumber = 2
     }
 
-    "return applications based on application state filter" in {
+    "return applications based on application state filter Active" in {
       val applicationInTest       = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
@@ -1202,6 +1265,29 @@ class ApplicationRepositoryISpec
       result.matching.head.total mustBe 1
       result.applications.size mustBe 1
       result.applications.head.id mustBe applicationInProduction.id
+    }
+
+    "return applications based on application state filter WasDeleted" in {
+      val applicationInTest       = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val applicationDeleted =
+        createAppWithStatusUpdatedOn(State.DELETED, LocalDateTime.now(clock))
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationDeleted))
+
+      val applicationSearch = new ApplicationSearch(filters = List(WasDeleted), includeDeleted = true)
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationDeleted.id
     }
 
     "return applications based on access type filter" in {
@@ -2807,6 +2893,36 @@ class ApplicationRepositoryISpec
           val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
           latestAcceptance.responsibleIndividual.fullName.value mustBe riName
           latestAcceptance.responsibleIndividual.emailAddress.value mustBe riEmail
+        }
+        case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
+      }
+    }
+
+    "handle ResponsibleIndividualChangedToSelf event correctly" in {
+      val applicationId = ApplicationId.random
+      val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
+      val submissionId = Submission.Id.random
+      val submissionIndex = 1
+      val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
+        TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List(TermsOfUseAcceptance(oldRi, LocalDateTime.now, submissionId, submissionIndex)))
+      val access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
+      val app = anApplicationData(applicationId).copy(access = access)
+      await(applicationRepository.save(app))
+
+      val devHubUser = CollaboratorActor("admin@example.com")
+      val event = ResponsibleIndividualChangedToSelf(
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, 
+        oldRi.fullName.value, oldRi.emailAddress.value,  
+        submissionId, submissionIndex, adminName, adminEmail)
+      val appWithUpdatedRI = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
+      appWithUpdatedRI.access match {
+        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => {
+          importantSubmissionData.responsibleIndividual.fullName.value mustBe adminName
+          importantSubmissionData.responsibleIndividual.emailAddress.value mustBe adminEmail
+          importantSubmissionData.termsOfUseAcceptances.size mustBe 2
+          val latestAcceptance = importantSubmissionData.termsOfUseAcceptances(1)
+          latestAcceptance.responsibleIndividual.fullName.value mustBe adminName
+          latestAcceptance.responsibleIndividual.emailAddress.value mustBe adminEmail
         }
         case _ => fail("unexpected access type: " + appWithUpdatedRI.access)
       }

@@ -72,12 +72,6 @@ case class ApplicationState(
     )
   }
 
-  def toPendingGatekeeperApproval(clock: Clock) = {
-    requireState(requirement = PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
-
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock))
-  }
-
   def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
 

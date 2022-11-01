@@ -141,6 +141,16 @@ class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with Befor
       resultState.verificationCode shouldBe None
       resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
     }
+
+    "move to DELETED state" in {
+      val resultState = startingState.toDeleted(clockMinusHours(2L))
+
+      resultState.name shouldBe State.DELETED
+      resultState.isDeleted shouldBe true
+      resultState.verificationCode shouldBe None
+      resultState.updatedOn.isAfter(startingState.updatedOn) shouldBe true
+    }
+
     "fail when application state is changed to PENDING_GATEKEEPER_APPROVAL" in {
 
       intercept[InvalidStateTransition](startingState.toPendingGatekeeperApproval(upliftRequestedByEmail, upliftRequestedByName, clock))

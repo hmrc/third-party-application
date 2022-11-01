@@ -154,6 +154,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
         when(aMock.delete(*[ApplicationId], *)).thenReturn(successful(applicationData))
     }
 
+    object HardDelete {
+
+      def verifyCalledWith(id: ApplicationId) =
+        ApplicationRepoMock.verify.hardDelete(eqTo(id))
+
+      def thenReturnHasSucceeded() =
+        when(aMock.hardDelete(*[ApplicationId])).thenReturn(successful(HasSucceeded))
+    }
+
     object FetchByServerToken {
 
       def thenReturnWhen(serverToken: String)(applicationData: ApplicationData) =
