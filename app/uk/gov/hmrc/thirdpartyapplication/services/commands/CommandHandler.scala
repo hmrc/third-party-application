@@ -36,29 +36,32 @@ object CommandHandler {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
-  private def isAdmin(userId: UserId, app: ApplicationData) =
+  def instigatorIsCollaboratorOnApp(instigatorId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
+    cond(app.collaborators.exists(c =>  c.userId == instigatorId), s"no collaborator found with instigator's userid: $instigatorId")
+
+  private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
 
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
     updated.exists(_.role == Role.ADMINISTRATOR)
   }
 
-  def isAdminOnApp(userId: UserId, app: ApplicationData) =
+  def isAdminOnApp(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(isAdmin(userId, app), "User must be an ADMIN")
 
-  def isAdminIfInProduction(userId: UserId, app: ApplicationData) =
+  def isAdminIfInProduction(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isAdmin(userId, app)) || (app.environment == Environment.SANDBOX.toString),
       "App is in PRODUCTION so User must be an ADMIN"
     )
 
-  def isNotInProcessOfBeingApproved(app: ApplicationData) =
+  def isNotInProcessOfBeingApproved(app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
       "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"
     )
 
-  def isApproved(app: ApplicationData) =
+  def isApproved(app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       "App is not in PRE_PRODUCTION or in PRODUCTION state"

@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, AddCollaborator, AddCollaboratorGatekeeper, Collaborator, RemoveCollaborator, RemoveCollaboratorGateKeeper, RemoveCollaboratorPlatformJobs, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, Collaborator, RemoveCollaborator, RemoveCollaboratorGateKeeper, RemoveCollaboratorPlatformJobs, UpdateApplicationEvent, UserId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.time.LocalDateTime
@@ -34,6 +34,11 @@ class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionCon
   private def validate(app: ApplicationData, collaboratorEmail: String): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map(applicationWillHaveAnAdmin(collaboratorEmail, app))(_ => app)
   }
+
+  private def validateWithInstigator(app: ApplicationData, collaboratorEmail: String, instigatorId: UserId): ValidatedNec[String, ApplicationData] = {
+    Apply[ValidatedNec[String, *]].map2(instigatorIsCollaboratorOnApp(instigatorId, app),applicationWillHaveAnAdmin(collaboratorEmail, app)){case _ => app}
+  }
+
 
   import UpdateApplicationEvent._
 
@@ -76,7 +81,7 @@ class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionCon
 
   def process(app: ApplicationData, cmd: RemoveCollaborator): CommandHandler.Result = {
     Future.successful {
-      validate(app, cmd.collaborator.emailAddress) map { _ =>
+      validateWithInstigator(app, cmd.collaborator.emailAddress, cmd.instigator) map { _ =>
         asEvents(app, cmd)
       }
     }

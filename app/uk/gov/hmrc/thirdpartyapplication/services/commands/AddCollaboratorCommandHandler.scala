@@ -18,7 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, AddCollaborator, AddCollaboratorGatekeeper, ApplicationUpdate, Collaborator, UpdateApplicationEvent, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.time.LocalDateTime
@@ -30,10 +30,6 @@ class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContex
 
   import CommandHandler._
 
-
-  private def validate(app: ApplicationData, collaboratorEmail: String): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map(collaboratorAlreadyOnApp(collaboratorEmail, app))(_ => app)
-  }
 
   import UpdateApplicationEvent._
 
@@ -63,7 +59,8 @@ class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContex
 
   def process(app: ApplicationData, cmd: AddCollaborator): CommandHandler.Result = {
     Future.successful {
-      validate(app, cmd.collaborator.emailAddress) map { _ =>
+      Apply[ValidatedNec[String, *]]
+        .map2(instigatorIsCollaboratorOnApp(cmd.instigator, app), collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)){ case _ => app } map { _ =>
         asEvents(app, cmd)
       }
     }
@@ -71,7 +68,7 @@ class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContex
 
   def process(app: ApplicationData, cmd: AddCollaboratorGatekeeper): CommandHandler.Result = {
     Future.successful {
-      validate(app, cmd.collaborator.emailAddress) map { _ =>
+     Apply[ValidatedNec[String, *]].map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)){ case _ => app } map { _ =>
         asEvents(app, cmd)
       }
     }

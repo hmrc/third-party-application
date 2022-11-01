@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationStateChanged, CollaboratorAdded, ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet, ApplicationStateChanged}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
@@ -137,7 +137,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   def addApplicationTermsOfUseAcceptance(applicationId: ApplicationId, acceptance: TermsOfUseAcceptance): Future[ApplicationData] =
     updateApplication(applicationId, Updates.push("access.importantSubmissionData.termsOfUseAcceptances", Codecs.toBson(acceptance)))
-
 
   def recordApplicationUsage(applicationId: ApplicationId): Future[ApplicationData] =
     updateApplication(applicationId, Updates.currentDate("lastAccess"))
@@ -515,8 +514,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
-
-
   private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.combine(
       Updates.set("name", name),
@@ -605,9 +602,3 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 }
-
-//sealed trait ApplicationModificationResult
-
-//final case class SuccessfulApplicationModificationResult(numberOfDocumentsUpdated: Int) extends ApplicationModificationResult
-//
-//final case class UnsuccessfulApplicationModificationResult(message: Option[String]) extends ApplicationModificationResult
