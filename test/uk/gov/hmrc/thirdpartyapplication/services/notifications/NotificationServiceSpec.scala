@@ -192,8 +192,8 @@ class NotificationServiceSpec
       val requestingAdminEmail = "admin@example.com"
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
       val event = ClientSecretAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
-        CollaboratorActor("dev@example.com"),
-        "secret", ClientSecret(obfuscatedSecret, LocalDateTime.now(), hashedSecret = "hashed"), requestingAdminEmail)
+        CollaboratorActor(requestingAdminEmail),
+        "secret", ClientSecret(obfuscatedSecret, LocalDateTime.now(), hashedSecret = "hashed"))
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -204,11 +204,11 @@ class NotificationServiceSpec
     "when receive a ClientSecretRemoved, call the event handler and return successfully" in new Setup {
       val clientSecretId = "the-id"
       val clientSecretName = "********cret"
-      val requestingAdminEmail = "admin@example.com"
+      val requestingAdminEmail = "dev@example.com"
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
       val event = ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
-        CollaboratorActor("dev@example.com"),
-        clientSecretId, clientSecretName, requestingAdminEmail)
+        CollaboratorActor(requestingAdminEmail),
+        clientSecretId, clientSecretName)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)

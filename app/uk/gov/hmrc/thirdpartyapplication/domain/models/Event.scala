@@ -74,8 +74,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     secretValue: String,
-    clientSecret: ClientSecret,
-    requestingAdminEmail: String
+    clientSecret: ClientSecret
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretAdded {
@@ -88,8 +87,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     clientSecretId: String,
-    clientSecretName: String,
-    requestingAdminEmail: String
+    clientSecretName: String
   ) extends UpdateApplicationEvent
 
   object ClientSecretAddedObfuscated {
@@ -101,8 +99,7 @@ object UpdateApplicationEvent {
         evt.eventDateTime,
         evt.actor,
         evt.clientSecret.id,
-        evt.clientSecret.name,
-        evt.requestingAdminEmail)
+        evt.clientSecret.name)
     }
   }
 
@@ -112,8 +109,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     clientSecretId: String,
-    clientSecretName: String,
-    requestingAdminEmail: String
+    clientSecretName: String
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretRemoved {

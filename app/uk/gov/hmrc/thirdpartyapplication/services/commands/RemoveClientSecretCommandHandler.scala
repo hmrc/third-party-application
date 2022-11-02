@@ -46,8 +46,7 @@ class RemoveClientSecretCommandHandler @Inject()()(implicit val ec: ExecutionCon
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(cmd.email),
         clientSecretId = cmd.clientSecretId,
-        clientSecretName = clientSecret.map(_.name).getOrElse(""),
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+        clientSecretName = clientSecret.map(_.name).getOrElse("")
       )
     )
   }

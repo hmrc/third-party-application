@@ -2607,8 +2607,7 @@ class ApplicationRepositoryISpec
         eventDateTime = LocalDateTime.now(),
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = newClientSecret,
-        requestingAdminEmail = adminEmail
+        clientSecret = newClientSecret
       )
       val existingClientSecrets = app.tokens.production.clientSecrets
       await(applicationRepository.save(app))
@@ -2633,8 +2632,7 @@ class ApplicationRepositoryISpec
         eventDateTime = LocalDateTime.now(),
         actor = CollaboratorActor(adminEmail),
         clientSecretId = clientSecretToRemove.id,
-        clientSecretName = clientSecretToRemove.name,
-        requestingAdminEmail = adminEmail
+        clientSecretName = clientSecretToRemove.name
       )
       val existingClientSecrets = app.tokens.production.clientSecrets
       await(applicationRepository.save(app))

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorRemoved, GatekeeperUserActor, ScheduledJobActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -43,32 +43,46 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
 
     val jobId = "theJobThatDeletesCollaborators"
     val scheduledJobActor = ScheduledJobActor(jobId)
+    val collaboratorEmail = "newdev@somecompany.com"
 
+    val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
         developerCollaborator,
-        adminCollaborator
+        adminCollaborator,
+        collaborator
       )
     )
 
     val timestamp = LocalDateTime.now
-    val collaboratorEmail = "newdev@somecompany.com"
 
-    val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
     val adminsToEmail = Set(adminEmail, devEmail)
 
     val removeCollaborator = RemoveCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
   }
 
   "process RemoveCollaborator" should {
-    "create a valid event for a standard command" in new Setup {
+    "create a valid event for a standard command with CollaboratorActor" in new Setup {
       val result = await(underTest.process(app, removeCollaborator))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
       event.applicationId shouldBe applicationId
       event.actor shouldBe adminActor
+      event.eventDateTime shouldBe timestamp
+      event.collaboratorEmail shouldBe collaborator.emailAddress
+      event.collaboratorId shouldBe collaborator.userId
+      event.collaboratorRole shouldBe collaborator.role
+    }
+
+    "create a valid event for a standard command with GatekeeperActor" in new Setup {
+      val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)))
+
+      result.isValid shouldBe true
+      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
+      event.applicationId shouldBe applicationId
+      event.actor shouldBe gkUserActor
       event.eventDateTime shouldBe timestamp
       event.collaboratorEmail shouldBe collaborator.emailAddress
       event.collaboratorId shouldBe collaborator.userId

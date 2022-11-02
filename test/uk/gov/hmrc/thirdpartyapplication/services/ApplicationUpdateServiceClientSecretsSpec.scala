@@ -63,7 +63,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       val event = ClientSecretAdded(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), secretValue, clientSecret, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), secretValue, clientSecret)
 
       when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -100,8 +100,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
         LocalDateTime.now(),
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
         clientSecret.id,
-        clientSecret.name,
-        adminEmail)
+        clientSecret.name)
 
       when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)

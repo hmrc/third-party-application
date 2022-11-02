@@ -44,8 +44,7 @@ class AddClientSecretCommandHandler @Inject()()
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(cmd.email),
         secretValue = cmd.secretValue,
-        clientSecret = cmd.clientSecret,
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+        clientSecret = cmd.clientSecret
       )
     )
   }
