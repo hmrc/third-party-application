@@ -219,7 +219,6 @@ class NotificationServiceSpec
     "when receive a AddCollaborator, call the event handler and return successfully" in new Setup {
       val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
 
-      val requestingAdminEmail = "admin@example.com"
       EmailConnectorMock.SendCollaboratorAddedNotification.thenReturnSuccess()
       EmailConnectorMock.SendCollaboratorAddedConfirmation.thenReturnSuccess()
 
@@ -230,8 +229,7 @@ class NotificationServiceSpec
         collaborator.userId,
         collaborator.emailAddress,
         collaborator.role,
-        adminsToEmail,
-        requestingAdminEmail)
+        adminsToEmail)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -248,7 +246,6 @@ class NotificationServiceSpec
     "when receive a RemoveCollaborator, call the event handler and return successfully" in new Setup {
       val adminsToEmail = Set("anAdmin@someCompany.com", "anotherdev@someCompany.com")
 
-      val requestingAdminEmail = "admin@example.com"
       EmailConnectorMock.SendCollaboratorRemovedNotification.thenReturnSuccess()
       EmailConnectorMock.SendCollaboratorRemovedConfirmation.thenReturnSuccess()
 
@@ -260,8 +257,7 @@ class NotificationServiceSpec
         collaborator.emailAddress,
         collaborator.role,
         true,
-        adminsToEmail,
-        requestingAdminEmail)
+        adminsToEmail)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -270,7 +266,7 @@ class NotificationServiceSpec
         collaboratorEmail, applicationData.name, recipients = adminsToEmail)
 
       EmailConnectorMock.SendCollaboratorRemovedConfirmation
-        .verifyCalledWith(requestingAdminEmail, applicationData.name, recipients = Set(collaboratorEmail))
+        .verifyCalledWith("dev@example.com", applicationData.name, recipients = Set(collaboratorEmail))
 
     }
   }

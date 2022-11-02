@@ -18,7 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, Collaborator, RemoveCollaborator, RemoveCollaboratorGateKeeper, RemoveCollaboratorPlatformJobs, UpdateApplicationEvent, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent, UserId}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import java.time.LocalDateTime
@@ -30,39 +31,41 @@ class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionCon
 
   import CommandHandler._
 
+  private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
-  private def validate(app: ApplicationData, collaboratorEmail: String): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map(applicationWillHaveAnAdmin(collaboratorEmail, app))(_ => app)
+    cmd.actor match {
+      case CollaboratorActor(actorEmail: String) =>  Apply[ValidatedNec[String, *]]
+        .map3(isCollaboratorOnApp(actorEmail, app),
+              isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
+              applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)){case _ => app}
+      case _ => Apply[ValidatedNec[String, *]]
+        .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
+              applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)){case _ => app}
+    }
+
   }
-
-  private def validateWithInstigator(app: ApplicationData, collaboratorEmail: String, instigatorId: UserId): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(instigatorIsCollaboratorOnApp(instigatorId, app),applicationWillHaveAnAdmin(collaboratorEmail, app)){case _ => app}
-  }
-
 
   import UpdateApplicationEvent._
 
 
    private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[UpdateApplicationEvent] ={
-    asEvents(app, getRequester(app, cmd.instigator), cmd.adminsToEmail, CollaboratorActor(cmd.email), cmd.timestamp, cmd.collaborator, notifyCollaborator = true)
+    asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, cmd: RemoveCollaboratorGateKeeper): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.gatekeeperUser), cmd.timestamp, cmd.collaborator, notifyCollaborator = true)
-  }
-
-  private def asEvents(app: ApplicationData, cmd: RemoveCollaboratorPlatformJobs): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, ActorType.SCHEDULED_JOB.toString , cmd.adminsToEmail, ScheduledJobActor(cmd.jobId), cmd.timestamp, cmd.collaborator, notifyCollaborator = false)
-  }
 
 
   private def asEvents(app: ApplicationData,
-                       requestingAdminEmail: String,
-                       adminsToEmail:Set[String],
                        actor: Actor,
+                       adminsToEmail:Set[String],
                        eventTime: LocalDateTime,
-                       collaborator: Collaborator,
-                       notifyCollaborator: Boolean): NonEmptyList[UpdateApplicationEvent] = {
+                       collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
+    def notifyCollaborator() ={
+      actor match {
+        case _: ScheduledJobActor => false
+        case _ => true
+       }
+    }
+
     NonEmptyList.of(
       CollaboratorRemoved(
         id = UpdateApplicationEvent.Id.random,
@@ -72,35 +75,19 @@ class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionCon
         collaboratorId = collaborator.userId,
         collaboratorEmail = collaborator.emailAddress,
         collaboratorRole = collaborator.role,
-        notifyCollaborator = notifyCollaborator,
-        verifiedAdminsToEmail = adminsToEmail,
-        requestingAdminEmail = requestingAdminEmail
+        notifyCollaborator = notifyCollaborator(),
+        verifiedAdminsToEmail = adminsToEmail
       )
     )
   }
 
   def process(app: ApplicationData, cmd: RemoveCollaborator): CommandHandler.Result = {
     Future.successful {
-      validateWithInstigator(app, cmd.collaborator.emailAddress, cmd.instigator) map { _ =>
+      validate(app, cmd) map { _ =>
         asEvents(app, cmd)
       }
     }
   }
 
-  def process(app: ApplicationData, cmd: RemoveCollaboratorGateKeeper): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd.collaborator.emailAddress) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
-  }
-
-  def process(app: ApplicationData, cmd: RemoveCollaboratorPlatformJobs): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd.collaborator.emailAddress) map { _ =>
-        asEvents(app, cmd)
-      }
-    }
-  }
 
 }

@@ -74,9 +74,9 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       val appCollaboratorAddedEvt: CollaboratorAdded = CollaboratorAdded(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, adminsToEmail, requesterEmail)
+        collaborator.userId, collaborator.emailAddress, collaborator.role, adminsToEmail)
 
-      val addCollaborator = AddCollaborator(idOf(someAdmin), someAdmin, collaborator, adminsToEmail,timestamp)
+      val addCollaborator = AddCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail,timestamp)
 
       val events = NonEmptyList.of(appCollaboratorAddedEvt)
 
@@ -94,48 +94,6 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       )
 
       val result = await(underTest.update(applicationId, addCollaborator).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(appCollaboratorAddedEvt)
-      result shouldBe Right(appAfter)
-    }
-  }
-
-  "update with AddCollaboratorGateKeeper" should {
-
-    val requesterEmail = "bill.badger@rupert.com"
-
-    "return the updated application if the application exists" in new Setup {
-
-      val someAdmin = "someAdmin@company"
-      val collaboratorEmail = "someone@somecompany"
-      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-
-      val adminsToEmail = Set("1@company.com", "2@company.com")
-      val appBefore = applicationData
-      val appAfter = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
-      val appCollaboratorAddedEvt: CollaboratorAdded = CollaboratorAdded(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, adminsToEmail, requesterEmail)
-
-      val addCollaboratorGatekeeper = AddCollaboratorGatekeeper(someAdmin, collaborator, adminsToEmail, timestamp)
-
-      val events = NonEmptyList.of(appCollaboratorAddedEvt)
-
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaboratorGatekeeper])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, addCollaboratorGatekeeper).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(appCollaboratorAddedEvt)
       result shouldBe Right(appAfter)
@@ -160,9 +118,9 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       : CollaboratorRemoved = CollaboratorRemoved(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, notifyCollaborator = true, adminsToEmail, requesterEmail)
+        collaborator.userId, collaborator.emailAddress, collaborator.role, notifyCollaborator = true, adminsToEmail)
 
-      val removeCollaborator = RemoveCollaborator(idOf(someAdmin), someAdmin, collaborator, adminsToEmail, timestamp)
+      val removeCollaborator = RemoveCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail, timestamp)
 
       val events = NonEmptyList.of(collaboratorRemovedEvt)
 
@@ -186,89 +144,4 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
     }
   }
 
-  "update with RemoveCollaboratorGateKeeper" should {
-
-    val requesterEmail = "bill.badger@rupert.com"
-
-    "return the updated application if the application exists" in new Setup {
-
-      val someAdmin = "someAdmin@company"
-      val collaboratorEmail = "someone@somecompany"
-      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-
-      val adminsToEmail = Set("1@company.com", "2@company.com")
-      val appBefore = applicationData
-      val appAfter = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
-      val collaboratorRemovedEvt
-      : CollaboratorRemoved = CollaboratorRemoved(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, notifyCollaborator = true, adminsToEmail, requesterEmail)
-
-      val removeCollaboratorGK = RemoveCollaboratorGateKeeper(someAdmin, collaborator, adminsToEmail, timestamp)
-
-      val events = NonEmptyList.of(collaboratorRemovedEvt)
-
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaboratorGateKeeper])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, removeCollaboratorGK).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(collaboratorRemovedEvt)
-      result shouldBe Right(appAfter)
-    }
-  }
-
-  "update with RemoveCollaboratorPlatformJob" should {
-
-    val requesterEmail = "bill.badger@rupert.com"
-
-    "return the updated application if the application exists" in new Setup {
-
-      val someAdmin = "someAdmin@company"
-      val collaboratorEmail = "someone@somecompany"
-      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-
-      val adminsToEmail = Set("1@company.com", "2@company.com")
-      val appBefore = applicationData
-      val appAfter = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
-      val collaboratorRemovedEvt
-      : CollaboratorRemoved = CollaboratorRemoved(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, notifyCollaborator = false, adminsToEmail, requesterEmail)
-
-      val removeCollaborator = RemoveCollaboratorPlatformJobs("someJobId",  collaborator, adminsToEmail, timestamp)
-
-      val events = NonEmptyList.of(collaboratorRemovedEvt)
-
-      ApplicationRepoMock.Fetch.thenReturn(appBefore)
-      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      ApiPlatformEventServiceMock.ApplyEvents.succeeds
-      NotificationServiceMock.SendNotifications.thenReturnSuccess()
-      SubmissionsServiceMock.ApplyEvents.succeeds()
-      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
-      StateHistoryRepoMock.ApplyEvents.succeeds()
-      AuditServiceMock.ApplyEvents.succeeds
-
-      when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaboratorPlatformJobs])).thenReturn(
-        Future.successful(Validated.valid(events).toValidatedNec)
-      )
-
-      val result = await(underTest.update(applicationId, removeCollaborator).value)
-
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(collaboratorRemovedEvt)
-      result shouldBe Right(appAfter)
-    }
-  }
 }

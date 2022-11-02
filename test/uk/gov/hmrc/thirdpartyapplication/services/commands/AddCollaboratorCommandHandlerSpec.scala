@@ -34,13 +34,11 @@ class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
 
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
 
-
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
     val adminActor        = CollaboratorActor(adminEmail)
 
     val gkUserEmail = "admin@gatekeeper"
-    val gkUserActor        = GatekeeperUserActor(gkUserEmail)
-
+    val gkUserActor = GatekeeperUserActor(gkUserEmail)
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -54,9 +52,8 @@ class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
     val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
     val adminsToEmail     = Set(adminEmail, devEmail)
 
-    val addCollaborator = AddCollaborator(idOf(adminActor.email), adminEmail, collaborator, adminsToEmail, timestamp)
+    val addCollaborator = AddCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
 
-    val addCollaboratorGK = AddCollaboratorGatekeeper(gkUserEmail, collaborator, adminsToEmail, timestamp)
   }
 
   "process AddCollaborator" should {
@@ -84,32 +81,5 @@ class AddCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
 
     }
   }
-
-  "process AddCollaboratorGateKeeper" should {
-    "create a valid event for an admin on a production application" in new Setup {
-      val result = await(underTest.process(app, addCollaboratorGK))
-
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorAdded]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe gkUserActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
-    }
-
-    "return an error when collaborator already exists against the application" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, addCollaboratorGK.copy(collaborator = adminCollaborator)))
-
-      result.isValid shouldBe false
-      result.toEither match {
-        case Left(Chain(error: String)) => error shouldBe s"Collaborator already linked to Application ${app.id.asText}"
-        case _                          => fail()
-      }
-
-    }
-  }
-
 
 }

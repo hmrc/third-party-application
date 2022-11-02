@@ -18,6 +18,8 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
+
 import java.time.LocalDateTime
 
 trait ApplicationUpdate {
@@ -25,8 +27,8 @@ trait ApplicationUpdate {
 }
 case class AddClientSecret(instigator: UserId, email: String, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
 case class RemoveClientSecret(instigator: UserId, email: String, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class AddCollaborator(instigator: UserId, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
-case class RemoveCollaborator(instigator: UserId, email: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
+case class AddCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
+case class RemoveCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
 case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
@@ -35,28 +37,18 @@ case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateT
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 
-trait GatekeeperApplicationUpdate extends ApplicationUpdate {
+trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String
 }
-case class AddCollaboratorGatekeeper(gatekeeperUser: String, collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
-case class RemoveCollaboratorGateKeeper(gatekeeperUser: String, collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
-case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
-case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
+case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationUpdate
+case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
 
-trait ApiPlatformJobsApplicationUpdate extends ApplicationUpdate {
-  def jobId: String
-}
-
-case class RemoveCollaboratorPlatformJobs(jobId: String,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApiPlatformJobsApplicationUpdate
 
 trait ApplicationUpdateFormatters {
   implicit val addClientSecretFormatter = Json.format[AddClientSecret]
   implicit val removeClientSecretFormatter = Json.format[RemoveClientSecret]
   implicit val addCollaboratorFormatter = Json.format[AddCollaborator]
-  implicit val addCollaboratorGatekeeperFormatter = Json.format[AddCollaboratorGatekeeper]
   implicit val removeCollaboratorFormatter = Json.format[RemoveCollaborator]
-  implicit val removeCollaboratorGatekeeperFormatter = Json.format[RemoveCollaboratorGateKeeper]
-  implicit val removeCollaboratorPlatformJobsFormatter = Json.format[RemoveCollaboratorPlatformJobs]
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
   implicit val changePrivacyPolicyLocationFormatter = Json.format[ChangeProductionApplicationPrivacyPolicyLocation]
   implicit val changeTermsAndConditionsLocationFormatter = Json.format[ChangeProductionApplicationTermsAndConditionsLocation]
@@ -70,10 +62,7 @@ trait ApplicationUpdateFormatters {
     .and[AddClientSecret]("addClientSecret")
     .and[RemoveClientSecret]("removeClientSecret")
     .and[AddCollaborator]("addCollaborator")
-    .and[AddCollaboratorGatekeeper]("addCollaboratorGatekeeper")
     .and[RemoveCollaborator]("removeCollaborator")
-    .and[RemoveCollaboratorGateKeeper]("removeCollaboratorGateKeeper")
-    .and[RemoveCollaboratorPlatformJobs]("removeCollaboratorPlatformJobs")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
     .and[ChangeProductionApplicationPrivacyPolicyLocation]("changeProductionApplicationPrivacyPolicyLocation")
     .and[ChangeProductionApplicationTermsAndConditionsLocation]("changeProductionApplicationTermsAndConditionsLocation")

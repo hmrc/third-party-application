@@ -2662,8 +2662,7 @@ class ApplicationRepositoryISpec
         collaboratorId = collaborator.userId,
         collaboratorRole = collaborator.role,
         collaboratorEmail = collaborator.emailAddress,
-        verifiedAdminsToEmail = adminsToEmail,
-        requestingAdminEmail = adminEmail
+        verifiedAdminsToEmail = adminsToEmail
       )
 
       await(applicationRepository.save(app))
@@ -2690,8 +2689,7 @@ class ApplicationRepositoryISpec
         collaboratorRole = collaborator.role,
         collaboratorEmail = collaborator.emailAddress,
         notifyCollaborator = true,
-        verifiedAdminsToEmail = adminsToEmail,
-        requestingAdminEmail = adminEmail
+        verifiedAdminsToEmail = adminsToEmail
       )
 
       await(applicationRepository.save(app.copy(collaborators = app.collaborators ++ Set(collaborator))))

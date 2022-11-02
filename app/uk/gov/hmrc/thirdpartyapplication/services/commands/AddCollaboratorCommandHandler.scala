@@ -33,15 +33,23 @@ class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContex
 
   import UpdateApplicationEvent._
 
+  private def validate(app: ApplicationData, cmd: AddCollaborator) ={
+    cmd.actor match {
+      case CollaboratorActor(collaboratorEmail: String) => Apply[ValidatedNec[String, *]].map2(
+                isCollaboratorOnApp (collaboratorEmail, app),
+                collaboratorAlreadyOnApp (cmd.collaborator.emailAddress, app) ) { case _ => app}
+      case _  => Apply[ValidatedNec[String, *]]
+        .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)) ( _ => app )
+    }
+
+  }
+
    private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] ={
-    asEvents(app, getRequester(app, cmd.instigator), cmd.adminsToEmail, CollaboratorActor(cmd.email), cmd.timestamp, cmd.collaborator)
+    asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-  private def asEvents(app: ApplicationData, cmd: AddCollaboratorGatekeeper): NonEmptyList[UpdateApplicationEvent] = {
-    asEvents(app, cmd.gatekeeperUser, cmd.adminsToEmail, GatekeeperUserActor(cmd.gatekeeperUser), cmd.timestamp, cmd.collaborator)
-  }
 
-  private def asEvents(app: ApplicationData, requestingAdminEmail: String, adminsToEmail:Set[String], actor: Actor, eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, actor: Actor,  adminsToEmail:Set[String], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
       CollaboratorAdded(
         id = UpdateApplicationEvent.Id.random,
@@ -51,26 +59,19 @@ class AddCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContex
         collaboratorId = collaborator.userId,
         collaboratorEmail = collaborator.emailAddress.toLowerCase,
         collaboratorRole = collaborator.role,
-        verifiedAdminsToEmail = adminsToEmail,
-        requestingAdminEmail = requestingAdminEmail
+        verifiedAdminsToEmail = adminsToEmail
       )
     )
   }
 
+
+
   def process(app: ApplicationData, cmd: AddCollaborator): CommandHandler.Result = {
     Future.successful {
-      Apply[ValidatedNec[String, *]]
-        .map2(instigatorIsCollaboratorOnApp(cmd.instigator, app), collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)){ case _ => app } map { _ =>
+     validate(app, cmd) map { _ =>
         asEvents(app, cmd)
       }
     }
   }
 
-  def process(app: ApplicationData, cmd: AddCollaboratorGatekeeper): CommandHandler.Result = {
-    Future.successful {
-     Apply[ValidatedNec[String, *]].map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)){ case _ => app } map { _ =>
-        asEvents(app, cmd)
-      }
-    }
-  }
 }

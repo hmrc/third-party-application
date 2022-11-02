@@ -58,11 +58,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
     val adminsToEmail = Set(adminEmail, devEmail)
 
-    val removeCollaborator = RemoveCollaborator(idOf(adminActor.email), adminEmail, collaborator, adminsToEmail, timestamp)
-
-    val removeCollaboratorGK = RemoveCollaboratorGateKeeper(gkUserEmail, collaborator, adminsToEmail, timestamp)
-
-    val removeCollaboratorPJ = RemoveCollaboratorPlatformJobs(jobId, collaborator, adminsToEmail, timestamp)
+    val removeCollaborator = RemoveCollaborator(CollaboratorActor(adminActor.email), collaborator, adminsToEmail, timestamp)
   }
 
   "process RemoveCollaborator" should {
@@ -90,58 +86,4 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
 
     }
   }
-
-  "process RemoveCollaboratorGateKeeper" should {
-    "create a valid event for a Gatekeeper command" in new Setup {
-      val result = await(underTest.process(app, removeCollaboratorGK))
-
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe gkUserActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
-    }
-
-    "return an error when trying to remove last admin for an application" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeCollaboratorGK.copy(collaborator = adminCollaborator)))
-
-      result.isValid shouldBe false
-      result.toEither match {
-        case Left(Chain(error: String)) => error shouldBe s"Collaborator is last remaining admin for Application ${app.id.asText}"
-        case _ => fail()
-      }
-
-    }
-  }
-
-  "process RemoveCollaboratorPlatformJobs" should {
-    "create a valid event for a Gatekeeper command" in new Setup {
-      val result = await(underTest.process(app, removeCollaboratorPJ))
-
-      result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
-      event.applicationId shouldBe applicationId
-      event.actor shouldBe scheduledJobActor
-      event.eventDateTime shouldBe timestamp
-      event.collaboratorEmail shouldBe collaborator.emailAddress
-      event.collaboratorId shouldBe collaborator.userId
-      event.collaboratorRole shouldBe collaborator.role
-    }
-
-    "return an error when trying to remove last admin for an application" in new Setup {
-      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeCollaboratorPJ.copy(collaborator = adminCollaborator)))
-
-      result.isValid shouldBe false
-      result.toEither match {
-        case Left(Chain(error: String)) => error shouldBe s"Collaborator is last remaining admin for Application ${app.id.asText}"
-        case _ => fail()
-      }
-
-    }
-  }
-
-
 }

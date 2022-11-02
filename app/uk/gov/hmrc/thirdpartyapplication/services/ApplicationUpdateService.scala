@@ -84,10 +84,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
-      case cmd: AddCollaboratorGatekeeper                             => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaboratorGateKeeper                          => removeCollaboratorCommandHandler.process(app, cmd)
-      case cmd: RemoveCollaboratorPlatformJobs                        => removeCollaboratorCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

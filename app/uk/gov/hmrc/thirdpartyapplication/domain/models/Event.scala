@@ -32,7 +32,7 @@ sealed trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
   def actor: UpdateApplicationEvent.Actor
-  def requestingAdminEmail: String
+
 }
 
 trait TriggersNotification {
@@ -41,7 +41,6 @@ trait TriggersNotification {
 
 object UpdateApplicationEvent {
   sealed trait Actor
-
   case class GatekeeperUserActor(user: String) extends Actor
   case class CollaboratorActor(email: String) extends Actor
   case class ScheduledJobActor(jobId: String) extends Actor
@@ -341,8 +340,7 @@ object UpdateApplicationEvent {
                                collaboratorId: UserId,
                                collaboratorEmail: String,
                                collaboratorRole: Role,
-                               verifiedAdminsToEmail: Set[String],
-                               requestingAdminEmail: String) extends UpdateApplicationEvent with TriggersNotification
+                               verifiedAdminsToEmail: Set[String]) extends UpdateApplicationEvent with TriggersNotification
 
   object CollaboratorAdded {
     implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
@@ -358,8 +356,7 @@ object UpdateApplicationEvent {
                                collaboratorEmail: String,
                                collaboratorRole: Role,
                                notifyCollaborator: Boolean,
-                               verifiedAdminsToEmail: Set[String],
-                               requestingAdminEmail: String) extends UpdateApplicationEvent with TriggersNotification
+                               verifiedAdminsToEmail: Set[String]) extends UpdateApplicationEvent with TriggersNotification
 
   object CollaboratorRemoved {
     implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
