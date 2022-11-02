@@ -8,6 +8,7 @@
 # Any test-only end-point should be defined here.
 # !!!WARNING!!! Every route defined in this file MUST be prefixed with "/test-only/". This is because NGINX is blocking every uri containing the string "test-only" in production.
 # Failing to follow this rule may result in test routes deployed in production.
+POST          /test-only/application/:id/delete                                uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationController.deleteApplication(id: uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId)
 
 # Add all the application routes to the prod.routes file
 ->         /                          prod.Routes

@@ -478,6 +478,24 @@ class ApplicationRepositoryISpec
       retrieved1.map(_.grantLength) mustBe Some(grantLength1)
       retrieved2.map(_.grantLength) mustBe Some(grantLength2)
     }
+
+    "do not retrieve the application for a given client id when it has a matching client id but is deleted" in {
+      val application1 = anApplicationDataForTest(
+        ApplicationId.random,
+        ClientId("aaa"),
+        deletedState("requestorEmail@example.com")
+      )
+
+      await(applicationRepository.save(application1))
+
+      val retrieved = await(
+        applicationRepository.fetchByClientId(
+          application1.tokens.production.clientId
+        )
+      )
+
+      retrieved mustBe None
+    }
   }
 
   "fetchByServerToken" should {
@@ -505,6 +523,24 @@ class ApplicationRepositoryISpec
 
       retrieved mustBe Some(application2)
     }
+
+    "do not retrieve the application when it is matched for access token but is deleted" in {
+      val application1 = anApplicationDataForTest(
+        ApplicationId.random,
+        ClientId("aaa"),
+        deletedState("requestorEmail@example.com")
+      )
+
+      await(applicationRepository.save(application1))
+
+      val retrieved = await(
+        applicationRepository.fetchByServerToken(
+          application1.tokens.production.accessToken
+        )
+      )
+
+      retrieved mustBe None
+    }
   }
 
   "fetchAllForEmailAddress" should {
@@ -517,9 +553,15 @@ class ApplicationRepositoryISpec
         id = ApplicationId.random,
         prodClientId = generateClientId
       )
+      val application3 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId,
+        deletedState("requestorEmail@example.com")
+      )
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
+      await(applicationRepository.save(application3))
 
       val retrieved =
         await(applicationRepository.fetchAllForEmailAddress("user@example.com"))
@@ -529,7 +571,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchStandardNonTestingApps" should {
-    "retrieve all the standard applications not in TESTING state" in {
+    "retrieve all the standard applications not in TESTING (or DELETED) state" in {
       val application1 = anApplicationDataForTest(
         id = ApplicationId.random,
         prodClientId = generateClientId
@@ -549,11 +591,17 @@ class ApplicationRepositoryISpec
         prodClientId = generateClientId,
         state = pendingRequesterVerificationState("user2")
       )
+      val application5 = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId,
+        state = deletedState("user2")
+      )
 
       await(applicationRepository.save(application1))
       await(applicationRepository.save(application2))
       await(applicationRepository.save(application3))
       await(applicationRepository.save(application4))
+      await(applicationRepository.save(application5))
 
       val retrieved = await(applicationRepository.fetchStandardNonTestingApps())
 
@@ -584,8 +632,14 @@ class ApplicationRepositoryISpec
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
 
-    "return empty list when all apps  in TESTING state" in {
+    "return empty list when all apps in TESTING state" in {
       val application1 = anApplicationDataForTest(ApplicationId.random)
+      await(applicationRepository.save(application1))
+      await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
+    }
+
+    "return empty list when all apps in DELETED state" in {
+      val application1 = anApplicationDataForTest(ApplicationId.random, state = deletedState("user2"))
       await(applicationRepository.save(application1))
       await(applicationRepository.fetchStandardNonTestingApps()) mustBe Nil
     }
@@ -617,6 +671,20 @@ class ApplicationRepositoryISpec
       val retrieved = await(
         applicationRepository.fetchApplicationsByName("non-matching-name")
       )
+
+      retrieved mustBe List.empty
+    }
+
+    "dont retrieve the application with the matching name if its deleted" in {
+      val applicationName           = "appName"
+      val applicationNormalisedName = "appname"
+
+      val application = anApplicationDataForTest(id = ApplicationId.random, state = deletedState("user2"))
+        .copy(normalisedName = applicationNormalisedName)
+
+      await(applicationRepository.save(application))
+      val retrieved =
+        await(applicationRepository.fetchApplicationsByName(applicationName))
 
       retrieved mustBe List.empty
     }
@@ -895,6 +963,20 @@ class ApplicationRepositoryISpec
         applicationRepository.fetchVerifiableUpliftBy(
           "aDifferentVerificationCode"
         )
+      )
+      retrieved mustBe None
+    }
+
+    "not retrieve the application with verificationCode when in deleted state" in {
+      val application = anApplicationDataForTest(
+        ApplicationId.random,
+        state = pendingRequesterVerificationState("requestorEmail@example.com")
+      )
+      await(applicationRepository.save(application))
+      await(applicationRepository.delete(application.id, LocalDateTime.now))
+
+      val retrieved   = await(
+        applicationRepository.fetchVerifiableUpliftBy(generatedVerificationCode)
       )
       retrieved mustBe None
     }
@@ -2565,6 +2647,7 @@ class ApplicationRepositoryISpec
     "return two applications when both have the same userId" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
 
       val collaborator     =
@@ -2574,9 +2657,13 @@ class ApplicationRepositoryISpec
       val testApplication2 =
         anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
           .copy(collaborators = Set(collaborator))
+      val testApplication3 =
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+          .copy(collaborators = Set(collaborator))
 
       await(applicationRepository.save(testApplication1))
       await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
 
       val result = await(applicationRepository.fetchAllForUserId(userId))
 
@@ -2588,25 +2675,29 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForUserIdAndEnvironment" should {
-    "return one application when both apps have the same userId but only one is in Production" in {
+    "return one application when 3 apps have the same userId but only one is in Production and not deleted" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
       val collaborator =
         Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
 
-      val prodApplication    = anApplicationDataForTest(applicationId1)
+      val prodApplication1   = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user2"))
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
           .copy(
             environment = Environment.SANDBOX.toString,
             collaborators = Set(collaborator)
           )
 
-      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
       val result = await(
@@ -2625,25 +2716,29 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForEmailAddressAndEnvironment" should {
-    "return one application when both apps have the same user email but only one is in Production" in {
+    "return one application when 3 apps have the same user email but only one is in Production and not deleted" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
       val userId         = UserId.random
       val productionEnv  = Environment.PRODUCTION.toString
 
       val collaborator =
         Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
 
-      val prodApplication    = anApplicationDataForTest(applicationId1)
+      val prodApplication1   = anApplicationDataForTest(applicationId1)
+        .copy(environment = productionEnv, collaborators = Set(collaborator))
+      val prodApplication2   = anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"), state = deletedState("user"))
         .copy(environment = productionEnv, collaborators = Set(collaborator))
       val sandboxApplication =
-        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"))
           .copy(
             environment = Environment.SANDBOX.toString,
             collaborators = Set(collaborator)
           )
 
-      await(applicationRepository.save(prodApplication))
+      await(applicationRepository.save(prodApplication1))
+      await(applicationRepository.save(prodApplication2))
       await(applicationRepository.save(sandboxApplication))
 
       val result = await(
@@ -3095,6 +3190,15 @@ class ApplicationRepositoryISpec
 
       val results = await(applicationRepository.fetchProdAppStateHistories())
       results mustBe List(ApplicationWithStateHistory(prodApp.id, prodApp.name, 2, List(stateHistory1, stateHistory2)))
+    }
+
+    "do not return app state history for a deleted app" in {
+      val app = saveApp(State.DELETED, Duration.ZERO, true)
+      saveHistoryStatePair(app.id, State.TESTING, State.PENDING_REQUESTER_VERIFICATION, Duration.ofHours(1))
+      saveHistoryStatePair(app.id, State.PENDING_REQUESTER_VERIFICATION, State.DELETED, Duration.ofHours(2))
+
+      val results = await(applicationRepository.fetchProdAppStateHistories())
+      results mustBe List.empty
     }
   }
 
