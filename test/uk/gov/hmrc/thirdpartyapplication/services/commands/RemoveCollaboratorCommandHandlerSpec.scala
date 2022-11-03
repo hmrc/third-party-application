@@ -67,7 +67,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       val result = await(underTest.process(app, removeCollaborator))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.asInstanceOf[CollaboratorRemoved]
+      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
       event.applicationId shouldBe applicationId
       event.actor shouldBe adminActor
       event.eventDateTime shouldBe timestamp
@@ -77,10 +77,10 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     }
 
     "create a valid event for a standard command with GatekeeperActor" in new Setup {
-      val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)))
+      val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.asInstanceOf[CollaboratorRemoved]
+      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
       event.applicationId shouldBe applicationId
       event.actor shouldBe gkUserActor
       event.eventDateTime shouldBe timestamp
