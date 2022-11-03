@@ -240,7 +240,7 @@ class ApplicationService @Inject() (
       _   <- deleteSubscriptions(app)
       _   <- thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(app.tokens.production.clientId)
       _   <- apiGatewayStore.deleteApplication(app.wso2ApplicationName)
-      _   <- applicationRepository.delete(applicationId)
+      _   <- applicationRepository.hardDelete(applicationId)
       _   <- submissionsService.deleteAllAnswersForApplication(app.id)
       _   <- stateHistoryRepository.deleteByApplicationId(applicationId)
       _    = auditFunction(app)
@@ -457,7 +457,7 @@ class ApplicationService @Inject() (
       case PRIVILEGED | ROPC => OldActor("", GATEKEEPER)
       case _                 => OldActor(loggedInUser, COLLABORATOR)
     }
-    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.delete(a.id))
+    insertStateHistory(appData, appData.state.name, None, actor.id, actor.actorType, (a: ApplicationData) => applicationRepository.hardDelete(a.id))
   }
 
   private def auditAppCreated(app: ApplicationData)(implicit hc: HeaderCarrier) =

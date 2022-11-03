@@ -47,6 +47,7 @@ case class ApplicationState(
   def isPendingRequesterVerification                                   = name == State.PENDING_REQUESTER_VERIFICATION
   def isInPreProductionOrProduction                                    = name == State.PRE_PRODUCTION || name == State.PRODUCTION
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification = name == State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION || name == State.PENDING_GATEKEEPER_APPROVAL
+  def isDeleted                                                        = name == State.DELETED
 
   def toProduction(clock: Clock) = {
     requireState(requirement = State.PRE_PRODUCTION, transitionTo = PRODUCTION)
@@ -71,12 +72,6 @@ case class ApplicationState(
     )
   }
 
-  def toPendingGatekeeperApproval(clock: Clock) = {
-    requireState(requirement = PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
-
-    copy(name = State.PENDING_GATEKEEPER_APPROVAL, updatedOn = LocalDateTime.now(clock))
-  }
-
   def toPendingResponsibleIndividualVerification(requestedByEmailAddress: String, requestedByName: String, clock: Clock) = {
     requireState(requirement = TESTING, transitionTo = State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION)
 
@@ -99,6 +94,8 @@ case class ApplicationState(
     }
     copy(name = State.PENDING_REQUESTER_VERIFICATION, verificationCode = Some(verificationCode()), updatedOn = LocalDateTime.now(clock))
   }
+
+  def toDeleted(clock: Clock) = copy(name = DELETED, verificationCode = None, updatedOn = LocalDateTime.now(clock))
 }
 
 object ApplicationState {
@@ -122,4 +119,7 @@ object ApplicationState {
 
   def production(requestedByEmail: String, requestedByName: String) =
     ApplicationState(State.PRODUCTION, Some(requestedByEmail), Some(requestedByName))
+
+  def deleted(requestedByEmail: String, requestedByName: String) =
+    ApplicationState(State.DELETED, Some(requestedByEmail), Some(requestedByName))
 }

@@ -228,7 +228,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchStandardNonTestingApps(): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("access.accessType", Codecs.toBson(AccessType.STANDARD)),
-      notEqual("state.name", Codecs.toBson(State.TESTING))
+      notEqual("state.name", Codecs.toBson(State.TESTING)),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
@@ -239,11 +240,21 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def fetchApplicationsByName(name: String): Future[Seq[ApplicationData]] = {
-    collection.find(equal("normalisedName", name.toLowerCase)).toFuture()
+    val query = and(
+      equal("normalisedName", name.toLowerCase),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).toFuture()
   }
 
   def fetchVerifiableUpliftBy(verificationCode: String): Future[Option[ApplicationData]] = {
-    collection.find(equal("state.verificationCode", verificationCode)).headOption()
+    val query = and(
+      equal("state.verificationCode", verificationCode),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
   def fetchAllByStatusDetails(state: State.State, updatedBefore: LocalDateTime): Future[Seq[ApplicationData]] = {
@@ -278,34 +289,56 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def fetchByClientId(clientId: ClientId): Future[Option[ApplicationData]] = {
-    collection.find(equal("tokens.production.clientId", Codecs.toBson(clientId))).headOption()
+    val query = and(
+      equal("tokens.production.clientId", Codecs.toBson(clientId)),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
   def fetchByServerToken(serverToken: String): Future[Option[ApplicationData]] = {
-    collection.find(equal("tokens.production.accessToken", serverToken)).headOption()
+    val query = and(
+      equal("tokens.production.accessToken", serverToken),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).headOption()
   }
 
   def fetchAllForUserId(userId: UserId): Future[Seq[ApplicationData]] = {
-    collection.find(equal("collaborators.userId", Codecs.toBson(userId))).toFuture()
+    val query = and(
+      equal("collaborators.userId", Codecs.toBson(userId)),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).toFuture()
   }
 
   def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.userId", Codecs.toBson(userId)),
-      equal("environment", environment)
+      equal("environment", environment),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
   }
 
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {
-    collection.find(equal("collaborators.emailAddress", emailAddress)).toFuture()
+    val query = and(
+      equal("collaborators.emailAddress", emailAddress),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
+    )
+
+    collection.find(query).toFuture()
   }
 
   def fetchAllForEmailAddressAndEnvironment(emailAddress: String, environment: String): Future[Seq[ApplicationData]] = {
     val query = and(
       equal("collaborators.emailAddress", emailAddress),
-      equal("environment", environment)
+      equal("environment", environment),
+      notEqual("state.name", Codecs.toBson(State.DELETED))
     )
 
     collection.find(query).toFuture()
@@ -314,6 +347,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   def fetchProdAppStateHistories(): Future[Seq[ApplicationWithStateHistory]] = {
     val pipeline: Seq[Bson] = Seq(
       matches(equal("environment", Codecs.toBson(Environment.PRODUCTION))),
+      matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
       addFields(Field("version", cond(Document("$not" -> BsonString("$access.importantSubmissionData")), 1, 2))),
       lookup(from = "stateHistory", localField = "id", foreignField = "applicationId", as = "states"),
       sort(ascending("createdOn", "states.changedAt"))
@@ -322,7 +356,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def searchApplications(applicationSearch: ApplicationSearch): Future[PaginatedApplicationData] = {
-    val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch))
+    val filters = applicationSearch.filters.map(filter => convertFilterToQueryClause(filter, applicationSearch)) ++ deletedFilter(applicationSearch)
     val sort    = convertToSortClause(applicationSearch.sort)
 
     val pagination = List(
@@ -341,6 +375,14 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     ))
   }
 
+  private def deletedFilter(applicationSearch: ApplicationSearch): List[Bson] = {
+    // Filter out Deleted applications, unless specifically asked for
+    if (!applicationSearch.includeDeleted) {
+      List(matches(notEqual("state.name", Codecs.toBson(State.DELETED))))
+    } else {
+      List()
+    }
+  }
 
   private def matches(predicates: Bson): Bson = filter(predicates)
 
@@ -377,6 +419,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case PendingGatekeeperCheck                   => applicationStatusMatch(State.PENDING_GATEKEEPER_APPROVAL)
       case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
       case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
+      case WasDeleted                               => applicationStatusMatch(State.DELETED)
 
       // Access Type
       case StandardAccess   => accessTypeMatch(AccessType.STANDARD)
@@ -477,16 +520,23 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
   }
 
   def processAll(function: ApplicationData => Unit): Future[Unit] = {
-    collection.find()
+    collection.find(notEqual("state.name", Codecs.toBson(State.DELETED)))
       .map(function)
       .toFuture()
       .map(_ => ())
   }
 
-  def delete(id: ApplicationId): Future[HasSucceeded] = {
+  def hardDelete(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteOne(equal("id", Codecs.toBson(id)))
       .toFuture()
       .map(_ => HasSucceeded)
+  }
+
+  def delete(id: ApplicationId, updatedOn: LocalDateTime): Future[ApplicationData] = {
+    updateApplication(id, Updates.combine(
+      Updates.set("state.name", Codecs.toBson(State.DELETED)),
+      Updates.set("state.updatedOn", updatedOn)
+    ))
   }
 
   def documentsWithFieldMissing(fieldName: String): Future[Int] = {
@@ -503,6 +553,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   def getApplicationWithSubscriptionCount(): Future[Map[String, Int]] = {
     val pipeline = Seq(
+      matches(notEqual("state.name", Codecs.toBson(State.DELETED))),
       lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subscribedApis"),
       unwind("$subscribedApis"),
       group(Document("id" -> "$id", "name" -> "$name"), Accumulators.sum("count", 1))

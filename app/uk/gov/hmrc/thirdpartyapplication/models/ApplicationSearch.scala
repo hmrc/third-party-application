@@ -33,7 +33,8 @@ case class ApplicationSearch(
     textToSearch: Option[String] = None,
     apiContext: Option[ApiContext] = None,
     apiVersion: Option[ApiVersion] = None,
-    sort: ApplicationSort = SubmittedAscending
+    sort: ApplicationSort = SubmittedAscending,
+    includeDeleted: Boolean = false
   ) {
   def hasSubscriptionFilter()            = filters.exists(filter => filter.isInstanceOf[APISubscriptionFilter])
   def hasSpecificApiSubscriptionFilter() = filters.exists(filter => filter.isInstanceOf[SpecificAPISubscription.type])
@@ -66,8 +67,9 @@ object ApplicationSearch {
     def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
     def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
     def sort       = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
+    def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
 
-    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort)
+    new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted)
   }
 }
 
@@ -110,6 +112,7 @@ case object PendingResponsibleIndividualVerification extends StatusFilter
 case object PendingGatekeeperCheck                   extends StatusFilter
 case object PendingSubmitterVerification             extends StatusFilter
 case object Active                                   extends StatusFilter
+case object WasDeleted                               extends StatusFilter
 
 case object ApplicationStatusFilter extends StatusFilter {
 
@@ -120,6 +123,7 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "PENDING_GATEKEEPER_CHECK"                    => Some(PendingGatekeeperCheck)
       case "PENDING_SUBMITTER_VERIFICATION"              => Some(PendingSubmitterVerification)
       case "ACTIVE"                                      => Some(Active)
+      case "DELETED"                                     => Some(WasDeleted)
       case _                                             => None
     }
   }

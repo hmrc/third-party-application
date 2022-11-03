@@ -62,4 +62,12 @@ trait ApplicationStateUtil extends FixedClock {
     verificationCode = Some(generatedVerificationCode),
     updatedOn = LocalDateTime.now(clock)
   )
+
+  def deletedState(requestedBy: String) = ApplicationState(
+    name = State.DELETED,
+    requestedByEmailAddress = Some(requestedBy),
+    requestedByName = Some(requestedBy),
+    verificationCode = None,
+    updatedOn = LocalDateTime.now(clock)
+  )
 }
