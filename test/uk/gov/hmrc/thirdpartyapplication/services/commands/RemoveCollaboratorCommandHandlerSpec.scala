@@ -67,7 +67,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       val result = await(underTest.process(app, removeCollaborator))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
+      val event = result.toOption.get.asInstanceOf[CollaboratorRemoved]
       event.applicationId shouldBe applicationId
       event.actor shouldBe adminActor
       event.eventDateTime shouldBe timestamp
@@ -80,7 +80,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       val result = await(underTest.process(app, removeCollaborator.copy(actor = gkUserActor)))
 
       result.isValid shouldBe true
-      val event = result.toOption.get.head.asInstanceOf[CollaboratorRemoved]
+      val event = result.toOption.get.asInstanceOf[CollaboratorRemoved]
       event.applicationId shouldBe applicationId
       event.actor shouldBe gkUserActor
       event.eventDateTime shouldBe timestamp
