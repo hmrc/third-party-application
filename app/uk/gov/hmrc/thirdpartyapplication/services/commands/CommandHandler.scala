@@ -24,7 +24,6 @@ import cats.implicits._
 import cats.data.ValidatedNec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
 import cats.data.NonEmptyList
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
 
 abstract class CommandHandler {
   implicit def ec: ExecutionContext
