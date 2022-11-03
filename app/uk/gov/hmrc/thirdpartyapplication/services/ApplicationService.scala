@@ -109,7 +109,7 @@ class ApplicationService @Inject() (
     } yield ApplicationResponse(data = savedApp)
   }
 
-  @deprecated("please use AddCollaborator or AddCollaboratorGatekeeper commands to application Update controller")
+  @deprecated("please use AddCollaboratorRequest command to application Update controller")
   def addCollaborator(applicationId: ApplicationId, request: AddCollaboratorRequest)(implicit hc: HeaderCarrier) = {
 
     def validateCollaborator(app: ApplicationData, email: String, role: Role, userId: UserId): Collaborator = {
@@ -242,6 +242,7 @@ class ApplicationService @Inject() (
     }
   }
 
+  @deprecated("please use RemoveCollaboratorRequest command to application Update controller")
   def deleteCollaborator(
       applicationId: ApplicationId,
       collaborator: String,
