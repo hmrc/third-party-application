@@ -2644,7 +2644,7 @@ class ApplicationRepositoryISpec
   }
 
   "fetchAllForUserId" should {
-    "return two applications when both have the same userId" in {
+    "return two applications when all have the same userId" in {
       val applicationId1 = ApplicationId.random
       val applicationId2 = ApplicationId.random
       val applicationId3 = ApplicationId.random
@@ -2665,9 +2665,38 @@ class ApplicationRepositoryISpec
       await(applicationRepository.save(testApplication2))
       await(applicationRepository.save(testApplication3))
 
-      val result = await(applicationRepository.fetchAllForUserId(userId))
+      val result = await(applicationRepository.fetchAllForUserId(userId, false))
 
       result.size mustBe 2
+      result.map(
+        _.collaborators.map(collaborator => collaborator.userId mustBe userId)
+      )
+    }
+
+    "return three applications when all have the same userId and one is deleted" in {
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val applicationId3 = ApplicationId.random
+      val userId         = UserId.random
+
+      val collaborator     =
+        Collaborator("user@example.com", Role.ADMINISTRATOR, userId)
+      val testApplication1 = anApplicationDataForTest(applicationId1)
+        .copy(collaborators = Set(collaborator))
+      val testApplication2 =
+        anApplicationDataForTest(applicationId2, prodClientId = ClientId("bbb"))
+          .copy(collaborators = Set(collaborator))
+      val testApplication3 =
+        anApplicationDataForTest(applicationId3, prodClientId = ClientId("ccc"), state = deletedState("user1"))
+          .copy(collaborators = Set(collaborator))
+
+      await(applicationRepository.save(testApplication1))
+      await(applicationRepository.save(testApplication2))
+      await(applicationRepository.save(testApplication3))
+
+      val result = await(applicationRepository.fetchAllForUserId(userId, true))
+
+      result.size mustBe 3
       result.map(
         _.collaborators.map(collaborator => collaborator.userId mustBe userId)
       )

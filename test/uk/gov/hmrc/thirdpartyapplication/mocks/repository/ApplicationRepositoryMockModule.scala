@@ -204,8 +204,8 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
 
     object fetchAllForUserId {
 
-      def thenReturnWhen(userId: UserId)(apps: ApplicationData*) =
-        when(aMock.fetchAllForUserId(eqTo(userId))).thenReturn(successful(apps.toList))
+      def thenReturnWhen(userId: UserId, includeDeleted: Boolean)(apps: ApplicationData*) =
+        when(aMock.fetchAllForUserId(eqTo(userId), eqTo(includeDeleted))).thenReturn(successful(apps.toList))
     }
 
     object FetchAllForApiIdentifier {

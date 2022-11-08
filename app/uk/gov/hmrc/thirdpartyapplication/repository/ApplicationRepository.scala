@@ -306,11 +306,18 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(query).headOption()
   }
 
-  def fetchAllForUserId(userId: UserId): Future[Seq[ApplicationData]] = {
-    val query = and(
-      equal("collaborators.userId", Codecs.toBson(userId)),
-      notEqual("state.name", Codecs.toBson(State.DELETED))
-    )
+  def fetchAllForUserId(userId: UserId, includeDeleted: Boolean): Future[Seq[ApplicationData]] = {
+
+    def query = {
+      if (includeDeleted) {
+        equal("collaborators.userId", Codecs.toBson(userId))
+      } else {
+        and(
+          equal("collaborators.userId", Codecs.toBson(userId)),
+          notEqual("state.name", Codecs.toBson(State.DELETED))
+        )
+      }
+    }
 
     collection.find(query).toFuture()
   }
