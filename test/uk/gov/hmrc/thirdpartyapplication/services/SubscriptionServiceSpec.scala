@@ -27,12 +27,13 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.mocks.AuditServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule}
 
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
@@ -43,7 +44,7 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   private val loggedInUser    = "loggedin@example.com"
   private val productionToken = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")))
 
-  trait Setup extends AuditServiceMockModule {
+  trait SetupWithoutHc extends AuditServiceMockModule with ApplicationUpdateServiceMockModule {
 
     lazy val locked                  = false
     val mockApiGatewayStore          = mock[ApiGatewayStore](withSettings.lenient())
@@ -52,18 +53,15 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
     val mockEmailConnector           = mock[EmailConnector](withSettings.lenient())
     val mockSubscriptionRepository   = mock[SubscriptionRepository](withSettings.lenient())
     val mockApiPlatformEventsService = mock[ApiPlatformEventService](withSettings.lenient())
+    val mockApplicationUpdateService = mock[ApplicationUpdateService](withSettings.lenient())
     val response                     = mock[WSResponse]
-
-    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
-      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
-      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
-    )
 
     val underTest = new SubscriptionService(
       mockApplicationRepository,
       mockSubscriptionRepository,
       AuditServiceMock.aMock,
       mockApiPlatformEventsService,
+      ApplicationUpdateServiceMock.aMock,
       mockApiGatewayStore
     )
 
@@ -97,6 +95,13 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe false
     }
   }
+  
+  trait Setup extends SetupWithoutHc {
+    implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
+      LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
+      LOGGED_IN_USER_NAME_HEADER -> "John Smith"
+    )
+  }
 
   "fetchAllSubscriptionsForApplication" should {
     val applicationId = ApplicationId.random
@@ -120,6 +125,59 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       val result = await(underTest.fetchAllSubscriptionsForApplication(applicationId))
 
       result shouldBe Set("context".asIdentifier)
+    }
+  }
+  
+  "updateApplicationForApiSubscription" should {
+    val applicationId = ApplicationId.random
+    val apiIdentifier = ApiIdentifier.random
+
+    "return successfully using the correct CollaboratorActor if the collaborator is a member of the application" in new Setup {
+      val application = anApplicationData(applicationId)
+      val actor = CollaboratorActor(loggedInUser)
+
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, application)
+
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, application.name, application.collaborators, apiIdentifier))
+      
+      result shouldBe HasSucceeded
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
+
+    "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
+      implicit val hc = HeaderCarrier()
+      val applicationData = anApplicationData(applicationId)
+      val actor = GatekeeperUserActor("Gatekeeper Admin")
+
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
+
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+
+      result shouldBe HasSucceeded
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
+    
+    "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
+      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
+      val actor = GatekeeperUserActor("Gatekeeper Admin")
+
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
+
+      val result = await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+
+      result shouldBe HasSucceeded
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
+    }
+    
+    "throw an exception if the application has not updated" in new Setup {
+      val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
+      val errorMessage = "Not valid"
+
+      ApplicationUpdateServiceMock.Update.thenReturnError(applicationId, errorMessage)
+      
+      intercept[FailedToSubscribeException] {
+        await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
+      }
     }
   }
 

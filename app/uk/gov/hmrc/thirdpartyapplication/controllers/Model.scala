@@ -114,6 +114,7 @@ object ErrorCode extends Enumeration {
   val INVALID_IP_ALLOWLIST         = Value("INVALID_IP_ALLOWLIST")
   val INVALID_GRANT_LENGTH         = Value("INVALID_GRANT_LENGTH_IN_DAYS")
   val BAD_QUERY_PARAMETER          = Value("BAD_QUERY_PARAMETER")
+  val FAILED_TO_SUBSCRIBE          = Value("FAILED_TO_SUBSCRIBE")
 }
 
 object JsErrorResponse {

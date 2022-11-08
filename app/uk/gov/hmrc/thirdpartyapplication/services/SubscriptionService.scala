@@ -16,14 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import cats.Foldable.ops.toAllFoldableOps
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
+import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.{failed, successful}
 
@@ -33,9 +39,10 @@ class SubscriptionService @Inject() (
     subscriptionRepository: SubscriptionRepository,
     auditService: AuditService,
     apiPlatformEventService: ApiPlatformEventService,
+    applicationUpdateService: ApplicationUpdateService,
     apiGatewayStore: ApiGatewayStore
   )(implicit val ec: ExecutionContext
-  ) {
+  ) extends ApplicationLogger {
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
@@ -56,7 +63,24 @@ class SubscriptionService @Inject() (
     subscriptionRepository.isSubscribed(applicationId, api)
   }
 
-  // TODO 5522: Call ApplicationUpdateService instead; still used when adding a new application
+  def updateApplicationForApiSubscription(
+      applicationId: ApplicationId,
+      applicationName: String,
+      collaborators: Set[Collaborator],
+      api: ApiIdentifier
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    val actor          = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators)
+    val subscribeToApi = SubscribeToApi(actor, api, LocalDateTime.now())
+    applicationUpdateService.update(applicationId, subscribeToApi).value.map {
+      case Left(e)  =>
+        logger.warn(s"Command Process failed for $applicationId because ${e.toList.mkString("[", ",", "]")}")
+        throw FailedToSubscribeException(applicationName, api)
+      case Right(_) => HasSucceeded
+    }
+  }
+
+  @deprecated("remove when no longer using old logic")
   def createSubscriptionForApplicationMinusChecks(applicationId: ApplicationId, apiIdentifier: ApiIdentifier)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     for {
       app <- fetchApp(applicationId)
@@ -94,5 +118,16 @@ class SubscriptionService @Inject() (
       case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
     }
   }
+
+  private def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
+    userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
+      .map(email => deriveActor(email, collaborators))
+      .getOrElse(GatekeeperUserActor("Gatekeeper Admin"))
+
+  private def deriveActor(userEmail: String, collaborators: Set[Collaborator]): Actor =
+    collaborators.find(_.emailAddress.equalsIgnoreCase(userEmail)) match {
+      case None                  => GatekeeperUserActor("Gatekeeper Admin")
+      case Some(_: Collaborator) => CollaboratorActor(userEmail)
+    }
 
 }

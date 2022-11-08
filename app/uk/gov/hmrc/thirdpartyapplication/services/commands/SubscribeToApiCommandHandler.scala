@@ -24,12 +24,12 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubscribeToApiCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
+class SubscribeToApiCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: SubscribeToApi): ValidatedNec[String, ApplicationData] = {
-    // TODO 5522 authentication for ROPC or Privileged App
+    // TODO: 5522 authentication for ROPC or Privileged App
     Validated.Valid(app)
   }
 
@@ -43,7 +43,7 @@ class SubscribeToApiCommandHandler @Inject()()(implicit val ec: ExecutionContext
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         context = cmd.apiIdentifier.context.value,
-        version = cmd.apiIdentifier.version.value,
+        version = cmd.apiIdentifier.version.value
       )
     )
   }

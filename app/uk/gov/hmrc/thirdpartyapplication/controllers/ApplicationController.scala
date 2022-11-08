@@ -105,12 +105,21 @@ class ApplicationController @Inject() (
           applicationResponse <- applicationService.create(createApplicationRequest)
           applicationId        = applicationResponse.application.id
           subs                 = createApplicationRequest.anySubscriptions
-          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api)))
+          _                   <- Future.sequence(subs.map(api =>
+                                   subscriptionService.updateApplicationForApiSubscription(
+                                     applicationId,
+                                     applicationResponse.application.name,
+                                     applicationResponse.application.collaborators,
+                                     api
+                                   )
+                                 ))
           _                   <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
-        case e: ApplicationAlreadyExists =>
+        case e: ApplicationAlreadyExists   =>
           Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+        case e: FailedToSubscribeException =>
+          BadRequest(JsErrorResponse(FAILED_TO_SUBSCRIBE, s"${e.getMessage}"))
       } recover recovery
     }
   }
@@ -202,10 +211,10 @@ class ApplicationController @Inject() (
   def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[ClientSecretRequestWithUserId] { secret =>
       credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
-        case e: NotFoundException => handleNotFound(e.getMessage)
-        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
+        case e: NotFoundException          => handleNotFound(e.getMessage)
+        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
         case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-        case e => handleException(e)
+        case e                             => handleException(e)
       }
     }
   }

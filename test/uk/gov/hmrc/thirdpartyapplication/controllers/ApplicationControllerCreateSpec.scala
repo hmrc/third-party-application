@@ -71,7 +71,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
   private val privilegedAccess = Privileged(scopes = Set("scope1"))
   private val ropcAccess       = Ropc()
 
-  trait Setup 
+  trait Setup
       extends SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
       with StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -119,7 +119,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequest)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -131,7 +131,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
     "succeed with a 201 (Created) for a valid Standard application request when service responds successfully to legacy uplift" in new Setup {
       ApplicationServiceMock.Create.onRequestReturn(standardApplicationRequestV1)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
 
       val result = underTest.create()(request.withBody(Json.toJson(standardApplicationRequestV1)))
 
@@ -142,7 +142,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid Privileged application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(privilegedApplicationRequest)(privilegedApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -156,7 +156,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
     "succeed with a 201 (Created) for a valid ROPC application request when gatekeeper is logged in and service responds successfully" in new Setup {
       StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
       ApplicationServiceMock.Create.onRequestReturn(ropcApplicationRequest)(ropcApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(*[ApplicationId], *)(*)).thenReturn(successful(HasSucceeded))
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
@@ -172,7 +172,7 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       val applicationRequestWithOneSubscription = standardApplicationRequest.copy(upliftRequest = makeUpliftRequest(apis))
 
       ApplicationServiceMock.Create.onRequestReturn(applicationRequestWithOneSubscription)(standardApplicationResponse)
-      when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)).thenReturn(successful(
+      when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(
         HasSucceeded
       ))
       UpliftLinkServiceMock.CreateUpliftLink.thenReturn(standardApplicationRequest.sandboxApplicationId, standardApplicationResponse.application.id)
@@ -182,7 +182,12 @@ class ApplicationControllerCreateSpec extends ControllerSpec
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(applicationRequestWithOneSubscription))(*)
-      verify(mockSubscriptionService, times(1)).createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(testApi))(*)
+      verify(mockSubscriptionService, times(1)).updateApplicationForApiSubscription(
+        eqTo(standardApplicationResponse.application.id),
+        eqTo(standardApplicationResponse.application.name),
+        eqTo(standardApplicationResponse.application.collaborators),
+        eqTo(testApi)
+      )(*)
     }
 
     "succeed with a 201 (Created) for a valid Standard application request with multiple subscriptions when service responds successfully" in new Setup {
@@ -196,14 +201,19 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       SubmissionsServiceMock.Create.thenReturn(aSubmission)
 
       apis.map(api =>
-        when(mockSubscriptionService.createSubscriptionForApplicationMinusChecks(eqTo(standardApplicationResponse.application.id), eqTo(api))(*)).thenReturn(successful(HasSucceeded))
+        when(mockSubscriptionService.updateApplicationForApiSubscription(*[ApplicationId], *, *, *)(*)).thenReturn(successful(HasSucceeded))
       )
 
       val result = underTest.create()(request.withBody(Json.toJson(applicationRequestWithTwoSubscriptions)))
 
       status(result) shouldBe CREATED
       verify(underTest.applicationService).create(eqTo(applicationRequestWithTwoSubscriptions))(*)
-      verify(mockSubscriptionService, times(2)).createSubscriptionForApplicationMinusChecks(*[ApplicationId], *[ApiIdentifier])(*)
+      verify(mockSubscriptionService, times(2)).updateApplicationForApiSubscription(
+        eqTo(standardApplicationResponse.application.id),
+        eqTo(standardApplicationResponse.application.name),
+        eqTo(standardApplicationResponse.application.collaborators),
+        *[ApiIdentifier]
+      )(*)
     }
 
     "fail with a 401 (Unauthorized) for a valid Privileged application request when gatekeeper is not logged in" in new Setup {

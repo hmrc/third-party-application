@@ -27,7 +27,7 @@ object HeaderCarrierHelper {
   val DEVELOPER_EMAIL_KEY    = "developerEmail"
   val DEVELOPER_FULLNAME_KEY = "developerFullName"
 
-  def headersToUserContext(hc: HeaderCarrier) =
+  def headersToUserContext(hc: HeaderCarrier): Map[String, String] =
     userContextFromHeaders(hc.extraHeaders.filter(pair => Seq(LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER).contains(pair._1)).toMap)
 
   private def userContextFromHeaders(headers: Map[String, String]) = {
