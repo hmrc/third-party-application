@@ -74,7 +74,7 @@ class ApplicationUpdateService @Inject()(
     } yield savedApp
   }
 
-  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate): CommandHandler.Result = {
+  private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
       case cmd: RemoveClientSecret                                    => removeClientSecretCommandHandler.process(app, cmd)

@@ -81,7 +81,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
         context = apiIdentifier.context.value,
         version = apiIdentifier.version.value,
       )
-      when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])).thenReturn(
+      when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])(*)).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
       )
 
@@ -105,7 +105,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
         context = apiIdentifier.context.value,
         version = apiIdentifier.version.value,
       )
-      when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])).thenReturn(
+      when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])(*)).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
       )
       

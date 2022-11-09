@@ -20,6 +20,7 @@ import play.api.mvc._
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
@@ -29,13 +30,13 @@ abstract class AbstractGatekeeperRoleAuthorisationService(authControlConfig: Aut
   lazy val UNAUTHORIZED_RESPONSE = successful(Some(Results.Unauthorized(JsErrorResponse(ErrorCode.UNAUTHORIZED, "Unauthorised"))))
   protected lazy val OK_RESPONSE = successful(None)
 
-  def ensureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
+  def ensureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     if (authControlConfig.enabled) {
-      innerEnsureHasGatekeeperRole(request)
+      innerEnsureHasGatekeeperRole()
     } else {
       Future.successful(None)
     }
   }
 
-  protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]]
+  protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]]
 }

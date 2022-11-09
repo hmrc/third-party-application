@@ -28,9 +28,9 @@ trait StrideGatekeeperRoleAuthorisationServiceMockModule {
     def aMock: StrideGatekeeperRoleAuthorisationService
 
     object EnsureHasGatekeeperRole {
-      def authorised = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(None))
+      def authorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(None))
 
-      def notAuthorised = when(aMock.ensureHasGatekeeperRole(*)).thenReturn(successful(Some(Unauthorized("bang"))))
+      def notAuthorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("bang"))))
     }
   }
   

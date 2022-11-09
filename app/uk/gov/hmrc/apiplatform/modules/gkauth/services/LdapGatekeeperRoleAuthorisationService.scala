@@ -19,7 +19,6 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import uk.gov.hmrc.internalauth.client.BackendAuthComponents
 import play.api.mvc._
 import scala.concurrent.Future
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.internalauth.client._
 import scala.concurrent.ExecutionContext
@@ -29,9 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 @Singleton
 class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
-  protected def innerEnsureHasGatekeeperRole[A](request: Request[A]): Future[Option[Result]] = {
-    implicit val hc: HeaderCarrier = HeaderCarrierConverter.fromRequest(request)
-    
+  protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     hc.authorization.fold[Future[Option[Result]]]({
       logger.debug("No Header Carrier Authorisation")
       UNAUTHORIZED_RESPONSE

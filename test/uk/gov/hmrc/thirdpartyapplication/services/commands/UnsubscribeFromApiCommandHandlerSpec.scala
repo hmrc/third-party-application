@@ -16,8 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiUnsubscribed, CollaboratorActor}
+import cats.data.{NonEmptyList, ValidatedNec}
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiUnsubscribed, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 import java.time.LocalDateTime
@@ -25,40 +30,92 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
-  trait Setup {
-    val underTest = new UnsubscribeFromApiCommandHandler()
+  trait Setup extends StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
+    implicit val hc = HeaderCarrier()
+
+    val underTest = new UnsubscribeFromApiCommandHandler(StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 
     val applicationId = ApplicationId.random
-
-    val developerEmail = "developer@example.com"
-    val developerUserId = idOf(developerEmail)
-    val developerCollaborator = Collaborator(developerEmail, Role.DEVELOPER, developerUserId)
-    val developerActor = CollaboratorActor(developerEmail)
-
-    val app = anApplicationData(applicationId).copy(collaborators = Set(developerCollaborator))
-
+    val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
     val apiIdentifier = "some-context".asIdentifier("1.1")
     val timestamp = LocalDateTime.now
 
-    val unsubscribeFromApi = UnsubscribeFromApi(developerActor, apiIdentifier, timestamp)
+    val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, timestamp)
+  }
+
+  trait PrivilegedAndRopcSetup extends Setup {
+
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+      testWithPrivilegedAndRopc(applicationId, testBlock)
+    }
+
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      testWithPrivilegedAndRopc(applicationId, testBlock)
+    }
+
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      testBlock(anApplicationData(applicationId, access = Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData(applicationId, access = Ropc()))
+    }
   }
 
   "process" should {
-    "create a valid event for an admin" in new Setup {
+
+    "create an ApiUnsubscribed event when removing a subscription from a STANDARD application" in new Setup {
+      val app = anApplicationData(applicationId)
+
       val result = await(underTest.process(app, unsubscribeFromApi))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ApiUnsubscribed]
       event.applicationId shouldBe applicationId
-      event.actor shouldBe developerActor
+      event.actor shouldBe gatekeeperUserActor
       event.eventDateTime shouldBe timestamp
       event.context shouldBe apiIdentifier.context.value
       event.version shouldBe apiIdentifier.version.value
     }
 
-    "sad path - fails authentication of developer" in new Setup {
-      // TODO 5522 ROPC or Privileged App
-    }
-  }
+    "create an ApiUnsubscribed event when removing a subscription from a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
+      new PrivilegedAndRopcSetup {
+        StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
+        testWithPrivilegedAndRopcGatekeeperLoggedIn(
+          applicationId,
+          { app =>
+            val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, unsubscribeFromApi))
+
+            result.isValid shouldBe true
+            result.toEither match {
+              case Left(_)                                             => fail()
+              case Right(events: NonEmptyList[UpdateApplicationEvent]) =>
+                val event = events.head.asInstanceOf[ApiUnsubscribed]
+                event.applicationId shouldBe applicationId
+                event.actor shouldBe gatekeeperUserActor
+                event.eventDateTime shouldBe timestamp
+                event.context shouldBe apiIdentifier.context.value
+                event.version shouldBe apiIdentifier.version.value
+            }
+          }
+        )
+      }
+
+    "return invalid with an error message when removing a subscription from a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
+      new PrivilegedAndRopcSetup {
+
+        testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
+          applicationId,
+          { app =>
+            val result = await(underTest.process(app, unsubscribeFromApi))
+
+            result.isValid shouldBe false
+            result.toEither match {
+              case Right(_)           => fail()
+              case Left(errorMessage) => errorMessage.head shouldBe s"Unauthorized to unsubscribe any API from app ${app.name}"
+            }
+          }
+        )
+      }
+  }
 }

@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.{NonEmptyList, Validated, ValidatedNec}
+import cats.data.{NonEmptyList, Validated}
+import play.api.mvc.Result
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{SubscribeToApi, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
@@ -24,14 +28,10 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class SubscribeToApiCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
-
-  import CommandHandler._
-
-  private def validate(app: ApplicationData, cmd: SubscribeToApi): ValidatedNec[String, ApplicationData] = {
-    // TODO: 5522 authentication for ROPC or Privileged App
-    Validated.Valid(app)
-  }
+class SubscribeToApiCommandHandler @Inject() (
+    strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
+  )(implicit val ec: ExecutionContext
+  ) extends CommandHandler {
 
   import UpdateApplicationEvent._
 
@@ -48,11 +48,15 @@ class SubscribeToApiCommandHandler @Inject() ()(implicit val ec: ExecutionContex
     )
   }
 
-  def process(app: ApplicationData, cmd: SubscribeToApi): CommandHandler.Result = {
-    Future.successful {
-      validate(app, cmd) map { _ =>
-        asEvents(app, cmd)
+  def process(app: ApplicationData, cmd: SubscribeToApi)(implicit hc: HeaderCarrier): CommandHandler.Result = {
+    if (List(PRIVILEGED, ROPC).contains(app.access.accessType)) {
+      strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole().map {
+        case None            => Validated.valid(asEvents(app, cmd))
+        case Some(_: Result) => Validated.invalidNec(s"Unauthorized to subscribe any API to app ${app.name}")
       }
+    } else {
+      Future.successful(Validated.valid(asEvents(app, cmd)))
     }
   }
 }
+

@@ -23,14 +23,16 @@ import play.api.test.FakeRequest
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.http.Status.UNAUTHORIZED
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
-class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule  {
+class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule {
   val request = FakeRequest()
-  
+  implicit val hc = HeaderCarrierConverter.fromRequest(request)
+
   trait Setup {
     def authControlConfig: AuthControlConfig
 
-    val fakeStrideAuthRoles = StrideAuthRoles("A","B","C")
+    val fakeStrideAuthRoles = StrideAuthRoles("A", "B", "C")
 
     lazy val underTest = new StrideGatekeeperRoleAuthorisationService(authControlConfig, fakeStrideAuthRoles, StrideAuthConnectorMock.aMock)
   }
@@ -59,7 +61,7 @@ class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with St
 
   "with auth disabled" should {
     "return None (good result) when auth is not enabled" in new Setup with DisabledAuth with Unauthorised {
-      val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
       result shouldBe None
     }
@@ -67,15 +69,15 @@ class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with St
 
   "with auth enabled" should {
     "return None (good result) when user should be authorised " in new Setup with EnabledAuth with Authorised {
-      val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
       result shouldBe None
     }
 
     "return Some(...) (unauthorised) when user is present but not authorised" in new Setup with EnabledAuth with Unauthorised {
-       val result = await(underTest.ensureHasGatekeeperRole(request))
+      val result = await(underTest.ensureHasGatekeeperRole())
 
-       result.value.header.status shouldBe UNAUTHORIZED
+      result.value.header.status shouldBe UNAUTHORIZED
     }
   }
 }

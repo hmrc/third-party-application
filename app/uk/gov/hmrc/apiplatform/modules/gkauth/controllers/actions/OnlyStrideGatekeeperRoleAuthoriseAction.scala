@@ -21,6 +21,7 @@ import scala.concurrent.ExecutionContext
 import play.api.mvc._
 import scala.concurrent.Future
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 trait OnlyStrideGatekeeperRoleAuthoriseAction {
   self: BaseController =>
@@ -32,7 +33,10 @@ trait OnlyStrideGatekeeperRoleAuthoriseAction {
   private def authenticationAction = new ActionFilter[Request] {
     protected def executionContext: ExecutionContext = ec
 
-    def filter[A](input: Request[A]): Future[Option[Result]] = strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(input)
+    def filter[A](input: Request[A]): Future[Option[Result]] = {
+      implicit val hc = HeaderCarrierConverter.fromRequest(input)
+      strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+    }
   }
 
   def requiresAuthentication(): ActionBuilder[Request, AnyContent] = Action andThen authenticationAction

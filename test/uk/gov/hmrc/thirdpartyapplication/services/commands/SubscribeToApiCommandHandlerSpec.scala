@@ -16,8 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, CollaboratorActor}
+import cats.data.{NonEmptyList, ValidatedNec}
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 import java.time.LocalDateTime
@@ -25,117 +30,92 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
-  trait Setup {
-    val underTest = new SubscribeToApiCommandHandler()
+  trait Setup extends StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
+    implicit val hc = HeaderCarrier()
+
+    val underTest = new SubscribeToApiCommandHandler(StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 
     val applicationId = ApplicationId.random
-    
-    val developerEmail = "developer@example.com"
-    val developerUserId = idOf(developerEmail)
-    val developerCollaborator = Collaborator(developerEmail, Role.DEVELOPER, developerUserId)
-    val developerActor = CollaboratorActor(developerEmail)
-
-    val app = anApplicationData(applicationId).copy(collaborators = Set(developerCollaborator))
-
+    val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
     val apiIdentifier = "some-context".asIdentifier("1.1")
     val timestamp = LocalDateTime.now
 
-    val subscribeToApi = SubscribeToApi(developerActor, apiIdentifier, timestamp)
+    val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
+  }
+
+  trait PrivilegedAndRopcSetup extends Setup {
+
+    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
+      testWithPrivilegedAndRopc(applicationId, testBlock)
+    }
+
+    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
+      testWithPrivilegedAndRopc(applicationId, testBlock)
+    }
+
+    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, testBlock: ApplicationData => Unit): Unit = {
+      testBlock(anApplicationData(applicationId, access = Privileged(scopes = Set("scope1"))))
+      testBlock(anApplicationData(applicationId, access = Ropc()))
+    }
   }
 
   "process" should {
-    "create a valid event" in new Setup {
+
+    "create an ApiSubscribed event when adding a subscription to a STANDARD application" in new Setup {
+      val app = anApplicationData(applicationId)
+
       val result = await(underTest.process(app, subscribeToApi))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ApiSubscribed]
       event.applicationId shouldBe applicationId
-      event.actor shouldBe developerActor
+      event.actor shouldBe gatekeeperUserActor
       event.eventDateTime shouldBe timestamp
       event.context shouldBe apiIdentifier.context.value
       event.version shouldBe apiIdentifier.version.value
     }
 
-    "sad path - fails authentication of developer" in new Setup {
-      // TODO 5522 ROPC or Privileged App
-    }
-  }
-
-  /*
-  trait PrivilegedAndRopcSetup extends Setup {
-
-    def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
-
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = true, testBlock)
-    }
-
-    def testWithPrivilegedAndRopcGatekeeperNotLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
-      StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
-
-      testWithPrivilegedAndRopc(applicationId, gatekeeperLoggedIn = false, testBlock)
-    }
-
-    private def testWithPrivilegedAndRopc(applicationId: ApplicationId, gatekeeperLoggedIn: Boolean, testBlock: => Unit): Unit = {
-      when(underTest.applicationService.fetch(applicationId))
-        .thenReturn(
-          OptionT.pure[Future](aNewApplicationResponse(privilegedAccess)),
-          OptionT.pure[Future](aNewApplicationResponse(ropcAccess))
-        )
-      testBlock
-      testBlock
-    }
-  }
-
-  "createSubscriptionForApi, an authenticated request" should {
-
-    val subscribeToApi = SubscribeToApi(CollaboratorActor("dev@example.com"), ApiIdentifier.random, LocalDateTime.now())
-    val subscribeToApiRequestBody = Json.toJsObject(subscribeToApi) ++ Json.obj("updateType" -> "subscribeToApi")
-
-    "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnNothingFor(applicationId)
-
-      val result = underTest.update(applicationId)(request.withBody(subscribeToApiRequestBody))
-
-      verifyErrorResult(result, NOT_FOUND, ErrorCode.APPLICATION_NOT_FOUND)
-    }
-
-    "succeed (OK) when a subscription is successfully added to a STANDARD application" in new Setup {
-      ApplicationServiceMock.Fetch.thenReturnFor(applicationId)(aNewApplicationResponse())
-      ApplicationUpdateServiceMock.Update.thenReturnSuccess(anApplicationData(applicationId))
-
-      val result = underTest.update(applicationId)(request.withBody(subscribeToApiRequestBody))
-
-      status(result) shouldBe OK
-    }
-
-    "succeed (Ok) when a subscription is successfully added to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
+    "create an ApiSubscribed event when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is logged in" in
       new PrivilegedAndRopcSetup {
-
         StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
 
         testWithPrivilegedAndRopcGatekeeperLoggedIn(
-          applicationId, {
-            ApplicationUpdateServiceMock.Update.thenReturnSuccess(anApplicationData(applicationId))
+          applicationId,
+          { app =>
+            val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, subscribeToApi))
 
-            val result = underTest.update(applicationId)(request.withBody(subscribeToApiRequestBody))
-
-            status(result) shouldBe OK
+            result.isValid shouldBe true
+            result.toEither match {
+              case Left(_)                                             => fail()
+              case Right(events: NonEmptyList[UpdateApplicationEvent]) =>
+                val event = events.head.asInstanceOf[ApiSubscribed]
+                event.applicationId shouldBe applicationId
+                event.actor shouldBe gatekeeperUserActor
+                event.eventDateTime shouldBe timestamp
+                event.context shouldBe apiIdentifier.context.value
+                event.version shouldBe apiIdentifier.version.value
+            }
           }
         )
       }
 
-    "fail with 401 (Unauthorized) when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
+    "return invalid with an error message when adding a subscription to a PRIVILEGED or ROPC application and the gatekeeper is not logged in" in
       new PrivilegedAndRopcSetup {
 
         testWithPrivilegedAndRopcGatekeeperNotLoggedIn(
-          applicationId, {
-            val result = underTest.update(applicationId)(request.withBody(subscribeToApiRequestBody))
+          applicationId,
+          { app =>
+            val result = await(underTest.process(app, subscribeToApi))
 
-            status(result) shouldBe UNAUTHORIZED
+            result.isValid shouldBe false
+            result.toEither match {
+              case Right(_)           => fail()
+              case Left(errorMessage) => errorMessage.head shouldBe s"Unauthorized to subscribe any API to app ${app.name}"
+            }
           }
         )
       }
   }
-*/
 }
