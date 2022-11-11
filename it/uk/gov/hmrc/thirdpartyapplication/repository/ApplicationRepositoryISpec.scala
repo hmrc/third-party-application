@@ -1372,6 +1372,29 @@ class ApplicationRepositoryISpec
       result.applications.head.id mustBe applicationDeleted.id
     }
 
+    "return applications based on application state filter ExcludingDeleted" in {
+      val applicationInTest       = anApplicationDataForTest(
+        id = ApplicationId.random,
+        prodClientId = generateClientId
+      )
+      val applicationDeleted =
+        createAppWithStatusUpdatedOn(State.DELETED, LocalDateTime.now(clock))
+      await(applicationRepository.save(applicationInTest))
+      await(applicationRepository.save(applicationDeleted))
+
+      val applicationSearch = new ApplicationSearch(filters = List(ExcludingDeleted), includeDeleted = true)
+
+      val result =
+        await(applicationRepository.searchApplications(applicationSearch))
+
+      result.totals.size mustBe 1
+      result.totals.head.total mustBe 2
+      result.matching.size mustBe 1
+      result.matching.head.total mustBe 1
+      result.applications.size mustBe 1
+      result.applications.head.id mustBe applicationInTest.id
+    }
+
     "return applications based on access type filter" in {
       val standardApplication = anApplicationDataForTest(
         id = ApplicationId.random,
