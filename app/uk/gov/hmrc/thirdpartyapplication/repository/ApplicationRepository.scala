@@ -399,6 +399,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
 
+    def applicationStatusNotEqual(state: State): Bson = matches(notEqual("state.name", Codecs.toBson(State.DELETED)))
+
     def accessTypeMatch(accessType: AccessType): Bson = matches(equal("access.accessType", Codecs.toBson(accessType)))
 
     def specificAPISubscription(apiContext: ApiContext, apiVersion: Option[ApiVersion]) = {
@@ -415,6 +417,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
 
     applicationSearchFilter match {
+
       // API Subscriptions
       case NoAPISubscriptions        => matches(size("subscribedApis", 0))
       case OneOrMoreAPISubscriptions => matches(Document(s"""{$$expr: {$$gte: [{$$size:"$$subscribedApis"}, 1] }}"""))
@@ -427,6 +430,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case PendingSubmitterVerification             => applicationStatusMatch(State.PENDING_REQUESTER_VERIFICATION)
       case Active                                   => applicationStatusMatch(State.PRE_PRODUCTION, State.PRODUCTION)
       case WasDeleted                               => applicationStatusMatch(State.DELETED)
+      case ExcludingDeleted                         => applicationStatusNotEqual(State.DELETED) 
 
       // Access Type
       case StandardAccess   => accessTypeMatch(AccessType.STANDARD)

@@ -113,6 +113,8 @@ case object PendingGatekeeperCheck                   extends StatusFilter
 case object PendingSubmitterVerification             extends StatusFilter
 case object Active                                   extends StatusFilter
 case object WasDeleted                               extends StatusFilter
+case object ExcludingDeleted                         extends StatusFilter
+
 
 case object ApplicationStatusFilter extends StatusFilter {
 
@@ -124,6 +126,7 @@ case object ApplicationStatusFilter extends StatusFilter {
       case "PENDING_SUBMITTER_VERIFICATION"              => Some(PendingSubmitterVerification)
       case "ACTIVE"                                      => Some(Active)
       case "DELETED"                                     => Some(WasDeleted)
+      case "EXCLUDING_DELETED"                           => Some(ExcludingDeleted)
       case _                                             => None
     }
   }
