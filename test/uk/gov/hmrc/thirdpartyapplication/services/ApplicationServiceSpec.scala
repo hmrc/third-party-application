@@ -1009,9 +1009,9 @@ class ApplicationServiceSpec
       val privilegedApplicationData: ApplicationData = anApplicationData(applicationId, access = Privileged())
       val ropcApplicationData: ApplicationData       = anApplicationData(applicationId, access = Ropc())
 
-      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
+      ApplicationRepoMock.fetchAllForUserId.thenReturnWhen(userId, false)(standardApplicationData, privilegedApplicationData, ropcApplicationData)
 
-      val result = await(underTest.fetchAllForCollaborator(userId))
+      val result = await(underTest.fetchAllForCollaborator(userId, false))
       result.size shouldBe 3
       result.head.subscriptions.size shouldBe 2
     }

@@ -50,22 +50,13 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationServiceMockModule
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger with ControllerTestData {
 
   import play.api.test.Helpers._
 
   val authTokenHeader                          = "authorization" -> "authorizationToken"
   implicit lazy val materializer: Materializer = NoMaterializer
   implicit lazy val request                    = FakeRequest()
-
-  private val standardAccess   = Standard(List("http://example.com/redirect"), Some("http://example.com/terms"), Some("http://example.com/privacy"))
-  private val privilegedAccess = Privileged(scopes = Set("scope1"))
-  private val ropcAccess       = Ropc()
-
-  val collaborators: Set[Collaborator] = Set(
-    Collaborator("admin@example.com", ADMINISTRATOR, UserId.random),
-    Collaborator("dev@example.com", DEVELOPER, UserId.random)
-  )
 
   trait Setup 
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
@@ -112,28 +103,6 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
       testBlock
       testBlock
     }
-  }
-
-  private def aNewApplicationResponse(access: Access, environment: Environment = Environment.PRODUCTION) = {
-    val grantLengthInDays = 547
-
-    new ApplicationResponse(
-      ApplicationId.random,
-      ClientId("clientId"),
-      "gatewayId",
-      "My Application",
-      environment.toString,
-      Some("Description"),
-      collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
-      grantLengthInDays,
-      None,
-      standardAccess.redirectUris,
-      standardAccess.termsAndConditionsUrl,
-      standardAccess.privacyPolicyUrl,
-      access
-    )
   }
 
   def verifyForbidden(result: Future[Result]): Unit = {
@@ -295,6 +264,35 @@ class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil 
 
       status(result) shouldBe 200
       contentAsJson(result) shouldBe Json.toJson(expectedAppStateHistories)
+    }
+  }
+
+  "fetchAllForCollaborator" should {
+    val userId = UserId.random
+    val standardApplicationResponse: ExtendedApplicationResponse   = aNewExtendedApplicationResponse(access = Standard())
+
+    "succeed with a 200 when applications are found for the collaborator by user id" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true))
+        .thenReturn(successful(List(standardApplicationResponse)))
+
+      status(underTest.fetchAllForCollaborator(userId)(request)) shouldBe OK
+    }
+
+    "succeed with a 200 when no applications are found for the collaborator by user id" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(successful(Nil))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
+
+      status(result) shouldBe OK
+      contentAsString(result) shouldBe "[]"
+    }
+
+    "fail with a 500 when an exception is thrown" in new Setup {
+      when(underTest.applicationService.fetchAllForCollaborator(userId, true)).thenReturn(failed(new RuntimeException("Expected test failure")))
+
+      val result = underTest.fetchAllForCollaborator(userId)(request)
+
+      status(result) shouldBe INTERNAL_SERVER_ERROR
     }
   }
 

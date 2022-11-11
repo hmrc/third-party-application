@@ -332,7 +332,7 @@ class ApplicationController @Inject() (
     } recover recovery
 
   def fetchAllForCollaborator(userId: UserId) = Action.async {
-    applicationService.fetchAllForCollaborator(userId).map(apps => Ok(toJson(apps))) recover recovery
+    applicationService.fetchAllForCollaborator(userId, false).map(apps => Ok(toJson(apps))) recover recovery
   }
 
   private def fetchAllForUserIdAndEnvironment(userId: UserId, environment: String) = {

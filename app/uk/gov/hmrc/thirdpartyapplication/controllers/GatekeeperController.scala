@@ -114,6 +114,10 @@ class GatekeeperController @Inject() (
     gatekeeperService.fetchAppStateHistories() map (histories => Ok(Json.toJson(histories))) recover recovery
   }
 
+  def fetchAllForCollaborator(userId: UserId) = Action.async {
+    applicationService.fetchAllForCollaborator(userId, true).map(apps => Ok(Json.toJson(apps))) recover recovery
+  }
+
   // TODO - this should use a request with payload validation in the JSformatter
   def updateRateLimitTier(applicationId: ApplicationId) = requiresAuthentication().async(parse.json) { implicit request =>
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
