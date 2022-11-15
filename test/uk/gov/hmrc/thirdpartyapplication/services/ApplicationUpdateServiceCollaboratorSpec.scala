@@ -87,6 +87,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockAddCollaboratorCommandHandler.process(*[ApplicationData], *[AddCollaborator])).thenReturn(
@@ -131,6 +132,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockRemoveCollaboratorCommandHandler.process(*[ApplicationData], *[RemoveCollaborator])).thenReturn(
