@@ -31,8 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
   with ApplicationStateUtil
   with ApplicationTestData {
-  
-  
+
   trait CommonSetup extends AuditServiceMockModule
     with ApplicationRepositoryMockModule
     with ResponsibleIndividualVerificationRepositoryMockModule
@@ -56,6 +55,8 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
     val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
+    val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler = mock[AddCollaboratorCommandHandler]
+    val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler = mock[RemoveCollaboratorCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
@@ -75,9 +76,10 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       mockVerifyResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
-      mockDeclineApplicationApprovalRequestCommandHandler
+      mockDeclineApplicationApprovalRequestCommandHandler,
+      mockAddCollaboratorCommandHandler,
+      mockRemoveCollaboratorCommandHandler
     )
   }
-
 
 }

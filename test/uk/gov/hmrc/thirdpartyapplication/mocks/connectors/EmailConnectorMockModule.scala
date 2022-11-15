@@ -19,6 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks.connectors
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -212,5 +213,50 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfResponsibleIndividual(*, *, *, *, *)(*)
     }
+
+    object SendCollaboratorAddedNotification {
+      def thenReturnSuccess() = {
+        when(aMock.sendCollaboratorAddedNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(requester: String, role: Role, applicationName: String, recipients: Set[String]) =
+        verify.sendCollaboratorAddedNotification(eqTo(requester), eqTo(role), eqTo(applicationName),  eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedNotification(*, *, *, *)(*)
+    }
+
+    object SendCollaboratorAddedConfirmation {
+      def thenReturnSuccess() = {
+        when(aMock.sendCollaboratorAddedConfirmation(*,  *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith( role: Role, applicationName: String, recipients: Set[String]) =
+        verify.sendCollaboratorAddedConfirmation(eqTo(role), eqTo(applicationName), eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*,  *, *)(*)
+    }
+
+    object SendCollaboratorRemovedNotification {
+      def thenReturnSuccess() = {
+        when(aMock.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(requester: String, applicationName: String, recipients: Set[String]) =
+        verify.sendRemovedCollaboratorNotification(eqTo(requester), eqTo(applicationName), eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorNotification(*, *, *)(*)
+    }
+
+    object SendCollaboratorRemovedConfirmation {
+      def thenReturnSuccess() = {
+        when(aMock.sendRemovedCollaboratorConfirmation(*,  *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(requester: String, applicationName: String, recipients: Set[String]) =
+        verify.sendRemovedCollaboratorConfirmation(eqTo(applicationName), eqTo(recipients))(*)
+
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendRemovedCollaboratorConfirmation(*, *)(*)
+    }
+
   }
 }

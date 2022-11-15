@@ -18,19 +18,17 @@ package uk.gov.hmrc.thirdpartyapplication.domain.models
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
+
 import java.time.LocalDateTime
 
 trait ApplicationUpdate {
   def timestamp: LocalDateTime
 }
-
-trait GatekeeperApplicationUpdate extends ApplicationUpdate {
-  def gatekeeperUser: String
-}
-
 case class AddClientSecret(instigator: UserId, email: String, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
 case class RemoveClientSecret(instigator: UserId, email: String, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperApplicationUpdate
+case class AddCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
+case class RemoveCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate
 case class ChangeProductionApplicationTermsAndConditionsLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: TermsAndConditionsLocation) extends ApplicationUpdate
 case class ChangeResponsibleIndividualToSelf(instigator: UserId, timestamp: LocalDateTime, name: String, email: String) extends ApplicationUpdate
@@ -38,12 +36,19 @@ case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperApplicationUpdate
+
+trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
+  def gatekeeperUser: String
+}
+case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationUpdate
+case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
 
 
 trait ApplicationUpdateFormatters {
   implicit val addClientSecretFormatter = Json.format[AddClientSecret]
   implicit val removeClientSecretFormatter = Json.format[RemoveClientSecret]
+  implicit val addCollaboratorFormatter = Json.format[AddCollaborator]
+  implicit val removeCollaboratorFormatter = Json.format[RemoveCollaborator]
   implicit val changeNameFormatter = Json.format[ChangeProductionApplicationName]
   implicit val changePrivacyPolicyLocationFormatter = Json.format[ChangeProductionApplicationPrivacyPolicyLocation]
   implicit val changeTermsAndConditionsLocationFormatter = Json.format[ChangeProductionApplicationTermsAndConditionsLocation]
@@ -56,6 +61,8 @@ trait ApplicationUpdateFormatters {
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[AddClientSecret]("addClientSecret")
     .and[RemoveClientSecret]("removeClientSecret")
+    .and[AddCollaborator]("addCollaborator")
+    .and[RemoveCollaborator]("removeCollaborator")
     .and[ChangeProductionApplicationName]("changeProductionApplicationName")
     .and[ChangeProductionApplicationPrivacyPolicyLocation]("changeProductionApplicationPrivacyPolicyLocation")
     .and[ChangeProductionApplicationTermsAndConditionsLocation]("changeProductionApplicationTermsAndConditionsLocation")

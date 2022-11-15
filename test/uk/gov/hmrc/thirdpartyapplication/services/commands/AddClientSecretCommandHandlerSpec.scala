@@ -66,7 +66,6 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       event.eventDateTime shouldBe timestamp
       event.secretValue shouldBe secretValue
       event.clientSecret shouldBe clientSecret
-      event.requestingAdminEmail shouldBe adminEmail
     }
 
     "return an error for a non-admin developer on a production application" in new Setup {
@@ -91,8 +90,6 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       event.eventDateTime shouldBe timestamp
       event.secretValue shouldBe secretValue
       event.clientSecret shouldBe clientSecret
-      event.requestingAdminEmail shouldBe devEmail
-
     }
   }
 

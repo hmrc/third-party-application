@@ -156,6 +156,7 @@ class ApplicationController @Inject() (
     handleOption(credentialService.fetchCredentials(applicationId))
   }
 
+  @deprecated("remove when client no longer uses this route and sends AddCollaboratorRequest Command")
   def addCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[AddCollaboratorRequest] { collaboratorRequest =>
       applicationService.addCollaborator(applicationId, collaboratorRequest) map {
@@ -168,6 +169,7 @@ class ApplicationController @Inject() (
     }
   }
 
+  @deprecated("remove when client no longer uses this route and sends RemoveCollaboratorRequest Command")
   def deleteCollaborator(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[DeleteCollaboratorRequest] { dcRequest =>
       applicationService.deleteCollaborator(applicationId, dcRequest.email, dcRequest.adminsToEmail, dcRequest.notifyCollaborator) map (_ => NoContent) recover {

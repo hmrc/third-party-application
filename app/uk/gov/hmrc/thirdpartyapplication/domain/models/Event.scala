@@ -24,6 +24,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndivi
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.play.json.Union
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
 sealed trait UpdateApplicationEvent {
@@ -31,7 +32,7 @@ sealed trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
   def actor: UpdateApplicationEvent.Actor
-  def requestingAdminEmail: String
+
 }
 
 trait TriggersNotification {
@@ -40,17 +41,20 @@ trait TriggersNotification {
 
 object UpdateApplicationEvent {
   sealed trait Actor
-
   case class GatekeeperUserActor(user: String) extends Actor
   case class CollaboratorActor(email: String) extends Actor
-  //case class ScheduledJobActor(jobId: String) extends Actor
-  //case class UnknownActor() extends Actor
+  case class ScheduledJobActor(jobId: String) extends Actor
+//  case class UnknownActor() extends Actor
 
   object Actor {
     implicit val gatekeeperUserActorFormat: OFormat[GatekeeperUserActor] = Json.format[GatekeeperUserActor]
     implicit val collaboratorActorFormat: OFormat[CollaboratorActor] = Json.format[CollaboratorActor]
+    implicit val scheduledJobActorFormat: OFormat[ScheduledJobActor] = Json.format[ScheduledJobActor]
+//    implicit val unknownActorFormat: OFormat[UnknownActor] = Json.format[UnknownActor]
 
     implicit val formatActor: OFormat[Actor] = Union.from[Actor]("actorType")
+//      .and[UnknownActor](ActorType.UNKNOWN.toString)
+      .and[ScheduledJobActor](ActorType.SCHEDULED_JOB.toString)
       .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
       .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
@@ -70,8 +74,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     secretValue: String,
-    clientSecret: ClientSecret,
-    requestingAdminEmail: String
+    clientSecret: ClientSecret
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretAdded {
@@ -84,8 +87,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     clientSecretId: String,
-    clientSecretName: String,
-    requestingAdminEmail: String
+    clientSecretName: String
   ) extends UpdateApplicationEvent
 
   object ClientSecretAddedObfuscated {
@@ -97,8 +99,7 @@ object UpdateApplicationEvent {
         evt.eventDateTime,
         evt.actor,
         evt.clientSecret.id,
-        evt.clientSecret.name,
-        evt.requestingAdminEmail)
+        evt.clientSecret.name)
     }
   }
 
@@ -108,8 +109,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     clientSecretId: String,
-    clientSecretName: String,
-    requestingAdminEmail: String
+    clientSecretName: String
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ClientSecretRemoved {
@@ -329,6 +329,36 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
   }
 
+  case class CollaboratorAdded(id: UpdateApplicationEvent.Id,
+                               applicationId: ApplicationId,
+                               eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                               actor: Actor,
+                               collaboratorId: UserId,
+                               collaboratorEmail: String,
+                               collaboratorRole: Role,
+                               verifiedAdminsToEmail: Set[String]) extends UpdateApplicationEvent with TriggersNotification
+
+  object CollaboratorAdded {
+    implicit val format: OFormat[CollaboratorAdded] = Json.format[CollaboratorAdded]
+
+    def collaboratorFromEvent(evt: CollaboratorAdded) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+  }
+
+  case class CollaboratorRemoved(id: UpdateApplicationEvent.Id,
+                               applicationId: ApplicationId,
+                               eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+                               actor: Actor,
+                               collaboratorId: UserId,
+                               collaboratorEmail: String,
+                               collaboratorRole: Role,
+                               notifyCollaborator: Boolean,
+                               verifiedAdminsToEmail: Set[String]) extends UpdateApplicationEvent with TriggersNotification
+
+  object CollaboratorRemoved {
+    implicit val format: OFormat[CollaboratorRemoved] = Json.format[CollaboratorRemoved]
+
+    def collaboratorFromEvent(evt: CollaboratorRemoved) = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+  }
   case class ApplicationApprovalRequestDeclined(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
@@ -364,5 +394,7 @@ object UpdateApplicationEvent {
     .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
+    .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
+    .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
     .format
 }

@@ -23,7 +23,7 @@ import com.github.tomakehurst.wiremock.client.WireMock._
 import scala.concurrent.ExecutionContext.Implicits.global
 import EmailConnector.SendEmailRequest
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Role}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 class EmailConnectorSpec extends ConnectorSpec {
@@ -80,7 +80,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(role, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Role.ADMINISTRATOR, applicationName, expectedToEmails))
     }
 
     "send added collaborator confirmation email with article for developer" in new Setup {
@@ -96,7 +96,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorConfirmation(role, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedConfirmation(Role.DEVELOPER, applicationName, expectedToEmails))
     }
 
     "send added collaborator notification email" in new Setup {
@@ -112,7 +112,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       val expectedRequest                         = SendEmailRequest(expectedToEmails, expectedTemplateId, expectedParameters)
       emailWillReturn(expectedRequest)
 
-      await(connector.sendAddedCollaboratorNotification(collaboratorEmail, role, applicationName, expectedToEmails))
+      await(connector.sendCollaboratorAddedNotification(collaboratorEmail, Role.ADMINISTRATOR, applicationName, expectedToEmails))
     }
 
     "send removed collaborator confirmation email" in new Setup {

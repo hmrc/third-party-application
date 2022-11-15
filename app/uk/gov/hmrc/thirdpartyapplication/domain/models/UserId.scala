@@ -20,7 +20,7 @@ import java.{util => ju}
 import scala.util.control.NonFatal
 
 case class UserId(value: ju.UUID) extends AnyVal {
-  def asText = value.toString()
+  def asText: String = value.toString
 }
 
 object UserId {

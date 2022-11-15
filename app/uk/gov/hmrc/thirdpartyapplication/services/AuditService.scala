@@ -23,12 +23,12 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit,  _}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{CollaboratorAdded => CollaboratorAddedAudit, CollaboratorRemoved => CollaboratorRemovedAudit,  ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -79,6 +79,8 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt : ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
       case evt : ClientSecretAdded => auditClientSecretAdded(app, evt)
       case evt : ClientSecretRemoved => auditClientSecretRemoved(app, evt)
+      case evt : CollaboratorAdded => auditAddCollaborator(app, evt)
+      case evt: CollaboratorRemoved => auditRemoveCollaborator(app, evt)
       case _ => Future.successful(None)
     }
   }
@@ -91,6 +93,20 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
         result       <- liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
       } yield result
     )
+      .toOption
+      .value
+  }
+
+    private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]]  = {
+      val collaborator  = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+     liftF(audit(CollaboratorAddedAudit,   AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
+     .toOption
+     .value
+    }
+
+  private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+    liftF(audit(CollaboratorRemovedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorRemovedAudit.details(collaborator)))
       .toOption
       .value
   }

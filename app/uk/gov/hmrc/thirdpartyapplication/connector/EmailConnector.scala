@@ -32,6 +32,7 @@ import scala.util.Failure
 import scala.util.Success
 import scala.util.Try
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.{ADMINISTRATOR, DEVELOPER, Role}
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -82,15 +83,22 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
 
-  def sendAddedCollaboratorConfirmation(role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    val article = if (role == "admin") "an" else "a"
+
+  private def getRoleForDisplay(role: Role) =
+    role match {
+      case ADMINISTRATOR => "admin"
+      case DEVELOPER => "developer"
+    }
+
+  def sendCollaboratorAddedConfirmation(role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    val article = if (role == ADMINISTRATOR) "an" else "a"
 
     post(SendEmailRequest(
       recipients,
       addedCollaboratorConfirmation,
       Map(
         "article"           -> article,
-        "role"              -> role,
+        "role"              -> getRoleForDisplay(role),
         "applicationName"   -> application,
         "developerHubTitle" -> devHubTitle
       )
@@ -98,8 +106,9 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
       .map(_ => HasSucceeded)
   }
 
-  def sendAddedCollaboratorNotification(email: String, role: String, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, addedCollaboratorNotification, Map("email" -> email, "role" -> s"$role", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+  def sendCollaboratorAddedNotification(email: String, role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+    post(SendEmailRequest(recipients, addedCollaboratorNotification,
+      Map("email" -> email, "role" -> s"${getRoleForDisplay(role)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
       .map(_ => HasSucceeded)
   }
 

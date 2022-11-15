@@ -18,44 +18,52 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class RemoveClientSecretCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
+class AddCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
-  
-  private def validate(app: ApplicationData, cmd: RemoveClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.instigator, app),
-      clientSecretExists(cmd.clientSecretId, app))
-    { case _ => app }
-  }
 
   import UpdateApplicationEvent._
 
-  private def asEvents(app: ApplicationData, cmd: RemoveClientSecret): NonEmptyList[UpdateApplicationEvent] = {
-    val clientSecret: Option[ClientSecret] = app.tokens.production.clientSecrets.find(_.id == cmd.clientSecretId)
+  private def validate(app: ApplicationData, cmd: AddCollaborator) = {
+    cmd.actor match {
+      case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]].map2(
+          isCollaboratorOnApp(actorEmail, app),
+          collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app)
+        ) { case _ => app }
+      case _                                     => Apply[ValidatedNec[String, *]]
+          .map(collaboratorAlreadyOnApp(cmd.collaborator.emailAddress, app))(_ => app)
+    }
+
+  }
+
+  private def asEvents(app: ApplicationData, cmd: AddCollaborator): NonEmptyList[UpdateApplicationEvent] = {
     NonEmptyList.of(
-      ClientSecretRemoved(
+      CollaboratorAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(cmd.email),
-        clientSecretId = cmd.clientSecretId,
-        clientSecretName = clientSecret.map(_.name).getOrElse("")
+        actor = cmd.actor,
+        collaboratorId = cmd.collaborator.userId,
+        collaboratorEmail = cmd.collaborator.emailAddress.toLowerCase,
+        collaboratorRole = cmd.collaborator.role,
+        verifiedAdminsToEmail = cmd.adminsToEmail
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: RemoveClientSecret): CommandHandler.Result = {
+  def process(app: ApplicationData, cmd: AddCollaborator): CommandHandler.Result = {
     Future.successful {
       validate(app, cmd) map { _ =>
         asEvents(app, cmd)
       }
     }
   }
+
 }

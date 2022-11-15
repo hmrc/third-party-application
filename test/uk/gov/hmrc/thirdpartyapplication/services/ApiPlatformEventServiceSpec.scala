@@ -91,8 +91,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
         eventDateTime = LocalDateTime.now(),
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = ClientSecret("name", LocalDateTime.now(), None,  UUID.randomUUID().toString, "eulaVterces"),
-        requestingAdminEmail = adminEmail
+        clientSecret = ClientSecret("name", LocalDateTime.now(), None,  UUID.randomUUID().toString, "eulaVterces")
       )
       "obfuscate ClientSecret Event when applied" in new Setup() {
         val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)

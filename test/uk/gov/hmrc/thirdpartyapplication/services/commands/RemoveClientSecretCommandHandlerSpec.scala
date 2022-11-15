@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, ClientSecretRemoved, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretRemoved, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
@@ -66,7 +66,6 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       event.eventDateTime shouldBe timestamp
       event.clientSecretId shouldBe clientSecret.id
       event.clientSecretName shouldBe clientSecret.name
-      event.requestingAdminEmail shouldBe adminEmail
     }
 
     "return an error for a non-admin developer on a production application" in new Setup {
@@ -101,7 +100,6 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       event.eventDateTime shouldBe timestamp
       event.clientSecretId shouldBe clientSecret.id
       event.clientSecretName shouldBe clientSecret.name
-      event.requestingAdminEmail shouldBe devEmail
 
     }
   }

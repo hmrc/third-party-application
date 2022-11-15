@@ -22,7 +22,7 @@ import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
 import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
 import cats.data.NonEmptyList
 
 abstract class CommandHandler {
@@ -36,25 +36,32 @@ object CommandHandler {
     if (cond) ().validNec[String] else left.invalidNec[Unit]
   }
 
-  private def isAdmin(userId: UserId, app: ApplicationData) =
+  def isCollaboratorOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
+    cond(app.collaborators.exists(c =>  c.emailAddress == email), s"no collaborator found with email: $email")
+
+  private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
 
-  def isAdminOnApp(userId: UserId, app: ApplicationData) =
+  private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
+    updated.exists(_.role == Role.ADMINISTRATOR)
+  }
+
+  def isAdminOnApp(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(isAdmin(userId, app), "User must be an ADMIN")
 
-  def isAdminIfInProduction(userId: UserId, app: ApplicationData) =
+  def isAdminIfInProduction(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isAdmin(userId, app)) || (app.environment == Environment.SANDBOX.toString),
       "App is in PRODUCTION so User must be an ADMIN"
     )
 
-  def isNotInProcessOfBeingApproved(app: ApplicationData) =
+  def isNotInProcessOfBeingApproved(app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION || app.state.name == State.TESTING,
       "App is not in TESTING, in PRE_PRODUCTION or in PRODUCTION"
     )
 
-  def isApproved(app: ApplicationData) =
+  def isApproved(app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       app.state.name == State.PRODUCTION || app.state.name == State.PRE_PRODUCTION,
       "App is not in PRE_PRODUCTION or in PRODUCTION state"
@@ -65,6 +72,21 @@ object CommandHandler {
       app.tokens.production.clientSecrets.exists(_.id == clientSecretId),
       s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
+
+  def collaboratorAlreadyOnApp(email: String, app: ApplicationData)  = {
+      cond(
+      !app.collaborators.exists(_.emailAddress.toLowerCase == email.toLowerCase),
+      s"Collaborator already linked to Application ${app.id.value}"
+    )
+  }
+
+  def applicationWillHaveAnAdmin(email: String, app: ApplicationData) = {
+    cond(
+      applicationHasAnAdmin(app.collaborators.filterNot(_.emailAddress equalsIgnoreCase email)),
+      s"Collaborator is last remaining admin for Application ${app.id.value}"
+    )
+  }
+
 
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
