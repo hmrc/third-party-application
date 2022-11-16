@@ -77,7 +77,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     context: String,
-    version: String,
+    version: String
   ) extends UpdateApplicationEvent with UpdatesSubscription
 
   object ApiSubscribed {
@@ -90,7 +90,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     context: String,
-    version: String,
+    version: String
   ) extends UpdateApplicationEvent with UpdatesSubscription
 
   object ApiUnsubscribed {
