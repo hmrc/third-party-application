@@ -108,6 +108,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
+  @deprecated("remove when no longer using old logic")
   def sendApiSubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
@@ -119,6 +120,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
+  @deprecated("remove when no longer using old logic")
   def sendApiUnsubscribedEvent(appData: ApplicationData, context: ApiContext, version: ApiVersion)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(

@@ -35,6 +35,9 @@ case class ApplicationAlreadyExists(applicationName: String) extends RuntimeExce
 case class SubscriptionAlreadyExistsException(name: String, api: ApiIdentifier)
     extends RuntimeException(s"""Application: '$name' is already Subscribed to API: ${api.asText(": ")}""")
 
+case class FailedToSubscribeException(applicationName: String, api: ApiIdentifier)
+    extends RuntimeException(s"""Failed to Subscribe API: ${api.asText(": ")} to Application: '$applicationName'""")
+
 case class ScopeNotFoundException(scope: String) extends RuntimeException(s"Scope '$scope' not found")
 
 case class InvalidIpAllowlistException(message: String) extends RuntimeException(message)

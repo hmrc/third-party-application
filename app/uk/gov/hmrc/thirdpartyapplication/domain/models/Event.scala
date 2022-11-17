@@ -32,10 +32,13 @@ sealed trait UpdateApplicationEvent {
   def applicationId: ApplicationId
   def eventDateTime: LocalDateTime
   def actor: UpdateApplicationEvent.Actor
-
 }
 
 trait TriggersNotification {
+  self: UpdateApplicationEvent =>
+}
+
+trait UpdatesSubscription {
   self: UpdateApplicationEvent =>
 }
 
@@ -66,6 +69,32 @@ object UpdateApplicationEvent {
     implicit val format = Json.valueFormat[Id]
 
     def random: Id = Id(UUID.randomUUID)
+  }
+
+  case class ApiSubscribed(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    context: String,
+    version: String
+  ) extends UpdateApplicationEvent with UpdatesSubscription
+
+  object ApiSubscribed {
+    implicit val format: OFormat[ApiSubscribed] = Json.format[ApiSubscribed]
+  }
+
+  case class ApiUnsubscribed(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    context: String,
+    version: String
+  ) extends UpdateApplicationEvent with UpdatesSubscription
+
+  object ApiUnsubscribed {
+    implicit val format: OFormat[ApiUnsubscribed] = Json.format[ApiUnsubscribed]
   }
 
   case class ClientSecretAdded(
@@ -378,6 +407,8 @@ object UpdateApplicationEvent {
   }
 
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
+    .and[ApiSubscribed](EventType.API_SUBSCRIBED_V2.toString)
+    .and[ApiUnsubscribed](EventType.API_UNSUBSCRIBED_V2.toString)
     .and[ClientSecretAddedObfuscated](EventType.CLIENT_SECRET_ADDED_V2.toString)
     .and[ClientSecretRemoved](EventType.CLIENT_SECRET_REMOVED_V2.toString)
     .and[ProductionAppNameChanged](EventType.PROD_APP_NAME_CHANGED.toString)

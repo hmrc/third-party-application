@@ -19,7 +19,7 @@ package uk.gov.hmrc.apiplatform.modules.gkauth.services
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
+import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
@@ -33,8 +33,7 @@ class StrideGatekeeperRoleAuthorisationService @Inject() (authControlConfig: Aut
 
   private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 
-  protected def innerEnsureHasGatekeeperRole[A](input: Request[A]): Future[Option[Result]] = {
-    implicit val hc = HeaderCarrierConverter.fromRequest(input)
+  protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     strideAuthConnector.authorise(hasAnyGatekeeperEnrolment, EmptyRetrieval)
       .map(_ => None)
       .recoverWith {

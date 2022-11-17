@@ -105,12 +105,21 @@ class ApplicationController @Inject() (
           applicationResponse <- applicationService.create(createApplicationRequest)
           applicationId        = applicationResponse.application.id
           subs                 = createApplicationRequest.anySubscriptions
-          _                   <- Future.sequence(subs.map(api => subscriptionService.createSubscriptionForApplicationMinusChecks(applicationId, api)))
+          _                   <- Future.sequence(subs.map(api =>
+                                   subscriptionService.updateApplicationForApiSubscription(
+                                     applicationId,
+                                     applicationResponse.application.name,
+                                     applicationResponse.application.collaborators,
+                                     api
+                                   )
+                                 ))
           _                   <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
         case e: ApplicationAlreadyExists =>
           Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
+        case e: FailedToSubscribeException =>
+          BadRequest(JsErrorResponse(FAILED_TO_SUBSCRIBE, s"${e.getMessage}"))
       } recover recovery
     }
   }
@@ -375,6 +384,7 @@ class ApplicationController @Inject() (
     } recover recovery
   }
 
+  @deprecated("remove when client no longer uses this route")
   def createSubscriptionForApplication(applicationId: ApplicationId) =
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async(parse.json) {
       implicit request =>
@@ -383,6 +393,7 @@ class ApplicationController @Inject() (
         }
     }
 
+  @deprecated("remove when client no longer uses this route")
   def removeSubscriptionForApplication(applicationId: ApplicationId, context: ApiContext, version: ApiVersion) = {
     requiresAuthenticationForPrivilegedOrRopcApplications(applicationId).async { implicit request =>
       subscriptionService.removeSubscriptionForApplication(applicationId, ApiIdentifier(context, version)).map(_ => NoContent) recover recovery

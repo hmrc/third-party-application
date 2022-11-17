@@ -21,6 +21,8 @@ import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 
 import play.api.mvc.Request
 import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
 import scala.concurrent.ExecutionContext
@@ -35,11 +37,12 @@ trait AnyGatekeeperRoleAuthorisationAction {
    
   def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] =  {
     Action.async { implicit request => 
-      ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
+      implicit val hc = HeaderCarrierConverter.fromRequest(request)
+      ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
       .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE}
       .flatMap(_ match {
         case Some(failureToAuthorise) =>
-          strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
+          strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
             .flatMap(_ match {
               case None => block(request)
               case Some(failureToAuthorise) => successful(failureToAuthorise)

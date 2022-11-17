@@ -29,6 +29,7 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
 import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
 
 trait ApplicationTypeAuthorisationActions {
@@ -60,12 +61,14 @@ trait ApplicationTypeAuthorisationActions {
       case e: NotFoundException => Some(Results.NotFound(JsErrorResponse(APPLICATION_NOT_FOUND, e.getMessage)))
     }
 
-    def filter[A](request: Request[A]): Future[Option[Result]] =
+    def filter[A](request: Request[A]): Future[Option[Result]] = {
+      implicit val hc = HeaderCarrierConverter.fromRequest(request)
       deriveAccessType(request) flatMap {
-        case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole(request)
+        case Some(accessType) if toMatchAccessTypes.contains(accessType) => strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
         case Some(_) if failOnAccessTypeMismatch                         => FAILED_ACCESS_TYPE
         case _                                                           => successful(None)
       } recover localRecovery
+    }
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }

@@ -188,4 +188,16 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     ).toFuture()
       .map(_ => HasSucceeded)
   }
+
+  def applyEvents(events: List[UpdateApplicationEvent with UpdatesSubscription]): Future[HasSucceeded] =
+    events.map(applyEvent).fold(Future.successful(HasSucceeded))((_, x) => x)
+
+  private def applyEvent(event: UpdateApplicationEvent with UpdatesSubscription): Future[HasSucceeded] = {
+    import UpdateApplicationEvent._
+
+    event match {
+      case evt: ApiSubscribed => add(evt.applicationId, ApiIdentifier(ApiContext(evt.context), ApiVersion(evt.version)))
+      case evt: ApiUnsubscribed => remove(evt.applicationId, ApiIdentifier(ApiContext(evt.context), ApiVersion(evt.version)))
+    }
+  }
 }

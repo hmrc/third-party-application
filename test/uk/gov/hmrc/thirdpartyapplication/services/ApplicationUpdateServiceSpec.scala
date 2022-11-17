@@ -72,6 +72,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       SubmissionsServiceMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
       AuditServiceMock.ApplyEvents.succeeds
 
@@ -132,6 +133,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationPrivacyPolicyLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationPrivacyPolicyLocation])).thenReturn(
@@ -177,6 +179,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeProductionApplicationTermsAndConditionsLocationCommandHandler.process(*[ApplicationData], *[ChangeProductionApplicationTermsAndConditionsLocation])).thenReturn(
@@ -222,6 +225,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToSelfCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToSelf])).thenReturn(
@@ -275,6 +279,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockChangeResponsibleIndividualToOtherCommandHandler.process(*[ApplicationData], *[ChangeResponsibleIndividualToOther])).thenReturn(
@@ -316,6 +321,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockVerifyResponsibleIndividualCommandHandler.process(*[ApplicationData], *[VerifyResponsibleIndividual])).thenReturn(
@@ -374,6 +380,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineResponsibleIndividualCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividual])).thenReturn(
@@ -424,6 +431,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineResponsibleIndividualDidNotVerifyCommandHandler.process(*[ApplicationData], *[DeclineResponsibleIndividualDidNotVerify])).thenReturn(
@@ -470,6 +478,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
       when(mockDeclineApplicationApprovalRequestCommandHandler.process(*[ApplicationData], *[DeclineApplicationApprovalRequest])).thenReturn(

@@ -1147,7 +1147,7 @@ class ApplicationControllerSpec
     }
   }
 
-  "createSubscriptionForApplication" should {
+  "createSubscriptionForApplication (deprecated)" should {
     val applicationId = ApplicationId.random
     val body          = anAPIJson()
 
@@ -1218,7 +1218,7 @@ class ApplicationControllerSpec
 
   }
 
-  "removeSubscriptionForApplication" should {
+  "removeSubscriptionForApplication (deprecated)" should {
     val applicationId = ApplicationId.random
 
     "fail with a 404 (not found) when no application exists for the given application id" in new Setup {
