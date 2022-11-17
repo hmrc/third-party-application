@@ -38,6 +38,7 @@ case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) 
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
+case class UpdateRedirectUris(actor: Actor, oldRedirectUris: String, newRedirectUris: String, timestamp: LocalDateTime) extends ApplicationUpdate
 
 trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String
@@ -61,6 +62,7 @@ trait ApplicationUpdateFormatters {
   implicit val declineApplicationApprovalRequestFormatter = Json.format[DeclineApplicationApprovalRequest]
   implicit val subscribeToApiFormatter = Json.format[SubscribeToApi]
   implicit val unsubscribeFromApiFormatter = Json.format[UnsubscribeFromApi]
+  implicit val UpdateRedirectUrisFormatter = Json.format[UpdateRedirectUris]
 
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[AddClientSecret]("addClientSecret")
@@ -77,5 +79,6 @@ trait ApplicationUpdateFormatters {
     .and[DeclineApplicationApprovalRequest]("declineApplicationApprovalRequest")
     .and[SubscribeToApi]("subscribeToApi")
     .and[UnsubscribeFromApi]("unsubscribeFromApi")
+    .and[UpdateRedirectUris]("updateRedirectUris")
     .format
 }

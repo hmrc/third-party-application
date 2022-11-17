@@ -60,6 +60,7 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler = mock[RemoveCollaboratorCommandHandler]
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler = mock[SubscribeToApiCommandHandler]
     val mockUnsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler = mock[UnsubscribeFromApiCommandHandler]
+    val mockUpdateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler = mock[UpdateRedirectUrisCommandHandler]
 
     val underTest = new ApplicationUpdateService(
       ApplicationRepoMock.aMock,
@@ -84,7 +85,8 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockSubscribeToApiCommandHandler,
-      mockUnsubscribeFromApiCommandHandler
+      mockUnsubscribeFromApiCommandHandler,
+      mockUpdateRedirectUrisCommandHandler
     )
   }
 
