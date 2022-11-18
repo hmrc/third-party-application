@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import cats.Apply
 import cats.data.Validated.Valid
 import cats.data.{NonEmptyList, Validated, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent, UpdateRedirectUris}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, Standard, UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.{Inject, Singleton}
@@ -32,7 +32,7 @@ class UpdateRedirectUrisCommandHandler @Inject()()
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: UpdateRedirectUris): ValidatedNec[String, ApplicationData] = {
-    Validated.validNec(app)  // TODO - check that before and after URIs are different
+    Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => app)
   }
 
   import UpdateApplicationEvent._

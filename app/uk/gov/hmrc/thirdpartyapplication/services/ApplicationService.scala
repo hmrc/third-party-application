@@ -17,10 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
+import cats.data.NonEmptyChain
 import org.apache.commons.net.util.SubnetUtils
-import uk.gov.hmrc.http.ForbiddenException
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
@@ -39,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -78,9 +77,10 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
+    applicationUpdateService: ApplicationUpdateService,
     clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ActorHelper {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -489,19 +489,43 @@ class ApplicationService @Inject() (
       existing <- fetchApp(applicationId)
       _         = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = sendEventIfRedirectUrisChanged(existing, savedApp)
       _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      _         = sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
     } yield savedApp
   }
 
-  private def sendEventIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
+  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
     (previousAppData.access, updatedAppData.access) match {
       case (previous: Standard, updated: Standard) =>
         if (previous.redirectUris != updated.redirectUris) {
-          apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
+          handleUpdateApplication(
+            previousAppData.id,
+            updatedAppData.collaborators,
+            oldRedirectUris = previous.redirectUris.mkString(","),
+            newRedirectUris = updated.redirectUris.mkString(",")
+          )
         }
       case _                                       => ()
     }
+  }
+
+  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: String, newRedirectUris: String)
+                                     (implicit hc: HeaderCarrier): Unit = {
+
+    def fail(errorMessages: NonEmptyChain[String]) = {
+      logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
+      throw new BadRequestException("Failed to process UpdateRedirectUris command")
+    }
+
+    val updateRedirectUris = UpdateRedirectUris(
+    actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators),
+    oldRedirectUris,
+    newRedirectUris,
+    timestamp = LocalDateTime.now(clock)
+    )
+
+    applicationUpdateService.update(applicationId, updateRedirectUris).fold(fail, _ => ())
+
   }
 
   private def fetchApp(applicationId: ApplicationId) = {

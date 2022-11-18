@@ -17,12 +17,13 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
+import cats.data.{EitherT, NonEmptyChain}
 import cats.implicits._
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -84,6 +85,7 @@ class ApplicationServiceSpec
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
+    val applicationUpdateServiceMock              = mock[ApplicationUpdateService]
     val applicationResponseCreator                = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -115,6 +117,7 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
+      applicationUpdateServiceMock,
       clock
     )
 
@@ -152,7 +155,7 @@ class ApplicationServiceSpec
     }
   }
 
-  "Create with Colloborator userId" should {
+  "Create with Collaborator userId" should {
 
     "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
@@ -499,6 +502,93 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.verifyCalled()
     }
 
+    "send an audit event for each type of change" in new Setup {
+      val testUserEmail = "test@example.com"
+      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
+      val tokens        = ApplicationTokens(
+        Token(ClientId("prodId"), "prodToken")
+      )
+
+      val existingApplication                 = ApplicationData(
+        id = applicationId,
+        name = "app name",
+        normalisedName = "app name",
+        collaborators = Set(admin),
+        wso2ApplicationName = "wso2ApplicationName",
+        tokens = tokens,
+        state = testingState(),
+        createdOn = LocalDateTime.now,
+        lastAccess = Some(LocalDateTime.now)
+      )
+      val newRedirectUris                     = List("http://new-url.example.com")
+      val updatedApplication: ApplicationData = existingApplication.copy(
+        name = "new name",
+        normalisedName = "new name",
+        access = Standard(
+          newRedirectUris,
+          Some("http://new-url.example.com/terms-and-conditions"),
+          Some("http://new-url.example.com/privacy-policy")
+        )
+      )
+
+      ApplicationRepoMock.Fetch.thenReturn(existingApplication)
+      ApplicationRepoMock.Save.thenReturn(updatedApplication)
+      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.rightT(updatedApplication))
+
+//      when(applicationUpdateServiceMock.update(*[ApplicationId], *)).thenReturn(Left(NonEmptyChain.one(s"No application found with id $applicationId")))
+
+      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
+
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
+      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), *)(*)
+    }
+
+    "throw BadRequestException when UpdateRedirectUris command fails" in new Setup {
+      val testUserEmail = "test@example.com"
+      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
+      val tokens        = ApplicationTokens(
+        Token(ClientId("prodId"), "prodToken")
+      )
+
+      val existingApplication                 = ApplicationData(
+        id = applicationId,
+        name = "app name",
+        normalisedName = "app name",
+        collaborators = Set(admin),
+        wso2ApplicationName = "wso2ApplicationName",
+        tokens = tokens,
+        state = testingState(),
+        createdOn = LocalDateTime.now,
+        lastAccess = Some(LocalDateTime.now)
+      )
+      val newRedirectUris                     = List("http://new-url.example.com")
+      val updatedApplication: ApplicationData = existingApplication.copy(
+        name = "new name",
+        normalisedName = "new name",
+        access = Standard(
+          newRedirectUris,
+          Some("http://new-url.example.com/terms-and-conditions"),
+          Some("http://new-url.example.com/privacy-policy")
+        )
+      )
+
+      ApplicationRepoMock.Fetch.thenReturn(existingApplication)
+      ApplicationRepoMock.Save.thenReturn(updatedApplication)
+      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain.one(s"Bang")))
+
+      intercept[BadRequestException]{
+        await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
+      }
+
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
+      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), *)(*)
+    }
+
+
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
@@ -576,47 +666,6 @@ class ApplicationServiceSpec
         state = data.state,
         rateLimitTier = SILVER
       ))
-    }
-
-    "send an audit event for each type of change" in new Setup {
-      val testUserEmail = "test@example.com"
-      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
-      val tokens        = ApplicationTokens(
-        Token(ClientId("prodId"), "prodToken")
-      )
-
-      val existingApplication                 = ApplicationData(
-        id = applicationId,
-        name = "app name",
-        normalisedName = "app name",
-        collaborators = Set(admin),
-        wso2ApplicationName = "wso2ApplicationName",
-        tokens = tokens,
-        state = testingState(),
-        createdOn = LocalDateTime.now,
-        lastAccess = Some(LocalDateTime.now)
-      )
-      val newRedirectUris                     = List("http://new-url.example.com")
-      val updatedApplication: ApplicationData = existingApplication.copy(
-        name = "new name",
-        normalisedName = "new name",
-        access = Standard(
-          newRedirectUris,
-          Some("http://new-url.example.com/terms-and-conditions"),
-          Some("http://new-url.example.com/privacy-policy")
-        )
-      )
-
-      ApplicationRepoMock.Fetch.thenReturn(existingApplication)
-      ApplicationRepoMock.Save.thenReturn(updatedApplication)
-
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppRedirectUrisChanged), *)(*)
-      verify(mockApiPlatformEventService).sendRedirectUrisUpdatedEvent(eqTo(updatedApplication), eqTo(""), eqTo(newRedirectUris.mkString(",")))(any[HeaderCarrier])
-      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
     }
   }
 
@@ -987,9 +1036,11 @@ class ApplicationServiceSpec
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionToken = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
+      val productionTokn = productionToken.copy(accessToken = serverToken)
+//        Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
+//        val productionToken       = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
-      override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
+      override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionTokn))
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 

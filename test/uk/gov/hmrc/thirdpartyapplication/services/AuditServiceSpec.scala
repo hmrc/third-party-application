@@ -245,9 +245,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       AppPrivacyPolicyUrlChanged ->
         (Map("newPrivacyPolicyUrl" -> "http://new-url.example.com/privacy-policy") ++ commonAuditData)
 
-    val appRedirectUrisAudit =
-      AppRedirectUrisChanged ->
-        (Map("newRedirectUris" -> "http://new-url.example.com,http://new-url.example.com/other-redirect") ++ commonAuditData)
+//    val appRedirectUrisAudit =
+//      AppRedirectUrisChanged ->
+//        (Map("newRedirectUris" -> "http://new-url.example.com,http://new-url.example.com/other-redirect") ++ commonAuditData)
 
     val appTermsAndConditionsUrlAudit =
       AppTermsAndConditionsUrlChanged ->
@@ -255,7 +255,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
     "produce the audit events required by an application update" in {
       AuditHelper.calculateAppChanges(previousApp, updatedApp) shouldEqual
-        Set(appNameAudit, appPrivacyAudit, appRedirectUrisAudit, appTermsAndConditionsUrlAudit)
+        Set(appNameAudit, appPrivacyAudit, appTermsAndConditionsUrlAudit)
     }
 
     "only produce audit events if the fields have been updated" in {

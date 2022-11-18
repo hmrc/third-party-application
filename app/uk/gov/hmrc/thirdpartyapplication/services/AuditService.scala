@@ -341,7 +341,7 @@ object AuditHelper {
 
     val standardEvents = (previous.access, updated.access) match {
       case (p: Standard, u: Standard) => Set(
-          calcRedirectUriChange(p, u),
+//          calcRedirectUriChange(p, u),
           calcTermsAndConditionsChange(p, u),
           calcPrivacyPolicyChange(p, u)
         )
@@ -356,10 +356,10 @@ object AuditHelper {
   private def when[A](pred: Boolean, ret: => A): Option[A] =
     if (pred) Some(ret) else None
 
-  private def calcRedirectUriChange(a: Standard, b: Standard) = {
-    val redirectUris = b.redirectUris.mkString(",")
-    when(a.redirectUris != b.redirectUris, AppRedirectUrisChanged -> Map("newRedirectUris" -> redirectUris))
-  }
+//  private def calcRedirectUriChange(a: Standard, b: Standard) = {
+//    val redirectUris = b.redirectUris.mkString(",")
+//    when(a.redirectUris != b.redirectUris, AppRedirectUrisChanged -> Map("newRedirectUris" -> redirectUris))
+//  }
 
   private def calcNameChange(a: ApplicationData, b: ApplicationData) =
     when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))
