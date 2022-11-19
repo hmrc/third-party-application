@@ -245,10 +245,6 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       AppPrivacyPolicyUrlChanged ->
         (Map("newPrivacyPolicyUrl" -> "http://new-url.example.com/privacy-policy") ++ commonAuditData)
 
-//    val appRedirectUrisAudit =
-//      AppRedirectUrisChanged ->
-//        (Map("newRedirectUris" -> "http://new-url.example.com,http://new-url.example.com/other-redirect") ++ commonAuditData)
-
     val appTermsAndConditionsUrlAudit =
       AppTermsAndConditionsUrlChanged ->
         (Map("newTermsAndConditionsUrl" -> "http://new-url.example.com/terms-and-conditions") ++ commonAuditData)

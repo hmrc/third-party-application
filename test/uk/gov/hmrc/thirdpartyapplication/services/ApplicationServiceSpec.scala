@@ -35,6 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.GatekeeperUserActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
@@ -117,7 +118,7 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      applicationUpdateServiceMock,
+      applicationUpdateServiceMock, // TODO use ApplicationUpdateServiceMock.aMock
       clock
     )
 
@@ -533,15 +534,15 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
+      // TODO use ApplicationUpdateServiceMock.Update
       when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.rightT(updatedApplication))
-
-//      when(applicationUpdateServiceMock.update(*[ApplicationId], *)).thenReturn(Left(NonEmptyChain.one(s"No application found with id $applicationId")))
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
+      // TODO use ApplicationUpdateServiceMock.Update
       verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), *)(*)
     }
 
@@ -573,21 +574,28 @@ class ApplicationServiceSpec
           Some("http://new-url.example.com/privacy-policy")
         )
       )
+      val updateRedirectUris = UpdateRedirectUris(
+        actor = GatekeeperUserActor("Gatekeeper Admin"),
+        oldRedirectUris = "",
+        newRedirectUris = newRedirectUris.mkString(","),
+        timestamp = LocalDateTime.now(clock)
+      )
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
-      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain.one(s"Bang")))
+      // TODO use ApplicationUpdateServiceMock.Update
+      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain.one("Error message")))
 
       intercept[BadRequestException]{
         await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
-      }
+      }.message shouldBe "Failed to process UpdateRedirectUris command"
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), *)(*)
+      // TODO use ApplicationUpdateServiceMock.Update
+      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), eqTo(updateRedirectUris))(*)
     }
-
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()

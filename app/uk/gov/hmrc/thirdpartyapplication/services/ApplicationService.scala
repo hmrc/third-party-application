@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
-import cats.data.NonEmptyChain
+import cats.data.{EitherT, NonEmptyChain}
 import org.apache.commons.net.util.SubnetUtils
 import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
@@ -485,47 +485,36 @@ class ApplicationService @Inject() (
         throw new ForbiddenException("Updating the access type of an application is not allowed")
       }
 
-    for {
-      existing <- fetchApp(applicationId)
-      _         = checkAccessType(existing)
-      savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
-      _         = sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
-    } yield savedApp
-  }
-
-  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
-    (previousAppData.access, updatedAppData.access) match {
-      case (previous: Standard, updated: Standard) =>
-        if (previous.redirectUris != updated.redirectUris) {
-          handleUpdateApplication(
-            previousAppData.id,
-            updatedAppData.collaborators,
-            oldRedirectUris = previous.redirectUris.mkString(","),
-            newRedirectUris = updated.redirectUris.mkString(",")
-          )
-        }
-      case _                                       => ()
-    }
-  }
-
-  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: String, newRedirectUris: String)
-                                     (implicit hc: HeaderCarrier): Unit = {
-
     def fail(errorMessages: NonEmptyChain[String]) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
       throw new BadRequestException("Failed to process UpdateRedirectUris command")
     }
 
-    val updateRedirectUris = UpdateRedirectUris(
-    actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators),
-    oldRedirectUris,
-    newRedirectUris,
-    timestamp = LocalDateTime.now(clock)
-    )
+    for {
+      existing <- fetchApp(applicationId)
+      _         = checkAccessType(existing)
+      savedApp <- applicationRepository.save(updatedApplication(existing))
+      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      _        <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp).fold(fail, identity)
+    } yield savedApp
+  }
 
-    applicationUpdateService.update(applicationId, updateRedirectUris).fold(fail, _ => ())
-
+  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)
+                                                    (implicit hc: HeaderCarrier): EitherT[Future, NonEmptyChain[String], ApplicationData] = {
+    (previousAppData.access, updatedAppData.access) match {
+      case (previous: Standard, updated: Standard) =>
+        if (previous.redirectUris != updated.redirectUris) {
+          val updateRedirectUris = UpdateRedirectUris(
+            actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), updatedAppData.collaborators),
+            oldRedirectUris = previous.redirectUris.mkString(","),
+            newRedirectUris = updated.redirectUris.mkString(","),
+            timestamp = LocalDateTime.now(clock)
+          )
+          applicationUpdateService.update(previousAppData.id, updateRedirectUris)
+        }
+        else EitherT.rightT(updatedAppData)
+      case _                                       => EitherT.rightT(updatedAppData)
+    }
   }
 
   private def fetchApp(applicationId: ApplicationId) = {

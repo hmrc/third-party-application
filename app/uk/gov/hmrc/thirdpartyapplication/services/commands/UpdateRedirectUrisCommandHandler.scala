@@ -17,9 +17,8 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.Apply
-import cats.data.Validated.Valid
-import cats.data.{NonEmptyList, Validated, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, Standard, UpdateApplicationEvent, UpdateRedirectUris}
+import cats.data.{NonEmptyList, ValidatedNec}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{UpdateApplicationEvent, UpdateRedirectUris}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import javax.inject.{Inject, Singleton}
@@ -31,7 +30,7 @@ class UpdateRedirectUrisCommandHandler @Inject()()
 
   import CommandHandler._
 
-  private def validate(app: ApplicationData, cmd: UpdateRedirectUris): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map(isStandardAccess(app))(_ => app)
   }
 
@@ -52,7 +51,7 @@ class UpdateRedirectUrisCommandHandler @Inject()()
 
   def process(app: ApplicationData, cmd: UpdateRedirectUris): CommandHandler.Result = {
     Future.successful {
-      validate(app, cmd) map { _ =>
+      validate(app) map { _ =>
         asEvents(app, cmd)
       }
     }

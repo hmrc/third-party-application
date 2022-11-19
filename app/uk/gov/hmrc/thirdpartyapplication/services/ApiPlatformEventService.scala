@@ -149,17 +149,4 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
   }
-//
-//  private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldActor] = {
-//    if (userContext.isEmpty) {
-//      Option(OldActor("admin@gatekeeper", ActorType.GATEKEEPER))
-//    } else {
-//      userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-//        .map(email => OldActor(email, deriveActorType(email, collaborators)))
-//    }
-//  }
-//
-//  private def deriveActorType(userEmail: String, collaborators: Set[Collaborator]): ActorType.Value =
-//    collaborators
-//      .find(_.emailAddress.equalsIgnoreCase(userEmail)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
 }
