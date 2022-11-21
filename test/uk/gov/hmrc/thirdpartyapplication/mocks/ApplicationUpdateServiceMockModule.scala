@@ -55,6 +55,10 @@ trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatch
         verify(aMock).update(eqTo(applicationId), captor.capture)(*)
         captor.value
       }
+
+      def verifyCalledWith(applicationId: ApplicationId, applicationUpdate: ApplicationUpdate) = {
+        verify(aMock).update(eqTo(applicationId), eqTo(applicationUpdate))(*)
+      }
     }
   }
 

@@ -17,7 +17,6 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
-import cats.data.{EitherT, NonEmptyChain}
 import cats.implicits._
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
@@ -58,7 +57,7 @@ class ApplicationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
-    with ApplicationTestData
+    with ApplicationUpdateServiceMockModule
     with UpliftRequestSamples
     with FixedClock {
 
@@ -86,7 +85,6 @@ class ApplicationServiceSpec
     val mockThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
     val mockGatekeeperService                     = mock[GatekeeperService]
     val mockApiPlatformEventService               = mock[ApiPlatformEventService]
-    val applicationUpdateServiceMock              = mock[ApplicationUpdateService]
     val applicationResponseCreator                = new ApplicationResponseCreator()
 
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
@@ -118,7 +116,7 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
-      applicationUpdateServiceMock, // TODO use ApplicationUpdateServiceMock.aMock
+      ApplicationUpdateServiceMock.aMock,
       clock
     )
 
@@ -534,16 +532,14 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
-      // TODO use ApplicationUpdateServiceMock.Update
-      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.rightT(updatedApplication))
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplication)
 
       await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
 
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      // TODO use ApplicationUpdateServiceMock.Update
-      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), *)(*)
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id)
     }
 
     "throw BadRequestException when UpdateRedirectUris command fails" in new Setup {
@@ -583,8 +579,7 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Fetch.thenReturn(existingApplication)
       ApplicationRepoMock.Save.thenReturn(updatedApplication)
-      // TODO use ApplicationUpdateServiceMock.Update
-      when(applicationUpdateServiceMock.update(*[ApplicationId], *)(*)).thenReturn(EitherT.leftT(NonEmptyChain.one("Error message")))
+      ApplicationUpdateServiceMock.Update.thenReturnError("Error message")
 
       intercept[BadRequestException]{
         await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
@@ -593,8 +588,7 @@ class ApplicationServiceSpec
       AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
       AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-      // TODO use ApplicationUpdateServiceMock.Update
-      verify(applicationUpdateServiceMock).update(eqTo(updatedApplication.id), eqTo(updateRedirectUris))(*)
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
     }
 
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
@@ -1032,8 +1026,6 @@ class ApplicationServiceSpec
 
   "fetchByServerToken" should {
 
-    val serverToken = "b3c83934c02df8b111e7f9f8700000"
-
     "return none when no application exists in the repository for the given server token" in new Setup {
       ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
 
@@ -1044,11 +1036,7 @@ class ApplicationServiceSpec
 
     "return an application when it exists in the repository for the given server token" in new Setup {
 
-      val productionTokn = productionToken.copy(accessToken = serverToken)
-//        Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
-//        val productionToken       = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
-
-      override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionTokn))
+      override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 
       ApplicationRepoMock.FetchByServerToken.thenReturnWhen(serverToken)(applicationData)
 
