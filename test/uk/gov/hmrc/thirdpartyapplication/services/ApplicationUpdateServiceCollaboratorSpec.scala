@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.util._
 import java.time.LocalDateTime
 import scala.concurrent.Future
 
-class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils {
+class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils with ApplicationTestData {
 
   trait Setup extends CommonSetup
 

@@ -57,11 +57,12 @@ class ApplicationServiceSpec
     extends AsyncHmrcSpec
     with BeforeAndAfterAll
     with ApplicationStateUtil
-    with ApplicationUpdateServiceMockModule
+    with ApplicationTestData
     with UpliftRequestSamples
     with FixedClock {
 
   trait Setup extends AuditServiceMockModule
+      with ApplicationUpdateServiceMockModule
       with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with ApplicationRepositoryMockModule

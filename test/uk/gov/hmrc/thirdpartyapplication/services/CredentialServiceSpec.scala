@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.LocalDateTime
 
-class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
+class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
   trait Setup extends ApplicationRepositoryMockModule
     with AuditServiceMockModule

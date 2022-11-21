@@ -41,7 +41,7 @@ import cats.data.OptionT
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UserId
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, FixedClock}
 
 import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -50,7 +50,8 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationServiceMockModule
 
-class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger with ControllerTestData {
+class GatekeeperControllerSpec extends ControllerSpec with ApplicationStateUtil with FixedClock with ApplicationLogger 
+  with ControllerTestData with ApplicationTestData {
 
   import play.api.test.Helpers._
 

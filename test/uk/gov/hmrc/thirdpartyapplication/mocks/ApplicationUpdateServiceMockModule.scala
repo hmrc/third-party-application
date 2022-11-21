@@ -22,12 +22,11 @@ import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 import org.mockito.captor.ArgCaptor
 import scala.concurrent.ExecutionContext.Implicits.global
 
-trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
+trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
   protected trait BaseApplicationUpdateServiceMock {
 
