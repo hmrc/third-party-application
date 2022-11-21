@@ -98,6 +98,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     )
   }
 
+  @deprecated("remove when no longer using old logic")
   def sendRedirectUrisUpdatedEvent(appData: ApplicationData, oldRedirectUris: String, newRedirectUris: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(

@@ -673,6 +673,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _ : ApiSubscribed => noOp(event)
       case _ : ApiUnsubscribed => noOp(event)
       case _ : ClientSecretAddedObfuscated => noOp(event)
+      case _ : RedirectUrisUpdated => noOp(event)
     }
   }
 }
