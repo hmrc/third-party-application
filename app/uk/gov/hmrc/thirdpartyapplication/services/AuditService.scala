@@ -23,7 +23,7 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit, CollaboratorAdded => CollaboratorAddedAudit, CollaboratorRemoved => CollaboratorRemovedAudit, _}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
@@ -100,12 +100,12 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-    private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]]  = {
-      val collaborator  = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
-     liftF(audit(CollaboratorAddedAudit,   AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
-     .toOption
-     .value
-    }
+  private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+    liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
+      .toOption
+      .value
+  }
 
   private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
@@ -149,7 +149,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdated)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       AppRedirectUrisChanged,
-      Map("newRedirectUris" -> evt.newRedirectUris)
+      Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris)
     ))
       .toOption
       .value
@@ -197,12 +197,12 @@ object AuditAction {
     val auditType = "ApplicationUnsubscribedFromAPI"
   }
 
-  case object ClientSecretAdded extends AuditAction {
+  case object ClientSecretAddedAudit extends AuditAction {
     val name      = "Application Client Secret Added"
     val auditType = "ApplicationClientSecretAdded"
   }
 
-  case object ClientSecretRemoved extends AuditAction {
+  case object ClientSecretRemovedAudit extends AuditAction {
     val name      = "Application Client Secret Removed"
     val auditType = "ApplicationClientSecretRemoved"
   }
@@ -262,7 +262,7 @@ object AuditAction {
     val auditType = "CreateRopcApplicationRequestDeniedDueToDenyListedName"
   }
 
-  case object CollaboratorAdded extends AuditAction {
+  case object CollaboratorAddedAudit extends AuditAction {
     val name      = "Collaborator added to an application"
     val auditType = "CollaboratorAddedToApplication"
 
@@ -272,7 +272,7 @@ object AuditAction {
     )
   }
 
-  case object CollaboratorRemoved extends AuditAction {
+  case object CollaboratorRemovedAudit extends AuditAction {
     val name      = "Collaborator removed from an application"
     val auditType = "CollaboratorRemovedFromApplication"
 

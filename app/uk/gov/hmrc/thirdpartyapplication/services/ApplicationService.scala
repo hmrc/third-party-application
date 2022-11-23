@@ -143,7 +143,7 @@ class ApplicationService @Inject() (
       app         <- fetchApp(applicationId)
       collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
       _           <- addUser(app, collaborator)
-      _            = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
+      _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
       _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
       _            = sendNotificationEmails(app.name, collaborator,  request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
@@ -262,7 +262,7 @@ class ApplicationService @Inject() (
     }
 
     def audit(collaborator: Option[Collaborator]) = collaborator match {
-      case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
+      case Some(c) => auditService.audit(CollaboratorRemovedAudit, AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(c))
       case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 

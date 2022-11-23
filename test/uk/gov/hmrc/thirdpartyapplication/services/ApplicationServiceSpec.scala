@@ -693,8 +693,8 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorAdded,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        CollaboratorAddedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAddedAudit.details(addRequest.collaborator),
         hc
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -735,8 +735,8 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorAdded,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        CollaboratorAddedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAddedAudit.details(addRequest.collaborator),
         hc
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -897,8 +897,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorConfirmation(applicationData.name, Set(testEmail))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(testEmail, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(testEmail, DEVELOPER, idOf(testEmail))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(testEmail, DEVELOPER, idOf(testEmail))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(testEmail), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -941,8 +941,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -959,8 +959,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector, never).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])

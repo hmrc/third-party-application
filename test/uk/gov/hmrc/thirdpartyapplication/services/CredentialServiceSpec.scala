@@ -250,7 +250,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       result.clientSecrets.last.name shouldBe secretName
 
       AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretAdded,
+        ClientSecretAddedAudit,
         Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> secretName, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
@@ -307,7 +307,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
 
       AuditServiceMock.Audit.thenReturnSuccessWhen(
-        ClientSecretRemoved,
+        ClientSecretRemovedAudit,
         Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove)
       )
 
@@ -318,7 +318,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       updatedClientSecrets should not contain (firstSecret)
 
       AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretRemoved,
+        ClientSecretRemovedAudit,
         Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove),
         hc
       )

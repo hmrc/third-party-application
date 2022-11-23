@@ -29,10 +29,10 @@ import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Warn, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorActor, CollaboratorAdded, CollaboratorRemoved, GatekeeperUserActor, RedirectUrisUpdated}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
 import scala.concurrent.Future
@@ -44,7 +44,8 @@ import cats.data.NonEmptyList
 import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
-class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
+  with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
@@ -153,8 +154,10 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val requesterName = "bill badger"
     val appInTesting = applicationData.copy(state = ApplicationState.testing)
 
+    val collaboratorActor = CollaboratorActor(applicationData.collaborators.head.emailAddress)
+    implicit val hc: HeaderCarrier = HeaderCarrier()
+
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
-      implicit val hc: HeaderCarrier = HeaderCarrier()
 
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
@@ -201,6 +204,220 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val result = await(auditService.applyEvents(appInTesting, NonEmptyList.one(appApprovalRequestDeclined)))
       
       result shouldBe Some(AuditResult.Success)
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a ClientSecretAdded event" in new Setup {
+
+      val clientSecretAdded = ClientSecretAdded(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        "secret value",
+        ClientSecret(name = "name", hashedSecret = "hashedSecret")
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ClientSecretAddedAudit.auditType,
+        tags = hc.toAuditTags(ClientSecretAddedAudit.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "newClientSecret" -> clientSecretAdded.clientSecret.name,
+          "clientSecretType" -> "PRODUCTION"
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(clientSecretAdded)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a ClientSecretRemoved event" in new Setup {
+
+      val clientSecretRemoved = ClientSecretRemoved(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        "client secret ID",
+        "secret name"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = ClientSecretRemovedAudit.auditType,
+        tags = hc.toAuditTags(ClientSecretRemovedAudit.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "removedClientSecret" -> clientSecretRemoved.clientSecretId
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(clientSecretRemoved)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a CollaboratorAdded event" in new Setup {
+
+      val newCollaborator = Collaborator(
+        "emailaddress",
+        Role.DEVELOPER,
+        UserId.random
+      )
+
+      val collaboratorAdded = CollaboratorAdded(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        newCollaborator.userId,
+        newCollaborator.emailAddress,
+        newCollaborator.role,
+        verifiedAdminsToEmail = Set.empty
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = CollaboratorAddedAudit.auditType,
+        tags = hc.toAuditTags(CollaboratorAddedAudit.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "newCollaboratorEmail" -> newCollaborator.emailAddress,
+          "newCollaboratorType"  -> newCollaborator.role.toString
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(collaboratorAdded)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a CollaboratorRemoved event" in new Setup {
+
+      val removedCollaborator = applicationData.collaborators.head
+
+      val collaboratorRemoved = CollaboratorRemoved(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        removedCollaborator.userId,
+        removedCollaborator.emailAddress,
+        removedCollaborator.role,
+        false,
+        verifiedAdminsToEmail = Set.empty
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = CollaboratorRemovedAudit.auditType,
+        tags = hc.toAuditTags(CollaboratorRemovedAudit.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "removedCollaboratorEmail" -> removedCollaborator.emailAddress,
+          "removedCollaboratorType"  -> removedCollaborator.role.toString
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(collaboratorRemoved)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a ApiSubscribed event" in new Setup {
+
+      val apiSubscribed = ApiSubscribed(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        "context",
+        "version"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = Subscribed.auditType,
+        tags = hc.toAuditTags(Subscribed.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "apiVersion" -> apiSubscribed.version,
+          "apiContext" -> apiSubscribed.context
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(apiSubscribed)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a ApiUnsubscribed event" in new Setup {
+
+      val apiUnsubscribed = ApiUnsubscribed(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        "context",
+        "version"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = Unsubscribed.auditType,
+        tags = hc.toAuditTags(Unsubscribed.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "apiVersion" -> apiUnsubscribed.version,
+          "apiContext" -> apiUnsubscribed.context
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(apiUnsubscribed)))
+
+      result shouldBe Some(AuditResult.Success)
+
+      verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
+    }
+
+    "applyEvents with a RedirectUrisUpdated event" in new Setup {
+
+      val redirectUrisUpdated = RedirectUrisUpdated(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        collaboratorActor,
+        oldRedirectUris = "",
+        newRedirectUris = "http://new-url.example.com,http://new-url.example.com/other-redirect"
+      )
+
+      val expectedDataEvent = DataEvent(
+        auditSource = "third-party-application",
+        auditType = AppRedirectUrisChanged.auditType,
+        tags = hc.toAuditTags(AppRedirectUrisChanged.name, "-"),
+        detail = Map(
+          "applicationId" -> applicationId.value.toString,
+          "newRedirectUris" -> redirectUrisUpdated.newRedirectUris,
+        )
+      )
+
+      when(mockAuditConnector.sendEvent(*)(*, *)).thenReturn(Future.successful(AuditResult.Success))
+
+      val result = await(auditService.applyEvents(applicationData, NonEmptyList.one(redirectUrisUpdated)))
+
+      result shouldBe Some(AuditResult.Success)
+
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
   }
