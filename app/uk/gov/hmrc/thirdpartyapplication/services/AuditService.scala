@@ -149,7 +149,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdated)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
       AppRedirectUrisChanged,
-      Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris)
+      Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))
     ))
       .toOption
       .value

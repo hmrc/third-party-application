@@ -604,7 +604,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
     updateApplication(evt.applicationId, Updates.set(
-      "access.redirectUris", Codecs.toBson(evt.newRedirectUris.split(","))))
+      "access.redirectUris", Codecs.toBson(evt.newRedirectUris)))
 
   private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.combine(

@@ -410,8 +410,8 @@ object UpdateApplicationEvent {
                                  applicationId: ApplicationId,
                                  eventDateTime: LocalDateTime,
                                  actor: Actor,
-                                 oldRedirectUris: String,
-                                 newRedirectUris: String) extends UpdateApplicationEvent
+                                 oldRedirectUris: List[String],
+                                 newRedirectUris: List[String]) extends UpdateApplicationEvent
 
   object RedirectUrisUpdated {
     implicit val format: OFormat[RedirectUrisUpdated] = Json.format[RedirectUrisUpdated]

@@ -177,8 +177,8 @@ class ApplicationServiceSpec
       )
       val updateRedirectUris = UpdateRedirectUris(
         actor = GatekeeperUserActor("Gatekeeper Admin"),
-        oldRedirectUris = "",
-        newRedirectUris = newRedirectUris.mkString(","),
+        oldRedirectUris = List.empty,
+        newRedirectUris = newRedirectUris,
         timestamp = LocalDateTime.now(clock)
       )
 

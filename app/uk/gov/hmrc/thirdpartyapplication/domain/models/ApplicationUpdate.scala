@@ -38,7 +38,7 @@ case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) 
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
-case class UpdateRedirectUris(actor: Actor, oldRedirectUris: String, newRedirectUris: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime) extends ApplicationUpdate
 
 trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String

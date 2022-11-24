@@ -42,8 +42,8 @@ class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceU
     val developer = applicationData.collaborators.head
     val developerActor = CollaboratorActor(developer.emailAddress)
 
-    val oldRedirectUris = ""
-    val newRedirectUris = "http://new-url.example.com,http://new-url.example.com/other-redirect"
+    val oldRedirectUris = List.empty
+    val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
     val timestamp = LocalDateTime.now
     val updateRedirectUris = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)

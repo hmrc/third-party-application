@@ -398,8 +398,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val redirectUrisUpdated = RedirectUrisUpdated(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         collaboratorActor,
-        oldRedirectUris = "",
-        newRedirectUris = "http://new-url.example.com,http://new-url.example.com/other-redirect"
+        oldRedirectUris = List.empty,
+        newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
       )
 
       val expectedDataEvent = DataEvent(
@@ -408,7 +408,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(AppRedirectUrisChanged.name, "-"),
         detail = Map(
           "applicationId" -> applicationId.value.toString,
-          "newRedirectUris" -> redirectUrisUpdated.newRedirectUris,
+          "newRedirectUris" -> redirectUrisUpdated.newRedirectUris.mkString(","),
         )
       )
 

@@ -502,8 +502,8 @@ class ApplicationService @Inject() (
           handleUpdateApplication(
             previousAppData.id,
             updatedAppData.collaborators,
-            oldRedirectUris = previous.redirectUris.mkString(","),
-            newRedirectUris = updated.redirectUris.mkString(",")
+            oldRedirectUris = previous.redirectUris,
+            newRedirectUris = updated.redirectUris
           )
         }
         else Future.successful(updatedAppData)
@@ -511,7 +511,7 @@ class ApplicationService @Inject() (
     }
   }
 
-  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: String, newRedirectUris: String)
+  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: List[String], newRedirectUris: List[String])
                                      (implicit hc: HeaderCarrier): Future[ApplicationData] = {
 
     def fail(errorMessages: NonEmptyChain[String]) = {
