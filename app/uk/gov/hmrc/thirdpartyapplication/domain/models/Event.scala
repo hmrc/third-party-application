@@ -358,6 +358,19 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
   }
 
+  case class ApplicationDeleted(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    reasons: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ApplicationDeleted {
+    implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
+  }
+
   case class CollaboratorAdded(id: UpdateApplicationEvent.Id,
                                applicationId: ApplicationId,
                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
