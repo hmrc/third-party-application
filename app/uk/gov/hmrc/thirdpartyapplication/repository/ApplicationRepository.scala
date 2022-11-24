@@ -35,7 +35,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.AccessType
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet, ApplicationStateChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationStateChanged, CollaboratorAdded, ResponsibleIndividualChanged, ResponsibleIndividualChangedToSelf, ResponsibleIndividualSet}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
@@ -586,6 +586,26 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     }
   }
 
+  private def updateClientSecretAdded(evt: UpdateApplicationEvent.ClientSecretAdded): Future[ApplicationData] =
+    updateApplication(evt.applicationId, Updates.push(
+      "tokens.production.clientSecrets", Codecs.toBson(evt.clientSecret)))
+
+  private def updateClientSecretRemoved(evt: UpdateApplicationEvent.ClientSecretRemoved): Future[ApplicationData] =
+    updateApplication(evt.applicationId, Updates.pull(
+      "tokens.production.clientSecrets", Codecs.toBson(Json.obj("id" -> evt.clientSecretId))))
+
+  private def updateCollaboratorAdded(evt: UpdateApplicationEvent.CollaboratorAdded) =
+    updateApplication(evt.applicationId, Updates.push(
+      "collaborators", Codecs.toBson(CollaboratorAdded.collaboratorFromEvent(evt))))
+
+  private def updateCollaboratorRemoved(evt: UpdateApplicationEvent.CollaboratorRemoved) =
+    updateApplication(evt.applicationId, Updates.pull(
+      "collaborators", Codecs.toBson(Json.obj("userId" -> evt.collaboratorId))))
+
+  private def updateRedirectUrisUpdated(evt: UpdateApplicationEvent.RedirectUrisUpdated) =
+    updateApplication(evt.applicationId, Updates.set(
+      "access.redirectUris", Codecs.toBson(evt.newRedirectUris.split(","))))
+
   private def updateApplicationName(applicationId: ApplicationId, name: String): Future[ApplicationData] =
     updateApplication(applicationId, Updates.combine(
       Updates.set("name", name),
@@ -652,9 +672,9 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     import UpdateApplicationEvent._
 
     event match {
-      case evt : ClientSecretAdded =>  updateApplication(evt.applicationId, Updates.push("tokens.production.clientSecrets", Codecs.toBson(evt.clientSecret)))
-      case evt : ClientSecretRemoved => updateApplication(evt.applicationId, Updates.pull("tokens.production.clientSecrets", Codecs.toBson(Json.obj("id" -> evt.clientSecretId))))
-      case evt : RedirectUrisUpdated => updateApplication(evt.applicationId, Updates.set("access.redirectUris", Codecs.toBson(evt.newRedirectUris.split(","))))
+      case evt : ClientSecretAdded =>  updateClientSecretAdded(evt)
+      case evt : ClientSecretRemoved => updateClientSecretRemoved(evt)
+      case evt : RedirectUrisUpdated => updateRedirectUrisUpdated(evt)
       case evt : ProductionAppNameChanged => updateApplicationName(evt.applicationId, evt.newAppName)
       case evt : ProductionAppPrivacyPolicyLocationChanged => updateApplicationPrivacyPolicyLocation(evt.applicationId, evt.newLocation)
       case evt : ProductionLegacyAppPrivacyPolicyLocationChanged => updateLegacyApplicationPrivacyPolicyLocation(evt.applicationId, evt.newUrl)
@@ -664,8 +684,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case evt : ResponsibleIndividualChanged => updateApplicationChangeResponsibleIndividual(evt)
       case evt : ResponsibleIndividualChangedToSelf => updateApplicationChangeResponsibleIndividualToSelf(evt)
       case evt : ApplicationStateChanged => updateApplicationState(evt)
-      case evt : CollaboratorAdded =>  updateApplication(event.applicationId, Updates.push("collaborators", Codecs.toBson(CollaboratorAdded.collaboratorFromEvent(evt))))
-      case evt : CollaboratorRemoved =>  updateApplication(event.applicationId, Updates.pull("collaborators", Codecs.toBson(Json.obj("userId" -> evt.collaboratorId))))
+      case evt : CollaboratorAdded =>  updateCollaboratorAdded(evt)
+      case evt : CollaboratorRemoved =>  updateCollaboratorRemoved(evt)
       case _ : ResponsibleIndividualVerificationStarted => noOp(event)
       case _ : ResponsibleIndividualDeclined => noOp(event)
       case _ : ResponsibleIndividualDeclinedUpdate => noOp(event)
@@ -674,7 +694,6 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _ : ApiSubscribed => noOp(event)
       case _ : ApiUnsubscribed => noOp(event)
       case _ : ClientSecretAddedObfuscated => noOp(event)
-      case _ : RedirectUrisUpdated => noOp(event)
     }
   }
 }
