@@ -32,6 +32,8 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
     SubmissionsServiceMock.ApplyEvents.succeeds()
     StateHistoryRepoMock.ApplyEvents.succeeds()
     SubscriptionRepoMock.ApplyEvents.succeeds()
+    ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+    ApiGatewayStoreMock.ApplyEvents.succeeds()
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
     AuditServiceMock.ApplyEvents.succeeds
   }

@@ -39,7 +39,9 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     with SubscriptionRepositoryMockModule
     with NotificationServiceMockModule
     with ApiPlatformEventServiceMockModule
-    with SubmissionsServiceMockModule {
+    with SubmissionsServiceMockModule
+    with ApiGatewayStoreMockModule
+    with ThirdPartyDelegatedAuthorityServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -56,6 +58,7 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
     val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
+    val mockDeleteApplicationCommandHandler: DeleteApplicationCommandHandler = mock[DeleteApplicationCommandHandler]
     val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler = mock[AddCollaboratorCommandHandler]
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler = mock[RemoveCollaboratorCommandHandler]
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler = mock[SubscribeToApiCommandHandler]
@@ -69,6 +72,8 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
       SubmissionsServiceMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
+      ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
       mockAddClientSecretCommandHandler,
       mockRemoveClientSecretCommandHandler,
@@ -81,6 +86,7 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler,
+      mockDeleteApplicationCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockSubscribeToApiCommandHandler,

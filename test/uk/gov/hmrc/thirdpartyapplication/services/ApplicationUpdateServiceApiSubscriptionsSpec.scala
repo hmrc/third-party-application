@@ -32,6 +32,8 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
     SubmissionsServiceMock.ApplyEvents.succeeds()
     StateHistoryRepoMock.ApplyEvents.succeeds()
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
+    ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+    ApiGatewayStoreMock.ApplyEvents.succeeds()
     NotificationServiceMock.SendNotifications.thenReturnSuccess()
     AuditServiceMock.ApplyEvents.succeeds()
     

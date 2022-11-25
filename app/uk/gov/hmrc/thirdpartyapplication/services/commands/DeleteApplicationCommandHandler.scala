@@ -55,14 +55,18 @@ class DeleteApplicationCommandHandler @Inject()(
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplication): NonEmptyList[UpdateApplicationEvent] = {
+    val requestingAdminEmail = cmd.instigator.toString()
+    val clientId = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationDeleted(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
+        clientId = clientId,
+        wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
-        requestingAdminEmail = cmd.instigator.toString()
+        requestingAdminEmail = requestingAdminEmail
       ),
       ApplicationStateChanged(
         id = UpdateApplicationEvent.Id.random,
@@ -71,8 +75,8 @@ class DeleteApplicationCommandHandler @Inject()(
         actor = cmd.actor,
         app.state.name,
         State.DELETED,
-        requestingAdminName = cmd.instigator.toString(),
-        requestingAdminEmail = cmd.instigator.toString()
+        requestingAdminName = requestingAdminEmail,
+        requestingAdminEmail = requestingAdminEmail
       )
     )
   }

@@ -39,6 +39,8 @@ class ApplicationUpdateService @Inject()(
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService,
   submissionService: SubmissionsService,
+  thirdPartyDelegatedAuthorityService: ThirdPartyDelegatedAuthorityService,
+  apiGatewayStore: ApiGatewayStore,
   auditService: AuditService,
   addClientSecretCommandHandler: AddClientSecretCommandHandler,
   removeClientSecretCommandHandler: RemoveClientSecretCommandHandler,
@@ -51,6 +53,7 @@ class ApplicationUpdateService @Inject()(
   declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
   declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
   declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
+  deleteApplicationCommandHandler: DeleteApplicationCommandHandler,
   addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
   removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
   subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
@@ -67,6 +70,8 @@ class ApplicationUpdateService @Inject()(
       _                <- E.liftF(stateHistoryRepository.applyEvents(events))
       _                <- E.liftF(subscriptionRepository.applyEvents(events.collect { case evt: UpdateApplicationEvent with UpdatesSubscription => evt}))
       _                <- E.liftF(submissionService.applyEvents(events))
+      _                <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
+      _                <- E.liftF(apiGatewayStore.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
       _                <- E.liftF(auditService.applyEvents(savedApp, events))
@@ -87,6 +92,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
+      case cmd: DeleteApplication                                     => deleteApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)

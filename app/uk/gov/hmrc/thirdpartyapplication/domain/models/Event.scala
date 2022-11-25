@@ -363,6 +363,8 @@ object UpdateApplicationEvent {
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
     reasons: String,
     requestingAdminEmail: String
   ) extends UpdateApplicationEvent with TriggersNotification
