@@ -22,12 +22,11 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 
 import java.time.LocalDateTime
 import scala.concurrent.{ExecutionContext, Future}
@@ -42,7 +41,7 @@ class SubscriptionService @Inject() (
     applicationUpdateService: ApplicationUpdateService,
     apiGatewayStore: ApiGatewayStore
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ActorHelper {
 
   val IgnoredContexts: List[String] = List("sso-in/sso", "web-session/sso-api")
 
@@ -118,16 +117,5 @@ class SubscriptionService @Inject() (
       case _         => failed(new NotFoundException(s"Application not found for id: ${applicationId.value}"))
     }
   }
-
-  private def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
-    userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-      .map(email => deriveActor(email, collaborators))
-      .getOrElse(GatekeeperUserActor("Gatekeeper Admin"))
-
-  private def deriveActor(userEmail: String, collaborators: Set[Collaborator]): Actor =
-    collaborators.find(_.emailAddress.equalsIgnoreCase(userEmail)) match {
-      case None                  => GatekeeperUserActor("Gatekeeper Admin")
-      case Some(_: Collaborator) => CollaboratorActor(userEmail)
-    }
 
 }

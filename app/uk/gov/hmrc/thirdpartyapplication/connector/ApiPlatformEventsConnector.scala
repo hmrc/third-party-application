@@ -46,6 +46,7 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
   private val apiUnsubscribedUri     = applicationEventsUri + "/apiUnsubscribed"
   private val updateApplicationUri   = "/application-event"
 
+  @deprecated("remove after client is no longer using the old endpoint")
   def sendRedirectUrisUpdatedEvent(event: RedirectUrisUpdatedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, redirectUrisUpdatedUri)(hc)
 
   def sendTeamMemberAddedEvent(event: TeamMemberAddedEvent)(implicit hc: HeaderCarrier): Future[Boolean] = postEvent(event, teamMemberAddedUri)(hc)

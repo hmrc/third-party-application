@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule, ClientSecretServiceMockModule}
@@ -39,7 +39,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.LocalDateTime
 
-class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
+class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with ApplicationTestData {
 
   trait Setup extends ApplicationRepositoryMockModule
     with AuditServiceMockModule
@@ -250,7 +250,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result.clientSecrets.last.name shouldBe secretName
 
       AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretAdded,
+        ClientSecretAddedAudit,
         Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> secretName, "clientSecretType" -> PRODUCTION.toString),
         hc
       )
@@ -307,7 +307,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
 
       AuditServiceMock.Audit.thenReturnSuccessWhen(
-        ClientSecretRemoved,
+        ClientSecretRemovedAudit,
         Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove)
       )
 
@@ -318,7 +318,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       updatedClientSecrets should not contain (firstSecret)
 
       AuditServiceMock.Audit.verifyCalledWith(
-        ClientSecretRemoved,
+        ClientSecretRemovedAudit,
         Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretIdToRemove),
         hc
       )

@@ -22,14 +22,14 @@ import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
 
-import scala.collection.mutable.Map
+import scala.collection.mutable
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.LocalDateTime
 
 trait ApplicationTestData extends ApplicationStateUtil {
 
-  val idsByEmail = Map[String, UserId]()
+  val idsByEmail = mutable.Map[String, UserId]()
 
   def idOf(email: String) = {
     idsByEmail.getOrElseUpdate(email, UserId.random)
@@ -40,8 +40,9 @@ trait ApplicationTestData extends ApplicationStateUtil {
   val loggedInUser = "loggedin@example.com"
   val devEmail     = "dev@example.com"
 
+  val serverToken           = "b3c83934c02df8b111e7f9f8700000"
   val serverTokenLastAccess = LocalDateTime.now(clock)
-  val productionToken       = Token(ClientId("aaa"), "bbb", List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
+  val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByEmail = "john.smith@example.com"
   val grantLength      = 547

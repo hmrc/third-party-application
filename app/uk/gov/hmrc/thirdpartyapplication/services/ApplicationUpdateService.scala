@@ -54,7 +54,8 @@ class ApplicationUpdateService @Inject()(
   addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
   removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
   subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
-  unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler
+  unsubscribeFromApiCommandHandler: UnsubscribeFromApiCommandHandler,
+  updateRedirectUrisCommandHandler: UpdateRedirectUrisCommandHandler
 ) (implicit val ec: ExecutionContext) extends ApplicationLogger {
   import cats.implicits._
   private val E = EitherTHelper.make[NonEmptyChain[String]]
@@ -91,6 +92,7 @@ class ApplicationUpdateService @Inject()(
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)
       case cmd: UnsubscribeFromApi                                    => unsubscribeFromApiCommandHandler.process(app, cmd)
+      case cmd: UpdateRedirectUris                                    => updateRedirectUrisCommandHandler.process(app, cmd)
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }

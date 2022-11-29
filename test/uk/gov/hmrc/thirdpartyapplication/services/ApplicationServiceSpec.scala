@@ -22,7 +22,7 @@ import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterAll
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.http.{ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
+import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, HttpResponse, NotFoundException}
 import uk.gov.hmrc.mongo.lock.LockRepository
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
@@ -34,6 +34,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{RateLimitTier, SILVER}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.GatekeeperUserActor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.ApiSubscriptionFieldsConnectorMockModule
@@ -61,6 +62,7 @@ class ApplicationServiceSpec
     with FixedClock {
 
   trait Setup extends AuditServiceMockModule
+      with ApplicationUpdateServiceMockModule
       with ApiGatewayStoreMockModule
       with ApiSubscriptionFieldsConnectorMockModule
       with ApplicationRepositoryMockModule
@@ -115,6 +117,7 @@ class ApplicationServiceSpec
       TokenServiceMock.aMock,
       SubmissionsServiceMock.aMock,
       UpliftNamingServiceMock.aMock,
+      ApplicationUpdateServiceMock.aMock,
       clock
     )
 
@@ -138,6 +141,53 @@ class ApplicationServiceSpec
 
     override lazy val locked = true
   }
+  
+  trait SetupForAuditTests extends Setup {
+    def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
+      val testUserEmail = "test@example.com"
+      val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
+      val tokens = ApplicationTokens(
+        Token(ClientId("prodId"), "prodToken")
+      )
+
+      val existingApplication = ApplicationData(
+        id = applicationId,
+        name = "app name",
+        normalisedName = "app name",
+        collaborators = Set(admin),
+        wso2ApplicationName = "wso2ApplicationName",
+        tokens = tokens,
+        state = testingState(),
+        access = access,
+        createdOn = LocalDateTime.now,
+        lastAccess = Some(LocalDateTime.now)
+      )
+      val newRedirectUris = List("http://new-url.example.com")
+      val updatedApplication: ApplicationData = existingApplication.copy(
+        name = "new name",
+        normalisedName = "new name",
+        access = access match {
+          case _: Standard => Standard (
+            newRedirectUris,
+            Some ("http://new-url.example.com/terms-and-conditions"),
+            Some ("http://new-url.example.com/privacy-policy")
+          )
+          case x => x
+        }
+      )
+      val updateRedirectUris = UpdateRedirectUris(
+        actor = GatekeeperUserActor("Gatekeeper Admin"),
+        oldRedirectUris = List.empty,
+        newRedirectUris = newRedirectUris,
+        timestamp = LocalDateTime.now(clock)
+      )
+
+      ApplicationRepoMock.Fetch.thenReturn(existingApplication)
+      ApplicationRepoMock.Save.thenReturn(updatedApplication)
+
+      (updatedApplication, updateRedirectUris)
+    }
+  }
 
   class MockLockService(locked: Boolean) extends ApplicationLockService(mock[LockRepository]) {
     var callsMadeToLockKeeper: Int = 0
@@ -152,7 +202,7 @@ class ApplicationServiceSpec
     }
   }
 
-  "Create with Colloborator userId" should {
+  "Create with Collaborator userId" should {
 
     "create a new standard application in Mongo but not the API gateway for the PRINCIPAL (PRODUCTION) environment" in new Setup {
       TokenServiceMock.CreateEnvironmentToken.thenReturn(productionToken)
@@ -499,6 +549,42 @@ class ApplicationServiceSpec
       ApplicationRepoMock.Save.verifyCalled()
     }
 
+    "send an audit event for each type of change" in new SetupForAuditTests {
+      val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplication)
+
+      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
+
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
+    }
+
+    "throw BadRequestException when UpdateRedirectUris command fails" in new SetupForAuditTests {
+      val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
+      ApplicationUpdateServiceMock.Update.thenReturnError("Error message")
+
+      intercept[BadRequestException]{
+        await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
+      }.message shouldBe "Failed to process UpdateRedirectUris command"
+
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
+      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(updatedApplication.id, updateRedirectUris)
+    }
+
+    "not update RedirectUris or audit TermsAndConditionsUrl or PrivacyPolicyUrl for a privileged app" in new SetupForAuditTests {
+      val (updatedApplication, _) = setupAuditTests(Privileged())
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplication)
+
+      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name, access = Privileged())))
+
+      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
+      ApplicationUpdateServiceMock.Update.verifyNeverCalled
+    }
+
     "throw a NotFoundException if application doesn't exist in repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
 
@@ -577,47 +663,6 @@ class ApplicationServiceSpec
         rateLimitTier = SILVER
       ))
     }
-
-    "send an audit event for each type of change" in new Setup {
-      val testUserEmail = "test@example.com"
-      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
-      val tokens        = ApplicationTokens(
-        Token(ClientId("prodId"), "prodToken")
-      )
-
-      val existingApplication                 = ApplicationData(
-        id = applicationId,
-        name = "app name",
-        normalisedName = "app name",
-        collaborators = Set(admin),
-        wso2ApplicationName = "wso2ApplicationName",
-        tokens = tokens,
-        state = testingState(),
-        createdOn = LocalDateTime.now,
-        lastAccess = Some(LocalDateTime.now)
-      )
-      val newRedirectUris                     = List("http://new-url.example.com")
-      val updatedApplication: ApplicationData = existingApplication.copy(
-        name = "new name",
-        normalisedName = "new name",
-        access = Standard(
-          newRedirectUris,
-          Some("http://new-url.example.com/terms-and-conditions"),
-          Some("http://new-url.example.com/privacy-policy")
-        )
-      )
-
-      ApplicationRepoMock.Fetch.thenReturn(existingApplication)
-      ApplicationRepoMock.Save.thenReturn(updatedApplication)
-
-      await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
-
-      AuditServiceMock.verify.audit(eqTo(AppNameChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppTermsAndConditionsUrlChanged), *)(*)
-      AuditServiceMock.verify.audit(eqTo(AppRedirectUrisChanged), *)(*)
-      verify(mockApiPlatformEventService).sendRedirectUrisUpdatedEvent(eqTo(updatedApplication), eqTo(""), eqTo(newRedirectUris.mkString(",")))(any[HeaderCarrier])
-      AuditServiceMock.verify.audit(eqTo(AppPrivacyPolicyUrlChanged), *)(*)
-    }
   }
 
   "add collaborator with userId" should {
@@ -641,8 +686,8 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorAdded,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        CollaboratorAddedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAddedAudit.details(addRequest.collaborator),
         hc
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -683,8 +728,8 @@ class ApplicationServiceSpec
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorAdded,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorAdded.details(addRequest.collaborator),
+        CollaboratorAddedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorAddedAudit.details(addRequest.collaborator),
         hc
       )
       result shouldBe AddCollaboratorResponse(registeredUser = true)
@@ -845,8 +890,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorConfirmation(applicationData.name, Set(testEmail))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(testEmail, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(testEmail, DEVELOPER, idOf(testEmail))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(testEmail, DEVELOPER, idOf(testEmail))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(testEmail), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -889,8 +934,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -907,8 +952,8 @@ class ApplicationServiceSpec
       verify(mockEmailConnector, never).sendRemovedCollaboratorConfirmation(applicationData.name, Set(collaborator))
       verify(mockEmailConnector).sendRemovedCollaboratorNotification(collaborator, applicationData.name, adminsToEmail)
       AuditServiceMock.Audit.verifyCalledWith(
-        CollaboratorRemoved,
-        AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
+        CollaboratorRemovedAudit,
+        AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(Collaborator(collaborator, DEVELOPER, idOf(collaborator))),
         hc
       )
       verify(mockApiPlatformEventService).sendTeamMemberRemovedEvent(eqTo(applicationData), eqTo(collaborator), eqTo("DEVELOPER"))(any[HeaderCarrier])
@@ -975,8 +1020,6 @@ class ApplicationServiceSpec
 
   "fetchByServerToken" should {
 
-    val serverToken = "b3c83934c02df8b111e7f9f8700000"
-
     "return none when no application exists in the repository for the given server token" in new Setup {
       ApplicationRepoMock.FetchByServerToken.thenReturnNoneWhen(serverToken)
 
@@ -986,8 +1029,6 @@ class ApplicationServiceSpec
     }
 
     "return an application when it exists in the repository for the given server token" in new Setup {
-
-      val productionToken = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")))
 
       override val applicationData: ApplicationData = anApplicationData(applicationId).copy(tokens = ApplicationTokens(productionToken))
 

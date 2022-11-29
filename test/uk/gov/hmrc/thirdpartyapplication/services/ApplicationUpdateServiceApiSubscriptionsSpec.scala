@@ -56,6 +56,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
       SubscriptionRepoMock.ApplyEvents.verifyCalledWith(event)
       ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
+      AuditServiceMock.ApplyEvents.verifyCalledWith(applicationData, NonEmptyList.one(event))
     }
     
     def testForMissingApplication(applicationUpdate: ApplicationUpdate): Unit = {

@@ -91,7 +91,7 @@ class CredentialService @Inject() (
 
       updatedApplication    <- applicationRepository.addClientSecret(applicationId, newSecret)
       _                      = apiPlatformEventService.sendClientSecretAddedEvent(updatedApplication, newSecret.id)
-      _                      = auditService.audit(ClientSecretAdded, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
+      _                      = auditService.audit(ClientSecretAddedAudit, Map("applicationId" -> applicationId.value.toString, "newClientSecret" -> newSecret.name, "clientSecretType" -> "PRODUCTION"))
       notificationRecipients = existingApp.admins.map(_.emailAddress)
 
       _ = emailConnector.sendAddedClientSecretNotification(secretRequest.actorEmailAddress, newSecret.name, existingApp.name, notificationRecipients)
@@ -101,7 +101,7 @@ class CredentialService @Inject() (
   @deprecated("remove after client is no longer using the old endpoint")
   def deleteClientSecret(applicationId: ApplicationId, clientSecretId: String, actorEmailAddress: String)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
     def audit(applicationId: ApplicationId, clientSecretId: String): Future[AuditResult] =
-      auditService.audit(ClientSecretRemoved, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
+      auditService.audit(ClientSecretRemovedAudit, Map("applicationId" -> applicationId.value.toString, "removedClientSecret" -> clientSecretId))
 
     def sendNotification(clientSecret: ClientSecret, app: ApplicationData): Future[HasSucceeded] = {
       emailConnector.sendRemovedClientSecretNotification(actorEmailAddress, clientSecret.name, app.name, app.admins.map(_.emailAddress))

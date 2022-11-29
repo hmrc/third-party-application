@@ -17,10 +17,9 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import akka.actor.ActorSystem
+import cats.data.NonEmptyChain
 import org.apache.commons.net.util.SubnetUtils
-import uk.gov.hmrc.http.ForbiddenException
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
@@ -39,7 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.CredentialGenerator
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
@@ -78,9 +77,10 @@ class ApplicationService @Inject() (
     tokenService: TokenService,
     submissionsService: SubmissionsService,
     upliftNamingService: UpliftNamingService,
+    applicationUpdateService: ApplicationUpdateService,
     clock: Clock
   )(implicit val ec: ExecutionContext
-  ) extends ApplicationLogger {
+  ) extends ApplicationLogger with ActorHelper {
 
   def create(application: CreateApplicationRequest)(implicit hc: HeaderCarrier): Future[CreateApplicationResponse] = {
 
@@ -143,7 +143,7 @@ class ApplicationService @Inject() (
       app         <- fetchApp(applicationId)
       collaborator = validateCollaborator(app, request.collaborator.emailAddress, request.collaborator.role, request.collaborator.userId)
       _           <- addUser(app, collaborator)
-      _            = auditService.audit(CollaboratorAdded, AuditHelper.applicationId(app.id) ++ CollaboratorAdded.details(collaborator))
+      _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
       _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
       _            = sendNotificationEmails(app.name, collaborator,  request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
@@ -262,7 +262,7 @@ class ApplicationService @Inject() (
     }
 
     def audit(collaborator: Option[Collaborator]) = collaborator match {
-      case Some(c) => auditService.audit(CollaboratorRemoved, AuditHelper.applicationId(applicationId) ++ CollaboratorRemoved.details(c))
+      case Some(c) => auditService.audit(CollaboratorRemovedAudit, AuditHelper.applicationId(applicationId) ++ CollaboratorRemovedAudit.details(c))
       case None    => logger.warn(s"Failed to audit collaborator removal for: $collaborator")
     }
 
@@ -489,19 +489,44 @@ class ApplicationService @Inject() (
       existing <- fetchApp(applicationId)
       _         = checkAccessType(existing)
       savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = sendEventIfRedirectUrisChanged(existing, savedApp)
       _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
-    } yield savedApp
+      updatedApp <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
+    } yield updatedApp
   }
 
-  private def sendEventIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Unit = {
+  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)
+                                                    (implicit hc: HeaderCarrier): Future[ApplicationData] = {
     (previousAppData.access, updatedAppData.access) match {
       case (previous: Standard, updated: Standard) =>
         if (previous.redirectUris != updated.redirectUris) {
-          apiPlatformEventService.sendRedirectUrisUpdatedEvent(updatedAppData, previous.redirectUris.mkString(","), updated.redirectUris.mkString(","))
+          handleUpdateApplication(
+            previousAppData.id,
+            updatedAppData.collaborators,
+            oldRedirectUris = previous.redirectUris,
+            newRedirectUris = updated.redirectUris
+          )
         }
-      case _                                       => ()
+        else Future.successful(updatedAppData)
+      case _                                       => Future.successful(updatedAppData)
     }
+  }
+
+  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: List[String], newRedirectUris: List[String])
+                                     (implicit hc: HeaderCarrier): Future[ApplicationData] = {
+
+    def fail(errorMessages: NonEmptyChain[String]) = {
+      logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")
+      throw new BadRequestException("Failed to process UpdateRedirectUris command")
+    }
+
+    val updateRedirectUris = UpdateRedirectUris(
+      actor = getActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), collaborators),
+      oldRedirectUris,
+      newRedirectUris,
+      timestamp = LocalDateTime.now(clock)
+    )
+
+    applicationUpdateService.update(applicationId, updateRedirectUris).fold(fail, identity)
   }
 
   private def fetchApp(applicationId: ApplicationId) = {
