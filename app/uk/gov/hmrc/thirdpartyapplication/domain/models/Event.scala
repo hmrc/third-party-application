@@ -366,11 +366,34 @@ object UpdateApplicationEvent {
     clientId: ClientId,
     wso2ApplicationName: String,
     reasons: String,
-    requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersNotification
+    requestingAdminEmail: Option[String]
+  ) extends UpdateApplicationEvent
 
   object ApplicationDeleted {
     implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
+  }
+
+  case class ApplicationDeletedByGatekeeper(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ApplicationDeletedByGatekeeper {
+    implicit val format: OFormat[ApplicationDeletedByGatekeeper] = Json.format[ApplicationDeletedByGatekeeper]
+  }
+
+  case class ProductionCredentialsDeletedEmail(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor
+  ) extends UpdateApplicationEvent with TriggersNotification
+
+  object ProductionCredentialsDeletedEmail {
+    implicit val format: OFormat[ProductionCredentialsDeletedEmail] = Json.format[ProductionCredentialsDeletedEmail]
   }
 
   case class CollaboratorAdded(id: UpdateApplicationEvent.Id,

@@ -29,6 +29,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
 
   trait Setup extends CommonSetup {
     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+    NotificationRepositoryMock.ApplyEvents.succeeds()
     SubmissionsServiceMock.ApplyEvents.succeeds()
     StateHistoryRepoMock.ApplyEvents.succeeds()
     SubscriptionRepoMock.ApplyEvents.succeeds()

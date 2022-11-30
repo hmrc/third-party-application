@@ -46,6 +46,8 @@ class NotificationService @Inject()(emailConnector: EmailConnector)(implicit val
         case evt: ResponsibleIndividualDeclined => ResponsibleIndividualDeclinedNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ResponsibleIndividualDeclinedUpdate => ResponsibleIndividualDeclinedUpdateNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: ResponsibleIndividualDidNotVerify => ResponsibleIndividualDidNotVerifyNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ProductionCredentialsDeletedEmail => ProductionCredentialsDeletedEmailNotification.sendAdviceEmail(emailConnector, app, evt)
+        case evt: ApplicationDeletedByGatekeeper => ApplicationDeletedByGatekeeperNotification.sendAdviceEmail(emailConnector, app, evt)
         case evt: CollaboratorAdded => CollaboratorAddedNotification.sendCollaboratorAddedNotification(emailConnector, app, evt)
         case evt: CollaboratorRemoved => CollaboratorRemovedNotification.sendCollaboratorRemovedNotification(emailConnector, app, evt)
       }

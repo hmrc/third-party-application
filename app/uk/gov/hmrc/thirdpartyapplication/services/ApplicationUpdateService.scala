@@ -20,7 +20,7 @@ import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndivid
 import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository, NotificationRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
@@ -36,6 +36,7 @@ class ApplicationUpdateService @Inject()(
   responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository,
   stateHistoryRepository: StateHistoryRepository,
   subscriptionRepository: SubscriptionRepository,
+  notificationRepository: NotificationRepository,
   notificationService: NotificationService,
   apiPlatformEventService: ApiPlatformEventService,
   submissionService: SubmissionsService,
@@ -53,7 +54,10 @@ class ApplicationUpdateService @Inject()(
   declineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler,
   declineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler,
   declineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler,
-  deleteApplicationCommandHandler: DeleteApplicationCommandHandler,
+  deleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler,
+  deleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler,
+  deleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler,
+  deleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler,
   addCollaboratorCommandHandler: AddCollaboratorCommandHandler,
   removeCollaboratorCommandHandler: RemoveCollaboratorCommandHandler,
   subscribeToApiCommandHandler: SubscribeToApiCommandHandler,
@@ -73,6 +77,7 @@ class ApplicationUpdateService @Inject()(
       _                <- E.liftF(thirdPartyDelegatedAuthorityService.applyEvents(events))
       _                <- E.liftF(apiGatewayStore.applyEvents(events))
       _                <- E.liftF(responsibleIndividualVerificationRepository.applyEvents(events))
+      _                <- E.liftF(notificationRepository.applyEvents(events))
       _                <- E.liftF(apiPlatformEventService.applyEvents(events))
       _                <- E.liftF(auditService.applyEvents(savedApp, events))
       _                <- E.liftF(notificationService.sendNotifications(savedApp, events.collect { case evt: UpdateApplicationEvent with TriggersNotification => evt}))
@@ -92,7 +97,10 @@ class ApplicationUpdateService @Inject()(
       case cmd: DeclineResponsibleIndividual                          => declineResponsibleIndividualCommandHandler.process(app, cmd)
       case cmd: DeclineResponsibleIndividualDidNotVerify              => declineResponsibleIndividualDidNotVerifyCommandHandler.process(app, cmd)
       case cmd: DeclineApplicationApprovalRequest                     => declineApplicationApprovalRequestCommandHandler.process(app, cmd)
-      case cmd: DeleteApplication                                     => deleteApplicationCommandHandler.process(app, cmd)
+      case cmd: DeleteApplicationByCollaborator                       => deleteApplicationByCollaboratorCommandHandler.process(app, cmd)
+      case cmd: DeleteApplicationByGatekeeper                         => deleteApplicationByGatekeeperCommandHandler.process(app, cmd)
+      case cmd: DeleteUnusedApplication                               => deleteUnusedApplicationCommandHandler.process(app, cmd)
+      case cmd: DeleteProductionCredentialsApplication                => deleteProductionCredentialsApplicationCommandHandler.process(app, cmd)
       case cmd: AddCollaborator                                       => addCollaboratorCommandHandler.process(app, cmd)
       case cmd: RemoveCollaborator                                    => removeCollaboratorCommandHandler.process(app, cmd)
       case cmd: SubscribeToApi                                        => subscribeToApiCommandHandler.process(app, cmd)

@@ -20,14 +20,14 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
+import cats.data.{NonEmptyList, ValidatedNec, Validated}
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplication, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
-class DeleteApplicationCommandHandler @Inject()(
+class DeleteUnusedApplicationCommandHandler @Inject()(
     val authControlConfig: AuthControlConfig,
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -35,27 +35,18 @@ class DeleteApplicationCommandHandler @Inject()(
   import CommandHandler._
   import UpdateApplicationEvent._
 
-  def canDeleteApplications =
-    cond(authControlConfig.canDeleteApplications, "Cannot delete this applicaton")
+  def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
+    cond(authControlConfig.authorisationKey == cmd.authorisationKey, "Cannot delete this applicaton")
 
-  def matchesAuthorisationKey =
-    // TODO - need to pass in the request to get request.matchesAuthorisationKey
-    cond(true, "Cannot delete this applicaton")
-
-  private def validate(app: ApplicationData, cmd: DeleteApplication): ValidatedNec[String, ApplicationData] = {
+  private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): ValidatedNec[String, ApplicationData] = {
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) =>  Apply[ValidatedNec[String, *]]
-        .map4(isCollaboratorOnApp(actorEmail, app),
-              isStandardAccess(app),
-              canDeleteApplications,
-              matchesAuthorisationKey){case _ => app}
-      case _ => Apply[ValidatedNec[String, *]] 
-        .map(isStandardAccess(app)){case _ => app}
+      case ScheduledJobActor(jobId: String) =>  Apply[ValidatedNec[String, *]]
+        .map(matchesAuthorisationKey(cmd)){case _ => app}
+      case _ => Validated.invalidNec("Invalid actor type")
     }
   }
 
-  private def asEvents(app: ApplicationData, cmd: DeleteApplication): NonEmptyList[UpdateApplicationEvent] = {
-    val requestingAdminEmail = cmd.instigator.toString()
+  private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication): NonEmptyList[UpdateApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationDeleted(
@@ -66,7 +57,7 @@ class DeleteApplicationCommandHandler @Inject()(
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
-        requestingAdminEmail = requestingAdminEmail
+        requestingAdminEmail = None
       ),
       ApplicationStateChanged(
         id = UpdateApplicationEvent.Id.random,
@@ -75,13 +66,13 @@ class DeleteApplicationCommandHandler @Inject()(
         actor = cmd.actor,
         app.state.name,
         State.DELETED,
-        requestingAdminName = requestingAdminEmail,
-        requestingAdminEmail = requestingAdminEmail
+        requestingAdminName = cmd.actor.toString,
+        requestingAdminEmail = cmd.actor.toString
       )
     )
   }
 
-  def process(app: ApplicationData, cmd: DeleteApplication): CommandHandler.Result = {
+  def process(app: ApplicationData, cmd: DeleteUnusedApplication): CommandHandler.Result = {
     Future.successful {
       validate(app, cmd) map { _ =>
         asEvents(app, cmd)
