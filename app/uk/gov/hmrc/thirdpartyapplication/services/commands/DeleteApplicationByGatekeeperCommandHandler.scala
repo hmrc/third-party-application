@@ -21,13 +21,11 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.data.{NonEmptyList, ValidatedNec, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class DeleteApplicationByGatekeeperCommandHandler @Inject()(
-    val authControlConfig: AuthControlConfig,
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 

@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class DeleteUnusedApplicationCommandHandler @Inject()(
-    val authControlConfig: AuthControlConfig,
+    val authControlConfig: AuthControlConfig
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 

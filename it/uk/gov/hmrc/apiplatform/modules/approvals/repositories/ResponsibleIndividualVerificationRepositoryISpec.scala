@@ -22,13 +22,14 @@ import play.api.inject
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
 import uk.gov.hmrc.utils.ServerBaseISpec
 import play.api.inject.guice.GuiceApplicationBuilder
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet, ResponsibleIndividualDeclined, ResponsibleIndividualDeclinedUpdate, ResponsibleIndividualDidNotVerify}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor, ProductionAppNameChanged, ResponsibleIndividualVerificationStarted, ResponsibleIndividualChanged, ResponsibleIndividualSet, ResponsibleIndividualDeclined, ResponsibleIndividualDeclinedUpdate, ResponsibleIndividualDidNotVerify, ApplicationDeleted}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
@@ -275,10 +276,25 @@ class ResponsibleIndividualVerificationRepositoryISpec
         "admin@example.com"
       )
 
+    def buildApplicationDeletedEvent(applicationId: ApplicationId) =
+      ApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        ClientId("clientId"),
+        "wso2ApplicationName",
+        "reasons",
+        Some("admin@example.com")
+      )
+
     def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
+      buildRiVerificationToURecordWithAppId(id, appId, submissionId, submissionIndex)
+
+    def buildRiVerificationToURecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualToUVerification(
         id,
-        appId,
+        applicationId,
         submissionId,
         submissionIndex,
         appName,
@@ -287,9 +303,12 @@ class ResponsibleIndividualVerificationRepositoryISpec
       )
 
     def buildRiVerificationRecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =
+      buildRiVerificationRecordWithAppId(id, appId, submissionId, submissionIndex)
+
+    def buildRiVerificationRecordWithAppId(id: ResponsibleIndividualVerificationId, applicationId: ApplicationId, submissionId: Submission.Id, submissionIndex: Int) =
       ResponsibleIndividualUpdateVerification(
         id,
-        appId,
+        applicationId,
         submissionId,
         submissionIndex,
         appName,
@@ -410,6 +429,26 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
 
       await(repository.findAll) mustBe List(existingRecordNotMatchingCode)
+    }
+
+    "remove old records that match application when ApplicationDeleted event is received" in {
+      val existingAppId = ApplicationId.random
+
+      val existingRecordMatchingApplication1 = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, Submission.Id.random, 0)
+      val existingRecordMatchingApplication2 = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, Submission.Id.random, 1)
+      val existingRecordMatchingApplication3 = buildRiVerificationToURecordWithAppId(ResponsibleIndividualVerificationId.random, existingAppId, Submission.Id.random, 0)
+      val existingRecordNotMatchingApplication = buildRiVerificationRecordWithAppId(ResponsibleIndividualVerificationId.random, ApplicationId.random, Submission.Id.random, 0)
+
+      await(repository.save(existingRecordMatchingApplication1))
+      await(repository.save(existingRecordMatchingApplication2))
+      await(repository.save(existingRecordMatchingApplication3))
+      await(repository.save(existingRecordNotMatchingApplication))
+
+      val event = buildApplicationDeletedEvent(existingAppId)
+
+      await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
+
+      await(repository.findAll).toSet mustBe Set(existingRecordNotMatchingApplication)
     }
 
     "handle other events correctly" in {

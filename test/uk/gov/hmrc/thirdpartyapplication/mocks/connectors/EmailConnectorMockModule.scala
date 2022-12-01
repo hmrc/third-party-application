@@ -20,6 +20,7 @@ import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
@@ -176,6 +177,16 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
       def verifyCalledWith(applicationName: String, recipients: Set[String]) =
         verify.sendProductionCredentialsRequestExpired(eqTo(applicationName), eqTo(recipients))(*)
+    }
+
+    object SendApplicationDeletedNotification {
+
+      def thenReturnSuccess() = {
+        when(aMock.sendApplicationDeletedNotification(*, *[ApplicationId], *, *)(*)).thenReturn(successful(HasSucceeded))
+      }
+
+      def verifyCalledWith(applicationName: String, applicationId: ApplicationId, requesterEmail: String, recipients: Set[String]) =
+        verify.sendApplicationDeletedNotification(eqTo(applicationName), eqTo(applicationId), eqTo(requesterEmail), eqTo(recipients))(*)
     }
 
     object SendChangeOfApplicationName {

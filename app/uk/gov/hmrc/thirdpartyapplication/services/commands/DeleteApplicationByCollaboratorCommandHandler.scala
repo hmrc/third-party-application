@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class DeleteApplicationByCollaboratorCommandHandler @Inject()(
-    val authControlConfig: AuthControlConfig,
+    val authControlConfig: AuthControlConfig
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -39,11 +39,11 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
   def isApplicationDeployedToSandbox(app: ApplicationData) =
-    cond(app.environment == Environment.SANDBOX, "Cannot delete this applicaton")
+    cond(app.environment == Environment.SANDBOX.toString, "Cannot delete this applicaton - must be Sandbox")
     
   private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): ValidatedNec[String, ApplicationData] = {
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) =>  Apply[ValidatedNec[String, *]]
+      case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]]
         .map4(isAdminOnApp(actorEmail, app),
               isStandardAccess(app),
               isApplicationDeployedToSandbox(app),

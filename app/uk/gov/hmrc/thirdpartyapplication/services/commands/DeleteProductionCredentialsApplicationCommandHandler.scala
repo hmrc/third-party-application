@@ -19,23 +19,24 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec, Validated}
 
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
-    val authControlConfig: AuthControlConfig,
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
+  import CommandHandler._
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): ValidatedNec[String, ApplicationData] = {
     cmd.actor match {
-      case ScheduledJobActor(jobId: String) => Validated.validNec(app)
+      case ScheduledJobActor(jobId: String) => Apply[ValidatedNec[String, *]]
+        .map(isInTesting(app)){case _ => app}
       case _ => Validated.invalidNec("Invalid actor type")
     }
   }

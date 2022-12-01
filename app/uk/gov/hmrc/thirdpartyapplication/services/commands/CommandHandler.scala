@@ -50,7 +50,7 @@ object CommandHandler {
     cond(isAdmin(userId, app), "User must be an ADMIN")
 
   def isAdminOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
-    cond(app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == email), s"no admin found with email: $email")
+    cond(app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == email), s"No admin found with email: $email")
 
   def isAdminIfInProduction(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
@@ -90,11 +90,16 @@ object CommandHandler {
     )
   }
 
-
   def isPendingResponsibleIndividualVerification(app: ApplicationData) =
     cond(
       app.isPendingResponsibleIndividualVerification,
       "App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION state"
+    )
+
+  def isInTesting(app: ApplicationData) =
+    cond(
+      app.isInTesting,
+      "App is not in TESTING state"
     )
 
   def isInPendingGatekeeperApprovalOrResponsibleIndividualVerification(app: ApplicationData) =

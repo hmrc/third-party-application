@@ -518,4 +518,202 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       result shouldBe Right(appAfter)
     }
   }
+
+  "update with DeleteApplicationByCollaborator" should {
+    val requesterEmail = "bill.badger@rupert.com"
+    val actor = CollaboratorActor(requesterEmail)
+    val reasons = "Reasons description text"
+    val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(actor, reasons, LocalDateTime.now)
+    val clientId = ClientId("clientId")
+    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+
+    "return the updated application if the application exists" in new Setup {
+      val appBefore = applicationData
+      val appAfter = appInDeletedState
+
+      val applicationDeleted = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        clientId, "wso2ApplicationName", "reasons", Some(requesterEmail))
+      val stateEvent = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        State.PRODUCTION, State.DELETED, 
+        requesterEmail, requesterEmail)
+      val events = NonEmptyList.of(applicationDeleted, stateEvent)
+
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
+
+      when(mockDeleteApplicationByCollaboratorCommandHandler.process(*[ApplicationData], *[DeleteApplicationByCollaborator])).thenReturn(
+        Future.successful(Validated.valid(events).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, deleteApplicationByCollaborator).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent)
+      result shouldBe Right(appAfter)
+    }
+  }  
+
+  "update with DeleteApplicationByGatekeeper" should {
+    val requesterEmail = "bill.badger@rupert.com"
+    val actor = GatekeeperUserActor("gatekeeperuser")
+    val reasons = "Reasons description text"
+    val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(actor, requesterEmail, reasons, LocalDateTime.now)
+    val clientId = ClientId("clientId")
+    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+
+    "return the updated application if the application exists" in new Setup {
+      val appBefore = applicationData
+      val appAfter = appInDeletedState
+
+      val applicationDeleted = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        clientId, "wso2ApplicationName", "reasons", Some(requesterEmail))
+      val stateEvent = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        State.PRODUCTION, State.DELETED, 
+        requesterEmail, requesterEmail)
+      val applicationDeletedByGatekeeper = ApplicationDeletedByGatekeeper(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor, requesterEmail)
+      val events = NonEmptyList.of(applicationDeleted, stateEvent, applicationDeletedByGatekeeper)
+
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
+
+      when(mockDeleteApplicationByGatekeeperCommandHandler.process(*[ApplicationData], *[DeleteApplicationByGatekeeper])).thenReturn(
+        Future.successful(Validated.valid(events).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, deleteApplicationByGatekeeper).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent, applicationDeletedByGatekeeper)
+      result shouldBe Right(appAfter)
+    }
+  }  
+
+  "update with DeleteUnusedApplication" should {
+    val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val reasons = "Reasons description text"
+    val authorisationKey = "23476523467235972354923"
+    val deleteUnusedApplication = DeleteUnusedApplication(actor, authorisationKey, reasons, LocalDateTime.now)
+    val requesterEmail = "bill.badger@rupert.com"
+    val clientId = ClientId("clientId")
+    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+
+    "return the updated application if the application exists" in new Setup {
+      val appBefore = applicationData
+      val appAfter = appInDeletedState
+
+      val applicationDeleted = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        clientId, "wso2ApplicationName", "reasons", None)
+      val stateEvent = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        State.PRODUCTION, State.DELETED, 
+        requesterEmail, requesterEmail)
+      val events = NonEmptyList.of(applicationDeleted, stateEvent)
+
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
+
+      when(mockDeleteUnusedApplicationCommandHandler.process(*[ApplicationData], *[DeleteUnusedApplication])).thenReturn(
+        Future.successful(Validated.valid(events).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, deleteUnusedApplication).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent)
+      result shouldBe Right(appAfter)
+    }
+  }  
+
+  "update with DeleteProductionCredentialsApplication" should {
+    val actor = ScheduledJobActor("ProductionCredentialsRequestExpiredJob")
+    val reasons = "Reasons description text"
+    val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(actor, reasons, LocalDateTime.now)
+    val requesterEmail = "bill.badger@rupert.com"
+    val clientId = ClientId("clientId")
+    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+
+    "return the updated application if the application exists" in new Setup {
+      val appBefore = applicationData
+      val appAfter = appInDeletedState
+
+      val applicationDeleted = ApplicationDeleted(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        clientId, "wso2ApplicationName", "reasons", None)
+      val stateEvent = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor,
+        State.PRODUCTION, State.DELETED, 
+        requesterEmail, requesterEmail)
+      val productionCredentialsDeletedEmail = ProductionCredentialsDeletedEmail(
+        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        actor)
+
+      val events = NonEmptyList.of(applicationDeleted, stateEvent, productionCredentialsDeletedEmail)
+
+      ApplicationRepoMock.Fetch.thenReturn(appBefore)
+      ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
+      ApiPlatformEventServiceMock.ApplyEvents.succeeds
+      NotificationServiceMock.SendNotifications.thenReturnSuccess()
+      SubmissionsServiceMock.ApplyEvents.succeeds()
+      ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
+      StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
+      SubscriptionRepoMock.ApplyEvents.succeeds()
+      AuditServiceMock.ApplyEvents.succeeds
+
+      when(mockDeleteProductionCredentialsApplicationCommandHandler.process(*[ApplicationData], *[DeleteProductionCredentialsApplication])).thenReturn(
+        Future.successful(Validated.valid(events).toValidatedNec)
+      )
+
+      val result = await(underTest.update(applicationId, deleteProductionCredentialsApplication).value)
+
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent, productionCredentialsDeletedEmail)
+      result shouldBe Right(appAfter)
+    }
+  }  
+
+
 }
