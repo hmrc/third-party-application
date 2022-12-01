@@ -209,7 +209,7 @@ class ApplicationController @Inject() (
   }
 
   def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
-    withJsonBody[ClientSecretRequestWithUserId] { secret =>
+    withJsonBody[ClientSecretRequestWithActor] { secret =>
       credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
         case e: NotFoundException => handleNotFound(e.getMessage)
         case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))

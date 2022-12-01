@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, CollaboratorActor, CollaboratorAdded, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, CollaboratorAdded, GatekeeperUserActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 

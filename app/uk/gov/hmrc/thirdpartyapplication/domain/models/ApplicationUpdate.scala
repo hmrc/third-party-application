@@ -25,8 +25,8 @@ import java.time.LocalDateTime
 trait ApplicationUpdate {
   def timestamp: LocalDateTime
 }
-case class AddClientSecret(instigator: UserId, email: String, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
-case class RemoveClientSecret(instigator: UserId, email: String, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class AddClientSecret(actor: Actor, secretValue: String, clientSecret: ClientSecret, timestamp: LocalDateTime) extends ApplicationUpdate
+case class RemoveClientSecret(actor: Actor, clientSecretId: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class AddCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
 case class RemoveCollaborator(actor: Actor,  collaborator: Collaborator, adminsToEmail:Set[String], timestamp: LocalDateTime) extends ApplicationUpdate
 case class ChangeProductionApplicationPrivacyPolicyLocation(instigator: UserId, timestamp: LocalDateTime, newLocation: PrivacyPolicyLocation) extends ApplicationUpdate

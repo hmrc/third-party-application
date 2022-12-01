@@ -33,8 +33,8 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
@@ -553,7 +553,7 @@ class ApplicationControllerSpec
     val applicationId = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest = ClientSecretRequestWithUserId(UserId.random, "actor@example.com", LocalDateTime.now())
+    val secretRequest = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now())
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(

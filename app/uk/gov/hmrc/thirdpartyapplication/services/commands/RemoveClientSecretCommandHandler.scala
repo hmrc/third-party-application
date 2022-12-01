@@ -30,7 +30,7 @@ class RemoveClientSecretCommandHandler @Inject()()(implicit val ec: ExecutionCon
   import CommandHandler._
   
   private def validate(app: ApplicationData, cmd: RemoveClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.instigator, app),
+    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.actor, app),
       clientSecretExists(cmd.clientSecretId, app))
     { case _ => app }
   }
@@ -44,7 +44,7 @@ class RemoveClientSecretCommandHandler @Inject()()(implicit val ec: ExecutionCon
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(cmd.email),
+        actor = cmd.actor,
         clientSecretId = cmd.clientSecretId,
         clientSecretName = clientSecret.map(_.name).getOrElse("")
       )
