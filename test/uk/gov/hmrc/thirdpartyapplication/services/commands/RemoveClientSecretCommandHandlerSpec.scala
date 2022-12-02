@@ -51,8 +51,8 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val secretValue = "secret"
     val clientSecret = app.tokens.production.clientSecrets.head
 
-    val removeClientSecretByDev = RemoveClientSecret(developerUserId, devEmail, clientSecret.id, timestamp)
-    val removeClientSecretByAdmin = RemoveClientSecret(adminUserId, adminEmail, clientSecret.id, timestamp)
+    val removeClientSecretByDev = RemoveClientSecret(CollaboratorActor(devEmail), clientSecret.id, timestamp)
+    val removeClientSecretByAdmin = RemoveClientSecret(CollaboratorActor(adminEmail), clientSecret.id, timestamp)
   }
 
   "process" should {

@@ -23,7 +23,7 @@ import javax.inject.{Inject, Singleton}
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithUserId, ValidationRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
@@ -58,12 +58,11 @@ class CredentialService @Inject() (
     })
   }
 
-  def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithUserId)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
+  def addClientSecretNew(applicationId: ApplicationId, request: ClientSecretRequestWithActor)(implicit hc: HeaderCarrier): Future[ApplicationTokenResponse] = {
 
     def generateCommand() = {
       val generatedSecret = clientSecretService.generateClientSecret()
-      AddClientSecret(instigator = request.userId,
-        email = request.actorEmailAddress,
+      AddClientSecret(actor = request.actor,
         secretValue = generatedSecret._2,
         clientSecret = generatedSecret._1,
         timestamp = request.timestamp)

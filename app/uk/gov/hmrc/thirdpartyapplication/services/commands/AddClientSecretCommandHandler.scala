@@ -31,7 +31,7 @@ class AddClientSecretCommandHandler @Inject()()
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: AddClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map(isAdminIfInProduction(cmd.instigator, app))(_ => app)
+    Apply[ValidatedNec[String, *]].map(isAdminIfInProduction(cmd.actor, app))(_ => app)
   }
 
   import UpdateApplicationEvent._
@@ -42,7 +42,7 @@ class AddClientSecretCommandHandler @Inject()()
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = CollaboratorActor(cmd.email),
+        actor = cmd.actor,
         secretValue = cmd.secretValue,
         clientSecret = cmd.clientSecret
       )

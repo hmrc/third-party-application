@@ -20,6 +20,7 @@ import play.api.libs.json.{JsObject, Json}
 import play.api.libs.json.Json.JsValueWrapper
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.IpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.Actor
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidGrantLengthException
 
@@ -31,7 +32,7 @@ case class ApplicationNameValidationRequest(applicationName: String, selfApplica
 
 case class ClientSecretRequest(actorEmailAddress: String)
 
-case class ClientSecretRequestWithUserId(userId: UserId, actorEmailAddress: String, timestamp: LocalDateTime)
+case class ClientSecretRequestWithActor(actor: Actor, timestamp: LocalDateTime)
 
 case class DeleteClientSecretRequest(actorEmailAddress: String)
 

@@ -51,8 +51,8 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
     val secretValue = "secret"
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
 
-    val addClientSecretByDev = AddClientSecret(developerUserId, devEmail, secretValue, clientSecret, timestamp)
-    val addClientSecretByAdmin = AddClientSecret(adminUserId, adminEmail, secretValue, clientSecret, timestamp)
+    val addClientSecretByDev = AddClientSecret(CollaboratorActor(devEmail), secretValue, clientSecret, timestamp)
+    val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
   }
 
   "process" should {
