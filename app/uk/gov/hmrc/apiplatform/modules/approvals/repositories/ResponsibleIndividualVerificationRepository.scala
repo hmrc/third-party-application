@@ -115,7 +115,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
 
   private def deleteAllByApplicationId(id: ApplicationId): Future[HasSucceeded] = {
     collection.deleteMany(
-      equal("applicationId", Codecs.toBson(id)),
+      equal("applicationId", Codecs.toBson(id))
     )
       .toFuture()
       .map(_ => HasSucceeded)
