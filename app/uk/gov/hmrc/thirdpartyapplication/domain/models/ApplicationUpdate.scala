@@ -41,6 +41,7 @@ case class DeleteProductionCredentialsApplication(actor: Actor, reasons: String,
 case class DeleteUnusedApplication(actor: Actor, authorisationKey: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
+case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime) extends ApplicationUpdate
 
 trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
   def gatekeeperUser: String
@@ -69,6 +70,7 @@ trait ApplicationUpdateFormatters {
   implicit val deleteProductionCredentialsApplicationFormatter = Json.format[DeleteProductionCredentialsApplication]
   implicit val subscribeToApiFormatter = Json.format[SubscribeToApi]
   implicit val unsubscribeFromApiFormatter = Json.format[UnsubscribeFromApi]
+  implicit val UpdateRedirectUrisFormatter = Json.format[UpdateRedirectUris]
 
   implicit val applicationUpdateRequestFormatter = Union.from[ApplicationUpdate]("updateType")
     .and[AddClientSecret]("addClientSecret")
@@ -89,5 +91,6 @@ trait ApplicationUpdateFormatters {
     .and[DeleteProductionCredentialsApplication]("deleteProductionCredentialsApplication")
     .and[SubscribeToApi]("subscribeToApi")
     .and[UnsubscribeFromApi]("unsubscribeFromApi")
+    .and[UpdateRedirectUris]("updateRedirectUris")
     .format
 }

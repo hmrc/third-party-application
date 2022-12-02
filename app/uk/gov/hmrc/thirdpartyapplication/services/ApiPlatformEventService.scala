@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.{ApiSubscribedEvent, ApiUnsubscribedEvent, ApplicationEvent, ClientSecretAddedEvent, ClientSecretRemovedEvent, EventId, RedirectUrisUpdatedEvent, TeamMemberAddedEvent, TeamMemberRemovedEvent}
-import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, ClientSecretAddedObfuscated}
 
@@ -32,7 +32,8 @@ import scala.concurrent.{ExecutionContext, Future}
 
 // TODO - context and version probably should be strings in the events??
 @Singleton
-class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
+class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlatformEventsConnector)
+                                        (implicit val ec: ExecutionContext) extends ApplicationLogger with ActorHelper {
 
   def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Boolean] = {
     events match {
@@ -57,7 +58,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "ClientSecretAdded",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ClientSecretAddedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
       }
     )
@@ -69,7 +70,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "ClientSecretRemoved",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ClientSecretRemovedEvent(EventId.random, appId, actor = actor, clientSecretId = clientSecretId))
       }
     )
@@ -80,7 +81,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "TeamMemberAddedEvent",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(TeamMemberAddedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       }
     )
@@ -91,18 +92,19 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "TeamMemberRemovedEvent",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(TeamMemberRemovedEvent(EventId.random, appId, actor = actor, teamMemberEmail = teamMemberEmail, teamMemberRole = teamMemberRole))
       }
     )
   }
 
+  @deprecated("remove when no longer using old logic")
   def sendRedirectUrisUpdatedEvent(appData: ApplicationData, oldRedirectUris: String, newRedirectUris: String)(implicit hc: HeaderCarrier): Future[Boolean] = {
     val appId = appData.id.value.toString
     handleResult(
       appId,
       eventType = "RedirectUrisUpdatedEvent",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(RedirectUrisUpdatedEvent(EventId.random, appId, actor = actor, oldRedirectUris = oldRedirectUris, newRedirectUris = newRedirectUris))
       }
     )
@@ -114,7 +116,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "ApiSubscribedEvent",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ApiSubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
       }
     )
@@ -126,7 +128,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     handleResult(
       appId,
       eventType = "ApiUnsubscribedEvent",
-      maybeFuture = userContextToActor(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
+      maybeFuture = getOldActorFromContext(HeaderCarrierHelper.headersToUserContext(hc), appData.collaborators).map {
         actor => sendEvent(ApiUnsubscribedEvent(EventId.random, appId, actor = actor, context = context.value, version = version.value))
       }
     )
@@ -148,17 +150,4 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     case apse: ApiSubscribedEvent       => apiPlatformEventsConnector.sendApiSubscribedEvent(apse)
     case apuse: ApiUnsubscribedEvent    => apiPlatformEventsConnector.sendApiUnsubscribedEvent(apuse)
   }
-
-  private def userContextToActor(userContext: Map[String, String], collaborators: Set[Collaborator]): Option[OldActor] = {
-    if (userContext.isEmpty) {
-      Option(OldActor("admin@gatekeeper", ActorType.GATEKEEPER))
-    } else {
-      userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
-        .map(email => OldActor(email, deriveActorType(email, collaborators)))
-    }
-  }
-
-  private def deriveActorType(userEmail: String, collaborators: Set[Collaborator]): ActorType.Value =
-    collaborators
-      .find(_.emailAddress.equalsIgnoreCase(userEmail)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
 }

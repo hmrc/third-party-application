@@ -24,11 +24,12 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
 
-class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils {
+class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils with ApplicationTestData {
 
   trait Setup extends CommonSetup
 
@@ -99,6 +100,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       val result = await(underTest.update(applicationId, addCollaborator).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(appCollaboratorAddedEvt)
+      AuditServiceMock.ApplyEvents.verifyCalledWith(appAfter, NonEmptyList.one(appCollaboratorAddedEvt))
       result shouldBe Right(appAfter)
     }
   }
@@ -147,6 +149,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       val result = await(underTest.update(applicationId, removeCollaborator).value)
 
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(collaboratorRemovedEvt)
+      AuditServiceMock.ApplyEvents.verifyCalledWith(appAfter, NonEmptyList.one(collaboratorRemovedEvt))
       result shouldBe Right(appAfter)
     }
   }

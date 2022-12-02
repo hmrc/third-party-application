@@ -23,12 +23,12 @@ import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{CollaboratorAdded => CollaboratorAddedAudit, CollaboratorRemoved => CollaboratorRemovedAudit, ClientSecretAdded => ClientSecretAddedAudit, ClientSecretRemoved => ClientSecretRemovedAudit, _}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved, ApplicationDeletedByGatekeeper}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved, ApplicationDeletedByGatekeeper, RedirectUrisUpdated}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -84,6 +84,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt: ApplicationDeletedByGatekeeper => auditApplicationDeletedByGatekeeper(app, evt)
       case evt : ApiSubscribed => auditApiSubscribed(app, evt)
       case evt : ApiUnsubscribed => auditApiUnsubscribed(app, evt)
+      case evt : RedirectUrisUpdated => auditRedirectUrisUpdated(app, evt)
       case _ => Future.successful(None)
     }
   }
@@ -106,12 +107,12 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .value
   }
 
-    private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]]  = {
-      val collaborator  = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
-     liftF(audit(CollaboratorAddedAudit,   AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
-     .toOption
-     .value
-    }
+  private def auditAddCollaborator(app: ApplicationData, evt: CollaboratorAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
+    liftF(audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator)))
+      .toOption
+      .value
+  }
 
   private def auditRemoveCollaborator(app: ApplicationData, evt: CollaboratorRemoved)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     val collaborator = Collaborator(evt.collaboratorEmail, evt.collaboratorRole, evt.collaboratorId)
@@ -152,6 +153,13 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       .toOption
       .value
 
+  private def auditRedirectUrisUpdated(app: ApplicationData, evt: RedirectUrisUpdated)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
+    liftF(audit(
+      AppRedirectUrisChanged,
+      Map("applicationId" -> app.id.value.toString, "newRedirectUris" -> evt.newRedirectUris.mkString(","))
+    ))
+      .toOption
+      .value
 }
 
 sealed trait AuditAction {
@@ -196,12 +204,12 @@ object AuditAction {
     val auditType = "ApplicationUnsubscribedFromAPI"
   }
 
-  case object ClientSecretAdded extends AuditAction {
+  case object ClientSecretAddedAudit extends AuditAction {
     val name      = "Application Client Secret Added"
     val auditType = "ApplicationClientSecretAdded"
   }
 
-  case object ClientSecretRemoved extends AuditAction {
+  case object ClientSecretRemovedAudit extends AuditAction {
     val name      = "Application Client Secret Removed"
     val auditType = "ApplicationClientSecretRemoved"
   }
@@ -261,7 +269,7 @@ object AuditAction {
     val auditType = "CreateRopcApplicationRequestDeniedDueToDenyListedName"
   }
 
-  case object CollaboratorAdded extends AuditAction {
+  case object CollaboratorAddedAudit extends AuditAction {
     val name      = "Collaborator added to an application"
     val auditType = "CollaboratorAddedToApplication"
 
@@ -271,7 +279,7 @@ object AuditAction {
     )
   }
 
-  case object CollaboratorRemoved extends AuditAction {
+  case object CollaboratorRemovedAudit extends AuditAction {
     val name      = "Collaborator removed from an application"
     val auditType = "CollaboratorRemovedFromApplication"
 
@@ -348,7 +356,6 @@ object AuditHelper {
 
     val standardEvents = (previous.access, updated.access) match {
       case (p: Standard, u: Standard) => Set(
-          calcRedirectUriChange(p, u),
           calcTermsAndConditionsChange(p, u),
           calcPrivacyPolicyChange(p, u)
         )
@@ -362,11 +369,6 @@ object AuditHelper {
 
   private def when[A](pred: Boolean, ret: => A): Option[A] =
     if (pred) Some(ret) else None
-
-  private def calcRedirectUriChange(a: Standard, b: Standard) = {
-    val redirectUris = b.redirectUris.mkString(",")
-    when(a.redirectUris != b.redirectUris, AppRedirectUrisChanged -> Map("newRedirectUris" -> redirectUris))
-  }
 
   private def calcNameChange(a: ApplicationData, b: ApplicationData) =
     when(a.name != b.name, AppNameChanged -> Map("newApplicationName" -> b.name))

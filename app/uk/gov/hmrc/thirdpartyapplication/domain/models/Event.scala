@@ -444,6 +444,17 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ApplicationApprovalRequestDeclined] = Json.format[ApplicationApprovalRequestDeclined]
   }
 
+  case class RedirectUrisUpdated(id: UpdateApplicationEvent.Id,
+                                 applicationId: ApplicationId,
+                                 eventDateTime: LocalDateTime,
+                                 actor: Actor,
+                                 oldRedirectUris: List[String],
+                                 newRedirectUris: List[String]) extends UpdateApplicationEvent
+
+  object RedirectUrisUpdated {
+    implicit val format: OFormat[RedirectUrisUpdated] = Json.format[RedirectUrisUpdated]
+  }
+
   implicit val formatUpdatepplicationEvent: OFormat[UpdateApplicationEvent] = Union.from[UpdateApplicationEvent]("eventType")
     .and[ApiSubscribed](EventType.API_SUBSCRIBED_V2.toString)
     .and[ApiUnsubscribed](EventType.API_UNSUBSCRIBED_V2.toString)
@@ -465,5 +476,6 @@ object UpdateApplicationEvent {
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
     .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
     .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
+    .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)
     .format
 }

@@ -79,6 +79,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
       result shouldBe Right(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
+      AuditServiceMock.ApplyEvents.verifyCalledWith(appAfter, NonEmptyList.one(event))
     }
 
     "return the error if the application does not exist" in new Setup {
@@ -116,6 +117,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(event)
       result shouldBe Right(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
+      AuditServiceMock.ApplyEvents.verifyCalledWith(appAfter, NonEmptyList.one(event))
     }
 
     "return the error if the application does not exist" in new Setup {
