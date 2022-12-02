@@ -42,7 +42,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
     val requesterEmail = cmd.requestedByEmailAddress
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
-      ApplicationDeleted(
+      ApplicationDeletedByGatekeeper(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
@@ -50,7 +50,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
-        requestingAdminEmail = Some(requesterEmail)
+        requestingAdminEmail = requesterEmail
       ),
       ApplicationStateChanged(
         id = UpdateApplicationEvent.Id.random,
@@ -60,13 +60,6 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
         app.state.name,
         State.DELETED,
         requestingAdminName = requesterEmail,
-        requestingAdminEmail = requesterEmail
-      ),
-      ApplicationDeletedByGatekeeper(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
         requestingAdminEmail = requesterEmail
       )
     )

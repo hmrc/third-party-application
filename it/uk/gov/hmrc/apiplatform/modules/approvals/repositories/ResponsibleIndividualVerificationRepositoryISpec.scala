@@ -284,8 +284,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
         CollaboratorActor("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
-        "reasons",
-        Some("admin@example.com")
+        "reasons"
       )
 
     def buildRiVerificationToURecord(id: ResponsibleIndividualVerificationId, submissionId: Submission.Id, submissionIndex: Int) =

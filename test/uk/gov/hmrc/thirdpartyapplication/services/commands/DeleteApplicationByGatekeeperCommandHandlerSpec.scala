@@ -48,15 +48,16 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       val result = await(underTest.process(app, DeleteApplicationByGatekeeper(actor, requestedByEmail, reasons, ts)))
       
       result.isValid shouldBe true
-      result.toOption.get.length shouldBe 3
+      result.toOption.get.length shouldBe 2
 
-      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
+      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeletedByGatekeeper]
       applicationDeleted.applicationId shouldBe appId
       applicationDeleted.eventDateTime shouldBe ts
       applicationDeleted.actor shouldBe actor
       applicationDeleted.reasons shouldBe reasons
       applicationDeleted.clientId shouldBe app.tokens.production.clientId
       applicationDeleted.wso2ApplicationName shouldBe app.wso2ApplicationName
+      applicationDeleted.requestingAdminEmail shouldBe requestedByEmail
 
       val stateEvent = result.toOption.get.tail.head.asInstanceOf[ApplicationStateChanged]
       stateEvent.applicationId shouldBe appId
@@ -64,12 +65,6 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       stateEvent.actor shouldBe actor
       stateEvent.newAppState shouldBe State.DELETED
       stateEvent.oldAppState shouldBe app.state.name
-
-      val applicationDeletedByGatekeeper = result.toOption.get.tail.tail.head.asInstanceOf[ApplicationDeletedByGatekeeper]
-      applicationDeletedByGatekeeper.applicationId shouldBe appId
-      applicationDeletedByGatekeeper.eventDateTime shouldBe ts
-      applicationDeletedByGatekeeper.actor shouldBe actor
-      applicationDeletedByGatekeeper.requestingAdminEmail shouldBe requestedByEmail
     }
 
     "return an error if the actor type is not GatekeeperUserActor" in new Setup {

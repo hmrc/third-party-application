@@ -42,6 +42,13 @@ trait UpdatesSubscription {
   self: UpdateApplicationEvent =>
 }
 
+trait ApplicationDeletedBase {
+  self: UpdateApplicationEvent =>
+  def clientId: ClientId
+  def wso2ApplicationName: String
+  def reasons: String
+}
+
 object UpdateApplicationEvent {
   sealed trait Actor
   case class GatekeeperUserActor(user: String) extends Actor
@@ -365,9 +372,8 @@ object UpdateApplicationEvent {
     actor: Actor,
     clientId: ClientId,
     wso2ApplicationName: String,
-    reasons: String,
-    requestingAdminEmail: Option[String]
-  ) extends UpdateApplicationEvent
+    reasons: String
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase
 
   object ApplicationDeleted {
     implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
@@ -378,22 +384,28 @@ object UpdateApplicationEvent {
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
+    reasons: String,
     requestingAdminEmail: String
-  ) extends UpdateApplicationEvent with TriggersNotification
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
 
   object ApplicationDeletedByGatekeeper {
     implicit val format: OFormat[ApplicationDeletedByGatekeeper] = Json.format[ApplicationDeletedByGatekeeper]
   }
 
-  case class ProductionCredentialsDeletedEmail(
+  case class ProductionCredentialsApplicationDeleted(
     id: UpdateApplicationEvent.Id,
     applicationId: ApplicationId,
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-    actor: Actor
-  ) extends UpdateApplicationEvent with TriggersNotification
+    actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
+    reasons: String
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
 
-  object ProductionCredentialsDeletedEmail {
-    implicit val format: OFormat[ProductionCredentialsDeletedEmail] = Json.format[ProductionCredentialsDeletedEmail]
+  object ProductionCredentialsApplicationDeleted {
+    implicit val format: OFormat[ProductionCredentialsApplicationDeleted] = Json.format[ProductionCredentialsApplicationDeleted]
   }
 
   case class CollaboratorAdded(id: UpdateApplicationEvent.Id,

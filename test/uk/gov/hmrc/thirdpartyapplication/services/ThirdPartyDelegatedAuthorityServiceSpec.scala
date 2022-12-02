@@ -51,8 +51,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
         CollaboratorActor("requester@example.com"),
         clientId,
         "wso2ApplicationName",
-        "reasons",
-        Some("admin@example.com")
+        "reasons"
       )
 
     "handle an ApplicationDeleted event by calling the connector" in new Setup {

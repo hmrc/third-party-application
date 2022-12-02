@@ -44,15 +44,14 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
   private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): NonEmptyList[UpdateApplicationEvent] = {
     val clientId = app.tokens.production.clientId
     NonEmptyList.of(
-      ApplicationDeleted(
+      ProductionCredentialsApplicationDeleted(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
         actor = cmd.actor,
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
-        reasons = cmd.reasons,
-        requestingAdminEmail = None
+        reasons = cmd.reasons
       ),
       ApplicationStateChanged(
         id = UpdateApplicationEvent.Id.random,
@@ -63,12 +62,6 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
         State.DELETED,
         requestingAdminName = cmd.actor.toString,
         requestingAdminEmail = cmd.actor.toString
-      ),
-      ProductionCredentialsDeletedEmail(
-        id = UpdateApplicationEvent.Id.random,
-        applicationId = app.id,
-        eventDateTime = cmd.timestamp,
-        actor = cmd.actor
       )
     )
   }

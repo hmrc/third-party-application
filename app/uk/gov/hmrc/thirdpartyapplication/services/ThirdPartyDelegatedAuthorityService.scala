@@ -54,7 +54,7 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : ApplicationDeleted => revokeApplicationAuthorities(evt.clientId)
+      case evt : UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
       case _ => Future.successful(None)
     }
   }

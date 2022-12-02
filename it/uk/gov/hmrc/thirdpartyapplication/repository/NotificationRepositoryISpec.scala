@@ -112,8 +112,7 @@ class NotificationRepositoryISpec
         CollaboratorActor("requester@example.com"),
         ClientId("clientId"),
         "wso2ApplicationName",
-        "reasons",
-        Some("admin@example.com")
+        "reasons"
       )
 
     "handle an ApplicationDeleted event by deleting any records for the application id" in {

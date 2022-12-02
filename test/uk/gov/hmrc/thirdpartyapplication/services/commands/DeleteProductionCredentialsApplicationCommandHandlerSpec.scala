@@ -48,9 +48,9 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       val result = await(underTest.process(app, DeleteProductionCredentialsApplication(actor, reasons, ts)))
       
       result.isValid shouldBe true
-      result.toOption.get.length shouldBe 3
+      result.toOption.get.length shouldBe 2
 
-      val applicationDeleted = result.toOption.get.head.asInstanceOf[ApplicationDeleted]
+      val applicationDeleted = result.toOption.get.head.asInstanceOf[ProductionCredentialsApplicationDeleted]
       applicationDeleted.applicationId shouldBe appId
       applicationDeleted.eventDateTime shouldBe ts
       applicationDeleted.actor shouldBe actor
@@ -64,11 +64,6 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
       stateEvent.actor shouldBe actor
       stateEvent.newAppState shouldBe State.DELETED
       stateEvent.oldAppState shouldBe app.state.name
-
-      val productionCredentialsDeletedEmail = result.toOption.get.tail.tail.head.asInstanceOf[ProductionCredentialsDeletedEmail]
-      productionCredentialsDeletedEmail.applicationId shouldBe appId
-      productionCredentialsDeletedEmail.eventDateTime shouldBe ts
-      productionCredentialsDeletedEmail.actor shouldBe actor
     }
 
     "return an error if the application state is not TESTING" in new Setup {

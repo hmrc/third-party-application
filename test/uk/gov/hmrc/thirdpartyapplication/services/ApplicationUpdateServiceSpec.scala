@@ -534,7 +534,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       val applicationDeleted = ApplicationDeleted(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons", Some(requesterEmail))
+        clientId, "wso2ApplicationName", "reasons")
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
@@ -578,19 +578,16 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       val appBefore = applicationData
       val appAfter = appInDeletedState
 
-      val applicationDeleted = ApplicationDeleted(
+      val applicationDeletedByGatekeeper = ApplicationDeletedByGatekeeper(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons", Some(requesterEmail))
+        clientId, "wso2ApplicationName", "reasons", requesterEmail)
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
         State.PRODUCTION, State.DELETED, 
         requesterEmail, requesterEmail)
-      val applicationDeletedByGatekeeper = ApplicationDeletedByGatekeeper(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        actor, requesterEmail)
-      val events = NonEmptyList.of(applicationDeleted, stateEvent, applicationDeletedByGatekeeper)
+      val events = NonEmptyList.of(applicationDeletedByGatekeeper, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -611,7 +608,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
       val result = await(underTest.update(applicationId, deleteApplicationByGatekeeper).value)
 
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent, applicationDeletedByGatekeeper)
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeletedByGatekeeper, stateEvent)
       result shouldBe Right(appAfter)
     }
   }  
@@ -632,7 +629,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       val applicationDeleted = ApplicationDeleted(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons", None)
+        clientId, "wso2ApplicationName", "reasons")
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
@@ -664,7 +661,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     }
   }  
 
-  "update with DeleteProductionCredentialsApplication" should {
+  "update with ProductionCredentialsApplicationDeleted" should {
     val actor = ScheduledJobActor("ProductionCredentialsRequestExpiredJob")
     val reasons = "Reasons description text"
     val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(actor, reasons, LocalDateTime.now)
@@ -676,20 +673,16 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       val appBefore = applicationData
       val appAfter = appInDeletedState
 
-      val applicationDeleted = ApplicationDeleted(
+      val productionCredentialsApplicationDeleted = ProductionCredentialsApplicationDeleted(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        actor,
-        clientId, "wso2ApplicationName", "reasons", None)
+        actor, clientId, "wso2AppName", "reasons")
       val stateEvent = ApplicationStateChanged(
         UpdateApplicationEvent.Id.random, applicationId, timestamp,
         actor,
         State.PRODUCTION, State.DELETED, 
         requesterEmail, requesterEmail)
-      val productionCredentialsDeletedEmail = ProductionCredentialsDeletedEmail(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        actor)
 
-      val events = NonEmptyList.of(applicationDeleted, stateEvent, productionCredentialsDeletedEmail)
+      val events = NonEmptyList.of(productionCredentialsApplicationDeleted, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -710,7 +703,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
       val result = await(underTest.update(applicationId, deleteProductionCredentialsApplication).value)
 
-      ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent, productionCredentialsDeletedEmail)
+      ApplicationRepoMock.ApplyEvents.verifyCalledWith(productionCredentialsApplicationDeleted, stateEvent)
       result shouldBe Right(appAfter)
     }
   }  

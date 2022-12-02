@@ -62,8 +62,7 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
         actor = cmd.actor,
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
-        reasons = cmd.reasons,
-        requestingAdminEmail = None
+        reasons = cmd.reasons
       ),
       ApplicationStateChanged(
         id = UpdateApplicationEvent.Id.random,

@@ -54,14 +54,14 @@ trait ApiGatewayStore extends EitherTHelper[String] {
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : ApplicationDeleted => deleteApplication(evt)
+      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteApplication(evt)
       case _ => Future.successful(None)
     }
   }
 
   import cats.instances.future.catsStdInstancesForFuture
 
-  private def deleteApplication(event: ApplicationDeleted)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  private def deleteApplication(event: UpdateApplicationEvent with ApplicationDeletedBase)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     (
       for {
         result <- liftF(deleteApplication(event.wso2ApplicationName)(hc))
