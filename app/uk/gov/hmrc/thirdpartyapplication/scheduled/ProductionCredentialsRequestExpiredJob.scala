@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import cats.implicits._
 import com.google.inject.Singleton
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, Environment}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, Environment, DeleteProductionCredentialsApplication}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ScheduledJobActor
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
@@ -36,9 +37,7 @@ import javax.inject.Inject
 class ProductionCredentialsRequestExpiredJob @Inject() (
     productionCredentialsRequestExpiredLockService: ProductionCredentialsRequestExpiredJobLockService,
     applicationRepository: ApplicationRepository,
-    applicationService: ApplicationService,
-    notificationRepository: NotificationRepository,
-    emailConnector: EmailConnector,
+    applicationUpdateService: ApplicationUpdateService,
     clock: Clock,
     jobConfig: ProductionCredentialsRequestExpiredJobConfig
   )(implicit val ec: ExecutionContext
@@ -59,7 +58,7 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     val result: Future[RunningOfJobSuccessful.type] = for {
       deleteApps  <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
       _            = logger.info(s"Found ${deleteApps.size} applications")
-      _           <- Future.sequence(deleteApps.map(deleteExpiredApplication))
+      _           <- Future.sequence(deleteApps.map(deleteExpiredApplication(_)))
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
@@ -71,21 +70,12 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
     logger.info(s"Delete expired production credentials request for app{id=${app.id.value},name=${app.name},state." +
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
-    val recipients = getRecipients(app)
-    def audit(app: ApplicationData): Future[AuditResult] = {
-      logger.info(s"Delete application ${app.id.value} - ${app.name}")
-      Future.successful(uk.gov.hmrc.play.audit.http.connector.AuditResult.Success)
-    }
+    val reasons = s"Delete expired production credentials request, updated on ${app.state.updatedOn}"
+    val request     =  DeleteProductionCredentialsApplication(ScheduledJobActor(name), reasons, LocalDateTime.now(clock))
 
-    for {
-      asc        <- applicationService.deleteApplication(app.id, None, audit)
-      _          <- notificationRepository.deleteAllByApplicationId(app.id)
-      sent       <- emailConnector.sendProductionCredentialsRequestExpired(app.name, recipients)
-    } yield sent
-  }
-
-  private def getRecipients(app: ApplicationData): Set[String] = {
-    app.collaborators.map(_.emailAddress)
+    (for {
+      savedApp      <- applicationUpdateService.update(app.id, request)
+    } yield HasSucceeded).value
   }
 }
 
