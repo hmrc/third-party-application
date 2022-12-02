@@ -35,10 +35,10 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   import cats.instances.future.catsStdInstancesForFuture
 
-  def revokeApplicationAuthorities(event: ApplicationDeleted)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+  def revokeApplicationAuthorities(clientId: ClientId)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     (
       for {
-        result <- liftF(thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(event.clientId))
+        result <- liftF(thirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId))
       } yield result
     )
       .toOption
@@ -54,7 +54,7 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : ApplicationDeleted => revokeApplicationAuthorities(evt)
+      case evt : ApplicationDeleted => revokeApplicationAuthorities(evt.clientId)
       case _ => Future.successful(None)
     }
   }

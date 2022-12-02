@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import cats.data.NonEmptyList
 import akka.actor.ActorSystem
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
@@ -29,7 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import java.time.LocalDateTime
+import java.time.{LocalDateTime, ZoneOffset}
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -89,7 +91,34 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
       verify(mockAwsApiGatewayConnector).deleteApplication(applicationName)(hc)
     }
-
   }
 
+  "applyEvents" should {
+    val now = LocalDateTime.now(ZoneOffset.UTC)
+
+    def buildApplicationDeletedEvent(applicationId: ApplicationId) =
+      ApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        ClientId("clientId"),
+        "wso2ApplicationName",
+        "reasons",
+        Some("admin@example.com")
+      )
+
+    "handle an ApplicationDeleted event by calling the connector" in new Setup {
+      val applicationId1  = ApplicationId.random
+
+      when(mockAwsApiGatewayConnector.deleteApplication("wso2ApplicationName")(hc)).thenReturn(successful(HasSucceeded))
+
+      val event = buildApplicationDeletedEvent(applicationId1)
+
+      val result = await(underTest.applyEvents(NonEmptyList.one(event)))
+
+      result shouldBe Some(HasSucceeded)
+      verify(mockAwsApiGatewayConnector).deleteApplication("wso2ApplicationName")(hc)
+    }
+  }  
 }
