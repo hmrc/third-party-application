@@ -24,7 +24,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.ApplicationDeleted
 
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future}
