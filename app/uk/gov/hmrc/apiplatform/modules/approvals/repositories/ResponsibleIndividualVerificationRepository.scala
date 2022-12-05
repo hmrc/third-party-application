@@ -25,8 +25,8 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndiv
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent, ApplicationId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet, ResponsibleIndividualChanged, ResponsibleIndividualDeclined, ResponsibleIndividualDidNotVerify, ResponsibleIndividualDeclinedUpdate, ApplicationDeleted}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ResponsibleIndividual, UpdateApplicationEvent, ApplicationId, ApplicationDeletedBase}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ResponsibleIndividualVerificationStarted, ResponsibleIndividualSet, ResponsibleIndividualChanged, ResponsibleIndividualDeclined, ResponsibleIndividualDidNotVerify, ResponsibleIndividualDeclinedUpdate}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
@@ -173,7 +173,7 @@ class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoCompone
       case evt : ResponsibleIndividualDeclined => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
       case evt : ResponsibleIndividualDeclinedUpdate => deleteResponsibleIndividualVerification(evt.code)
       case evt : ResponsibleIndividualDidNotVerify => deleteSubmissionInstance(evt.submissionId, evt.submissionIndex)
-      case evt : ApplicationDeleted => deleteAllByApplicationId(evt.applicationId)
+      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
       case _ => Future.successful(HasSucceeded)
     }
   }

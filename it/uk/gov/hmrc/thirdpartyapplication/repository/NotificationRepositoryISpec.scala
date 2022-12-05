@@ -26,7 +26,7 @@ import uk.gov.hmrc.mongo.test.CleanMongoCollectionSupport
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor, ProductionCredentialsApplicationDeleted}
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
@@ -115,6 +115,17 @@ class NotificationRepositoryISpec
         "reasons"
       )
 
+    def buildProductionCredentialsApplicationDeletedEvent(applicationId: ApplicationId) =
+      ProductionCredentialsApplicationDeleted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        now,
+        CollaboratorActor("requester@example.com"),
+        ClientId("clientId"),
+        "wso2ApplicationName",
+        "reasons"
+      )
+
     "handle an ApplicationDeleted event by deleting any records for the application id" in {
       val applicationId1  = ApplicationId.random
       val applicationId2  = ApplicationId.random
@@ -123,6 +134,21 @@ class NotificationRepositoryISpec
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
       val event = buildApplicationDeletedEvent(applicationId1)
+
+      val result = await(notificationRepository.applyEvents(NonEmptyList.one(event)))
+
+      result mustBe HasSucceeded
+      await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
+    }
+
+    "handle an ProductionCredentialsApplicationDeleted event by deleting any records for the application id" in {
+      val applicationId1  = ApplicationId.random
+      val applicationId2  = ApplicationId.random
+      val now = LocalDateTime.now
+      await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+      await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+
+      val event = buildProductionCredentialsApplicationDeletedEvent(applicationId1)
 
       val result = await(notificationRepository.applyEvents(NonEmptyList.one(event)))
 
