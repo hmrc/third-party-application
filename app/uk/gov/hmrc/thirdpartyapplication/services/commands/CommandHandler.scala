@@ -21,9 +21,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import scala.concurrent.Future
 import scala.concurrent.ExecutionContext
 import cats.implicits._
+import cats.data.NonEmptyList
 import cats.data.ValidatedNec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
-import cats.data.NonEmptyList
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 
 abstract class CommandHandler {
   implicit def ec: ExecutionContext
@@ -42,6 +43,12 @@ object CommandHandler {
   private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
 
+  private def isCollaboratorActorAndAdmin(actor: Actor, app: ApplicationData): Boolean =
+    actor match {
+      case CollaboratorActor(emailAddress) => app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == emailAddress)
+      case _                               => false
+    }
+
   private def applicationHasAnAdmin(updated: Set[Collaborator]): Boolean = {
     updated.exists(_.role == Role.ADMINISTRATOR)
   }
@@ -52,9 +59,9 @@ object CommandHandler {
   def isAdminOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == email), s"No admin found with email: $email")
 
-  def isAdminIfInProduction(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
+  def isAdminIfInProduction(actor: Actor, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
-      (app.environment == Environment.PRODUCTION.toString && isAdmin(userId, app)) || (app.environment == Environment.SANDBOX.toString),
+      (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),
       "App is in PRODUCTION so User must be an ADMIN"
     )
 

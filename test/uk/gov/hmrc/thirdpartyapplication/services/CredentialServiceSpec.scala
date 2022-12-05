@@ -21,9 +21,10 @@ import com.github.t3hnar.bcrypt._
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import org.mockito.captor.ArgCaptor
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithUserId, ValidationRequest}
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ClientSecretRequest, ClientSecretRequestWithActor, ValidationRequest}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
@@ -76,7 +77,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
       collaborators = Set(Collaborator(loggedInUser, ADMINISTRATOR, UserId.random), Collaborator(anotherAdminUser, ADMINISTRATOR, UserId.random))
     )
     val secretRequest = ClientSecretRequest(loggedInUser)
-    val secretRequestWithId = ClientSecretRequestWithUserId(UserId.random, loggedInUser, LocalDateTime.now())
+    val secretRequestWithActor = ClientSecretRequestWithActor(CollaboratorActor(loggedInUser), LocalDateTime.now())
     val environmentToken = applicationData.tokens.production
     val firstSecret = environmentToken.clientSecrets.head
 
@@ -192,7 +193,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(updatedApplicationData)
 
-      val result: ApplicationTokenResponse = await(underTest.addClientSecretNew(applicationId, secretRequestWithId))
+      val result: ApplicationTokenResponse = await(underTest.addClientSecretNew(applicationId, secretRequestWithActor))
 
       result.clientId shouldBe applicationData.tokens.production.clientId
       result.accessToken shouldBe applicationData.tokens.production.accessToken
@@ -205,7 +206,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
 
     "throw a NotFoundException when no application exists in the repository for the given application id" in new Setup {
       ApplicationRepoMock.Fetch.thenReturnNone()
-      intercept[NotFoundException](await(underTest.addClientSecretNew(applicationId, secretRequestWithId)))
+      intercept[NotFoundException](await(underTest.addClientSecretNew(applicationId, secretRequestWithActor)))
 
       ApplicationUpdateServiceMock.Update.verifyNeverCalled
     }
@@ -213,7 +214,7 @@ class CredentialServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with
     "throw a ClientSecretsLimitExceeded when app already contains 5 secrets" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationDataWith5Secrets)
 
-      intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecretNew(applicationId, secretRequestWithId)))
+      intercept[ClientSecretsLimitExceeded](await(underTest.addClientSecretNew(applicationId, secretRequestWithActor)))
 
       ApplicationRepoMock.Save.verifyNeverCalled()
     }

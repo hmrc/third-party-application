@@ -49,8 +49,6 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
       access = Standard(importantSubmissionData = None)
     )
 
-    val instigator = applicationData.collaborators.head.userId
-  
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
     val secretValue = "somSecret"
 
@@ -60,7 +58,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
 
   "update with AddClientSecret" should {
     
-    val addClientSecret = AddClientSecret(instigator, adminEmail, secretValue, clientSecret, timestamp)
+    val addClientSecret = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
     
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -93,7 +91,7 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
 
   "update with RemoveClientSecret" should {
     
-    val removeClientSecret = RemoveClientSecret(instigator, adminEmail, clientSecret.id, timestamp)
+    val removeClientSecret = RemoveClientSecret(CollaboratorActor(adminEmail), clientSecret.id, timestamp)
 
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
