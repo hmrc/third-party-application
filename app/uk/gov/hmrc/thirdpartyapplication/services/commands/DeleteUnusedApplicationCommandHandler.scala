@@ -65,8 +65,8 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
         actor = cmd.actor,
         app.state.name,
         State.DELETED,
-        requestingAdminName = cmd.actor.toString,
-        requestingAdminEmail = cmd.actor.toString
+        requestingAdminName = getCollaboratorAsString(cmd.actor),
+        requestingAdminEmail = getCollaboratorAsString(cmd.actor)
       )
     )
   }
