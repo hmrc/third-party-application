@@ -77,12 +77,6 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
       result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
     }
 
-    "return an error if the application is in the Production environment" in new Setup {
-      val productionApp = app.copy(environment = Environment.PRODUCTION.toString())
-      val result = await(underTest.process(productionApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Cannot delete this applicaton - must be Sandbox"))
-    }
-
     "return an error if the actor is not an admin of the application" in new Setup {
       val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))

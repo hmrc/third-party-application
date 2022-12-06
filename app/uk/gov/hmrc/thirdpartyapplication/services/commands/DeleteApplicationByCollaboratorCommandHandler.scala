@@ -23,7 +23,7 @@ import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent, Environment}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
@@ -38,14 +38,10 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
   def canDeleteApplicationsOrNotProductionApp(app: ApplicationData) =
     cond(authControlConfig.canDeleteApplications || !app.state.isInPreProductionOrProduction, "Cannot delete this applicaton")
 
-  def isApplicationDeployedToSandbox(app: ApplicationData) =
-    cond(app.environment == Environment.SANDBOX.toString, "Cannot delete this applicaton - must be Sandbox")
-    
   private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]
-        .map4(isAdminOnApp(cmd.instigator, app),
+        .map3(isAdminOnApp(cmd.instigator, app),
               isStandardAccess(app),
-              isApplicationDeployedToSandbox(app),
               canDeleteApplicationsOrNotProductionApp(app)){case _ => app}
   }
 
