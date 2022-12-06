@@ -520,10 +520,11 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with DeleteApplicationByCollaborator" should {
+    val instigator = UserId.random
     val requesterEmail = "bill.badger@rupert.com"
     val actor = CollaboratorActor(requesterEmail)
     val reasons = "Reasons description text"
-    val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(actor, reasons, LocalDateTime.now)
+    val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(instigator, reasons, LocalDateTime.now)
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
@@ -568,9 +569,10 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   "update with DeleteApplicationByGatekeeper" should {
     val requesterEmail = "bill.badger@rupert.com"
-    val actor = GatekeeperUserActor("gatekeeperuser")
+    val gatekeeperUser = "gatekeeperuser"
+    val actor = GatekeeperUserActor(gatekeeperUser)
     val reasons = "Reasons description text"
-    val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(actor, requesterEmail, reasons, LocalDateTime.now)
+    val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(gatekeeperUser, requesterEmail, reasons, LocalDateTime.now)
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 

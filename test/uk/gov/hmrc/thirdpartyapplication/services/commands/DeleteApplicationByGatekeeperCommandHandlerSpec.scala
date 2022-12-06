@@ -16,8 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
@@ -35,7 +33,8 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
 
     val appId = ApplicationId.random
     val requestedByEmail = "admin@example.com"
-    val actor = GatekeeperUserActor("gatekeeperuser")
+    val gatekeeperUser = "gatekeeperuser"
+    val actor = GatekeeperUserActor(gatekeeperUser)
     val reasons = "reasons description text"
     val app = anApplicationData(appId, environment = Environment.SANDBOX)
     val ts = LocalDateTime.now
@@ -45,7 +44,7 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       
-      val result = await(underTest.process(app, DeleteApplicationByGatekeeper(actor, requestedByEmail, reasons, ts)))
+      val result = await(underTest.process(app, DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)))
       
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
@@ -65,11 +64,6 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
       stateEvent.actor shouldBe actor
       stateEvent.newAppState shouldBe State.DELETED
       stateEvent.oldAppState shouldBe app.state.name
-    }
-
-    "return an error if the actor type is not GatekeeperUserActor" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByGatekeeper(CollaboratorActor("admin@example.com"), requestedByEmail, reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Invalid actor type"))
     }
   }
 }

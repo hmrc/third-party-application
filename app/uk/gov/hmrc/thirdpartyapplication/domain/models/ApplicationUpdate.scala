@@ -36,7 +36,7 @@ case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class DeleteApplicationByCollaborator(actor: Actor, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeleteProductionCredentialsApplication(actor: Actor, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeleteUnusedApplication(actor: Actor, authorisationKey: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
@@ -48,7 +48,7 @@ trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
 }
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationUpdate
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
-case class DeleteApplicationByGatekeeper(actor: Actor, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
 
 
 trait ApplicationUpdateFormatters {

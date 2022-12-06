@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec, Validated}
+import cats.data.{NonEmptyList, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByCollaborator, State, UpdateApplicationEvent, Environment}
@@ -42,24 +42,22 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
     cond(app.environment == Environment.SANDBOX.toString, "Cannot delete this applicaton - must be Sandbox")
     
   private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): ValidatedNec[String, ApplicationData] = {
-    cmd.actor match {
-      case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]]
-        .map4(isAdminOnApp(actorEmail, app),
+    Apply[ValidatedNec[String, *]]
+        .map4(isAdminOnApp(cmd.instigator, app),
               isStandardAccess(app),
               isApplicationDeployedToSandbox(app),
               canDeleteApplicationsOrNotProductionApp(app)){case _ => app}
-      case _ => Validated.invalidNec("Invalid actor type")
-    }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator): NonEmptyList[UpdateApplicationEvent] = {
     val clientId = app.tokens.production.clientId
+    val requesterEmail = getRequester(app, cmd.instigator)
     NonEmptyList.of(
       ApplicationDeleted(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = CollaboratorActor(requesterEmail),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
@@ -68,11 +66,11 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = CollaboratorActor(requesterEmail),
         app.state.name,
         State.DELETED,
-        requestingAdminName = getCollaboratorAsString(cmd.actor),
-        requestingAdminEmail = getCollaboratorAsString(cmd.actor)
+        requestingAdminName = requesterEmail,
+        requestingAdminEmail = requesterEmail
       )
     )
   }

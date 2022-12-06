@@ -35,10 +35,13 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     val appId = ApplicationId.random
-    val appAdminEmail = loggedInUser
-    val actor = CollaboratorActor(appAdminEmail)
+    val appAdminUserId = UserId.random
+    val appAdminEmail = "admin@example.com"
     val reasons = "reasons description text"
-    val app = anApplicationData(appId, environment = Environment.SANDBOX)
+    val actor = CollaboratorActor(appAdminEmail)
+    val app = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators = Set(
+      Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+    ))
     val ts = LocalDateTime.now
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
     val underTest = new DeleteApplicationByCollaboratorCommandHandler(authControlConfig)
@@ -47,7 +50,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(actor, reasons, ts)))
+      val result = await(underTest.process(app, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
       
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
@@ -70,19 +73,19 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     "return an error if the application is non-standard" in new Setup {
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(actor, reasons, ts)))
+      val result = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
     }
 
     "return an error if the application is in the Production environment" in new Setup {
       val productionApp = app.copy(environment = Environment.PRODUCTION.toString())
-      val result = await(underTest.process(productionApp, DeleteApplicationByCollaborator(actor, reasons, ts)))
+      val result = await(underTest.process(productionApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Cannot delete this applicaton - must be Sandbox"))
     }
 
     "return an error if the actor is not an admin of the application" in new Setup {
-      val result = await(underTest.process(app, DeleteApplicationByCollaborator(CollaboratorActor("some-other-guy@example.com"), reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.one("No admin found with email: some-other-guy@example.com"))
+      val result = await(underTest.process(app, DeleteApplicationByCollaborator(UserId.random, reasons, ts)))
+      result shouldBe Invalid(NonEmptyChain.one("User must be an ADMIN"))
     }
   }
 }

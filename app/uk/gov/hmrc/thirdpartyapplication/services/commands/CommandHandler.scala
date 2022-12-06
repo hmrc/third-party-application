@@ -63,9 +63,6 @@ object CommandHandler {
   def isAdminOnApp(userId: UserId, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(isAdmin(userId, app), "User must be an ADMIN")
 
-  def isAdminOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
-    cond(app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.emailAddress == email), s"No admin found with email: $email")
-
   def isAdminIfInProduction(actor: Actor, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(
       (app.environment == Environment.PRODUCTION.toString && isCollaboratorActorAndAdmin(actor, app)) || (app.environment == Environment.SANDBOX.toString),

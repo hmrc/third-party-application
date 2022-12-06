@@ -32,10 +32,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): ValidatedNec[String, ApplicationData] = {
-    cmd.actor match {
-      case GatekeeperUserActor(user: String) =>  Validated.validNec(app)
-      case _ => Validated.invalidNec("Invalid actor type")
-    }
+    Validated.validNec(app)
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): NonEmptyList[UpdateApplicationEvent] = {
@@ -46,7 +43,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = GatekeeperUserActor(cmd.gatekeeperUser),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons,
@@ -56,7 +53,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = GatekeeperUserActor(cmd.gatekeeperUser),
         app.state.name,
         State.DELETED,
         requestingAdminName = requesterEmail,
