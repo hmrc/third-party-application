@@ -21,6 +21,9 @@ import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
+import scala.util.Try
+import java.util.Base64
+import java.nio.charset.StandardCharsets
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}
@@ -35,8 +38,10 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
   import CommandHandler._
   import UpdateApplicationEvent._
 
+  def base64Decode(stringToDecode: String): Try[String] = Try(new String(Base64.getDecoder.decode(stringToDecode), StandardCharsets.UTF_8))
+
   def matchesAuthorisationKey(cmd: DeleteUnusedApplication) =
-    cond(authControlConfig.authorisationKey == cmd.authorisationKey, "Cannot delete this applicaton")
+    cond(base64Decode(cmd.authorisationKey).map(_ == authControlConfig.authorisationKey).getOrElse(false), "Cannot delete this applicaton")
 
   private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]

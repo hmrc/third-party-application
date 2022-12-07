@@ -25,6 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
+import org.apache.commons.codec.binary.Base64.encodeBase64String
+import java.nio.charset.StandardCharsets.UTF_8
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
@@ -40,8 +42,8 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
     val reasons = "reasons description text"
     val app = anApplicationData(appId, environment = Environment.SANDBOX)
     val ts = LocalDateTime.now
-    val authKey = "authorisationKey12345"
-    val authControlConfig = AuthControlConfig(true, true, authKey)
+    val authKey = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
+    val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
     val underTest = new DeleteUnusedApplicationCommandHandler(authControlConfig)
   }
 
@@ -70,7 +72,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
     }
 
     "return an error if the auth key is incorrect" in new Setup {
-      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", "incorrectAuthKey", reasons, ts)))
+      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", encodeBase64String("incorrectAuthKey".getBytes(UTF_8)), reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Cannot delete this applicaton"))
     }
   }
