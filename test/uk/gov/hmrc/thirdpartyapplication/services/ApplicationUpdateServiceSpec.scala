@@ -619,7 +619,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
     val reasons = "Reasons description text"
     val authorisationKey = "23476523467235972354923"
-    val deleteUnusedApplication = DeleteUnusedApplication(actor, authorisationKey, reasons, LocalDateTime.now)
+    val deleteUnusedApplication = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authorisationKey, reasons, LocalDateTime.now)
     val requesterEmail = "bill.badger@rupert.com"
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))

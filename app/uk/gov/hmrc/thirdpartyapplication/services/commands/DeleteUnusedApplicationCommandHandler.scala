@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec, Validated}
+import cats.data.{NonEmptyList, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}
@@ -39,11 +39,8 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
     cond(authControlConfig.authorisationKey == cmd.authorisationKey, "Cannot delete this applicaton")
 
   private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): ValidatedNec[String, ApplicationData] = {
-    cmd.actor match {
-      case ScheduledJobActor(jobId: String) =>  Apply[ValidatedNec[String, *]]
+    Apply[ValidatedNec[String, *]]
         .map(matchesAuthorisationKey(cmd)){case _ => app}
-      case _ => Validated.invalidNec("Invalid actor type")
-    }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication): NonEmptyList[UpdateApplicationEvent] = {
@@ -53,7 +50,7 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = ScheduledJobActor(cmd.jobId),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
@@ -62,11 +59,11 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = ScheduledJobActor(cmd.jobId),
         app.state.name,
         State.DELETED,
-        requestingAdminName = getCollaboratorAsString(cmd.actor),
-        requestingAdminEmail = getCollaboratorAsString(cmd.actor)
+        requestingAdminName = cmd.jobId,
+        requestingAdminEmail = cmd.jobId
       )
     )
   }

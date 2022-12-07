@@ -48,7 +48,7 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       
-      val result = await(underTest.process(app, DeleteUnusedApplication(actor, authKey, reasons, ts)))
+      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)))
       
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
@@ -70,13 +70,8 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
     }
 
     "return an error if the auth key is incorrect" in new Setup {
-      val result = await(underTest.process(app, DeleteUnusedApplication(actor, "incorrectAuthKey", reasons, ts)))
+      val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", "incorrectAuthKey", reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Cannot delete this applicaton"))
-    }
-
-    "return an error if the actor type is not ScheduledJobActor" in new Setup {
-      val result = await(underTest.process(app, DeleteUnusedApplication(CollaboratorActor("admin@example.com"), authKey, reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Invalid actor type"))
     }
   }
 }
