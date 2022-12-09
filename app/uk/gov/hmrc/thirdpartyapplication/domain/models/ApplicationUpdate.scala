@@ -37,7 +37,7 @@ case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateT
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
-case class DeleteProductionCredentialsApplication(actor: Actor, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteProductionCredentialsApplication(jobId: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeleteUnusedApplication(jobId: String, authorisationKey: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate

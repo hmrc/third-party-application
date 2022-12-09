@@ -35,7 +35,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
 
     val appId = ApplicationId.random
     val appAdminEmail = loggedInUser
-    val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val jobId = "DeleteUnusedApplicationsJob"
+    val actor = ScheduledJobActor(jobId)
     val reasons = "reasons description text"
     val app = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
     val ts = LocalDateTime.now
@@ -45,7 +46,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
       
-      val result = await(underTest.process(app, DeleteProductionCredentialsApplication(actor, reasons, ts)))
+      val result = await(underTest.process(app, DeleteProductionCredentialsApplication(jobId, reasons, ts)))
       
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
@@ -68,13 +69,8 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
 
     "return an error if the application state is not TESTING" in new Setup {
       val productionApp = app.copy(state = ApplicationState.production("requestedby@example.com", "requestedByName"))
-      val result = await(underTest.process(productionApp, DeleteProductionCredentialsApplication(actor, reasons, ts)))
+      val result = await(underTest.process(productionApp, DeleteProductionCredentialsApplication(jobId, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("App is not in TESTING state"))
-    }
-
-    "return an error if the actor type is not ScheduledJobActor" in new Setup {
-      val result = await(underTest.process(app, DeleteProductionCredentialsApplication(CollaboratorActor("admin@example.com"), reasons, ts)))
-      result shouldBe Invalid(NonEmptyChain.apply("Invalid actor type"))
     }
   }
 }

@@ -20,7 +20,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec, Validated}
+import cats.data.{NonEmptyList, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
@@ -34,11 +34,8 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
   import UpdateApplicationEvent._
 
   private def validate(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): ValidatedNec[String, ApplicationData] = {
-    cmd.actor match {
-      case ScheduledJobActor(jobId: String) => Apply[ValidatedNec[String, *]]
+    Apply[ValidatedNec[String, *]]
         .map(isInTesting(app)){case _ => app}
-      case _ => Validated.invalidNec("Invalid actor type")
-    }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): NonEmptyList[UpdateApplicationEvent] = {
@@ -48,7 +45,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = ScheduledJobActor(cmd.jobId),
         clientId = clientId,
         wso2ApplicationName = app.wso2ApplicationName,
         reasons = cmd.reasons
@@ -57,11 +54,11 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
         id = UpdateApplicationEvent.Id.random,
         applicationId = app.id,
         eventDateTime = cmd.timestamp,
-        actor = cmd.actor,
+        actor = ScheduledJobActor(cmd.jobId),
         app.state.name,
         State.DELETED,
-        requestingAdminName = getCollaboratorAsString(cmd.actor),
-        requestingAdminEmail = getCollaboratorAsString(cmd.actor)
+        requestingAdminName = cmd.jobId,
+        requestingAdminEmail = cmd.jobId
       )
     )
   }

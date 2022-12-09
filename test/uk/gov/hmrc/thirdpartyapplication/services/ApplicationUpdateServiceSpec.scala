@@ -664,9 +664,10 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }  
 
   "update with ProductionCredentialsApplicationDeleted" should {
-    val actor = ScheduledJobActor("ProductionCredentialsRequestExpiredJob")
+    val jobId = "ProductionCredentialsRequestExpiredJob"
+    val actor = ScheduledJobActor(jobId)
     val reasons = "Reasons description text"
-    val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(actor, reasons, LocalDateTime.now)
+    val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(jobId, reasons, LocalDateTime.now)
     val requesterEmail = "bill.badger@rupert.com"
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
