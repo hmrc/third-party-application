@@ -36,6 +36,9 @@ case class ChangeResponsibleIndividualToOther(code: String, timestamp: LocalDate
 case class VerifyResponsibleIndividual(instigator: UserId, timestamp: LocalDateTime, requesterName: String, riName: String, riEmail: String) extends ApplicationUpdate
 case class DeclineResponsibleIndividual(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class DeclineResponsibleIndividualDidNotVerify(code: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteApplicationByCollaborator(instigator: UserId, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteProductionCredentialsApplication(jobId: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
+case class DeleteUnusedApplication(jobId: String, authorisationKey: String, reasons: String, timestamp: LocalDateTime) extends ApplicationUpdate
 case class SubscribeToApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UnsubscribeFromApi(actor: Actor, apiIdentifier: ApiIdentifier, timestamp: LocalDateTime) extends ApplicationUpdate
 case class UpdateRedirectUris(actor: Actor, oldRedirectUris: List[String], newRedirectUris: List[String], timestamp: LocalDateTime) extends ApplicationUpdate
@@ -45,6 +48,7 @@ trait GatekeeperSpecificApplicationUpdate extends ApplicationUpdate {
 }
 case class ChangeProductionApplicationName(instigator: UserId, timestamp: LocalDateTime, gatekeeperUser: String, newName: String) extends GatekeeperSpecificApplicationUpdate
 case class DeclineApplicationApprovalRequest(gatekeeperUser: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
+case class DeleteApplicationByGatekeeper(gatekeeperUser: String, requestedByEmailAddress: String, reasons: String, timestamp: LocalDateTime) extends GatekeeperSpecificApplicationUpdate
 
 
 trait ApplicationUpdateFormatters {
@@ -60,6 +64,10 @@ trait ApplicationUpdateFormatters {
   implicit val verifyResponsibleIndividualFormatter = Json.format[VerifyResponsibleIndividual]
   implicit val declineResponsibleIndividualFormatter = Json.format[DeclineResponsibleIndividual]
   implicit val declineApplicationApprovalRequestFormatter = Json.format[DeclineApplicationApprovalRequest]
+  implicit val deleteApplicationByCollaboratorFormatter = Json.format[DeleteApplicationByCollaborator]
+  implicit val deleteApplicationByGatekeeperFormatter = Json.format[DeleteApplicationByGatekeeper]
+  implicit val deleteUnusedApplicationFormatter = Json.format[DeleteUnusedApplication]
+  implicit val deleteProductionCredentialsApplicationFormatter = Json.format[DeleteProductionCredentialsApplication]
   implicit val subscribeToApiFormatter = Json.format[SubscribeToApi]
   implicit val unsubscribeFromApiFormatter = Json.format[UnsubscribeFromApi]
   implicit val UpdateRedirectUrisFormatter = Json.format[UpdateRedirectUris]
@@ -77,6 +85,10 @@ trait ApplicationUpdateFormatters {
     .and[VerifyResponsibleIndividual]("verifyResponsibleIndividual")
     .and[DeclineResponsibleIndividual]("declineResponsibleIndividual")
     .and[DeclineApplicationApprovalRequest]("declineApplicationApprovalRequest")
+    .and[DeleteApplicationByCollaborator]("deleteApplicationByCollaborator")
+    .and[DeleteApplicationByGatekeeper]("deleteApplicationByGatekeeper")
+    .and[DeleteUnusedApplication]("deleteUnusedApplication")
+    .and[DeleteProductionCredentialsApplication]("deleteProductionCredentialsApplication")
     .and[SubscribeToApi]("subscribeToApi")
     .and[UnsubscribeFromApi]("unsubscribeFromApi")
     .and[UpdateRedirectUris]("updateRedirectUris")

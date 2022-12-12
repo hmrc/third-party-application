@@ -28,7 +28,7 @@ import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved, RedirectUrisUpdated}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved, ApplicationDeletedByGatekeeper, RedirectUrisUpdated}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -80,12 +80,19 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case evt : ClientSecretAdded => auditClientSecretAdded(app, evt)
       case evt : ClientSecretRemoved => auditClientSecretRemoved(app, evt)
       case evt : CollaboratorAdded => auditAddCollaborator(app, evt)
-      case evt : CollaboratorRemoved => auditRemoveCollaborator(app, evt)
+      case evt: CollaboratorRemoved => auditRemoveCollaborator(app, evt)
+      case evt: ApplicationDeletedByGatekeeper => auditApplicationDeletedByGatekeeper(app, evt)
       case evt : ApiSubscribed => auditApiSubscribed(app, evt)
       case evt : ApiUnsubscribed => auditApiUnsubscribed(app, evt)
       case evt : RedirectUrisUpdated => auditRedirectUrisUpdated(app, evt)
       case _ => Future.successful(None)
     }
+  }
+
+  private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
+    liftF(auditGatekeeperAction(evt.actor.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
+      .toOption
+      .value
   }
 
   private def auditApplicationApprovalRequestDeclined(app: ApplicationData, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {

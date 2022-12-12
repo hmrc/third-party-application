@@ -60,6 +60,9 @@ object EventType extends Enumeration {
   val RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE            = Value
   val RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY             = Value
   val APPLICATION_APPROVAL_REQUEST_DECLINED             = Value
+  val APPLICATION_DELETED                               = Value
+  val APPLICATION_DELETED_BY_GATEKEEPER                 = Value
+  val PRODUCTION_CREDENTIALS_APPLICATION_DELETED        = Value
   
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }

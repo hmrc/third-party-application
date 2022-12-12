@@ -35,6 +35,9 @@ class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceU
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
     AuditServiceMock.ApplyEvents.succeeds()
     NotificationServiceMock.SendNotifications.thenReturnSuccess()
+    ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+    ApiGatewayStoreMock.ApplyEvents.succeeds()
+    NotificationRepositoryMock.ApplyEvents.succeeds()
     
     val applicationId = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)

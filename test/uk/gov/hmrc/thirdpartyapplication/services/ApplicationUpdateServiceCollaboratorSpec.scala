@@ -24,7 +24,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
-import uk.gov.hmrc.thirdpartyapplication.util._
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 import java.time.LocalDateTime
 import scala.concurrent.Future
@@ -86,7 +86,10 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
       SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 
@@ -132,7 +135,10 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
       NotificationServiceMock.SendNotifications.thenReturnSuccess()
       SubmissionsServiceMock.ApplyEvents.succeeds()
       ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+      NotificationRepositoryMock.ApplyEvents.succeeds()
       StateHistoryRepoMock.ApplyEvents.succeeds()
+      ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+      ApiGatewayStoreMock.ApplyEvents.succeeds()
       SubscriptionRepoMock.ApplyEvents.succeeds()
       AuditServiceMock.ApplyEvents.succeeds
 

@@ -42,6 +42,13 @@ trait UpdatesSubscription {
   self: UpdateApplicationEvent =>
 }
 
+trait ApplicationDeletedBase {
+  self: UpdateApplicationEvent =>
+  def clientId: ClientId
+  def wso2ApplicationName: String
+  def reasons: String
+}
+
 object UpdateApplicationEvent {
   sealed trait Actor
   case class GatekeeperUserActor(user: String) extends Actor
@@ -358,6 +365,49 @@ object UpdateApplicationEvent {
     implicit val format: OFormat[ResponsibleIndividualDidNotVerify] = Json.format[ResponsibleIndividualDidNotVerify]
   }
 
+  case class ApplicationDeleted(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
+    reasons: String
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase
+
+  object ApplicationDeleted {
+    implicit val format: OFormat[ApplicationDeleted] = Json.format[ApplicationDeleted]
+  }
+
+  case class ApplicationDeletedByGatekeeper(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
+    reasons: String,
+    requestingAdminEmail: String
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
+
+  object ApplicationDeletedByGatekeeper {
+    implicit val format: OFormat[ApplicationDeletedByGatekeeper] = Json.format[ApplicationDeletedByGatekeeper]
+  }
+
+  case class ProductionCredentialsApplicationDeleted(
+    id: UpdateApplicationEvent.Id,
+    applicationId: ApplicationId,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: Actor,
+    clientId: ClientId,
+    wso2ApplicationName: String,
+    reasons: String
+  ) extends UpdateApplicationEvent with ApplicationDeletedBase with TriggersNotification
+
+  object ProductionCredentialsApplicationDeleted {
+    implicit val format: OFormat[ProductionCredentialsApplicationDeleted] = Json.format[ProductionCredentialsApplicationDeleted]
+  }
+
   case class CollaboratorAdded(id: UpdateApplicationEvent.Id,
                                applicationId: ApplicationId,
                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
@@ -436,6 +486,9 @@ object UpdateApplicationEvent {
     .and[ResponsibleIndividualDeclinedUpdate](EventType.RESPONSIBLE_INDIVIDUAL_DECLINED_UPDATE.toString)
     .and[ResponsibleIndividualDidNotVerify](EventType.RESPONSIBLE_INDIVIDUAL_DID_NOT_VERIFY.toString)
     .and[ApplicationApprovalRequestDeclined](EventType.APPLICATION_APPROVAL_REQUEST_DECLINED.toString)
+    .and[ApplicationDeleted](EventType.APPLICATION_DELETED.toString)
+    .and[ApplicationDeletedByGatekeeper](EventType.APPLICATION_DELETED_BY_GATEKEEPER.toString)
+    .and[ProductionCredentialsApplicationDeleted](EventType.PRODUCTION_CREDENTIALS_APPLICATION_DELETED.toString)
     .and[CollaboratorAdded](EventType.COLLABORATOR_ADDED.toString)
     .and[CollaboratorRemoved](EventType.COLLABORATOR_REMOVED.toString)
     .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)

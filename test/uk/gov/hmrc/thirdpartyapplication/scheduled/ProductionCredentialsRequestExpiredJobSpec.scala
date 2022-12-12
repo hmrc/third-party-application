@@ -28,19 +28,17 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{
   TermsAndConditionsLocation
 }
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.NotificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
-  trait Setup extends ApplicationRepositoryMockModule with ApplicationServiceMockModule with EmailConnectorMockModule with NotificationRepositoryMockModule with ApplicationTestData {
+  trait Setup extends ApplicationRepositoryMockModule with ApplicationUpdateServiceMockModule with ApplicationTestData {
 
     val mockLockKeeper = mock[ProductionCredentialsRequestExpiredJobLockService]
     val timeNow        = LocalDateTime.now
@@ -70,22 +68,18 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
     val interval         = FiniteDuration(1, HOURS)
     val deleteInterval  = FiniteDuration(10, DAYS)
     val jobConfig        = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
-    val job              = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationServiceMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
+    val job              = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
     val recipients = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiredJob" should {
     "delete applications, send emails correctly and delete any notification records" in new Setup {
       ApplicationRepoMock.FetchByStatusDetailsAndEnvironment.thenReturn(app)
-      ApplicationServiceMock.DeleteApplication.thenSucceeds()
-      EmailConnectorMock.SendProductionCredentialsRequestExpired.thenReturnSuccess()
-      NotificationRepositoryMock.DeleteAllByApplicationId.thenReturnSuccess()
+      ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
 
       await(job.runJob)
 
-      ApplicationServiceMock.DeleteApplication.verifyCalledWith(app.id, None)
-      NotificationRepositoryMock.DeleteAllByApplicationId.verifyCalledWith(app.id)
-      EmailConnectorMock.SendProductionCredentialsRequestExpired.verifyCalledWith(appName, recipients)
+      ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
     }
   }
 }

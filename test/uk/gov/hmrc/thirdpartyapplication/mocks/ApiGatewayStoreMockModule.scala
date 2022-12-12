@@ -97,6 +97,11 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
 
     }
 
+    object ApplyEvents {
+      def succeeds() = {
+        when(aMock.applyEvents(*)(*)).thenReturn(successful(None))
+      }
+    }
   }
 
   object ApiGatewayStoreMock extends BaseApiGatewayStoreMock {

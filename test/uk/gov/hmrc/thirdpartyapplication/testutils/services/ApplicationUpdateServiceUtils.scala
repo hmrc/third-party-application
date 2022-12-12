@@ -37,9 +37,12 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     with ResponsibleIndividualVerificationRepositoryMockModule
     with StateHistoryRepositoryMockModule
     with SubscriptionRepositoryMockModule
+    with NotificationRepositoryMockModule
     with NotificationServiceMockModule
     with ApiPlatformEventServiceMockModule
-    with SubmissionsServiceMockModule {
+    with SubmissionsServiceMockModule
+    with ApiGatewayStoreMockModule
+    with ThirdPartyDelegatedAuthorityServiceMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
@@ -56,6 +59,10 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     val mockDeclineResponsibleIndividualCommandHandler: DeclineResponsibleIndividualCommandHandler = mock[DeclineResponsibleIndividualCommandHandler]
     val mockDeclineResponsibleIndividualDidNotVerifyCommandHandler: DeclineResponsibleIndividualDidNotVerifyCommandHandler = mock[DeclineResponsibleIndividualDidNotVerifyCommandHandler]
     val mockDeclineApplicationApprovalRequestCommandHandler: DeclineApplicationApprovalRequestCommandHandler = mock[DeclineApplicationApprovalRequestCommandHandler]
+    val mockDeleteApplicationByCollaboratorCommandHandler: DeleteApplicationByCollaboratorCommandHandler = mock[DeleteApplicationByCollaboratorCommandHandler]
+    val mockDeleteApplicationByGatekeeperCommandHandler: DeleteApplicationByGatekeeperCommandHandler = mock[DeleteApplicationByGatekeeperCommandHandler]
+    val mockDeleteUnusedApplicationCommandHandler: DeleteUnusedApplicationCommandHandler = mock[DeleteUnusedApplicationCommandHandler]
+    val mockDeleteProductionCredentialsApplicationCommandHandler: DeleteProductionCredentialsApplicationCommandHandler = mock[DeleteProductionCredentialsApplicationCommandHandler]
     val mockAddCollaboratorCommandHandler: AddCollaboratorCommandHandler = mock[AddCollaboratorCommandHandler]
     val mockRemoveCollaboratorCommandHandler: RemoveCollaboratorCommandHandler = mock[RemoveCollaboratorCommandHandler]
     val mockSubscribeToApiCommandHandler: SubscribeToApiCommandHandler = mock[SubscribeToApiCommandHandler]
@@ -67,9 +74,12 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       ResponsibleIndividualVerificationRepositoryMock.aMock,
       StateHistoryRepoMock.aMock,
       SubscriptionRepoMock.aMock,
+      NotificationRepositoryMock.aMock,
       NotificationServiceMock.aMock,
       ApiPlatformEventServiceMock.aMock,
       SubmissionsServiceMock.aMock,
+      ThirdPartyDelegatedAuthorityServiceMock.aMock,
+      ApiGatewayStoreMock.aMock,
       AuditServiceMock.aMock,
       mockAddClientSecretCommandHandler,
       mockRemoveClientSecretCommandHandler,
@@ -82,6 +92,10 @@ abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
       mockDeclineResponsibleIndividualCommandHandler,
       mockDeclineResponsibleIndividualDidNotVerifyCommandHandler,
       mockDeclineApplicationApprovalRequestCommandHandler,
+      mockDeleteApplicationByCollaboratorCommandHandler,
+      mockDeleteApplicationByGatekeeperCommandHandler,
+      mockDeleteUnusedApplicationCommandHandler,
+      mockDeleteProductionCredentialsApplicationCommandHandler,
       mockAddCollaboratorCommandHandler,
       mockRemoveCollaboratorCommandHandler,
       mockSubscribeToApiCommandHandler,

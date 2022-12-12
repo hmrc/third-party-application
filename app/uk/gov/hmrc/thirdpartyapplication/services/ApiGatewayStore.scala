@@ -27,8 +27,10 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 import scala.collection._
 import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import cats.data.NonEmptyList
 
-trait ApiGatewayStore {
+trait ApiGatewayStore extends EitherTHelper[String] {
 
   /*
    * API-3862: As a legacy of out use of WSO2, we had an identifer for applications named 'wso2ApplicationName'. This is the name of the property in the
@@ -42,6 +44,31 @@ trait ApiGatewayStore {
 
   def updateApplication(app: ApplicationData, rateLimitTier: RateLimitTier)(implicit hc: HeaderCarrier): Future[HasSucceeded]
 
+  def applyEvents(events: NonEmptyList[UpdateApplicationEvent])(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+    events match {
+      case NonEmptyList(e, Nil)  => applyEvent(e)
+      case NonEmptyList(e, tail) => applyEvent(e).flatMap(_ => applyEvents(NonEmptyList.fromListUnsafe(tail)))
+    }
+  }
+
+  private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+    event match {
+      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteApplication(evt)
+      case _ => Future.successful(None)
+    }
+  }
+
+  import cats.instances.future.catsStdInstancesForFuture
+
+  private def deleteApplication(event: UpdateApplicationEvent with ApplicationDeletedBase)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
+    (
+      for {
+        result <- liftF(deleteApplication(event.wso2ApplicationName)(hc))
+      } yield result
+    )
+      .toOption
+      .value
+  }  
 }
 
 @Singleton
@@ -58,11 +85,10 @@ class AwsApiGatewayStore @Inject() (awsApiGatewayConnector: AwsApiGatewayConnect
 
   override def deleteApplication(wso2ApplicationName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] =
     awsApiGatewayConnector.deleteApplication(wso2ApplicationName)(hc)
-
 }
 
 @Singleton
-class StubApiGatewayStore @Inject() () extends ApiGatewayStore {
+class StubApiGatewayStore @Inject() (implicit val ec: ExecutionContext) extends ApiGatewayStore {
 
   lazy val stubApplications: concurrent.Map[String, mutable.ListBuffer[ApiIdentifier]] = concurrent.TrieMap()
 

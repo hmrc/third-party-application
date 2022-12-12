@@ -29,9 +29,12 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
 
   trait Setup extends CommonSetup {
     ResponsibleIndividualVerificationRepositoryMock.ApplyEvents.succeeds()
+    NotificationRepositoryMock.ApplyEvents.succeeds()
     SubmissionsServiceMock.ApplyEvents.succeeds()
     StateHistoryRepoMock.ApplyEvents.succeeds()
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
+    ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
+    ApiGatewayStoreMock.ApplyEvents.succeeds()
     NotificationServiceMock.SendNotifications.thenReturnSuccess()
     AuditServiceMock.ApplyEvents.succeeds()
     

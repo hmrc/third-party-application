@@ -269,5 +269,25 @@ class NotificationServiceSpec
         .verifyCalledWith("dev@example.com", applicationData.name, recipients = Set(collaboratorEmail))
 
     }
+
+    "when receive a ApplicationDeletedByGatekeeper, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendApplicationDeletedNotification.thenReturnSuccess()
+      val event = ApplicationDeletedByGatekeeper(UpdateApplicationEvent.Id.random, applicationData.id, LocalDateTime.now(),
+        GatekeeperUserActor("gatekeeperuser"), ClientId("clientId"), "wso2AppName", "reasons", "admin@example.com")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendApplicationDeletedNotification.verifyCalledWith(applicationData.name, event.applicationId, event.requestingAdminEmail, Set(loggedInUser))
+    }
+
+    "when receive a ProductionCredentialsApplicationDeleted, call the event handler and return successfully" in new Setup {
+      EmailConnectorMock.SendProductionCredentialsRequestExpired.thenReturnSuccess()
+      val event = ProductionCredentialsApplicationDeleted(UpdateApplicationEvent.Id.random, applicationData.id, LocalDateTime.now(),
+        GatekeeperUserActor("gatekeeperuser"), ClientId("clientId"), "wso2AppName", "reasons")
+
+      val result = await(underTest.sendNotifications(applicationData, List(event)))
+      result shouldBe List(HasSucceeded)
+      EmailConnectorMock.SendProductionCredentialsRequestExpired.verifyCalledWith(applicationData.name, Set(loggedInUser))
+    }
   }
 }
