@@ -30,9 +30,10 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{R
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 import java.time.LocalDateTime
-import javax.inject.Inject
+import com.google.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+@Singleton
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ResponsibleIndividualVerification](
       collectionName = "responsibleIndividualVerification",

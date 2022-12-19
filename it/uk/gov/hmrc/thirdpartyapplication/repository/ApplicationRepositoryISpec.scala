@@ -2858,6 +2858,7 @@ class ApplicationRepositoryISpec
     val gkUser        = GatekeeperUserActor(gkUserName)
     val adminEmail    = "admin@example.com"
     val adminName     = "Mr Admin"
+    val devHubUser    = CollaboratorActor(adminEmail)
 
     "handle multiple events correctly" in {
       val applicationId = ApplicationId.random
@@ -3006,7 +3007,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation)
+      val event = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldLocation, newLocation)
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, _, privacyPolicyLocation, _))) => privacyPolicyLocation mustBe newLocation
@@ -3022,7 +3023,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl)
+      val event = ProductionLegacyAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldUrl, newUrl)
       val appWithUpdatedPrivacyPolicyLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedPrivacyPolicyLocation.access match {
         case Standard(_, _, Some(privacyPolicyUrl), _, _, None) => privacyPolicyUrl mustBe newUrl
@@ -3041,7 +3042,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldLocation, newLocation)
+      val event = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldLocation, newLocation)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) => termsAndConditionsLocation mustBe newLocation
@@ -3057,7 +3058,7 @@ class ApplicationRepositoryISpec
       val app = anApplicationData(applicationId).copy(access = access)
       await(applicationRepository.save(app))
 
-      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, gkUser, oldUrl, newUrl)
+      val event = ProductionLegacyAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now, devHubUser, oldUrl, newUrl)
       val appWithUpdatedTermsConditionsLocation = await(applicationRepository.applyEvents(NonEmptyList.one(event)))
       appWithUpdatedTermsConditionsLocation.access match {
         case Standard(_, Some(termsAndConditionsUrl), _, _, _, None) => termsAndConditionsUrl mustBe newUrl
