@@ -68,6 +68,13 @@ object UpdateApplicationEvent {
       .and[GatekeeperUserActor](ActorType.GATEKEEPER.toString)
       .and[CollaboratorActor](ActorType.COLLABORATOR.toString)
       .format
+
+    def getCollaboratorAsString(actor: Actor): String =
+      actor match {
+        case CollaboratorActor(emailAddress) => emailAddress
+        case GatekeeperUserActor(userId) => userId
+        case ScheduledJobActor(jobId) => jobId
+      }  
   }
 
   case class Id(value: UUID) extends AnyVal
@@ -172,8 +179,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     oldLocation: PrivacyPolicyLocation,
-    newLocation: PrivacyPolicyLocation,
-    requestingAdminEmail: String
+    newLocation: PrivacyPolicyLocation
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppPrivacyPolicyLocationChanged {
@@ -186,8 +192,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     oldUrl: String,
-    newUrl: String,
-    requestingAdminEmail: String
+    newUrl: String
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionLegacyAppPrivacyPolicyLocationChanged {
@@ -200,8 +205,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     oldLocation: TermsAndConditionsLocation,
-    newLocation: TermsAndConditionsLocation,
-    requestingAdminEmail: String
+    newLocation: TermsAndConditionsLocation
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionAppTermsConditionsLocationChanged {
@@ -214,8 +218,7 @@ object UpdateApplicationEvent {
     eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
     actor: Actor,
     oldUrl: String,
-    newUrl: String,
-    requestingAdminEmail: String
+    newUrl: String
   ) extends UpdateApplicationEvent with TriggersNotification
 
   object ProductionLegacyAppTermsConditionsLocationChanged {

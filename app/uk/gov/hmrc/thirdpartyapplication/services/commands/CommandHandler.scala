@@ -24,7 +24,7 @@ import cats.implicits._
 import cats.data.NonEmptyList
 import cats.data.ValidatedNec
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor, GatekeeperUserActor, ScheduledJobActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
 
 abstract class CommandHandler {
   implicit def ec: ExecutionContext
@@ -39,13 +39,6 @@ object CommandHandler {
 
   def isCollaboratorOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
     cond(app.collaborators.exists(c =>  c.emailAddress == email), s"no collaborator found with email: $email")
-
-  def getCollaboratorAsString(actor: Actor): String =
-    actor match {
-      case CollaboratorActor(emailAddress) => emailAddress
-      case GatekeeperUserActor(userId) => userId
-      case ScheduledJobActor(jobId) => jobId
-    }  
 
   private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)

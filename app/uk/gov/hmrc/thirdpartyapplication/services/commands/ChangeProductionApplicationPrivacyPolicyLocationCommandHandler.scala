@@ -50,8 +50,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
           eventDateTime = cmd.timestamp,
           actor = CollaboratorActor(getRequester(app, cmd.instigator)),
           oldUrl = oldUrl,
-          newUrl = newUrl,
-          requestingAdminEmail = getRequester(app, cmd.instigator)
+          newUrl = newUrl
         ))
       case _ => Left("Unexpected new PrivacyPolicyLocation type specified for legacy application: " + cmd.newLocation)
     }
@@ -64,8 +63,7 @@ class ChangeProductionApplicationPrivacyPolicyLocationCommandHandler @Inject()()
         eventDateTime = cmd.timestamp,
         actor = CollaboratorActor(getRequester(app, cmd.instigator)),
         oldLocation = oldLocation,
-        newLocation = cmd.newLocation,
-        requestingAdminEmail = getRequester(app, cmd.instigator)
+        newLocation = cmd.newLocation
       )
 
   private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationPrivacyPolicyLocation): Either[String,UpdateApplicationEvent] = {

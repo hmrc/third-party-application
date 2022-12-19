@@ -117,7 +117,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val oldLocation           = PrivacyPolicyLocation.InDesktopSoftware
     val newLocation           = PrivacyPolicyLocation.Url("http://example.com")
     val changePrivacyPolicyLocation = ChangeProductionApplicationPrivacyPolicyLocation(instigator, timestamp, newLocation)
-    val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation, adminEmail)
+    val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation)
 
     def setPrivacyPolicyLocation(app: ApplicationData, location: PrivacyPolicyLocation) = {
       app.access match {
@@ -166,7 +166,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
     val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
     val changeTermsConditionsLocation = ChangeProductionApplicationTermsAndConditionsLocation(instigator, timestamp, newLocation)
-    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation, adminEmail)
+    val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, CollaboratorActor(adminEmail), oldLocation, newLocation)
 
     def setTermsAndConditionsLocation(app: ApplicationData, location: TermsAndConditionsLocation) = {
       app.access match {
