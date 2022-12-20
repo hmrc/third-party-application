@@ -56,6 +56,7 @@ class NotificationServiceSpec
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData)))
 
     val adminEmail = "admin@example.com"
+    val devHubUser = CollaboratorActor(adminEmail)
     val gatekeeperUser = "gkuser"
     val oldAppName = "old name"
     val newAppName = "new name"
@@ -78,7 +79,7 @@ class NotificationServiceSpec
       val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
       val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
       val event = ProductionAppPrivacyPolicyLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousPrivacyPolicyUrl, newPrivacyPolicyUrl, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -90,7 +91,7 @@ class NotificationServiceSpec
       val previousPrivacyPolicyUrl = "https://example.com/old-privacy-policy"
       val newPrivacyPolicyUrl = "https://example.com/new-privacy-policy"
       val event = ProductionLegacyAppPrivacyPolicyLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousPrivacyPolicyUrl, newPrivacyPolicyUrl, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -102,7 +103,7 @@ class NotificationServiceSpec
       val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
       val newTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
       val event = ProductionAppTermsConditionsLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousTermsAndConditionsUrl, newTermsAndConditionsUrl, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -114,7 +115,7 @@ class NotificationServiceSpec
       val previousTermsAndConditionsUrl = "https://example.com/old-terms-conds"
       val newTermsAndConditionsUrl = "https://example.com/new-terms-conds"
       val event = ProductionLegacyAppTermsConditionsLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), previousTermsAndConditionsUrl, newTermsAndConditionsUrl, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
