@@ -1,18 +1,16 @@
 import bloop.integrations.sbt.BloopDefaults
-import play.core.PlayVersion
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
-import uk.gov.hmrc._
 
 lazy val appName = "third-party-application"
 
 lazy val plugins: Seq[Plugins]         = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
 
-lazy val microservice = (project in file("."))
+lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins: _*)
   .disablePlugins(JUnitXmlReportPlugin)
   .settings(playSettings: _*)
@@ -52,7 +50,7 @@ lazy val microservice = (project in file("."))
     IntegrationTest / fork              := false,
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
-    IntegrationTest / testGrouping      := oneForkedJvmPerTest((definedTests in IntegrationTest).value),
+    IntegrationTest / testGrouping      := oneForkedJvmPerTest((IntegrationTest / definedTests).value),
     IntegrationTest / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
     IntegrationTest / parallelExecution := false
   )
@@ -71,4 +69,4 @@ def oneForkedJvmPerTest(tests: Seq[TestDefinition]): Seq[Group] =
     )
   }
 
-bloopAggregateSourceDependencies in Global := true
+Global / bloopAggregateSourceDependencies := true
