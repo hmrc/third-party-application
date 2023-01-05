@@ -25,15 +25,15 @@ import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.time.DateTimeUtils
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.{blocking, Future}
+import scala.concurrent.{ExecutionContext, Future, blocking}
 import scala.util.{Failure, Success}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.{Instant, ZoneOffset}
 
 @Singleton
-class ClientSecretService @Inject() (applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig) extends ApplicationLogger {
+class ClientSecretService @Inject() (applicationRepository: ApplicationRepository, config: ClientSecretServiceConfig)
+                                    (implicit ec: ExecutionContext) extends ApplicationLogger {
 
   def clientSecretValueGenerator: () => String = UUID.randomUUID().toString
 
