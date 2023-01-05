@@ -421,7 +421,7 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
 
     httpClient.POST[SendEmailRequest, HttpResponse](url, payload)
       .map { response =>
-        logger.info(s"Sent '${payload.templateId}' to: ${payload.to.mkString(",")} with response: ${response.status}")
+        logger.info(s"Sent '${payload.templateId}' with response: ${response.status}")
         response.status match {
           case status if status >= 200 && status <= 299 => HasSucceeded
           case NOT_FOUND                                => throw new RuntimeException(s"Unable to send email. Downstream endpoint not found: $url")
