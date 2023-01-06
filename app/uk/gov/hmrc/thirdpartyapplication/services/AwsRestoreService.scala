@@ -26,9 +26,8 @@ import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository) extends ApplicationLogger {
-
-  implicit val executionContext: ExecutionContext = ExecutionContext.global
+class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)
+                                  (implicit ec: ExecutionContext) extends ApplicationLogger {
 
   val DefaultRateLimitTier: RateLimitTier = BRONZE
 

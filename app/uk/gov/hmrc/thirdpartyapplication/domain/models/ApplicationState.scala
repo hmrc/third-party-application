@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import org.apache.commons.codec.binary.Base64
 import play.api.libs.json.{Format, OFormat}
+import play.shaded.oauth.org.apache.commons.codec.binary.Base64
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
 import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
