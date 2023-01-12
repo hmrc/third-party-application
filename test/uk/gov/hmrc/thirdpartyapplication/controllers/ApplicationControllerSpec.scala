@@ -772,7 +772,6 @@ class ApplicationControllerSpec
 
   "query dispatcher" should {
     val clientId    = ClientId("A123XC")
-    val serverToken = "b3c83934c02df8b111e7f9f8700000"
 
     trait LastAccessedSetup extends Setup {
       val updatedLastAccessTime: LocalDateTime = LocalDateTime.now()
