@@ -20,7 +20,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import org.mockito.MockitoSugar
 import org.mockito.ArgumentMatchersSugar
 import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription, UserId}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription}
 
 import scala.concurrent.Future.{failed, successful}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
@@ -55,15 +55,6 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
       def thenFailWith(ex: Exception) =
         when(aMock.getSubscribers(*[ApiIdentifier])).thenReturn(failed(ex))
-    }
-
-    object GetSubscriptionsForDeveloper {
-
-      def thenReturnWhen(userId: UserId)(apis: Set[ApiIdentifier]) =
-        when(aMock.getSubscriptionsForDeveloper(eqTo(userId))).thenReturn(successful(apis))
-
-      def thenFailWith(ex: Exception) =
-        when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
     }
 
     object Remove {

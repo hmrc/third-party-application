@@ -32,14 +32,17 @@ import uk.gov.hmrc.thirdpartyapplication.util.NoMetricsGuiceOneAppPerSuite
 import play.api.libs.json.Json
 import akka.stream.testkit.NoMaterializer
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.SubscriptionRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 
-class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule {
+class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAppPerSuite with SubscriptionRepositoryMockModule with ApplicationRepositoryMockModule {
 
   import play.api.test.Helpers._
 
   override def builder(): GuiceApplicationBuilder =
     super.builder()
       .overrides(bind[SubscriptionRepository].to(SubscriptionRepoMock.aMock))
+      .overrides(bind[ApplicationRepository].to(ApplicationRepoMock.aMock))
 
   trait Setup {
     implicit lazy val materializer: Materializer                            = NoMaterializer
@@ -92,7 +95,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
 
     "return the subscriptions from the repository" in new Setup {
       val expectedSubscriptions = Set("hello/world".asIdentifier)
-      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenReturnWhen(userId)(expectedSubscriptions)
+      ApplicationRepoMock.GetSubscriptionsForDeveloper.thenReturnWhen(userId)(expectedSubscriptions)
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 
@@ -101,7 +104,7 @@ class SubscriptionControllerSpec extends ControllerSpec with NoMetricsGuiceOneAp
     }
 
     "return 500 if something goes wrong" in new Setup {
-      SubscriptionRepoMock.GetSubscriptionsForDeveloper.thenFailWith(new RuntimeException("something went wrong"))
+      ApplicationRepoMock.GetSubscriptionsForDeveloper.thenFailWith(new RuntimeException("something went wrong"))
 
       val result = callEndpointWith(FakeRequest(GET, s"/developer/${userId.value}/subscriptions"))
 
