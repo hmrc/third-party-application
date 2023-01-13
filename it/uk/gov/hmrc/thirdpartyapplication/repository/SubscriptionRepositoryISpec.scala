@@ -185,61 +185,6 @@ class SubscriptionRepositoryISpec
     }
   }
 
-  "getSubscriptionsForDeveloper" should {
-    val developerEmail = "john.doe@example.com"
-
-    "return only the APIs that the user's apps are subscribed to, without duplicates" in {
-      val app1            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app1))
-      val app2            = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app2))
-      val someoneElsesApp = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
-      await(applicationRepository.save(someoneElsesApp))
-
-      val helloWorldApi1 = "hello-world".asIdentifier("1.0")
-      val helloWorldApi2 = "hello-world".asIdentifier("2.0")
-      val helloVatApi    = "hello-vat".asIdentifier("1.0")
-      val helloAgentsApi = "hello-agents".asIdentifier("1.0")
-
-      await(subscriptionRepository.add(app1.id, helloWorldApi1))
-      await(subscriptionRepository.add(app1.id, helloVatApi))
-      await(subscriptionRepository.add(app2.id, helloWorldApi2))
-      await(subscriptionRepository.add(app2.id, helloVatApi))
-      await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
-
-      val developerId                = app1.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set(helloWorldApi1, helloVatApi)
-    }
-
-    "return empty when the user is not a collaborator of any apps" in {
-      val app1 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List("someone-else@example.com"))
-      val app2 = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-
-      await(applicationRepository.save(app1))
-      await(applicationRepository.save(app2))
-
-      val api = "hello-world".asIdentifier("1.0")
-      await(subscriptionRepository.add(app1.id, api))
-
-      val developerId                = app2.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set.empty
-    }
-
-    "return empty when the user's apps are not subscribed to any API" in {
-      val app = anApplicationData(id = ApplicationId.random, clientId = generateClientId, user = List(developerEmail))
-      await(applicationRepository.save(app))
-
-      val developerId                = app.collaborators.head.userId
-      val result: Set[ApiIdentifier] = await(subscriptionRepository.getSubscriptionsForDeveloper(developerId))
-
-      result mustBe Set.empty
-    }
-  }
-
   "getSubscribers" should {
     val application1 = ApplicationId.random
     val application2 = ApplicationId.random

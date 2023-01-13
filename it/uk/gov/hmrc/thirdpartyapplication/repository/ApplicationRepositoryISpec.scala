@@ -40,12 +40,14 @@ import uk.gov.hmrc.utils.ServerBaseISpec
 import java.time.{Clock, Duration, LocalDateTime, ZoneOffset}
 import java.util.UUID
 import scala.util.Random.nextString
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
     with SubmissionsTestData
     with ApplicationTestData
     with JavaDateTimeTestUtils
+    with ApplicationStateUtil
     with BeforeAndAfterEach
     with MetricsHelper {
 
@@ -3308,6 +3310,65 @@ class ApplicationRepositoryISpec
     }
   }
 
+  
+  "getSubscriptionsForDeveloper" should {
+    val developerEmail1 = "john.doe@example.com"
+    val developerEmail2 = "someone-else@example.com"
+
+    val user1 = Collaborator(developerEmail1, Role.DEVELOPER, UserId.random)
+    val user2 = Collaborator(developerEmail2, Role.DEVELOPER, UserId.random)
+
+    "return only the APIs that the user's apps are subscribed to, without duplicates" in {
+      val app1            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app1))
+      val app2            = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app2))
+      val someoneElsesApp = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
+      await(applicationRepository.save(someoneElsesApp))
+
+      val helloWorldApi1 = "hello-world".asIdentifier("1.0")
+      val helloWorldApi2 = "hello-world".asIdentifier("2.0")
+      val helloVatApi    = "hello-vat".asIdentifier("1.0")
+      val helloAgentsApi = "hello-agents".asIdentifier("1.0")
+
+      await(subscriptionRepository.add(app1.id, helloWorldApi1))
+      await(subscriptionRepository.add(app1.id, helloVatApi))
+      await(subscriptionRepository.add(app2.id, helloWorldApi2))
+      await(subscriptionRepository.add(app2.id, helloVatApi))
+      await(subscriptionRepository.add(someoneElsesApp.id, helloAgentsApi))
+
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(user1.userId))
+
+      result mustBe Set(helloWorldApi1, helloVatApi, helloWorldApi2)
+    }
+
+    "return empty when the user is not a collaborator of any apps" in {
+      val app1 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user2))
+      val app2 = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+
+      await(applicationRepository.save(app1))
+      await(applicationRepository.save(app2))
+
+      val api = "hello-world".asIdentifier("1.0")
+      await(subscriptionRepository.add(app1.id, api))
+
+      val developerId                = app2.collaborators.head.userId
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
+
+      result mustBe Set.empty
+    }
+
+    "return empty when the user's apps are not subscribed to any API" in {
+      val app = anApplicationDataForTest(id = ApplicationId.random, prodClientId = generateClientId, users = Set(user1))
+      await(applicationRepository.save(app))
+
+      val developerId                = app.collaborators.head.userId
+      val result: Set[ApiIdentifier] = await(applicationRepository.getSubscriptionsForDeveloper(developerId))
+
+      result mustBe Set.empty
+    }
+  }
+
   def createAppWithStatusUpdatedOn(
       state: State.State,
       updatedOn: LocalDateTime
@@ -3398,5 +3459,6 @@ class ApplicationRepositoryISpec
       checkInformation = checkInformation
     )
   }
+
 
 }
