@@ -65,6 +65,15 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
       }
     }
 
+    object GetSubscriptionsForDeveloper {
+
+      def thenReturnWhen(userId: UserId)(apis: Set[ApiIdentifier]) =
+        when(aMock.getSubscriptionsForDeveloper(eqTo(userId))).thenReturn(successful(apis))
+
+      def thenFailWith(ex: Exception) =
+        when(aMock.getSubscriptionsForDeveloper(*[UserId])).thenReturn(failed(ex))
+    }
+
     object FetchByClientId {
 
       def thenReturnWhen(clientId: ClientId)(applicationData: ApplicationData) =

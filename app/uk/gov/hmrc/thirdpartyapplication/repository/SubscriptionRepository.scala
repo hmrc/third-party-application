@@ -116,25 +116,6 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
       .map(_.map(_.apiIdentifier).toList)
   }
 
-  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    val pipeline = Seq(
-      lookup(from = "application", localField = "applications", foreignField = "id", as = "applications"),
-      filter(equal("applications.collaborators.userId", Codecs.toBson(userId))),
-      project(
-        fields(
-          excludeId(),
-          computed("context", "$apiIdentifier.context"),
-          computed("version", "$apiIdentifier.version")
-        )
-      )
-    )
-
-    collection.aggregate[BsonValue](pipeline)
-      .map(Codecs.fromBson[ApiIdentifier])
-      .toFuture()
-      .map(_.toSet)
-  }
-
   def getSubscriptionCountByApiCheckingApplicationExists: Future[List[SubscriptionCountByApi]] = {
     val pipeline = Seq(
       unwind("$applications"),

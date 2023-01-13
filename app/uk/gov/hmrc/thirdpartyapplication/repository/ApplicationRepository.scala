@@ -44,6 +44,12 @@ import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+object ApplicationRepository {
+  case class SubsByUser(apiIdentifiers: List[ApiIdentifier])
+
+  implicit val subsByUserFormat = Json.format[SubsByUser]
+}
+
 @Singleton
 class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
     extends PlayMongoRepository[ApplicationData](
@@ -105,6 +111,12 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
           ascending("collaborators.emailAddress"),
           IndexOptions()
             .name("collaboratorsEmailAddressIndex")
+            .background(true)
+        ),
+        IndexModel(
+          ascending("collaborators.userId"),
+          IndexOptions()
+            .name("collaboratorsUserIdIndex")
             .background(true)
         )
       ),
@@ -330,6 +342,71 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     )
 
     collection.find(query).toFuture()
+  }
+
+  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
+    /*
+    db.application.aggregate( [
+        {
+            $match:
+            {
+                "collaborators.userId" : "85682eda-5758-4a13-8b97-057c94b3657b"
+            }
+        },
+        {
+            $lookup:
+            {
+                from: "subscription",
+                localField: "id",
+                foreignField: "applications",
+                as: "subs"
+            }
+        },
+        {
+            $project:
+            {
+                _id: 0,
+                "apiIdentifier": "$subs.apiIdentifier"
+            }
+        },
+        {
+            $unwind: "$apiIdentifier"
+        },
+        {
+            $project: {
+                _id: 0,
+                "context": "$apiIdentifier.context",
+                "version": "$apiIdentifier.version"
+            }
+        }
+    ] )
+    */
+
+    import org.mongodb.scala.model.Projections.{computed, excludeId}
+
+    val pipeline = Seq(
+      matches(equal("collaborators.userId", Codecs.toBson(userId))),
+      lookup(from = "subscription", localField = "id", foreignField = "applications", as = "subs"),
+      project(
+        fields(
+          excludeId(),
+          computed("apiIdentifier", "$subs.apiIdentifier")
+        )
+      ),
+      unwind("$apiIdentifier"),
+      project(
+        fields(
+          excludeId(),
+          computed("context", "$apiIdentifier.context"),
+          computed("version", "$apiIdentifier.version")
+        )
+      )  
+    )
+
+    collection.aggregate[BsonValue](pipeline)
+      .map(Codecs.fromBson[ApiIdentifier])
+      .toFuture()
+      .map(_.toSet)
   }
 
   def fetchAllForEmailAddress(emailAddress: String): Future[Seq[ApplicationData]] = {

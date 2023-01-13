@@ -25,6 +25,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 import scala.concurrent.ExecutionContext
 import play.api.libs.json.Json
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
 
@@ -33,7 +34,7 @@ private[controllers] object SubscribersResponse {
 }
 
 @Singleton
-class SubscriptionController @Inject() (subscriptionRepository: SubscriptionRepository, cc: ControllerComponents)(implicit val ec: ExecutionContext)
+class SubscriptionController @Inject() (subscriptionRepository: SubscriptionRepository, applicationRepository: ApplicationRepository, cc: ControllerComponents)(implicit val ec: ExecutionContext)
     extends BackendController(cc) with JsonUtils {
 
   def getSubscribers(context: ApiContext, version: ApiVersion): Action[AnyContent] = Action.async { _ =>
@@ -41,7 +42,7 @@ class SubscriptionController @Inject() (subscriptionRepository: SubscriptionRepo
   }
 
   def getSubscriptionsForDeveloper(developerId: UserId): Action[AnyContent] = Action.async { _ =>
-    subscriptionRepository.getSubscriptionsForDeveloper(developerId)
+    applicationRepository.getSubscriptionsForDeveloper(developerId)
       .map(subscriptions => Ok(toJson(subscriptions))) recover recovery
   }
 }
