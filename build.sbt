@@ -2,6 +2,7 @@ import bloop.integrations.sbt.BloopDefaults
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
+import uk.gov.hmrc.DefaultBuildSettings
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
@@ -44,9 +45,9 @@ lazy val microservice = Project(appName, file("."))
     Test / parallelExecution := false
   )
   .configs(IntegrationTest)
+  .settings(DefaultBuildSettings.integrationTestSettings())
   .settings(inConfig(IntegrationTest)(BloopDefaults.configSettings))
   .settings(
-    Defaults.itSettings,
     IntegrationTest / fork              := false,
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
     addTestReportOption(IntegrationTest, "int-test-reports"),
