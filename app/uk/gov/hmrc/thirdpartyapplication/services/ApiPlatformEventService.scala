@@ -42,7 +42,7 @@ class ApiPlatformEventService @Inject() (val apiPlatformEventsConnector: ApiPlat
     }
   }
 
-  private def obfuscateEvent(event: UpdateApplicationEvent): UpdateApplicationEvent                  = {
+  private def obfuscateEvent(event: UpdateApplicationEvent): UpdateApplicationEvent = {
     event match {
       case evt: ClientSecretAdded => ClientSecretAddedObfuscated.fromClientSecretAdded(evt)
       case _                      => event

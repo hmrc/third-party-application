@@ -110,7 +110,7 @@ class ApiPlatformEventsConnector @Inject() (http: HttpClient, config: ApiPlatfor
     }
   }
 
-  private def addEventURI(path: String): String                                                         = {
+  private def addEventURI(path: String): String = {
     serviceBaseUrl + path
   }
 }

@@ -33,7 +33,7 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
 
     object ApplyEvents {
 
-      def succeeds                                                       = {
+      def succeeds = {
         when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
       }
 

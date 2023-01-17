@@ -31,12 +31,12 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId               = ApplicationId.random
-    val devEmail                    = "dev@example.com"
-    val adminEmail                  = "admin@example.com"
-    val oldName                     = "old app name"
-    val newName                     = "new app name"
-    val responsibleIndividual       = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val applicationId         = ApplicationId.random
+    val devEmail              = "dev@example.com"
+    val adminEmail            = "admin@example.com"
+    val oldName               = "old app name"
+    val newName               = "new app name"
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
     val testImportantSubmissionData = ImportantSubmissionData(
       Some("organisationUrl.com"),

@@ -62,9 +62,9 @@ class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec wit
     val warningInterval = FiniteDuration(10, DAYS)
     val jobConfig       = ProductionCredentialsRequestExpiryWarningJobConfig(initialDelay, interval, true, warningInterval)
 
-    val job             =
+    val job        =
       new ProductionCredentialsRequestExpiryWarningJob(mockLockKeeper, ApplicationRepoMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
-    val recipients      = app.collaborators.map(_.emailAddress)
+    val recipients = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiryWarningJob" should {

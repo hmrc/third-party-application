@@ -53,7 +53,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
     val requesterEmail           = appAdminEmail
     val requesterName            = "mr admin"
 
-    val importantSubmissionData  = ImportantSubmissionData(
+    val importantSubmissionData = ImportantSubmissionData(
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
@@ -62,17 +62,17 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       List.empty
     )
 
-    val app                      = anApplicationData(appId).copy(
+    val app  = anApplicationData(appId).copy(
       collaborators = Set(
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
     )
-    val ts                       = LocalDateTime.now
-    val code                     = "3242342387452384623549234"
+    val ts   = LocalDateTime.now
+    val code = "3242342387452384623549234"
 
-    val riVerificationToU        = ResponsibleIndividualToUVerification(
+    val riVerificationToU = ResponsibleIndividualToUVerification(
       ResponsibleIndividualVerificationId(code),
       appId,
       submission.id,
@@ -82,7 +82,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    val riVerificationUpdate     = ResponsibleIndividualUpdateVerification(
+    val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
       appId,
       submission.id,
@@ -94,7 +94,7 @@ class ChangeResponsibleIndividualToOtherCommandHandlerSpec extends AsyncHmrcSpec
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
-    val underTest                = new ChangeResponsibleIndividualToOtherCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
+    val underTest            = new ChangeResponsibleIndividualToOtherCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
   }
 
   "process" should {

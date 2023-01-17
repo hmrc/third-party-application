@@ -53,7 +53,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
     val requesterEmail           = appAdminEmail
     val requesterName            = "mr admin"
 
-    val importantSubmissionData  = ImportantSubmissionData(
+    val importantSubmissionData = ImportantSubmissionData(
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
@@ -62,18 +62,18 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       List.empty
     )
 
-    val app                      = anApplicationData(appId).copy(
+    val app     = anApplicationData(appId).copy(
       collaborators = Set(
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName)
     )
-    val ts                       = LocalDateTime.now
-    val code                     = "3242342387452384623549234"
-    val reasons                  = "The responsible individual did not accept the terms of use in 20 days."
+    val ts      = LocalDateTime.now
+    val code    = "3242342387452384623549234"
+    val reasons = "The responsible individual did not accept the terms of use in 20 days."
 
-    val riVerificationToU        = ResponsibleIndividualToUVerification(
+    val riVerificationToU = ResponsibleIndividualToUVerification(
       ResponsibleIndividualVerificationId(code),
       appId,
       submission.id,
@@ -83,7 +83,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       ResponsibleIndividualVerificationState.INITIAL
     )
 
-    val riVerificationUpdate     = ResponsibleIndividualUpdateVerification(
+    val riVerificationUpdate = ResponsibleIndividualUpdateVerification(
       ResponsibleIndividualVerificationId(code),
       appId,
       submission.id,
@@ -95,7 +95,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       requesterEmail,
       ResponsibleIndividualVerificationState.INITIAL
     )
-    val underTest                = new DeclineResponsibleIndividualDidNotVerifyCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
+    val underTest            = new DeclineResponsibleIndividualDidNotVerifyCommandHandler(ResponsibleIndividualVerificationRepositoryMock.aMock)
   }
 
   "process" should {

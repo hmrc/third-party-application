@@ -36,11 +36,11 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId             = ApplicationId.random
-    val appAdminUserId    = UserId.random
-    val appAdminEmail     = "admin@example.com"
-    val reasons           = "reasons description text"
-    val actor             = CollaboratorActor(appAdminEmail)
+    val appId          = ApplicationId.random
+    val appAdminUserId = UserId.random
+    val appAdminEmail  = "admin@example.com"
+    val reasons        = "reasons description text"
+    val actor          = CollaboratorActor(appAdminEmail)
 
     val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
       Set(

@@ -48,7 +48,7 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec 
     val gatekeeperUser           = "GateKeeperUser"
     val reasons                  = "reasons description text"
 
-    val importantSubmissionData  = ImportantSubmissionData(
+    val importantSubmissionData = ImportantSubmissionData(
       None,
       ResponsibleIndividual.build(riName, riEmail),
       Set.empty,
@@ -57,15 +57,15 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec 
       List.empty
     )
 
-    val app                      = anApplicationData(appId).copy(
+    val app       = anApplicationData(appId).copy(
       collaborators = Set(
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
       state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName)
     )
-    val ts                       = LocalDateTime.now
-    val underTest                = new DeclineApplicationApprovalRequestCommandHandler(SubmissionsServiceMock.aMock)
+    val ts        = LocalDateTime.now
+    val underTest = new DeclineApplicationApprovalRequestCommandHandler(SubmissionsServiceMock.aMock)
   }
 
   "process" should {

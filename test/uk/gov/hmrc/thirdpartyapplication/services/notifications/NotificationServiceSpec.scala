@@ -45,10 +45,10 @@ class NotificationServiceSpec
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId                    = ApplicationId.random
-    val responsibleIndividual            = ResponsibleIndividual.build("bob example", "bob@example.com")
+    val applicationId         = ApplicationId.random
+    val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
-    val testImportantSubmissionData      = ImportantSubmissionData(
+    val testImportantSubmissionData = ImportantSubmissionData(
       Some("organisationUrl.com"),
       responsibleIndividual,
       Set(ServerLocation.InUK),

@@ -36,14 +36,14 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId                   = ApplicationId.random
-    val submission              = aSubmission
-    val appAdminUserId          = UserId.random
-    val appAdminEmail           = "admin@example.com"
-    val appAdminName            = "Ms Admin"
-    val oldRiUserId             = UserId.random
-    val oldRiEmail              = "oldri@example.com"
-    val oldRiName               = "old ri"
+    val appId          = ApplicationId.random
+    val submission     = aSubmission
+    val appAdminUserId = UserId.random
+    val appAdminEmail  = "admin@example.com"
+    val appAdminName   = "Ms Admin"
+    val oldRiUserId    = UserId.random
+    val oldRiEmail     = "oldri@example.com"
+    val oldRiName      = "old ri"
 
     val importantSubmissionData = ImportantSubmissionData(
       None,
@@ -54,17 +54,17 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
       List.empty
     )
 
-    val app                     = anApplicationData(appId).copy(
+    val app       = anApplicationData(appId).copy(
       collaborators = Set(
         Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId),
         Collaborator(oldRiEmail, Role.ADMINISTRATOR, oldRiUserId)
       ),
       access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData))
     )
-    val ts                      = LocalDateTime.now
-    val riName                  = "Mr Responsible"
-    val riEmail                 = "ri@example.com"
-    val underTest               = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)
+    val ts        = LocalDateTime.now
+    val riName    = "Mr Responsible"
+    val riEmail   = "ri@example.com"
+    val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)
   }
 
   "process" should {

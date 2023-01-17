@@ -56,7 +56,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
 
-  val riVerification                   = models.ResponsibleIndividualUpdateVerification(
+  val riVerification = models.ResponsibleIndividualUpdateVerification(
     ResponsibleIndividualVerificationId.random,
     applicationId,
     submissionId,
@@ -67,7 +67,7 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
     adminName,
     adminEmail
   )
-  val instigator                       = applicationData.collaborators.head.userId
+  val instigator     = applicationData.collaborators.head.userId
 
   "update with AddCollaborator" should {
 

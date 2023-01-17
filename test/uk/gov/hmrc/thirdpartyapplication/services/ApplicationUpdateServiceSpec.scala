@@ -58,7 +58,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
 
-  val riVerification                   = models.ResponsibleIndividualUpdateVerification(
+  val riVerification = models.ResponsibleIndividualUpdateVerification(
     ResponsibleIndividualVerificationId.random,
     applicationId,
     submissionId,
@@ -69,7 +69,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     adminName,
     adminEmail
   )
-  val instigator                       = applicationData.collaborators.head.userId
+  val instigator     = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {
     val newName    = "robs new app"
