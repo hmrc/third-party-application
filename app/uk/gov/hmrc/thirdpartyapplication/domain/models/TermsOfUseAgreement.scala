@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import java.time.LocalDateTime
+
 import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import java.time.LocalDateTime
 
 case class TermsOfUseAgreement(emailAddress: String, timeStamp: LocalDateTime, version: String)
 

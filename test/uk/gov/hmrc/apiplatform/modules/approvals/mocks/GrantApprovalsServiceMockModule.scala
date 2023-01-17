@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
 import scala.concurrent.Future.successful
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 

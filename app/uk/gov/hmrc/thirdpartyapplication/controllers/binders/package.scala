@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.mvc.PathBindable
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import play.api.mvc.QueryStringBindable
 import java.{util => ju}
 import scala.util.Try
+
+import play.api.mvc.{PathBindable, QueryStringBindable}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 package object binders {
 

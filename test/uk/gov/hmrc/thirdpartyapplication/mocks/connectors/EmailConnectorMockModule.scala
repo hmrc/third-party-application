@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.connectors
 
-import org.mockito.verification.VerificationMode
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
 import scala.concurrent.Future
 import scala.concurrent.Future.successful
+
+import org.mockito.verification.VerificationMode
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {

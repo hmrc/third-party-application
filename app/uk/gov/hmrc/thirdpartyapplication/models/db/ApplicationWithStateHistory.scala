@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models.db
 
 import play.api.libs.json.Json
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, StateHistory}
 
 case class ApplicationWithStateHistory private (id: ApplicationId, name: String, version: Int, states: List[StateHistory])

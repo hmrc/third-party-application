@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 
+import scala.concurrent.Future.successful
+
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import scala.concurrent.Future.successful
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.SubmissionsDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 trait SubmissionsDAOMockModule extends MockitoSugar with ArgumentMatchersSugar {

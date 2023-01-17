@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.LocalDateTime
+import scala.concurrent.Future
+
 import cats.data.{NonEmptyList, Validated}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
@@ -25,9 +29,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-
-import java.time.LocalDateTime
-import scala.concurrent.Future
 
 class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceUtils with ApplicationTestData {
 

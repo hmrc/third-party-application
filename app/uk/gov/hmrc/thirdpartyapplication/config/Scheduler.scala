@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import com.google.inject.AbstractModule
+
 import play.api.inject.ApplicationLifecycle
 import play.api.{Application, LoggerLike}
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.scheduling.{ExclusiveScheduledJob, RunningOfScheduledJobs}
 import uk.gov.hmrc.thirdpartyapplication.scheduled._
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.ExecutionContext
 
 class SchedulerModule extends AbstractModule with ApplicationLogger {
 

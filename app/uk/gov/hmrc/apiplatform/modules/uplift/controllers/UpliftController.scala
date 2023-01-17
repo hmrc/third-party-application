@@ -16,20 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.controllers
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
 import play.api.mvc.ControllerComponents
-import javax.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
-import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsErrorResponse
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
+
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models._
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsErrorResponse, JsonUtils}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State}
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
 
 object UpliftController {
   import play.api.libs.json.Json

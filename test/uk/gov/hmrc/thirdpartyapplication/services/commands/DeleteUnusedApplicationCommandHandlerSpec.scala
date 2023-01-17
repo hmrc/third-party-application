@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import org.apache.commons.codec.binary.Base64.encodeBase64String
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import cats.data.NonEmptyChain
+import cats.data.Validated.Invalid
+import org.apache.commons.codec.binary.Base64.encodeBase64String
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 

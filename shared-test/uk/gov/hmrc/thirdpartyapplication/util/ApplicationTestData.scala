@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
+import java.time.LocalDateTime
+import scala.collection.mutable
+
 import com.github.t3hnar.bcrypt._
+
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.db._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment.Environment
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-
-import scala.collection.mutable
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.models.db._
 
 trait ApplicationTestData extends ApplicationStateUtil {
 

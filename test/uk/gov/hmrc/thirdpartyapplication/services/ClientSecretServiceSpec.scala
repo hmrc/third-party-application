@@ -16,16 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientSecret
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
+import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
-import java.time.LocalDateTime
+import com.github.t3hnar.bcrypt._
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ClientSecret}
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ClientSecretServiceSpec extends AsyncHmrcSpec with ApplicationRepositoryMockModule with FixedClock {
 

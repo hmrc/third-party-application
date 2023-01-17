@@ -17,9 +17,10 @@
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
 import play.api.libs.json._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 import uk.gov.hmrc.play.json.Union
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 trait BaseSubmissionsJsonFormatters extends GroupOfQuestionnairesJsonFormatters {
 

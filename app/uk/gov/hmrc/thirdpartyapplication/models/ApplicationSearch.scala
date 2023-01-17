@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.format.DateTimeFormatter
+import java.time.{LocalDate, LocalDateTime}
+
 import org.mongodb.scala.bson.conversions.Bson
 import org.mongodb.scala.model.Aggregates
 import org.mongodb.scala.model.Filters._
+
 import uk.gov.hmrc.mongo.play.json.Codecs
 import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-import java.time.format.DateTimeFormatter
-import java.time.{LocalDate, LocalDateTime}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 case class ApplicationSearch(
     pageNumber: Int = 1,

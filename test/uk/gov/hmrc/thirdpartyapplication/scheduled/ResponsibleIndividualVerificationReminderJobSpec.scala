@@ -16,29 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.temporal.ChronoUnit.SECONDS
+import java.time.{Clock, LocalDateTime, ZoneOffset}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
+
 import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, REMINDERS_SENT}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{
-  ApplicationId,
-  ApplicationState,
-  ImportantSubmissionData,
-  PrivacyPolicyLocation,
-  ResponsibleIndividual,
-  Standard,
-  TermsAndConditionsLocation
-}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import java.time.{Clock, LocalDateTime, ZoneOffset}
-import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
-import java.time.temporal.ChronoUnit.SECONDS
 
 class ResponsibleIndividualVerificationReminderJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 

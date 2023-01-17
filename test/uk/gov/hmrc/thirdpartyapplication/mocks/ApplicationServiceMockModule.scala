@@ -16,26 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import cats.data.OptionT
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, TermsOfUseAcceptance}
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{failed, successful}
-import scala.concurrent.ExecutionContext.Implicits.global
-import cats.implicits.catsStdInstancesForFuture
-import org.mockito.captor.ArgCaptor
+
 import cats.data.OptionT
-import scala.concurrent.Future
-import cats.implicits._
-import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.CreateApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Deleted
+import cats.implicits.{catsStdInstancesForFuture, _}
+import org.mockito.captor.ArgCaptor
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Deleted, TermsOfUseAcceptance}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationResponse, CreateApplicationRequest, CreateApplicationResponse}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 

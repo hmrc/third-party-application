@@ -16,19 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats.data.NonEmptyChain
+
 import play.api.libs.json.Json
 import play.api.mvc._
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate, ApplicationUpdateFormatters}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services._
 
 @Singleton
 class ApplicationUpdateController @Inject() (

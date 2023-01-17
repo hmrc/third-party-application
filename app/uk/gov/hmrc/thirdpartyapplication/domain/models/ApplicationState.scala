@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import play.api.libs.json.{Format, OFormat}
-import play.shaded.oauth.org.apache.commons.codec.binary.Base64
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-
 import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.{util => ju}
+
+import play.api.libs.json.{Format, OFormat}
+import play.shaded.oauth.org.apache.commons.codec.binary.Base64
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.{State, _}
+import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
 
 case class ApplicationState(
     name: State = TESTING,

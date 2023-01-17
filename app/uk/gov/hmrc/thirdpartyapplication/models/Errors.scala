@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 
 class UserAlreadyExists extends RuntimeException
 

@@ -16,16 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
+
+import cats.Apply
+import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineApplicationApprovalRequest, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
 class DeclineApplicationApprovalRequestCommandHandler @Inject() (

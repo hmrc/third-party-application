@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import play.api.http.Status._
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import com.github.tomakehurst.wiremock.client.WireMock._
 
-import scala.concurrent.ExecutionContext.Implicits.global
-import EmailConnector.SendEmailRequest
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector.SendEmailRequest
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, Role}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 

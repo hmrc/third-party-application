@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import scala.util.Try
-import java.util.Base64
-import java.nio.charset.StandardCharsets
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}

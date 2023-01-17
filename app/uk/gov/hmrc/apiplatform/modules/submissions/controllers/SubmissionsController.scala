@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import play.api.mvc.ControllerComponents
 import scala.concurrent.ExecutionContext
+
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import play.api.mvc.Results
+import play.api.mvc.{ControllerComponents, Results}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 object SubmissionsController {
 

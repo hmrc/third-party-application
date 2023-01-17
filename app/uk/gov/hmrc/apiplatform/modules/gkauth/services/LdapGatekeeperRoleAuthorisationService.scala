@@ -16,13 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.internalauth.client.BackendAuthComponents
-import play.api.mvc._
-import scala.concurrent.Future
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.internalauth.client._
-import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+import play.api.mvc._
+import uk.gov.hmrc.http.HeaderCarrier
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
+
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton

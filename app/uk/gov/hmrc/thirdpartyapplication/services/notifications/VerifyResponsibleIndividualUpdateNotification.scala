@@ -16,12 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
+import scala.concurrent.Future
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
-import scala.concurrent.Future
 
 object VerifyResponsibleIndividualUpdateNotification {
 

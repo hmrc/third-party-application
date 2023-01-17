@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+import scala.concurrent.Future
+import scala.concurrent.Future.successful
+
 import org.mockito.stubbing.ScalaOngoingStubbing
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.repositories.UpliftLinksRepository
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
 
 trait UpliftLinksRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

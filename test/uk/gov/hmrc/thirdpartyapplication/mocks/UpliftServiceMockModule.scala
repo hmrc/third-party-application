@@ -16,16 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
-import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationStateChange
-
 import scala.concurrent.Future.{failed, successful}
+
+import org.mockito.verification.VerificationMode
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftVerified
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationStateChange, UpliftVerified}
 
 trait UpliftServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

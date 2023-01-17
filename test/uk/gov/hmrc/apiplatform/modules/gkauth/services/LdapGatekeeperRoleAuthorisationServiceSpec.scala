@@ -16,20 +16,19 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.FakeRequest
-import uk.gov.hmrc.internalauth.client.test.BackendAuthComponentsStub
-import uk.gov.hmrc.internalauth.client.test.StubBehaviour
-import uk.gov.hmrc.internalauth.client.Retrieval
-import uk.gov.hmrc.play.http.HeaderCarrierConverter
-import play.api.test.StubControllerComponentsFactory
-import play.api.mvc.ControllerComponents
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import play.api.http.Status.UNAUTHORIZED
+
 import play.api.http.HeaderNames.AUTHORIZATION
+import play.api.http.Status.UNAUTHORIZED
+import play.api.mvc.ControllerComponents
+import play.api.test.{FakeRequest, StubControllerComponentsFactory}
+import uk.gov.hmrc.internalauth.client.Retrieval
+import uk.gov.hmrc.internalauth.client.test.{BackendAuthComponentsStub, StubBehaviour}
+import uk.gov.hmrc.play.http.HeaderCarrierConverter
+
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
   val fakeRequest = FakeRequest()

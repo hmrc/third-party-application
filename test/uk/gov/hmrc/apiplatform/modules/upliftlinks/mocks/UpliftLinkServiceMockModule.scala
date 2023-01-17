@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
 import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+
+import cats.data.OptionT
+import cats.implicits._
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
-import cats.data.OptionT
-import scala.concurrent.Future
-import cats.implicits._
-import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait UpliftLinkServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 

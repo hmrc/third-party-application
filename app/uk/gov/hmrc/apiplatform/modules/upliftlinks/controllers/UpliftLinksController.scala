@@ -16,15 +16,17 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
 import cats.implicits._
-import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
-import play.api.mvc.ControllerComponents
+
 import play.api.libs.json.Json
+import play.api.mvc.ControllerComponents
+
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters
 
 @Singleton

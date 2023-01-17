@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-
 import java.time.LocalDateTime
+
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 case class Token(
     clientId: ClientId,

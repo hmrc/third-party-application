@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.testutils.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse}
+
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks._
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository._
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
 import uk.gov.hmrc.thirdpartyapplication.services.commands._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import scala.concurrent.ExecutionContext.Implicits.global
 
 abstract class ApplicationUpdateServiceUtils extends AsyncHmrcSpec
     with ApplicationStateUtil

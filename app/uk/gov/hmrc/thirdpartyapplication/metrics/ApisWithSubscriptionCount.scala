@@ -16,18 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.metrics
 
-import com.google.inject.Singleton
-import play.api.libs.json.OFormat
-
 import javax.inject.Inject
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success}
+
+import com.google.inject.Singleton
+
+import play.api.libs.json.OFormat
+import uk.gov.hmrc.mongo.metrix.MetricSource
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 import uk.gov.hmrc.thirdpartyapplication.util.MetricsHelper
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.mongo.metrix.MetricSource
-
-import scala.concurrent.{ExecutionContext, Future}
-import scala.util.{Failure, Success}
 
 @Singleton
 class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: SubscriptionRepository)

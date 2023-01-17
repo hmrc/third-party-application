@@ -16,21 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.{Clock, LocalDateTime}
+import javax.inject.Inject
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.implicits._
 import com.google.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, Environment, State}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
-import java.time.{Clock, LocalDateTime}
-import javax.inject.Inject
 
 @Singleton
 class ProductionCredentialsRequestExpiredJob @Inject() (

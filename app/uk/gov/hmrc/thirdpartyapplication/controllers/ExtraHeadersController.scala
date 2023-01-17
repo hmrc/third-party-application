@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import play.api.mvc.ControllerComponents
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import play.api.mvc.{ControllerComponents, RequestHeader}
 import uk.gov.hmrc.http.HeaderCarrier
-import play.api.mvc.RequestHeader
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 abstract class ExtraHeadersController(cc: ControllerComponents) extends BackendController(cc) {

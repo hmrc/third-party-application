@@ -16,10 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.repositories
 
+import java.time.LocalDateTime
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.data.NonEmptyList
+import com.google.inject.{Inject, Singleton}
 import org.mongodb.scala.model.Filters.{and, equal, exists, lte}
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions, Updates}
+
+import uk.gov.hmrc.mongo.MongoComponent
+import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.ResponsibleIndividualVerificationState
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualUpdateVerification,
@@ -28,22 +36,9 @@ import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualVerificationState
 }
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.MongoComponent
-import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, ResponsibleIndividual, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ResponsibleIndividualChanged,
-  ResponsibleIndividualDeclined,
-  ResponsibleIndividualDeclinedUpdate,
-  ResponsibleIndividualDidNotVerify,
-  ResponsibleIndividualSet,
-  ResponsibleIndividualVerificationStarted
-}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-
-import java.time.LocalDateTime
-import com.google.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ResponsibleIndividualVerificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

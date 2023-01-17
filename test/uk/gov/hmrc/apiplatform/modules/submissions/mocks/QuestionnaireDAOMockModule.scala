@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
-
 import scala.concurrent.Future.successful
+
 import cats.data.NonEmptyList
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.submissions.QuestionnaireTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 
 trait QuestionnaireDAOMockModule extends MockitoSugar with ArgumentMatchersSugar with QuestionnaireTestData {
 

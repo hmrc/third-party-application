@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 
+import java.time.{LocalDateTime, ZoneOffset}
+
 import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+import uk.gov.hmrc.play.json.Union
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.{INITIAL, ResponsibleIndividualVerificationState}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
-import uk.gov.hmrc.play.json.Union
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ResponsibleIndividual}
 
 sealed trait ResponsibleIndividualVerification {
   def id: ResponsibleIndividualVerificationId

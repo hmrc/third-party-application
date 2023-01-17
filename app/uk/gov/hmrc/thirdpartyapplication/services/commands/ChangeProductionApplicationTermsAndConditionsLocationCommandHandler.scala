@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.Apply
 import cats.data.Validated.{Invalid, Valid}
 import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
-import javax.inject.{Inject, Singleton}
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {

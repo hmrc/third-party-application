@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.Helpers
-import play.api.test.Helpers._
-import play.api.test.FakeRequest
-import play.api.libs.json.JsSuccess
-import play.api.libs.json.Json
+
 import akka.stream.testkit.NoMaterializer
-import play.api.libs.json.JsError
+
+import play.api.libs.json.{JsError, JsSuccess, Json}
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
+
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.ExtendedSubmission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.MarkedSubmission
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{ExtendedSubmission, MarkedSubmission, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class SubmissionsControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.SubmissionsFrontendJsonFormatters._

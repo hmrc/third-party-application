@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import cats.implicits._
+
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object ValidateAnswers {
 

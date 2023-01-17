@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.domain.services
 
+import play.api.libs.json._
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
   ResponsibleIndividualToUVerification,
   ResponsibleIndividualUpdateVerification,
   ResponsibleIndividualVerification,
   ResponsibleIndividualVerificationWithDetails
 }
-import play.api.libs.json._
 
 trait ResponsibleIndividualVerificationFrontendJsonFormatters extends EnvReads {
 

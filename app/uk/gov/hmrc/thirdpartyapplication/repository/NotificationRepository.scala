@@ -16,20 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
+import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.NonEmptyList
 import com.google.inject.{Inject, Singleton}
+import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Filters.equal
-import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationDeletedBase
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 
 @Singleton
 class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)

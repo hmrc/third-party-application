@@ -16,39 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.format.DateTimeFormatter
+import java.time.{Clock, LocalDateTime}
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.AuditExtensions.auditHeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.{AuditConnector, AuditResult}
 import uk.gov.hmrc.play.audit.model.DataEvent
+
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{MarkAnswer, QuestionsAndAnswersToMap}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Standard, UpdateApplicationEvent, _}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Standard
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
-  ApiSubscribed,
-  ApiUnsubscribed,
-  ApplicationApprovalRequestDeclined,
-  ApplicationDeletedByGatekeeper,
-  ClientSecretAdded,
-  ClientSecretRemoved,
-  CollaboratorAdded,
-  CollaboratorRemoved,
-  RedirectUrisUpdated
-}
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-
-import scala.concurrent.{ExecutionContext, Future}
-import cats.data.NonEmptyList
-
-import java.time.{Clock, LocalDateTime}
-import java.time.format.DateTimeFormatter
 
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext)

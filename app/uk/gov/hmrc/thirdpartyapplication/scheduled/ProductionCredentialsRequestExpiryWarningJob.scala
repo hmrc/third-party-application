@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.{Clock, LocalDateTime}
+import javax.inject.Inject
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
+
 import com.google.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{Environment, State}
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Notification, NotificationStatus, NotificationType}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, NotificationRepository}
-import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
-import java.time.{Clock, LocalDateTime}
-import javax.inject.Inject
 
 @Singleton
 class ProductionCredentialsRequestExpiryWarningJob @Inject() (

@@ -16,27 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsDAOMockModule
+import java.time.{LocalDateTime, ZoneOffset}
+
+import cats.data.NonEmptyList
+import org.scalatest.Inside
+
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.{SubmissionsDAOMockModule, _}
+import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
   ApplicationApprovalRequestDeclined,
   ApplicationStateChanged,
   CollaboratorActor,
   ResponsibleIndividualDidNotVerify
 }
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
-import uk.gov.hmrc.apiplatform.modules.submissions.repositories.QuestionnaireDAO
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services._
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-
-import org.scalatest.Inside
-import cats.data.NonEmptyList
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, _}
 
 class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 

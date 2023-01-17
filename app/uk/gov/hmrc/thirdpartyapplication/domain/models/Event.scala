@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import java.time.LocalDateTime
-import java.time.ZoneOffset
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
+
 import play.api.libs.json._
+import uk.gov.hmrc.play.json.Union
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.play.json.Union
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
 sealed trait UpdateApplicationEvent {

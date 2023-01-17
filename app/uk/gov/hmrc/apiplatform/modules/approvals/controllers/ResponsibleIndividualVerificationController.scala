@@ -16,20 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import play.api.mvc.ControllerComponents
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
+import play.api.libs.json.Json
+import play.api.mvc.{ControllerComponents, Results}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+
+import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerification
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.services.ResponsibleIndividualVerificationFrontendJsonFormatters
-import play.api.libs.json.Json
-import play.api.mvc.Results
-
-import scala.concurrent.ExecutionContext
 import uk.gov.hmrc.apiplatform.modules.approvals.services.ResponsibleIndividualVerificationService
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
+import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
 
 object ResponsibleIndividualVerificationController {
   case class ResponsibleIndividualVerificationRequest(code: String)

@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
 import java.util.UUID.randomUUID
-import uk.gov.hmrc.thirdpartyapplication.domain.utils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
+import uk.gov.hmrc.thirdpartyapplication.domain.utils
 
 case class EventId(value: UUID) extends AnyVal
 

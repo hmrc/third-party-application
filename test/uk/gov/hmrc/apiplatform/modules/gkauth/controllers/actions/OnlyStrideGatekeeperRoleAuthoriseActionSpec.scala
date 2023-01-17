@@ -16,18 +16,19 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.controllers.OnlyStrideGatekeeperRoleAuthoriseAction
-import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.mvc.ControllerComponents
-import play.api.test.{FakeRequest, Helpers}
-import play.api.test.Helpers._
 import scala.concurrent.ExecutionContext
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import play.api.mvc.ControllerComponents
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.{StrideGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.controllers.OnlyStrideGatekeeperRoleAuthoriseAction
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationService
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class OnlyStrideGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec with StrideGatekeeperRoleAuthorisationServiceMockModule with ApplicationServiceMockModule {
 

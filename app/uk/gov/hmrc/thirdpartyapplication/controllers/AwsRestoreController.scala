@@ -17,11 +17,12 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
-import scala.concurrent.ExecutionContext
+import uk.gov.hmrc.thirdpartyapplication.services.AwsRestoreService
 
 @Singleton
 class AwsRestoreController @Inject() (awsRestoreService: AwsRestoreService, cc: ControllerComponents)(implicit val ec: ExecutionContext) extends BackendController(cc)

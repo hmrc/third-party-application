@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
+import java.time.LocalDateTime
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory.dateTimeOrdering
 import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-
-import java.time.LocalDateTime
 
 class StateHistorySpec extends HmrcSpec {
 

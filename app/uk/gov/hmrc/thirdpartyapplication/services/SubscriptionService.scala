@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.Foldable.ops.toAllFoldableOps
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
+import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.{ExecutionContext, Future}
+
+import cats.Foldable.ops.toAllFoldableOps
+
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.models._
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, HeaderCarrierHelper}
-
-import java.time.LocalDateTime
-import scala.concurrent.{ExecutionContext, Future}
-import scala.concurrent.Future.{failed, successful}
 
 @Singleton
 class SubscriptionService @Inject() (

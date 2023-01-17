@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.Future.successful
+
 import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.Future.successful
-import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.{AuditAction, AuditService}
 
 trait AuditServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

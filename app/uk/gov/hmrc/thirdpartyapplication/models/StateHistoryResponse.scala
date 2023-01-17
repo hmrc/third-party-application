@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.LocalDateTime
+
 import play.api.libs.json.Json
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
-import java.time.LocalDateTime
 
 case class StateHistoryResponse(applicationId: ApplicationId, state: State, actor: OldActor, notes: Option[String], changedAt: LocalDateTime)
 

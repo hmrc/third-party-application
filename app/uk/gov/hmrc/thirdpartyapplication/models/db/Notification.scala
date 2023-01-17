@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models.db
 
-import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
-import play.api.libs.json.{Format, Json, OFormat}
 import java.time.LocalDateTime
+
+import play.api.libs.json.{Format, Json, OFormat}
+import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.utils.EnumJson
 
 object NotificationStatus extends Enumeration {
   type NotificationStatus = Value

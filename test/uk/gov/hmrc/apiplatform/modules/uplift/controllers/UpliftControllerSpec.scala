@@ -16,29 +16,25 @@
 
 package uk.gov.hmrc.apiplatform.modules.uplift.controllers
 
-import play.api.mvc.AnyContentAsEmpty
-import play.api.test.FakeRequest
-import org.scalatest.prop.TableDrivenPropertyChecks
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerSpec
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode
-import uk.gov.hmrc.thirdpartyapplication.controllers.ControllerTestData
+import org.scalatest.prop.TableDrivenPropertyChecks
 
-import scala.concurrent.ExecutionContext.Implicits.global
 import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpliftRequested
-import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationAlreadyExists
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidStateTransition
-import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import play.api.mvc.AnyContentAsEmpty
+import play.api.test.FakeRequest
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
 import uk.gov.hmrc.apiplatform.modules.uplift.controllers.UpliftController._
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ControllerSpec, ControllerTestData, ErrorCode}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State, UpliftRequested}
+import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationAlreadyExists, InvalidStateTransition}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class UpliftControllerSpec
     extends ControllerSpec
