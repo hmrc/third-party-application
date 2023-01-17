@@ -17,7 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import org.scalatest.{EitherValues, OptionValues, Inside}
+import org.scalatest.{EitherValues, Inside, OptionValues}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 import org.scalatestplus.play.WsScalaTestClient

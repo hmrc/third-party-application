@@ -37,16 +37,16 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
     ApiGatewayStoreMock.ApplyEvents.succeeds()
     NotificationServiceMock.SendNotifications.thenReturnSuccess()
     AuditServiceMock.ApplyEvents.succeeds()
-    
-    val applicationId = ApplicationId.random
+
+    val applicationId                    = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
-    val developer = applicationData.collaborators.head
-    val developerActor = CollaboratorActor(developer.emailAddress)
+    val developer       = applicationData.collaborators.head
+    val developerActor  = CollaboratorActor(developer.emailAddress)
     val gatekeeperActor = GatekeeperUserActor("admin@gatekeeper")
 
     val apiIdentifier = "some-context".asIdentifier("1.1")
-    val timestamp = LocalDateTime.now
+    val timestamp     = LocalDateTime.now
 
     def testForSuccess(applicationUpdate: ApplicationUpdate, event: UpdateApplicationEvent with UpdatesSubscription): Unit = {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -61,7 +61,7 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
       ApiPlatformEventServiceMock.ApplyEvents.verifyCalledWith(NonEmptyList.one(event))
       AuditServiceMock.ApplyEvents.verifyCalledWith(applicationData, NonEmptyList.one(event))
     }
-    
+
     def testForMissingApplication(applicationUpdate: ApplicationUpdate): Unit = {
       ApplicationRepoMock.Fetch.thenReturnNoneWhen(applicationId)
 
@@ -77,13 +77,13 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
 
     "return the application if the application exists" in new Setup {
       val subscribeToApi = SubscribeToApi(developerActor, apiIdentifier, timestamp)
-      val event = ApiSubscribed(
+      val event          = ApiSubscribed(
         UpdateApplicationEvent.Id.random,
         applicationId,
         eventDateTime = timestamp,
         actor = developerActor,
         context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value,
+        version = apiIdentifier.version.value
       )
       when(mockSubscribeToApiCommandHandler.process(*[ApplicationData], *[SubscribeToApi])(*)).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -98,21 +98,21 @@ class ApplicationUpdateServiceApiSubscriptionsSpec extends ApplicationUpdateServ
   }
 
   "update with UnsubscribeFromApi" should {
-    
+
     "return the application if the application exists" in new Setup {
       val unsubscribeFromApi = UnsubscribeFromApi(developerActor, apiIdentifier, timestamp)
-      val event = ApiUnsubscribed(
+      val event              = ApiUnsubscribed(
         UpdateApplicationEvent.Id.random,
         applicationId,
         eventDateTime = timestamp,
         actor = developerActor,
         context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value,
+        version = apiIdentifier.version.value
       )
       when(mockUnsubscribeFromApiCommandHandler.process(*[ApplicationData], *[UnsubscribeFromApi])(*)).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
       )
-      
+
       testForSuccess(unsubscribeFromApi, event)
     }
 

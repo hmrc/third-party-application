@@ -111,8 +111,8 @@ class StateHistoryRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt : ApplicationStateChanged => addStateHistoryRecord(evt)
-      case _ => Future.successful(HasSucceeded)
+      case evt: ApplicationStateChanged => addStateHistoryRecord(evt)
+      case _                            => Future.successful(HasSucceeded)
     }
   }
 

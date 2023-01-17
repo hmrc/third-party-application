@@ -53,8 +53,8 @@ trait ApiGatewayStore extends EitherTHelper[String] {
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteApplication(evt)
-      case _ => Future.successful(None)
+      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteApplication(evt)
+      case _                                                       => Future.successful(None)
     }
   }
 
@@ -68,7 +68,7 @@ trait ApiGatewayStore extends EitherTHelper[String] {
     )
       .toOption
       .value
-  }  
+  }
 }
 
 @Singleton

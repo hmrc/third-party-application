@@ -35,14 +35,14 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
-    implicit val hc: HeaderCarrier                         = HeaderCarrier()
+    implicit val hc: HeaderCarrier                                                       = HeaderCarrier()
     val mockThirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
-    val underTest                                          = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
+    val underTest                                                                        = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
   }
 
   "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val clientId = ClientId("clientId")
+    val now                                                        = LocalDateTime.now(ZoneOffset.UTC)
+    val clientId                                                   = ClientId("clientId")
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
         UpdateApplicationEvent.Id.random,
@@ -55,7 +55,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
       )
 
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
-      val applicationId1  = ApplicationId.random
+      val applicationId1 = ApplicationId.random
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(hc)).thenReturn(successful(HasSucceeded))
 
@@ -66,5 +66,5 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
       result shouldBe Some(HasSucceeded)
       verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(hc)
     }
-  }  
+  }
 }

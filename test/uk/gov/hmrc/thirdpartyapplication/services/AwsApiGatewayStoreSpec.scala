@@ -108,7 +108,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       )
 
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
-      val applicationId1  = ApplicationId.random
+      val applicationId1 = ApplicationId.random
 
       when(mockAwsApiGatewayConnector.deleteApplication("wso2ApplicationName")(hc)).thenReturn(successful(HasSucceeded))
 
@@ -119,5 +119,5 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe Some(HasSucceeded)
       verify(mockAwsApiGatewayConnector).deleteApplication("wso2ApplicationName")(hc)
     }
-  }  
+  }
 }

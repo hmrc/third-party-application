@@ -29,7 +29,7 @@ trait OnlyStrideGatekeeperRoleAuthoriseAction {
   implicit val ec: ExecutionContext
 
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
- 
+
   private def authenticationAction = new ActionFilter[Request] {
     protected def executionContext: ExecutionContext = ec
 

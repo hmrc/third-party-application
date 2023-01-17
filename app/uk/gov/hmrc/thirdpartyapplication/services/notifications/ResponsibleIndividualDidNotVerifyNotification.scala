@@ -25,8 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future
 
 object ResponsibleIndividualDidNotVerifyNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ResponsibleIndividualDidNotVerify)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ResponsibleIndividualDidNotVerify
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     emailConnector.sendResponsibleIndividualDidNotVerify(
       event.responsibleIndividualName,
       event.requestingAdminEmail,

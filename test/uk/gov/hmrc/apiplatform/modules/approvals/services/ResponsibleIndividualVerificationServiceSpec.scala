@@ -16,7 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationWithDetails}
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualVerificationId,
+  ResponsibleIndividualVerificationWithDetails
+}
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule

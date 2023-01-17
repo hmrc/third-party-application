@@ -34,24 +34,27 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val appAdminUserId = UserId.random
-    val appAdminEmail = "admin@example.com"
-    val reasons = "reasons description text"
-    val actor = CollaboratorActor(appAdminEmail)
-    val app = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators = Set(
-      Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
-    ))
-    val ts = LocalDateTime.now
+    val appId             = ApplicationId.random
+    val appAdminUserId    = UserId.random
+    val appAdminEmail     = "admin@example.com"
+    val reasons           = "reasons description text"
+    val actor             = CollaboratorActor(appAdminEmail)
+
+    val app               = anApplicationData(appId, environment = Environment.SANDBOX).copy(collaborators =
+      Set(
+        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+      )
+    )
+    val ts                = LocalDateTime.now
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
-    val underTest = new DeleteApplicationByCollaboratorCommandHandler(authControlConfig)
+    val underTest         = new DeleteApplicationByCollaboratorCommandHandler(authControlConfig)
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
-      
+
       val result = await(underTest.process(app, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 
@@ -73,7 +76,7 @@ class DeleteApplicationByCollaboratorCommandHandlerSpec extends AsyncHmrcSpec wi
 
     "return an error if the application is non-standard" in new Setup {
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
+      val result         = await(underTest.process(nonStandardApp, DeleteApplicationByCollaborator(appAdminUserId, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("App must have a STANDARD access type"))
     }
 

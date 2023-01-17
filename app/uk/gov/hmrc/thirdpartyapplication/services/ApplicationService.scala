@@ -131,7 +131,6 @@ class ApplicationService @Inject() (
       )(implicit hc: HeaderCarrier
       ): Future[HasSucceeded] = {
 
-
       if (adminsToEmail.nonEmpty) {
         emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
       }
@@ -145,7 +144,7 @@ class ApplicationService @Inject() (
       _           <- addUser(app, collaborator)
       _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
       _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      _            = sendNotificationEmails(app.name, collaborator,  request.adminsToEmail)
+      _            = sendNotificationEmails(app.name, collaborator, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
 
@@ -486,16 +485,15 @@ class ApplicationService @Inject() (
       }
 
     for {
-      existing <- fetchApp(applicationId)
-      _         = checkAccessType(existing)
-      savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      existing   <- fetchApp(applicationId)
+      _           = checkAccessType(existing)
+      savedApp   <- applicationRepository.save(updatedApplication(existing))
+      _           = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
       updatedApp <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
     } yield updatedApp
   }
 
-  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)
-                                                    (implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     (previousAppData.access, updatedAppData.access) match {
       case (previous: Standard, updated: Standard) =>
         if (previous.redirectUris != updated.redirectUris) {
@@ -505,14 +503,18 @@ class ApplicationService @Inject() (
             oldRedirectUris = previous.redirectUris,
             newRedirectUris = updated.redirectUris
           )
-        }
-        else Future.successful(updatedAppData)
+        } else Future.successful(updatedAppData)
       case _                                       => Future.successful(updatedAppData)
     }
   }
 
-  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: List[String], newRedirectUris: List[String])
-                                     (implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def handleUpdateApplication(
+      applicationId: ApplicationId,
+      collaborators: Set[Collaborator],
+      oldRedirectUris: List[String],
+      newRedirectUris: List[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[ApplicationData] = {
 
     def fail(errorMessages: NonEmptyChain[String]) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")

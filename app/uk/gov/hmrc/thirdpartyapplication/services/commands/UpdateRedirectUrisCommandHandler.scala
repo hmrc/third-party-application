@@ -25,8 +25,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class UpdateRedirectUrisCommandHandler @Inject()()
-                                                (implicit val ec: ExecutionContext) extends CommandHandler {
+class UpdateRedirectUrisCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 

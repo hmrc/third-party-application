@@ -67,6 +67,7 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
       }

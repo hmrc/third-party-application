@@ -38,17 +38,17 @@ class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceU
     ThirdPartyDelegatedAuthorityServiceMock.ApplyEvents.succeeds()
     ApiGatewayStoreMock.ApplyEvents.succeeds()
     NotificationRepositoryMock.ApplyEvents.succeeds()
-    
-    val applicationId = ApplicationId.random
+
+    val applicationId                    = ApplicationId.random
     val applicationData: ApplicationData = anApplicationData(applicationId)
 
-    val developer = applicationData.collaborators.head
+    val developer      = applicationData.collaborators.head
     val developerActor = CollaboratorActor(developer.emailAddress)
 
     val oldRedirectUris = List.empty
     val newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
 
-    val timestamp = LocalDateTime.now
+    val timestamp          = LocalDateTime.now
     val updateRedirectUris = UpdateRedirectUris(developerActor, oldRedirectUris, newRedirectUris, timestamp)
   }
 
@@ -69,7 +69,7 @@ class ApplicationUpdateServiceRedirectUrisSpec extends ApplicationUpdateServiceU
 
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       ApplicationRepoMock.ApplyEvents.thenReturn(applicationData)
-      
+
       val result = await(underTest.update(applicationId, updateRedirectUris).value)
 
       result shouldBe Right(applicationData)

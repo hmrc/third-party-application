@@ -32,7 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModu
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.NotificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationType, NotificationStatus}
+import uk.gov.hmrc.thirdpartyapplication.models.db.{NotificationStatus, NotificationType}
 
 import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.{Clock, LocalDateTime, ZoneOffset}
@@ -61,17 +61,19 @@ class ProductionCredentialsRequestExpiryWarningJobSpec extends AsyncHmrcSpec wit
       List.empty
     )
 
-    val app              = anApplicationData(
+    val app             = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
     ).copy(name = appName)
-    val initialDelay     = FiniteDuration(1, MINUTES)
-    val interval         = FiniteDuration(1, HOURS)
-    val warningInterval  = FiniteDuration(10, DAYS)
-    val jobConfig        = ProductionCredentialsRequestExpiryWarningJobConfig(initialDelay, interval, true, warningInterval)
-    val job              = new ProductionCredentialsRequestExpiryWarningJob(mockLockKeeper, ApplicationRepoMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
-    val recipients = app.collaborators.map(_.emailAddress)
+    val initialDelay    = FiniteDuration(1, MINUTES)
+    val interval        = FiniteDuration(1, HOURS)
+    val warningInterval = FiniteDuration(10, DAYS)
+    val jobConfig       = ProductionCredentialsRequestExpiryWarningJobConfig(initialDelay, interval, true, warningInterval)
+
+    val job             =
+      new ProductionCredentialsRequestExpiryWarningJob(mockLockKeeper, ApplicationRepoMock.aMock, NotificationRepositoryMock.aMock, EmailConnectorMock.aMock, fixedClock, jobConfig)
+    val recipients      = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiryWarningJob" should {

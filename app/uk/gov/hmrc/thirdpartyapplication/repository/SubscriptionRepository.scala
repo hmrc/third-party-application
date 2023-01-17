@@ -177,7 +177,7 @@ class SubscriptionRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     import UpdateApplicationEvent._
 
     event match {
-      case evt: ApiSubscribed => add(evt.applicationId, ApiIdentifier(ApiContext(evt.context), ApiVersion(evt.version)))
+      case evt: ApiSubscribed   => add(evt.applicationId, ApiIdentifier(ApiContext(evt.context), ApiVersion(evt.version)))
       case evt: ApiUnsubscribed => remove(evt.applicationId, ApiIdentifier(ApiContext(evt.context), ApiVersion(evt.version)))
     }
   }

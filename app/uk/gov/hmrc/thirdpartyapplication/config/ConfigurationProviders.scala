@@ -148,7 +148,7 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualUpdateVerificationRemovalJobConfig] {
 
   override def get() = {
@@ -164,7 +164,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() 
 
 @Singleton
 class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationSetDefaultTypeJobConfig] {
 
   override def get() = {

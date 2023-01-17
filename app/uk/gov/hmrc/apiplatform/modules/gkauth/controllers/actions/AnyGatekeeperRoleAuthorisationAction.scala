@@ -34,21 +34,21 @@ trait AnyGatekeeperRoleAuthorisationAction {
   implicit val ec: ExecutionContext
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-   
-  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] =  {
-    Action.async { implicit request => 
+
+  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] = {
+    Action.async { implicit request =>
       implicit val hc = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
-      .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE}
-      .flatMap(_ match {
-        case Some(failureToAuthorise) =>
-          strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
-            .flatMap(_ match {
-              case None => block(request)
-              case Some(failureToAuthorise) => successful(failureToAuthorise)
-            })
-        case None => block(request)
-      })
+        .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }
+        .flatMap(_ match {
+          case Some(failureToAuthorise) =>
+            strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+              .flatMap(_ match {
+                case None                     => block(request)
+                case Some(failureToAuthorise) => successful(failureToAuthorise)
+              })
+          case None                     => block(request)
+        })
     }
   }
 }

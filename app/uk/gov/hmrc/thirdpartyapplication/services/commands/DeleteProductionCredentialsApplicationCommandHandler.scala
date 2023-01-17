@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredenti
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
-class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
+class DeleteProductionCredentialsApplicationCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -35,7 +35,7 @@ class DeleteProductionCredentialsApplicationCommandHandler @Inject()(
 
   private def validate(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]
-        .map(isInTesting(app)){case _ => app}
+      .map(isInTesting(app)) { case _ => app }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteProductionCredentialsApplication): NonEmptyList[UpdateApplicationEvent] = {

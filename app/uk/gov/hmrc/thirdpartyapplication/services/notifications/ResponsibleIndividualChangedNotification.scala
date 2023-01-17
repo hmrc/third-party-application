@@ -24,8 +24,16 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future
 
 object ResponsibleIndividualChangedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, previousResponsibleIndividualEmail: String, requestingAdminName: String, previousResponsibleIndividualName: String, newResponsibleIndividualName: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      previousResponsibleIndividualEmail: String,
+      requestingAdminName: String,
+      previousResponsibleIndividualName: String,
+      newResponsibleIndividualName: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ Set(previousResponsibleIndividualEmail)
     emailConnector.sendChangeOfResponsibleIndividual(
       requestingAdminName,

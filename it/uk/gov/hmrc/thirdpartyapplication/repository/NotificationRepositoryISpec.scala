@@ -70,9 +70,10 @@ class NotificationRepositoryISpec
 
     "create an entry" in {
       val applicationId = ApplicationId.random
-      val now = LocalDateTime.now
+      val now           = LocalDateTime.now
 
-      val result = await(notificationRepository.createEntity(Notification(applicationId, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
+      val result =
+        await(notificationRepository.createEntity(Notification(applicationId, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
       result mustBe true
       await(notificationRepository.collection.countDocuments().toFuture().map(x => x.toInt)) mustBe 1
@@ -81,9 +82,9 @@ class NotificationRepositoryISpec
 
   "remove" should {
     "delete any records for the application id" in {
-      val applicationId1  = ApplicationId.random
-      val applicationId2  = ApplicationId.random
-      val now = LocalDateTime.now
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val now            = LocalDateTime.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
@@ -94,8 +95,8 @@ class NotificationRepositoryISpec
     }
 
     "not fail when deleting a non-existing record" in {
-      val applicationId1  = ApplicationId.random
-      val result = await(notificationRepository.deleteAllByApplicationId(applicationId1))
+      val applicationId1 = ApplicationId.random
+      val result         = await(notificationRepository.deleteAllByApplicationId(applicationId1))
 
       result mustBe HasSucceeded
     }
@@ -127,9 +128,9 @@ class NotificationRepositoryISpec
       )
 
     "handle an ApplicationDeleted event by deleting any records for the application id" in {
-      val applicationId1  = ApplicationId.random
-      val applicationId2  = ApplicationId.random
-      val now = LocalDateTime.now
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val now            = LocalDateTime.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 
@@ -142,9 +143,9 @@ class NotificationRepositoryISpec
     }
 
     "handle an ProductionCredentialsApplicationDeleted event by deleting any records for the application id" in {
-      val applicationId1  = ApplicationId.random
-      val applicationId2  = ApplicationId.random
-      val now = LocalDateTime.now
+      val applicationId1 = ApplicationId.random
+      val applicationId2 = ApplicationId.random
+      val now            = LocalDateTime.now
       await(notificationRepository.createEntity(Notification(applicationId1, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
       await(notificationRepository.createEntity(Notification(applicationId2, now, NotificationType.PRODUCTION_CREDENTIALS_REQUEST_EXPIRY_WARNING, NotificationStatus.SENT)))
 

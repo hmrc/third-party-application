@@ -32,7 +32,18 @@ import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorActor, CollaboratorAdded, CollaboratorRemoved, GatekeeperUserActor, RedirectUrisUpdated}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
+  ApiSubscribed,
+  ApiUnsubscribed,
+  ApplicationApprovalRequestDeclined,
+  ClientSecretAdded,
+  ClientSecretRemoved,
+  CollaboratorActor,
+  CollaboratorAdded,
+  CollaboratorRemoved,
+  GatekeeperUserActor,
+  RedirectUrisUpdated
+}
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 
 import scala.concurrent.Future
@@ -45,14 +56,14 @@ import java.time.format.DateTimeFormatter
 import java.time.LocalDateTime
 
 class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with FixedClock
-  with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
+    with ApplicationTestData with SubmissionsTestData with SubmissionsServiceMockModule {
 
   class Setup {
     val mockAuditConnector = mock[AuditConnector]
     val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)
   }
 
-  val timestamp      = LocalDateTime.now
+  val timestamp             = LocalDateTime.now
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
   val testImportantSubmissionData = ImportantSubmissionData(
@@ -68,8 +79,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     applicationId,
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
-  val instigator = applicationData.collaborators.head.userId
-
+  val instigator                       = applicationData.collaborators.head.userId
 
   def isSameDataEvent(expected: DataEvent) =
     new ArgumentMatcher[DataEvent] {
@@ -149,48 +159,57 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
 
   "applyEvents" should {
     val gatekeeperUser = "Bob.TheBuilder"
-    val reasons = "Reasons description text"
+    val reasons        = "Reasons description text"
     val requesterEmail = "bill.badger@rupert.com"
-    val requesterName = "bill badger"
-    val appInTesting = applicationData.copy(state = ApplicationState.testing)
+    val requesterName  = "bill badger"
+    val appInTesting   = applicationData.copy(state = ApplicationState.testing)
 
-    val collaboratorActor = CollaboratorActor(applicationData.collaborators.head.emailAddress)
+    val collaboratorActor          = CollaboratorActor(applicationData.collaborators.head.emailAddress)
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
     "applyEvents with a single ApplicationApprovalRequestDeclined event" in new Setup {
 
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         GatekeeperUserActor(gatekeeperUser),
-        gatekeeperUser, gatekeeperUser, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
+        gatekeeperUser,
+        gatekeeperUser,
+        Submission.Id.random,
+        1,
+        reasons,
+        requesterName,
+        requesterEmail
+      )
 
-      val tags = Map("gatekeeperId" -> gatekeeperUser)
-      val questionsWithAnswers = QuestionsAndAnswersToMap(declinedSubmission)
-      val declinedData = Map("status" -> "declined", "reasons" -> reasons)
-      val fmt = DateTimeFormatter.ISO_DATE_TIME
+      val tags                       = Map("gatekeeperId" -> gatekeeperUser)
+      val questionsWithAnswers       = QuestionsAndAnswersToMap(declinedSubmission)
+      val declinedData               = Map("status" -> "declined", "reasons" -> reasons)
+      val fmt                        = DateTimeFormatter.ISO_DATE_TIME
       val submissionPreviousInstance = declinedSubmission.instances.tail.head
       val submittedOn: LocalDateTime = submissionPreviousInstance.statusHistory.find(s => s.isSubmitted).map(_.timestamp).get
-      val declinedOn: LocalDateTime = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
-      val dates = Map(
+      val declinedOn: LocalDateTime  = submissionPreviousInstance.statusHistory.find(s => s.isDeclined).map(_.timestamp).get
+      val dates                      = Map(
         "submission.started.date"   -> declinedSubmission.startedOn.format(fmt),
         "submission.submitted.date" -> submittedOn.format(fmt),
         "submission.declined.date"  -> declinedOn.format(fmt)
       )
-      val markedAnswers = MarkAnswer.markSubmission(declinedSubmission)
-      val nbrOfFails    = markedAnswers.filter(_._2 == Fail).size
-      val nbrOfWarnings = markedAnswers.filter(_._2 == Warn).size
-      val counters      = Map(
+      val markedAnswers              = MarkAnswer.markSubmission(declinedSubmission)
+      val nbrOfFails                 = markedAnswers.filter(_._2 == Fail).size
+      val nbrOfWarnings              = markedAnswers.filter(_._2 == Warn).size
+      val counters                   = Map(
         "submission.failures" -> nbrOfFails.toString,
         "submission.warnings" -> nbrOfWarnings.toString
       )
-      val gatekeeperDetails = Map(
+      val gatekeeperDetails          = Map(
         "applicationId"          -> appInTesting.id.value.toString,
         "applicationName"        -> appInTesting.name,
         "upliftRequestedByEmail" -> appInTesting.state.requestedByEmailAddress.getOrElse("-"),
         "applicationAdmins"      -> appInTesting.admins.map(_.emailAddress).mkString(", ")
       )
 
-      val extraDetail = questionsWithAnswers ++ declinedData ++ dates ++ counters ++ gatekeeperDetails
+      val extraDetail       = questionsWithAnswers ++ declinedData ++ dates ++ counters ++ gatekeeperDetails
       val expectedDataEvent = DataEvent(
         auditSource = "third-party-application",
         auditType = ApplicationApprovalDeclined.auditType,
@@ -202,7 +221,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       SubmissionsServiceMock.FetchLatest.thenReturn(declinedSubmission)
 
       val result = await(auditService.applyEvents(appInTesting, NonEmptyList.one(appApprovalRequestDeclined)))
-      
+
       result shouldBe Some(AuditResult.Success)
       verify(mockAuditConnector).sendEvent(argThat(isSameDataEvent(expectedDataEvent)))(*, *)
     }
@@ -210,7 +229,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a ClientSecretAdded event" in new Setup {
 
       val clientSecretAdded = ClientSecretAdded(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         "secret value",
         ClientSecret(name = "name", hashedSecret = "hashedSecret")
@@ -221,8 +242,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         auditType = ClientSecretAddedAudit.auditType,
         tags = hc.toAuditTags(ClientSecretAddedAudit.name, "-"),
         detail = Map(
-          "applicationId" -> applicationId.value.toString,
-          "newClientSecret" -> clientSecretAdded.clientSecret.name,
+          "applicationId"    -> applicationId.value.toString,
+          "newClientSecret"  -> clientSecretAdded.clientSecret.name,
           "clientSecretType" -> "PRODUCTION"
         )
       )
@@ -239,7 +260,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a ClientSecretRemoved event" in new Setup {
 
       val clientSecretRemoved = ClientSecretRemoved(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         "client secret ID",
         "secret name"
@@ -250,7 +273,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         auditType = ClientSecretRemovedAudit.auditType,
         tags = hc.toAuditTags(ClientSecretRemovedAudit.name, "-"),
         detail = Map(
-          "applicationId" -> applicationId.value.toString,
+          "applicationId"       -> applicationId.value.toString,
           "removedClientSecret" -> clientSecretRemoved.clientSecretId
         )
       )
@@ -273,7 +296,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       )
 
       val collaboratorAdded = CollaboratorAdded(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         newCollaborator.userId,
         newCollaborator.emailAddress,
@@ -286,7 +311,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         auditType = CollaboratorAddedAudit.auditType,
         tags = hc.toAuditTags(CollaboratorAddedAudit.name, "-"),
         detail = Map(
-          "applicationId" -> applicationId.value.toString,
+          "applicationId"        -> applicationId.value.toString,
           "newCollaboratorEmail" -> newCollaborator.emailAddress,
           "newCollaboratorType"  -> newCollaborator.role.toString
         )
@@ -306,7 +331,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       val removedCollaborator = applicationData.collaborators.head
 
       val collaboratorRemoved = CollaboratorRemoved(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         removedCollaborator.userId,
         removedCollaborator.emailAddress,
@@ -320,7 +347,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         auditType = CollaboratorRemovedAudit.auditType,
         tags = hc.toAuditTags(CollaboratorRemovedAudit.name, "-"),
         detail = Map(
-          "applicationId" -> applicationId.value.toString,
+          "applicationId"            -> applicationId.value.toString,
           "removedCollaboratorEmail" -> removedCollaborator.emailAddress,
           "removedCollaboratorType"  -> removedCollaborator.role.toString
         )
@@ -338,7 +365,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a ApiSubscribed event" in new Setup {
 
       val apiSubscribed = ApiSubscribed(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         "context",
         "version"
@@ -350,8 +379,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(Subscribed.name, "-"),
         detail = Map(
           "applicationId" -> applicationId.value.toString,
-          "apiVersion" -> apiSubscribed.version,
-          "apiContext" -> apiSubscribed.context
+          "apiVersion"    -> apiSubscribed.version,
+          "apiContext"    -> apiSubscribed.context
         )
       )
 
@@ -367,7 +396,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a ApiUnsubscribed event" in new Setup {
 
       val apiUnsubscribed = ApiUnsubscribed(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         "context",
         "version"
@@ -379,8 +410,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         tags = hc.toAuditTags(Unsubscribed.name, "-"),
         detail = Map(
           "applicationId" -> applicationId.value.toString,
-          "apiVersion" -> apiUnsubscribed.version,
-          "apiContext" -> apiUnsubscribed.context
+          "apiVersion"    -> apiUnsubscribed.version,
+          "apiContext"    -> apiUnsubscribed.context
         )
       )
 
@@ -396,7 +427,9 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     "applyEvents with a RedirectUrisUpdated event" in new Setup {
 
       val redirectUrisUpdated = RedirectUrisUpdated(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         collaboratorActor,
         oldRedirectUris = List.empty,
         newRedirectUris = List("https://new-url.example.com", "https://new-url.example.com/other-redirect")
@@ -407,8 +440,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
         auditType = AppRedirectUrisChanged.auditType,
         tags = hc.toAuditTags(AppRedirectUrisChanged.name, "-"),
         detail = Map(
-          "applicationId" -> applicationId.value.toString,
-          "newRedirectUris" -> redirectUrisUpdated.newRedirectUris.mkString(","),
+          "applicationId"   -> applicationId.value.toString,
+          "newRedirectUris" -> redirectUrisUpdated.newRedirectUris.mkString(",")
         )
       )
 

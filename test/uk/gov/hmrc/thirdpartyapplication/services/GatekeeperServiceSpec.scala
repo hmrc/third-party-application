@@ -469,29 +469,49 @@ class GatekeeperServiceSpec extends AsyncHmrcSpec with BeforeAndAfterAll with Ap
 
   "fetchAppStateHistories" should {
     "return correct state history values" in new Setup {
-      val appId1 = ApplicationId.random
-      val appId2 = ApplicationId.random
-      val ts1 = LocalDateTime.now
-      val ts2 = LocalDateTime.now
-      val ts3= LocalDateTime.now
-      val history1 = ApplicationWithStateHistory(appId1, "app1", 2, List(
-        StateHistory(appId1, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts1),
-        StateHistory(appId1, State.PRODUCTION, OldActor("bob", ActorType.GATEKEEPER), Some(State.TESTING), None, ts2)
-      ))
-      val history2 = ApplicationWithStateHistory(appId2, "app2", 2, List(
-        StateHistory(appId2, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts3)
-      ))
+      val appId1   = ApplicationId.random
+      val appId2   = ApplicationId.random
+      val ts1      = LocalDateTime.now
+      val ts2      = LocalDateTime.now
+      val ts3      = LocalDateTime.now
+      val history1 = ApplicationWithStateHistory(
+        appId1,
+        "app1",
+        2,
+        List(
+          StateHistory(appId1, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts1),
+          StateHistory(appId1, State.PRODUCTION, OldActor("bob", ActorType.GATEKEEPER), Some(State.TESTING), None, ts2)
+        )
+      )
+      val history2 = ApplicationWithStateHistory(
+        appId2,
+        "app2",
+        2,
+        List(
+          StateHistory(appId2, State.TESTING, OldActor("bob", ActorType.GATEKEEPER), None, None, ts3)
+        )
+      )
       ApplicationRepoMock.FetchProdAppStateHistories.thenReturn(history1, history2)
 
       val result = await(underTest.fetchAppStateHistories())
       result shouldBe List(
-        ApplicationStateHistory(appId1, "app1", 2, List(
-          ApplicationStateHistoryItem(State.TESTING, ts1),
-          ApplicationStateHistoryItem(State.PRODUCTION, ts2)
-        )),
-        ApplicationStateHistory(appId2, "app2", 2, List(
-          ApplicationStateHistoryItem(State.TESTING, ts3)
-        ))
+        ApplicationStateHistory(
+          appId1,
+          "app1",
+          2,
+          List(
+            ApplicationStateHistoryItem(State.TESTING, ts1),
+            ApplicationStateHistoryItem(State.PRODUCTION, ts2)
+          )
+        ),
+        ApplicationStateHistory(
+          appId2,
+          "app2",
+          2,
+          List(
+            ApplicationStateHistoryItem(State.TESTING, ts3)
+          )
+        )
       )
     }
   }

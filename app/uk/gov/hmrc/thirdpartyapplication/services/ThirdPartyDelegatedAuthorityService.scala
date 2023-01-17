@@ -29,7 +29,8 @@ import cats.data.NonEmptyList
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector
-  ) (implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+  )(implicit val ec: ExecutionContext
+  ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -52,8 +53,8 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
-      case _ => Future.successful(None)
+      case evt: UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
+      case _                                                       => Future.successful(None)
     }
   }
 }

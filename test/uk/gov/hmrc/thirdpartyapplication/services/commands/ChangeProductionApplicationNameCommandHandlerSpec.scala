@@ -51,7 +51,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app       = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))

@@ -25,8 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future
 
 object ProductionCredentialsApplicationDeletedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ProductionCredentialsApplicationDeleted)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ProductionCredentialsApplicationDeleted
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app)
     emailConnector.sendProductionCredentialsRequestExpired(app.name, recipients)
   }

@@ -17,7 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.gkauth.domain.models
 
 case class StrideAuthRoles(
-  adminRole: String,
-  superUserRole: String,
-  userRole: String
-)
+    adminRole: String,
+    superUserRole: String,
+    userRole: String
+  )

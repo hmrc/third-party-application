@@ -40,8 +40,8 @@ class ApisWithSubscriptionCount @Inject() (val subscriptionRepository: Subscript
 
     val result = numberOfSubscriptionsByApi
       .map(_.map {
-        case (apiName, count) => subscriptionCountKey(apiName) -> count }
-      )
+        case (apiName, count) => subscriptionCountKey(apiName) -> count
+      })
 
     result.onComplete({
       case Success(v) => logger.info(s"[METRIC] Success - ApisWithSubscriptionCount - api versions are: ${v.keys.size}")

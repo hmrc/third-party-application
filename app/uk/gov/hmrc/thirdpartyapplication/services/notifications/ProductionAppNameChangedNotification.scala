@@ -25,7 +25,7 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future
 
 object ProductionAppNameChangedNotification {
-  
+
   def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ProductionAppNameChanged)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationName(event.requestingAdminEmail, event.oldAppName, event.newAppName, recipients)
@@ -38,7 +38,7 @@ object ProductionAppNameChangedNotification {
   private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
+      case _                                                      => Set()
     }
   }
 }

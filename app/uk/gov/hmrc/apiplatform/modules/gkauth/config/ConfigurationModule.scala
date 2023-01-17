@@ -22,6 +22,7 @@ import play.api.{Configuration, Environment}
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 
 class StrideConfigurationModule extends Module {
+
   override def bindings(environment: Environment, configuration: Configuration): List[Binding[_]] = {
     List(
       bind[StrideAuthConnector.Config].toProvider[StrideAuthConnectorConfigProvider],

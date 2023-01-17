@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
-  with ApplicationTestData {
+    with ApplicationTestData {
 
   trait Setup extends ApplicationUpdateServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsTestData {
@@ -78,17 +78,28 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     "remove database record" in new Setup {
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
 
-      val code = "123242423432432432"
+      val code         = "123242423432432432"
       val verification = ResponsibleIndividualUpdateVerification(
-        ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now,
-        ResponsibleIndividual.build("ri name", "ri@example.com"), "Mr Admin", "admin@example.com"
+        ResponsibleIndividualVerificationId(code),
+        app.id,
+        completelyAnswerExtendedSubmission.submission.id,
+        0,
+        "my app",
+        LocalDateTime.now,
+        ResponsibleIndividual.build("ri name", "ri@example.com"),
+        "Mr Admin",
+        "admin@example.com"
       )
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeUpdate, INITIAL, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeUpdate,
+        INITIAL,
+        timeNow.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }

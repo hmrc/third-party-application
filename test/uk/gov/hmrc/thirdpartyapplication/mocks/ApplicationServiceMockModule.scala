@@ -49,11 +49,11 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
         val r: OptionT[Future, ApplicationResponse] = OptionT.pure[Future](ApplicationResponse(data = applicationData))
         when(aMock.fetch(*[ApplicationId])).thenReturn(r)
       }
-      
+
       def thenReturn(response: ApplicationResponse) = {
         when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.pure[Future](response))
       }
-      
+
       def thenReturnFor(id: ApplicationId)(response: ApplicationResponse) = {
         when(aMock.fetch(eqTo(id))).thenReturn(OptionT.pure[Future](response))
       }
@@ -63,11 +63,12 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
       def thenReturnNothingFor(id: ApplicationId) = when(aMock.fetch(id)).thenReturn(OptionT.fromOption[Future](None))
 
       def thenThrow(ex: Exception) = when(aMock.fetch(*[ApplicationId])).thenReturn(OptionT.liftF(failed(ex)))
-      
+
       def thenThrowFor(id: ApplicationId)(ex: Exception) = when(aMock.fetch(id)).thenReturn(OptionT.liftF(failed(ex)))
     }
 
     object Create {
+
       def onRequestReturn(request: CreateApplicationRequest)(response: CreateApplicationResponse) = {
         when(aMock.create(eqTo(request))(*)).thenReturn(successful(response))
       }
@@ -78,7 +79,7 @@ trait ApplicationServiceMockModule extends MockitoSugar with ArgumentMatchersSug
 
       def verifyCalledWith(applicationId: ApplicationId, request: Option[DeleteApplicationRequest]) = {
         verify(aMock).deleteApplication(eqTo(applicationId), eqTo(request), *)(*)
-      } 
+      }
     }
 
     object AddTermsOfUseAcceptance {

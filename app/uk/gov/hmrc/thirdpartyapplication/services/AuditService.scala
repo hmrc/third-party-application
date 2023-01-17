@@ -28,7 +28,17 @@ import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Fail, Submission, Warn}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApiSubscribed, ApiUnsubscribed, ApplicationApprovalRequestDeclined, ClientSecretAdded, ClientSecretRemoved, CollaboratorAdded, CollaboratorRemoved, ApplicationDeletedByGatekeeper, RedirectUrisUpdated}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
+  ApiSubscribed,
+  ApiUnsubscribed,
+  ApplicationApprovalRequestDeclined,
+  ApplicationDeletedByGatekeeper,
+  ClientSecretAdded,
+  ClientSecretRemoved,
+  CollaboratorAdded,
+  CollaboratorRemoved,
+  RedirectUrisUpdated
+}
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.QuestionsAndAnswersToMap
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.MarkAnswer
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
@@ -41,7 +51,8 @@ import java.time.{Clock, LocalDateTime}
 import java.time.format.DateTimeFormatter
 
 @Singleton
-class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext)
+    extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -76,16 +87,16 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
 
   private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
-      case evt : ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
-      case evt : ClientSecretAdded => auditClientSecretAdded(app, evt)
-      case evt : ClientSecretRemoved => auditClientSecretRemoved(app, evt)
-      case evt : CollaboratorAdded => auditAddCollaborator(app, evt)
-      case evt: CollaboratorRemoved => auditRemoveCollaborator(app, evt)
-      case evt: ApplicationDeletedByGatekeeper => auditApplicationDeletedByGatekeeper(app, evt)
-      case evt : ApiSubscribed => auditApiSubscribed(app, evt)
-      case evt : ApiUnsubscribed => auditApiUnsubscribed(app, evt)
-      case evt : RedirectUrisUpdated => auditRedirectUrisUpdated(app, evt)
-      case _ => Future.successful(None)
+      case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
+      case evt: ClientSecretAdded                  => auditClientSecretAdded(app, evt)
+      case evt: ClientSecretRemoved                => auditClientSecretRemoved(app, evt)
+      case evt: CollaboratorAdded                  => auditAddCollaborator(app, evt)
+      case evt: CollaboratorRemoved                => auditRemoveCollaborator(app, evt)
+      case evt: ApplicationDeletedByGatekeeper     => auditApplicationDeletedByGatekeeper(app, evt)
+      case evt: ApiSubscribed                      => auditApiSubscribed(app, evt)
+      case evt: ApiUnsubscribed                    => auditApiUnsubscribed(app, evt)
+      case evt: RedirectUrisUpdated                => auditRedirectUrisUpdated(app, evt)
+      case _                                       => Future.successful(None)
     }
   }
 
@@ -98,9 +109,9 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
   private def auditApplicationApprovalRequestDeclined(app: ApplicationData, evt: ApplicationApprovalRequestDeclined)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     (
       for {
-        submission   <- fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
-        extraDetails =  AuditHelper.createExtraDetailsForApplicationApprovalRequestDeclined(app, submission, evt)
-        result       <- liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
+        submission  <- fromOptionF(submissionService.fetchLatest(evt.applicationId), "No submission provided to audit")
+        extraDetails = AuditHelper.createExtraDetailsForApplicationApprovalRequestDeclined(app, submission, evt)
+        result      <- liftF(auditGatekeeperAction(evt.decliningUserName, app, ApplicationApprovalDeclined, extraDetails))
       } yield result
     )
       .toOption
@@ -139,8 +150,8 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
 
   private def auditClientSecretAdded(app: ApplicationData, evt: ClientSecretAdded)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] =
     liftF(audit(
-       ClientSecretAddedAudit,
-       Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")
+      ClientSecretAddedAudit,
+      Map("applicationId" -> app.id.value.toString, "newClientSecret" -> evt.clientSecret.name, "clientSecretType" -> "PRODUCTION")
     ))
       .toOption
       .value
@@ -383,10 +394,10 @@ object AuditHelper {
     when(a.privacyPolicyUrl != b.privacyPolicyUrl, AppPrivacyPolicyUrlChanged -> Map("newPrivacyPolicyUrl" -> b.privacyPolicyUrl.getOrElse("")))
 
   def createExtraDetailsForApplicationApprovalRequestDeclined(app: ApplicationData, submission: Submission, evt: ApplicationApprovalRequestDeclined): Map[String, String] = {
-  
+
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
-    val importantSubmissionData = app.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))
+    val importantSubmissionData    = app.importantSubmissionData.getOrElse(throw new RuntimeException("No importantSubmissionData found in application"))
     val submissionPreviousInstance = submission.instances.tail.head
 
     val questionsWithAnswers = QuestionsAndAnswersToMap(submission)
@@ -412,5 +423,5 @@ object AuditHelper {
     )
 
     questionsWithAnswers ++ declinedData ++ dates ++ counters
-  }    
+  }
 }

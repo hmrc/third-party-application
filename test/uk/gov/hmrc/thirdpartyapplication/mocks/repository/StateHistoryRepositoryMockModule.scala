@@ -86,6 +86,7 @@ trait StateHistoryRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(Future.successful(HasSucceeded))
       }

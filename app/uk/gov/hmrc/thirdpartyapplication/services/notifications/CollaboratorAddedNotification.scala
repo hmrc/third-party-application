@@ -25,9 +25,14 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import scala.concurrent.{ExecutionContext, Future}
 
 object CollaboratorAddedNotification {
-  
-  def sendCollaboratorAddedNotification(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.CollaboratorAdded)
-                                       (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HasSucceeded] = {
+
+  def sendCollaboratorAddedNotification(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.CollaboratorAdded
+    )(implicit hc: HeaderCarrier,
+      ec: ExecutionContext
+    ): Future[HasSucceeded] = {
     for {
       _ <- emailConnector.sendCollaboratorAddedNotification(event.collaboratorEmail, event.collaboratorRole, app.name, event.verifiedAdminsToEmail)
       _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaboratorRole, app.name, Set(event.collaboratorEmail))

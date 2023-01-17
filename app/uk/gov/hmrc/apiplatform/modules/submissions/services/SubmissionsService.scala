@@ -128,17 +128,17 @@ class SubmissionsService @Inject() (
 
   private def applyEvent(event: UpdateApplicationEvent): Future[Option[Submission]] = {
     event match {
-      case evt : ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
-      case _ => Future.successful(None)
+      case evt: ApplicationApprovalRequestDeclined => declineApplicationApprovalRequest(evt)
+      case _                                       => Future.successful(None)
     }
   }
 
-  private def declineApplicationApprovalRequest(evt : ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
+  private def declineApplicationApprovalRequest(evt: ApplicationApprovalRequestDeclined): Future[Option[Submission]] = {
     (
       for {
-        extSubmission            <- fromOptionF(fetch(evt.submissionId), "submission not found")
-        updatedSubmission        =  Submission.decline(evt.eventDateTime, evt.decliningUserEmail, evt.reasons)(extSubmission.submission)
-        savedSubmission          <- liftF(store(updatedSubmission))
+        extSubmission    <- fromOptionF(fetch(evt.submissionId), "submission not found")
+        updatedSubmission = Submission.decline(evt.eventDateTime, evt.decliningUserEmail, evt.reasons)(extSubmission.submission)
+        savedSubmission  <- liftF(store(updatedSubmission))
       } yield savedSubmission
     )
       .toOption

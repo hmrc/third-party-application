@@ -65,8 +65,8 @@ case class ApplicationState(
     requireState(requirement = TESTING, transitionTo = State.PENDING_GATEKEEPER_APPROVAL)
 
     copy(
-      name = State.PENDING_GATEKEEPER_APPROVAL, 
-      updatedOn = LocalDateTime.now(clock), 
+      name = State.PENDING_GATEKEEPER_APPROVAL,
+      updatedOn = LocalDateTime.now(clock),
       requestedByEmailAddress = Some(requestedByEmailAddress),
       requestedByName = Some(requestedByName)
     )

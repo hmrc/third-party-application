@@ -38,34 +38,38 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
     ApiPlatformEventServiceMock.ApplyEvents.succeeds
     AuditServiceMock.ApplyEvents.succeeds
   }
-    val timestamp = LocalDateTime.now
-    val gatekeeperUser = "gkuser1"
-    val adminName = "Mr Admin"
-    val adminEmail = "admin@example.com"
-    val applicationId = ApplicationId.random
+  val timestamp      = LocalDateTime.now
+  val gatekeeperUser = "gkuser1"
+  val adminName      = "Mr Admin"
+  val adminEmail     = "admin@example.com"
+  val applicationId  = ApplicationId.random
 
-    val applicationData: ApplicationData = anApplicationData(
-      applicationId,
-      access = Standard(importantSubmissionData = None)
-    )
+  val applicationData: ApplicationData = anApplicationData(
+    applicationId,
+    access = Standard(importantSubmissionData = None)
+  )
 
-    val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
-    val secretValue = "somSecret"
+  val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
+  val secretValue  = "somSecret"
 
-    val updatedProductionToken = productionToken.copy(clientSecrets = productionToken.clientSecrets ++ List(clientSecret))
-
-  
+  val updatedProductionToken = productionToken.copy(clientSecrets = productionToken.clientSecrets ++ List(clientSecret))
 
   "update with AddClientSecret" should {
-    
+
     val addClientSecret = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
-    
+
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      val event = ClientSecretAdded(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), secretValue, clientSecret)
+      val event    = ClientSecretAdded(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        LocalDateTime.now(),
+        UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
+        secretValue,
+        clientSecret
+      )
 
       when(mockAddClientSecretCommandHandler.process(*[ApplicationData], *[AddClientSecret])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)
@@ -90,20 +94,21 @@ class ApplicationUpdateServiceClientSecretsSpec extends ApplicationUpdateService
   }
 
   "update with RemoveClientSecret" should {
-    
+
     val removeClientSecret = RemoveClientSecret(CollaboratorActor(adminEmail), clientSecret.id, timestamp)
 
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
       val appAfter = applicationData.copy(tokens = ApplicationTokens(updatedProductionToken))
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
-      val event = ClientSecretRemoved(
+      val event    = ClientSecretRemoved(
         UpdateApplicationEvent.Id.random,
         applicationId,
         LocalDateTime.now(),
         UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
         clientSecret.id,
-        clientSecret.name)
+        clientSecret.name
+      )
 
       when(mockRemoveClientSecretCommandHandler.process(*[ApplicationData], *[RemoveClientSecret])).thenReturn(
         Future.successful(Validated.valid(NonEmptyList.of(event)).toValidatedNec)

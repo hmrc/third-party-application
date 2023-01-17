@@ -33,9 +33,9 @@ class ResponsibleIndividualVerificationSetDefaultTypeJobSpec extends AsyncHmrcSp
     val timeNow        = LocalDateTime.now
     val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
-    val initialDelay    = FiniteDuration(1, MINUTES)
-    val interval        = FiniteDuration(20, DAYS)
-    val jobConfig       = ResponsibleIndividualVerificationSetDefaultTypeJobConfig(initialDelay, interval, true)
+    val initialDelay = FiniteDuration(1, MINUTES)
+    val interval     = FiniteDuration(20, DAYS)
+    val jobConfig    = ResponsibleIndividualVerificationSetDefaultTypeJobConfig(initialDelay, interval, true)
 
     val job = new ResponsibleIndividualVerificationSetDefaultTypeJob(
       mockLockKeeper,

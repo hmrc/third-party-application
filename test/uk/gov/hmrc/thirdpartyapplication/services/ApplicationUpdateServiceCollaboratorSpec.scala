@@ -33,10 +33,10 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
 
   trait Setup extends CommonSetup
 
-  val timestamp      = LocalDateTime.now
-  val gatekeeperUser = "gkuser1"
-  val adminName = "Mr Admin"
-  val adminEmail = "admin@example.com"
+  val timestamp             = LocalDateTime.now
+  val gatekeeperUser        = "gkuser1"
+  val adminName             = "Mr Admin"
+  val adminEmail            = "admin@example.com"
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -54,9 +54,19 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
     applicationId,
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
-  val riVerification = models.ResponsibleIndividualUpdateVerification(
-    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
-  val instigator = applicationData.collaborators.head.userId
+
+  val riVerification                   = models.ResponsibleIndividualUpdateVerification(
+    ResponsibleIndividualVerificationId.random,
+    applicationId,
+    submissionId,
+    1,
+    applicationData.name,
+    timestamp,
+    responsibleIndividual,
+    adminName,
+    adminEmail
+  )
+  val instigator                       = applicationData.collaborators.head.userId
 
   "update with AddCollaborator" should {
 
@@ -64,19 +74,25 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
 
     "return the updated application if the application exists" in new Setup {
 
-      val someAdmin = "someAdmin@company"
+      val someAdmin         = "someAdmin@company"
       val collaboratorEmail = "someone@somecompany"
-      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
 
-      val adminsToEmail  = Set("1@company.com", "2@company.com")
-      val appBefore = applicationData
-      val appAfter = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
+      val adminsToEmail                              = Set("1@company.com", "2@company.com")
+      val appBefore                                  = applicationData
+      val appAfter                                   = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
       val appCollaboratorAddedEvt: CollaboratorAdded = CollaboratorAdded(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, adminsToEmail)
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        adminsToEmail
+      )
 
-      val addCollaborator = AddCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail,timestamp)
+      val addCollaborator = AddCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail, timestamp)
 
       val events = NonEmptyList.of(appCollaboratorAddedEvt)
 
@@ -105,25 +121,30 @@ class ApplicationUpdateServiceCollaboratorSpec extends ApplicationUpdateServiceU
     }
   }
 
-
   "update with RemoveCollaborator" should {
 
     val requesterEmail = "bill.badger@rupert.com"
 
     "return the updated application if the application exists" in new Setup {
 
-      val someAdmin = "someAdmin@company"
+      val someAdmin         = "someAdmin@company"
       val collaboratorEmail = "someone@somecompany"
-      val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
+      val collaborator      = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
 
-      val adminsToEmail = Set("1@company.com", "2@company.com")
-      val appBefore = applicationData
-      val appAfter = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
-      val collaboratorRemovedEvt
-      : CollaboratorRemoved = CollaboratorRemoved(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+      val adminsToEmail                               = Set("1@company.com", "2@company.com")
+      val appBefore                                   = applicationData
+      val appAfter                                    = appBefore.copy(collaborators = applicationData.collaborators ++ Set(collaborator))
+      val collaboratorRemovedEvt: CollaboratorRemoved = CollaboratorRemoved(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        collaborator.userId, collaborator.emailAddress, collaborator.role, notifyCollaborator = true, adminsToEmail)
+        collaborator.userId,
+        collaborator.emailAddress,
+        collaborator.role,
+        notifyCollaborator = true,
+        adminsToEmail
+      )
 
       val removeCollaborator = RemoveCollaborator(CollaboratorActor(someAdmin), collaborator, adminsToEmail, timestamp)
 

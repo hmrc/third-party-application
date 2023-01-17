@@ -21,7 +21,12 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsDAOMockModul
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationApprovalRequestDeclined, ResponsibleIndividualDidNotVerify, ApplicationStateChanged, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{
+  ApplicationApprovalRequestDeclined,
+  ApplicationStateChanged,
+  CollaboratorActor,
+  ResponsibleIndividualDidNotVerify
+}
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks._
@@ -231,41 +236,41 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
     }
 
     "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val appId = ApplicationId.random
-    val submissionId = Submission.Id.random
-    val reasons = "reasons description"
-    val code = "5324763549732592387659238746"
+      val now          = LocalDateTime.now(ZoneOffset.UTC)
+      val appId        = ApplicationId.random
+      val submissionId = Submission.Id.random
+      val reasons      = "reasons description"
+      val code         = "5324763549732592387659238746"
 
-    def buildApplicationApprovalRequestDeclinedEvent() =
-      ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        0,
-        reasons, 
-        "Mr Admin",
-        "admin@example.com"
-      )
+      def buildApplicationApprovalRequestDeclinedEvent() =
+        ApplicationApprovalRequestDeclined(
+          UpdateApplicationEvent.Id.random,
+          appId,
+          now,
+          CollaboratorActor("requester@example.com"),
+          "Mr New Ri",
+          "ri@example.com",
+          submissionId,
+          0,
+          reasons,
+          "Mr Admin",
+          "admin@example.com"
+        )
 
-    def buildResponsibleIndividualDidNotVerifyEvent() =
-      ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random,
-        appId,
-        now,
-        CollaboratorActor("requester@example.com"),
-        "Mr New Ri",
-        "ri@example.com",
-        submissionId,
-        0,
-        code, 
-        "Mr Admin",
-        "admin@example.com"
-      )
+      def buildResponsibleIndividualDidNotVerifyEvent() =
+        ResponsibleIndividualDidNotVerify(
+          UpdateApplicationEvent.Id.random,
+          appId,
+          now,
+          CollaboratorActor("requester@example.com"),
+          "Mr New Ri",
+          "ri@example.com",
+          submissionId,
+          0,
+          code,
+          "Mr Admin",
+          "admin@example.com"
+        )
 
       def buildApplicationStateChangedEvent() =
         ApplicationStateChanged(
@@ -289,7 +294,7 @@ class SubmissionsServiceSpec extends AsyncHmrcSpec with Inside with FixedClock {
 
         val out = result.value
         out.instances.length shouldBe submittedSubmission.instances.length + 1
-        out.instances.tail.head.status.isDeclined shouldBe true 
+        out.instances.tail.head.status.isDeclined shouldBe true
         SubmissionsDAOMock.Update.verifyCalled()
       }
 

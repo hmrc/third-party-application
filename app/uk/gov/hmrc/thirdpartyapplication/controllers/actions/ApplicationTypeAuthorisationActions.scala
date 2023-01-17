@@ -39,7 +39,6 @@ trait ApplicationTypeAuthorisationActions {
   def applicationService: ApplicationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
 
-
   def requiresAuthenticationFor(accessTypes: AccessType*): ActionBuilder[Request, AnyContent] =
     Action andThen PayloadBasedApplicationTypeFilter(accessTypes.toList)
 
@@ -48,8 +47,6 @@ trait ApplicationTypeAuthorisationActions {
 
   def requiresAuthenticationForPrivilegedOrRopcApplications(applicationId: ApplicationId): ActionBuilder[Request, AnyContent] =
     Action andThen RepositoryBasedApplicationTypeFilter(applicationId, List(PRIVILEGED, ROPC), false)
-
-
 
   private abstract class ApplicationTypeFilter(toMatchAccessTypes: List[AccessType], failOnAccessTypeMismatch: Boolean)(implicit ec: ExecutionContext)
       extends ActionFilter[Request] {
@@ -72,7 +69,6 @@ trait ApplicationTypeAuthorisationActions {
 
     protected def deriveAccessType[A](request: Request[A]): Future[Option[AccessType]]
   }
-
 
   private case class PayloadBasedApplicationTypeFilter(accessTypes: List[AccessType]) extends ApplicationTypeFilter(accessTypes, false) {
 

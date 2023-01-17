@@ -63,10 +63,10 @@ object ApplicationSearch {
       .flatten
       .toList
 
-    def searchText = queryString.getOrElse("search", List.empty).headOption
-    def apiContext = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
-    def apiVersion = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
-    def sort       = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
+    def searchText     = queryString.getOrElse("search", List.empty).headOption
+    def apiContext     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").headOption.map(ApiContext(_)))
+    def apiVersion     = queryString.getOrElse("apiSubscription", List.empty).headOption.flatMap(_.split("--").lift(1).map(ApiVersion(_)))
+    def sort           = ApplicationSort(queryString.getOrElse("sort", List.empty).headOption)
     def includeDeleted = queryString.getOrElse("includeDeleted", List.empty).headOption.getOrElse("false").toBoolean
 
     new ApplicationSearch(pageNumber, pageSize, filters, searchText, apiContext, apiVersion, sort, includeDeleted)
@@ -114,7 +114,6 @@ case object PendingSubmitterVerification             extends StatusFilter
 case object Active                                   extends StatusFilter
 case object WasDeleted                               extends StatusFilter
 case object ExcludingDeleted                         extends StatusFilter
-
 
 case object ApplicationStatusFilter extends StatusFilter {
 

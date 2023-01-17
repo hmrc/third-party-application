@@ -35,10 +35,10 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
 
     val underTest = new SubscribeToApiCommandHandler(StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 
-    val applicationId = ApplicationId.random
+    val applicationId       = ApplicationId.random
     val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
-    val apiIdentifier = "some-context".asIdentifier("1.1")
-    val timestamp = LocalDateTime.now
+    val apiIdentifier       = "some-context".asIdentifier("1.1")
+    val timestamp           = LocalDateTime.now
 
     val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
   }

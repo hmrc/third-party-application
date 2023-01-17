@@ -72,7 +72,7 @@ class ApplicationControllerSpec
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup 
+  trait Setup
       extends AuthConfigSetup
       with SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
@@ -109,7 +109,6 @@ class ApplicationControllerSpec
     )
   }
 
-  
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
@@ -552,10 +551,10 @@ class ApplicationControllerSpec
   }
 
   "add client secret (new)" should {
-    val applicationId = ApplicationId.random
+    val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS))
+    val secretRequest             = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS))
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -773,7 +772,7 @@ class ApplicationControllerSpec
   }
 
   "query dispatcher" should {
-    val clientId    = ClientId("A123XC")
+    val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
       val updatedLastAccessTime: LocalDateTime = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
@@ -1276,7 +1275,6 @@ class ApplicationControllerSpec
 
   }
 
-
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
       val applicationId: ApplicationId        = ApplicationId.random
@@ -1362,11 +1360,11 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application                                  = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
-    val applicationId                                = application.id
-    val gatekeeperUserId                             = "big.boss.gatekeeper"
-    val requestedByEmailAddress                      = "admin@example.com"
-    val deleteRequest                                = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    val application             = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
+    val applicationId           = application.id
+    val gatekeeperUserId        = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
@@ -1399,7 +1397,6 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
- 
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
@@ -1447,11 +1444,11 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(
-          request
+        request
           .withBody(Json.toJson(deleteRequest))
           .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey.reverse))
           .asInstanceOf[FakeRequest[AnyContent]]
-        )
+      )
 
       status(result) shouldBe BAD_REQUEST
       verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1460,12 +1457,11 @@ class ApplicationControllerSpec
     "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
       ApplicationServiceMock.DeleteApplication.thenSucceeds
-      
+
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
-        .asInstanceOf[FakeRequest[AnyContent]]
-        )
+        .asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1481,5 +1477,3 @@ class ApplicationControllerSpec
     }
   }
 }
-
-

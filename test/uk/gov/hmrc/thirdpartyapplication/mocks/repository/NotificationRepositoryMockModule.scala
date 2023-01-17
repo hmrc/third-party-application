@@ -31,6 +31,7 @@ trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
     object CreateEntity {
       def thenReturnSuccess() = when(aMock.createEntity(*[Notification])).thenAnswer(successful(true))
+
       def verifyCalledWith()  = {
         val captor = ArgCaptor[Notification]
         verify(aMock).createEntity(captor.capture)
@@ -44,6 +45,7 @@ trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
       }

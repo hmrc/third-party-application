@@ -105,6 +105,7 @@ trait SubmissionsServiceMockModule extends MockitoSugar with ArgumentMatchersSug
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(Future.successful(None))
       }

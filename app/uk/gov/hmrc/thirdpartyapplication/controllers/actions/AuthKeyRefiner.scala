@@ -28,7 +28,7 @@ import cats.implicits._
 
 trait AuthKeyRefiner {
   self: BaseController =>
-  
+
   def authControlConfig: AuthControlConfig
 
   def authKeyRefiner(implicit ec: ExecutionContext): ActionRefiner[Request, MaybeMatchesAuthorisationKeyRequest] =

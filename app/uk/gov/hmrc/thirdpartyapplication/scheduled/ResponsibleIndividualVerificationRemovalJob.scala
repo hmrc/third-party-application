@@ -53,7 +53,8 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val removeIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.removalInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      removalsDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
+      removalsDue <-
+        repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.REMINDERS_SENT, removeIfCreatedBeforeNow)
       _           <- Future.sequence(removalsDue.map(sendRemovalEmailAndRemoveRecord(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {
@@ -65,11 +66,11 @@ class ResponsibleIndividualVerificationRemovalJob @Inject() (
   }
 
   def sendRemovalEmailAndRemoveRecord(verificationDueForRemoval: ResponsibleIndividualVerification) = {
-    val request       =  DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
+    val request = DeclineResponsibleIndividualDidNotVerify(verificationDueForRemoval.id.value, LocalDateTime.now(clock))
 
     logger.info(s"Responsible individual verification timed out for application ${verificationDueForRemoval.applicationName} (started at ${verificationDueForRemoval.createdOn})")
     (for {
-      savedApp       <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
+      savedApp <- applicationUpdateService.update(verificationDueForRemoval.applicationId, request)
     } yield HasSucceeded).value
   }
 }

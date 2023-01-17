@@ -26,7 +26,7 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
 class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule {
-  val request = FakeRequest()
+  val request     = FakeRequest()
   implicit val hc = HeaderCarrierConverter.fromRequest(request)
 
   trait Setup {

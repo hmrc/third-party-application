@@ -28,7 +28,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class DeclineApplicationApprovalRequestCommandHandler @Inject()(
+class DeclineApplicationApprovalRequestCommandHandler @Inject() (
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -48,7 +48,7 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject()(
 
   private def asEvents(app: ApplicationData, cmd: DeclineApplicationApprovalRequest, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
     val requesterEmail = getRequesterEmail(app).get
-    val requesterName = getRequesterName(app).get
+    val requesterName  = getRequesterName(app).get
     NonEmptyList.of(
       ApplicationApprovalRequestDeclined(
         id = UpdateApplicationEvent.Id.random,
@@ -80,9 +80,9 @@ class DeclineApplicationApprovalRequestCommandHandler @Inject()(
     submissionService.fetchLatest(app.id).map(maybeSubmission => {
       maybeSubmission match {
         case Some(submission) => validate(app, cmd) map { _ =>
-          asEvents(app, cmd, submission)
-        }
-        case _ => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
+            asEvents(app, cmd, submission)
+          }
+        case _                => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
       }
     })
   }

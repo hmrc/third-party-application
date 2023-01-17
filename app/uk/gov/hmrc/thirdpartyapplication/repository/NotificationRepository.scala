@@ -62,7 +62,7 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     collection.deleteMany(equal("applicationId", Codecs.toBson(applicationId)))
       .toFuture()
       .map(_ => HasSucceeded)
-  }    
+  }
 
   def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
     events match {
@@ -73,8 +73,8 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
-      case _ => Future.successful(HasSucceeded)
+      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
+      case _                                                       => Future.successful(HasSucceeded)
     }
-  }  
+  }
 }

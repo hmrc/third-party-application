@@ -25,8 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future
 
 object ApplicationDeletedByGatekeeperNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ApplicationDeletedByGatekeeper
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app)
     emailConnector.sendApplicationDeletedNotification(app.name, app.id, event.requestingAdminEmail, recipients)
   }

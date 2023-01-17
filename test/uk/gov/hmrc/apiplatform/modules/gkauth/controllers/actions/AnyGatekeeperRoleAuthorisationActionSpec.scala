@@ -30,29 +30,30 @@ import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAutho
 import scala.concurrent.Future.successful
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationServiceMockModule
 
-class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec  {
+class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec {
 
-  abstract class TestController(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc) with AnyGatekeeperRoleAuthorisationAction {
+  abstract class TestController(val cc: ControllerComponents)(implicit val executionContext: ExecutionContext) extends BackendController(cc)
+      with AnyGatekeeperRoleAuthorisationAction {
     def applicationService: ApplicationService
     def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
     implicit val ec = executionContext
-    
+
     def testMethod = anyAuthenticatedUserAction { _ =>
       successful(Ok("Authenticated"))
     }
   }
 
-  trait Setup 
+  trait Setup
       extends StrideGatekeeperRoleAuthorisationServiceMockModule
       with ApplicationServiceMockModule
       with LdapGatekeeperRoleAuthorisationServiceMockModule {
     val stubControllerComponents = Helpers.stubControllerComponents()
-    val request   = FakeRequest()
+    val request                  = FakeRequest()
 
     lazy val underTest = new TestController(stubControllerComponents) {
-      val applicationService: ApplicationService        = ApplicationServiceMock.aMock
-      val strideGatekeeperRoleAuthorisationService      = StrideGatekeeperRoleAuthorisationServiceMock.aMock
-      val ldapGatekeeperRoleAuthorisationService        = LdapGatekeeperRoleAuthorisationServiceMock.aMock
+      val applicationService: ApplicationService   = ApplicationServiceMock.aMock
+      val strideGatekeeperRoleAuthorisationService = StrideGatekeeperRoleAuthorisationServiceMock.aMock
+      val ldapGatekeeperRoleAuthorisationService   = LdapGatekeeperRoleAuthorisationServiceMock.aMock
     }
   }
 
@@ -61,19 +62,19 @@ class AnyGatekeeperRoleAuthoriseActionSpec extends AsyncHmrcSpec  {
     StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
     val result = underTest.testMethod(request)
     status(result) shouldBe OK
-  }   
-  
+  }
+
   "succeed when authorised with GK" in new Setup {
     LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
     StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.authorised
     val result = underTest.testMethod(request)
     status(result) shouldBe OK
   }
-  
+
   "fail when not authorised with LDAP or GK" in new Setup {
     LdapGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
     StrideGatekeeperRoleAuthorisationServiceMock.EnsureHasGatekeeperRole.notAuthorised
     val result = underTest.testMethod(request)
     status(result) shouldBe UNAUTHORIZED
   }
-} 
+}

@@ -85,7 +85,7 @@ class GatekeeperService @Inject() (
   def fetchAppStateHistories(): Future[Seq[ApplicationStateHistory]] = {
     for {
       appsWithHistory <- applicationRepository.fetchProdAppStateHistories()
-      history = appsWithHistory.map(a => ApplicationStateHistory(a.id, a.name, a.version, a.states.map(s => ApplicationStateHistoryItem(s.state, s.changedAt))))
+      history          = appsWithHistory.map(a => ApplicationStateHistory(a.id, a.name, a.version, a.states.map(s => ApplicationStateHistoryItem(s.state, s.changedAt))))
     } yield history
   }
 

@@ -62,17 +62,14 @@ class CredentialService @Inject() (
 
     def generateCommand() = {
       val generatedSecret = clientSecretService.generateClientSecret()
-      AddClientSecret(actor = request.actor,
-        secretValue = generatedSecret._2,
-        clientSecret = generatedSecret._1,
-        timestamp = request.timestamp)
+      AddClientSecret(actor = request.actor, secretValue = generatedSecret._2, clientSecret = generatedSecret._1, timestamp = request.timestamp)
     }
 
     for {
-      existingApp <- fetchApp(applicationId)
-      _ = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
-      addSecretCmd = generateCommand()
-      _ <- applicationUpdateService.update(applicationId, addSecretCmd).value
+      existingApp        <- fetchApp(applicationId)
+      _                   = if (existingApp.tokens.production.clientSecrets.size >= clientSecretLimit) throw new ClientSecretsLimitExceeded
+      addSecretCmd        = generateCommand()
+      _                  <- applicationUpdateService.update(applicationId, addSecretCmd).value
       updatedApplication <- fetchApp(applicationId)
     } yield ApplicationTokenResponse(updatedApplication.tokens.production, addSecretCmd.clientSecret.id, addSecretCmd.secretValue)
 

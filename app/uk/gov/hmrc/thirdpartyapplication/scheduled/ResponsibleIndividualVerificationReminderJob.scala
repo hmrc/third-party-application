@@ -58,7 +58,8 @@ class ResponsibleIndividualVerificationReminderJob @Inject() (
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val remindIfCreatedBeforeNow                    = LocalDateTime.now(clock).minus(jobConfig.reminderInterval.toSeconds, SECONDS)
     val result: Future[RunningOfJobSuccessful.type] = for {
-      remindersDue <- repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
+      remindersDue <-
+        repository.fetchByTypeStateAndAge(ResponsibleIndividualVerification.VerificationTypeToU, ResponsibleIndividualVerificationState.INITIAL, remindIfCreatedBeforeNow)
       _            <- Future.sequence(remindersDue.map(sendReminderEmailsAndUpdateStatus(_)))
     } yield RunningOfJobSuccessful
     result.recoverWith {

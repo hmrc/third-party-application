@@ -55,8 +55,7 @@ import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import play.api.test.Helpers
 
 class ApplicationControllerUpdateSpec extends ControllerSpec
-    with ApplicationStateUtil with TableDrivenPropertyChecks
-     {
+    with ApplicationStateUtil with TableDrivenPropertyChecks {
 
   import play.api.test.Helpers._
 
@@ -79,7 +78,6 @@ class ApplicationControllerUpdateSpec extends ControllerSpec
     val mockSubmissionService: SubmissionsService    = mock[SubmissionsService]
     val mockNamingService: UpliftNamingService       = mock[UpliftNamingService]
     val mockUpliftLinkService: UpliftLinkService     = mock[UpliftLinkService]
-
 
     val applicationTtlInSecs  = 1234
     val subscriptionTtlInSecs = 4321

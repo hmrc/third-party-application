@@ -24,8 +24,16 @@ import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future
 
 object StandardChangedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String, previousValue: String, newValue: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      requestingAdminEmail: String,
+      fieldName: String,
+      previousValue: String,
+      newValue: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationDetails(requestingAdminEmail, app.name, fieldName, previousValue, newValue, recipients)
   }
@@ -37,7 +45,7 @@ object StandardChangedNotification {
   private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
+      case _                                                      => Set()
     }
   }
 }

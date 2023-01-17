@@ -33,19 +33,24 @@ import play.api.http.HeaderNames.AUTHORIZATION
 
 class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StubControllerComponentsFactory {
   val fakeRequest = FakeRequest()
-  
+
   val cc: ControllerComponents = stubControllerComponents()
 
   val expectedRetrieval = Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission)
 
   trait Setup {
-    val mockStubBehaviour = mock[StubBehaviour]
+    val mockStubBehaviour     = mock[StubBehaviour]
     val backendAuthComponents = BackendAuthComponentsStub(mockStubBehaviour)(cc, implicitly)
-    
+
     def authControlConfig: AuthControlConfig
     lazy val underTest = new LdapGatekeeperRoleAuthorisationService(authControlConfig, backendAuthComponents)
 
-    protected def stub(isAuth: Boolean) = when(mockStubBehaviour.stubAuth(None, expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](Retrieval.Username("Bob"), isAuth)))
+    protected def stub(
+        isAuth: Boolean
+      ) = when(mockStubBehaviour.stubAuth(None, expectedRetrieval)).thenReturn(Future.successful(uk.gov.hmrc.internalauth.client.~[Retrieval.Username, Boolean](
+      Retrieval.Username("Bob"),
+      isAuth
+    )))
   }
 
   trait DisabledAuth {
@@ -60,13 +65,13 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
   trait AuthHeaderPresent {
     self: Setup =>
-    val request = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) //.withSession("authToken" -> "Token some-token")
+    val request     = fakeRequest.withHeaders((AUTHORIZATION, "xxx")) // .withSession("authToken" -> "Token some-token")
     implicit val hc = HeaderCarrierConverter.fromRequest(request)
   }
 
   trait NoAuthHeaderPresent {
     self: Setup =>
-    val request = fakeRequest
+    val request     = fakeRequest
     implicit val hc = HeaderCarrierConverter.fromRequest(request)
   }
 
@@ -81,7 +86,6 @@ class LdapGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with Stub
 
     stub(false)
   }
-
 
   "with auth disabled" should {
     "return None (good result) when auth is not enabled" in new Setup with DisabledAuth with NoAuthHeaderPresent {

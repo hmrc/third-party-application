@@ -33,7 +33,7 @@ trait StrideGatekeeperRoleAuthorisationServiceMockModule {
       def notAuthorised = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("bang"))))
     }
   }
-  
+
   object StrideGatekeeperRoleAuthorisationServiceMock extends BaseStrideGatekeeperRoleAuthorisationServiceMock {
     val aMock = mock[StrideGatekeeperRoleAuthorisationService]
   }

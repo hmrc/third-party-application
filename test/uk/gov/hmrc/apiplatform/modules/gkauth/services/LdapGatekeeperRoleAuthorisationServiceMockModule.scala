@@ -34,7 +34,7 @@ trait LdapGatekeeperRoleAuthorisationServiceMockModule {
       def notAuthorised[A] = when(aMock.ensureHasGatekeeperRole()(*)).thenReturn(successful(Some(Unauthorized("Boo"))))
     }
   }
-  
+
   object LdapGatekeeperRoleAuthorisationServiceMock extends BaseLdapGatekeeperRoleAuthorisationServiceMock {
     val aMock = mock[LdapGatekeeperRoleAuthorisationService]
   }

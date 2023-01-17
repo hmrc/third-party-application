@@ -25,7 +25,6 @@ case class ApplicationWithStateHistory private (id: ApplicationId, name: String,
 object ApplicationWithStateHistory {
   def apply(id: ApplicationId, name: String, version: Int, states: List[StateHistory]) = new ApplicationWithStateHistory(id, name, version, states.sorted)
 
-  implicit val dateTimeFormatter = MongoJavatimeFormats.localDateTimeReads
+  implicit val dateTimeFormatter                 = MongoJavatimeFormats.localDateTimeReads
   implicit val formatApplicationWithStateHistory = Json.format[ApplicationWithStateHistory]
 }
-

@@ -40,7 +40,7 @@ object ResponsibleIndividualVerification {
   implicit val riVerificationFormat: OFormat[ResponsibleIndividualToUVerification]          = Json.format[ResponsibleIndividualToUVerification]
   implicit val riUpdateVerificationFormat: OFormat[ResponsibleIndividualUpdateVerification] = Json.format[ResponsibleIndividualUpdateVerification]
 
-  val VerificationTypeToU: String = "termsOfUse"
+  val VerificationTypeToU: String    = "termsOfUse"
   val VerificationTypeUpdate: String = "adminUpdate"
 
   implicit val jsonFormatResponsibleIndividualVerification = Union.from[ResponsibleIndividualVerification]("verificationType")

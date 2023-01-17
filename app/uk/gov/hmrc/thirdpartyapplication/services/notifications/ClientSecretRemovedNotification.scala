@@ -27,12 +27,15 @@ import scala.concurrent.Future
 
 object ClientSecretRemovedNotification {
 
-
-  def sendClientSecretRemovedNotification(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ClientSecretRemoved)
-                                         (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-       event.actor match {
-         case CollaboratorActor(email: String) => emailConnector.sendRemovedClientSecretNotification(email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
-         case _ => Future.successful(HasSucceeded)
-       }
+  def sendClientSecretRemovedNotification(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ClientSecretRemoved
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    event.actor match {
+      case CollaboratorActor(email: String) => emailConnector.sendRemovedClientSecretNotification(email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
+      case _                                => Future.successful(HasSucceeded)
+    }
   }
 }

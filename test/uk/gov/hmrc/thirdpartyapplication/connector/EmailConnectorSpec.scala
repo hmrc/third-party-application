@@ -359,7 +359,7 @@ class EmailConnectorSpec extends ConnectorSpec {
       )
       val recipients                              = Set("admin@example.com", "dev@example.com", "ri@example.com")
       val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiChangeOfApplicationDetails", expectedParameters)
-      
+
       emailWillReturn(expectedRequest)
 
       val result = await(connector.sendChangeOfApplicationDetails(requesterName, applicationName, fieldName, previousValue, newValue, recipients))
@@ -377,12 +377,12 @@ class EmailConnectorSpec extends ConnectorSpec {
 
       val expectedParameters: Map[String, String] = Map(
         "responsibleIndividualName" -> responsibleIndividualName,
-        "applicationName" -> appName,
-        "requesterName" -> adminName,
-        "developerHubLink" -> s"$hubUrl/developer/submissions/responsible-individual-verification?code=$verificationId"
+        "applicationName"           -> appName,
+        "requesterName"             -> adminName,
+        "developerHubLink"          -> s"$hubUrl/developer/submissions/responsible-individual-verification?code=$verificationId"
       )
-      val recipients                        = Set(responsibleIndividualEmail)
-      val expectedRequest: SendEmailRequest = SendEmailRequest(recipients, "apiVerifyResponsibleIndividualUpdate", expectedParameters)
+      val recipients                              = Set(responsibleIndividualEmail)
+      val expectedRequest: SendEmailRequest       = SendEmailRequest(recipients, "apiVerifyResponsibleIndividualUpdate", expectedParameters)
 
       emailWillReturn(expectedRequest)
 

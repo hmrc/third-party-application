@@ -31,6 +31,7 @@ trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with Ar
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)(*)).thenReturn(successful(None))
       }

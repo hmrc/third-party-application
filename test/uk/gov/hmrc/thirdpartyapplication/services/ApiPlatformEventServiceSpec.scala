@@ -84,14 +84,14 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   "ApiPlatformEventService" when {
 
     "applyEvents" should {
-      val secretValue = "secretValue"
+      val secretValue            = "secretValue"
       val clientSecretAddedEvent = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = applicationData.id,
         eventDateTime = LocalDateTime.now(),
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = ClientSecret("name", LocalDateTime.now(), None,  UUID.randomUUID().toString, "eulaVterces")
+        clientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
       )
       "obfuscate ClientSecret Event when applied" in new Setup() {
         val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)
@@ -99,7 +99,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
           .thenReturn(Future.successful(true))
 
         implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> adminEmail)
-        val result = await(objInTest.applyEvents(NonEmptyList.of(clientSecretAddedEvent)))
+        val result                        = await(objInTest.applyEvents(NonEmptyList.of(clientSecretAddedEvent)))
         result shouldBe true
       }
     }

@@ -31,9 +31,11 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
     def aMock: ApiPlatformEventService
 
     object ApplyEvents {
-      def succeeds = {
+
+      def succeeds                                                       = {
         when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
       }
+
       def verifyCalledWith(events: NonEmptyList[UpdateApplicationEvent]) = {
         verify(aMock).applyEvents(eqTo(events))(*)
       }

@@ -25,8 +25,13 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future
 
 object ResponsibleIndividualDeclinedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ResponsibleIndividualDeclined)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ResponsibleIndividualDeclined
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     emailConnector.sendResponsibleIndividualDeclined(
       event.responsibleIndividualName,
       event.requestingAdminEmail,

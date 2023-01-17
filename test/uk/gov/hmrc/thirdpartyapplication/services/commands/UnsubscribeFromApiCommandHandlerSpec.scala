@@ -35,10 +35,10 @@ class UnsubscribeFromApiCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
 
     val underTest = new UnsubscribeFromApiCommandHandler(StrideGatekeeperRoleAuthorisationServiceMock.aMock)
 
-    val applicationId = ApplicationId.random
+    val applicationId       = ApplicationId.random
     val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
-    val apiIdentifier = "some-context".asIdentifier("1.1")
-    val timestamp = LocalDateTime.now
+    val apiIdentifier       = "some-context".asIdentifier("1.1")
+    val timestamp           = LocalDateTime.now
 
     val unsubscribeFromApi = UnsubscribeFromApi(gatekeeperUserActor, apiIdentifier, timestamp)
   }

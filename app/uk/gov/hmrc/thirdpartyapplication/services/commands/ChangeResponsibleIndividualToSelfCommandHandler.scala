@@ -27,7 +27,7 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
 @Singleton
-class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
+class ChangeResponsibleIndividualToSelfCommandHandler @Inject() (
     submissionService: SubmissionsService
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -35,11 +35,14 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
   import CommandHandler._
 
   private def isNotCurrentRi(name: String, email: String, app: ApplicationData) =
-    cond(app.access match {
-      case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
-        ! responsibleIndividual.fullName.value.equalsIgnoreCase(name) || ! responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
-      case _ => true
-    }, s"The specified individual is already the RI for this application")
+    cond(
+      app.access match {
+        case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) =>
+          !responsibleIndividual.fullName.value.equalsIgnoreCase(name) || !responsibleIndividual.emailAddress.value.equalsIgnoreCase(email)
+        case _                                                                                            => true
+      },
+      s"The specified individual is already the RI for this application"
+    )
 
   private def validate(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map5(
@@ -55,7 +58,7 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
 
   private def asEvents(app: ApplicationData, cmd: ChangeResponsibleIndividualToSelf, submission: Submission): NonEmptyList[UpdateApplicationEvent] = {
     val previousResponsibleIndividual = getResponsibleIndividual(app).get
-    val requesterEmail = getRequester(app, cmd.instigator)
+    val requesterEmail                = getRequester(app, cmd.instigator)
     NonEmptyList.of(
       ResponsibleIndividualChangedToSelf(
         id = UpdateApplicationEvent.Id.random,
@@ -76,9 +79,9 @@ class ChangeResponsibleIndividualToSelfCommandHandler @Inject()(
     submissionService.fetchLatest(app.id).map(maybeSubmission => {
       maybeSubmission match {
         case Some(submission) => validate(app, cmd) map { _ =>
-          asEvents(app, cmd, submission)
-        }
-        case _ => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
+            asEvents(app, cmd, submission)
+          }
+        case _                => Validated.Invalid(NonEmptyChain.one(s"No submission found for application ${app.id}"))
       }
     })
   }

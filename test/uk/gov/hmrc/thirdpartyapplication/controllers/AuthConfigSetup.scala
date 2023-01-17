@@ -31,7 +31,7 @@ trait AuthConfigSetup {
   }
 }
 
-trait SandboxAuthSetup extends AuthConfigSetup { 
+trait SandboxAuthSetup extends AuthConfigSetup {
   override def provideAuthConfig(): AuthControlConfig = AuthControlConfig(true, true, authorisationKey)
 }
 

@@ -59,17 +59,17 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
       List.empty
     )
 
-    val app              = anApplicationData(
+    val app            = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
     ).copy(name = appName)
-    val initialDelay     = FiniteDuration(1, MINUTES)
-    val interval         = FiniteDuration(1, HOURS)
-    val deleteInterval  = FiniteDuration(10, DAYS)
-    val jobConfig        = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
-    val job              = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
-    val recipients = app.collaborators.map(_.emailAddress)
+    val initialDelay   = FiniteDuration(1, MINUTES)
+    val interval       = FiniteDuration(1, HOURS)
+    val deleteInterval = FiniteDuration(10, DAYS)
+    val jobConfig      = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
+    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
+    val recipients     = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiredJob" should {

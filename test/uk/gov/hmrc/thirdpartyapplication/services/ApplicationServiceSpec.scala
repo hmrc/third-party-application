@@ -141,16 +141,17 @@ class ApplicationServiceSpec
 
     override lazy val locked = true
   }
-  
+
   trait SetupForAuditTests extends Setup {
+
     def setupAuditTests(access: Access): (ApplicationData, UpdateRedirectUris) = {
       val testUserEmail = "test@example.com"
-      val admin = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
-      val tokens = ApplicationTokens(
+      val admin         = Collaborator(testUserEmail, ADMINISTRATOR, idOf(testUserEmail))
+      val tokens        = ApplicationTokens(
         Token(ClientId("prodId"), "prodToken")
       )
 
-      val existingApplication = ApplicationData(
+      val existingApplication                 = ApplicationData(
         id = applicationId,
         name = "app name",
         normalisedName = "app name",
@@ -162,20 +163,20 @@ class ApplicationServiceSpec
         createdOn = LocalDateTime.now,
         lastAccess = Some(LocalDateTime.now)
       )
-      val newRedirectUris = List("http://new-url.example.com")
+      val newRedirectUris                     = List("http://new-url.example.com")
       val updatedApplication: ApplicationData = existingApplication.copy(
         name = "new name",
         normalisedName = "new name",
         access = access match {
-          case _: Standard => Standard (
-            newRedirectUris,
-            Some ("http://new-url.example.com/terms-and-conditions"),
-            Some ("http://new-url.example.com/privacy-policy")
-          )
-          case x => x
+          case _: Standard => Standard(
+              newRedirectUris,
+              Some("http://new-url.example.com/terms-and-conditions"),
+              Some("http://new-url.example.com/privacy-policy")
+            )
+          case x           => x
         }
       )
-      val updateRedirectUris = UpdateRedirectUris(
+      val updateRedirectUris                  = UpdateRedirectUris(
         actor = GatekeeperUserActor("Gatekeeper Admin"),
         oldRedirectUris = List.empty,
         newRedirectUris = newRedirectUris,
@@ -214,7 +215,7 @@ class ApplicationServiceSpec
 
       val expectedApplicationData: ApplicationData =
         anApplicationDataWithCollaboratorWithUserId(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
-        
+
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -247,7 +248,7 @@ class ApplicationServiceSpec
         environment = Environment.PRODUCTION,
         access = Standard().copy(sellResellOrDistribute = Some(sellResellOrDistribute))
       )
-      .copy(description = None)
+        .copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -272,7 +273,8 @@ class ApplicationServiceSpec
 
       val createdApp: CreateApplicationResponse = await(underTest.create(applicationRequest)(hc))
 
-      val expectedApplicationData: ApplicationData = anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
+      val expectedApplicationData: ApplicationData =
+        anApplicationData(createdApp.application.id, state = testingState(), environment = Environment.PRODUCTION).copy(description = None)
 
       createdApp.totp shouldBe None
       ApiGatewayStoreMock.CreateApplication.verifyNeverCalled()
@@ -304,7 +306,12 @@ class ApplicationServiceSpec
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
-      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(createdApp.application.id, State.PRODUCTION, OldActor(loggedInUser, COLLABORATOR), changedAt = LocalDateTime.now(clock)))
+      StateHistoryRepoMock.Insert.verifyCalledWith(StateHistory(
+        createdApp.application.id,
+        State.PRODUCTION,
+        OldActor(loggedInUser, COLLABORATOR),
+        changedAt = LocalDateTime.now(clock)
+      ))
       AuditServiceMock.Audit.verifyCalledWith(
         AppCreated,
         Map(
@@ -335,7 +342,7 @@ class ApplicationServiceSpec
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
         access = Privileged(totpIds = Some(TotpId("prodTotpId")))
       )
-      .copy(description = None)
+        .copy(description = None)
 
       createdApp.totp shouldBe Some(TotpSecret(prodTOTP.secret))
 
@@ -368,7 +375,7 @@ class ApplicationServiceSpec
         state = ApplicationState(name = State.PRODUCTION, requestedByEmailAddress = Some(loggedInUser), updatedOn = LocalDateTime.now(clock)),
         access = Ropc()
       )
-      .copy(description = None)
+        .copy(description = None)
 
       ApiGatewayStoreMock.CreateApplication.verifyCalled()
       ApplicationRepoMock.Save.verifyCalledWith(expectedApplicationData)
@@ -565,7 +572,7 @@ class ApplicationServiceSpec
       val (updatedApplication, updateRedirectUris) = setupAuditTests(Standard())
       ApplicationUpdateServiceMock.Update.thenReturnError("Error message")
 
-      intercept[BadRequestException]{
+      intercept[BadRequestException] {
         await(underTest.update(applicationId, UpdateApplicationRequest(updatedApplication.name)))
       }.message shouldBe "Failed to process UpdateRedirectUris command"
 
@@ -785,8 +792,8 @@ class ApplicationServiceSpec
         any[HeaderCarrier]
       )
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER,  applicationData.name, Set(email))
-      verify(mockEmailConnector).sendCollaboratorAddedNotification(email,  Role.DEVELOPER, applicationData.name, adminsToEmail)
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER, applicationData.name, Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedNotification(email, Role.DEVELOPER, applicationData.name, adminsToEmail)
       result shouldBe AddCollaboratorResponse(registeredUser = false)
     }
 
@@ -812,7 +819,7 @@ class ApplicationServiceSpec
       )
 
       ApplicationRepoMock.Save.verifyCalledWith(expected)
-      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER, expected.name,  Set(email))
+      verify(mockEmailConnector).sendCollaboratorAddedConfirmation(Role.DEVELOPER, expected.name, Set(email))
       verifyNoMoreInteractions(mockEmailConnector)
       result shouldBe AddCollaboratorResponse(registeredUser = true)
     }

@@ -26,7 +26,7 @@ import java.time.LocalDateTime
 class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach with FixedClock {
 
   val upliftRequestedByEmail = "requester@example.com"
-  val upliftRequestedByName = "Mrs Requester"
+  val upliftRequestedByName  = "Mrs Requester"
 
   "state transition from TESTING " should {
     val startingState = testingState().copy(updatedOn = LocalDateTime.now(clockMinusHours(24L)))

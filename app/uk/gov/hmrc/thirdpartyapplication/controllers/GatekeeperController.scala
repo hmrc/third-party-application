@@ -29,7 +29,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import scala.concurrent.ExecutionContext
 import scala.concurrent.Future.successful
-import scala.util.{Try, Success, Failure}
+import scala.util.{Failure, Success, Try}
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationService
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
@@ -44,9 +44,9 @@ class GatekeeperController @Inject() (
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc)
-  with JsonUtils
-  with AnyGatekeeperRoleAuthorisationAction
-  with OnlyStrideGatekeeperRoleAuthoriseAction {
+    with JsonUtils
+    with AnyGatekeeperRoleAuthorisationAction
+    with OnlyStrideGatekeeperRoleAuthoriseAction {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -123,16 +123,16 @@ class GatekeeperController @Inject() (
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Success(rateLimitTier) =>
-          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map(_ => NoContent) recover recovery
-        case Failure(_)                        => 
+          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
+        case Failure(_)             =>
           successful(UnprocessableEntity(
             JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
           ))
       }
     }
-    .recover(recovery)
+      .recover(recovery)
   }
- 
+
   def deleteApplication(id: ApplicationId) =
     requiresAuthentication().async { implicit request =>
       withJsonBodyFromAnyContent[DeleteApplicationRequest] { deleteApplicationPayload =>

@@ -32,7 +32,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
 class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
-  with ApplicationTestData {
+    with ApplicationTestData {
 
   trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule with ApplicationUpdateServiceMockModule
       with SubmissionsTestData {
@@ -79,15 +79,19 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
     "send email and remove database record" in new Setup {
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
 
-      val code = "123242423432432432"
+      val code         = "123242423432432432"
       val verification =
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeToU,
+        REMINDERS_SENT,
+        timeNow.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }
@@ -97,18 +101,29 @@ class ResponsibleIndividualVerificationRemovalJobSpec extends AsyncHmrcSpec with
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(app.id, app)
       ApplicationUpdateServiceMock.Update.thenReturnError(badApp.id, "Error")
 
-      val code1 = "123242423432432432"
+      val code1         = "123242423432432432"
       val verification1 =
-        ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code1), badApp.id, completelyAnswerExtendedSubmission.submission.id, 0, badApp.name, LocalDateTime.now)
-      val code2 = "725446087565645698"
+        ResponsibleIndividualToUVerification(
+          ResponsibleIndividualVerificationId(code1),
+          badApp.id,
+          completelyAnswerExtendedSubmission.submission.id,
+          0,
+          badApp.name,
+          LocalDateTime.now
+        )
+      val code2         = "725446087565645698"
       val verification2 =
         ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code2), app.id, completelyAnswerExtendedSubmission.submission.id, 0, app.name, LocalDateTime.now)
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification1, verification2)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeToU, REMINDERS_SENT, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeToU,
+        REMINDERS_SENT,
+        timeNow.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code2
     }

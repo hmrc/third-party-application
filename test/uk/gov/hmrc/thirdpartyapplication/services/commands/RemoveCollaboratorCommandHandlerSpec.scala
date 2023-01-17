@@ -30,18 +30,17 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val underTest = new RemoveCollaboratorCommandHandler()
 
     val applicationId = ApplicationId.random
-    val adminEmail = "admin@example.com"
+    val adminEmail    = "admin@example.com"
 
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail))
 
-
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
-    val adminActor = CollaboratorActor(adminEmail)
+    val adminActor        = CollaboratorActor(adminEmail)
 
     val gkUserEmail = "admin@gatekeeper"
     val gkUserActor = GatekeeperUserActor(gkUserEmail)
 
-    val jobId = "theJobThatDeletesCollaborators"
+    val jobId             = "theJobThatDeletesCollaborators"
     val scheduledJobActor = ScheduledJobActor(jobId)
     val collaboratorEmail = "newdev@somecompany.com"
 
@@ -95,7 +94,7 @@ class RemoveCollaboratorCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       result.isValid shouldBe false
       result.toEither match {
         case Left(Chain(error: String)) => error shouldBe s"Collaborator is last remaining admin for Application ${app.id.asText}"
-        case _ => fail()
+        case _                          => fail()
       }
 
     }

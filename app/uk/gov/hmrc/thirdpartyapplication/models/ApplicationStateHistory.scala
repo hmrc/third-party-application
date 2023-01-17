@@ -26,6 +26,5 @@ case class ApplicationStateHistory(applicationId: ApplicationId, appName: String
 
 object ApplicationStateHistory {
   implicit val formatApplicationStateHistoryItem = Json.format[ApplicationStateHistoryItem]
-  implicit val formatApplicationStateHistory = Json.format[ApplicationStateHistory]
+  implicit val formatApplicationStateHistory     = Json.format[ApplicationStateHistory]
 }
-

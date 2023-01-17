@@ -99,17 +99,18 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     }
 
     object SendVerifyResponsibleIndividualUpdateNotification {
+
       def thenReturnSuccess(): Unit = {
         when(aMock.sendVerifyResponsibleIndividualUpdateNotification(*, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
       def verifyCalledWith(
-        responsibleIndividualName: String,
-        responsibleIndividualEmailAddress: String,
-        applicationName: String,
-        requesterName: String,
-        verifyResponsibleIndividualUniqueId: String
-      ) =
+          responsibleIndividualName: String,
+          responsibleIndividualEmailAddress: String,
+          applicationName: String,
+          requesterName: String,
+          verifyResponsibleIndividualUniqueId: String
+        ) =
         verify.sendVerifyResponsibleIndividualUpdateNotification(
           eqTo(responsibleIndividualName),
           eqTo(responsibleIndividualEmailAddress),
@@ -207,7 +208,7 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
         when(aMock.sendChangeOfApplicationDetails(*, *, *, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith(requester: String, applicationName: String, fieldName: String,  previousValue: String, newValue: String, recipients: Set[String]) =
+      def verifyCalledWith(requester: String, applicationName: String, fieldName: String, previousValue: String, newValue: String, recipients: Set[String]) =
         verify.sendChangeOfApplicationDetails(eqTo(requester), eqTo(applicationName), eqTo(fieldName), eqTo(previousValue), eqTo(newValue), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendChangeOfApplicationDetails(*, *, *, *, *, *)(*)
@@ -226,28 +227,31 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     }
 
     object SendCollaboratorAddedNotification {
+
       def thenReturnSuccess() = {
         when(aMock.sendCollaboratorAddedNotification(*, *, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
       def verifyCalledWith(requester: String, role: Role, applicationName: String, recipients: Set[String]) =
-        verify.sendCollaboratorAddedNotification(eqTo(requester), eqTo(role), eqTo(applicationName),  eqTo(recipients))(*)
+        verify.sendCollaboratorAddedNotification(eqTo(requester), eqTo(role), eqTo(applicationName), eqTo(recipients))(*)
 
       def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedNotification(*, *, *, *)(*)
     }
 
     object SendCollaboratorAddedConfirmation {
+
       def thenReturnSuccess() = {
-        when(aMock.sendCollaboratorAddedConfirmation(*,  *, *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendCollaboratorAddedConfirmation(*, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
-      def verifyCalledWith( role: Role, applicationName: String, recipients: Set[String]) =
+      def verifyCalledWith(role: Role, applicationName: String, recipients: Set[String]) =
         verify.sendCollaboratorAddedConfirmation(eqTo(role), eqTo(applicationName), eqTo(recipients))(*)
 
-      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*,  *, *)(*)
+      def verifyNeverCalled() = EmailConnectorMock.verify(never).sendCollaboratorAddedConfirmation(*, *, *)(*)
     }
 
     object SendCollaboratorRemovedNotification {
+
       def thenReturnSuccess() = {
         when(aMock.sendRemovedCollaboratorNotification(*, *, *)(*)).thenReturn(successful(HasSucceeded))
       }
@@ -259,8 +263,9 @@ trait EmailConnectorMockModule extends MockitoSugar with ArgumentMatchersSugar {
     }
 
     object SendCollaboratorRemovedConfirmation {
+
       def thenReturnSuccess() = {
-        when(aMock.sendRemovedCollaboratorConfirmation(*,  *)(*)).thenReturn(successful(HasSucceeded))
+        when(aMock.sendRemovedCollaboratorConfirmation(*, *)(*)).thenReturn(successful(HasSucceeded))
       }
 
       def verifyCalledWith(requester: String, applicationName: String, recipients: Set[String]) =

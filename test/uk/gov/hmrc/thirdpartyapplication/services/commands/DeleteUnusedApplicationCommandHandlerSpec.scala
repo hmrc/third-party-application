@@ -36,22 +36,22 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val appAdminEmail = loggedInUser
-    val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
-    val reasons = "reasons description text"
-    val app = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts = LocalDateTime.now
-    val authKey = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
+    val appId             = ApplicationId.random
+    val appAdminEmail     = loggedInUser
+    val actor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val reasons           = "reasons description text"
+    val app               = anApplicationData(appId, environment = Environment.SANDBOX)
+    val ts                = LocalDateTime.now
+    val authKey           = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
-    val underTest = new DeleteUnusedApplicationCommandHandler(authControlConfig)
+    val underTest         = new DeleteUnusedApplicationCommandHandler(authControlConfig)
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
-      
+
       val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 
