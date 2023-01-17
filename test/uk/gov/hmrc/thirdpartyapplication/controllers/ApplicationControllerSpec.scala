@@ -59,6 +59,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 
+import java.time.temporal.ChronoUnit
+
 class ApplicationControllerSpec
     extends ControllerSpec
     with ApplicationStateUtil
@@ -149,7 +151,7 @@ class ApplicationControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS), "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
@@ -553,7 +555,7 @@ class ApplicationControllerSpec
     val applicationId = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now())
+    val secretRequest = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS))
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -774,7 +776,7 @@ class ApplicationControllerSpec
     val clientId    = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now()
+      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 

@@ -35,7 +35,7 @@ trait ApplicationTestData extends ApplicationStateUtil {
     idsByEmail.getOrElseUpdate(email, UserId.random)
   }
 
-  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4), createdOn = LocalDateTime.now(clock))
 
   val loggedInUser = "loggedin@example.com"
   val devEmail     = "dev@example.com"

@@ -42,6 +42,8 @@ import java.util.UUID
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 
+import java.time.temporal.ChronoUnit
+
 class ApplicationRepositoryISpec
     extends ServerBaseISpec
     with SubmissionsTestData
@@ -331,7 +333,7 @@ class ApplicationRepositoryISpec
           ClientId("aaa"),
           generateAccessToken,
           List(
-            ClientSecret(
+            aClientSecret(
               name = "Default",
               lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
               hashedSecret = "hashed-secret"
@@ -370,7 +372,7 @@ class ApplicationRepositoryISpec
       val testStartTime     = LocalDateTime.now(clock)
       val applicationId     = ApplicationId.random
       val secretToUpdate    =
-        ClientSecret(
+        aClientSecret(
           name = "SecretToUpdate",
           lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
           hashedSecret = "hashed-secret"
@@ -382,7 +384,7 @@ class ApplicationRepositoryISpec
             generateAccessToken,
             List(
               secretToUpdate,
-              ClientSecret(
+              aClientSecret(
                 name = "SecretToLeave",
                 lastAccess = Some(LocalDateTime.now(clock).minusDays(20)),
                 hashedSecret = "hashed-secret"
@@ -2342,7 +2344,7 @@ class ApplicationRepositoryISpec
       )
 
       val clientSecret       =
-        ClientSecret("secret-name", hashedSecret = "hashed-secret")
+        aClientSecret(name = "secret-name", hashedSecret = "hashed-secret")
       val updatedApplication = await(
         applicationRepository.addClientSecret(applicationId, clientSecret)
       )
@@ -2355,8 +2357,6 @@ class ApplicationRepositoryISpec
   }
 
   "updateClientSecretName" should {
-    def namedClientSecret(id: String, name: String): ClientSecret =
-      ClientSecret(id = id, name = name, hashedSecret = "hashed-secret")
     def clientSecretWithId(
         application: ApplicationData,
         clientSecretId: String
@@ -2379,7 +2379,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            clientSecrets = List(namedClientSecret(clientSecretId, ""))
+            clientSecrets = List(aClientSecret(clientSecretId))
           )
         )
       )
@@ -2406,7 +2406,7 @@ class ApplicationRepositoryISpec
         applicationRepository.save(
           anApplicationDataForTest(
             applicationId,
-            clientSecrets = List(namedClientSecret(clientSecretId, "Default"))
+            clientSecrets = List(aClientSecret(clientSecretId, name = "Default"))
           )
         )
       )
@@ -2434,9 +2434,9 @@ class ApplicationRepositoryISpec
           anApplicationDataForTest(
             applicationId,
             clientSecrets = List(
-              namedClientSecret(
+              aClientSecret(
                 clientSecretId,
-                "••••••••••••••••••••••••••••••••abc1"
+                name = "••••••••••••••••••••••••••••••••abc1"
               )
             )
           )
@@ -2461,15 +2461,9 @@ class ApplicationRepositoryISpec
       val applicationId  = ApplicationId.random
       val clientSecretId = UUID.randomUUID().toString
 
-      val clientSecret1 = namedClientSecret(
-        UUID.randomUUID().toString,
-        "secret-that-should-not-change"
-      )
-      val clientSecret2 = namedClientSecret(
-        UUID.randomUUID().toString,
-        "secret-that-should-not-change"
-      )
-      val clientSecret3 = namedClientSecret(clientSecretId, "secret-3")
+      val clientSecret1 = aClientSecret(name = "secret-that-should-not-change")
+      val clientSecret2 = aClientSecret(name = "secret-that-should-not-change")
+      val clientSecret3 = aClientSecret(clientSecretId, name = "secret-3")
 
       await(
         applicationRepository.save(
@@ -2556,7 +2550,7 @@ class ApplicationRepositoryISpec
     "overwrite an existing hashedSecretField" in {
       val applicationId = ApplicationId.random
       val clientSecret  =
-        ClientSecret("secret-name", hashedSecret = "old-hashed-secret")
+        aClientSecret(name = "secret-name", hashedSecret = "old-hashed-secret")
 
       val savedApplication = await(
         applicationRepository.save(
@@ -2586,12 +2580,9 @@ class ApplicationRepositoryISpec
     "update correct client secret where there are multiple" in {
       val applicationId = ApplicationId.random
 
-      val clientSecret1 =
-        ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2 =
-        ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3 =
-        ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecret1 = aClientSecret(name = "secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2 = aClientSecret(name = "secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3 = aClientSecret(name = "secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(
         applicationRepository.save(
@@ -2632,12 +2623,9 @@ class ApplicationRepositoryISpec
     "remove client secret with matching id" in {
       val applicationId = ApplicationId.random
 
-      val clientSecretToRemove =
-        ClientSecret("secret-name-1", hashedSecret = "old-hashed-secret-1")
-      val clientSecret2        =
-        ClientSecret("secret-name-2", hashedSecret = "old-hashed-secret-2")
-      val clientSecret3        =
-        ClientSecret("secret-name-3", hashedSecret = "old-hashed-secret-3")
+      val clientSecretToRemove = aClientSecret(name = "secret-name-1", hashedSecret = "old-hashed-secret-1")
+      val clientSecret2        = aClientSecret(name = "secret-name-2", hashedSecret = "old-hashed-secret-2")
+      val clientSecret3        = aClientSecret(name = "secret-name-3", hashedSecret = "old-hashed-secret-3")
 
       await(
         applicationRepository.save(
@@ -2884,7 +2872,7 @@ class ApplicationRepositoryISpec
 
       val app = anApplicationData(applicationId)
 
-      val newClientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
+      val newClientSecret = aClientSecret(name = "name", hashedSecret = "eulaVterces")
       val secretValue = "secretValue"
       val event = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
@@ -3163,7 +3151,7 @@ class ApplicationRepositoryISpec
 
     "handle ApplicationStateChanged event correctly" in {
       val applicationId = ApplicationId.random
-      val ts = LocalDateTime.now
+      val ts = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
       val oldRi = ResponsibleIndividual.build("old ri name", "old@example.com")
       val importantSubmissionData = ImportantSubmissionData(None, oldRi, Set.empty,
         TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
@@ -3223,7 +3211,7 @@ class ApplicationRepositoryISpec
     def saveApp(state: State, timeOffset: Duration, isNewJourney: Boolean = true, environment: Environment = Environment.PRODUCTION) = {
       val appId = ApplicationId.random
       val app = anApplicationData(appId).copy(
-        state = ApplicationState(name = state),
+        state = ApplicationState(name = state, updatedOn = LocalDateTime.now(clock)),
         access = Standard(importantSubmissionData = isNewJourney match {
           case true => Some(ImportantSubmissionData(
             None,
@@ -3235,7 +3223,7 @@ class ApplicationRepositoryISpec
           ))
           case false => None
         }),
-        createdOn = LocalDateTime.now.plus(timeOffset),
+        createdOn = LocalDateTime.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS),
         environment = environment.toString,
         tokens = ApplicationTokens(Token(ClientId.random, "access token"))
       )
@@ -3245,7 +3233,7 @@ class ApplicationRepositoryISpec
 
     def saveHistoryStatePair(appId: ApplicationId, oldState: State, newState: State, timeOffset: Duration) = saveHistory(appId, Some(oldState), newState, timeOffset)
     def saveHistory(appId: ApplicationId, maybeOldState: Option[State], newState: State, timeOffset: Duration) = {
-      val stateHistory = StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, LocalDateTime.now.plus(timeOffset))
+      val stateHistory = StateHistory(appId, newState, OldActor("actor", ActorType.GATEKEEPER), maybeOldState, None, LocalDateTime.now.plus(timeOffset).truncatedTo(ChronoUnit.MILLIS))
       await(stateHistoryRepository.insert(stateHistory))
       stateHistory
     }
@@ -3403,13 +3391,7 @@ class ApplicationRepositoryISpec
         Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(
-        ClientSecret(
-          "",
-          createdOn = LocalDateTime.now(clock),
-          hashedSecret = "hashed-secret"
-        )
-      )
+      clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret"))
     ): ApplicationData = {
 
     aNamedApplicationData(
@@ -3435,9 +3417,7 @@ class ApplicationRepositoryISpec
         Collaborator("user@example.com", Role.ADMINISTRATOR, UserId.random)
       ),
       checkInformation: Option[CheckInformation] = None,
-      clientSecrets: List[ClientSecret] = List(
-        ClientSecret("", hashedSecret = "hashed-secret")
-      ),
+      clientSecrets: List[ClientSecret] = List(aClientSecret(hashedSecret = "hashed-secret")),
       grantLength: Int = defaultGrantLength
     ): ApplicationData = {
 
@@ -3460,5 +3440,13 @@ class ApplicationRepositoryISpec
     )
   }
 
+  def aClientSecret(id: String = UUID.randomUUID().toString, name: String = "", lastAccess: Option[LocalDateTime] = None, hashedSecret: String = "") =
+    ClientSecret(
+      id = id,
+      name = name,
+      lastAccess = lastAccess,
+      hashedSecret = hashedSecret,
+      createdOn = LocalDateTime.now(clock)
+    )
 
 }

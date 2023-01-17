@@ -21,6 +21,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
+import java.time.temporal.ChronoUnit
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.util.Random
 
@@ -92,7 +93,7 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
     AskWhen.Context.Keys.VAT_OR_ITSA       -> "No"
   )
-  val now                              = LocalDateTime.now
+  val now                              = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
 
   val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
 

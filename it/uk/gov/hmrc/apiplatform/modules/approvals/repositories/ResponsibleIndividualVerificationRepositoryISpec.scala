@@ -33,6 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{C
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
+import java.time.temporal.ChronoUnit
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import java.util.UUID
 
@@ -61,9 +62,11 @@ class ResponsibleIndividualVerificationRepositoryISpec
     await(repository.ensureIndexes)
   }
 
+  private def nowTruncatedToMillis = LocalDateTime.now(ZoneOffset.UTC).truncatedTo(ChronoUnit.MILLIS)
+
   def buildToUDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
+      createdOn: LocalDateTime = nowTruncatedToMillis,
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) =
@@ -71,7 +74,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildUpdateDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
+      createdOn: LocalDateTime = nowTruncatedToMillis,
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) =
@@ -79,7 +82,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   def buildAndSaveDoc(
       state: ResponsibleIndividualVerificationState,
-      createdOn: LocalDateTime = LocalDateTime.now,
+      createdOn: LocalDateTime = nowTruncatedToMillis,
       submissionId: Submission.Id = Submission.Id.random,
       submissionIndex: Int = 0
     ) = {
@@ -92,7 +95,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "save" should {
     "save ToU document to the database" in {
-      val doc = buildToUDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc = buildToUDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -100,7 +103,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
     }
 
     "save update document to the database" in {
-      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc = buildUpdateDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO))
       await(repository.save(doc))
 
       val allDocs = await(repository.findAll)
@@ -110,7 +113,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetch" should {
     "retrieve a document by id" in {
-      val savedDoc   = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc   = buildAndSaveDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO))
       val fetchedDoc = await(repository.fetch(savedDoc.id))
 
       Some(savedDoc) mustBe fetchedDoc
@@ -119,7 +122,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "delete" should {
     "remove a document by id" in {
-      val savedDoc = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val savedDoc = buildAndSaveDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO))
       await(repository.delete(savedDoc.id))
 
       await(repository.findAll) mustBe List()
@@ -127,8 +130,8 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
     "remove the record matching the latest submission instance only" in {
       val submissionId                   = Submission.Id.random
-      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 0)
-      buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO), submissionId, 1)
+      val savedDocForSubmissionInstance0 = buildAndSaveDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO), submissionId, 0)
+      buildAndSaveDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO), submissionId, 1)
       val submissionWithTwoInstances     = Submission.addInstance(answersToQuestions, Submission.Status.Answering(LocalDateTime.now, true))(aSubmission.copy(id = submissionId))
       await(repository.delete(submissionWithTwoInstances))
 
@@ -138,7 +141,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "fetchByStateAndAge" should {
     "retrieve correct documents" in {
-      val initialWithOldDate = buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
+      val initialWithOldDate = buildAndSaveDoc(INITIAL, nowTruncatedToMillis.minusDays(MANY_DAYS_AGO))
       buildAndSaveDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(MANY_DAYS_AGO))
       buildAndSaveDoc(REMINDERS_SENT, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
@@ -164,7 +167,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "updateSetDefaultVerificationType" should {
     "not change any records where verificationType already exists" in {
-      val doc = buildUpdateDoc(INITIAL, LocalDateTime.now.minusDays(FEW_DAYS_AGO))
+      val doc = buildUpdateDoc(INITIAL, nowTruncatedToMillis.minusDays(FEW_DAYS_AGO))
       val updateType = await(repository.save(doc))
 
       val stateInitial      = buildAndSaveDoc(INITIAL)
@@ -179,7 +182,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
 
   "applyEvents" should {
     val appName = "my app"
-    val now = LocalDateTime.now(ZoneOffset.UTC)
+    val now = nowTruncatedToMillis
     val appId = ApplicationId.random
     val code = "12341285217652137257396"
 
@@ -352,7 +355,7 @@ class ResponsibleIndividualVerificationRepositoryISpec
       await(repository.save(existingRecordNotMatchingSubmissionId))
       await(repository.save(existingRecordNotMatchingSubmissionIndex))
 
-      val updateTimestamp = LocalDateTime.now().plusHours(1)
+      val updateTimestamp = nowTruncatedToMillis.plusHours(1)
       val event = buildRiVerificationStartedEvent(existingSubmissionId, existingSubmissionIndex).copy(eventDateTime = updateTimestamp)
 
       await(repository.applyEvents(NonEmptyList.one(event))) mustBe HasSucceeded
