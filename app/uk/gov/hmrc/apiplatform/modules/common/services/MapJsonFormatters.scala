@@ -22,6 +22,7 @@ import play.api.libs.json._
 
 trait MapJsonFormatters {
 
+  // scalastyle:off cyclomatic.complexity
   implicit def listMapReads[K, V](implicit keyReads: KeyReads[K], readsV: Reads[V]): Reads[ListMap[K, V]] = new Reads[ListMap[K, V]] {
     type Errors = Seq[(JsPath, Seq[JsonValidationError])]
 
@@ -58,6 +59,7 @@ trait MapJsonFormatters {
       case _ => JsError(Seq(JsPath() -> Seq(JsonValidationError("error.expected.jsobject"))))
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   implicit def listMapWrites[K, V](implicit keyWrites: KeyWrites[K], formatV: Writes[V]): Writes[ListMap[K, V]] =
     new Writes[ListMap[K, V]] {

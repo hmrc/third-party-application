@@ -32,6 +32,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 @Singleton
 class NotificationService @Inject() (emailConnector: EmailConnector)(implicit val ec: ExecutionContext) extends ApplicationLogger {
 
+  // scalastyle:off cyclomatic.complexity method.length
   def sendNotifications(app: ApplicationData, events: List[UpdateApplicationEvent with TriggersNotification])(implicit hc: HeaderCarrier): Future[List[HasSucceeded]] = {
     def sendNotification(app: ApplicationData, event: UpdateApplicationEvent with TriggersNotification) = {
       event match {
@@ -87,5 +88,6 @@ class NotificationService @Inject() (emailConnector: EmailConnector)(implicit va
 
     Future.sequence(events.map(evt => sendNotification(app, evt)))
   }
+  // scalastyle:on cyclomatic.complexity method.length
 
 }

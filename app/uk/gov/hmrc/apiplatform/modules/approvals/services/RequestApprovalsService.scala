@@ -170,10 +170,11 @@ class RequestApprovalsService @Inject() (
       name = applicationName,
       normalisedName = applicationName.toLowerCase,
       access = updateStandardData(existing.access, importantSubmissionData),
-      state = if (isRequesterTheResponsibleIndividual)
+      state = if (isRequesterTheResponsibleIndividual) {
         existing.state.toPendingGatekeeperApproval(requestedByEmailAddress, requestedByName, clock)
-      else
+      } else {
         existing.state.toPendingResponsibleIndividualVerification(requestedByEmailAddress, requestedByName, clock)
+      }
     )
 
   private def validateApplicationName(appName: String, appId: ApplicationId, accessType: AccessType)(implicit hc: HeaderCarrier): Future[Either[ApprovalRejectedDueToName, Unit]] =

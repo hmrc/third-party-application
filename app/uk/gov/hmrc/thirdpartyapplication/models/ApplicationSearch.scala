@@ -28,6 +28,8 @@ import uk.gov.hmrc.mongo.play.json.formats.MongoJavatimeFormats
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
+// scalastyle:off number.of.types
+
 case class ApplicationSearch(
     pageNumber: Int = 1,
     pageSize: Int = Int.MaxValue,
@@ -221,3 +223,5 @@ object ApplicationSort extends ApplicationSort {
     case _                      => SubmittedAscending
   }
 }
+
+// scalastyle:on number.of.types

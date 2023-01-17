@@ -352,8 +352,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
     collection.find(query).toFuture()
   }
 
-  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
-    /*
+  /*
     db.application.aggregate( [
         {
             $match:
@@ -388,7 +387,8 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
             }
         }
     ] )
-     */
+   */
+  def getSubscriptionsForDeveloper(userId: UserId): Future[Set[ApiIdentifier]] = {
 
     import org.mongodb.scala.model.Projections.{computed, excludeId}
 
@@ -480,6 +480,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def in(fieldName: String, values: Seq[String]): Bson = matches(Filters.in(fieldName, values: _*))
 
+  // scalastyle:off cyclomatic.complexity
   private def convertFilterToQueryClause(applicationSearchFilter: ApplicationSearchFilter, applicationSearch: ApplicationSearch): Bson = {
 
     def applicationStatusMatch(states: State*): Bson = in("state.name", states.map(_.toString))
@@ -531,6 +532,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _                                 => Document() // Only here to complete the match
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   private def convertToSortClause(sort: ApplicationSort): List[Bson] = sort match {
     case NameAscending         => List(Aggregates.sort(Sorts.ascending("name")))
@@ -805,6 +807,7 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
 
   private def noOp(event: UpdateApplicationEvent): Future[ApplicationData] = fetch(event.applicationId).map(_.get)
 
+  // scalastyle:off cyclomatic.complexity
   private def applyEvent(event: UpdateApplicationEvent): Future[ApplicationData] = {
     import UpdateApplicationEvent._
 
@@ -834,4 +837,5 @@ class ApplicationRepository @Inject() (mongo: MongoComponent)(implicit val ec: E
       case _: ClientSecretAddedObfuscated                                                                         => noOp(event)
     }
   }
+  // scalastyle:on cyclomatic.complexity
 }

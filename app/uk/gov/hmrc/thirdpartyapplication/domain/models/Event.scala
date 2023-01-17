@@ -28,6 +28,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.Role
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 import uk.gov.hmrc.thirdpartyapplication.models.EventType
 
+// scalastyle:off number.of.types number.of.methods
+
 sealed trait UpdateApplicationEvent {
   def id: UpdateApplicationEvent.Id
   def applicationId: ApplicationId
@@ -500,3 +502,5 @@ object UpdateApplicationEvent {
     .and[RedirectUrisUpdated](EventType.REDIRECT_URIS_UPDATED_V2.toString)
     .format
 }
+
+// scalastyle:on number.of.types number.of.methods

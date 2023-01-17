@@ -38,6 +38,8 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction.{ApplicationDeleted, _}
 import uk.gov.hmrc.thirdpartyapplication.util.HeaderCarrierHelper
 
+// scalastyle:off number.of.types
+
 @Singleton
 class AuditService @Inject() (val auditConnector: AuditConnector, val submissionService: SubmissionsService, val clock: Clock)(implicit val ec: ExecutionContext)
     extends EitherTHelper[String] {
@@ -73,6 +75,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
     }
   }
 
+  // scalastyle:off cyclomatic.complexity
   private def applyEvent(app: ApplicationData, event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     event match {
       case evt: ApplicationApprovalRequestDeclined => auditApplicationApprovalRequestDeclined(app, evt)
@@ -87,6 +90,7 @@ class AuditService @Inject() (val auditConnector: AuditConnector, val submission
       case _                                       => Future.successful(None)
     }
   }
+  // scalastyle:on cyclomatic.complexity
 
   private def auditApplicationDeletedByGatekeeper(app: ApplicationData, evt: ApplicationDeletedByGatekeeper)(implicit hc: HeaderCarrier): Future[Option[AuditResult]] = {
     liftF(auditGatekeeperAction(evt.actor.toString, app, ApplicationDeleted, Map("requestedByEmailAddress" -> evt.requestingAdminEmail)))
@@ -413,3 +417,5 @@ object AuditHelper {
     questionsWithAnswers ++ declinedData ++ dates ++ counters
   }
 }
+
+// scalastyle:on number.of.types

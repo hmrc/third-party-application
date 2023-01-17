@@ -88,6 +88,7 @@ class ApplicationUpdateService @Inject() (
     } yield savedApp
   }
 
+  // scalastyle:off cyclomatic.complexity
   private def processUpdate(app: ApplicationData, applicationUpdate: ApplicationUpdate)(implicit hc: HeaderCarrier): CommandHandler.Result = {
     applicationUpdate match {
       case cmd: AddClientSecret                                       => addClientSecretCommandHandler.process(app, cmd)
@@ -113,4 +114,5 @@ class ApplicationUpdateService @Inject() (
       case _                                                          => Future.successful(Validated.invalidNec(s"Unknown ApplicationUpdate type $applicationUpdate"))
     }
   }
+  // scalastyle:on cyclomatic.complexity
 }
