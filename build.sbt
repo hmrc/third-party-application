@@ -47,7 +47,6 @@ lazy val microservice = Project(appName, file("."))
   .settings(
     addCompilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
   )
-  .settings(SilencerSettings())
   .settings(inConfig(Test)(BloopDefaults.configSettings))
   .settings(
     Test / testOptions += Tests.Argument(TestFrameworks.ScalaTest, "-eT"),
