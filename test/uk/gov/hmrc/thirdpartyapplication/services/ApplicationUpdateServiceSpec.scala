@@ -34,7 +34,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   trait Setup extends CommonSetup
 
-  val timestamp      = LocalDateTime.now
+  val timestamp      = FixedClock.now
   val gatekeeperUser = "gkuser1"
   val adminName = "Mr Admin"
   val adminEmail = "admin@example.com"
@@ -64,7 +64,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val newName    = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
     val event = ProductionAppNameChanged(
-      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), applicationData.name, newName, adminEmail)
+      UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), applicationData.name, newName, adminEmail)
 
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -213,7 +213,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with ChangeResponsibleIndividualToSelf" should {
-    val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, LocalDateTime.now, "name", "email")
+    val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, FixedClock.now, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
       val newRiName = "Mr Responsible"
@@ -262,7 +262,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   "update with ChangeResponsibleIndividualToOther" should {
     val code = "235345t3874528745379534234234234"
-    val changeResponsibleIndividual = ChangeResponsibleIndividualToOther(code, LocalDateTime.now)
+    val changeResponsibleIndividual = ChangeResponsibleIndividualToOther(code, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName = "bill badger"
     val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
@@ -319,7 +319,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   "update with VerifyResponsibleIndividual" should {
     val adminName = "Ms Admin"
-    val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, LocalDateTime.now, adminName, "name", "email")
+    val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, FixedClock.now, adminName, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
       val newRiName = "Mr Responsible"
@@ -364,7 +364,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   "update with DeclineResponsibleIndividual" should {
     val code = "235345t3874528745379534234234234"
-    val declineResponsibleIndividual = DeclineResponsibleIndividual(code, LocalDateTime.now)
+    val declineResponsibleIndividual = DeclineResponsibleIndividual(code, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName = "bill badger"
     val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
@@ -418,7 +418,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
 
   "update with DeclineResponsibleIndividualDidNotVerify" should {
     val code = "235345t3874528745379534234234234"
-    val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, LocalDateTime.now)
+    val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName = "bill badger"
     val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
@@ -473,7 +473,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   "update with DeclineApplicationApprovalRequest" should {
     val gatekeeperUser = "Bob.TheBuilder"
     val reasons = "Reasons description text"
-    val declineApplicationApprovalRequest = DeclineApplicationApprovalRequest(gatekeeperUser, reasons, LocalDateTime.now)
+    val declineApplicationApprovalRequest = DeclineApplicationApprovalRequest(gatekeeperUser, reasons, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val requesterName = "bill badger"
     val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
@@ -525,7 +525,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val requesterEmail = "bill.badger@rupert.com"
     val actor = CollaboratorActor(requesterEmail)
     val reasons = "Reasons description text"
-    val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(instigator, reasons, LocalDateTime.now)
+    val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(instigator, reasons, FixedClock.now)
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
@@ -573,7 +573,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val gatekeeperUser = "gatekeeperuser"
     val actor = GatekeeperUserActor(gatekeeperUser)
     val reasons = "Reasons description text"
-    val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(gatekeeperUser, requesterEmail, reasons, LocalDateTime.now)
+    val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(gatekeeperUser, requesterEmail, reasons, FixedClock.now)
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
@@ -620,7 +620,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
     val reasons = "Reasons description text"
     val authorisationKey = "23476523467235972354923"
-    val deleteUnusedApplication = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authorisationKey, reasons, LocalDateTime.now)
+    val deleteUnusedApplication = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authorisationKey, reasons, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
@@ -668,7 +668,7 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val jobId = "ProductionCredentialsRequestExpiredJob"
     val actor = ScheduledJobActor(jobId)
     val reasons = "Reasons description text"
-    val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(jobId, reasons, LocalDateTime.now)
+    val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(jobId, reasons, FixedClock.now)
     val requesterEmail = "bill.badger@rupert.com"
     val clientId = ClientId("clientId")
     val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))

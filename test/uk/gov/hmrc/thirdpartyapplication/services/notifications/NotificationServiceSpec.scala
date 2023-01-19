@@ -28,7 +28,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class NotificationServiceSpec
@@ -67,7 +66,7 @@ class NotificationServiceSpec
     "when receive a ProductionAppNameChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationName.thenReturnSuccess()
       val event = ProductionAppNameChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), oldAppName, newAppName, adminEmail)
+        UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), oldAppName, newAppName, adminEmail)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -79,7 +78,7 @@ class NotificationServiceSpec
       val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
       val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
       val event = ProductionAppPrivacyPolicyLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
+        UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -91,7 +90,7 @@ class NotificationServiceSpec
       val previousPrivacyPolicyUrl = "https://example.com/old-privacy-policy"
       val newPrivacyPolicyUrl = "https://example.com/new-privacy-policy"
       val event = ProductionLegacyAppPrivacyPolicyLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
+        UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, previousPrivacyPolicyUrl, newPrivacyPolicyUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -103,7 +102,7 @@ class NotificationServiceSpec
       val previousTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/old-terms-conds")
       val newTermsAndConditionsUrl = TermsAndConditionsLocation.Url("https://example.com/new-terms-conds")
       val event = ProductionAppTermsConditionsLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
+        UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -115,7 +114,7 @@ class NotificationServiceSpec
       val previousTermsAndConditionsUrl = "https://example.com/old-terms-conds"
       val newTermsAndConditionsUrl = "https://example.com/new-terms-conds"
       val event = ProductionLegacyAppTermsConditionsLocationChanged(
-        UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
+        UpdateApplicationEvent.Id.random, applicationId, FixedClock.now, devHubUser, previousTermsAndConditionsUrl, newTermsAndConditionsUrl)
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -124,7 +123,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualVerificationStarted, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendVerifyResponsibleIndividualUpdateNotification.thenReturnSuccess()
-      val event = ResponsibleIndividualVerificationStarted(UpdateApplicationEvent.Id.random, ApplicationId.random, "app name", LocalDateTime.now(),
+      val event = ResponsibleIndividualVerificationStarted(UpdateApplicationEvent.Id.random, ApplicationId.random, "app name", FixedClock.now,
         CollaboratorActor("admin@example.com"), "admin name", "admin@example.com",
         "ri name", "ri@example.com", Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
 
@@ -135,7 +134,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualChanged, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfResponsibleIndividual.thenReturnSuccess()
-      val event = ResponsibleIndividualChanged(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ResponsibleIndividualChanged(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("admin@example.com"), "old ri name", "oldri@example.com",
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
@@ -146,7 +145,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualChangedToSelf, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendChangeOfResponsibleIndividual.thenReturnSuccess()
-      val event = ResponsibleIndividualChangedToSelf(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ResponsibleIndividualChangedToSelf(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("admin@example.com"), "old ri name", "oldri@example.com",
         Submission.Id.random, 1, "admin name", "admin@example.com")
 
@@ -157,7 +156,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualDeclined, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualDeclined.thenReturnSuccess()
-      val event = ResponsibleIndividualDeclined(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ResponsibleIndividualDeclined(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
@@ -168,7 +167,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualDeclinedUpdate, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualNotChanged.thenReturnSuccess()
-      val event = ResponsibleIndividualDeclinedUpdate(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ResponsibleIndividualDeclinedUpdate(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
@@ -179,7 +178,7 @@ class NotificationServiceSpec
 
     "when receive a ResponsibleIndividualDidNotVerify, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendResponsibleIndividualDidNotVerify.thenReturnSuccess()
-      val event = ResponsibleIndividualDidNotVerify(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ResponsibleIndividualDidNotVerify(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("admin@example.com"),
         "ri name", "ri@example.com", Submission.Id.random, 1, "code12345678", "admin name", "admin@example.com")
 
@@ -192,9 +191,9 @@ class NotificationServiceSpec
       val obfuscatedSecret = "********cret"
       val requestingAdminEmail = "admin@example.com"
       EmailConnectorMock.SendAddedClientSecretNotification.thenReturnOk()
-      val event = ClientSecretAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ClientSecretAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor(requestingAdminEmail),
-        "secret", ClientSecret(obfuscatedSecret, LocalDateTime.now(), hashedSecret = "hashed"))
+        "secret", ClientSecret(obfuscatedSecret, FixedClock.now, hashedSecret = "hashed"))
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
       result shouldBe List(HasSucceeded)
@@ -207,7 +206,7 @@ class NotificationServiceSpec
       val clientSecretName = "********cret"
       val requestingAdminEmail = "dev@example.com"
       EmailConnectorMock.SendRemovedClientSecretNotification.thenReturnOk()
-      val event = ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = ClientSecretRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor(requestingAdminEmail),
         clientSecretId, clientSecretName)
 
@@ -225,7 +224,7 @@ class NotificationServiceSpec
 
       val collaboratorEmail = "somedev@someCompany.com"
       val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-      val event = CollaboratorAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = CollaboratorAdded(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
@@ -252,7 +251,7 @@ class NotificationServiceSpec
 
       val collaboratorEmail = "somedev@someCompany.com"
       val collaborator = Collaborator(collaboratorEmail, Role.DEVELOPER, idOf(collaboratorEmail))
-      val event = CollaboratorRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, LocalDateTime.now(),
+      val event = CollaboratorRemoved(UpdateApplicationEvent.Id.random, ApplicationId.random, FixedClock.now,
         CollaboratorActor("dev@example.com"),
         collaborator.userId,
         collaborator.emailAddress,
@@ -273,7 +272,7 @@ class NotificationServiceSpec
 
     "when receive a ApplicationDeletedByGatekeeper, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendApplicationDeletedNotification.thenReturnSuccess()
-      val event = ApplicationDeletedByGatekeeper(UpdateApplicationEvent.Id.random, applicationData.id, LocalDateTime.now(),
+      val event = ApplicationDeletedByGatekeeper(UpdateApplicationEvent.Id.random, applicationData.id, FixedClock.now,
         GatekeeperUserActor("gatekeeperuser"), ClientId("clientId"), "wso2AppName", "reasons", "admin@example.com")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))
@@ -283,7 +282,7 @@ class NotificationServiceSpec
 
     "when receive a ProductionCredentialsApplicationDeleted, call the event handler and return successfully" in new Setup {
       EmailConnectorMock.SendProductionCredentialsRequestExpired.thenReturnSuccess()
-      val event = ProductionCredentialsApplicationDeleted(UpdateApplicationEvent.Id.random, applicationData.id, LocalDateTime.now(),
+      val event = ProductionCredentialsApplicationDeleted(UpdateApplicationEvent.Id.random, applicationData.id, FixedClock.now,
         GatekeeperUserActor("gatekeeperuser"), ClientId("clientId"), "wso2AppName", "reasons")
 
       val result = await(underTest.sendNotifications(applicationData, List(event)))

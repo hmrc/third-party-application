@@ -23,8 +23,6 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util._
 
-import java.time.LocalDateTime
-
 class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequestSamples {
 
   "RateLimitTier" should {
@@ -46,10 +44,10 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ApplicationTokens(Token(ClientId("cid"), "at")),
         productionState("user1"),
         Standard(),
-        LocalDateTime.now,
-        Some(LocalDateTime.now)
+        FixedClock.now,
+        Some(FixedClock.now)
       )
-    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = LocalDateTime.now(clock))
+    val history = StateHistory(app.id, State.PENDING_GATEKEEPER_APPROVAL, OldActor("1", ActorType.COLLABORATOR), changedAt = FixedClock.now)
 
     "create object" in {
       val result = ApplicationWithUpliftRequest.create(app, history)
@@ -80,7 +78,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken"),
-        createdOn = LocalDateTime.now(clock)
+        createdOn = FixedClock.now
       )
     }
 
@@ -95,7 +93,7 @@ class ApplicationSpec extends HmrcSpec with ApplicationStateUtil with UpliftRequ
         ),
         wso2ApplicationName = "wso2ApplicationName",
         environmentToken = Token(ClientId("clientId"), "accessToken"),
-        createdOn = LocalDateTime.now(clock)
+        createdOn = FixedClock.now
       )
     }
 

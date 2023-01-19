@@ -30,8 +30,6 @@ import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.util._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-import java.time.LocalDateTime
-
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
 
   trait Setup extends ApplicationRepositoryMockModule with UpliftRequestSamples {
@@ -46,7 +44,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
         ),
         applicationName,
         Token(ClientId(""), serverToken, List.empty),
-        createdOn = LocalDateTime.now(clock)
+        createdOn = FixedClock.now
       )
     }
 

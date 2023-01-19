@@ -21,8 +21,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{C
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -47,7 +47,7 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       )
     )
 
-    val timestamp = LocalDateTime.now
+    val timestamp = FixedClock.now
     val secretValue = "secret"
     val clientSecret = app.tokens.production.clientSecrets.head
 

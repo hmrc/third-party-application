@@ -32,7 +32,6 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
 import java.time.format.DateTimeFormatter
-import java.time.LocalDateTime
 
 class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
 
@@ -52,7 +51,7 @@ class GrantApprovalsServiceSpec extends AsyncHmrcSpec {
     val fmt = DateTimeFormatter.ISO_DATE_TIME
 
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val acceptanceDate        = LocalDateTime.now(clock)
+    val acceptanceDate        = FixedClock.now
 
     val acceptance = TermsOfUseAcceptance(
       responsibleIndividual,

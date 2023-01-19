@@ -23,6 +23,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
 import java.time.{LocalDateTime, ZoneOffset}
 import scala.util.Random
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 trait StatusTestDataHelper {
 
@@ -92,13 +93,11 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
     AskWhen.Context.Keys.IN_HOUSE_SOFTWARE -> "No",
     AskWhen.Context.Keys.VAT_OR_ITSA       -> "No"
   )
-  val now                              = LocalDateTime.now
-
-  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, now, testGroups, testQuestionIdsOfInterest, standardContext)
+  val aSubmission = Submission.create("bob@example.com", submissionId, applicationId, FixedClock.now, testGroups, testQuestionIdsOfInterest, standardContext)
 
   val altSubmissionId = Submission.Id.random
   require(altSubmissionId != submissionId)
-  val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, now.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
+  val altSubmission   = Submission.create("bob@example.com", altSubmissionId, applicationId, FixedClock.now.plusSeconds(100), testGroups, testQuestionIdsOfInterest, standardContext)
 
   val completedSubmissionId = Submission.Id.random
   require(completedSubmissionId != submissionId)
@@ -115,9 +114,9 @@ trait SubmissionsTestData extends QuestionBuilder with QuestionnaireTestData wit
   val createdSubmission   = aSubmission
   val answeringSubmission = createdSubmission.answeringWith(answersToQuestions)
   val answeredSubmission  = createdSubmission.hasCompletelyAnsweredWith(AnsweringQuestionsHelper.answersForGroups(Pass)(answeringSubmission.groups))
-  val submittedSubmission = Submission.submit(now, "bob@example.com")(answeredSubmission)
-  val declinedSubmission  = Submission.decline(now, gatekeeperUserName, reasons)(submittedSubmission)
-  val grantedSubmission   = Submission.grant(now, gatekeeperUserName)(submittedSubmission)
+  val submittedSubmission = Submission.submit(FixedClock.now, "bob@example.com")(answeredSubmission)
+  val declinedSubmission  = Submission.decline(FixedClock.now, gatekeeperUserName, reasons)(submittedSubmission)
+  val grantedSubmission   = Submission.grant(FixedClock.now, gatekeeperUserName)(submittedSubmission)
 
   def buildSubmissionWithQuestions(): Submission = {
     val subId = Submission.Id.random

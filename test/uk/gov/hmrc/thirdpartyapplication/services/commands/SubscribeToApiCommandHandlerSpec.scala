@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with ApiIdentifierSyntax {
 
@@ -38,7 +38,7 @@ class SubscribeToApiCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTes
     val applicationId = ApplicationId.random
     val gatekeeperUserActor = GatekeeperUserActor("Gatekeeper Admin")
     val apiIdentifier = "some-context".asIdentifier("1.1")
-    val timestamp = LocalDateTime.now
+    val timestamp = FixedClock.now
 
     val subscribeToApi = SubscribeToApi(gatekeeperUserActor, apiIdentifier, timestamp)
   }

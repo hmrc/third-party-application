@@ -29,8 +29,8 @@ import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApplicationUpdateControllerSpec
     extends ControllerSpec
@@ -63,7 +63,7 @@ class ApplicationUpdateControllerSpec
     val validUpdateNameRequestBody = Json.obj(
       "updateType"     -> "changeProductionApplicationName",
       "instigator"     -> instigatorUserId,
-      "timestamp"      -> LocalDateTime.now(),
+      "timestamp"      -> FixedClock.now,
       "gatekeeperUser" -> gatekeeperUser,
       "newName"        -> "bob"
     )

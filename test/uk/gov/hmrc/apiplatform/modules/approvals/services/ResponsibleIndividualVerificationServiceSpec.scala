@@ -27,7 +27,6 @@ import uk.gov.hmrc.thirdpartyapplication.mocks.repository.{ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec, FixedClock}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 
 class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
@@ -81,7 +80,7 @@ class ResponsibleIndividualVerificationServiceSpec extends AsyncHmrcSpec {
       Submission.Id.random,
       0,
       appName,
-      LocalDateTime.now(clock)
+      FixedClock.now
     )
     val riVerificationWithDetails = ResponsibleIndividualVerificationWithDetails(riVerification, responsibleIndividual, "Rick Deckard", "rick@submitter.com")
   }

@@ -23,8 +23,8 @@ import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 
-import java.time.{Clock, LocalDateTime}
 import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -38,7 +38,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
       def thenCreateNewVerification(verificationId: ResponsibleIndividualVerificationId = ResponsibleIndividualVerificationId.random) = {
         when(aMock.createNewToUVerification(*[ApplicationData], *[Submission.Id], *)).thenAnswer((appData: ApplicationData, submissionId: Submission.Id, index: Int) =>
           Future.successful(
-            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, LocalDateTime.now(Clock.systemUTC()))
+            ResponsibleIndividualToUVerification(verificationId, appData.id, submissionId, index, appData.name, FixedClock.now)
           )
         )
       }
@@ -55,7 +55,7 @@ trait ResponsibleIndividualVerificationServiceMockModule extends MockitoSugar wi
               Submission.Id.random,
               0,
               "App name",
-              LocalDateTime.now(Clock.systemUTC())
+              FixedClock.now
             )
           ))
         )

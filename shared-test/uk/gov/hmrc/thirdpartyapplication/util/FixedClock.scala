@@ -17,6 +17,7 @@
 package uk.gov.hmrc.thirdpartyapplication.util
 
 import java.time.{Clock, Instant, LocalDateTime, ZoneOffset}
+import java.time.temporal.ChronoUnit
 
 trait FixedClock {
 
@@ -31,4 +32,8 @@ trait FixedClock {
       .toInstant(utc)
     Clock.fixed(newInstant, utc)
   }
+}
+
+object FixedClock extends FixedClock {
+  val now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)
 }

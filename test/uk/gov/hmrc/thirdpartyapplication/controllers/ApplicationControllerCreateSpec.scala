@@ -44,7 +44,7 @@ import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockM
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
@@ -365,8 +365,8 @@ class ApplicationControllerCreateSpec extends ControllerSpec
       environment.toString,
       Some("Description"),
       collaborators,
-      LocalDateTime.now,
-      Some(LocalDateTime.now),
+      FixedClock.now,
+      Some(FixedClock.now),
       grantLengthInDays,
       None,
       standardAccess.redirectUris,

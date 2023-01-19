@@ -25,9 +25,9 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId, ResponsibleIndividualVerificationState}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -51,7 +51,7 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandlerSpec extends AsyncHm
       Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
     ), access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)
     ), state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
-    val ts = LocalDateTime.now
+    val ts = FixedClock.now
     val code = "3242342387452384623549234"
     val reasons = "The responsible individual did not accept the terms of use in 20 days."
     val riVerificationToU = ResponsibleIndividualToUVerification(ResponsibleIndividualVerificationId(code), 

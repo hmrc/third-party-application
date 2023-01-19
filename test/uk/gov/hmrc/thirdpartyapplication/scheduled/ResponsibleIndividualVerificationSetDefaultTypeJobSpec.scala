@@ -21,17 +21,15 @@ import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
-import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, MINUTES}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ResponsibleIndividualVerificationSetDefaultTypeJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
   trait Setup extends ResponsibleIndividualVerificationRepositoryMockModule {
 
     val mockLockKeeper = mock[ResponsibleIndividualVerificationSetDefaultTypeJobLockService]
-    val timeNow        = LocalDateTime.now
-    val fixedClock     = Clock.fixed(timeNow.toInstant(ZoneOffset.UTC), ZoneOffset.UTC)
 
     val initialDelay    = FiniteDuration(1, MINUTES)
     val interval        = FiniteDuration(20, DAYS)
@@ -40,7 +38,7 @@ class ResponsibleIndividualVerificationSetDefaultTypeJobSpec extends AsyncHmrcSp
     val job = new ResponsibleIndividualVerificationSetDefaultTypeJob(
       mockLockKeeper,
       ResponsibleIndividualVerificationRepositoryMock.aMock,
-      fixedClock,
+      clock,
       jobConfig
     )
   }

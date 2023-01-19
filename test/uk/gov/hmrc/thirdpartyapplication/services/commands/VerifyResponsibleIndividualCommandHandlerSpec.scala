@@ -25,8 +25,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -48,7 +48,7 @@ class VerifyResponsibleIndividualCommandHandlerSpec extends AsyncHmrcSpec with A
       Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId),
       Collaborator(oldRiEmail, Role.ADMINISTRATOR, oldRiUserId)
     ), access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)))
-    val ts = LocalDateTime.now
+    val ts = FixedClock.now
     val riName = "Mr Responsible"
     val riEmail = "ri@example.com"
     val underTest = new VerifyResponsibleIndividualCommandHandler(SubmissionsServiceMock.aMock)

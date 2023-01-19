@@ -31,7 +31,7 @@ import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 import scala.util.Random.nextString
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -56,8 +56,8 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
         Token(ClientId.random, serverToken)
       ),
       testingState(),
-      createdOn = LocalDateTime.now,
-      lastAccess = Some(LocalDateTime.now)
+      createdOn = FixedClock.now,
+      lastAccess = Some(FixedClock.now)
     )
   }
 
@@ -94,7 +94,7 @@ class AwsApiGatewayStoreSpec extends AsyncHmrcSpec with ApplicationStateUtil {
   }
 
   "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
+    val now = FixedClock.now
 
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(

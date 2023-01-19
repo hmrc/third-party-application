@@ -52,7 +52,7 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
     val auditService       = new AuditService(mockAuditConnector, SubmissionsServiceMock.aMock, clock)
   }
 
-  val timestamp      = LocalDateTime.now
+  val timestamp      = FixedClock.now
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
 
   val testImportantSubmissionData = ImportantSubmissionData(
@@ -437,8 +437,8 @@ class AuditServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil with Fixe
       wso2ApplicationName = "wso2ApplicationName",
       tokens = tokens,
       state = testingState(),
-      createdOn = LocalDateTime.now,
-      lastAccess = Some(LocalDateTime.now)
+      createdOn = FixedClock.now,
+      lastAccess = Some(FixedClock.now)
     )
 
     val updatedApp = previousApp.copy(

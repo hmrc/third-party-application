@@ -401,8 +401,8 @@ class SubscriptionRepositoryISpec
       ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      FixedClock.now,
+      Some(FixedClock.now),
       checkInformation = checkInformation
     )
   }

@@ -20,9 +20,8 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 import uk.gov.hmrc.http.HeaderCarrier
-
-import java.time.LocalDateTime
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
   trait Setup extends EmailConnectorMockModule {
@@ -50,7 +49,7 @@ class ProductionAppNameChangedNotificationSpec extends AsyncHmrcSpec with Applic
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val timestamp = LocalDateTime.now
+    val timestamp = FixedClock.now
     val gatekeeperUser = "gkuser"
     val eventId = UpdateApplicationEvent.Id.random
     val actor = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)

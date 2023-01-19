@@ -26,7 +26,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{G
 import scala.concurrent.ExecutionContext.Implicits.global
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 
@@ -89,7 +89,7 @@ class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
   val prodAppNameChangedEvent: ProductionAppNameChanged = ProductionAppNameChanged(
     id = UpdateApplicationEvent.Id.random,
     applicationId = ApplicationId.random,
-    eventDateTime = LocalDateTime.now,
+    eventDateTime = FixedClock.now,
     actor = GatekeeperUserActor("mr gatekeeper"),
     oldAppName = "old name",
     newAppName = "new name",

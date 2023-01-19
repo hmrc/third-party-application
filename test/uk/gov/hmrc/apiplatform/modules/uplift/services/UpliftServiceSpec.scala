@@ -35,8 +35,6 @@ import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.apiplatform.modules.uplift.domain.models.InvalidUpliftVerificationCode
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.repositories.UpliftLinksRepositoryMockModule
 
-import java.time.LocalDateTime
-
 class UpliftServiceSpec extends AsyncHmrcSpec {
 
   trait Setup
@@ -77,7 +75,7 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
         state = PENDING_GATEKEEPER_APPROVAL,
         actor = OldActor(upliftRequestedByEmail, COLLABORATOR),
         previousState = Some(TESTING),
-        changedAt = LocalDateTime.now(clock)
+        changedAt = FixedClock.now
       )
 
       ApplicationRepoMock.Fetch.thenReturn(application)
@@ -180,8 +178,8 @@ class UpliftServiceSpec extends AsyncHmrcSpec {
       ApplicationRepoMock.Save.thenReturn(mock[ApplicationData])
 
       val expectedStateHistory =
-        StateHistory(applicationId, State.PRE_PRODUCTION, OldActor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = LocalDateTime.now(clock))
-      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, OldActor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = LocalDateTime.now(clock))
+        StateHistory(applicationId, State.PRE_PRODUCTION, OldActor(upliftRequestedBy, COLLABORATOR), Some(PENDING_REQUESTER_VERIFICATION), changedAt = FixedClock.now)
+      val upliftRequest        = StateHistory(applicationId, PENDING_GATEKEEPER_APPROVAL, OldActor(upliftRequestedBy, COLLABORATOR), Some(TESTING), changedAt = FixedClock.now)
 
       val application: ApplicationData = anApplicationData(applicationId, pendingRequesterVerificationState(upliftRequestedBy))
 

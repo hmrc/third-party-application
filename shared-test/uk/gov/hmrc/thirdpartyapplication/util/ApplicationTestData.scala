@@ -35,13 +35,13 @@ trait ApplicationTestData extends ApplicationStateUtil {
     idsByEmail.getOrElseUpdate(email, UserId.random)
   }
 
-  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), hashedSecret = secret.bcrypt(4))
+  def aSecret(secret: String): ClientSecret = ClientSecret(secret.takeRight(4), FixedClock.now, hashedSecret = secret.bcrypt(4))
 
   val loggedInUser = "loggedin@example.com"
   val devEmail     = "dev@example.com"
 
   val serverToken           = "b3c83934c02df8b111e7f9f8700000"
-  val serverTokenLastAccess = LocalDateTime.now(clock)
+  val serverTokenLastAccess = FixedClock.now
   val productionToken       = Token(ClientId("aaa"), serverToken, List(aSecret("secret1"), aSecret("secret2")), Some(serverTokenLastAccess))
 
   val requestedByEmail = "john.smith@example.com"
@@ -67,8 +67,8 @@ trait ApplicationTestData extends ApplicationStateUtil {
       ApplicationTokens(productionToken),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      createdOn = FixedClock.now,
+      lastAccess = Some(FixedClock.now),
       grantLength,
       rateLimitTier = rateLimitTier,
       environment = environment.toString,
