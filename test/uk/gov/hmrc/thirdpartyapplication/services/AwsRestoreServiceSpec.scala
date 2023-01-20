@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
@@ -47,7 +46,7 @@ class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar wit
         ),
         applicationName,
         Token(ClientId(""), serverToken, List.empty),
-        createdOn = LocalDateTime.now(clock)
+        createdOn = FixedClock.now
       )
     }
 

@@ -16,7 +16,6 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
 
@@ -39,6 +38,7 @@ import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, Stat
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -271,8 +271,8 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       ApplicationTokens(productionToken),
       state,
       Standard(),
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      FixedClock.now,
+      Some(FixedClock.now),
       rateLimitTier = rateLimitTier
     )
   }

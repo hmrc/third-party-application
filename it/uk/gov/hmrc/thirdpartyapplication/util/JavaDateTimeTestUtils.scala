@@ -24,7 +24,7 @@ import java.time.temporal.ChronoField
 trait JavaDateTimeTestUtils {
 
   def timestampShouldBeApproximatelyNow(date: LocalDateTime, thresholdMillis: Int = 500, clock: Clock) = {
-    val now                   = LocalDateTime.now(clock)
+    val now                   = FixedClock.now
     val reasonableExpectation = now.minus(thresholdMillis, ChronoField.MILLI_OF_SECOND.getBaseUnit)
 
     withClue(s"timestamp $date was not within ${thresholdMillis}ms of $now") {

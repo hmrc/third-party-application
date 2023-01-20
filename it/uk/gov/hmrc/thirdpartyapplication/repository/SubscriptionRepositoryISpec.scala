@@ -33,7 +33,7 @@ import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, Application
 import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, JavaDateTimeTestUtils, MetricsHelper}
 import uk.gov.hmrc.utils.ServerBaseISpec
 
-import java.time.{Clock, LocalDateTime}
+import java.time.Clock
 import scala.util.Random.nextString
 
 class SubscriptionRepositoryISpec
@@ -401,8 +401,8 @@ class SubscriptionRepositoryISpec
       ApplicationTokens(Token(clientId, generateAccessToken)),
       state,
       access,
-      LocalDateTime.now(clock),
-      Some(LocalDateTime.now(clock)),
+      FixedClock.now,
+      Some(FixedClock.now),
       checkInformation = checkInformation
     )
   }
