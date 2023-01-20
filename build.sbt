@@ -2,6 +2,7 @@ import bloop.integrations.sbt.BloopDefaults
 import sbt.Keys._
 import sbt.Tests.{Group, SubProcess}
 import sbt._
+import uk.gov.hmrc.DefaultBuildSettings
 import uk.gov.hmrc.DefaultBuildSettings._
 import uk.gov.hmrc.sbtdistributables.SbtDistributablesPlugin.publishingSettings
 
@@ -9,6 +10,16 @@ lazy val appName = "third-party-application"
 
 lazy val plugins: Seq[Plugins]         = Seq(PlayScala, SbtAutoBuildPlugin, SbtDistributablesPlugin)
 lazy val playSettings: Seq[Setting[_]] = Seq.empty
+
+ThisBuild / scalafixDependencies += "com.github.liancheng" %% "organize-imports" % "0.6.0"
+
+inThisBuild(
+  List(
+    scalaVersion := "2.12.15",
+    semanticdbEnabled := true,
+    semanticdbVersion := scalafixSemanticdb.revision
+  )
+)
 
 lazy val microservice = Project(appName, file("."))
   .enablePlugins(plugins: _*)
@@ -20,7 +31,7 @@ lazy val microservice = Project(appName, file("."))
   .settings(ScoverageSettings())
   .settings(
     name            := appName,
-    scalaVersion    := "2.12.13",
+    scalaVersion    := "2.12.15",
     libraryDependencies ++= AppDependencies(),
     retrieveManaged := true,
     routesGenerator := InjectedRoutesGenerator,
@@ -44,9 +55,9 @@ lazy val microservice = Project(appName, file("."))
     Test / parallelExecution := false
   )
   .configs(IntegrationTest)
+  .settings(DefaultBuildSettings.integrationTestSettings())
   .settings(inConfig(IntegrationTest)(BloopDefaults.configSettings))
   .settings(
-    Defaults.itSettings,
     IntegrationTest / fork              := false,
     IntegrationTest / unmanagedSourceDirectories ++= Seq(baseDirectory.value / "it", baseDirectory.value / "shared-test"),
     addTestReportOption(IntegrationTest, "int-test-reports"),

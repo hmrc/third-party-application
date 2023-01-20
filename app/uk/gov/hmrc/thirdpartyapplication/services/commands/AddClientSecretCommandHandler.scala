@@ -16,17 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.Apply
+import cats.data.{NonEmptyList, ValidatedNec}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{AddClientSecret, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class AddClientSecretCommandHandler @Inject()()
-                                             (implicit val ec: ExecutionContext) extends CommandHandler {
+class AddClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 

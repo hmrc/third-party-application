@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.data.NonEmptyChain
-import cats.data.Validated.Invalid
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import org.apache.commons.codec.binary.Base64.encodeBase64String
 import java.nio.charset.StandardCharsets.UTF_8
 import java.time.LocalDateTime
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import cats.data.NonEmptyChain
+import cats.data.Validated.Invalid
+import org.apache.commons.codec.binary.Base64.encodeBase64String
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -36,22 +38,22 @@ class DeleteUnusedApplicationCommandHandlerSpec extends AsyncHmrcSpec with Appli
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val appAdminEmail = loggedInUser
-    val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
-    val reasons = "reasons description text"
-    val app = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts = LocalDateTime.now
-    val authKey = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
+    val appId             = ApplicationId.random
+    val appAdminEmail     = loggedInUser
+    val actor             = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val reasons           = "reasons description text"
+    val app               = anApplicationData(appId, environment = Environment.SANDBOX)
+    val ts                = LocalDateTime.now
+    val authKey           = encodeBase64String("authorisationKey12345".getBytes(UTF_8))
     val authControlConfig = AuthControlConfig(true, true, "authorisationKey12345")
-    val underTest = new DeleteUnusedApplicationCommandHandler(authControlConfig)
+    val underTest         = new DeleteUnusedApplicationCommandHandler(authControlConfig)
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
-      
+
       val result = await(underTest.process(app, DeleteUnusedApplication("DeleteUnusedApplicationsJob", authKey, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 

@@ -16,20 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.models.DuplicateName
-import uk.gov.hmrc.thirdpartyapplication.models.InvalidName
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationNameValidationResult
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ChangeProductionApplicationName
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
-
-import scala.concurrent.ExecutionContext
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
 import cats.Apply
-import cats.data.ValidatedNec
-import cats.data.NonEmptyList
+import cats.data.{NonEmptyList, ValidatedNec}
+
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ChangeProductionApplicationName, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.models.{ApplicationNameValidationResult, DuplicateName, InvalidName}
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService.noExclusions
 
 @Singleton
 class ChangeProductionApplicationNameCommandHandler @Inject() (

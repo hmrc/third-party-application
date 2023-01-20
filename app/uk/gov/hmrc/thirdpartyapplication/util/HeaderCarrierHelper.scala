@@ -20,6 +20,7 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
 
 object HeaderCarrierHelper {

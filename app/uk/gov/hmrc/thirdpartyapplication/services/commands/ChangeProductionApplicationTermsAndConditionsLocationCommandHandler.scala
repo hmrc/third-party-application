@@ -16,18 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.Validated.{Invalid, Valid}
-import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.Apply
+import cats.data.Validated.{Invalid, Valid}
+import cats.data.{NonEmptyChain, NonEmptyList, ValidatedNec}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject()()(implicit val ec: ExecutionContext
-  ) extends CommandHandler {
+class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
@@ -41,7 +41,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
 
   import UpdateApplicationEvent._
 
-  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
+  private def buildEventForLegacyApp(oldUrl: String, app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String, UpdateApplicationEvent] = {
     cmd.newLocation match {
       case TermsAndConditionsLocation.Url(newUrl) =>
         Right(ProductionLegacyAppTermsConditionsLocationChanged(
@@ -52,7 +52,7 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
           oldUrl = oldUrl,
           newUrl = newUrl
         ))
-      case _ => Left("Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
+      case _                                      => Left("Unexpected new TermsAndConditionsLocation type specified for legacy application: " + cmd.newLocation)
     }
   }
 
@@ -66,20 +66,23 @@ class ChangeProductionApplicationTermsAndConditionsLocationCommandHandler @Injec
       newLocation = cmd.newLocation
     )
 
-  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String,UpdateApplicationEvent] = {
+  private def asEvents(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): Either[String, UpdateApplicationEvent] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, _, _, termsAndConditionsLocation, _, _))) =>
         Right(buildEventForNewApp(termsAndConditionsLocation, app, cmd))
-      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None) =>
+      case Standard(_, maybeTermsAndConditionsLocation, _, _, _, None)                                       =>
         buildEventForLegacyApp(maybeTermsAndConditionsLocation.getOrElse(""), app, cmd)
-      case _ =>
+      case _                                                                                                 =>
         Left("Unexpected application access value found: " + app.access)
     }
   }
 
   def process(app: ApplicationData, cmd: ChangeProductionApplicationTermsAndConditionsLocation): CommandHandler.Result = {
-    Future.successful(validate(app, cmd).fold(errs => Invalid(errs), _ => {
-      asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
-    }))
+    Future.successful(validate(app, cmd).fold(
+      errs => Invalid(errs),
+      _ => {
+        asEvents(app, cmd).fold(e => Invalid(NonEmptyChain.one(e)), event => Valid(NonEmptyList.one(event)))
+      }
+    ))
   }
 }

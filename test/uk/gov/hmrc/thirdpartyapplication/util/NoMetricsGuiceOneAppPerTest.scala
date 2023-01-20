@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import play.api.Application
-import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 import org.scalatest.TestSuite
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
+
+import play.api.Application
+import play.api.inject.guice.GuiceApplicationBuilder
+
+import uk.gov.hmrc.thirdpartyapplication.config.SchedulerModule
 
 trait NoMetricsGuiceOneAppPerTest extends GuiceOneAppPerTest {
   self: TestSuite =>

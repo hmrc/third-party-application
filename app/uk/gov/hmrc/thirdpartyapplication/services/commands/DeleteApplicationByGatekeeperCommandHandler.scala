@@ -19,13 +19,13 @@ package uk.gov.hmrc.thirdpartyapplication.services.commands
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
-import cats.data.{NonEmptyList, ValidatedNec, Validated}
+import cats.data.{NonEmptyList, Validated, ValidatedNec}
 
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByGatekeeper, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
-class DeleteApplicationByGatekeeperCommandHandler @Inject()(
+class DeleteApplicationByGatekeeperCommandHandler @Inject() (
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
@@ -37,7 +37,7 @@ class DeleteApplicationByGatekeeperCommandHandler @Inject()(
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplicationByGatekeeper): NonEmptyList[UpdateApplicationEvent] = {
     val requesterEmail = cmd.requestedByEmailAddress
-    val clientId = app.tokens.production.clientId
+    val clientId       = app.tokens.production.clientId
     NonEmptyList.of(
       ApplicationDeletedByGatekeeper(
         id = UpdateApplicationEvent.Id.random,

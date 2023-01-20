@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.Future
+
 import cats.data.NonEmptyList
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.services.ApiPlatformEventService
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-
-import scala.concurrent.Future
 
 trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 
@@ -31,9 +32,11 @@ trait ApiPlatformEventServiceMockModule extends MockitoSugar with ArgumentMatche
     def aMock: ApiPlatformEventService
 
     object ApplyEvents {
+
       def succeeds = {
         when(aMock.applyEvents(*)(*)).thenReturn(Future.successful(true))
       }
+
       def verifyCalledWith(events: NonEmptyList[UpdateApplicationEvent]) = {
         verify(aMock).applyEvents(eqTo(events))(*)
       }

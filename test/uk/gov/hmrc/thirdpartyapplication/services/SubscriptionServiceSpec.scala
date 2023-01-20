@@ -16,28 +16,29 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future.successful
+
 import com.github.t3hnar.bcrypt._
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 
 import play.api.libs.ws.WSResponse
 import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, GOLD, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{CollaboratorActor, GatekeeperUserActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
 import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationUpdateServiceMockModule, AuditServiceMockModule}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future.successful
 
 class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
@@ -95,11 +96,12 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe false
     }
   }
-  
+
   trait Setup extends SetupWithoutHc {
+
     implicit val hc: HeaderCarrier = HeaderCarrier().withExtraHeaders(
       LOGGED_IN_USER_EMAIL_HEADER -> loggedInUser,
-      LOGGED_IN_USER_NAME_HEADER -> "John Smith"
+      LOGGED_IN_USER_NAME_HEADER  -> "John Smith"
     )
   }
 
@@ -127,27 +129,27 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe Set("context".asIdentifier)
     }
   }
-  
+
   "updateApplicationForApiSubscription" should {
     val applicationId = ApplicationId.random
     val apiIdentifier = ApiIdentifier.random
 
     "return successfully using the correct CollaboratorActor if the collaborator is a member of the application" in new Setup {
       val application = anApplicationData(applicationId)
-      val actor = CollaboratorActor(loggedInUser)
+      val actor       = CollaboratorActor(loggedInUser)
 
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, application)
 
       val result = await(underTest.updateApplicationForApiSubscription(applicationId, application.name, application.collaborators, apiIdentifier))
-      
+
       result shouldBe HasSucceeded
       ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
 
     "return successfully using a GatekeeperUserCollaborator if there are no developers in the header carrier" in new SetupWithoutHc {
-      implicit val hc = HeaderCarrier()
+      implicit val hc     = HeaderCarrier()
       val applicationData = anApplicationData(applicationId)
-      val actor = GatekeeperUserActor("Gatekeeper Admin")
+      val actor           = GatekeeperUserActor("Gatekeeper Admin")
 
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
 
@@ -156,10 +158,10 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe HasSucceeded
       ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
-    
+
     "return successfully using a GatekeeperUserCollaborator if the logged in user is not a member of the application" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
-      val actor = GatekeeperUserActor("Gatekeeper Admin")
+      val actor           = GatekeeperUserActor("Gatekeeper Admin")
 
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(applicationId, applicationData)
 
@@ -168,13 +170,13 @@ class SubscriptionServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
       result shouldBe HasSucceeded
       ApplicationUpdateServiceMock.Update.verifyCalledWith(applicationId).asInstanceOf[SubscribeToApi].actor shouldBe actor
     }
-    
+
     "throw an exception if the application has not updated" in new Setup {
       val applicationData = anApplicationData(applicationId, collaborators = Set.empty)
-      val errorMessage = "Not valid"
+      val errorMessage    = "Not valid"
 
       ApplicationUpdateServiceMock.Update.thenReturnError(applicationId, errorMessage)
-      
+
       intercept[FailedToSubscribeException] {
         await(underTest.updateApplicationForApiSubscription(applicationId, applicationData.name, applicationData.collaborators, apiIdentifier))
       }

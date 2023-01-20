@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.mocks
 
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Token
 import uk.gov.hmrc.thirdpartyapplication.services.TokenService
 

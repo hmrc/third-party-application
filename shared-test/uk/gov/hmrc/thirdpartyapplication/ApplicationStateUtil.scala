@@ -16,10 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication
 
+import java.time.LocalDateTime
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-
-import java.time.LocalDateTime
 
 trait ApplicationStateUtil extends FixedClock {
   val generatedVerificationCode: String = "verificationCode"

@@ -16,21 +16,23 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
+import java.time.{Clock, LocalDateTime}
+import javax.inject.Inject
+import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
+import scala.concurrent.{ExecutionContext, Future}
+
 import cats.implicits._
 import com.google.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+
+import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{State, Environment, DeleteProductionCredentialsApplication}
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteProductionCredentialsApplication, Environment, State}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
-import scala.concurrent.{ExecutionContext, Future}
-import java.time.{Clock, LocalDateTime}
-import javax.inject.Inject
 
 @Singleton
 class ProductionCredentialsRequestExpiredJob @Inject() (
@@ -43,21 +45,21 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
   ) extends ScheduledMongoJob with ApplicationLogger {
 
   val productionCredentialsRequestDeleteInterval: FiniteDuration = jobConfig.deleteInterval
-  override def name: String                      = "ProductionCredentialsRequestExpiredJob"
-  override def interval: FiniteDuration          = jobConfig.interval
-  override def initialDelay: FiniteDuration      = jobConfig.initialDelay
-  override val isEnabled: Boolean                = jobConfig.enabled
-  override val lockService: LockService          = productionCredentialsRequestExpiredLockService
-  implicit val hc: HeaderCarrier            = HeaderCarrier()
+  override def name: String                                      = "ProductionCredentialsRequestExpiredJob"
+  override def interval: FiniteDuration                          = jobConfig.interval
+  override def initialDelay: FiniteDuration                      = jobConfig.initialDelay
+  override val isEnabled: Boolean                                = jobConfig.enabled
+  override val lockService: LockService                          = productionCredentialsRequestExpiredLockService
+  implicit val hc: HeaderCarrier                                 = HeaderCarrier()
 
   override def runJob(implicit ec: ExecutionContext): Future[RunningOfJobSuccessful] = {
     val deleteTime: LocalDateTime = LocalDateTime.now(clock).minusDays(productionCredentialsRequestDeleteInterval.toDays.toInt)
     logger.info(s"Delete expired production credentials requests for production applications having status of TESTING with updatedOn earlier than $deleteTime")
 
     val result: Future[RunningOfJobSuccessful.type] = for {
-      deleteApps  <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
-      _            = logger.info(s"Found ${deleteApps.size} applications")
-      _           <- Future.sequence(deleteApps.map(deleteExpiredApplication(_)))
+      deleteApps <- applicationRepository.fetchByStatusDetailsAndEnvironment(state = State.TESTING, updatedBefore = deleteTime, environment = Environment.PRODUCTION)
+      _           = logger.info(s"Found ${deleteApps.size} applications")
+      _          <- Future.sequence(deleteApps.map(deleteExpiredApplication(_)))
     } yield RunningOfJobSuccessful
 
     result.recoverWith {
@@ -70,10 +72,10 @@ class ProductionCredentialsRequestExpiredJob @Inject() (
       s"name='${app.state.name}',state.updatedOn='${app.state.updatedOn}}'")
 
     val reasons = s"Delete expired production credentials request, updated on ${app.state.updatedOn}"
-    val request     =  DeleteProductionCredentialsApplication(name, reasons, LocalDateTime.now(clock))
+    val request = DeleteProductionCredentialsApplication(name, reasons, LocalDateTime.now(clock))
 
     (for {
-      savedApp      <- applicationUpdateService.update(app.id, request)
+      savedApp <- applicationUpdateService.update(app.id, request)
     } yield HasSucceeded).value
   }
 }

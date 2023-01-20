@@ -16,20 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.repository
 
-import cats.data.NonEmptyList
+import scala.concurrent.{ExecutionContext, Future}
 
+import cats.data.NonEmptyList
 import com.google.inject.{Inject, Singleton}
+import org.mongodb.scala.model.Filters.equal
 import org.mongodb.scala.model.Indexes.ascending
 import org.mongodb.scala.model.{IndexModel, IndexOptions}
-import org.mongodb.scala.model.Filters.equal
-import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationDeletedBase
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+
 import uk.gov.hmrc.mongo.MongoComponent
 import uk.gov.hmrc.mongo.play.json.{Codecs, PlayMongoRepository}
 
-import scala.concurrent.{ExecutionContext, Future}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationDeletedBase, ApplicationId, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
 
 @Singleton
 class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: ExecutionContext)
@@ -62,7 +62,7 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
     collection.deleteMany(equal("applicationId", Codecs.toBson(applicationId)))
       .toFuture()
       .map(_ => HasSucceeded)
-  }    
+  }
 
   def applyEvents(events: NonEmptyList[UpdateApplicationEvent]): Future[HasSucceeded] = {
     events match {
@@ -73,8 +73,8 @@ class NotificationRepository @Inject() (mongo: MongoComponent)(implicit val ec: 
 
   private def applyEvent(event: UpdateApplicationEvent): Future[HasSucceeded] = {
     event match {
-      case evt : UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
-      case _ => Future.successful(HasSucceeded)
+      case evt: UpdateApplicationEvent with ApplicationDeletedBase => deleteAllByApplicationId(evt.applicationId)
+      case _                                                       => Future.successful(HasSucceeded)
     }
-  }  
+  }
 }

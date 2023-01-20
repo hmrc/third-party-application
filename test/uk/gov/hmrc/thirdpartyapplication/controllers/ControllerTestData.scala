@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import java.time.LocalDateTime
+import java.util.UUID
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import java.util.UUID
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 trait ControllerTestData {
 

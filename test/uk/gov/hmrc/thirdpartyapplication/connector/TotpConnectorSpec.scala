@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.HttpClient
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import com.github.tomakehurst.wiremock.client.WireMock._
+
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Totp
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.X_REQUEST_ID_HEADER
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.http.HeaderCarrier
-import play.api.http.Status._
-import com.github.tomakehurst.wiremock.client.WireMock._
 
 class TotpConnectorSpec extends ConnectorSpec {
 

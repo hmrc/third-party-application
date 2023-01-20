@@ -16,52 +16,49 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import java.time.LocalDateTime
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.Apply
+import cats.data.{NonEmptyList, ValidatedNec}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{Collaborator, RemoveCollaborator, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveCollaboratorCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
 
   private def validate(app: ApplicationData, cmd: RemoveCollaborator) = {
 
     cmd.actor match {
-      case CollaboratorActor(actorEmail: String) =>  Apply[ValidatedNec[String, *]]
-        .map3(isCollaboratorOnApp(actorEmail, app),
-              isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
-              applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)){case _ => app}
-      case _ => Apply[ValidatedNec[String, *]]
-        .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
-              applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)){case _ => app}
+      case CollaboratorActor(actorEmail: String) => Apply[ValidatedNec[String, *]]
+          .map3(
+            isCollaboratorOnApp(actorEmail, app),
+            isCollaboratorOnApp(cmd.collaborator.emailAddress, app),
+            applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)
+          ) { case _ => app }
+      case _                                     => Apply[ValidatedNec[String, *]]
+          .map2(isCollaboratorOnApp(cmd.collaborator.emailAddress, app), applicationWillHaveAnAdmin(cmd.collaborator.emailAddress, app)) { case _ => app }
     }
 
   }
 
   import UpdateApplicationEvent._
 
-   private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[UpdateApplicationEvent] ={
+  private def asEvents(app: ApplicationData, cmd: RemoveCollaborator): NonEmptyList[UpdateApplicationEvent] = {
     asEvents(app, cmd.actor, cmd.adminsToEmail, cmd.timestamp, cmd.collaborator)
   }
 
-
-  private def asEvents(app: ApplicationData,
-                       actor: Actor,
-                       adminsToEmail:Set[String],
-                       eventTime: LocalDateTime,
-                       collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
-    def notifyCollaborator() ={
+  private def asEvents(app: ApplicationData, actor: Actor, adminsToEmail: Set[String], eventTime: LocalDateTime, collaborator: Collaborator): NonEmptyList[UpdateApplicationEvent] = {
+    def notifyCollaborator() = {
       actor match {
         case _: ScheduledJobActor => false
-        case _ => true
-       }
+        case _                    => true
+      }
     }
 
     NonEmptyList.of(
@@ -86,6 +83,5 @@ class RemoveCollaboratorCommandHandler @Inject()()(implicit val ec: ExecutionCon
       }
     }
   }
-
 
 }

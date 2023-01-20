@@ -16,17 +16,15 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions
 
-import play.api.mvc.{Action, AnyContent, Result}
-import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
 
-import play.api.mvc.Request
-import uk.gov.hmrc.apiplatform.modules.gkauth.services._
+import play.api.mvc.{Action, AnyContent, Request, Result}
+import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
-import scala.concurrent.ExecutionContext
-import scala.util.control.NonFatal
+import uk.gov.hmrc.apiplatform.modules.gkauth.services._
 
 trait AnyGatekeeperRoleAuthorisationAction {
   self: BackendController =>
@@ -34,21 +32,21 @@ trait AnyGatekeeperRoleAuthorisationAction {
   implicit val ec: ExecutionContext
   def ldapGatekeeperRoleAuthorisationService: LdapGatekeeperRoleAuthorisationService
   def strideGatekeeperRoleAuthorisationService: StrideGatekeeperRoleAuthorisationService
-   
-  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] =  {
-    Action.async { implicit request => 
+
+  def anyAuthenticatedUserAction(block: Request[_] => Future[Result]): Action[AnyContent] = {
+    Action.async { implicit request =>
       implicit val hc = HeaderCarrierConverter.fromRequest(request)
       ldapGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
-      .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE}
-      .flatMap(_ match {
-        case Some(failureToAuthorise) =>
-          strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
-            .flatMap(_ match {
-              case None => block(request)
-              case Some(failureToAuthorise) => successful(failureToAuthorise)
-            })
-        case None => block(request)
-      })
+        .recoverWith { case NonFatal(_) => ldapGatekeeperRoleAuthorisationService.UNAUTHORIZED_RESPONSE }
+        .flatMap(_ match {
+          case Some(failureToAuthorise) =>
+            strideGatekeeperRoleAuthorisationService.ensureHasGatekeeperRole()
+              .flatMap(_ match {
+                case None                     => block(request)
+                case Some(failureToAuthorise) => successful(failureToAuthorise)
+              })
+          case None                     => block(request)
+        })
     }
   }
 }

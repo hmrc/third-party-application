@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -31,21 +32,21 @@ class DeleteApplicationByGatekeeperCommandHandlerSpec extends AsyncHmrcSpec with
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
+    val appId            = ApplicationId.random
     val requestedByEmail = "admin@example.com"
-    val gatekeeperUser = "gatekeeperuser"
-    val actor = GatekeeperUserActor(gatekeeperUser)
-    val reasons = "reasons description text"
-    val app = anApplicationData(appId, environment = Environment.SANDBOX)
-    val ts = LocalDateTime.now
-    val underTest = new DeleteApplicationByGatekeeperCommandHandler
+    val gatekeeperUser   = "gatekeeperuser"
+    val actor            = GatekeeperUserActor(gatekeeperUser)
+    val reasons          = "reasons description text"
+    val app              = anApplicationData(appId, environment = Environment.SANDBOX)
+    val ts               = LocalDateTime.now
+    val underTest        = new DeleteApplicationByGatekeeperCommandHandler
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
-      
+
       val result = await(underTest.process(app, DeleteApplicationByGatekeeper(gatekeeperUser, requestedByEmail, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 

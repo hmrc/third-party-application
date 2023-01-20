@@ -16,33 +16,35 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.NonEmptyList
-import akka.actor.ActorSystem
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
+import java.time.{LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future.successful
+
+import akka.actor.ActorSystem
+import cats.data.NonEmptyList
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ApplicationDeleted, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with ApplicationStateUtil {
 
   implicit val actorSystem: ActorSystem = ActorSystem("test")
 
   trait Setup {
-    implicit val hc: HeaderCarrier                         = HeaderCarrier()
+    implicit val hc: HeaderCarrier                                                       = HeaderCarrier()
     val mockThirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector = mock[ThirdPartyDelegatedAuthorityConnector]
-    val underTest                                          = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
+    val underTest                                                                        = new ThirdPartyDelegatedAuthorityService(mockThirdPartyDelegatedAuthorityConnector)
   }
 
   "applyEvents" should {
-    val now = LocalDateTime.now(ZoneOffset.UTC)
-    val clientId = ClientId("clientId")
+    val now                                                        = LocalDateTime.now(ZoneOffset.UTC)
+    val clientId                                                   = ClientId("clientId")
     def buildApplicationDeletedEvent(applicationId: ApplicationId) =
       ApplicationDeleted(
         UpdateApplicationEvent.Id.random,
@@ -55,7 +57,7 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
       )
 
     "handle an ApplicationDeleted event by calling the connector" in new Setup {
-      val applicationId1  = ApplicationId.random
+      val applicationId1 = ApplicationId.random
 
       when(mockThirdPartyDelegatedAuthorityConnector.revokeApplicationAuthorities(clientId)(hc)).thenReturn(successful(HasSucceeded))
 
@@ -66,5 +68,5 @@ class ThirdPartyDelegatedAuthorityServiceSpec extends AsyncHmrcSpec with Applica
       result shouldBe Some(HasSucceeded)
       verify(mockThirdPartyDelegatedAuthorityConnector).revokeApplicationAuthorities(clientId)(hc)
     }
-  }  
+  }
 }

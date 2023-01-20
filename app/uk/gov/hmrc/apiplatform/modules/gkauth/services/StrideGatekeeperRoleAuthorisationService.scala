@@ -16,20 +16,26 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.control.NonFatal
+
 import play.api.mvc._
 import uk.gov.hmrc.auth.core.Enrolment
 import uk.gov.hmrc.auth.core.retrieve.EmptyRetrieval
 import uk.gov.hmrc.http.HeaderCarrier
 
-import scala.concurrent.{ExecutionContext, Future}
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
-import scala.util.control.NonFatal
-import javax.inject.{Singleton, Inject}
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
-class StrideGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, strideAuthRoles: StrideAuthRoles, strideAuthConnector: StrideAuthConnector)(implicit val ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
+class StrideGatekeeperRoleAuthorisationService @Inject() (
+    authControlConfig: AuthControlConfig,
+    strideAuthRoles: StrideAuthRoles,
+    strideAuthConnector: StrideAuthConnector
+  )(implicit val ec: ExecutionContext
+  ) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   private lazy val hasAnyGatekeeperEnrolment = Enrolment(strideAuthRoles.userRole) or Enrolment(strideAuthRoles.superUserRole) or Enrolment(strideAuthRoles.adminRole)
 

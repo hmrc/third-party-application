@@ -35,7 +35,6 @@ trait ActorHelper {
     collaborators
       .find(_.emailAddress.equalsIgnoreCase(userEmail)).fold(ActorType.GATEKEEPER) { _: Collaborator => ActorType.COLLABORATOR }
 
-
   def getActorFromContext(userContext: Map[String, String], collaborators: Set[Collaborator]): Actor =
     userContext.get(HeaderCarrierHelper.DEVELOPER_EMAIL_KEY)
       .map(email => deriveActor(email, collaborators))

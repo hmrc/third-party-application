@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import org.scalatest.prop.TableDrivenPropertyChecks
-import play.api.libs.json.Json
-import play.api.mvc._
-import play.api.test.Helpers
-import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-
+import java.time.LocalDateTime
 import java.util.UUID
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
+
+import org.scalatest.prop.TableDrivenPropertyChecks
+
+import play.api.libs.json.Json
+import play.api.mvc._
+import play.api.test.{FakeRequest, Helpers}
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.{ApplicationServiceMockModule, ApplicationUpdateServiceMockModule}
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import java.time.LocalDateTime
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
 
 class ApplicationUpdateControllerSpec
     extends ControllerSpec

@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.utils
 
-import play.api.libs.json.{EnvReads, EnvWrites}
-
 import java.time.LocalDateTime
+
+import play.api.libs.json.{EnvReads, EnvWrites}
 
 trait UtcMillisDateTimeFormatters extends EnvWrites with EnvReads {
   import play.api.libs.json._

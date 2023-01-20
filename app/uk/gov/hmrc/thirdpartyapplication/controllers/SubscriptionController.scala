@@ -17,15 +17,15 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
+import play.api.libs.json.Json
 import play.api.libs.json.Json.toJson
 import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
-import scala.concurrent.ExecutionContext
-import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, SubscriptionRepository}
 
 private[controllers] case class SubscribersResponse(subscribers: Set[ApplicationId])
 
@@ -34,8 +34,12 @@ private[controllers] object SubscribersResponse {
 }
 
 @Singleton
-class SubscriptionController @Inject() (subscriptionRepository: SubscriptionRepository, applicationRepository: ApplicationRepository, cc: ControllerComponents)(implicit val ec: ExecutionContext)
-    extends BackendController(cc) with JsonUtils {
+class SubscriptionController @Inject() (
+    subscriptionRepository: SubscriptionRepository,
+    applicationRepository: ApplicationRepository,
+    cc: ControllerComponents
+  )(implicit val ec: ExecutionContext
+  ) extends BackendController(cc) with JsonUtils {
 
   def getSubscribers(context: ApiContext, version: ApiVersion): Action[AnyContent] = Action.async { _ =>
     subscriptionRepository.getSubscribers(ApiIdentifier(context, version)).map(subscribers => Ok(toJson(SubscribersResponse(subscribers)))) recover recovery

@@ -16,23 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
 import play.api.libs.json.Json
 import play.mvc.Http.Status._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.http.HttpResponse
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient, HttpResponse}
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role.{ADMINISTRATOR, DEVELOPER, Role}
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object EmailConnector {
   case class Config(baseUrl: String, devHubBaseUrl: String, devHubTitle: String, environmentName: String)
@@ -83,11 +78,10 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   val changeOfApplicationDetails                = "apiChangeOfApplicationDetails"
   val changeOfResponsibleIndividual             = "apiChangeOfResponsibleIndividual"
 
-
   private def getRoleForDisplay(role: Role) =
     role match {
       case ADMINISTRATOR => "admin"
-      case DEVELOPER => "developer"
+      case DEVELOPER     => "developer"
     }
 
   def sendCollaboratorAddedConfirmation(role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
@@ -107,8 +101,11 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendCollaboratorAddedNotification(email: String, role: Role, application: String, recipients: Set[String])(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-    post(SendEmailRequest(recipients, addedCollaboratorNotification,
-      Map("email" -> email, "role" -> s"${getRoleForDisplay(role)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)))
+    post(SendEmailRequest(
+      recipients,
+      addedCollaboratorNotification,
+      Map("email" -> email, "role" -> s"${getRoleForDisplay(role)}", "applicationName" -> application, "developerHubTitle" -> devHubTitle)
+    ))
       .map(_ => HasSucceeded)
   }
 
@@ -256,11 +253,11 @@ class EmailConnector @Inject() (httpClient: HttpClient, config: EmailConnector.C
   }
 
   def sendVerifyResponsibleIndividualUpdateNotification(
-     responsibleIndividualName: String,
-     responsibleIndividualEmailAddress: String,
-     applicationName: String,
-     requesterName: String,
-     verifyResponsibleIndividualUniqueId: String
+      responsibleIndividualName: String,
+      responsibleIndividualEmailAddress: String,
+      applicationName: String,
+      requesterName: String,
+      verifyResponsibleIndividualUniqueId: String
     )(implicit hc: HeaderCarrier
     ): Future[HasSucceeded] = {
     post(SendEmailRequest(

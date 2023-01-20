@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import play.api.test.Helpers
-import play.api.test.Helpers._
-import play.api.test.FakeRequest
-import play.api.libs.json.JsSuccess
+
 import akka.stream.testkit.NoMaterializer
-import play.api.libs.json.JsError
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockModule
+
+import play.api.libs.json.{JsError, JsSuccess}
+import play.api.test.Helpers._
+import play.api.test.{FakeRequest, Helpers}
+
 import uk.gov.hmrc.apiplatform.modules.submissions.controllers.QuestionnairesController
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.QuestionnaireDAOMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class QuestionnairesControllerSpec extends AsyncHmrcSpec {
   import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.GroupOfQuestionnairesJsonFormatters._

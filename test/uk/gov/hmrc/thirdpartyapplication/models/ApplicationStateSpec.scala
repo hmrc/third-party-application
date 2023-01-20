@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.scalatest.BeforeAndAfterEach
-import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-
 import java.time.LocalDateTime
+
+import org.scalatest.BeforeAndAfterEach
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State
+import uk.gov.hmrc.thirdpartyapplication.util.{FixedClock, HmrcSpec}
 
 class ApplicationStateSpec extends HmrcSpec with ApplicationStateUtil with BeforeAndAfterEach with FixedClock {
 
   val upliftRequestedByEmail = "requester@example.com"
-  val upliftRequestedByName = "Mrs Requester"
+  val upliftRequestedByName  = "Mrs Requester"
 
   "state transition from TESTING " should {
     val startingState = testingState().copy(updatedOn = LocalDateTime.now(clockMinusHours(24L)))

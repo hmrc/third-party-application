@@ -16,26 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import cats.data.NonEmptyList
-
+import java.time.LocalDateTime
 import java.util.UUID
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+
+import cats.data.NonEmptyList
 import org.mockito.captor.ArgCaptor
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.TableDrivenPropertyChecks
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.connector.ApiPlatformEventsConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.ActorType
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, ClientSecretAddedObfuscated, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.{ApplicationData, ApplicationTokens}
 import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders.{LOGGED_IN_USER_EMAIL_HEADER, LOGGED_IN_USER_NAME_HEADER}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
 
 class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach with TableDrivenPropertyChecks {
 
@@ -84,14 +85,14 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
   "ApiPlatformEventService" when {
 
     "applyEvents" should {
-      val secretValue = "secretValue"
+      val secretValue            = "secretValue"
       val clientSecretAddedEvent = ClientSecretAdded(
         id = UpdateApplicationEvent.Id.random,
         applicationId = applicationData.id,
         eventDateTime = LocalDateTime.now(),
         actor = CollaboratorActor(adminEmail),
         secretValue = secretValue,
-        clientSecret = ClientSecret("name", LocalDateTime.now(), None,  UUID.randomUUID().toString, "eulaVterces")
+        clientSecret = ClientSecret("name", LocalDateTime.now(), None, UUID.randomUUID().toString, "eulaVterces")
       )
       "obfuscate ClientSecret Event when applied" in new Setup() {
         val obfuscatedEvent = ClientSecretAddedObfuscated.fromClientSecretAdded(clientSecretAddedEvent)
@@ -99,7 +100,7 @@ class ApiPlatformEventServiceSpec extends AsyncHmrcSpec with BeforeAndAfterEach 
           .thenReturn(Future.successful(true))
 
         implicit val newHc: HeaderCarrier = HeaderCarrier().withExtraHeaders(LOGGED_IN_USER_EMAIL_HEADER -> adminEmail)
-        val result = await(objInTest.applyEvents(NonEmptyList.of(clientSecretAddedEvent)))
+        val result                        = await(objInTest.applyEvents(NonEmptyList.of(clientSecretAddedEvent)))
         result shouldBe true
       }
     }

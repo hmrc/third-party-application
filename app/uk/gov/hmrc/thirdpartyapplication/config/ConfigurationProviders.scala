@@ -16,20 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.config
 
-import net.ceedubs.ficus.Ficus._
-import net.ceedubs.ficus.readers.ArbitraryTypeReader._
-import play.api.inject.{Binding, Module}
-import play.api.{Configuration, Environment}
-import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
-import uk.gov.hmrc.thirdpartyapplication.scheduled._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
-
 import java.time.LocalDate
 import java.util.concurrent.TimeUnit._
 import javax.inject.{Inject, Provider, Singleton}
 import scala.concurrent.duration.{Duration, FiniteDuration}
+
+import net.ceedubs.ficus.Ficus._
+import net.ceedubs.ficus.readers.ArbitraryTypeReader._
+
+import play.api.inject.{Binding, Module}
+import play.api.{Configuration, Environment}
+import uk.gov.hmrc.play.bootstrap.config.ServicesConfig
+
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.controllers.ApplicationControllerConfig
+import uk.gov.hmrc.thirdpartyapplication.scheduled._
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationNamingService, ClientSecretServiceConfig, CredentialConfig}
 
 class ConfigurationModule extends Module {
 
@@ -148,7 +150,7 @@ class ResponsibleIndividualVerificationRemovalJobConfigProvider @Inject() (val c
 
 @Singleton
 class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualUpdateVerificationRemovalJobConfig] {
 
   override def get() = {
@@ -164,7 +166,7 @@ class ResponsibleIndividualUpdateVerificationRemovalJobConfigProvider @Inject() 
 
 @Singleton
 class ResponsibleIndividualVerificationSetDefaultTypeJobConfigProvider @Inject() (val configuration: Configuration)
-  extends ServicesConfig(configuration)
+    extends ServicesConfig(configuration)
     with Provider[ResponsibleIndividualVerificationSetDefaultTypeJobConfig] {
 
   override def get() = {

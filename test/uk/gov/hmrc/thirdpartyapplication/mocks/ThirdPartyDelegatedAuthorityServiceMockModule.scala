@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.Future.successful
+
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
 
-import scala.concurrent.Future.successful
 import uk.gov.hmrc.thirdpartyapplication.services.ThirdPartyDelegatedAuthorityService
 
 trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
@@ -31,6 +32,7 @@ trait ThirdPartyDelegatedAuthorityServiceMockModule extends MockitoSugar with Ar
     def verify(mode: org.mockito.verification.VerificationMode) = MockitoSugar.verify(aMock, mode)
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)(*)).thenReturn(successful(None))
       }

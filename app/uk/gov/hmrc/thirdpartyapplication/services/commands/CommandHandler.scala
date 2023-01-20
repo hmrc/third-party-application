@@ -16,15 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import scala.concurrent.{ExecutionContext, Future}
 
-import scala.concurrent.Future
-import scala.concurrent.ExecutionContext
+import cats.data.{NonEmptyList, ValidatedNec}
 import cats.implicits._
-import cats.data.NonEmptyList
-import cats.data.ValidatedNec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{AccessType, Collaborator, Environment, ImportantSubmissionData, Role, Standard, State, UpdateApplicationEvent, UserId}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{Actor, CollaboratorActor}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 abstract class CommandHandler {
   implicit def ec: ExecutionContext
@@ -38,7 +37,7 @@ object CommandHandler {
   }
 
   def isCollaboratorOnApp(email: String, app: ApplicationData): ValidatedNec[String, Unit] =
-    cond(app.collaborators.exists(c =>  c.emailAddress == email), s"no collaborator found with email: $email")
+    cond(app.collaborators.exists(c => c.emailAddress == email), s"no collaborator found with email: $email")
 
   private def isAdmin(userId: UserId, app: ApplicationData): Boolean =
     app.collaborators.exists(c => c.role == Role.ADMINISTRATOR && c.userId == userId)
@@ -80,8 +79,8 @@ object CommandHandler {
       s"Client Secret Id $clientSecretId not found in Application ${app.id.value}"
     )
 
-  def collaboratorAlreadyOnApp(email: String, app: ApplicationData)  = {
-      cond(
+  def collaboratorAlreadyOnApp(email: String, app: ApplicationData) = {
+    cond(
       !app.collaborators.exists(_.emailAddress.toLowerCase == email.toLowerCase),
       s"Collaborator already linked to Application ${app.id.value}"
     )
@@ -116,10 +115,13 @@ object CommandHandler {
     cond(app.access.accessType == AccessType.STANDARD, "App must have a STANDARD access type")
 
   def isStandardNewJourneyApp(app: ApplicationData) =
-    cond(app.access match {
-      case Standard(_, _, _, _, _, Some(_)) => true
-      case _ => false
-    }, "Must be a standard new journey application")
+    cond(
+      app.access match {
+        case Standard(_, _, _, _, _, Some(_)) => true
+        case _                                => false
+      },
+      "Must be a standard new journey application"
+    )
 
   def getRequester(app: ApplicationData, instigator: UserId) = {
     app.collaborators.find(_.userId == instigator).map(_.emailAddress).getOrElse(throw new RuntimeException(s"no collaborator found with instigator's userid: ${instigator}"))
@@ -128,8 +130,8 @@ object CommandHandler {
   def getResponsibleIndividual(app: ApplicationData) =
     app.access match {
       case Standard(_, _, _, _, _, Some(ImportantSubmissionData(_, responsibleIndividual, _, _, _, _))) => Some(responsibleIndividual)
-      case _ => None
-  }
+      case _                                                                                            => None
+    }
 
   def isResponsibleIndividualDefined(app: ApplicationData) =
     cond(getResponsibleIndividual(app).isDefined, "The responsible individual has not been set for this application")

@@ -16,26 +16,20 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+
+import play.api.libs.json.{JsValue, Json}
 import play.api.mvc.ControllerComponents
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import uk.gov.hmrc.thirdpartyapplication.controllers.JsonUtils
-import uk.gov.hmrc.thirdpartyapplication.controllers.ExtraHeadersController
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-import play.api.libs.json.Json
-import uk.gov.hmrc.apiplatform.modules.approvals.services.RequestApprovalsService
-import play.api.libs.json.JsValue
+import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.{ApprovalsActionBuilders, JsonErrorResponse}
+import uk.gov.hmrc.apiplatform.modules.approvals.services.{GrantApprovalsService, RequestApprovalsService}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.controllers.{ExtraHeadersController, JsonUtils}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, State}
 import uk.gov.hmrc.thirdpartyapplication.models.ApplicationResponse
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-
-import scala.concurrent.ExecutionContext
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.ApprovalsActionBuilders
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.approvals.services.GrantApprovalsService
-import uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions.JsonErrorResponse
 
 object ApprovalsController {
   case class RequestApprovalRequest(requestedByName: String, requestedByEmailAddress: String)

@@ -16,23 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
+import scala.concurrent.Future
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-import scala.concurrent.Future
-
 object ClientSecretRemovedNotification {
 
-
-  def sendClientSecretRemovedNotification(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.ClientSecretRemoved)
-                                         (implicit hc: HeaderCarrier): Future[HasSucceeded] = {
-       event.actor match {
-         case CollaboratorActor(email: String) => emailConnector.sendRemovedClientSecretNotification(email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
-         case _ => Future.successful(HasSucceeded)
-       }
+  def sendClientSecretRemovedNotification(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.ClientSecretRemoved
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
+    event.actor match {
+      case CollaboratorActor(email: String) => emailConnector.sendRemovedClientSecretNotification(email, event.clientSecretName, app.name, app.admins.map(_.emailAddress))
+      case _                                => Future.successful(HasSucceeded)
+    }
   }
 }

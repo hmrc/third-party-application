@@ -16,25 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{
-  ApplicationId,
-  ApplicationState,
-  ImportantSubmissionData,
-  PrivacyPolicyLocation,
-  ResponsibleIndividual,
-  Standard,
-  TermsAndConditionsLocation
-}
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-
-import scala.concurrent.ExecutionContext.Implicits.global
 import java.time.{Clock, LocalDateTime, ZoneOffset}
+import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
+
+import org.scalatest.BeforeAndAfterAll
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil {
 
@@ -59,17 +51,17 @@ class ProductionCredentialsRequestExpiredJobSpec extends AsyncHmrcSpec with Befo
       List.empty
     )
 
-    val app              = anApplicationData(
+    val app            = anApplicationData(
       ApplicationId.random,
       access = Standard(importantSubmissionData = Some(importantSubmissionData)),
       state = ApplicationState().toPendingResponsibleIndividualVerification(requesterEmail, requesterName, fixedClock)
     ).copy(name = appName)
-    val initialDelay     = FiniteDuration(1, MINUTES)
-    val interval         = FiniteDuration(1, HOURS)
-    val deleteInterval  = FiniteDuration(10, DAYS)
-    val jobConfig        = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
-    val job              = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
-    val recipients = app.collaborators.map(_.emailAddress)
+    val initialDelay   = FiniteDuration(1, MINUTES)
+    val interval       = FiniteDuration(1, HOURS)
+    val deleteInterval = FiniteDuration(10, DAYS)
+    val jobConfig      = ProductionCredentialsRequestExpiredJobConfig(initialDelay, interval, true, deleteInterval)
+    val job            = new ProductionCredentialsRequestExpiredJob(mockLockKeeper, ApplicationRepoMock.aMock, ApplicationUpdateServiceMock.aMock, fixedClock, jobConfig)
+    val recipients     = app.collaborators.map(_.emailAddress)
   }
 
   "ProductionCredentialsRequestExpiredJob" should {

@@ -16,18 +16,20 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import com.google.inject.Singleton
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, State, StateHistory}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
-
 import java.time.{Clock, LocalDateTime}
 import javax.inject.Inject
 import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 import scala.concurrent.{ExecutionContext, Future}
+
+import com.google.inject.Singleton
+
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType.SCHEDULED_JOB
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, State, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository}
 
 @Singleton
 class UpliftVerificationExpiryJob @Inject() (

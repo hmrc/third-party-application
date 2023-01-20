@@ -16,23 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.scheduled
 
-import org.scalatest.BeforeAndAfterAll
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
-import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
 import java.time.temporal.ChronoUnit.SECONDS
 import java.time.{Clock, LocalDateTime, ZoneOffset}
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.duration.{DAYS, FiniteDuration, HOURS, MINUTES}
 
+import org.scalatest.BeforeAndAfterAll
+
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationState.INITIAL
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerification, ResponsibleIndividualVerificationId}
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationUpdateServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ResponsibleIndividualVerificationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+
 class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpec with BeforeAndAfterAll with ApplicationStateUtil
-  with ApplicationTestData {
+    with ApplicationTestData {
 
   trait Setup extends ApplicationUpdateServiceMockModule with ResponsibleIndividualVerificationRepositoryMockModule
       with SubmissionsTestData {
@@ -78,17 +79,28 @@ class ResponsibleIndividualUpdateVerificationRemovalJobSpec extends AsyncHmrcSpe
     "remove database record" in new Setup {
       ApplicationUpdateServiceMock.Update.thenReturnSuccess(app)
 
-      val code = "123242423432432432"
+      val code         = "123242423432432432"
       val verification = ResponsibleIndividualUpdateVerification(
-        ResponsibleIndividualVerificationId(code), app.id, completelyAnswerExtendedSubmission.submission.id, 0, "my app", LocalDateTime.now,
-        ResponsibleIndividual.build("ri name", "ri@example.com"), "Mr Admin", "admin@example.com"
+        ResponsibleIndividualVerificationId(code),
+        app.id,
+        completelyAnswerExtendedSubmission.submission.id,
+        0,
+        "my app",
+        LocalDateTime.now,
+        ResponsibleIndividual.build("ri name", "ri@example.com"),
+        "Mr Admin",
+        "admin@example.com"
       )
       ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.thenReturn(verification)
 
       await(job.runJob)
 
-      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(ResponsibleIndividualVerification.VerificationTypeUpdate, INITIAL, timeNow.minus(removalInterval.toSeconds, SECONDS))
-      val applicationUpdate = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
+      ResponsibleIndividualVerificationRepositoryMock.FetchByTypeStateAndAge.verifyCalledWith(
+        ResponsibleIndividualVerification.VerificationTypeUpdate,
+        INITIAL,
+        timeNow.minus(removalInterval.toSeconds, SECONDS)
+      )
+      val applicationUpdate                        = ApplicationUpdateServiceMock.Update.verifyCalledWith(app.id)
       val declineResponsibleIndividualDidNotVerify = applicationUpdate.asInstanceOf[DeclineResponsibleIndividualDidNotVerify]
       declineResponsibleIndividualDidNotVerify.code shouldBe code
     }

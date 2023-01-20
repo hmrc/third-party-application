@@ -16,16 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.services
 
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
-import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-
+import java.time.{Clock, LocalDateTime}
 import scala.concurrent.{ExecutionContext, Future}
 import scala.util.Failure
-import java.time.{Clock, LocalDateTime}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor, StateHistory}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
 
 abstract class BaseService(stateHistoryRepository: StateHistoryRepository, clock: Clock)(implicit ec: ExecutionContext) {
 

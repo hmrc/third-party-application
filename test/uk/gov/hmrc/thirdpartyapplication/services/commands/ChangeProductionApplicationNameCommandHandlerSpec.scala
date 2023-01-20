@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.NonEmptyChain
 import cats.data.Validated.Invalid
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.UpliftNamingServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-import uk.gov.hmrc.http.HeaderCarrier
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import java.time.LocalDateTime
 
 class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -51,7 +53,7 @@ class ChangeProductionApplicationNameCommandHandlerSpec extends AsyncHmrcSpec wi
       List.empty
     )
 
-    val app = anApplicationData(applicationId).copy(
+    val app       = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))

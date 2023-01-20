@@ -16,14 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
-import org.mockito.verification.VerificationMode
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription}
-
 import scala.concurrent.Future.{failed, successful}
+
+import org.mockito.verification.VerificationMode
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, ApplicationId, UpdateApplicationEvent, UpdatesSubscription}
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
 
 trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -67,6 +67,7 @@ trait SubscriptionRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
       }

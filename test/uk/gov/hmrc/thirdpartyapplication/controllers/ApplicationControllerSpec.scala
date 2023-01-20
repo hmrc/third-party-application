@@ -16,48 +16,45 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import java.time.temporal.ChronoUnit
+import java.time.{LocalDateTime, ZoneOffset}
+import java.{util => ju}
+import scala.concurrent.ExecutionContext.Implicits.global
+import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
+
 import akka.stream.Materializer
+import akka.stream.testkit.NoMaterializer
 import cats.data.OptionT
 import cats.implicits._
 import com.github.t3hnar.bcrypt._
 import org.scalatest.prop.TableDrivenPropertyChecks
+
 import play.api.libs.json.{JsValue, Json}
 import play.api.mvc._
-import play.api.test.Helpers
-import play.api.test.FakeRequest
+import play.api.test.{FakeRequest, Helpers}
 import play.mvc.Http.HeaderNames
 import uk.gov.hmrc.auth.core.Enrolment
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
+
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Environment._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.CollaboratorActor
-import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.services.CredentialService
-import uk.gov.hmrc.thirdpartyapplication.services.GatekeeperService
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-
-import java.{util => ju}
-import scala.concurrent.ExecutionContext.Implicits.global
-import scala.concurrent.Future
-import scala.concurrent.Future.failed
-import scala.concurrent.Future.successful
-import akka.stream.testkit.NoMaterializer
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-
-import java.time.{LocalDateTime, ZoneOffset}
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.mocks.ApplicationServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.{CredentialService, GatekeeperService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class ApplicationControllerSpec
     extends ControllerSpec
@@ -70,7 +67,7 @@ class ApplicationControllerSpec
 
   implicit lazy val materializer: Materializer = NoMaterializer
 
-  trait Setup 
+  trait Setup
       extends AuthConfigSetup
       with SubmissionsServiceMockModule
       with UpliftLinkServiceMockModule
@@ -107,7 +104,6 @@ class ApplicationControllerSpec
     )
   }
 
-  
   trait PrivilegedAndRopcSetup extends Setup {
 
     def testWithPrivilegedAndRopcGatekeeperLoggedIn(applicationId: ApplicationId, testBlock: => Unit): Unit = {
@@ -149,7 +145,7 @@ class ApplicationControllerSpec
     ApplicationTokenResponse(ClientId("111"), "222", List(ClientSecretResponse(ClientSecret("3333", hashedSecret = "3333".bcrypt(4)))))
 
   "update approval" should {
-    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now, "1.0".asVersion.value)
+    val termsOfUseAgreement = TermsOfUseAgreement("test@example.com", LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS), "1.0".asVersion.value)
     val checkInformation    = CheckInformation(
       contactDetails = Some(ContactDetails("Tester", "test@example.com", "12345677890")),
       termsOfUseAgreements = List(termsOfUseAgreement)
@@ -550,10 +546,10 @@ class ApplicationControllerSpec
   }
 
   "add client secret (new)" should {
-    val applicationId = ApplicationId.random
+    val applicationId             = ApplicationId.random
     val applicationTokensResponse =
       ApplicationTokenResponse(ClientId("clientId"), "token", List(ClientSecretResponse(aSecret("secret1")), ClientSecretResponse(aSecret("secret2"))))
-    val secretRequest = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now())
+    val secretRequest             = ClientSecretRequestWithActor(CollaboratorActor("actor@example.com"), LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS))
 
     "succeed with a 200 (ok) when the application exists for the given id" in new PrivilegedAndRopcSetup {
       testWithPrivilegedAndRopcGatekeeperLoggedIn(
@@ -771,10 +767,10 @@ class ApplicationControllerSpec
   }
 
   "query dispatcher" should {
-    val clientId    = ClientId("A123XC")
+    val clientId = ClientId("A123XC")
 
     trait LastAccessedSetup extends Setup {
-      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now()
+      val updatedLastAccessTime: LocalDateTime = LocalDateTime.now.truncatedTo(ChronoUnit.MILLIS)
       val lastAccessTime: LocalDateTime        = updatedLastAccessTime.minusDays(10) // scalastyle:ignore magic.number
       val applicationId: ApplicationId         = ApplicationId.random
 
@@ -1274,7 +1270,6 @@ class ApplicationControllerSpec
 
   }
 
-
   "update IP allowlist" should {
     "succeed with a 204 (no content) when the IP allowlist is successfully added to the application" in new Setup {
       val applicationId: ApplicationId        = ApplicationId.random
@@ -1360,11 +1355,11 @@ class ApplicationControllerSpec
   }
 
   "notStrideUserDeleteApplication" should {
-    val application                                  = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
-    val applicationId                                = application.id
-    val gatekeeperUserId                             = "big.boss.gatekeeper"
-    val requestedByEmailAddress                      = "admin@example.com"
-    val deleteRequest                                = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
+    val application             = aNewApplicationResponse(environment = SANDBOX, state = ApplicationState(State.PRODUCTION))
+    val applicationId           = application.id
+    val gatekeeperUserId        = "big.boss.gatekeeper"
+    val requestedByEmailAddress = "admin@example.com"
+    val deleteRequest           = DeleteApplicationRequest(gatekeeperUserId, requestedByEmailAddress)
 
     "succeed when a sandbox application is successfully deleted" in new Setup with SandboxAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
@@ -1397,7 +1392,6 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(inPendingId)(request.withBody(Json.toJson(deleteRequest)).asInstanceOf[FakeRequest[AnyContent]])
- 
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(inPendingId), eqTo(None), *)(*)
@@ -1445,11 +1439,11 @@ class ApplicationControllerSpec
       ApplicationServiceMock.DeleteApplication.thenSucceeds
 
       val result = underTest.deleteApplication(applicationId)(
-          request
+        request
           .withBody(Json.toJson(deleteRequest))
           .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey.reverse))
           .asInstanceOf[FakeRequest[AnyContent]]
-        )
+      )
 
       status(result) shouldBe BAD_REQUEST
       verify(ApplicationServiceMock.aMock, never).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1458,12 +1452,11 @@ class ApplicationControllerSpec
     "succeed when a production application is requested to be deleted and authorisation key is valid" in new Setup with ProductionAuthSetup {
       ApplicationServiceMock.Fetch.thenReturn(application)
       ApplicationServiceMock.DeleteApplication.thenSucceeds
-      
+
       val result = underTest.deleteApplication(applicationId)(request
         .withBody(Json.toJson(deleteRequest))
         .withHeaders(AUTHORIZATION -> base64Encode(authorisationKey))
-        .asInstanceOf[FakeRequest[AnyContent]]
-        )
+        .asInstanceOf[FakeRequest[AnyContent]])
 
       status(result) shouldBe NO_CONTENT
       verify(ApplicationServiceMock.aMock).deleteApplication(eqTo(applicationId), eqTo(None), *)(*)
@@ -1479,5 +1472,3 @@ class ApplicationControllerSpec
     }
   }
 }
-
-

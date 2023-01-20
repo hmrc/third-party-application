@@ -16,21 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.LocalDateTime
 import java.util.UUID
-import org.mockito.ArgumentMatchersSugar
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.BRONZE
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
-import uk.gov.hmrc.thirdpartyapplication.util._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
 
-import java.time.LocalDateTime
+import org.mockito.ArgumentMatchersSugar
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.BRONZE
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.mocks.repository.ApplicationRepositoryMockModule
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class AwsRestoreServiceSpec extends AsyncHmrcSpec with ArgumentMatchersSugar with FixedClock {
 

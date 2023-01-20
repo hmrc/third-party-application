@@ -16,16 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.HttpClient
-import uk.gov.hmrc.http.HttpReads.Implicits._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
 
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
+import uk.gov.hmrc.http.HttpReads.Implicits._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ClientId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 
 object ThirdPartyDelegatedAuthorityConnector {
   case class Config(baseUrl: String)

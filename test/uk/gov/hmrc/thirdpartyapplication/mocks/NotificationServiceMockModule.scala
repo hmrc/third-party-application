@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
-
 import scala.concurrent.Future
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.notifications.NotificationService
+import uk.gov.hmrc.thirdpartyapplication.util.ApplicationTestData
 
 trait NotificationServiceMockModule extends MockitoSugar with ArgumentMatchersSugar with ApplicationTestData {
 

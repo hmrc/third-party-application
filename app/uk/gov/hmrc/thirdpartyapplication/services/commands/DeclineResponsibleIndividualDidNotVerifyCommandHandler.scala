@@ -16,29 +16,38 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
-import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
-import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{ResponsibleIndividualVerification, ResponsibleIndividualToUVerification, ResponsibleIndividualUpdateVerification, ResponsibleIndividualVerificationId}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.ExecutionContext
 
+import cats.Apply
+import cats.data.{NonEmptyChain, NonEmptyList, Validated, ValidatedNec}
+
+import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.{
+  ResponsibleIndividualToUVerification,
+  ResponsibleIndividualUpdateVerification,
+  ResponsibleIndividualVerification,
+  ResponsibleIndividualVerificationId
+}
+import uk.gov.hmrc.apiplatform.modules.approvals.repositories.ResponsibleIndividualVerificationRepository
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeclineResponsibleIndividualDidNotVerify, State, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
+class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject() (
     responsibleIndividualVerificationRepository: ResponsibleIndividualVerificationRepository
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
 
   import CommandHandler._
 
-  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) = 
+  private def isApplicationIdTheSame(app: ApplicationData, riVerification: ResponsibleIndividualVerification) =
     cond(app.id == riVerification.applicationId, "The given application id is different")
 
-  private def validateToU(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): ValidatedNec[String, ApplicationData] = {
+  private def validateToU(
+      app: ApplicationData,
+      cmd: DeclineResponsibleIndividualDidNotVerify,
+      riVerification: ResponsibleIndividualToUVerification
+    ): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map6(
       isStandardNewJourneyApp(app),
       isPendingResponsibleIndividualVerification(app),
@@ -49,7 +58,11 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
     ) { case _ => app }
   }
 
-  private def validateUpdate(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): ValidatedNec[String, ApplicationData] = {
+  private def validateUpdate(
+      app: ApplicationData,
+      cmd: DeclineResponsibleIndividualDidNotVerify,
+      riVerification: ResponsibleIndividualUpdateVerification
+    ): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]].map4(
       isStandardNewJourneyApp(app),
       isApproved(app),
@@ -60,10 +73,14 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
 
   import UpdateApplicationEvent._
 
-  private def asEventsToU(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualToUVerification): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEventsToU(
+      app: ApplicationData,
+      cmd: DeclineResponsibleIndividualDidNotVerify,
+      riVerification: ResponsibleIndividualToUVerification
+    ): NonEmptyList[UpdateApplicationEvent] = {
     val responsibleIndividual = getResponsibleIndividual(app).get
-    val requesterEmail = getRequesterEmail(app).get
-    val requesterName = getRequesterName(app).get
+    val requesterEmail        = getRequesterEmail(app).get
+    val requesterName         = getRequesterName(app).get
     NonEmptyList.of(
       ResponsibleIndividualDidNotVerify(
         id = UpdateApplicationEvent.Id.random,
@@ -104,7 +121,11 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
     )
   }
 
-  private def asEventsUpdate(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify, riVerification: ResponsibleIndividualUpdateVerification): NonEmptyList[UpdateApplicationEvent] = {
+  private def asEventsUpdate(
+      app: ApplicationData,
+      cmd: DeclineResponsibleIndividualDidNotVerify,
+      riVerification: ResponsibleIndividualUpdateVerification
+    ): NonEmptyList[UpdateApplicationEvent] = {
     val responsibleIndividual = riVerification.responsibleIndividual
     NonEmptyList.of(
       ResponsibleIndividualDeclinedUpdate(
@@ -120,19 +141,19 @@ class DeclineResponsibleIndividualDidNotVerifyCommandHandler @Inject()(
         requestingAdminName = riVerification.requestingAdminName,
         requestingAdminEmail = riVerification.requestingAdminEmail
       )
-    )  
+    )
   }
 
   def process(app: ApplicationData, cmd: DeclineResponsibleIndividualDidNotVerify): CommandHandler.Result = {
     responsibleIndividualVerificationRepository.fetch(ResponsibleIndividualVerificationId(cmd.code)).map(maybeRIVerification => {
       maybeRIVerification match {
-        case Some(riVerificationToU: ResponsibleIndividualToUVerification) => validateToU(app, cmd, riVerificationToU) map { _ =>
-          asEventsToU(app, cmd, riVerificationToU)
-        }
+        case Some(riVerificationToU: ResponsibleIndividualToUVerification)       => validateToU(app, cmd, riVerificationToU) map { _ =>
+            asEventsToU(app, cmd, riVerificationToU)
+          }
         case Some(riVerificationUpdate: ResponsibleIndividualUpdateVerification) => validateUpdate(app, cmd, riVerificationUpdate) map { _ =>
-          asEventsUpdate(app, cmd, riVerificationUpdate)
-        }
-        case _ => Validated.Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}"))
+            asEventsUpdate(app, cmd, riVerificationUpdate)
+          }
+        case _                                                                   => Validated.Invalid(NonEmptyChain.one(s"No responsibleIndividualVerification found for code ${cmd.code}"))
       }
     })
   }

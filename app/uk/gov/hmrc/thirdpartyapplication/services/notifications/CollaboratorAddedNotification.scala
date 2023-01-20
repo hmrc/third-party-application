@@ -16,18 +16,24 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-import scala.concurrent.{ExecutionContext, Future}
-
 object CollaboratorAddedNotification {
-  
-  def sendCollaboratorAddedNotification(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.CollaboratorAdded)
-                                       (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HasSucceeded] = {
+
+  def sendCollaboratorAddedNotification(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.CollaboratorAdded
+    )(implicit hc: HeaderCarrier,
+      ec: ExecutionContext
+    ): Future[HasSucceeded] = {
     for {
       _ <- emailConnector.sendCollaboratorAddedNotification(event.collaboratorEmail, event.collaboratorRole, app.name, event.verifiedAdminsToEmail)
       _ <- emailConnector.sendCollaboratorAddedConfirmation(event.collaboratorRole, app.name, Set(event.collaboratorEmail))

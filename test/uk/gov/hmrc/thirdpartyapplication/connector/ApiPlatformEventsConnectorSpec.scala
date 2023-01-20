@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.connector
 
-import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import com.github.tomakehurst.wiremock.client.WireMock._
-import play.api.http.Status._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
-
-import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
-
 import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
+import com.github.tomakehurst.wiremock.client.WireMock._
+
+import play.api.http.Status._
+import uk.gov.hmrc.http.{HeaderCarrier, HttpClient}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{GatekeeperUserActor, ProductionAppNameChanged}
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.ApplicationEventFormats._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 class ApiPlatformEventsConnectorSpec extends ConnectorSpec {
 

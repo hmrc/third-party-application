@@ -16,16 +16,17 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
-import play.api.libs.json.Json
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import java.time.LocalDateTime
+
+import play.api.libs.json.Json
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State.State
 
 case class ApplicationStateHistoryItem(state: State, timestamp: LocalDateTime)
 case class ApplicationStateHistory(applicationId: ApplicationId, appName: String, journeyVersion: Int, stateHistory: List[ApplicationStateHistoryItem])
 
 object ApplicationStateHistory {
   implicit val formatApplicationStateHistoryItem = Json.format[ApplicationStateHistoryItem]
-  implicit val formatApplicationStateHistory = Json.format[ApplicationStateHistory]
+  implicit val formatApplicationStateHistory     = Json.format[ApplicationStateHistory]
 }
-

@@ -16,13 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
-import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import uk.gov.hmrc.thirdpartyapplication.repository.NotificationRepository
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import scala.concurrent.Future.successful
+
 import org.mockito.captor.ArgCaptor
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.Notification
+import uk.gov.hmrc.thirdpartyapplication.repository.NotificationRepository
 
 trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -31,7 +33,8 @@ trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatcher
 
     object CreateEntity {
       def thenReturnSuccess() = when(aMock.createEntity(*[Notification])).thenAnswer(successful(true))
-      def verifyCalledWith()  = {
+
+      def verifyCalledWith() = {
         val captor = ArgCaptor[Notification]
         verify(aMock).createEntity(captor.capture)
         captor.value
@@ -44,6 +47,7 @@ trait NotificationRepositoryMockModule extends MockitoSugar with ArgumentMatcher
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)).thenReturn(successful(HasSucceeded))
       }

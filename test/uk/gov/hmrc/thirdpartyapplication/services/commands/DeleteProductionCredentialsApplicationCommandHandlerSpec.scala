@@ -16,16 +16,18 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.NonEmptyChain
 import cats.data.Validated.Invalid
-import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -33,21 +35,21 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
+    val appId         = ApplicationId.random
     val appAdminEmail = loggedInUser
-    val jobId = "DeleteUnusedApplicationsJob"
-    val actor = ScheduledJobActor(jobId)
-    val reasons = "reasons description text"
-    val app = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
-    val ts = LocalDateTime.now
-    val underTest = new DeleteProductionCredentialsApplicationCommandHandler
+    val jobId         = "DeleteUnusedApplicationsJob"
+    val actor         = ScheduledJobActor(jobId)
+    val reasons       = "reasons description text"
+    val app           = anApplicationData(appId, environment = Environment.SANDBOX, state = ApplicationState.testing)
+    val ts            = LocalDateTime.now
+    val underTest     = new DeleteProductionCredentialsApplicationCommandHandler
   }
 
   "process" should {
     "create correct event for a valid request with a standard app" in new Setup {
-      
+
       val result = await(underTest.process(app, DeleteProductionCredentialsApplication(jobId, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 
@@ -69,7 +71,7 @@ class DeleteProductionCredentialsApplicationCommandHandlerSpec extends AsyncHmrc
 
     "return an error if the application state is not TESTING" in new Setup {
       val productionApp = app.copy(state = ApplicationState.production("requestedby@example.com", "requestedByName"))
-      val result = await(underTest.process(productionApp, DeleteProductionCredentialsApplication(jobId, reasons, ts)))
+      val result        = await(underTest.process(productionApp, DeleteProductionCredentialsApplication(jobId, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("App is not in TESTING state"))
     }
   }

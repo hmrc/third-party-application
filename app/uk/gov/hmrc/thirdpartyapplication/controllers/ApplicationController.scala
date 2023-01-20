@@ -16,43 +16,38 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.successful
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Success, Try}
+
 import cats.data.OptionT
+
 import play.api.libs.json.Json.toJson
 import play.api.libs.json._
 import play.api.mvc._
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.http.NotFoundException
+import uk.gov.hmrc.http.{HeaderCarrier, NotFoundException}
 import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.common.services.{ApplicationLogger, EitherTHelper}
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
 import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateGrantLengthRequest.toGrantLength
+import uk.gov.hmrc.thirdpartyapplication.controllers.UpdateIpAllowlistRequest.toIpAllowlist
+import uk.gov.hmrc.thirdpartyapplication.controllers.actions.{ApplicationTypeAuthorisationActions, AuthKeyRefiner}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.utils._
 import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
 import uk.gov.hmrc.thirdpartyapplication.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
 import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.utils._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Future.successful
-import scala.util.Failure
-import scala.util.Success
-import scala.util.Try
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
-import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.thirdpartyapplication.services._
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.service.UpliftLinkService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.AuthKeyRefiner
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
-import uk.gov.hmrc.thirdpartyapplication.controllers.actions.ApplicationTypeAuthorisationActions
 
 @Singleton
 class ApplicationController @Inject() (
@@ -116,7 +111,7 @@ class ApplicationController @Inject() (
           _                   <- onV2(createApplicationRequest, processV2(applicationId))
         } yield Created(toJson(applicationResponse))
       } recover {
-        case e: ApplicationAlreadyExists =>
+        case e: ApplicationAlreadyExists   =>
           Conflict(JsErrorResponse(APPLICATION_ALREADY_EXISTS, s"Application already exists with name: ${e.applicationName}"))
         case e: FailedToSubscribeException =>
           BadRequest(JsErrorResponse(FAILED_TO_SUBSCRIBE, s"${e.getMessage}"))
@@ -211,10 +206,10 @@ class ApplicationController @Inject() (
   def addClientSecretNew(applicationId: ApplicationId) = Action.async(parse.json) { implicit request =>
     withJsonBody[ClientSecretRequestWithActor] { secret =>
       credentialService.addClientSecretNew(applicationId, secret) map { token => Ok(toJson(token)) } recover {
-        case e: NotFoundException => handleNotFound(e.getMessage)
-        case _: InvalidEnumException => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
+        case e: NotFoundException          => handleNotFound(e.getMessage)
+        case _: InvalidEnumException       => UnprocessableEntity(JsErrorResponse(INVALID_REQUEST_PAYLOAD, "Invalid environment"))
         case _: ClientSecretsLimitExceeded => Forbidden(JsErrorResponse(CLIENT_SECRET_LIMIT_EXCEEDED, "Client secret limit has been exceeded"))
-        case e => handleException(e)
+        case e                             => handleException(e)
       }
     }
   }

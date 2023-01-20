@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
-
 import scala.concurrent.ExecutionContext.Implicits.global
+
+import akka.stream.testkit.NoMaterializer
+
 import play.api.test.Helpers._
-import play.api.test.Helpers
+import play.api.test.{FakeRequest, Helpers}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.mocks.ResponsibleIndividualVerificationServiceMockModule
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import play.api.test.FakeRequest
-import akka.stream.testkit.NoMaterializer
+import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
 
 class ResponsibleIndividualVerificationControllerSpec extends AsyncHmrcSpec with FixedClock {
   implicit val mat = NoMaterializer

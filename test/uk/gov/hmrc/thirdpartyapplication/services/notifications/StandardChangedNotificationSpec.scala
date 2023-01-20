@@ -16,33 +16,38 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
+import java.time.LocalDateTime
+
 import uk.gov.hmrc.http.HeaderCarrier
 
-import java.time.LocalDateTime
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.mocks.connectors.EmailConnectorMockModule
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
 
 class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTestData {
+
   trait Setup extends EmailConnectorMockModule {
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val applicationId = ApplicationId.random
-    val devEmail = "dev@example.com"
-    val adminEmail = "admin@example.com"
-    val oldName = "old app name"
-    val newName = "new app name"
+    val applicationId         = ApplicationId.random
+    val devEmail              = "dev@example.com"
+    val adminEmail            = "admin@example.com"
+    val oldName               = "old app name"
+    val newName               = "new app name"
     val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
-    val testImportantSubmissionData = ImportantSubmissionData(Some("organisationUrl.com"),
-                              responsibleIndividual,
-                              Set(ServerLocation.InUK),
-                              TermsAndConditionsLocation.InDesktopSoftware,
-                              PrivacyPolicyLocation.InDesktopSoftware,
-                              List.empty)
 
-    val app = anApplicationData(applicationId).copy(
+    val testImportantSubmissionData = ImportantSubmissionData(
+      Some("organisationUrl.com"),
+      responsibleIndividual,
+      Set(ServerLocation.InUK),
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
+    val app            = anApplicationData(applicationId).copy(
       collaborators = Set(
         Collaborator(devEmail, Role.DEVELOPER, idOf(devEmail)),
         Collaborator(adminEmail, Role.ADMINISTRATOR, idOf(adminEmail))
@@ -50,21 +55,35 @@ class StandardChangedNotificationSpec extends AsyncHmrcSpec with ApplicationTest
       name = oldName,
       access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
     )
-    val timestamp = LocalDateTime.now
+    val timestamp      = LocalDateTime.now
     val gatekeeperUser = "gkuser"
-    val eventId = UpdateApplicationEvent.Id.random
-    val actor = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)
+    val eventId        = UpdateApplicationEvent.Id.random
+    val actor          = UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser)
   }
 
   "sendAdviceEmail" should {
     "successfully send email for PrivacyPolicyUrlChanged" in new Setup {
       EmailConnectorMock.SendChangeOfApplicationDetails.thenReturnSuccess()
       val previousPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/old-privacy-policy")
-      val newPrivacyPolicyUrl = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
+      val newPrivacyPolicyUrl      = PrivacyPolicyLocation.Url("https://example.com/new-privacy-policy")
 
-      val result = await(StandardChangedNotification.sendAdviceEmail(EmailConnectorMock.aMock, app, "admin@example.com", "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value))
+      val result = await(StandardChangedNotification.sendAdviceEmail(
+        EmailConnectorMock.aMock,
+        app,
+        "admin@example.com",
+        "privacy policy URL",
+        previousPrivacyPolicyUrl.value,
+        newPrivacyPolicyUrl.value
+      ))
       result shouldBe HasSucceeded
-      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(adminEmail, app.name, "privacy policy URL", previousPrivacyPolicyUrl.value, newPrivacyPolicyUrl.value, Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value))
+      EmailConnectorMock.SendChangeOfApplicationDetails.verifyCalledWith(
+        adminEmail,
+        app.name,
+        "privacy policy URL",
+        previousPrivacyPolicyUrl.value,
+        newPrivacyPolicyUrl.value,
+        Set(adminEmail, devEmail, responsibleIndividual.emailAddress.value)
+      )
     }
   }
 }

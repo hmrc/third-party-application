@@ -16,19 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.approvals.controllers.actions
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
-import scala.concurrent.ExecutionContext
-import play.api.mvc._
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.libs.json.{JsObject, Json}
+import play.api.mvc._
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+
 import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.QuestionnaireProgress
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Questionnaire
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.{Questionnaire, QuestionnaireProgress, Submission}
+import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.services.ApplicationDataService
 
 trait JsonErrorResponse {
   self: BackendController =>

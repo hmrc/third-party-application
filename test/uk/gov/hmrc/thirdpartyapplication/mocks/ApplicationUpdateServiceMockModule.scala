@@ -16,15 +16,16 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.{EitherT, NonEmptyChain}
 import cats.implicits.catsStdInstancesForFuture
+import org.mockito.captor.ArgCaptor
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApplicationId, ApplicationUpdate}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationUpdateService
-
-import org.mockito.captor.ArgCaptor
-import scala.concurrent.ExecutionContext.Implicits.global
 
 trait ApplicationUpdateServiceMockModule extends MockitoSugar with ArgumentMatchersSugar {
 

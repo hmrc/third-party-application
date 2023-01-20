@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
+import scala.concurrent.Future
+
 import com.google.inject.{Inject, Singleton}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import scala.concurrent.Future
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 @Singleton
 class ApplicationDataService @Inject() (appRepo: ApplicationRepository) {

@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiContext
 import uk.gov.hmrc.apiplatform.modules.fraudprevention.domain.models.FraudPrevention
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.util.UpliftRequestSamples
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.AskWhen.Context.Keys
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiContext, ApiIdentifierSyntax, SellResellOrDistribute}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.util.{HmrcSpec, UpliftRequestSamples}
 
 class DeriveContextSpec extends HmrcSpec with ApiIdentifierSyntax with UpliftRequestSamples {
 

@@ -16,21 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.nio.charset.StandardCharsets
+import java.util.Base64
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
+import scala.util.Try
 
 import cats.Apply
 import cats.data.{NonEmptyList, ValidatedNec}
-import scala.util.Try
-import java.util.Base64
-import java.nio.charset.StandardCharsets
 
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteUnusedApplication, State, UpdateApplicationEvent}
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
-class DeleteUnusedApplicationCommandHandler @Inject()(
+class DeleteUnusedApplicationCommandHandler @Inject() (
     val authControlConfig: AuthControlConfig
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -45,7 +45,7 @@ class DeleteUnusedApplicationCommandHandler @Inject()(
 
   private def validate(app: ApplicationData, cmd: DeleteUnusedApplication): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]
-        .map(matchesAuthorisationKey(cmd)){case _ => app}
+      .map(matchesAuthorisationKey(cmd)) { case _ => app }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteUnusedApplication): NonEmptyList[UpdateApplicationEvent] = {

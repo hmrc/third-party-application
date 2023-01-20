@@ -16,12 +16,14 @@
 
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.controllers
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-import play.api.test.Helpers._
-import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
 import scala.concurrent.ExecutionContext.Implicits.global
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+
 import play.api.test.FakeRequest
+import play.api.test.Helpers._
+
+import uk.gov.hmrc.apiplatform.modules.upliftlinks.mocks.UpliftLinkServiceMockModule
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApplicationId
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
 
 class UpliftLinksControllerSpec extends AsyncHmrcSpec {
 

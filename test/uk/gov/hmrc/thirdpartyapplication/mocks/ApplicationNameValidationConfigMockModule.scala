@@ -16,8 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.thirdpartyapplication.services.ApplicationNamingService
 
 trait ApplicationNameValidationConfigMockModule extends MockitoSugar with ArgumentMatchersSugar {

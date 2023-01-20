@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.common.services
 
-import play.api.libs.json._
 import cats.data.{NonEmptySet => NES}
 import cats.kernel.Order
+
+import play.api.libs.json._
 
 trait NonEmptySetFormatters {
 

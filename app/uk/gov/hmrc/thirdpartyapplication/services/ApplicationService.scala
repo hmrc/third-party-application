@@ -16,47 +16,40 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.{Clock, LocalDateTime}
+import java.util.concurrent.TimeUnit
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.Future.{apply => _, _}
+import scala.concurrent.duration.{Duration, DurationInt}
+import scala.concurrent.{ExecutionContext, Future}
+import scala.util.{Failure, Try}
+
 import akka.actor.ActorSystem
 import cats.data.NonEmptyChain
 import org.apache.commons.net.util.SubnetUtils
-import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
-import uk.gov.hmrc.play.audit.http.connector.AuditResult
-import uk.gov.hmrc.thirdpartyapplication.connector._
-import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.AddCollaboratorResponse
-import uk.gov.hmrc.thirdpartyapplication.controllers.DeleteApplicationRequest
-import uk.gov.hmrc.thirdpartyapplication.controllers.FixCollaboratorRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.thirdpartyapplication.repository.StateHistoryRepository
-import uk.gov.hmrc.thirdpartyapplication.repository.SubscriptionRepository
-import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
-import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 
-import java.util.concurrent.TimeUnit
-import javax.inject.Inject
-import javax.inject.Singleton
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future
-import scala.concurrent.Future.{apply => _, _}
-import scala.concurrent.duration.{Duration, DurationInt}
-import scala.util.Failure
-import scala.util.Try
+import uk.gov.hmrc.http.{BadRequestException, ForbiddenException, HeaderCarrier, NotFoundException}
+import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
+import uk.gov.hmrc.play.audit.http.connector.AuditResult
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.apiplatform.modules.submissions.services.SubmissionsService
 import uk.gov.hmrc.apiplatform.modules.uplift.services.UpliftNamingService
-import uk.gov.hmrc.mongo.lock.{LockRepository, LockService}
-
-import java.time.{Clock, LocalDateTime}
+import uk.gov.hmrc.thirdpartyapplication.connector._
+import uk.gov.hmrc.thirdpartyapplication.controllers.{AddCollaboratorRequest, AddCollaboratorResponse, DeleteApplicationRequest, FixCollaboratorRequest}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ActorType._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models.Role._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.State._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+import uk.gov.hmrc.thirdpartyapplication.repository.{ApplicationRepository, StateHistoryRepository, SubscriptionRepository}
+import uk.gov.hmrc.thirdpartyapplication.services.AuditAction._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HeaderCarrierUtils._
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
+import uk.gov.hmrc.thirdpartyapplication.util.{ActorHelper, CredentialGenerator, HeaderCarrierHelper}
 
 @Singleton
 class ApplicationService @Inject() (
@@ -131,7 +124,6 @@ class ApplicationService @Inject() (
       )(implicit hc: HeaderCarrier
       ): Future[HasSucceeded] = {
 
-
       if (adminsToEmail.nonEmpty) {
         emailConnector.sendCollaboratorAddedNotification(collaborator.emailAddress, collaborator.role, applicationName, adminsToEmail)
       }
@@ -145,7 +137,7 @@ class ApplicationService @Inject() (
       _           <- addUser(app, collaborator)
       _            = auditService.audit(CollaboratorAddedAudit, AuditHelper.applicationId(app.id) ++ CollaboratorAddedAudit.details(collaborator))
       _            = apiPlatformEventService.sendTeamMemberAddedEvent(app, collaborator.emailAddress, collaborator.role.toString)
-      _            = sendNotificationEmails(app.name, collaborator,  request.adminsToEmail)
+      _            = sendNotificationEmails(app.name, collaborator, request.adminsToEmail)
     } yield AddCollaboratorResponse(request.isRegistered)
   }
 
@@ -486,16 +478,15 @@ class ApplicationService @Inject() (
       }
 
     for {
-      existing <- fetchApp(applicationId)
-      _         = checkAccessType(existing)
-      savedApp <- applicationRepository.save(updatedApplication(existing))
-      _         = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
+      existing   <- fetchApp(applicationId)
+      _           = checkAccessType(existing)
+      savedApp   <- applicationRepository.save(updatedApplication(existing))
+      _           = AuditHelper.calculateAppChanges(existing, savedApp).foreach(Function.tupled(auditService.audit))
       updatedApp <- sendEventAndAuditIfRedirectUrisChanged(existing, savedApp)
     } yield updatedApp
   }
 
-  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)
-                                                    (implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def sendEventAndAuditIfRedirectUrisChanged(previousAppData: ApplicationData, updatedAppData: ApplicationData)(implicit hc: HeaderCarrier): Future[ApplicationData] = {
     (previousAppData.access, updatedAppData.access) match {
       case (previous: Standard, updated: Standard) =>
         if (previous.redirectUris != updated.redirectUris) {
@@ -505,14 +496,18 @@ class ApplicationService @Inject() (
             oldRedirectUris = previous.redirectUris,
             newRedirectUris = updated.redirectUris
           )
-        }
-        else Future.successful(updatedAppData)
+        } else Future.successful(updatedAppData)
       case _                                       => Future.successful(updatedAppData)
     }
   }
 
-  private def handleUpdateApplication(applicationId: ApplicationId, collaborators: Set[Collaborator], oldRedirectUris: List[String], newRedirectUris: List[String])
-                                     (implicit hc: HeaderCarrier): Future[ApplicationData] = {
+  private def handleUpdateApplication(
+      applicationId: ApplicationId,
+      collaborators: Set[Collaborator],
+      oldRedirectUris: List[String],
+      newRedirectUris: List[String]
+    )(implicit hc: HeaderCarrier
+    ): Future[ApplicationData] = {
 
     def fail(errorMessages: NonEmptyChain[String]) = {
       logger.warn(s"Command Process failed for $applicationId because ${errorMessages.toList.mkString("[", ",", "]")}")

@@ -16,14 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ImportantSubmissionData
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ResponsibleIndividual
 import cats.Apply
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ServerLocation
-import uk.gov.hmrc.thirdpartyapplication.domain.models.TermsAndConditionsLocation
-import uk.gov.hmrc.thirdpartyapplication.domain.models.PrivacyPolicyLocation
+
 import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ImportantSubmissionData, PrivacyPolicyLocation, ResponsibleIndividual, ServerLocation, TermsAndConditionsLocation}
 
 object SubmissionDataExtracter extends ApplicationLogger {
 

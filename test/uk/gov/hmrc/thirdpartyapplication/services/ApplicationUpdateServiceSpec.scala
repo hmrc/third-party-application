@@ -16,29 +16,30 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services
 
+import java.time.LocalDateTime
+import scala.concurrent.Future
+
 import cats.data.{NonEmptyChain, NonEmptyList, Validated}
+
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models
 import uk.gov.hmrc.apiplatform.modules.approvals.domain.models.ResponsibleIndividualVerificationId
 import uk.gov.hmrc.apiplatform.modules.submissions.domain.models.Submission
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.util._
-
-import java.time.LocalDateTime
-import scala.concurrent.Future
 import uk.gov.hmrc.thirdpartyapplication.testutils.services.ApplicationUpdateServiceUtils
+import uk.gov.hmrc.thirdpartyapplication.util._
 
 class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     with UpliftRequestSamples {
 
   trait Setup extends CommonSetup
 
-  val timestamp      = LocalDateTime.now
-  val gatekeeperUser = "gkuser1"
-  val adminName = "Mr Admin"
-  val adminEmail = "admin@example.com"
-  val devHubUser = CollaboratorActor(adminEmail)
+  val timestamp             = LocalDateTime.now
+  val gatekeeperUser        = "gkuser1"
+  val adminName             = "Mr Admin"
+  val adminEmail            = "admin@example.com"
+  val devHubUser            = CollaboratorActor(adminEmail)
   val applicationId         = ApplicationId.random
   val submissionId          = Submission.Id.random
   val responsibleIndividual = ResponsibleIndividual.build("bob example", "bob@example.com")
@@ -56,15 +57,32 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     applicationId,
     access = Standard(importantSubmissionData = Some(testImportantSubmissionData))
   )
+
   val riVerification = models.ResponsibleIndividualUpdateVerification(
-    ResponsibleIndividualVerificationId.random, applicationId, submissionId, 1, applicationData.name, timestamp, responsibleIndividual, adminName, adminEmail)
-  val instigator = applicationData.collaborators.head.userId
+    ResponsibleIndividualVerificationId.random,
+    applicationId,
+    submissionId,
+    1,
+    applicationData.name,
+    timestamp,
+    responsibleIndividual,
+    adminName,
+    adminEmail
+  )
+  val instigator     = applicationData.collaborators.head.userId
 
   "update with ChangeProductionApplicationName" should {
     val newName    = "robs new app"
     val changeName = ChangeProductionApplicationName(instigator, timestamp, gatekeeperUser, newName)
-    val event = ProductionAppNameChanged(
-      UpdateApplicationEvent.Id.random, applicationId, LocalDateTime.now(), UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser), applicationData.name, newName, adminEmail)
+    val event      = ProductionAppNameChanged(
+      UpdateApplicationEvent.Id.random,
+      applicationId,
+      LocalDateTime.now(),
+      UpdateApplicationEvent.GatekeeperUserActor(gatekeeperUser),
+      applicationData.name,
+      newName,
+      adminEmail
+    )
 
     "return the updated application if the application exists" in new Setup {
       ApplicationRepoMock.Fetch.thenReturn(applicationData)
@@ -115,21 +133,22 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with ChangeProductionApplicationPrivacyPolicyLocation" should {
-    val oldLocation           = PrivacyPolicyLocation.InDesktopSoftware
-    val newLocation           = PrivacyPolicyLocation.Url("http://example.com")
+    val oldLocation                 = PrivacyPolicyLocation.InDesktopSoftware
+    val newLocation                 = PrivacyPolicyLocation.Url("http://example.com")
     val changePrivacyPolicyLocation = ChangeProductionApplicationPrivacyPolicyLocation(instigator, timestamp, newLocation)
     val event                       = ProductionAppPrivacyPolicyLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, devHubUser, oldLocation, newLocation)
 
     def setPrivacyPolicyLocation(app: ApplicationData, location: PrivacyPolicyLocation) = {
       app.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(privacyPolicyLocation = location))))
-        case _ => fail("Unexpected access type: " + app.access)
+        case Standard(_, _, _, _, _, Some(importantSubmissionData)) =>
+          app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(privacyPolicyLocation = location))))
+        case _                                                      => fail("Unexpected access type: " + app.access)
       }
     }
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = setPrivacyPolicyLocation(applicationData, oldLocation)
-      val appAfter = setPrivacyPolicyLocation(applicationData, newLocation)
+      val appAfter  = setPrivacyPolicyLocation(applicationData, newLocation)
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
@@ -164,21 +183,22 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with ChangeProductionApplicationTermsAndConditionsLocation" should {
-    val oldLocation           = TermsAndConditionsLocation.InDesktopSoftware
-    val newLocation           = TermsAndConditionsLocation.Url("http://example.com")
+    val oldLocation                   = TermsAndConditionsLocation.InDesktopSoftware
+    val newLocation                   = TermsAndConditionsLocation.Url("http://example.com")
     val changeTermsConditionsLocation = ChangeProductionApplicationTermsAndConditionsLocation(instigator, timestamp, newLocation)
     val event                         = ProductionAppTermsConditionsLocationChanged(UpdateApplicationEvent.Id.random, applicationId, timestamp, devHubUser, oldLocation, newLocation)
 
     def setTermsAndConditionsLocation(app: ApplicationData, location: TermsAndConditionsLocation) = {
       app.access match {
-        case Standard(_, _, _, _, _, Some(importantSubmissionData)) => app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(termsAndConditionsLocation = location))))
-        case _ => fail("Unexpected access type: " + app.access)
+        case Standard(_, _, _, _, _, Some(importantSubmissionData)) =>
+          app.copy(access = app.access.asInstanceOf[Standard].copy(importantSubmissionData = Some(importantSubmissionData.copy(termsAndConditionsLocation = location))))
+        case _                                                      => fail("Unexpected access type: " + app.access)
       }
     }
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = setTermsAndConditionsLocation(applicationData, oldLocation)
-      val appAfter = setTermsAndConditionsLocation(applicationData, newLocation)
+      val appAfter  = setTermsAndConditionsLocation(applicationData, newLocation)
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
@@ -216,18 +236,32 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
     val changeResponsibleIndividual = ChangeResponsibleIndividualToSelf(UserId.random, LocalDateTime.now, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
+      val newRiName  = "Mr Responsible"
       val newRiEmail = "ri@example.com"
-      val code = "656474284925734543643"
-      val appBefore = applicationData
-      val appAfter = applicationData.copy(access = Standard(
-        importantSubmissionData = Some(testImportantSubmissionData.copy(
-          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
-      val event = ResponsibleIndividualChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        CollaboratorActor(changeResponsibleIndividual.email), "bob example", "bob@example.com",
-        newRiName, newRiEmail, Submission.Id.random, 1, code, changeResponsibleIndividual.name, 
-        changeResponsibleIndividual.email)
+      val code       = "656474284925734543643"
+      val appBefore  = applicationData
+      val appAfter   = applicationData.copy(access =
+        Standard(
+          importantSubmissionData = Some(testImportantSubmissionData.copy(
+            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+          ))
+        )
+      )
+      val event      = ResponsibleIndividualChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        CollaboratorActor(changeResponsibleIndividual.email),
+        "bob example",
+        "bob@example.com",
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        code,
+        changeResponsibleIndividual.name,
+        changeResponsibleIndividual.email
+      )
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
@@ -261,29 +295,47 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with ChangeResponsibleIndividualToOther" should {
-    val code = "235345t3874528745379534234234234"
+    val code                        = "235345t3874528745379534234234234"
     val changeResponsibleIndividual = ChangeResponsibleIndividualToOther(code, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val requesterName = "bill badger"
-    val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+    val requesterEmail              = "bill.badger@rupert.com"
+    val requesterName               = "bill badger"
+    val appInPendingRIVerification  = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
+      val newRiName  = "Mr Responsible"
       val newRiEmail = "ri@example.com"
-      val appBefore = appInPendingRIVerification
-      val appAfter = appInPendingRIVerification.copy(access = Standard(
-        importantSubmissionData = Some(testImportantSubmissionData.copy(
-          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
+      val appBefore  = appInPendingRIVerification
+      val appAfter   = appInPendingRIVerification.copy(access =
+        Standard(
+          importantSubmissionData = Some(testImportantSubmissionData.copy(
+            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+          ))
+        )
+      )
       val riSetEvent = ResponsibleIndividualSet(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterName, requesterEmail)
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        code,
+        requesterName,
+        requesterEmail
+      )
       val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        requesterEmail, requesterName)
-      val events = NonEmptyList.of(riSetEvent, stateEvent)
+        State.PENDING_GATEKEEPER_APPROVAL,
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+        requesterEmail,
+        requesterName
+      )
+      val events     = NonEmptyList.of(riSetEvent, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -318,18 +370,28 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with VerifyResponsibleIndividual" should {
-    val adminName = "Ms Admin"
+    val adminName                   = "Ms Admin"
     val verifyResponsibleIndividual = VerifyResponsibleIndividual(UserId.random, LocalDateTime.now, adminName, "name", "email")
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
+      val newRiName  = "Mr Responsible"
       val newRiEmail = "ri@example.com"
-      val app = applicationData
-      val appName = applicationData.name
-      val event = ResponsibleIndividualVerificationStarted(
-        UpdateApplicationEvent.Id.random, applicationId, appName, timestamp,
-        CollaboratorActor(verifyResponsibleIndividual.riEmail), adminName, adminEmail,
-        newRiName, newRiEmail, Submission.Id.random, 1, ResponsibleIndividualVerificationId.random)
+      val app        = applicationData
+      val appName    = applicationData.name
+      val event      = ResponsibleIndividualVerificationStarted(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        appName,
+        timestamp,
+        CollaboratorActor(verifyResponsibleIndividual.riEmail),
+        adminName,
+        adminEmail,
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        ResponsibleIndividualVerificationId.random
+      )
       ApplicationRepoMock.Fetch.thenReturn(app)
       ApplicationRepoMock.ApplyEvents.thenReturn(app)
       ApiPlatformEventServiceMock.ApplyEvents.succeeds
@@ -363,34 +425,61 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with DeclineResponsibleIndividual" should {
-    val code = "235345t3874528745379534234234234"
+    val code                         = "235345t3874528745379534234234234"
     val declineResponsibleIndividual = DeclineResponsibleIndividual(code, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val requesterName = "bill badger"
-    val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+    val requesterEmail               = "bill.badger@rupert.com"
+    val requesterName                = "bill badger"
+    val appInPendingRIVerification   = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val reasons = "reasons"
-      val appBefore = appInPendingRIVerification
-      val appAfter = appInPendingRIVerification.copy(access = Standard(
-        importantSubmissionData = Some(testImportantSubmissionData.copy(
-          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
-      val riDeclined = ResponsibleIndividualDeclined(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+      val newRiName                  = "Mr Responsible"
+      val newRiEmail                 = "ri@example.com"
+      val reasons                    = "reasons"
+      val appBefore                  = appInPendingRIVerification
+      val appAfter                   = appInPendingRIVerification.copy(access =
+        Standard(
+          importantSubmissionData = Some(testImportantSubmissionData.copy(
+            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+          ))
+        )
+      )
+      val riDeclined                 = ResponsibleIndividualDeclined(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterName, requesterEmail)
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        code,
+        requesterName,
+        requesterEmail
+      )
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        reasons,
+        requesterName,
+        requesterEmail
+      )
+      val stateEvent                 = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        requesterEmail, requesterName)
-      val events = NonEmptyList.of(riDeclined, appApprovalRequestDeclined, stateEvent)
+        State.PENDING_GATEKEEPER_APPROVAL,
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+        requesterEmail,
+        requesterName
+      )
+      val events                     = NonEmptyList.of(riDeclined, appApprovalRequestDeclined, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -417,34 +506,61 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with DeclineResponsibleIndividualDidNotVerify" should {
-    val code = "235345t3874528745379534234234234"
+    val code                                     = "235345t3874528745379534234234234"
     val declineResponsibleIndividualDidNotVerify = DeclineResponsibleIndividualDidNotVerify(code, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val requesterName = "bill badger"
-    val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+    val requesterEmail                           = "bill.badger@rupert.com"
+    val requesterName                            = "bill badger"
+    val appInPendingRIVerification               = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val reasons = "reasons"
-      val appBefore = appInPendingRIVerification
-      val appAfter = appInPendingRIVerification.copy(access = Standard(
-        importantSubmissionData = Some(testImportantSubmissionData.copy(
-          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
-      val riDidNotVerify = ResponsibleIndividualDidNotVerify(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+      val newRiName                  = "Mr Responsible"
+      val newRiEmail                 = "ri@example.com"
+      val reasons                    = "reasons"
+      val appBefore                  = appInPendingRIVerification
+      val appAfter                   = appInPendingRIVerification.copy(access =
+        Standard(
+          importantSubmissionData = Some(testImportantSubmissionData.copy(
+            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+          ))
+        )
+      )
+      val riDidNotVerify             = ResponsibleIndividualDidNotVerify(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, code, requesterName, requesterEmail)
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        code,
+        requesterName,
+        requesterEmail
+      )
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        reasons,
+        requesterName,
+        requesterEmail
+      )
+      val stateEvent                 = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        requesterEmail, requesterName)
-      val events = NonEmptyList.of(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
+        State.PENDING_GATEKEEPER_APPROVAL,
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+        requesterEmail,
+        requesterName
+      )
+      val events                     = NonEmptyList.of(riDidNotVerify, appApprovalRequestDeclined, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -471,30 +587,48 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with DeclineApplicationApprovalRequest" should {
-    val gatekeeperUser = "Bob.TheBuilder"
-    val reasons = "Reasons description text"
+    val gatekeeperUser                    = "Bob.TheBuilder"
+    val reasons                           = "Reasons description text"
     val declineApplicationApprovalRequest = DeclineApplicationApprovalRequest(gatekeeperUser, reasons, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val requesterName = "bill badger"
-    val appInPendingRIVerification = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
+    val requesterEmail                    = "bill.badger@rupert.com"
+    val requesterName                     = "bill badger"
+    val appInPendingRIVerification        = applicationData.copy(state = ApplicationState.pendingResponsibleIndividualVerification(requesterEmail, requesterName))
 
     "return the updated application if the application exists" in new Setup {
-      val newRiName = "Mr Responsible"
-      val newRiEmail = "ri@example.com"
-      val appBefore = appInPendingRIVerification
-      val appAfter = appInPendingRIVerification.copy(access = Standard(
-        importantSubmissionData = Some(testImportantSubmissionData.copy(
-          responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)))))
+      val newRiName                  = "Mr Responsible"
+      val newRiEmail                 = "ri@example.com"
+      val appBefore                  = appInPendingRIVerification
+      val appAfter                   = appInPendingRIVerification.copy(access =
+        Standard(
+          importantSubmissionData = Some(testImportantSubmissionData.copy(
+            responsibleIndividual = ResponsibleIndividual.build(newRiName, newRiEmail)
+          ))
+        )
+      )
       val appApprovalRequestDeclined = ApplicationApprovalRequestDeclined(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        newRiName, newRiEmail, Submission.Id.random, 1, reasons, requesterName, requesterEmail)
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        newRiName,
+        newRiEmail,
+        Submission.Id.random,
+        1,
+        reasons,
+        requesterName,
+        requesterEmail
+      )
+      val stateEvent                 = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         CollaboratorActor(requesterEmail),
-        State.PENDING_GATEKEEPER_APPROVAL, State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        requesterEmail, requesterName)
-      val events = NonEmptyList.of(appApprovalRequestDeclined, stateEvent)
+        State.PENDING_GATEKEEPER_APPROVAL,
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+        requesterEmail,
+        requesterName
+      )
+      val events                     = NonEmptyList.of(appApprovalRequestDeclined, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -521,28 +655,38 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
   }
 
   "update with DeleteApplicationByCollaborator" should {
-    val instigator = UserId.random
-    val requesterEmail = "bill.badger@rupert.com"
-    val actor = CollaboratorActor(requesterEmail)
-    val reasons = "Reasons description text"
+    val instigator                      = UserId.random
+    val requesterEmail                  = "bill.badger@rupert.com"
+    val actor                           = CollaboratorActor(requesterEmail)
+    val reasons                         = "Reasons description text"
     val deleteApplicationByCollaborator = DeleteApplicationByCollaborator(instigator, reasons, LocalDateTime.now)
-    val clientId = ClientId("clientId")
-    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+    val clientId                        = ClientId("clientId")
+    val appInDeletedState               = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = applicationData
-      val appAfter = appInDeletedState
+      val appAfter  = appInDeletedState
 
       val applicationDeleted = ApplicationDeleted(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons")
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        clientId,
+        "wso2ApplicationName",
+        "reasons"
+      )
+      val stateEvent         = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        State.PRODUCTION, State.DELETED, 
-        requesterEmail, requesterEmail)
-      val events = NonEmptyList.of(applicationDeleted, stateEvent)
+        State.PRODUCTION,
+        State.DELETED,
+        requesterEmail,
+        requesterEmail
+      )
+      val events             = NonEmptyList.of(applicationDeleted, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -566,31 +710,42 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent)
       result shouldBe Right(appAfter)
     }
-  }  
+  }
 
   "update with DeleteApplicationByGatekeeper" should {
-    val requesterEmail = "bill.badger@rupert.com"
-    val gatekeeperUser = "gatekeeperuser"
-    val actor = GatekeeperUserActor(gatekeeperUser)
-    val reasons = "Reasons description text"
+    val requesterEmail                = "bill.badger@rupert.com"
+    val gatekeeperUser                = "gatekeeperuser"
+    val actor                         = GatekeeperUserActor(gatekeeperUser)
+    val reasons                       = "Reasons description text"
     val deleteApplicationByGatekeeper = DeleteApplicationByGatekeeper(gatekeeperUser, requesterEmail, reasons, LocalDateTime.now)
-    val clientId = ClientId("clientId")
-    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+    val clientId                      = ClientId("clientId")
+    val appInDeletedState             = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = applicationData
-      val appAfter = appInDeletedState
+      val appAfter  = appInDeletedState
 
       val applicationDeletedByGatekeeper = ApplicationDeletedByGatekeeper(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons", requesterEmail)
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        clientId,
+        "wso2ApplicationName",
+        "reasons",
+        requesterEmail
+      )
+      val stateEvent                     = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        State.PRODUCTION, State.DELETED, 
-        requesterEmail, requesterEmail)
-      val events = NonEmptyList.of(applicationDeletedByGatekeeper, stateEvent)
+        State.PRODUCTION,
+        State.DELETED,
+        requesterEmail,
+        requesterEmail
+      )
+      val events                         = NonEmptyList.of(applicationDeletedByGatekeeper, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -614,31 +769,41 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeletedByGatekeeper, stateEvent)
       result shouldBe Right(appAfter)
     }
-  }  
+  }
 
   "update with DeleteUnusedApplication" should {
-    val actor = ScheduledJobActor("DeleteUnusedApplicationsJob")
-    val reasons = "Reasons description text"
-    val authorisationKey = "23476523467235972354923"
+    val actor                   = ScheduledJobActor("DeleteUnusedApplicationsJob")
+    val reasons                 = "Reasons description text"
+    val authorisationKey        = "23476523467235972354923"
     val deleteUnusedApplication = DeleteUnusedApplication("DeleteUnusedApplicationsJob", authorisationKey, reasons, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val clientId = ClientId("clientId")
-    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+    val requesterEmail          = "bill.badger@rupert.com"
+    val clientId                = ClientId("clientId")
+    val appInDeletedState       = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = applicationData
-      val appAfter = appInDeletedState
+      val appAfter  = appInDeletedState
 
       val applicationDeleted = ApplicationDeleted(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        clientId, "wso2ApplicationName", "reasons")
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        clientId,
+        "wso2ApplicationName",
+        "reasons"
+      )
+      val stateEvent         = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        State.PRODUCTION, State.DELETED, 
-        requesterEmail, requesterEmail)
-      val events = NonEmptyList.of(applicationDeleted, stateEvent)
+        State.PRODUCTION,
+        State.DELETED,
+        requesterEmail,
+        requesterEmail
+      )
+      val events             = NonEmptyList.of(applicationDeleted, stateEvent)
 
       ApplicationRepoMock.Fetch.thenReturn(appBefore)
       ApplicationRepoMock.ApplyEvents.thenReturn(appAfter)
@@ -662,29 +827,40 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(applicationDeleted, stateEvent)
       result shouldBe Right(appAfter)
     }
-  }  
+  }
 
   "update with ProductionCredentialsApplicationDeleted" should {
-    val jobId = "ProductionCredentialsRequestExpiredJob"
-    val actor = ScheduledJobActor(jobId)
-    val reasons = "Reasons description text"
+    val jobId                                  = "ProductionCredentialsRequestExpiredJob"
+    val actor                                  = ScheduledJobActor(jobId)
+    val reasons                                = "Reasons description text"
     val deleteProductionCredentialsApplication = DeleteProductionCredentialsApplication(jobId, reasons, LocalDateTime.now)
-    val requesterEmail = "bill.badger@rupert.com"
-    val clientId = ClientId("clientId")
-    val appInDeletedState = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
+    val requesterEmail                         = "bill.badger@rupert.com"
+    val clientId                               = ClientId("clientId")
+    val appInDeletedState                      = applicationData.copy(state = ApplicationState.deleted(requesterEmail, requesterEmail))
 
     "return the updated application if the application exists" in new Setup {
       val appBefore = applicationData
-      val appAfter = appInDeletedState
+      val appAfter  = appInDeletedState
 
       val productionCredentialsApplicationDeleted = ProductionCredentialsApplicationDeleted(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
-        actor, clientId, "wso2AppName", "reasons")
-      val stateEvent = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, applicationId, timestamp,
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
         actor,
-        State.PRODUCTION, State.DELETED, 
-        requesterEmail, requesterEmail)
+        clientId,
+        "wso2AppName",
+        "reasons"
+      )
+      val stateEvent                              = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        applicationId,
+        timestamp,
+        actor,
+        State.PRODUCTION,
+        State.DELETED,
+        requesterEmail,
+        requesterEmail
+      )
 
       val events = NonEmptyList.of(productionCredentialsApplicationDeleted, stateEvent)
 
@@ -710,7 +886,6 @@ class ApplicationUpdateServiceSpec extends ApplicationUpdateServiceUtils
       ApplicationRepoMock.ApplyEvents.verifyCalledWith(productionCredentialsApplicationDeleted, stateEvent)
       result shouldBe Right(appAfter)
     }
-  }  
-
+  }
 
 }

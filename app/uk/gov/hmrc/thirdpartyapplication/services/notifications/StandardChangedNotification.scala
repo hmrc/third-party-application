@@ -16,16 +16,26 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.http.HeaderCarrier
 import scala.concurrent.Future
 
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 object StandardChangedNotification {
-  
-  def sendAdviceEmail(emailConnector: EmailConnector, app: ApplicationData, requestingAdminEmail: String, fieldName: String, previousValue: String, newValue: String)(implicit hc: HeaderCarrier): Future[HasSucceeded] = {
+
+  def sendAdviceEmail(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      requestingAdminEmail: String,
+      fieldName: String,
+      previousValue: String,
+      newValue: String
+    )(implicit hc: HeaderCarrier
+    ): Future[HasSucceeded] = {
     val recipients = getRecipients(app) ++ getResponsibleIndividual(app)
     emailConnector.sendChangeOfApplicationDetails(requestingAdminEmail, app.name, fieldName, previousValue, newValue, recipients)
   }
@@ -37,7 +47,7 @@ object StandardChangedNotification {
   private def getResponsibleIndividual(app: ApplicationData): Set[String] = {
     app.access match {
       case Standard(_, _, _, _, _, Some(importantSubmissionData)) => Set(importantSubmissionData.responsibleIndividual.emailAddress.value)
-      case _ => Set()
+      case _                                                      => Set()
     }
   }
 }

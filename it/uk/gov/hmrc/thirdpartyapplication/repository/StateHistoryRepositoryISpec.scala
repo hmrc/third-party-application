@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,7 @@ package uk.gov.hmrc.thirdpartyapplication.repository
 import org.scalatest.concurrent.Eventually
 import org.scalatest.{BeforeAndAfterAll, BeforeAndAfterEach}
 import uk.gov.hmrc.mongo.test.{CleanMongoCollectionSupport, MongoSupport}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{OldActor, ActorType}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ActorType, OldActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.State
 import uk.gov.hmrc.thirdpartyapplication.domain.models.StateHistory
 import uk.gov.hmrc.thirdpartyapplication.util.{AsyncHmrcSpec, FixedClock}
@@ -130,17 +130,22 @@ class StateHistoryRepositoryISpec extends AsyncHmrcSpec with MongoSupport with C
   "applyEvents" should {
 
     "apply a ApplicationStateChanged event" in {
-      val requesterEmail = "bill.badger@rupert.com"
-      val requesterName = "bill badger"
-      val appId = ApplicationId.random
-      val ts = LocalDateTime.now(clock)
-      val actor: OldActor    = OldActor(requesterEmail, ActorType.COLLABORATOR)
-      val event = ApplicationStateChanged(
-        UpdateApplicationEvent.Id.random, appId, ts,
+      val requesterEmail  = "bill.badger@rupert.com"
+      val requesterName   = "bill badger"
+      val appId           = ApplicationId.random
+      val ts              = LocalDateTime.now(clock)
+      val actor: OldActor = OldActor(requesterEmail, ActorType.COLLABORATOR)
+      val event           = ApplicationStateChanged(
+        UpdateApplicationEvent.Id.random,
+        appId,
+        ts,
         CollaboratorActor(requesterEmail),
-        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION, 
-        State.PENDING_GATEKEEPER_APPROVAL, requesterName, requesterEmail)
-      val stateHistory = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
+        State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION,
+        State.PENDING_GATEKEEPER_APPROVAL,
+        requesterName,
+        requesterEmail
+      )
+      val stateHistory    = StateHistory(appId, State.PENDING_GATEKEEPER_APPROVAL, actor, Some(State.PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION), changedAt = ts)
 
       val result = await(repository.applyEvents(NonEmptyList.one(event)))
 

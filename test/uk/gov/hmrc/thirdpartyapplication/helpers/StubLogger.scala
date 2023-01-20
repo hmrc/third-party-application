@@ -16,11 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.helpers
 
-import org.slf4j
-import play.api.{LoggerLike, MarkerContext}
-
 import scala.collection.mutable.ListBuffer
+
 import org.mockito.MockitoSugar
+import org.slf4j
+
+import play.api.{LoggerLike, MarkerContext}
 
 class StubLogger extends LoggerLike with MockitoSugar {
   override val logger: slf4j.Logger = mock[slf4j.Logger]

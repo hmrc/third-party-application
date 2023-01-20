@@ -17,6 +17,7 @@
 package uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.services
 
 import play.api.libs.json.Json
+
 import uk.gov.hmrc.apiplatform.modules.upliftlinks.domain.models.UpliftLink
 
 trait UpliftLinkJsonFormatter {

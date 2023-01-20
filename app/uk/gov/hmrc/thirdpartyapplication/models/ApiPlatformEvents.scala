@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.thirdpartyapplication.models
 
+import java.time.{LocalDateTime, ZoneOffset}
 import java.util.UUID
 import java.util.UUID.randomUUID
-import uk.gov.hmrc.thirdpartyapplication.domain.utils
-import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
 
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.thirdpartyapplication.domain.models.OldActor
+import uk.gov.hmrc.thirdpartyapplication.domain.utils
 
 case class EventId(value: UUID) extends AnyVal
 
@@ -63,7 +63,7 @@ object EventType extends Enumeration {
   val APPLICATION_DELETED                               = Value
   val APPLICATION_DELETED_BY_GATEKEEPER                 = Value
   val PRODUCTION_CREDENTIALS_APPLICATION_DELETED        = Value
-  
+
   implicit val applicationEventTypeFormat = utils.EnumJson.enumFormat(EventType)
 }
 
@@ -73,59 +73,63 @@ sealed trait ApplicationEvent {
   def eventDateTime: LocalDateTime
 }
 
-case class TeamMemberAddedEvent(id: EventId,
-                                applicationId: String,
-                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                actor: OldActor,
-                                teamMemberEmail: String,
-                                teamMemberRole: String) extends ApplicationEvent
+case class TeamMemberAddedEvent(
+    id: EventId,
+    applicationId: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: OldActor,
+    teamMemberEmail: String,
+    teamMemberRole: String
+  ) extends ApplicationEvent
 
-case class TeamMemberRemovedEvent(id: EventId,
-                                  applicationId: String,
-                                  eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                  actor: OldActor,
-                                  teamMemberEmail: String,
-                                  teamMemberRole: String) extends ApplicationEvent
+case class TeamMemberRemovedEvent(
+    id: EventId,
+    applicationId: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: OldActor,
+    teamMemberEmail: String,
+    teamMemberRole: String
+  ) extends ApplicationEvent
 
-case class ClientSecretAddedEvent(id: EventId,
-                                  applicationId: String,
-                                  eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                  actor: OldActor,
-                                  clientSecretId: String) extends ApplicationEvent
+case class ClientSecretAddedEvent(id: EventId, applicationId: String, eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC), actor: OldActor, clientSecretId: String)
+    extends ApplicationEvent
 
-case class ClientSecretRemovedEvent(id: EventId,
-                                    applicationId: String,
-                                    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                    actor: OldActor,
-                                    clientSecretId: String) extends ApplicationEvent
+case class ClientSecretRemovedEvent(id: EventId, applicationId: String, eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC), actor: OldActor, clientSecretId: String)
+    extends ApplicationEvent
 
-case class RedirectUrisUpdatedEvent(id: EventId,
-                                    applicationId: String,
-                                    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                    actor: OldActor,
-                                    oldRedirectUris: String,
-                                    newRedirectUris: String) extends ApplicationEvent
+case class RedirectUrisUpdatedEvent(
+    id: EventId,
+    applicationId: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: OldActor,
+    oldRedirectUris: String,
+    newRedirectUris: String
+  ) extends ApplicationEvent
 
-case class ApiSubscribedEvent(id: EventId,
-                              applicationId: String,
-                              eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                              actor: OldActor,
-                              context: String,
-                              version: String) extends ApplicationEvent
+case class ApiSubscribedEvent(
+    id: EventId,
+    applicationId: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: OldActor,
+    context: String,
+    version: String
+  ) extends ApplicationEvent
 
-case class ApiUnsubscribedEvent(id: EventId,
-                                applicationId: String,
-                                eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
-                                actor: OldActor,
-                                context: String,
-                                version: String) extends ApplicationEvent
+case class ApiUnsubscribedEvent(
+    id: EventId,
+    applicationId: String,
+    eventDateTime: LocalDateTime = LocalDateTime.now(ZoneOffset.UTC),
+    actor: OldActor,
+    context: String,
+    version: String
+  ) extends ApplicationEvent
 
 object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   import play.api.libs.json._
   import uk.gov.hmrc.play.json.Union
 
-  implicit val eventIdFormat: Format[EventId]                                     = Json.valueFormat[EventId]
-  implicit val oldActorFormat: OFormat[OldActor]                                  = Json.format[OldActor]
+  implicit val eventIdFormat: Format[EventId]    = Json.valueFormat[EventId]
+  implicit val oldActorFormat: OFormat[OldActor] = Json.format[OldActor]
 
   implicit val teamMemberAddedEventFormats: OFormat[TeamMemberAddedEvent]         = Json.format[TeamMemberAddedEvent]
   implicit val teamMemberRemovedEventFormats: OFormat[TeamMemberRemovedEvent]     = Json.format[TeamMemberRemovedEvent]
@@ -134,7 +138,6 @@ object ApplicationEventFormats extends utils.UtcMillisDateTimeFormatters {
   implicit val urisUpdatedEventFormats: OFormat[RedirectUrisUpdatedEvent]         = Json.format[RedirectUrisUpdatedEvent]
   implicit val apiSubscribedEventFormats: OFormat[ApiSubscribedEvent]             = Json.format[ApiSubscribedEvent]
   implicit val apiUnsubscribedEventFormats: OFormat[ApiUnsubscribedEvent]         = Json.format[ApiUnsubscribedEvent]
-
 
   implicit val formatApplicationEvent: OFormat[ApplicationEvent] = Union.from[ApplicationEvent]("eventType")
     .and[TeamMemberAddedEvent](EventType.TEAM_MEMBER_ADDED.toString)

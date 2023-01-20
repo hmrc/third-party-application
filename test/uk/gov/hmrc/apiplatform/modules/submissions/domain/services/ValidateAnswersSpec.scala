@@ -16,12 +16,12 @@
 
 package uk.gov.hmrc.apiplatform.modules.questionnaires.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 import org.scalatest.Inside
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.AsIdsHelpers
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.ValidateAnswers
+
 import uk.gov.hmrc.apiplatform.modules.submissions.QuestionBuilder
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.services.{AsIdsHelpers, ValidateAnswers}
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class ValidateAnswersSpec extends HmrcSpec with Inside with QuestionBuilder with AsIdsHelpers {
 

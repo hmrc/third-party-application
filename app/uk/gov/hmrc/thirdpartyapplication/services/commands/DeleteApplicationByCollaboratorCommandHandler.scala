@@ -27,7 +27,7 @@ import uk.gov.hmrc.thirdpartyapplication.domain.models.{DeleteApplicationByColla
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
 @Singleton
-class DeleteApplicationByCollaboratorCommandHandler @Inject()(
+class DeleteApplicationByCollaboratorCommandHandler @Inject() (
     val authControlConfig: AuthControlConfig
   )(implicit val ec: ExecutionContext
   ) extends CommandHandler {
@@ -40,13 +40,11 @@ class DeleteApplicationByCollaboratorCommandHandler @Inject()(
 
   private def validate(app: ApplicationData, cmd: DeleteApplicationByCollaborator): ValidatedNec[String, ApplicationData] = {
     Apply[ValidatedNec[String, *]]
-        .map3(isAdminOnApp(cmd.instigator, app),
-              isStandardAccess(app),
-              canDeleteApplicationsOrNotProductionApp(app)){case _ => app}
+      .map3(isAdminOnApp(cmd.instigator, app), isStandardAccess(app), canDeleteApplicationsOrNotProductionApp(app)) { case _ => app }
   }
 
   private def asEvents(app: ApplicationData, cmd: DeleteApplicationByCollaborator): NonEmptyList[UpdateApplicationEvent] = {
-    val clientId = app.tokens.production.clientId
+    val clientId       = app.tokens.production.clientId
     val requesterEmail = getRequester(app, cmd.instigator)
     NonEmptyList.of(
       ApplicationDeleted(

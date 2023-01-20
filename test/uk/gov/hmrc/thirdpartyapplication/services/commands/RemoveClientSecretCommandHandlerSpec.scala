@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretRemoved, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -30,15 +31,15 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
     val underTest = new RemoveClientSecretCommandHandler()
 
     val applicationId = ApplicationId.random
-    val adminEmail = "admin@example.com"
+    val adminEmail    = "admin@example.com"
 
-    val developerUserId = idOf(devEmail)
+    val developerUserId       = idOf(devEmail)
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, developerUserId)
-    val developerActor = CollaboratorActor(devEmail)
+    val developerActor        = CollaboratorActor(devEmail)
 
-    val adminUserId = idOf(adminEmail)
+    val adminUserId       = idOf(adminEmail)
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
-    val adminActor = CollaboratorActor(adminEmail)
+    val adminActor        = CollaboratorActor(adminEmail)
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -47,11 +48,11 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       )
     )
 
-    val timestamp = LocalDateTime.now
-    val secretValue = "secret"
+    val timestamp    = LocalDateTime.now
+    val secretValue  = "secret"
     val clientSecret = app.tokens.production.clientSecrets.head
 
-    val removeClientSecretByDev = RemoveClientSecret(CollaboratorActor(devEmail), clientSecret.id, timestamp)
+    val removeClientSecretByDev   = RemoveClientSecret(CollaboratorActor(devEmail), clientSecret.id, timestamp)
     val removeClientSecretByAdmin = RemoveClientSecret(CollaboratorActor(adminEmail), clientSecret.id, timestamp)
   }
 
@@ -74,24 +75,24 @@ class RemoveClientSecretCommandHandlerSpec extends AsyncHmrcSpec with Applicatio
       result.isValid shouldBe false
       result.toEither match {
         case Left(Chain(error: String)) => error shouldBe "App is in PRODUCTION so User must be an ADMIN"
-        case _ => fail()
+        case _                          => fail()
       }
     }
 
     "return an error when client secret id is not valid" in new Setup {
-      val invalidClientId = "invalid"
+      val invalidClientId                                                    = "invalid"
       val result: ValidatedNec[String, NonEmptyList[UpdateApplicationEvent]] = await(underTest.process(app, removeClientSecretByAdmin.copy(clientSecretId = invalidClientId)))
 
       result.isValid shouldBe false
       result.toEither match {
         case Left(Chain(error: String)) => error shouldBe s"Client Secret Id $invalidClientId not found in Application ${app.id.value}"
-        case _ => fail()
+        case _                          => fail()
       }
     }
 
     "create a valid event for a developer on a non production application" in new Setup {
       val nonProductionApp = app.copy(environment = Environment.SANDBOX.toString)
-      val result = await(underTest.process(nonProductionApp, removeClientSecretByDev))
+      val result           = await(underTest.process(nonProductionApp, removeClientSecretByDev))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ClientSecretRemoved]

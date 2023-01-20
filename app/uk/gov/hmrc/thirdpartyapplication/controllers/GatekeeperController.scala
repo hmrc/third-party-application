@@ -17,22 +17,21 @@
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.ExecutionContext
+import scala.concurrent.Future.successful
+import scala.util.{Failure, Success, Try}
+
 import play.api.libs.json.Json
 import play.api.mvc.ControllerComponents
 import uk.gov.hmrc.play.bootstrap.backend.controller.BackendController
-import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
-import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService}
 
-import uk.gov.hmrc.thirdpartyapplication.services.SubscriptionService
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.models._
-import scala.concurrent.ExecutionContext
-import scala.concurrent.Future.successful
-import scala.util.{Try, Success, Failure}
 import uk.gov.hmrc.apiplatform.modules.gkauth.controllers.actions._
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.LdapGatekeeperRoleAuthorisationService
-import uk.gov.hmrc.apiplatform.modules.gkauth.services.StrideGatekeeperRoleAuthorisationService
+import uk.gov.hmrc.apiplatform.modules.gkauth.services.{LdapGatekeeperRoleAuthorisationService, StrideGatekeeperRoleAuthorisationService}
+import uk.gov.hmrc.thirdpartyapplication.controllers.ErrorCode._
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.JsonFormatters._
+import uk.gov.hmrc.thirdpartyapplication.models._
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, GatekeeperService, SubscriptionService}
 
 @Singleton
 class GatekeeperController @Inject() (
@@ -44,9 +43,9 @@ class GatekeeperController @Inject() (
     cc: ControllerComponents
   )(implicit val ec: ExecutionContext
   ) extends BackendController(cc)
-  with JsonUtils
-  with AnyGatekeeperRoleAuthorisationAction
-  with OnlyStrideGatekeeperRoleAuthoriseAction {
+    with JsonUtils
+    with AnyGatekeeperRoleAuthorisationAction
+    with OnlyStrideGatekeeperRoleAuthoriseAction {
 
   private lazy val badStateResponse = PreconditionFailed(
     JsErrorResponse(INVALID_STATE_TRANSITION, "Application is not in state 'PENDING_GATEKEEPER_APPROVAL'")
@@ -123,16 +122,16 @@ class GatekeeperController @Inject() (
     withJsonBody[UpdateRateLimitTierRequest] { updateRateLimitTierRequest =>
       Try(RateLimitTier withName updateRateLimitTierRequest.rateLimitTier.toUpperCase()) match {
         case Success(rateLimitTier) =>
-          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map(_ => NoContent) recover recovery
-        case Failure(_)                        => 
+          applicationService.updateRateLimitTier(applicationId, rateLimitTier) map (_ => NoContent) recover recovery
+        case Failure(_)             =>
           successful(UnprocessableEntity(
             JsErrorResponse(INVALID_REQUEST_PAYLOAD, s"'${updateRateLimitTierRequest.rateLimitTier}' is an invalid rate limit tier")
           ))
       }
     }
-    .recover(recovery)
+      .recover(recovery)
   }
- 
+
   def deleteApplication(id: ApplicationId) =
     requiresAuthentication().async { implicit request =>
       withJsonBodyFromAnyContent[DeleteApplicationRequest] { deleteApplicationPayload =>

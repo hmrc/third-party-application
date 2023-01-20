@@ -16,17 +16,19 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.NonEmptyChain
 import cats.data.Validated.Invalid
+
+import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
 import uk.gov.hmrc.apiplatform.modules.submissions.mocks.SubmissionsServiceMockModule
-import uk.gov.hmrc.http.HeaderCarrier
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent._
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData with SubmissionsTestData {
 
@@ -34,33 +36,44 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec 
 
     implicit val hc: HeaderCarrier = HeaderCarrier()
 
-    val appId = ApplicationId.random
-    val appAdminUserId = UserId.random
-    val appAdminEmail = "admin@example.com"
-    val riName = "Mr Responsible"
-    val riEmail = "ri@example.com"
+    val appId                    = ApplicationId.random
+    val appAdminUserId           = UserId.random
+    val appAdminEmail            = "admin@example.com"
+    val riName                   = "Mr Responsible"
+    val riEmail                  = "ri@example.com"
     val newResponsibleIndividual = ResponsibleIndividual.build("New RI", "new-ri@example")
-    val oldRiName = "old ri"
-    val requesterEmail = appAdminEmail
-    val requesterName = "mr admin"
-    val gatekeeperUser = "GateKeeperUser"
-    val reasons = "reasons description text"
-    val importantSubmissionData = ImportantSubmissionData(None, ResponsibleIndividual.build(riName, riEmail),
-      Set.empty, TermsAndConditionsLocation.InDesktopSoftware, PrivacyPolicyLocation.InDesktopSoftware, List.empty)
-    val app = anApplicationData(appId).copy(collaborators = Set(
-      Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
-    ), access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)
-    ), state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName))
-    val ts = LocalDateTime.now
+    val oldRiName                = "old ri"
+    val requesterEmail           = appAdminEmail
+    val requesterName            = "mr admin"
+    val gatekeeperUser           = "GateKeeperUser"
+    val reasons                  = "reasons description text"
+
+    val importantSubmissionData = ImportantSubmissionData(
+      None,
+      ResponsibleIndividual.build(riName, riEmail),
+      Set.empty,
+      TermsAndConditionsLocation.InDesktopSoftware,
+      PrivacyPolicyLocation.InDesktopSoftware,
+      List.empty
+    )
+
+    val app       = anApplicationData(appId).copy(
+      collaborators = Set(
+        Collaborator(appAdminEmail, Role.ADMINISTRATOR, appAdminUserId)
+      ),
+      access = Standard(List.empty, None, None, Set.empty, None, Some(importantSubmissionData)),
+      state = ApplicationState.pendingGatekeeperApproval(requesterEmail, requesterName)
+    )
+    val ts        = LocalDateTime.now
     val underTest = new DeclineApplicationApprovalRequestCommandHandler(SubmissionsServiceMock.aMock)
   }
 
   "process" should {
     "create correct event for a valid request with a submission and a standard app" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
-      
+
       val result = await(underTest.process(app, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
-      
+
       result.isValid shouldBe true
       result.toOption.get.length shouldBe 2
 
@@ -85,7 +98,6 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec 
       stateEvent.oldAppState shouldBe State.PENDING_GATEKEEPER_APPROVAL
     }
 
-
     "return an error if no responsibleIndividualVerification is found for the code" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturnNone
       val result = await(underTest.process(app, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
@@ -95,21 +107,21 @@ class DeclineApplicationApprovalRequestCommandHandlerSpec extends AsyncHmrcSpec 
     "return an error if the application is non-standard" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val nonStandardApp = app.copy(access = Ropc(Set.empty))
-      val result = await(underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
+      val result         = await(underTest.process(nonStandardApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application"))
     }
 
     "return an error if the application is old journey" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val oldJourneyApp = app.copy(access = Standard(List.empty, None, None, Set.empty, None, None))
-      val result = await(underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
+      val result        = await(underTest.process(oldJourneyApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.apply("Must be a standard new journey application"))
     }
 
     "return an error if the application state is not PendingResponsibleIndividualVerification or PendingGatekeeperApproval" in new Setup {
       SubmissionsServiceMock.FetchLatest.thenReturn(submittedSubmission)
       val pendingGKApprovalApp = app.copy(state = ApplicationState.pendingRequesterVerification(requesterEmail, requesterName, "12345678"))
-      val result = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
+      val result               = await(underTest.process(pendingGKApprovalApp, DeclineApplicationApprovalRequest(gatekeeperUser, reasons, ts)))
       result shouldBe Invalid(NonEmptyChain.one("App is not in PENDING_RESPONSIBLE_INDIVIDUAL_VERIFICATION or PENDING_GATEKEEPER_APPROVAL state"))
     }
   }

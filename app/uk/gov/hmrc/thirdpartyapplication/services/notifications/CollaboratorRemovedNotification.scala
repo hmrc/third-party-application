@@ -16,21 +16,27 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.notifications
 
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.http.HeaderCarrier
+
 import uk.gov.hmrc.thirdpartyapplication.connector.EmailConnector
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
 import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 
-import scala.concurrent.{ExecutionContext, Future}
-
 object CollaboratorRemovedNotification {
-  
-  def sendCollaboratorRemovedNotification(emailConnector: EmailConnector, app: ApplicationData, event: UpdateApplicationEvent.CollaboratorRemoved)
-                                         (implicit hc: HeaderCarrier, ec: ExecutionContext): Future[HasSucceeded] = {
+
+  def sendCollaboratorRemovedNotification(
+      emailConnector: EmailConnector,
+      app: ApplicationData,
+      event: UpdateApplicationEvent.CollaboratorRemoved
+    )(implicit hc: HeaderCarrier,
+      ec: ExecutionContext
+    ): Future[HasSucceeded] = {
     for {
       _ <- emailConnector.sendRemovedCollaboratorNotification(event.collaboratorEmail, app.name, event.verifiedAdminsToEmail)
-      _ <- if(event.notifyCollaborator)emailConnector.sendRemovedCollaboratorConfirmation(app.name, Set(event.collaboratorEmail)) else Future.successful(HasSucceeded)
+      _ <- if (event.notifyCollaborator) emailConnector.sendRemovedCollaboratorConfirmation(app.name, Set(event.collaboratorEmail)) else Future.successful(HasSucceeded)
     } yield HasSucceeded
   }
 }

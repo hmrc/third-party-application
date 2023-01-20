@@ -18,8 +18,10 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
-import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
+
 import play.api.libs.json.Json
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.CheckInformation
 
 class MongoFormatSpec extends AnyWordSpec with Matchers {
 

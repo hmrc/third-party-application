@@ -17,19 +17,22 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.models._
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
-
 import scala.concurrent.{ExecutionContext, Future}
-import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+
 import cats.data.NonEmptyList
+
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.common.services.EitherTHelper
+import uk.gov.hmrc.thirdpartyapplication.connector.ThirdPartyDelegatedAuthorityConnector
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models._
 
 @Singleton
 class ThirdPartyDelegatedAuthorityService @Inject() (
     thirdPartyDelegatedAuthorityConnector: ThirdPartyDelegatedAuthorityConnector
-  ) (implicit val ec: ExecutionContext) extends EitherTHelper[String] {
+  )(implicit val ec: ExecutionContext
+  ) extends EitherTHelper[String] {
 
   import cats.instances.future.catsStdInstancesForFuture
 
@@ -52,8 +55,8 @@ class ThirdPartyDelegatedAuthorityService @Inject() (
 
   private def applyEvent(event: UpdateApplicationEvent)(implicit hc: HeaderCarrier): Future[Option[HasSucceeded]] = {
     event match {
-      case evt : UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
-      case _ => Future.successful(None)
+      case evt: UpdateApplicationEvent with ApplicationDeletedBase => revokeApplicationAuthorities(evt.clientId)
+      case _                                                       => Future.successful(None)
     }
   }
 }

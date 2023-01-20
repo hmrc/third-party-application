@@ -16,19 +16,21 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks.repository
 
+import scala.concurrent.Future
+import scala.concurrent.Future.{failed, successful}
+
 import cats.data.NonEmptyList
 import org.mockito.captor.{ArgCaptor, Captor}
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.http.NotFoundException
-import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
-import uk.gov.hmrc.thirdpartyapplication.models.db._
-import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
-import uk.gov.hmrc.thirdpartyapplication.domain.models._
-import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
-import scala.concurrent.Future
-import scala.concurrent.Future.{failed, successful}
+import uk.gov.hmrc.http.NotFoundException
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.RateLimitTier
+import uk.gov.hmrc.thirdpartyapplication.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db._
+import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
 
 trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -367,16 +369,19 @@ trait ApplicationRepositoryMockModule extends MockitoSugar with ArgumentMatchers
     }
 
     object FetchProdAppStateHistories {
+
       def thenReturn(appStateHistories: ApplicationWithStateHistory*) =
         when(aMock.fetchProdAppStateHistories()).thenReturn(Future.successful(appStateHistories.toList))
     }
 
     object FetchByStatusDetailsAndEnvironment {
+
       def thenReturn(apps: ApplicationData*) =
         when(aMock.fetchByStatusDetailsAndEnvironment(*, *, *)).thenReturn(successful(apps.toList))
     }
 
     object FetchByStatusDetailsAndEnvironmentNotAleadyNotified {
+
       def thenReturn(apps: ApplicationData*) =
         when(aMock.fetchByStatusDetailsAndEnvironmentNotAleadyNotified(*, *, *)).thenReturn(successful(apps.toList))
     }

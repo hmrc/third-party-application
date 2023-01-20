@@ -1,5 +1,5 @@
 /*
- * Copyright 2020 HM Revenue & Customs
+ * Copyright 2023 HM Revenue & Customs
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -271,9 +271,9 @@ class SubscriptionRepositoryISpec
 
   "ApisWithSubscriptionCount" should {
     "return APIs with a count of subscriptions" in {
-      val api1 = "api-1"
-      val api2 = "api-2"
-      val api3 = "api-3"
+      val api1        = "api-1"
+      val api2        = "api-2"
+      val api3        = "api-3"
       val api1Version = "api-1-version-1"
       val api2Version = "api-2-version-2"
       val api3Version = "api-3-version-3"
@@ -301,7 +301,7 @@ class SubscriptionRepositoryISpec
           .insertOne(aSubscriptionData(api3, api3Version, application3.id))
           .toFuture()
       )
-      
+
       val expectedResult = List(
         SubscriptionCountByApi(ApiIdentifier(ApiContext(api1), ApiVersion(api1Version)), 2),
         SubscriptionCountByApi(ApiIdentifier(ApiContext(api2), ApiVersion(api2Version)), 2)
@@ -314,7 +314,7 @@ class SubscriptionRepositoryISpec
   }
 
   "applyEvents" should {
-  
+
     "handle ApiSubscribed event correctly" in {
       val applicationId = ApplicationId.random
       val apiIdentifier = "some-context".asIdentifier("1.0.0")
@@ -325,7 +325,7 @@ class SubscriptionRepositoryISpec
         applicationId = applicationId,
         actor = CollaboratorActor(adminEmail),
         context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value,
+        version = apiIdentifier.version.value
       )
 
       val result = await(subscriptionRepository.applyEvents(List(event)))
@@ -344,10 +344,10 @@ class SubscriptionRepositoryISpec
         applicationId = applicationId,
         actor = CollaboratorActor(adminEmail),
         context = apiIdentifier.context.value,
-        version = apiIdentifier.version.value,
+        version = apiIdentifier.version.value
       )
       await(subscriptionRepository.add(applicationId, apiIdentifier))
-      
+
       val result = await(subscriptionRepository.applyEvents(List(event)))
 
       result mustBe HasSucceeded
@@ -366,7 +366,7 @@ class SubscriptionRepositoryISpec
   def aSubscriptionData(apiContext: String, version: String, applicationIds: ApplicationId*): SubscriptionData = {
     subscriptionData(ApiContext(apiContext), ApiVersion(version), applicationIds: _*)
   }
-  
+
   def anApplicationData(
       id: ApplicationId,
       clientId: ClientId = ClientId("aaa"),

@@ -17,17 +17,18 @@
 package uk.gov.hmrc.thirdpartyapplication.services
 
 import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
 import uk.gov.hmrc.thirdpartyapplication.connector._
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier.{BRONZE, RateLimitTier}
 import uk.gov.hmrc.thirdpartyapplication.repository.ApplicationRepository
-import uk.gov.hmrc.apiplatform.modules.common.services.ApplicationLogger
-
-import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)
-                                  (implicit ec: ExecutionContext) extends ApplicationLogger {
+class AwsRestoreService @Inject() (awsApiGatewayConnector: AwsApiGatewayConnector, applicationRepository: ApplicationRepository)(implicit ec: ExecutionContext)
+    extends ApplicationLogger {
 
   val DefaultRateLimitTier: RateLimitTier = BRONZE
 

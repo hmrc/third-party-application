@@ -16,13 +16,14 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
+import java.time.LocalDateTime
+import scala.concurrent.ExecutionContext.Implicits.global
+
 import cats.data.{Chain, NonEmptyList, ValidatedNec}
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.UpdateApplicationEvent.{ClientSecretAdded, CollaboratorActor}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
 import uk.gov.hmrc.thirdpartyapplication.util.{ApplicationTestData, AsyncHmrcSpec}
-
-import java.time.LocalDateTime
-import scala.concurrent.ExecutionContext.Implicits.global
 
 class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTestData {
 
@@ -30,15 +31,15 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
     val underTest = new AddClientSecretCommandHandler()
 
     val applicationId = ApplicationId.random
-    val adminEmail = "admin@example.com"
+    val adminEmail    = "admin@example.com"
 
-    val developerUserId = idOf(devEmail)
+    val developerUserId       = idOf(devEmail)
     val developerCollaborator = Collaborator(devEmail, Role.DEVELOPER, developerUserId)
-    val developerActor = CollaboratorActor(devEmail)
+    val developerActor        = CollaboratorActor(devEmail)
 
-    val adminUserId = idOf(adminEmail)
+    val adminUserId       = idOf(adminEmail)
     val adminCollaborator = Collaborator(adminEmail, Role.ADMINISTRATOR, adminUserId)
-    val adminActor = CollaboratorActor(adminEmail)
+    val adminActor        = CollaboratorActor(adminEmail)
 
     val app = anApplicationData(applicationId).copy(
       collaborators = Set(
@@ -47,11 +48,11 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       )
     )
 
-    val timestamp = LocalDateTime.now
-    val secretValue = "secret"
+    val timestamp    = LocalDateTime.now
+    val secretValue  = "secret"
     val clientSecret = ClientSecret("name", timestamp, hashedSecret = "hashed")
 
-    val addClientSecretByDev = AddClientSecret(CollaboratorActor(devEmail), secretValue, clientSecret, timestamp)
+    val addClientSecretByDev   = AddClientSecret(CollaboratorActor(devEmail), secretValue, clientSecret, timestamp)
     val addClientSecretByAdmin = AddClientSecret(CollaboratorActor(adminEmail), secretValue, clientSecret, timestamp)
   }
 
@@ -74,14 +75,14 @@ class AddClientSecretCommandHandlerSpec extends AsyncHmrcSpec with ApplicationTe
       result.isValid shouldBe false
       result.toEither match {
         case Left(Chain(error: String)) => error shouldBe "App is in PRODUCTION so User must be an ADMIN"
-        case _ =>  fail()
+        case _                          => fail()
       }
 
     }
 
     "create a valid event for a developer on a non production application" in new Setup {
       val nonProductionApp = app.copy(environment = Environment.SANDBOX.toString)
-      val result = await(underTest.process(nonProductionApp, addClientSecretByDev))
+      val result           = await(underTest.process(nonProductionApp, addClientSecretByDev))
 
       result.isValid shouldBe true
       val event = result.toOption.get.head.asInstanceOf[ClientSecretAdded]

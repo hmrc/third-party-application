@@ -16,20 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.controllers
 
-import akka.stream.Materializer
-import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
-import org.apache.http.HttpStatus._
-import play.api.test.{FakeRequest, Helpers}
-import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
-import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
-
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.Future.{apply => _}
-import play.api.libs.json.Json
+
+import akka.stream.Materializer
 import akka.stream.testkit.NoMaterializer
+import org.apache.http.HttpStatus._
+
+import play.api.libs.json.Json
+import play.api.test.{FakeRequest, Helpers}
+import uk.gov.hmrc.http.HeaderCarrier
+
+import uk.gov.hmrc.thirdpartyapplication.ApplicationStateUtil
+import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifierSyntax._
+import uk.gov.hmrc.thirdpartyapplication.services.{ApplicationService, SubscriptionService}
+import uk.gov.hmrc.thirdpartyapplication.util.http.HttpHeaders._
 
 class CollaboratorControllerSpec extends ControllerSpec with ApplicationStateUtil {
 

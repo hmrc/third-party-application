@@ -16,11 +16,13 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
-import cats.data.NonEmptyList
 import scala.collection.immutable.ListMap
+
+import cats.data.NonEmptyList
+
 import uk.gov.hmrc.apiplatform.modules.submissions.SubmissionsTestData
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import uk.gov.hmrc.thirdpartyapplication.util.HmrcSpec
 
 class MarkAnswerSpec extends HmrcSpec {
 

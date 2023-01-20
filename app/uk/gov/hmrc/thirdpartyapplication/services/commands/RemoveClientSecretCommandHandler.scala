@@ -16,23 +16,22 @@
 
 package uk.gov.hmrc.thirdpartyapplication.services.commands
 
-import cats.Apply
-import cats.data.{NonEmptyList, ValidatedNec}
-import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret, UpdateApplicationEvent}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
-
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
+import cats.Apply
+import cats.data.{NonEmptyList, ValidatedNec}
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ClientSecret, RemoveClientSecret, UpdateApplicationEvent}
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 @Singleton
-class RemoveClientSecretCommandHandler @Inject()()(implicit val ec: ExecutionContext) extends CommandHandler {
+class RemoveClientSecretCommandHandler @Inject() ()(implicit val ec: ExecutionContext) extends CommandHandler {
 
   import CommandHandler._
-  
+
   private def validate(app: ApplicationData, cmd: RemoveClientSecret): ValidatedNec[String, ApplicationData] = {
-    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.actor, app),
-      clientSecretExists(cmd.clientSecretId, app))
-    { case _ => app }
+    Apply[ValidatedNec[String, *]].map2(isAdminIfInProduction(cmd.actor, app), clientSecretExists(cmd.clientSecretId, app)) { case _ => app }
   }
 
   import UpdateApplicationEvent._

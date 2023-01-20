@@ -16,14 +16,15 @@
 
 package uk.gov.hmrc.thirdpartyapplication.mocks
 
+import scala.concurrent.Future.{failed, successful}
+
 import org.mockito.verification.VerificationMode
 import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
-import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
+
 import uk.gov.hmrc.thirdpartyapplication.domain.models.RateLimitTier
 import uk.gov.hmrc.thirdpartyapplication.models.HasSucceeded
+import uk.gov.hmrc.thirdpartyapplication.models.db.ApplicationData
 import uk.gov.hmrc.thirdpartyapplication.services.ApiGatewayStore
-
-import scala.concurrent.Future.{failed, successful}
 
 trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar {
 
@@ -98,6 +99,7 @@ trait ApiGatewayStoreMockModule extends MockitoSugar with ArgumentMatchersSugar 
     }
 
     object ApplyEvents {
+
       def succeeds() = {
         when(aMock.applyEvents(*)(*)).thenReturn(successful(None))
       }

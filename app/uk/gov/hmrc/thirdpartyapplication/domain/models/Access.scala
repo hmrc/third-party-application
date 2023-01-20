@@ -16,8 +16,9 @@
 
 package uk.gov.hmrc.thirdpartyapplication.domain.models
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 import play.api.libs.json._
+
+import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType._
 
 sealed trait Access {
   val accessType: AccessType.Value

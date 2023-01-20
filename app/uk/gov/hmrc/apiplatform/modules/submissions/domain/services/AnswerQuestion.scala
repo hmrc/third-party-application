@@ -16,10 +16,11 @@
 
 package uk.gov.hmrc.apiplatform.modules.submissions.domain.services
 
-import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
+import java.time.{LocalDateTime, ZoneOffset}
+
 import cats.data.NonEmptyList
 
-import java.time.{LocalDateTime, ZoneOffset}
+import uk.gov.hmrc.apiplatform.modules.submissions.domain.models._
 
 object AnswerQuestion {
   import Submission.AnswersToQuestions

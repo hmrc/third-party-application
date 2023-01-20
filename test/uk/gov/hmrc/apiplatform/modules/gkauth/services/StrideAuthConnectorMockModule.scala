@@ -16,9 +16,10 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import org.mockito.MockitoSugar
-import org.mockito.ArgumentMatchersSugar
- import scala.concurrent.Future.{failed, successful}
+import scala.concurrent.Future.{failed, successful}
+
+import org.mockito.{ArgumentMatchersSugar, MockitoSugar}
+
 import uk.gov.hmrc.apiplatform.modules.gkauth.connectors.StrideAuthConnector
 
 trait StrideAuthConnectorMockModule {
@@ -27,15 +28,14 @@ trait StrideAuthConnectorMockModule {
   protected trait BaseStrideAuthConnectorMock {
     def aMock: StrideAuthConnector
 
-    object Authorise{
+    object Authorise {
       def succeeds = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(successful(()))
 
       def fails = when(aMock.authorise[Unit](*, *)(*, *)).thenReturn(failed(new RuntimeException))
     }
   }
-  
+
   object StrideAuthConnectorMock extends BaseStrideAuthConnectorMock {
     val aMock = mock[StrideAuthConnector]
   }
 }
-

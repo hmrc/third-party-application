@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
-
 import scala.concurrent.ExecutionContext.Implicits.global
-import play.api.test.FakeRequest
-import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+
 import play.api.http.Status.UNAUTHORIZED
-import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import play.api.test.FakeRequest
 import uk.gov.hmrc.play.http.HeaderCarrierConverter
 
+import uk.gov.hmrc.apiplatform.modules.gkauth.domain.models.StrideAuthRoles
+import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
+import uk.gov.hmrc.thirdpartyapplication.util.AsyncHmrcSpec
+
 class StrideGatekeeperRoleAuthorisationServiceSpec extends AsyncHmrcSpec with StrideAuthConnectorMockModule {
-  val request = FakeRequest()
+  val request     = FakeRequest()
   implicit val hc = HeaderCarrierConverter.fromRequest(request)
 
   trait Setup {

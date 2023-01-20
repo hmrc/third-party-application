@@ -16,17 +16,18 @@
 
 package uk.gov.hmrc.apiplatform.modules.gkauth.services
 
-import uk.gov.hmrc.internalauth.client.BackendAuthComponents
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.{ExecutionContext, Future}
+
 import play.api.mvc._
-import scala.concurrent.Future
 import uk.gov.hmrc.http.HeaderCarrier
-import uk.gov.hmrc.internalauth.client._
-import scala.concurrent.ExecutionContext
-import javax.inject.{Singleton, Inject}
+import uk.gov.hmrc.internalauth.client.{BackendAuthComponents, _}
+
 import uk.gov.hmrc.thirdpartyapplication.config.AuthControlConfig
 
 @Singleton
-class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext) extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
+class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthControlConfig, auth: BackendAuthComponents)(implicit ec: ExecutionContext)
+    extends AbstractGatekeeperRoleAuthorisationService(authControlConfig) {
 
   protected def innerEnsureHasGatekeeperRole[A]()(implicit hc: HeaderCarrier): Future[Option[Result]] = {
     hc.authorization.fold[Future[Option[Result]]]({
@@ -35,11 +36,11 @@ class LdapGatekeeperRoleAuthorisationService @Inject() (authControlConfig: AuthC
     })(authorization => {
       auth.authConnector.authenticate(predicate = None, Retrieval.username ~ Retrieval.hasPredicate(LdapAuthorisationPredicate.gatekeeperReadPermission))
         .flatMap {
-          case (name ~ true) => OK_RESPONSE
-          case (name ~ false) => 
+          case (name ~ true)  => OK_RESPONSE
+          case (name ~ false) =>
             logger.debug("No LDAP predicate matched")
             UNAUTHORIZED_RESPONSE
-          case _ => 
+          case _              =>
             logger.debug("LDAP Authenticate failed to find user")
             UNAUTHORIZED_RESPONSE
         }

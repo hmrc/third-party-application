@@ -16,26 +16,26 @@
 
 package uk.gov.hmrc.apiplatform.modules.scheduling
 
-import akka.actor.{Cancellable, Scheduler}
-import org.scalatest.concurrent.Eventually
-import play.api.Application
-import play.api.inject.{bind, ApplicationLifecycle}
-
+import java.time.Clock
+import java.util.concurrent.{CountDownLatch, TimeUnit}
 import scala.concurrent.duration._
 import scala.concurrent.{ExecutionContext, Future}
-import org.mockito.scalatest.MockitoSugar
-import org.scalatest.wordspec.AnyWordSpec
-import org.scalatest.matchers.should.Matchers
 
-import java.util.concurrent.{CountDownLatch, TimeUnit}
+import akka.actor.{Cancellable, Scheduler}
+import org.mockito.scalatest.MockitoSugar
+import org.scalatest.concurrent.Eventually
+import org.scalatest.matchers.should.Matchers
 import org.scalatest.time.{Minute, Span}
+import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerTest
+
+import play.api.Application
 import play.api.inject.guice.GuiceApplicationBuilder
+import play.api.inject.{ApplicationLifecycle, bind}
 import play.api.test.Helpers.{await, defaultAwaitTimeout}
+
 import uk.gov.hmrc.thirdpartyapplication.config.{ClockModule, SchedulerModule}
 import uk.gov.hmrc.thirdpartyapplication.util.FixedClock
-
-import java.time.Clock
 
 class RunningOfScheduledJobsSpec extends AnyWordSpec with Matchers with Eventually with MockitoSugar with GuiceOneAppPerTest with FixedClock {
 

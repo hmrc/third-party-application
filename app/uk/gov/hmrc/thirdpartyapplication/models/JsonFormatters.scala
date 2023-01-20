@@ -18,6 +18,7 @@ package uk.gov.hmrc.thirdpartyapplication.models
 
 import play.api.libs.functional.syntax._
 import play.api.libs.json._
+
 import uk.gov.hmrc.thirdpartyapplication.controllers.{ApplicationNameValidationRequest, _}
 import uk.gov.hmrc.thirdpartyapplication.domain.models.AccessType.{PRIVILEGED, ROPC, STANDARD}
 import uk.gov.hmrc.thirdpartyapplication.domain.models._
@@ -62,7 +63,7 @@ trait JsonFormatters extends UtcMillisDateTimeFormatters {
   implicit val formatValidationRequest                = Json.format[ValidationRequest]
   implicit val formatApplicationNameValidationRequest = Json.format[ApplicationNameValidationRequest]
   implicit val formatClientSecretRequest              = Json.format[ClientSecretRequest]
-  implicit val formatClientSecretRequestWithActor    = Json.format[ClientSecretRequestWithActor]
+  implicit val formatClientSecretRequestWithActor     = Json.format[ClientSecretRequestWithActor]
   implicit val formatApproveUpliftRequest             = Json.format[ApproveUpliftRequest]
   implicit val formatRejectUpliftRequest              = Json.format[RejectUpliftRequest]
   implicit val formatResendVerificationRequest        = Json.format[ResendVerificationRequest]

@@ -16,9 +16,8 @@
 
 package uk.gov.hmrc.thirdpartyapplication.util
 
-import uk.gov.hmrc.thirdpartyapplication.domain.models.SellResellOrDistribute
+import uk.gov.hmrc.thirdpartyapplication.domain.models.{ApiIdentifier, SellResellOrDistribute}
 import uk.gov.hmrc.thirdpartyapplication.models.UpliftRequest
-import uk.gov.hmrc.thirdpartyapplication.domain.models.ApiIdentifier
 
 trait UpliftRequestSamples {
   val sellResellOrDistribute      = SellResellOrDistribute("Yes")
