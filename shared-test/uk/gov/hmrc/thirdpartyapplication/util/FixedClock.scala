@@ -37,4 +37,3 @@ trait FixedClock {
 object FixedClock extends FixedClock {
   val now = LocalDateTime.now(clock).truncatedTo(ChronoUnit.MILLIS)
 }
-
